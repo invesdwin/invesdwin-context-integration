@@ -111,7 +111,7 @@
 				<usersfile>juddi-users.xml</usersfile> -->
 			<!-- jUDDI Authentication module to use -->
 			<authenticator>
-				<class>de.invesdwin.common.integration.ws.registry.internal.IntegrationWsPropertiesJuddiAuthenticator
+				<class>de.invesdwin.context.integration.ws.registry.internal.IntegrationWsPropertiesJuddiAuthenticator
 				</class>
 			</authenticator>
 

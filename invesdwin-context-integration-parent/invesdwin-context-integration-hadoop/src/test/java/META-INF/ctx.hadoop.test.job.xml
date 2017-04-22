@@ -24,10 +24,10 @@
 		}
 	</hadoop:script>
 
-	<hadoop:job id="hadoopTestJob" mapper="de.invesdwin.common.integration.hadoop.mapreduce.HadoopTestJobMapper"
-		reducer="de.invesdwin.common.integration.hadoop.mapreduce.HadoopTestJobReducer" input-path="${hadoopTestJob.input.path}"
+	<hadoop:job id="hadoopTestJob" mapper="de.invesdwin.context.integration.hadoop.mapreduce.HadoopTestJobMapper"
+		reducer="de.invesdwin.context.integration.hadoop.mapreduce.HadoopTestJobReducer" input-path="${hadoopTestJob.input.path}"
 		key="org.apache.hadoop.io.Text" output-path="${hadoopTestJob.output.path}"
-		jar="#{new de.invesdwin.common.integration.hadoop.jar.HadoopJobMergedClasspathJar().getResource()}" />
+		jar="#{new de.invesdwin.context.integration.hadoop.jar.HadoopJobMergedClasspathJar().getResource()}" />
 
 	<hadoop:job-runner id="hadoopTestJobRunner" job-ref="hadoopTestJob" />
 

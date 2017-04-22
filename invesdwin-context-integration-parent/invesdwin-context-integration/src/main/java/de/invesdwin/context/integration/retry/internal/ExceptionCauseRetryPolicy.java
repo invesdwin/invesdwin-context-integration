@@ -43,8 +43,8 @@ public class ExceptionCauseRetryPolicy extends NeverRetryPolicy implements Facto
     //    <set>
     //        <!-- exceptions that should always be allowed, even if they are in disallowedCauses (maybe a cause of that exception) -->
     //        <value>java.net.SocketTimeoutException</value>
-    //        <value>de.invesdwin.common.integration.retry.RetryLaterException</value>
-    //        <value>de.invesdwin.common.integration.retry.RetryLaterRuntimeException</value>
+    //        <value>de.invesdwin.context.integration.retry.RetryLaterException</value>
+    //        <value>de.invesdwin.context.integration.retry.RetryLaterRuntimeException</value>
     //    </set>
     //</property>
     private final List<Class<? extends Exception>> alwaysAllowedCauses = Arrays.asList(SocketTimeoutException.class,

@@ -18,7 +18,7 @@
 		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 	<bean
-		class="de.invesdwin.common.integration.ws.registry.internal.EmfInjector" />
+		class="de.invesdwin.context.integration.ws.registry.internal.EmfInjector" />
 
 	<jaxws:endpoint id="inquiry"
 		implementor="org.apache.juddi.api.impl.UDDIInquiryImpl" address="/inquiry">

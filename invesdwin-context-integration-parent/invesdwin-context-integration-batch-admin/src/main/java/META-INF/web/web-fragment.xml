@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-fragment>
 
-	<name>de.invesdwin.common.batch.admin</name>
+	<name>de.invesdwin.context.integration.batch.admin</name>
 
 	<filter>
 		<filter-name>shallowEtagHeaderFilter</filter-name>
@@ -29,7 +29,7 @@
 		<init-param>
 			<param-name>contextConfigLocation</param-name>
 			<param-value>
-				classpath*:/META-INF/ctx.batch.admin.xml,
+				classpath*:/META-INF/ctx.integration.batch.admin.xml,
 				classpath*:/org/springframework/batch/admin/web/resources/servlet-config.xml,
 				classpath*:/org/springframework/batch/admin/web/resources/webapp-config.xml
 			</param-value>

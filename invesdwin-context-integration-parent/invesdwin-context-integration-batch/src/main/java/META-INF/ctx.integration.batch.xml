@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.springframework.org/schema/beans"
+	xmlns:batch="http://www.springframework.org/schema/batch" xmlns:jdbc="http://www.springframework.org/schema/jdbc"
+	xsi:schemaLocation="http://www.springframework.org/schema/jdbc http://www.springframework.org/schema/jdbc/spring-jdbc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/batch http://www.springframework.org/schema/batch/spring-batch.xsd">
+
+	<bean name="batchDataSource" class="de.invesdwin.context.integration.batch.internal.BatchDataSource" />
+	<bean name="batchTransactionManager" class="de.invesdwin.context.integration.batch.internal.BatchTransactionManager" />
+
+	<batch:job-repository id="jobRepository" data-source="batchDataSource" transaction-manager="batchTransactionManager" isolation-level-for-create="REPEATABLE_READ" />
+
+	<bean name="jobLauncher" class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+		<property name="taskExecutor">
+			<bean class="org.springframework.core.task.support.TaskExecutorAdapter">
+				<constructor-arg>
+					<bean class="de.invesdwin.util.concurrent.Executors" factory-method="newCachedThreadPool">
+						<constructor-arg value="JobLauncher" />
+					</bean>
+				</constructor-arg>
+			</bean>
+		</property>
+		<property name="jobRepository" ref="jobRepository"></property>
+	</bean>
+
+	<jdbc:initialize-database data-source="batchDataSource"
+		enabled="#{T(de.invesdwin.context.integration.batch.internal.BatchDatabaseProperties).isInitDatabaseEnabled()}">
+		<jdbc:script execution="INIT"
+			location="org/springframework/batch/core/schema-#{T(de.invesdwin.context.integration.batch.internal.BatchDatabaseProperties).getDatabaseTypeForSchemaScript()}.sql" />
+	</jdbc:initialize-database>
+
+	<jdbc:initialize-database data-source="batchDataSource"
+		enabled="#{T(de.invesdwin.context.integration.batch.internal.BatchDatabaseProperties).isDestroyDatabaseEnabled()}">
+		<jdbc:script execution="DESTROY"
+			location="org/springframework/batch/core/schema-drop-#{T(de.invesdwin.context.integration.batch.internal.BatchDatabaseProperties).getDatabaseTypeForSchemaScript()}.sql" />
+	</jdbc:initialize-database>
+
+	<bean name="runIdIncrementer" class="org.springframework.batch.core.launch.support.RunIdIncrementer" />
+
+	<bean name="jobOperator" class="org.springframework.batch.core.launch.support.SimpleJobOperator">
+		<property name="jobLauncher" ref="jobLauncher" />
+		<property name="jobRegistry" ref="jobRegistry" />
+		<property name="jobExplorer" ref="jobExplorer" />
+		<property name="jobRepository" ref="jobRepository" />
+	</bean>
+	<bean name="jobRegistry" class="org.springframework.batch.core.configuration.support.MapJobRegistry" />
+	<bean name="jobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean">
+		<property name="dataSource" ref="batchDataSource" />
+	</bean>
+
+	<bean id="jobRegistryBeanPostProcessor" class="org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor">
+		<property name="jobRegistry" ref="jobRegistry" />
+	</bean>
+
+	<bean class="de.invesdwin.context.integration.batch.internal.LoggingAutomaticJobRegistrar">
+		<property name="jobContextResourcePattern" value="classpath*:/META-INF/batch/ctx.batch.*.xml" />
+		<property name="applicationContextFactories">
+			<bean class="org.springframework.batch.core.configuration.support.ClasspathXmlApplicationContextsFactoryBean">
+				<property name="resources" value="classpath*:/META-INF/batch/ctx.batch.*.xml" />
+			</bean>
+		</property>
+		<property name="jobLoader">
+			<bean class="de.invesdwin.context.integration.batch.internal.BatchContextIgnoringJobLoader">
+				<property name="jobRegistry" ref="jobRegistry" />
+			</bean>
+		</property>
+		<property name="jobRegistry" ref="jobRegistry" />
+	</bean>
+
+	<bean id="dummyTransactionManager" class="org.springframework.batch.support.transaction.ResourcelessTransactionManager" />
+
+</beans>

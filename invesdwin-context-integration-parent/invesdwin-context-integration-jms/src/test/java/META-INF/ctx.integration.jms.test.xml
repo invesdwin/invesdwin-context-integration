@@ -16,7 +16,7 @@
 			http://www.springframework.org/schema/integration/xml/spring-integration-xml.xsd">
 
 	<si:gateway id="jmsIntegrationTestServiceGateway"
-		service-interface="de.invesdwin.common.integration.jms.IJmsIntegrationTestService" />
+		service-interface="de.invesdwin.context.integration.jms.IJmsIntegrationTestService" />
 
 	<!-- einfache requests gehen über simple adapter -->
 	<si:channel id="helloWorldOut" />
@@ -43,6 +43,6 @@
 	<si:channel id="helloWorldWithAnswerIn" />
 
 	<bean
-		class="de.invesdwin.common.integration.jms.JmsIntegrationTestService" />
+		class="de.invesdwin.context.integration.jms.JmsIntegrationTestService" />
 
 </beans>

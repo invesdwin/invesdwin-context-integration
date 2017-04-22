@@ -9,10 +9,10 @@
 	<!-- Caching so that the template is no performance hog -->
 	<bean id="amqpConnectionFactory" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
 		<property name="channelCacheSize" value="10" />
-		<property name="host" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.HOST}" />
-		<property name="port" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.PORT}" />
-		<property name="username" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.USER}" />
-		<property name="password" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.PASSWORD}" />
+		<property name="host" value="${de.invesdwin.context.integration.amqp.AmqpClientProperties.HOST}" />
+		<property name="port" value="${de.invesdwin.context.integration.amqp.AmqpClientProperties.PORT}" />
+		<property name="username" value="${de.invesdwin.context.integration.amqp.AmqpClientProperties.USER}" />
+		<property name="password" value="${de.invesdwin.context.integration.amqp.AmqpClientProperties.PASSWORD}" />
 	</bean>
 	
 	<bean id="amqpTemplate" class="org.springframework.amqp.rabbit.core.RabbitTemplate">

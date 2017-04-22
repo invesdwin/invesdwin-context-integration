@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <web-fragment>
 
-	<name>de.invesdwin.common.integration.ws.jaxws</name>
+	<name>de.invesdwin.context.integration.ws.jaxws</name>
 
 	<servlet>
 		<servlet-name>cxf</servlet-name>

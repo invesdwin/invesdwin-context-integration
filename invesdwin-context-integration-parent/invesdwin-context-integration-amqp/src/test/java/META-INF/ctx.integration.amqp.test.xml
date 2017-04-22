@@ -13,7 +13,7 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<si:gateway id="amqpIntegrationTestServiceGateway"
-		service-interface="de.invesdwin.common.integration.amqp.IAmqpIntegrationTestService" />
+		service-interface="de.invesdwin.context.integration.amqp.IAmqpIntegrationTestService" />
 
 	<!-- simple requests go through a simple adapter -->
 	<si:channel id="helloWorldOut" />
@@ -48,6 +48,6 @@
 	<si:channel id="helloWorldWithAnswerIn" />
 
 	<bean
-		class="de.invesdwin.common.integration.amqp.AmqpIntegrationTestService" />
+		class="de.invesdwin.context.integration.amqp.AmqpIntegrationTestService" />
 
 </beans>

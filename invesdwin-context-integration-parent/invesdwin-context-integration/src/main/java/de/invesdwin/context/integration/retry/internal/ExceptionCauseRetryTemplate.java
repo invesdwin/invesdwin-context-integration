@@ -28,7 +28,7 @@ public class ExceptionCauseRetryTemplate extends RetryTemplate implements Factor
     //        </property>
     //        <property name="retryPolicy">
     //            <bean
-    //                class="de.invesdwin.common.integration.retry.internal.ExceptionCauseRetryPolicy">
+    //                class="de.invesdwin.context.integration.retry.internal.ExceptionCauseRetryPolicy">
     //            </bean>
     //        </property>
     //    </bean>

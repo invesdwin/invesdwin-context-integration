@@ -7,12 +7,12 @@
 	<batch:job id="batchTestJob2" incrementer="runIdIncrementer">
 		<batch:step id="batchTestJobStep1" next="batchTestJobStep2">
 			<batch:tasklet>
-				<bean class="de.invesdwin.common.batch.BatchTestJobStep1Tasklet" />
+				<bean class="de.invesdwin.context.integration.batch.BatchTestJobStep1Tasklet" />
 			</batch:tasklet>
 		</batch:step>
 		<batch:step id="batchTestJobStep2">
 			<batch:tasklet>
-				<bean class="de.invesdwin.common.batch.BatchTestJobStep2Tasklet" />
+				<bean class="de.invesdwin.context.integration.batch.BatchTestJobStep2Tasklet" />
 			</batch:tasklet>
 		</batch:step>
 	</batch:job>
