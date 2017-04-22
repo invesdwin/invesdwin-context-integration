@@ -30,6 +30,7 @@
 		<module>invesdwin-context-integration-ws-jaxrs</module>
 		<module>invesdwin-context-integration-ws-jaxws</module>
 		<module>invesdwin-context-integration-ws-registry</module>
+		<module>invesdwin-context-integration-ws-registry-dist</module>
 	</modules>
 
 	<properties>
@@ -138,6 +139,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws-registry</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-ws-registry-dist</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
 			
