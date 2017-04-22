@@ -1,0 +1,24 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:rabbit="http://www.springframework.org/schema/rabbit"
+	xsi:schemaLocation="http://www.springframework.org/schema/rabbit http://www.springframework.org/schema/rabbit/spring-rabbit-1.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="amqpClientProperties" class="de.invesdwin.context.system.properties.SystemPropertiesDefinition" />
+
+	<!-- Caching so that the template is no performance hog -->
+	<bean id="amqpConnectionFactory" class="org.springframework.amqp.rabbit.connection.CachingConnectionFactory">
+		<property name="channelCacheSize" value="10" />
+		<property name="host" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.HOST}" />
+		<property name="port" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.PORT}" />
+		<property name="username" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.USER}" />
+		<property name="password" value="${de.invesdwin.common.integration.amqp.AmqpClientProperties.PASSWORD}" />
+	</bean>
+	
+	<bean id="amqpTemplate" class="org.springframework.amqp.rabbit.core.RabbitTemplate">
+		<constructor-arg ref="amqpConnectionFactory" />
+	</bean>
+	
+	<rabbit:admin connection-factory="amqpConnectionFactory"/>
+	
+</beans>

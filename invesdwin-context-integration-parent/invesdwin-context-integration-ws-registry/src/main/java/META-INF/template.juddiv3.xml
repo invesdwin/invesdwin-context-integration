@@ -1,0 +1,136 @@
+<config>
+	<juddi>
+		<!-- The ${juddi.server.baseurl} token can be referenced in accessPoints 
+			and will be resolved at runtime. -->
+		<server>
+			<baseurl>[REGISTRY_SERVER_URI]</baseurl>
+			<baseurlsecure>[REGISTRY_SERVER_URI]</baseurlsecure>
+		</server>
+		<!-- The key of the root business that all of the UDDI services are registered 
+			in, as defined in the install_data -->
+		<root>
+			<!-- this is the 'root' username, or owner of the node -->
+			<publisher>root</publisher>
+			<!-- The key of the root business that all of the UDDI services are registered 
+				in, as defined in the install_data -->
+			<businessId>uddi:juddi.apache.org:businesses-asf</businessId>
+			<partition>uddi:juddi.apache.org</partition>
+		</root>
+		<!-- The node Id must be unique when setup in a cluster of UDDI servers 
+			implementing the replication API don't worry, jUDDI doesn't implement it 
+			right now, but it may come in the future Per the spec, The value used MUST 
+			match the businessKey of the Node Business Entity -->
+		<nodeId>uddi:juddi.apache.org:node1</nodeId>
+		<seed>
+			<always>false</always>
+		</seed>
+
+		<!-- Name of the persistence unit to use (the default, "juddiDatabase" 
+			refers to the unit compiled into the juddi library) -->
+		<persistenceunit>
+			<name>juddiDatabase</name>
+		</persistenceunit>
+
+		<!--Default locale -->
+		<locale>en_US</locale>
+
+		<!-- The maximum name size and maximum number of name elements allows in 
+			several of the FindXxxx and SaveXxxx UDDI functions. -->
+		<maxNameLength>255</maxNameLength>
+		<maxNameElementsAllowed>5</maxNameElementsAllowed>
+
+
+		<!-- The maximum number of rows returned in a find_* operation. Each call 
+			can set this independently, but this property defines a global maximum. -->
+		<maxRows>1000</maxRows>
+		<!-- The maximum number of "IN" clause parameters. Some RDMBS limit the 
+			number of parameters allowed in a SQL "IN" clause. -->
+		<maxInClause>1000</maxInClause>
+
+		<!-- The maximum number of UDDI artifacts allowed per publisher. A value 
+			of '-1' indicates any number of artifacts is valid (These values can be overridden 
+			at the individual publisher level). -->
+		<maxBusinessesPerPublisher>100</maxBusinessesPerPublisher>
+		<maxServicesPerBusiness>100</maxServicesPerBusiness>
+		<maxBindingsPerService>100</maxBindingsPerService>
+		<maxTModelsPerPublisher>100</maxTModelsPerPublisher>
+
+		<!-- Days before a transfer request expires -->
+		<transfer>
+			<expiration>
+				<days>3</days>
+			</expiration>
+		</transfer>
+
+		<!-- Days before a subscription expires -->
+		<subscription>
+			<expiration>
+				<days>30</days>
+			</expiration>
+
+			<!-- Minutes before a "chunked" subscription call expires -->
+			<chunkexpiration>
+				<minutes>5</minutes>
+			</chunkexpiration>
+
+			<!--Since 3.1.5 the maxium ammount of returned subscription entities allowed -->
+			<maxentities>1000</maxentities>
+		</subscription>
+
+		<!-- jUDDI UUIDGen implementation to use -->
+		<uuidgen>org.apache.juddi.uuidgen.DefaultUUIDGen</uuidgen>
+
+		<!-- jUDDI Cryptor implementation to use -->
+		<cryptor>org.apache.juddi.v3.client.cryptor.DefaultCryptor</cryptor>
+
+		<!-- jUDDI Key Generator to use -->
+		<keygenerator>org.apache.juddi.keygen.DefaultKeyGenerator
+		</keygenerator>
+
+		<notification>
+			<!-- Specifies the interval at which the notification timer triggers -->
+			<interval>5000</interval>
+			<!-- Specifies the amount of time to wait before the notification timer 
+				initially fires -->
+			<start>
+				<buffer>0</buffer>
+			</start>
+			<acceptableLagtime>1000</acceptableLagtime>
+			<maxTries>3</maxTries>
+			<!-- 10 minutes -->
+			<maxTriesResetInterval>600000</maxTriesResetInterval>
+			<sendAuthTokenWithResultList>false</sendAuthTokenWithResultList>
+		</notification>
+		<!-- All Authentication related settings -->
+		<auth>
+			<!-- Specifies whether the inquiry API requires authentication, all other 
+				APIs require authN -->
+			<Inquiry>false</Inquiry>
+
+			<!-- When using file based authentication, this is the filename to use 
+				<usersfile>juddi-users.xml</usersfile> -->
+			<!-- jUDDI Authentication module to use -->
+			<authenticator>
+				<class>de.invesdwin.common.integration.ws.registry.internal.IntegrationWsPropertiesJuddiAuthenticator
+				</class>
+			</authenticator>
+
+			<token>
+				<!-- Time in minutes to expire tokes after inactivity -->
+				<Timeout>15</Timeout>
+				<!-- As of 3.1.5 Duration of time for tokens to expire, regardless of 
+					inactivity -->
+				<Expiration>15</Expiration>
+			</token>
+		</auth>
+
+		<validation>
+			<!-- As of 3.1.5 This setting will force referential integrity for all 
+				tModels (except keyGenerators), category bags, bindingTemplate/AccessPoint/hostingRedirector 
+				(referencing another host), tModelinstanceparms and anything else that references 
+				a KeyName default value is true. set to false for backwards compatibility 
+				or for a more lax registry -->
+			<enforceReferentialIntegrity>true</enforceReferentialIntegrity>
+		</validation>
+	</juddi>
+</config>

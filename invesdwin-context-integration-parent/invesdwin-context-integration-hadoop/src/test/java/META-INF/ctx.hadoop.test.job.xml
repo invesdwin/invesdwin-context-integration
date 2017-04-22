@@ -1,0 +1,35 @@
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:hadoop="http://www.springframework.org/schema/hadoop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/hadoop http://www.springframework.org/schema/hadoop/spring-hadoop.xsd">
+
+	<bean id="hadoopTestJobProperties" class="de.invesdwin.context.system.properties.SystemPropertiesDefinition">
+		<property name="systemProperties">
+			<map>
+				<entry key="hadoopTestJob.dir" value="hadoopTestJob" />
+				<entry key="hadoopTestJob.input.path" value="${hadoopTestJob.dir}/input.txt" />
+				<entry key="hadoopTestJob.output.path" value="${hadoopTestJob.dir}/output" />
+			</map>
+		</property>
+	</bean>
+
+	<hadoop:script id="hadoopTestJobInitScript" language="javascript" run-at-startup="true">
+		ctx.getBean("hadoopTestJobCleanupScript").call();
+		fs.copyFromLocalFile("src/test/java/META-INF/${hadoopTestJob.input.path}", "${hadoopTestJob.input.path}");
+	</hadoop:script>
+
+	<hadoop:script id="hadoopTestJobCleanupScript" language="javascript">
+		if(fsh.test("${hadoopTestJob.dir}")){
+		fsh.rmr("${hadoopTestJob.dir}");
+		}
+	</hadoop:script>
+
+	<hadoop:job id="hadoopTestJob" mapper="de.invesdwin.common.integration.hadoop.mapreduce.HadoopTestJobMapper"
+		reducer="de.invesdwin.common.integration.hadoop.mapreduce.HadoopTestJobReducer" input-path="${hadoopTestJob.input.path}"
+		key="org.apache.hadoop.io.Text" output-path="${hadoopTestJob.output.path}"
+		jar="#{new de.invesdwin.common.integration.hadoop.jar.HadoopJobMergedClasspathJar().getResource()}" />
+
+	<hadoop:job-runner id="hadoopTestJobRunner" job-ref="hadoopTestJob" />
+
+
+</beans>

@@ -1,0 +1,18 @@
+<configuration>
+
+	<!-- the following messages are invalid since the derived class actually 
+		does check the password -->
+	<!-- DO NOT USE JUDDI AUTHENTICATOR FOR PRODUCTION SYSTEMS - DOES NOT VALIDATE 
+		PASSWORDS, AT ALL -->
+	<!-- Publisher "invesdwin" was not found, adding the publisher in on the 
+		fly. -->
+	<logger
+		name="de.invesdwin.common.integration.ws.registry.internal.IntegrationWsPropertiesJuddiAuthenticator"
+		additivity="false" level="ERROR">
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+		<appender-ref ref="common" />
+		<appender-ref ref="error" />
+	</logger>
+
+</configuration>

@@ -1,0 +1,36 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:amq="http://activemq.apache.org/schema/core"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.5.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Caching so that the template is no performance hog -->
+	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+		<constructor-arg ref="amqConnectionFactory" />
+		<property name="exceptionListener" ref="jmsExceptionListener" />
+		<property name="sessionCacheSize" value="10" />
+	</bean>
+	
+	<!--
+		Every clients connects itself to its own broker. All brokers are connected to each other.
+	-->
+	<amq:connectionFactory id="amqConnectionFactory" brokerURL="vm://default?broker.persistent=false" />
+
+	<!--
+		Broker choose a random port and find each other to build a grid. This is a bit slower but more robust.
+		See http://activemq.apache.org/networks-of-brokers.html
+	-->
+	<amq:broker brokerName="default" useJmx="false" persistent="false">
+		<amq:networkConnectors>
+			<amq:networkConnector networkTTL="1" conduitSubscriptions="true" duplex="true" dynamicOnly="true"
+				uri="multicast://default" />
+		</amq:networkConnectors>
+		<amq:persistenceAdapter>
+			<amq:memoryPersistenceAdapter />
+		</amq:persistenceAdapter>
+		<amq:transportConnectors>
+			<amq:transportConnector uri="tcp://localhost:0" discoveryUri="multicast://default" />
+		</amq:transportConnectors>
+	</amq:broker>
+
+</beans>

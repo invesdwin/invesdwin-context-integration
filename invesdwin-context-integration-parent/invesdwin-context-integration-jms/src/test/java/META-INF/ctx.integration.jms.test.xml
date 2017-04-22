@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns="http://www.springframework.org/schema/beans" xmlns:si="http://www.springframework.org/schema/integration"
+	xmlns:si-xml="http://www.springframework.org/schema/integration/xml"
+	xmlns:si-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:si-jms="http://www.springframework.org/schema/integration/jms"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+            http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/integration
+            http://www.springframework.org/schema/integration/spring-integration.xsd
+            http://www.springframework.org/schema/integration/stream
+            http://www.springframework.org/schema/integration/stream/spring-integration-stream.xsd
+            http://www.springframework.org/schema/integration/jms
+			http://www.springframework.org/schema/integration/jms/spring-integration-jms.xsd
+            http://www.springframework.org/schema/integration/xml
+			http://www.springframework.org/schema/integration/xml/spring-integration-xml.xsd">
+
+	<si:gateway id="jmsIntegrationTestServiceGateway"
+		service-interface="de.invesdwin.common.integration.jms.IJmsIntegrationTestService" />
+
+	<!-- einfache requests gehen über simple adapter -->
+	<si:channel id="helloWorldOut" />
+	<!-- request/response muss über gateways laufen -->
+	<si:channel id="helloWorldWithAnswerOut" />
+
+	<si-jms:outbound-channel-adapter
+		connection-factory="jmsConnectionFactory" channel="helloWorldOut"
+		destination-name="helloWorldJmsQueue" />
+	<si-jms:outbound-gateway
+		connection-factory="jmsConnectionFactory" request-channel="helloWorldWithAnswerOut"
+		request-destination-name="helloWorldWithAnswerJmsQueue" />
+
+	<!-- inbound-channel-adapter mit dem polling ist eine doofe alternative, 
+		wirft z.b. interrupted exception bei shutdown -->
+	<si-jms:message-driven-channel-adapter
+		connection-factory="jmsConnectionFactory" channel="helloWorldIn"
+		destination-name="helloWorldJmsQueue" />
+	<si-jms:inbound-gateway
+		connection-factory="jmsConnectionFactory" request-channel="helloWorldWithAnswerIn"
+		request-destination-name="helloWorldWithAnswerJmsQueue" />
+
+	<si:channel id="helloWorldIn" />
+	<si:channel id="helloWorldWithAnswerIn" />
+
+	<bean
+		class="de.invesdwin.common.integration.jms.JmsIntegrationTestService" />
+
+</beans>

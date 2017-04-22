@@ -1,0 +1,21 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:amq="http://activemq.apache.org/schema/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd http://activemq.apache.org/schema/core
+    http://activemq.apache.org/schema/core/activemq-core-5.4.2.xsd">
+
+	<!-- This context only gets loaded when JAXB generated classes are in the classpath. -->
+
+	<!-- MessageConverter useable in AMQP gateways -->
+	<bean id="jaxbAmqpMessageConverter"
+		class="org.springframework.amqp.support.converter.MarshallingMessageConverter">
+		<property name="marshaller" ref="jaxbMarshaller" />
+		<property name="unmarshaller" ref="jaxbUnmarshaller" />
+	</bean>
+
+	<bean id="jaxbAmqpTemplate" class="org.springframework.amqp.rabbit.core.RabbitTemplate">
+		<constructor-arg ref="amqpConnectionFactory" />
+		<property name="messageConverter" ref="jaxbAmqpMessageConverter" />
+	</bean>
+
+</beans>

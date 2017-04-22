@@ -1,0 +1,17 @@
+package de.invesdwin.common.batch;
+
+import java.util.Set;
+
+import javax.annotation.concurrent.Immutable;
+import javax.inject.Named;
+
+@Named
+@Immutable
+public class DisabledBatchContextSupport implements IDisabledBatchContext {
+
+    @Override
+    public Set<String> getResourceNames() {
+        return null;
+    }
+
+}

@@ -1,0 +1,25 @@
+<configuration>
+
+	<logger name="de.invesdwin.common.integration.ws.registry.publication.internal.WebServicePublicationManager" additivity="false" level="DEBUG">
+		<appender-ref ref="integration" />
+	</logger>
+	
+	<logger name="de.invesdwin.common.integration.ws.registry.RegistryDestinationProvider" additivity="false" level="DEBUG">
+		<appender-ref ref="integration" />
+	</logger>
+
+	<logger name="org.apache.juddi" additivity="false" level="ERROR">
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+		<appender-ref ref="common" />
+		<appender-ref ref="error" />
+	</logger>
+
+	<logger name="de.invesdwin.common.integration.ws.XsdWebServiceEndpointMapping" additivity="false" level="WARN">
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+		<appender-ref ref="common" />
+		<appender-ref ref="error" />
+	</logger>
+
+</configuration>

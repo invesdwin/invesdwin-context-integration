@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-fragment>
+
+	<name>de.invesdwin.common.integration.ws</name>
+
+	<!-- spring-web -->
+	<servlet>
+		<servlet-name>spring-web</servlet-name>
+		<servlet-class>org.springframework.web.servlet.DispatcherServlet
+		</servlet-class>
+		<init-param>
+			<param-name>dirAllowed</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:/META-INF/ctx.bootstrap.child.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+
+	<servlet-mapping>
+		<servlet-name>spring-web</servlet-name>
+		<url-pattern>/spring-web/*</url-pattern>
+	</servlet-mapping>
+
+	<!-- spring-ws -->
+	<servlet>
+		<servlet-name>spring-ws</servlet-name>
+		<servlet-class>org.springframework.ws.transport.http.MessageDispatcherServlet
+		</servlet-class>
+		<init-param>
+			<param-name>dirAllowed</param-name>
+			<param-value>false</param-value>
+		</init-param>
+		<init-param>
+			<param-name>transformWsdlLocations</param-name>
+			<param-value>true</param-value>
+		</init-param>
+		<!-- needs to be defined twice so that no filenotfound occurs -->
+		<init-param>
+			<param-name>contextConfigLocation</param-name>
+			<param-value>classpath:/META-INF/ctx.bootstrap.child.xml</param-value>
+		</init-param>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>spring-ws</servlet-name>
+		<url-pattern>/spring-ws/*</url-pattern>
+	</servlet-mapping>
+
+</web-fragment>
