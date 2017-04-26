@@ -7,6 +7,8 @@ import java.util.List;
 
 import javax.annotation.concurrent.Immutable;
 
+import org.jboss.shrinkwrap.resolver.api.maven.ConfigurableMavenResolverSystem;
+import org.jboss.shrinkwrap.resolver.api.maven.Maven;
 import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepositories;
 import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepository;
 
@@ -42,5 +44,13 @@ public final class MavenProperties {
     }
 
     private MavenProperties() {}
+
+    public static ConfigurableMavenResolverSystem newResolver() {
+        final ConfigurableMavenResolverSystem resolver = Maven.configureResolver();
+        for (final MavenRemoteRepository repo : MavenProperties.REMOTE_REPOSITORIES) {
+            resolver.withRemoteRepo(repo);
+        }
+        return resolver;
+    }
 
 }
