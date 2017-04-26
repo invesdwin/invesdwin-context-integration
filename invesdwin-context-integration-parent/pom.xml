@@ -152,11 +152,6 @@
 			</dependency>
 
 			<dependency>
-				<groupId>org.springframework.batch</groupId>
-				<artifactId>spring-batch-infrastructure</artifactId>
-				<version>${version.spring-batch}</version>
-			</dependency>
-			<dependency>
 				<groupId>org.springframework.retry</groupId>
 				<artifactId>spring-retry</artifactId>
 				<version>${version.spring-retry}</version>
