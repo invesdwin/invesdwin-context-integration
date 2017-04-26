@@ -60,6 +60,9 @@
 		<version.jersey>2.18</version.jersey>
 		<version.xmlsec>2.0.5</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
+
+		<version.jcabi-aether>0.10.1</version.jcabi-aether>
+		<version.maven>3.3.9</version.maven>
 	</properties>
 
 	<dependencyManagement>
@@ -147,7 +150,7 @@
 				<artifactId>invesdwin-context-integration-ws-registry-dist</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>org.springframework.batch</groupId>
 				<artifactId>spring-batch-infrastructure</artifactId>
@@ -412,8 +415,8 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-			
-			
+
+
 			<dependency>
 				<groupId>org.apache.activemq</groupId>
 				<artifactId>activemq-core</artifactId>
@@ -998,7 +1001,17 @@
 				<artifactId>jersey-media-json-jackson</artifactId>
 				<version>${version.jersey}</version>
 			</dependency>
-			
+
+			<dependency>
+				<groupId>com.jcabi</groupId>
+				<artifactId>jcabi-aether</artifactId>
+				<version>${version.jcabi-aether}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.maven</groupId>
+				<artifactId>maven-core</artifactId>
+				<version>${version.maven}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
