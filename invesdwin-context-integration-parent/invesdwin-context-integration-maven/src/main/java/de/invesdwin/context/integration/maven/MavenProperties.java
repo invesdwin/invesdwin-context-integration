@@ -7,23 +7,24 @@ import java.util.List;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.sonatype.aether.repository.Authentication;
-import org.sonatype.aether.repository.RemoteRepository;
+import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepositories;
+import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepository;
 
 import de.invesdwin.context.system.properties.SystemProperties;
-import de.invesdwin.util.lang.Strings;
 
 @Immutable
 public final class MavenProperties {
 
     public static final File LOCAL_REPOSITORY_DIRECTORY;
-    public static final List<RemoteRepository> REMOTE_REPOSITORIES;
+    public static final List<MavenRemoteRepository> REMOTE_REPOSITORIES;
 
     static {
         final SystemProperties systemProperties = new SystemProperties(MavenProperties.class);
         LOCAL_REPOSITORY_DIRECTORY = systemProperties.getFile("LOCAL_REPOSITORY_DIRECTORY");
+        //tell shrinkwrap where the files should be resolved to
+        new SystemProperties().setString("maven.repo.local", LOCAL_REPOSITORY_DIRECTORY.toString());
 
-        final List<RemoteRepository> remoteRepositories = new ArrayList<RemoteRepository>();
+        final List<MavenRemoteRepository> remoteRepositories = new ArrayList<MavenRemoteRepository>();
         int index = 1;
         while (true) {
             final String urlKey = "REMOTE_REPOSITORY_" + index + "_URL";
@@ -31,29 +32,13 @@ public final class MavenProperties {
                 break;
             }
             final String url = systemProperties.getString(urlKey);
-
-            final String usernameKey = "REMOTE_REPOSITORY_" + index + "_USERNAME";
-            final String username;
-            if (systemProperties.containsValue(usernameKey)) {
-                username = systemProperties.getString(usernameKey);
-            } else {
-                username = null;
-            }
-            final String passwordKey = "REMOTE_REPOSITORY_" + index + "_PASSWORD";
-            final String password;
-            if (systemProperties.containsValue(passwordKey)) {
-                password = systemProperties.getString(passwordKey);
-            } else {
-                password = null;
-            }
-            final RemoteRepository repo = new RemoteRepository(String.valueOf(index), "default", url);
-            if (Strings.isNotBlank(username) || Strings.isNotBlank(password)) {
-                repo.setAuthentication(new Authentication(username, password));
-            }
+            final MavenRemoteRepository repo = MavenRemoteRepositories.createRemoteRepository(String.valueOf(index),
+                    url, "default");
             remoteRepositories.add(repo);
             index++;
         }
         REMOTE_REPOSITORIES = Collections.unmodifiableList(remoteRepositories);
+
     }
 
     private MavenProperties() {}

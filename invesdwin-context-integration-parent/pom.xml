@@ -61,9 +61,8 @@
 		<version.xmlsec>2.0.5</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
 
-		<version.jcabi-aether>0.10.1</version.jcabi-aether>
-		<version.jcabi-log>0.15</version.jcabi-log>
-		<version.maven>3.3.9</version.maven>
+		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
+		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 	</properties>
 
 	<dependencyManagement>
@@ -962,41 +961,39 @@
 			</dependency>
 
 			<dependency>
-				<groupId>com.jcabi</groupId>
-				<artifactId>jcabi-aether</artifactId>
-				<version>${version.jcabi-aether}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.aspectj</groupId>
-						<artifactId>aspectjrt</artifactId>
-					</exclusion>
-				</exclusions>
+				<groupId>org.jboss.shrinkwrap.resolver</groupId>
+				<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
+				<version>${version.shrinkwrap-resolver}</version>
 			</dependency>
 			<dependency>
-				<groupId>com.jcabi</groupId>
-				<artifactId>jcabi-log</artifactId>
-				<version>${version.jcabi-log}</version>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-api</artifactId>
+				<version>${version.eclipse-aether}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-core</artifactId>
-				<version>${version.maven}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>javax.enterprise</groupId>
-						<artifactId>cdi-api</artifactId>
-					</exclusion>
-				</exclusions>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-impl</artifactId>
+				<version>${version.eclipse-aether}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-aether-provider</artifactId>
-				<version>${version.maven}</version>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-util</artifactId>
+				<version>${version.eclipse-aether}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.maven</groupId>
-				<artifactId>maven-artifact</artifactId>
-				<version>${version.maven}</version>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-spi</artifactId>
+				<version>${version.eclipse-aether}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-connector-basic</artifactId>
+				<version>${version.eclipse-aether}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.aether</groupId>
+				<artifactId>aether-transport-wagon</artifactId>
+				<version>${version.eclipse-aether}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
