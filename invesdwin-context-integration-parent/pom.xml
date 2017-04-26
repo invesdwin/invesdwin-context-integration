@@ -31,6 +31,7 @@
 		<module>invesdwin-context-integration-ws-jaxws</module>
 		<module>invesdwin-context-integration-ws-registry</module>
 		<module>invesdwin-context-integration-ws-registry-dist</module>
+		<module>invesdwin-context-integration-maven</module>
 	</modules>
 
 	<properties>
