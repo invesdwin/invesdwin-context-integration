@@ -1,13 +1,14 @@
 package de.invesdwin.context.integration.script;
 
-import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-public interface IScriptTaskResults extends Closeable {
+public interface IScriptTaskResults {
+
+    IScriptTaskEngine getEngine();
 
     String getString(String variable);
 
@@ -84,10 +85,5 @@ public interface IScriptTaskResults extends Closeable {
         }
         return matrixAsList;
     }
-
-    @Override
-    void close();
-
-    Object getEngine();
 
 }

@@ -1,11 +1,12 @@
 package de.invesdwin.context.integration.script;
 
-import java.io.Closeable;
 import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 
-public interface IScriptTaskInputs extends Closeable {
+public interface IScriptTaskInputs {
+
+    IScriptTaskEngine getEngine();
 
     void putString(String variable, String value);
 
@@ -84,10 +85,5 @@ public interface IScriptTaskInputs extends Closeable {
     }
 
     void putExpression(String variable, String expression);
-
-    Object getEngine();
-
-    @Override
-    void close();
 
 }
