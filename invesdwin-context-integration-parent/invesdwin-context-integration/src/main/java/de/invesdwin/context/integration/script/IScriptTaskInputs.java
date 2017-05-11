@@ -2,8 +2,12 @@ package de.invesdwin.context.integration.script;
 
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
-
+import de.invesdwin.util.math.Booleans;
+import de.invesdwin.util.math.Doubles;
+import de.invesdwin.util.math.Floats;
+import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.math.Longs;
+import de.invesdwin.util.math.Shorts;
 import de.invesdwin.util.math.decimal.ADecimal;
 import de.invesdwin.util.math.decimal.Decimal;
 
@@ -35,7 +39,7 @@ public interface IScriptTaskInputs {
     void putFloatVector(String variable, float[] value);
 
     default void putFloatVectorAsList(final String variable, final List<Float> value) {
-        putFloatVector(variable, ArrayUtils.toPrimitive(value.toArray(new Float[value.size()])));
+        putFloatVector(variable, Floats.toArray(value));
     }
 
     void putFloatMatrix(String variable, float[][] value);
@@ -44,7 +48,7 @@ public interface IScriptTaskInputs {
         final float[][] matrix = new float[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<Float> vector = value.get(i);
-            matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Float[vector.size()]));
+            matrix[i] = Floats.toArray(vector);
         }
         putFloatMatrix(variable, matrix);
     }
@@ -54,7 +58,7 @@ public interface IScriptTaskInputs {
     void putDoubleVector(String variable, double[] value);
 
     default void putDoubleVectorAsList(final String variable, final List<Double> value) {
-        putDoubleVector(variable, ArrayUtils.toPrimitive(value.toArray(new Double[value.size()])));
+        putDoubleVector(variable, Doubles.toArray(value));
     }
 
     void putDoubleMatrix(String variable, double[][] value);
@@ -63,7 +67,7 @@ public interface IScriptTaskInputs {
         final double[][] matrix = new double[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<Double> vector = value.get(i);
-            matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Double[vector.size()]));
+            matrix[i] = Doubles.toArray(vector);
         }
         putDoubleMatrix(variable, matrix);
     }
@@ -99,12 +103,31 @@ public interface IScriptTaskInputs {
         putDoubleMatrix(variable, matrix);
     }
 
+    void putShort(String variable, short value);
+
+    void putShortVector(String variable, short[] value);
+
+    default void putShortVectorAsList(final String variable, final List<Short> value) {
+        putShortVector(variable, Shorts.toArray(value));
+    }
+
+    void putShortMatrix(String variable, short[][] value);
+
+    default void putShortMatrixAsList(final String variable, final List<? extends List<Short>> value) {
+        final short[][] matrix = new short[value.size()][];
+        for (int i = 0; i < value.size(); i++) {
+            final List<Short> vector = value.get(i);
+            matrix[i] = Shorts.toArray(vector);
+        }
+        putShortMatrix(variable, matrix);
+    }
+
     void putInteger(String variable, int value);
 
     void putIntegerVector(String variable, int[] value);
 
     default void putIntegerVectorAsList(final String variable, final List<Integer> value) {
-        putIntegerVector(variable, ArrayUtils.toPrimitive(value.toArray(new Integer[value.size()])));
+        putIntegerVector(variable, Integers.toArray(value));
     }
 
     void putIntegerMatrix(String variable, int[][] value);
@@ -113,7 +136,7 @@ public interface IScriptTaskInputs {
         final int[][] matrix = new int[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<Integer> vector = value.get(i);
-            matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Integer[vector.size()]));
+            matrix[i] = Integers.toArray(vector);
         }
         putIntegerMatrix(variable, matrix);
     }
@@ -123,7 +146,7 @@ public interface IScriptTaskInputs {
     void putLongVector(String variable, long[] value);
 
     default void putLongVectorAsList(final String variable, final List<Long> value) {
-        putLongVector(variable, ArrayUtils.toPrimitive(value.toArray(new Long[value.size()])));
+        putLongVector(variable, Longs.toArray(value));
     }
 
     void putLongMatrix(String variable, long[][] value);
@@ -132,7 +155,7 @@ public interface IScriptTaskInputs {
         final long[][] matrix = new long[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<Long> vector = value.get(i);
-            matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Long[vector.size()]));
+            matrix[i] = Longs.toArray(vector);
         }
         putLongMatrix(variable, matrix);
     }
@@ -142,7 +165,7 @@ public interface IScriptTaskInputs {
     void putBooleanVector(String variable, boolean[] value);
 
     default void putBooleanVectorAsList(final String variable, final List<Boolean> value) {
-        putBooleanVector(variable, ArrayUtils.toPrimitive(value.toArray(new Boolean[value.size()])));
+        putBooleanVector(variable, Booleans.toArray(value));
     }
 
     void putBooleanMatrix(String variable, boolean[][] value);
@@ -151,7 +174,7 @@ public interface IScriptTaskInputs {
         final boolean[][] matrix = new boolean[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<Boolean> vector = value.get(i);
-            matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Boolean[vector.size()]));
+            matrix[i] = Booleans.toArray(vector);
         }
         putBooleanMatrix(variable, matrix);
     }

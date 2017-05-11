@@ -5,8 +5,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.commons.lang3.ArrayUtils;
-
+import de.invesdwin.util.math.Booleans;
+import de.invesdwin.util.math.Doubles;
+import de.invesdwin.util.math.Floats;
+import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.math.Longs;
+import de.invesdwin.util.math.Shorts;
 import de.invesdwin.util.math.decimal.ADecimal;
 import de.invesdwin.util.math.decimal.Decimal;
 
@@ -50,7 +54,7 @@ public interface IScriptTaskResults {
     float[] getFloatVector(String variable);
 
     default List<Float> getFloatVectorAsList(final String variable) {
-        return Arrays.asList(ArrayUtils.toObject(getFloatVector(variable)));
+        return Floats.asList(getFloatVector(variable));
     }
 
     float[][] getFloatMatrix(String variable);
@@ -59,7 +63,7 @@ public interface IScriptTaskResults {
         final float[][] matrix = getFloatMatrix(variable);
         final List<List<Float>> matrixAsList = new ArrayList<>(matrix.length);
         for (final float[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(ArrayUtils.toObject(vector)));
+            matrixAsList.add(Floats.asList(vector));
         }
         return matrixAsList;
     }
@@ -69,7 +73,7 @@ public interface IScriptTaskResults {
     double[] getDoubleVector(String variable);
 
     default List<Double> getDoubleVectorAsList(final String variable) {
-        return Arrays.asList(ArrayUtils.toObject(getDoubleVector(variable)));
+        return Doubles.asList(getDoubleVector(variable));
     }
 
     double[][] getDoubleMatrix(String variable);
@@ -78,7 +82,7 @@ public interface IScriptTaskResults {
         final double[][] matrix = getDoubleMatrix(variable);
         final List<List<Double>> matrixAsList = new ArrayList<>(matrix.length);
         for (final double[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(ArrayUtils.toObject(vector)));
+            matrixAsList.add(Doubles.asList(vector));
         }
         return matrixAsList;
     }
@@ -134,12 +138,31 @@ public interface IScriptTaskResults {
         return matrixAsList;
     }
 
+    short getShort(String variable);
+
+    short[] getShortVector(String variable);
+
+    default List<Short> getShortVectorAsList(final String variable) {
+        return Shorts.asList(getShortVector(variable));
+    }
+
+    short[][] getShortMatrix(String variable);
+
+    default List<List<Short>> getShortMatrixAsList(final String variable) {
+        final short[][] matrix = getShortMatrix(variable);
+        final List<List<Short>> matrixAsList = new ArrayList<>(matrix.length);
+        for (final short[] vector : matrix) {
+            matrixAsList.add(Shorts.asList(vector));
+        }
+        return matrixAsList;
+    }
+
     int getInteger(String variable);
 
     int[] getIntegerVector(String variable);
 
     default List<Integer> getIntegerVectorAsList(final String variable) {
-        return Arrays.asList(ArrayUtils.toObject(getIntegerVector(variable)));
+        return Integers.asList(getIntegerVector(variable));
     }
 
     int[][] getIntegerMatrix(String variable);
@@ -148,7 +171,7 @@ public interface IScriptTaskResults {
         final int[][] matrix = getIntegerMatrix(variable);
         final List<List<Integer>> matrixAsList = new ArrayList<>(matrix.length);
         for (final int[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(ArrayUtils.toObject(vector)));
+            matrixAsList.add(Integers.asList(vector));
         }
         return matrixAsList;
     }
@@ -158,7 +181,7 @@ public interface IScriptTaskResults {
     long[] getLongVector(String variable);
 
     default List<Long> getLongVectorAsList(final String variable) {
-        return Arrays.asList(ArrayUtils.toObject(getLongVector(variable)));
+        return Longs.asList(getLongVector(variable));
     }
 
     long[][] getLongMatrix(String variable);
@@ -167,7 +190,7 @@ public interface IScriptTaskResults {
         final long[][] matrix = getLongMatrix(variable);
         final List<List<Long>> matrixAsList = new ArrayList<>(matrix.length);
         for (final long[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(ArrayUtils.toObject(vector)));
+            matrixAsList.add(Longs.asList(vector));
         }
         return matrixAsList;
     }
@@ -177,7 +200,7 @@ public interface IScriptTaskResults {
     boolean[] getBooleanVector(String variable);
 
     default List<Boolean> getBooleanVectorAsList(final String variable) {
-        return Arrays.asList(ArrayUtils.toObject(getBooleanVector(variable)));
+        return Booleans.asList(getBooleanVector(variable));
     }
 
     boolean[][] getBooleanMatrix(String variable);
@@ -186,7 +209,7 @@ public interface IScriptTaskResults {
         final boolean[][] matrix = getBooleanMatrix(variable);
         final List<List<Boolean>> matrixAsList = new ArrayList<>(matrix.length);
         for (final boolean[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(ArrayUtils.toObject(vector)));
+            matrixAsList.add(Booleans.asList(vector));
         }
         return matrixAsList;
     }
