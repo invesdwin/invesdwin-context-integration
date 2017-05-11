@@ -4,6 +4,9 @@ import java.util.List;
 
 import org.apache.commons.lang3.ArrayUtils;
 
+import de.invesdwin.util.math.decimal.ADecimal;
+import de.invesdwin.util.math.decimal.Decimal;
+
 public interface IScriptTaskInputs {
 
     IScriptTaskEngine getEngine();
@@ -42,6 +45,37 @@ public interface IScriptTaskInputs {
         for (int i = 0; i < value.size(); i++) {
             final List<Double> vector = value.get(i);
             matrix[i] = ArrayUtils.toPrimitive(vector.toArray(new Double[vector.size()]));
+        }
+        putDoubleMatrix(variable, matrix);
+    }
+
+    default void putDecimal(final String variable, final ADecimal<?> value) {
+        putDouble(variable, value.getDefaultValue().doubleValueRaw());
+    }
+
+    default <T extends ADecimal<?>> void putDecimalVector(final String variable, final T[] value) {
+        putDoubleVector(variable, Decimal.toPrimitive(value));
+    }
+
+    default void putDecimalVectorAsList(final String variable, final List<? extends ADecimal<?>> value) {
+        putDoubleVector(variable, Decimal.toPrimitive(value.toArray(new ADecimal[value.size()])));
+    }
+
+    default <T extends ADecimal<?>> void putDecimalMatrix(final String variable, final T[][] value) {
+        final double[][] matrix = new double[value.length][];
+        for (int i = 0; i < value.length; i++) {
+            final T[] vector = value[i];
+            matrix[i] = Decimal.toPrimitive(vector);
+        }
+        putDoubleMatrix(variable, matrix);
+    }
+
+    default void putDecimalMatrixAsList(final String variable,
+            final List<? extends List<? extends ADecimal<?>>> value) {
+        final double[][] matrix = new double[value.size()][];
+        for (int i = 0; i < value.size(); i++) {
+            final List<? extends ADecimal<?>> vector = value.get(i);
+            matrix[i] = Decimal.toPrimitive(vector.toArray(new Decimal[vector.size()]));
         }
         putDoubleMatrix(variable, matrix);
     }
