@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import de.invesdwin.util.math.Booleans;
+import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.math.Characters;
 import de.invesdwin.util.math.Doubles;
 import de.invesdwin.util.math.Floats;
 import de.invesdwin.util.math.Integers;
@@ -29,6 +31,44 @@ public interface IScriptTaskResults {
     }
 
     IScriptTaskEngine getEngine();
+
+    byte getByte(String variable);
+
+    byte[] getByteVector(String variable);
+
+    default List<Byte> getByteVectorAsList(final String variable) {
+        return Bytes.asList(getByteVector(variable));
+    }
+
+    byte[][] getByteMatrix(String variable);
+
+    default List<List<Byte>> getByteMatrixAsList(final String variable) {
+        final byte[][] matrix = getByteMatrix(variable);
+        final List<List<Byte>> matrixAsList = new ArrayList<>(matrix.length);
+        for (final byte[] vector : matrix) {
+            matrixAsList.add(Bytes.asList(vector));
+        }
+        return matrixAsList;
+    }
+
+    char getCharacter(String variable);
+
+    char[] getCharacterVector(String variable);
+
+    default List<Character> getCharacterVectorAsList(final String variable) {
+        return Characters.asList(getCharacterVector(variable));
+    }
+
+    char[][] getCharacterMatrix(String variable);
+
+    default List<List<Character>> getCharacterMatrixAsList(final String variable) {
+        final char[][] matrix = getCharacterMatrix(variable);
+        final List<List<Character>> matrixAsList = new ArrayList<>(matrix.length);
+        for (final char[] vector : matrix) {
+            matrixAsList.add(Characters.asList(vector));
+        }
+        return matrixAsList;
+    }
 
     String getString(String variable);
 

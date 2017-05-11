@@ -3,6 +3,8 @@ package de.invesdwin.context.integration.script;
 import java.util.List;
 
 import de.invesdwin.util.math.Booleans;
+import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.math.Characters;
 import de.invesdwin.util.math.Doubles;
 import de.invesdwin.util.math.Floats;
 import de.invesdwin.util.math.Integers;
@@ -14,6 +16,44 @@ import de.invesdwin.util.math.decimal.Decimal;
 public interface IScriptTaskInputs {
 
     IScriptTaskEngine getEngine();
+
+    void putByte(String variable, byte value);
+
+    void putByteVector(String variable, byte[] value);
+
+    default void putByteVectorAsList(final String variable, final List<Byte> value) {
+        putByteVector(variable, Bytes.toArray(value));
+    }
+
+    void putByteMatrix(String variable, byte[][] value);
+
+    default void putByteMatrixAsList(final String variable, final List<? extends List<Byte>> value) {
+        final byte[][] matrix = new byte[value.size()][];
+        for (int i = 0; i < value.size(); i++) {
+            final List<Byte> vector = value.get(i);
+            matrix[i] = Bytes.toArray(vector);
+        }
+        putByteMatrix(variable, matrix);
+    }
+
+    void putCharacter(String variable, char value);
+
+    void putCharacterVector(String variable, char[] value);
+
+    default void putCharacterVectorAsList(final String variable, final List<Character> value) {
+        putCharacterVector(variable, Characters.toArray(value));
+    }
+
+    void putCharacterMatrix(String variable, char[][] value);
+
+    default void putCharacterMatrixAsList(final String variable, final List<? extends List<Character>> value) {
+        final char[][] matrix = new char[value.size()][];
+        for (int i = 0; i < value.size(); i++) {
+            final List<Character> vector = value.get(i);
+            matrix[i] = Characters.toArray(vector);
+        }
+        putCharacterMatrix(variable, matrix);
+    }
 
     void putString(String variable, String value);
 
