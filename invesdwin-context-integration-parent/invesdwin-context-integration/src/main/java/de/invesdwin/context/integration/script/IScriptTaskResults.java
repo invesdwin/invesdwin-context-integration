@@ -12,6 +12,18 @@ import de.invesdwin.util.math.decimal.Decimal;
 
 public interface IScriptTaskResults {
 
+    boolean isDefined(String variable);
+
+    default boolean isNotDefined(final String variable) {
+        return !isDefined(variable);
+    }
+
+    boolean isNull(String variable);
+
+    default boolean isNotNull(final String variable) {
+        return !isNull(variable);
+    }
+
     IScriptTaskEngine getEngine();
 
     String getString(String variable);
