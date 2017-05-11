@@ -5,9 +5,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 @NotThreadSafe
 public abstract class AScriptTask<V, R> {
 
-    public abstract void executeScript(IScriptTaskEngine engine);
-
     public abstract void populateInputs(IScriptTaskInputs inputs);
+
+    public abstract void executeScript(IScriptTaskEngine engine);
 
     public abstract V extractResults(IScriptTaskResults results);
 
