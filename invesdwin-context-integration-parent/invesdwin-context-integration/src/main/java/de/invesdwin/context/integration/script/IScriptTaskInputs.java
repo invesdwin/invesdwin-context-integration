@@ -11,7 +11,6 @@ import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.math.Longs;
 import de.invesdwin.util.math.Shorts;
 import de.invesdwin.util.math.decimal.ADecimal;
-import de.invesdwin.util.math.decimal.Decimal;
 
 public interface IScriptTaskInputs {
 
@@ -117,18 +116,18 @@ public interface IScriptTaskInputs {
     }
 
     default <T extends ADecimal<?>> void putDecimalVector(final String variable, final T[] value) {
-        putDoubleVector(variable, Decimal.toPrimitive(value));
+        putDoubleVector(variable, Doubles.checkedCastVector(value));
     }
 
     default void putDecimalVectorAsList(final String variable, final List<? extends ADecimal<?>> value) {
-        putDoubleVector(variable, Decimal.toPrimitive(value.toArray(new ADecimal[value.size()])));
+        putDoubleVector(variable, Doubles.checkedCastVector(value));
     }
 
     default <T extends ADecimal<?>> void putDecimalMatrix(final String variable, final T[][] value) {
         final double[][] matrix = new double[value.length][];
         for (int i = 0; i < value.length; i++) {
             final T[] vector = value[i];
-            matrix[i] = Decimal.toPrimitive(vector);
+            matrix[i] = Doubles.checkedCastVector(vector);
         }
         putDoubleMatrix(variable, matrix);
     }
@@ -138,7 +137,7 @@ public interface IScriptTaskInputs {
         final double[][] matrix = new double[value.size()][];
         for (int i = 0; i < value.size(); i++) {
             final List<? extends ADecimal<?>> vector = value.get(i);
-            matrix[i] = Decimal.toPrimitive(vector.toArray(new ADecimal[vector.size()]));
+            matrix[i] = Doubles.checkedCastVector(vector);
         }
         putDoubleMatrix(variable, matrix);
     }
