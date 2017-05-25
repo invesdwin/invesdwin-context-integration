@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.network;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.concurrent.Callable;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -24,20 +25,28 @@ public class DailyDownloadCache {
     public String download(final String name, final Callable<String> request) throws Exception {
         try {
             final File file = newFile(name);
-            if (!file.exists()
-                    || !ContextProperties.IS_TEST_ENVIRONMENT && shouldUpdate(FDate.valueOf(file.lastModified()))) {
+            if (shouldUpdate(file)) {
                 final String content = request.call();
-                FileUtils.writeStringToFile(file, content);
+                FileUtils.writeStringToFile(file, content, Charset.defaultCharset());
                 return content;
             } else {
-                return FileUtils.readFileToString(file);
+                return FileUtils.readFileToString(file, Charset.defaultCharset());
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private static File newFile(final String name) {
+    public boolean shouldUpdate(final String name) {
+        return shouldUpdate(newFile(name));
+    }
+
+    private boolean shouldUpdate(final File file) {
+        return !file.exists()
+                || !ContextProperties.IS_TEST_ENVIRONMENT && shouldUpdate(FDate.valueOf(file.lastModified()));
+    }
+
+    public static File newFile(final String name) {
         return new File(FOLDER, name.replace(":", "_") + ".txt");
     }
 
