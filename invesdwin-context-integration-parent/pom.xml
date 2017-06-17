@@ -150,6 +150,11 @@
 				<artifactId>invesdwin-context-integration-ws-registry-dist</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-maven</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
