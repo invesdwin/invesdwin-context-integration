@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.script;
 
 import java.util.List;
 
+import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.math.Characters;
@@ -21,22 +22,13 @@ public interface IScriptTaskInputs {
     void putByteVector(String variable, byte[] value);
 
     default void putByteVectorAsList(final String variable, final List<Byte> value) {
-        putByteVector(variable, Bytes.toArray(value));
+        putByteVector(variable, Bytes.toArrayVector(value));
     }
 
     void putByteMatrix(String variable, byte[][] value);
 
     default void putByteMatrixAsList(final String variable, final List<? extends List<Byte>> value) {
-        if (value == null) {
-            putByteMatrix(variable, null);
-        } else {
-            final byte[][] matrix = new byte[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Byte> vector = value.get(i);
-                matrix[i] = Bytes.toArray(vector);
-            }
-            putByteMatrix(variable, matrix);
-        }
+        putByteMatrix(variable, Bytes.toArrayMatrix(value));
     }
 
     void putCharacter(String variable, char value);
@@ -44,22 +36,13 @@ public interface IScriptTaskInputs {
     void putCharacterVector(String variable, char[] value);
 
     default void putCharacterVectorAsList(final String variable, final List<Character> value) {
-        putCharacterVector(variable, Characters.toArray(value));
+        putCharacterVector(variable, Characters.toArrayVector(value));
     }
 
     void putCharacterMatrix(String variable, char[][] value);
 
     default void putCharacterMatrixAsList(final String variable, final List<? extends List<Character>> value) {
-        if (value == null) {
-            putCharacterMatrix(variable, null);
-        } else {
-            final char[][] matrix = new char[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Character> vector = value.get(i);
-                matrix[i] = Characters.toArray(vector);
-            }
-            putCharacterMatrix(variable, matrix);
-        }
+        putCharacterMatrix(variable, Characters.toArrayMatrix(value));
     }
 
     void putString(String variable, String value);
@@ -67,26 +50,13 @@ public interface IScriptTaskInputs {
     void putStringVector(String variable, String[] value);
 
     default void putStringVectorAsList(final String variable, final List<String> value) {
-        if (value == null) {
-            putStringVector(variable, null);
-        } else {
-            putStringVector(variable, value.toArray(new String[value.size()]));
-        }
+        putStringVector(variable, Strings.toArrayVector(value));
     }
 
     void putStringMatrix(String variable, String[][] value);
 
     default void putStringMatrixAsList(final String variable, final List<? extends List<String>> value) {
-        if (value == null) {
-            putStringMatrix(variable, null);
-        } else {
-            final String[][] matrix = new String[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<String> vector = value.get(i);
-                matrix[i] = vector.toArray(new String[vector.size()]);
-            }
-            putStringMatrix(variable, matrix);
-        }
+        putStringMatrix(variable, Strings.toArrayMatrix(value));
     }
 
     void putFloat(String variable, float value);
@@ -94,22 +64,13 @@ public interface IScriptTaskInputs {
     void putFloatVector(String variable, float[] value);
 
     default void putFloatVectorAsList(final String variable, final List<Float> value) {
-        putFloatVector(variable, Floats.toArray(value));
+        putFloatVector(variable, Floats.toArrayVector(value));
     }
 
     void putFloatMatrix(String variable, float[][] value);
 
     default void putFloatMatrixAsList(final String variable, final List<? extends List<Float>> value) {
-        if (value == null) {
-            putFloatMatrix(variable, null);
-        } else {
-            final float[][] matrix = new float[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Float> vector = value.get(i);
-                matrix[i] = Floats.toArray(vector);
-            }
-            putFloatMatrix(variable, matrix);
-        }
+        putFloatMatrix(variable, Floats.toArrayMatrix(value));
     }
 
     void putDouble(String variable, double value);
@@ -117,22 +78,13 @@ public interface IScriptTaskInputs {
     void putDoubleVector(String variable, double[] value);
 
     default void putDoubleVectorAsList(final String variable, final List<Double> value) {
-        putDoubleVector(variable, Doubles.toArray(value));
+        putDoubleVector(variable, Doubles.toArrayVector(value));
     }
 
     void putDoubleMatrix(String variable, double[][] value);
 
     default void putDoubleMatrixAsList(final String variable, final List<? extends List<Double>> value) {
-        if (value == null) {
-            putDoubleMatrix(variable, null);
-        } else {
-            final double[][] matrix = new double[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Double> vector = value.get(i);
-                matrix[i] = Doubles.toArray(vector);
-            }
-            putDoubleMatrix(variable, matrix);
-        }
+        putDoubleMatrix(variable, Doubles.toArrayMatrix(value));
     }
 
     default void putDecimal(final String variable, final ADecimal<?> value) {
@@ -148,30 +100,12 @@ public interface IScriptTaskInputs {
     }
 
     default <T extends ADecimal<?>> void putDecimalMatrix(final String variable, final T[][] value) {
-        if (value == null) {
-            putDoubleMatrix(variable, null);
-        } else {
-            final double[][] matrix = new double[value.length][];
-            for (int i = 0; i < value.length; i++) {
-                final T[] vector = value[i];
-                matrix[i] = Doubles.checkedCastVector(vector);
-            }
-            putDoubleMatrix(variable, matrix);
-        }
+        putDoubleMatrix(variable, Doubles.checkedCastMatrix(value));
     }
 
     default void putDecimalMatrixAsList(final String variable,
             final List<? extends List<? extends ADecimal<?>>> value) {
-        if (value == null) {
-            putDoubleMatrix(variable, null);
-        } else {
-            final double[][] matrix = new double[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<? extends ADecimal<?>> vector = value.get(i);
-                matrix[i] = Doubles.checkedCastVector(vector);
-            }
-            putDoubleMatrix(variable, matrix);
-        }
+        putDoubleMatrix(variable, Doubles.checkedCastMatrix(value));
     }
 
     void putShort(String variable, short value);
@@ -179,22 +113,13 @@ public interface IScriptTaskInputs {
     void putShortVector(String variable, short[] value);
 
     default void putShortVectorAsList(final String variable, final List<Short> value) {
-        putShortVector(variable, Shorts.toArray(value));
+        putShortVector(variable, Shorts.toArrayVector(value));
     }
 
     void putShortMatrix(String variable, short[][] value);
 
     default void putShortMatrixAsList(final String variable, final List<? extends List<Short>> value) {
-        if (value == null) {
-            putShortMatrix(variable, null);
-        } else {
-            final short[][] matrix = new short[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Short> vector = value.get(i);
-                matrix[i] = Shorts.toArray(vector);
-            }
-            putShortMatrix(variable, matrix);
-        }
+        putShortMatrix(variable, Shorts.toArrayMatrix(value));
     }
 
     void putInteger(String variable, int value);
@@ -202,22 +127,13 @@ public interface IScriptTaskInputs {
     void putIntegerVector(String variable, int[] value);
 
     default void putIntegerVectorAsList(final String variable, final List<Integer> value) {
-        putIntegerVector(variable, Integers.toArray(value));
+        putIntegerVector(variable, Integers.toArrayVector(value));
     }
 
     void putIntegerMatrix(String variable, int[][] value);
 
     default void putIntegerMatrixAsList(final String variable, final List<? extends List<Integer>> value) {
-        if (value == null) {
-            putIntegerMatrix(variable, null);
-        } else {
-            final int[][] matrix = new int[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Integer> vector = value.get(i);
-                matrix[i] = Integers.toArray(vector);
-            }
-            putIntegerMatrix(variable, matrix);
-        }
+        putIntegerMatrix(variable, Integers.toArrayMatrix(value));
     }
 
     void putLong(String variable, long value);
@@ -225,22 +141,13 @@ public interface IScriptTaskInputs {
     void putLongVector(String variable, long[] value);
 
     default void putLongVectorAsList(final String variable, final List<Long> value) {
-        putLongVector(variable, Longs.toArray(value));
+        putLongVector(variable, Longs.toArrayVector(value));
     }
 
     void putLongMatrix(String variable, long[][] value);
 
     default void putLongMatrixAsList(final String variable, final List<? extends List<Long>> value) {
-        if (value == null) {
-            putLongMatrix(variable, null);
-        } else {
-            final long[][] matrix = new long[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Long> vector = value.get(i);
-                matrix[i] = Longs.toArray(vector);
-            }
-            putLongMatrix(variable, matrix);
-        }
+        putLongMatrix(variable, Longs.toArrayMatrix(value));
     }
 
     void putBoolean(String variable, boolean value);
@@ -248,22 +155,13 @@ public interface IScriptTaskInputs {
     void putBooleanVector(String variable, boolean[] value);
 
     default void putBooleanVectorAsList(final String variable, final List<Boolean> value) {
-        putBooleanVector(variable, Booleans.toArray(value));
+        putBooleanVector(variable, Booleans.toArrayVector(value));
     }
 
     void putBooleanMatrix(String variable, boolean[][] value);
 
     default void putBooleanMatrixAsList(final String variable, final List<? extends List<Boolean>> value) {
-        if (value == null) {
-            putBooleanMatrix(variable, null);
-        } else {
-            final boolean[][] matrix = new boolean[value.size()][];
-            for (int i = 0; i < value.size(); i++) {
-                final List<Boolean> vector = value.get(i);
-                matrix[i] = Booleans.toArray(vector);
-            }
-            putBooleanMatrix(variable, matrix);
-        }
+        putBooleanMatrix(variable, Booleans.toArrayMatrix(value));
     }
 
     void putExpression(String variable, String expression);

@@ -1,10 +1,8 @@
 package de.invesdwin.context.integration.script;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
+import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.math.Characters;
@@ -43,15 +41,7 @@ public interface IScriptTaskResults {
     byte[][] getByteMatrix(String variable);
 
     default List<List<Byte>> getByteMatrixAsList(final String variable) {
-        final byte[][] matrix = getByteMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Byte>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final byte[] vector : matrix) {
-            matrixAsList.add(Bytes.asList(vector));
-        }
-        return matrixAsList;
+        return Bytes.asListMatrix(getByteMatrix(variable));
     }
 
     char getCharacter(String variable);
@@ -65,15 +55,7 @@ public interface IScriptTaskResults {
     char[][] getCharacterMatrix(String variable);
 
     default List<List<Character>> getCharacterMatrixAsList(final String variable) {
-        final char[][] matrix = getCharacterMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Character>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final char[] vector : matrix) {
-            matrixAsList.add(Characters.asList(vector));
-        }
-        return matrixAsList;
+        return Characters.asListMatrix(getCharacterMatrix(variable));
     }
 
     String getString(String variable);
@@ -81,25 +63,13 @@ public interface IScriptTaskResults {
     String[] getStringVector(String variable);
 
     default List<String> getStringVectorAsList(final String variable) {
-        final String[] vector = getStringVector(variable);
-        if (vector == null) {
-            return null;
-        }
-        return Arrays.asList(vector);
+        return Strings.asList(getStringVector(variable));
     }
 
     String[][] getStringMatrix(String variable);
 
     default List<List<String>> getStringMatrixAsList(final String variable) {
-        final String[][] matrix = getStringMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<String>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final String[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(vector));
-        }
-        return matrixAsList;
+        return Strings.asListMatrix(getStringMatrix(variable));
     }
 
     float getFloat(String variable);
@@ -113,15 +83,7 @@ public interface IScriptTaskResults {
     float[][] getFloatMatrix(String variable);
 
     default List<List<Float>> getFloatMatrixAsList(final String variable) {
-        final float[][] matrix = getFloatMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Float>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final float[] vector : matrix) {
-            matrixAsList.add(Floats.asList(vector));
-        }
-        return matrixAsList;
+        return Floats.asListMatrix(getFloatMatrix(variable));
     }
 
     double getDouble(String variable);
@@ -136,14 +98,7 @@ public interface IScriptTaskResults {
 
     default List<List<Double>> getDoubleMatrixAsList(final String variable) {
         final double[][] matrix = getDoubleMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Double>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final double[] vector : matrix) {
-            matrixAsList.add(Doubles.asList(vector));
-        }
-        return matrixAsList;
+        return Doubles.asListMatrix(matrix);
     }
 
     default Decimal getDecimal(final String variable) {
@@ -167,44 +122,23 @@ public interface IScriptTaskResults {
     }
 
     default <T extends ADecimal<T>> T getDecimal(final String variable, final T converter) {
-        return converter.fromDefaultValue(new Decimal(getDouble(variable)));
+        return converter.toObject(getDouble(variable));
     }
 
     default <T extends ADecimal<T>> T[] getDecimalVector(final String variable, final T converter) {
-        return converter.fromDefaultValue(Decimal.toObject(getDoubleVector(variable)));
+        return converter.toObjectVector(getDoubleVector(variable));
     }
 
     default <T extends ADecimal<T>> List<T> getDecimalVectorAsList(final String variable, final T converter) {
-        final T[] vector = getDecimalVector(variable, converter);
-        if (vector == null) {
-            return null;
-        }
-        return Arrays.asList(vector);
+        return ADecimal.asListVector(getDecimalVector(variable, converter));
     }
 
-    @SuppressWarnings("unchecked")
     default <T extends ADecimal<T>> T[][] getDecimalMatrix(final String variable, final T converter) {
-        final double[][] matrix = getDoubleMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final T[][] matrixAsList = (T[][]) Array.newInstance(converter.getClass(), matrix.length, matrix[0].length);
-        for (int i = 0; i < matrix.length; i++) {
-            converter.fromDefaultValue(Decimal.toObject(matrix[i]), matrixAsList[i]);
-        }
-        return matrixAsList;
+        return converter.toObjectMatrix(getDoubleMatrix(variable));
     }
 
     default <T extends ADecimal<T>> List<List<T>> getDecimalMatrixAsList(final String variable, final T converter) {
-        final T[][] matrix = getDecimalMatrix(variable, converter);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<T>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final T[] vector : matrix) {
-            matrixAsList.add(Arrays.asList(vector));
-        }
-        return matrixAsList;
+        return ADecimal.asListMatrix(getDecimalMatrix(variable, converter));
     }
 
     short getShort(String variable);
@@ -218,15 +152,7 @@ public interface IScriptTaskResults {
     short[][] getShortMatrix(String variable);
 
     default List<List<Short>> getShortMatrixAsList(final String variable) {
-        final short[][] matrix = getShortMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Short>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final short[] vector : matrix) {
-            matrixAsList.add(Shorts.asList(vector));
-        }
-        return matrixAsList;
+        return Shorts.asListMatrix(getShortMatrix(variable));
     }
 
     int getInteger(String variable);
@@ -240,15 +166,7 @@ public interface IScriptTaskResults {
     int[][] getIntegerMatrix(String variable);
 
     default List<List<Integer>> getIntegerMatrixAsList(final String variable) {
-        final int[][] matrix = getIntegerMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Integer>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final int[] vector : matrix) {
-            matrixAsList.add(Integers.asList(vector));
-        }
-        return matrixAsList;
+        return Integers.asListMatrix(getIntegerMatrix(variable));
     }
 
     long getLong(String variable);
@@ -262,15 +180,7 @@ public interface IScriptTaskResults {
     long[][] getLongMatrix(String variable);
 
     default List<List<Long>> getLongMatrixAsList(final String variable) {
-        final long[][] matrix = getLongMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Long>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final long[] vector : matrix) {
-            matrixAsList.add(Longs.asList(vector));
-        }
-        return matrixAsList;
+        return Longs.asListMatrix(getLongMatrix(variable));
     }
 
     boolean getBoolean(String variable);
@@ -284,15 +194,7 @@ public interface IScriptTaskResults {
     boolean[][] getBooleanMatrix(String variable);
 
     default List<List<Boolean>> getBooleanMatrixAsList(final String variable) {
-        final boolean[][] matrix = getBooleanMatrix(variable);
-        if (matrix == null) {
-            return null;
-        }
-        final List<List<Boolean>> matrixAsList = new ArrayList<>(matrix.length);
-        for (final boolean[] vector : matrix) {
-            matrixAsList.add(Booleans.asList(vector));
-        }
-        return matrixAsList;
+        return Booleans.asListMatrix(getBooleanMatrix(variable));
     }
 
 }
