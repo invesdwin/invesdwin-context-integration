@@ -57,6 +57,6 @@ public class DailyDownloadCache {
 
     public boolean shouldUpdate(final FDate lastRequestTime) {
         return new Duration(lastRequestTime).isGreaterThan(DAILY_REFRESH_DURATION)
-                || !FDates.isSameDay(lastRequestTime, new FDate());
+                || !FDates.isSameJulianDay(lastRequestTime, new FDate());
     }
 }
