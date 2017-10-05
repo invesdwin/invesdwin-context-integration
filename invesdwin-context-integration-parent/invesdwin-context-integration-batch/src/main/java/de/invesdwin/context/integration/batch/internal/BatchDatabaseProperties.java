@@ -41,7 +41,7 @@ public final class BatchDatabaseProperties {
     private static boolean isDatabaseAlreadyInitialized() {
         final BatchDataSource dataSource = new BatchDataSource();
         try {
-            try (final Connection connection = dataSource.getConnection()) {
+            try (Connection connection = dataSource.getConnection()) {
                 final DatabaseMetaData metadata = connection.getMetaData();
                 try (ResultSet resultSet = metadata.getTables(null, null, "BATCH_JOB_EXECUTION", null)) {
                     final boolean tableExists = resultSet.next();

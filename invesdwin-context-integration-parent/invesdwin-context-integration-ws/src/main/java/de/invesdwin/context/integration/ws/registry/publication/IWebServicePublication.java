@@ -10,7 +10,7 @@ public interface IWebServicePublication {
 
     URI getUri();
 
-    void setUseRegistry(final boolean useRegistry);
+    void setUseRegistry(boolean useRegistry);
 
     boolean isUseRegistry();
 

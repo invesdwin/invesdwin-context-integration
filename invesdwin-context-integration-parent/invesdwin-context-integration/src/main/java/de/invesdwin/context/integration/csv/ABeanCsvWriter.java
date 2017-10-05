@@ -56,7 +56,7 @@ public abstract class ABeanCsvWriter<E> implements Closeable {
 
     protected abstract List<String> getHeaders();
 
-    protected abstract List<?> getElement(final E e);
+    protected abstract List<?> getElement(E e);
 
     @Override
     public final void close() throws IOException {

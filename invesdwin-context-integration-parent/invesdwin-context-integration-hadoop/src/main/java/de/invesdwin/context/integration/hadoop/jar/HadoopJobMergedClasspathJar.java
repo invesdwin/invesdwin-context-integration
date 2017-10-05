@@ -30,7 +30,7 @@ public class HadoopJobMergedClasspathJar {
                             HadoopJobMergedClasspathJar.class.getName() + ".jar");
                     final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
 
-                    try (final JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(file))) {
+                    try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(file))) {
                         processor.process(new HadoopJobMergedClasspathJarVisitor(jarOut));
                     }
                     alreadyGenerated = file;

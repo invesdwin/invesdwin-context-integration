@@ -164,7 +164,7 @@ public final class NetworkUtil extends SocketUtils {
 
     private static String readHostnameFile(final File file) {
         if (file.exists()) {
-            try (final InputStream in = new FileInputStream(file)) {
+            try (InputStream in = new FileInputStream(file)) {
                 return readHostnameStream(in);
             } catch (final FileNotFoundException e) {
                 return null;

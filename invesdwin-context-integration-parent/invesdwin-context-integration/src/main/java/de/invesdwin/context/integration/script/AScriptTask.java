@@ -11,7 +11,7 @@ public abstract class AScriptTask<V, R> {
 
     public abstract V extractResults(IScriptTaskResults results);
 
-    public abstract V run(final R runner);
+    public abstract V run(R runner);
 
     /**
      * Runs this script task with the provided/preferred/default runner or throws an exception when none can be
