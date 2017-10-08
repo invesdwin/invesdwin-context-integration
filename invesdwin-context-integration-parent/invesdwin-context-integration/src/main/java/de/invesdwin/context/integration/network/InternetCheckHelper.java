@@ -21,16 +21,15 @@ final class InternetCheckHelper {
     public static final Duration INTERNET_CHECK_FREQUENCY = new Duration(30, FTimeUnit.SECONDS);
     private static final Log LOG = new Log(InternetCheckHelper.class);
 
-    @GuardedBy("this.class")
+    @GuardedBy("InternetCheckHelper.class")
     private static Instant lastWarned = Instant.DUMMY;
-    @GuardedBy("this.class")
+    @GuardedBy("InternetCheckHelper.class")
     private static boolean checkRunning;
-    @GuardedBy("this.class")
+    @GuardedBy("InternetCheckHelper.class")
     private static boolean lastCheckResult;
-    @GuardedBy("this.class")
+    @GuardedBy("InternetCheckHelper.class")
     private static Instant lastCheck = Instant.DUMMY;
-    @GuardedBy("this.class")
-    private static InetAddress lastCheckIp;
+    private static volatile InetAddress lastCheckIp;
 
     private InternetCheckHelper() {}
 
@@ -70,7 +69,7 @@ final class InternetCheckHelper {
      */
     public static boolean isInternetAvailable(final boolean allowCache) throws InterruptedException {
         //Decide if checking or waiting for another check
-        synchronized (NetworkUtil.class) {
+        synchronized (InternetCheckHelper.class) {
             if (allowCache && lastCheck != Instant.DUMMY
                     && new Duration(lastCheck).isLessThan(INTERNET_CHECK_FREQUENCY)) {
                 //only check in the given frequency
@@ -79,7 +78,7 @@ final class InternetCheckHelper {
             if (checkRunning) {
                 while (checkRunning) {
                     //already check running, thus wait for it
-                    NetworkUtil.class.wait();
+                    InternetCheckHelper.class.wait();
                 }
                 return lastCheckResult;
             } else {
@@ -98,11 +97,11 @@ final class InternetCheckHelper {
             }
         }
         //and publish the result
-        synchronized (NetworkUtil.class) {
+        synchronized (InternetCheckHelper.class) {
             lastCheck = new Instant();
             lastCheckResult = internetAvailable;
             checkRunning = false;
-            NetworkUtil.class.notifyAll();
+            InternetCheckHelper.class.notifyAll();
         }
         return internetAvailable;
     }

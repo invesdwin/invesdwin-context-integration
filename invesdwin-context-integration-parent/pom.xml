@@ -39,26 +39,26 @@
 		<version.invesdwin-context-persistence>${version.invesdwin-context}</version.invesdwin-context-persistence>
 		<version.invesdwin-context-security>${version.invesdwin-context}</version.invesdwin-context-security>
 
-		<version.spring-batch>3.0.7.RELEASE</version.spring-batch>
-		<version.spring-retry>1.1.3.RELEASE</version.spring-retry>
-		<version.spring-integration>4.3.1.RELEASE</version.spring-integration>
-		<version.spring-ws>2.3.0.RELEASE</version.spring-ws>
+		<version.spring-batch>4.0.0.M3</version.spring-batch>
+		<version.spring-retry>1.2.1.RELEASE</version.spring-retry>
+		<version.spring-integration>5.0.0.M6</version.spring-integration>
+		<version.spring-ws>2.4.0.RELEASE</version.spring-ws>
 
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
-		<version.spring-amqp>1.6.1.RELEASE</version.spring-amqp>
-		<version.spring-data-hadoop>2.4.0.RELEASE</version.spring-data-hadoop>
+		<version.spring-amqp>2.0.0.RELEASE</version.spring-amqp>
+		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
 		<version.activemq>5.7.0</version.activemq>
 		<version.xbean-spring>3.14</version.xbean-spring>
 		<version.scout>1.2.7</version.scout>
 		<version.juddi>3.3.3</version.juddi>
-		<version.httpclient>4.3.6</version.httpclient>
+		<version.httpclient>4.5.3</version.httpclient>
 		<version.mail>1.4.7</version.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.1.7</version.cxf>
-		<version.hadoop>2.7.1</version.hadoop>
-		<version.jersey>2.18</version.jersey>
-		<version.xmlsec>2.0.5</version.xmlsec>
+		<version.hadoop>2.8.1</version.hadoop>
+		<version.jersey>2.25.1</version.jersey>
+		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
@@ -828,6 +828,10 @@
 					<exclusion>
 						<artifactId>zookeeper</artifactId>
 						<groupId>org.apache.zookeeper</groupId>
+					</exclusion>
+					<exclusion>
+						<groupId>net.jcip</groupId>
+						<artifactId>jcip-annotations</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>

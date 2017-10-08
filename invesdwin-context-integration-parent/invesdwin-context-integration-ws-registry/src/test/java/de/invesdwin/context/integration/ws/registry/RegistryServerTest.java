@@ -13,7 +13,7 @@ import javax.xml.registry.infomodel.Organization;
 import javax.xml.registry.infomodel.Service;
 import javax.xml.registry.infomodel.ServiceBinding;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
@@ -50,6 +50,7 @@ public class RegistryServerTest extends APersistenceTest {
         ctx.deactivate(RegistryServiceStub.class);
     }
 
+    @SuppressWarnings("JUnit4SetUpNotRun")
     @Override
     public void setUp() throws Exception {
         MergedContext.autowire(publicationTest);

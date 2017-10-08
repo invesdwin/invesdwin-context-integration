@@ -19,7 +19,7 @@ import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;
 @ThreadSafe
 public class HadoopJobMergedClasspathJar {
 
-    @GuardedBy("this.class")
+    @GuardedBy("HadoopJobMergedClasspathJar.class")
     private static File alreadyGenerated;
 
     public Resource getResource() {

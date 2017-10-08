@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.data.hadoop.fs.FsShell;
 import org.springframework.data.hadoop.mapreduce.JobRunner;
 import org.springframework.data.hadoop.scripting.HdfsScriptRunner;

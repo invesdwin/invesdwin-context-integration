@@ -14,6 +14,7 @@ import org.glassfish.hk2.api.MultiException;
 import org.glassfish.hk2.api.ServiceHandle;
 import org.glassfish.hk2.api.ServiceLocator;
 import org.glassfish.hk2.api.ServiceLocatorState;
+import org.glassfish.hk2.api.Unqualified;
 
 @NotThreadSafe
 public class DelegateServiceLocator implements ServiceLocator {
@@ -58,7 +59,8 @@ public class DelegateServiceLocator implements ServiceLocator {
     }
 
     @Override
-    public <T> List<T> getAllServices(final Annotation qualifier, final Annotation... qualifiers) throws MultiException {
+    public <T> List<T> getAllServices(final Annotation qualifier, final Annotation... qualifiers)
+            throws MultiException {
         return delegate.getAllServices(qualifier, qualifiers);
     }
 
@@ -256,6 +258,16 @@ public class DelegateServiceLocator implements ServiceLocator {
     @Override
     public <U> U createAndInitialize(final Class<U> createMe, final String strategy) {
         return delegate.createAndInitialize(createMe, strategy);
+    }
+
+    @Override
+    public Unqualified getDefaultUnqualified() {
+        return delegate.getDefaultUnqualified();
+    }
+
+    @Override
+    public void setDefaultUnqualified(final Unqualified arg0) {
+        delegate.setDefaultUnqualified(arg0);
     }
 
 }
