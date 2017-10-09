@@ -26,7 +26,7 @@ public class HadoopJobMergedClasspathJar {
         synchronized (HadoopJobMergedClasspathJar.class) {
             try {
                 if (alreadyGenerated == null || !alreadyGenerated.exists()) {
-                    final File file = new File(ContextProperties.TEMP_CLASSPATH_DIRECTORY,
+                    final File file = new File(ContextProperties.TEMP_DIRECTORY,
                             HadoopJobMergedClasspathJar.class.getName() + ".jar");
                     final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
 
