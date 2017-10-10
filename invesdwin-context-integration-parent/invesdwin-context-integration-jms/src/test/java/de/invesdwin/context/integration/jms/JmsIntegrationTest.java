@@ -4,7 +4,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 import org.junit.jupiter.api.function.Executable;
 
 import de.invesdwin.context.test.ATest;

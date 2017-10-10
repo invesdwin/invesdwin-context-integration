@@ -5,7 +5,7 @@ import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 

@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.ws.registry;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.TestContext;

@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.ws.registry.publication;
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Inject;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ws.registry.publication.internal.WebServicePublicationManager;

@@ -7,7 +7,7 @@ import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.jackson.JacksonFeature;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.test.ATest;

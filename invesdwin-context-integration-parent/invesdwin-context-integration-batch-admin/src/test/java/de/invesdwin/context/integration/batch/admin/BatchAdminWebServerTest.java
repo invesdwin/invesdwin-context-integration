@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.batch.admin;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.persistence.jpa.test.APersistenceTest;

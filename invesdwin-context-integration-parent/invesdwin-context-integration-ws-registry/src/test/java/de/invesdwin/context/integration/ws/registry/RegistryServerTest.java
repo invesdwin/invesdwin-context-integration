@@ -13,7 +13,7 @@ import javax.xml.registry.infomodel.Organization;
 import javax.xml.registry.infomodel.Service;
 import javax.xml.registry.infomodel.ServiceBinding;
 
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
