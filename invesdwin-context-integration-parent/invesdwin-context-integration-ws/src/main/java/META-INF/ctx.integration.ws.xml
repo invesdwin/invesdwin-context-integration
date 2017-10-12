@@ -10,8 +10,7 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- Spring-MVC for REST-WS -->
-	<bean
-		class="org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping" />
+	<mvc:annotation-driven />
 	<!-- log Spring-WS Exceptions/Faults correctly -->
 	<bean
 		class="org.springframework.ws.soap.server.endpoint.SoapFaultAnnotationExceptionResolver" />

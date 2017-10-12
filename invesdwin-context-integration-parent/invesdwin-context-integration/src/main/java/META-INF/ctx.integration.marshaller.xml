@@ -22,18 +22,10 @@
 			<bean class="org.springframework.integration.xml.transformer.ResultToStringTransformer" />
 		</constructor-arg>
 	</bean>
-	<bean name="jaxbMarshallingTransformerInterceptor" class="org.springframework.integration.transformer.MessageTransformingChannelInterceptor">
-		<constructor-arg ref="jaxbMarshallingTransformer" />
-		<property name="transformOnSend" value="true" />
-	</bean>
 
 	<alias alias="jaxbUnmarshaller" name="jaxbMarshaller" />
 	<bean id="jaxbUnmarshallingTransformer" class="org.springframework.integration.xml.transformer.UnmarshallingTransformer">
 		<constructor-arg ref="jaxbUnmarshaller" />
-	</bean>
-	<bean name="jaxbUnmarshallingTransformerInterceptor" class="org.springframework.integration.transformer.MessageTransformingChannelInterceptor">
-		<constructor-arg ref="jaxbUnmarshallingTransformer" />
-		<property name="transformOnSend" value="true" />
 	</bean>
 
 </beans>

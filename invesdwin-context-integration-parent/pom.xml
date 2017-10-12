@@ -48,10 +48,10 @@
 		<version.freemarker>2.3.23</version.freemarker>
 		<version.spring-amqp>2.0.0.RELEASE</version.spring-amqp>
 		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
-		<version.activemq>5.7.0</version.activemq>
-		<version.xbean-spring>3.14</version.xbean-spring>
+		<version.activemq>5.15.0</version.activemq>
+		<version.javax.jms-api>2.0.1</version.javax.jms-api>
 		<version.scout>1.2.7</version.scout>
-		<version.juddi>3.3.3</version.juddi>
+		<version.juddi>3.3.4</version.juddi>
 		<version.httpclient>4.5.3</version.httpclient>
 		<version.mail>1.4.7</version.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
@@ -382,7 +382,7 @@
 
 			<dependency>
 				<groupId>org.apache.activemq</groupId>
-				<artifactId>activemq-core</artifactId>
+				<artifactId>activemq-spring</artifactId>
 				<version>${version.activemq}</version>
 				<exclusions>
 					<exclusion>
@@ -394,25 +394,31 @@
 						<groupId>org.apache.activemq.protobuf</groupId>
 					</exclusion>
 					<exclusion>
+						<artifactId>geronimo-jta_1.0.1B_spec</artifactId>
+						<groupId>org.apache.geronimo.specs</groupId>
+					</exclusion>
+					<exclusion>
 						<artifactId>commons-net</artifactId>
 						<groupId>commons-net</groupId>
+					</exclusion>
+					<exclusion>
+						<artifactId>commons-logging</artifactId>
+						<groupId>commons-logging</groupId>
 					</exclusion>
 					<exclusion>
 						<artifactId>jasypt</artifactId>
 						<groupId>org.jasypt</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.apache.geronimo.specs</groupId>
+						<artifactId>geronimo-jms_1.1_spec</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.xbean</groupId>
-				<artifactId>xbean-spring</artifactId>
-				<version>${version.xbean-spring}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
+				<groupId>javax.jms</groupId>
+				<artifactId>javax.jms-api</artifactId>
+				<version>${version.javax.jms-api}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.juddi.scout</groupId>
