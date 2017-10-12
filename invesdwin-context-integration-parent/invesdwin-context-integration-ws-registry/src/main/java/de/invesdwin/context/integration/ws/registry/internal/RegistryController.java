@@ -22,6 +22,7 @@ import de.invesdwin.util.lang.Strings;
 
 @Controller
 @ThreadSafe
+@RequestMapping("/registry")
 public class RegistryController {
 
     @Inject
