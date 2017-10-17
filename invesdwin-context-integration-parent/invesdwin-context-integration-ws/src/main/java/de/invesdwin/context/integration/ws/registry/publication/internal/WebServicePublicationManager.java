@@ -52,7 +52,7 @@ public class WebServicePublicationManager implements IStartupHook {
         if (accessUri != null) {
             log.debug("Unregistering Service: %s", publication.getUri());
             try {
-                registry.unregisterServiceInstance(publication.getServiceName(), accessUri);
+                registry.unregisterServiceBinding(publication.getServiceName(), accessUri);
             } catch (final Throwable t) {
                 throw new RuntimeException("At: " + accessUri, t);
             }
@@ -106,9 +106,7 @@ public class WebServicePublicationManager implements IStartupHook {
     private void retryRegisterServiceInstance(final IWebServicePublication publication) throws IOException {
         final URI publicationUri = publication.getUri();
         try {
-            Assertions
-                    .assertThat(
-                            registry.registerServiceInstance(publication.getServiceName(), publicationUri.toString()))
+            Assertions.assertThat(registry.registerServiceBinding(publication.getServiceName(), publicationUri))
                     .isNotNull();
             serviceName_accessUri.put(publication.getServiceName(), publicationUri);
         } catch (final Throwable t) {

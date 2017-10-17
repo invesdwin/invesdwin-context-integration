@@ -4,22 +4,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
-import javax.xml.registry.infomodel.ServiceBinding;
+import de.invesdwin.context.integration.retry.RetryLaterException;
 
 public interface IRegistryService {
 
-    String ORGANIZATION = "de.invesdwin";
+    ServiceBinding registerServiceBinding(String serviceName, URI accessUri) throws IOException;
 
-    ServiceBinding registerServiceInstance(String serviceName, String accessURI) throws IOException;
+    ServiceBinding unregisterServiceBinding(String serviceName, URI accessUri) throws IOException;
 
-    void unregisterServiceInstance(String serviceName, URI accessUri) throws IOException;
+    Collection<ServiceBinding> queryServiceBindings(String serviceName) throws IOException;
 
-    Collection<ServiceBinding> queryServiceInstances(String serviceName) throws IOException;
-
-    Boolean isServerReady();
-
-    boolean isServerResponding();
-
-    void waitIfServerNotReady();
+    boolean isAvailable() throws RetryLaterException;
 
 }

@@ -8,8 +8,6 @@ import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
-import javax.xml.registry.JAXRException;
-import javax.xml.registry.infomodel.ServiceBinding;
 
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -93,17 +91,17 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         NetworkUtil.waitIfInternetNotAvailable();
         final List<URI> serviceUris = new ArrayList<URI>();
         try {
-            final Collection<ServiceBinding> bindings = registry.queryServiceInstances(serviceName);
+            final Collection<ServiceBinding> bindings = registry.queryServiceBindings(serviceName);
             if (bindings != null) {
                 for (final ServiceBinding binding : bindings) {
-                    final URI accessUri = URIs.asUri(binding.getAccessURI());
+                    final URI accessUri = binding.getAccessUri();
                     if (checkDownloadPossible(accessUri)) {
                         serviceUris.add(accessUri);
                         break;
                     }
                 }
             }
-        } catch (final JAXRException e) {
+        } catch (final Throwable e) {
             throw new IOException(
                     "Registry server [" + IntegrationWsProperties.getRegistryServerUri() + "] seems to be unreachable.",
                     e);
@@ -119,17 +117,17 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         NetworkUtil.waitIfInternetNotAvailable();
         URI serviceUri = null;
         try {
-            final Collection<ServiceBinding> bindings = registry.queryServiceInstances(serviceName);
+            final Collection<ServiceBinding> bindings = registry.queryServiceBindings(serviceName);
             if (bindings != null) {
                 for (final ServiceBinding binding : bindings) {
-                    final URI accessUri = URIs.asUri(binding.getAccessURI());
+                    final URI accessUri = binding.getAccessUri();
                     if (checkDownloadPossible(accessUri)) {
                         serviceUri = accessUri;
                         break;
                     }
                 }
             }
-        } catch (final JAXRException e) {
+        } catch (final Throwable e) {
             throw new IOException(
                     "Registry server [" + IntegrationWsProperties.getRegistryServerUri() + "] seems to be unreachable.",
                     e);

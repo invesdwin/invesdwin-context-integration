@@ -8,13 +8,6 @@
 		<appender-ref ref="integration" />
 	</logger>
 
-	<logger name="org.apache.juddi" additivity="false" level="ERROR">
-		<appender-ref ref="stdout" />
-		<appender-ref ref="stderr" />
-		<appender-ref ref="common" />
-		<appender-ref ref="error" />
-	</logger>
-
 	<logger name="de.invesdwin.context.integration.ws.XsdWebServiceEndpointMapping" additivity="false" level="WARN">
 		<appender-ref ref="stdout" />
 		<appender-ref ref="stderr" />

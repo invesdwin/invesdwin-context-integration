@@ -50,8 +50,6 @@
 		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
 		<version.activemq>5.15.0</version.activemq>
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
-		<version.scout>1.2.7</version.scout>
-		<version.juddi>3.3.4</version.juddi>
 		<version.httpclient>4.5.3</version.httpclient>
 		<version.mail>1.4.7</version.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
@@ -419,86 +417,6 @@
 				<groupId>javax.jms</groupId>
 				<artifactId>javax.jms-api</artifactId>
 				<version>${version.javax.jms-api}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.juddi.scout</groupId>
-				<artifactId>scout</artifactId>
-				<version>${version.scout}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>geronimo-activation_1.1_spec</artifactId>
-						<groupId>org.apache.geronimo.specs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>geronimo-jaxb_2.1_spec</artifactId>
-						<groupId>org.apache.geronimo.specs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>geronimo-saaj_1.3_spec</artifactId>
-						<groupId>org.apache.geronimo.specs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>geronimo-stax-api_1.0_spec</artifactId>
-						<groupId>org.apache.geronimo.specs</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.juddi</groupId>
-				<artifactId>juddi-client</artifactId>
-				<version>${version.juddi}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>commons-logging-api</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.juddi</groupId>
-				<artifactId>uddi-ws</artifactId>
-				<version>${version.juddi}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>commons-logging-api</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.juddi</groupId>
-				<artifactId>juddi-core</artifactId>
-				<version>${version.juddi}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>persistence-api</artifactId>
-						<groupId>javax.persistence</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>hibernate</artifactId>
-						<groupId>org.hibernate</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>hibernate-entitymanager</artifactId>
-						<groupId>org.hibernate</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>cglib-nodep</artifactId>
-						<groupId>cglib</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging-api</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>servlet-api</artifactId>
-						<groupId>javax.servlet</groupId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.httpcomponents</groupId>

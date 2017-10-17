@@ -1,0 +1,30 @@
+{
+	"type": "object",
+	"javaType": "de.invesdwin.context.integration.ws.registry.ServiceBinding",
+	"extendsJavaClass": "de.invesdwin.util.bean.AValueObject",
+	"properties": {
+		"name": {
+			"type": "string",
+			"required": true
+		},
+		"accessUri": {
+			"type": "string",
+			"required": true,
+			"format": "uri"
+		},
+		"created": {
+			"type": "string",
+			"required": true,
+			"format": "date-time"
+		},
+		"updated": {
+			"type": "string",
+			"required": true,
+			"format": "date-time"
+		},
+		"deleted": {
+			"type": "string",
+			"format": "date-time"
+		}
+	}
+}

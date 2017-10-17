@@ -74,18 +74,6 @@
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpclient</artifactId>
 		</dependency>
-		<dependency>
-			<groupId>org.apache.juddi.scout</groupId>
-			<artifactId>scout</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.juddi</groupId>
-			<artifactId>juddi-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.juddi</groupId>
-			<artifactId>uddi-ws</artifactId>
-		</dependency>
 	</dependencies>
 
 

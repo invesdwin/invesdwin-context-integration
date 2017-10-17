@@ -17,8 +17,6 @@ public final class IntegrationWsProperties {
             * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND; //4 Hours
     public static final long SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS = 6 * FTimeUnit.MINUTES_IN_HOUR
             * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND; //6 Hours
-    public static final String REGISTRY_SERVER_USER;
-    public static final String REGISTRY_SERVER_PASSWORD;
     public static final String WSS_USERNAMETOKEN_USER;
     public static final String WSS_USERNAMETOKEN_PASSWORD;
     public static final String SPRING_WEB_USER;
@@ -26,9 +24,6 @@ public final class IntegrationWsProperties {
     private static final SystemProperties SYSTEM_PROPERTIES = new SystemProperties(IntegrationWsProperties.class);
 
     static {
-        REGISTRY_SERVER_USER = SYSTEM_PROPERTIES.getString("REGISTRY_SERVER_USER");
-        REGISTRY_SERVER_PASSWORD = SYSTEM_PROPERTIES.getStringWithSecurityWarning("REGISTRY_SERVER_PASSWORD",
-                IProperties.INVESDWIN_DEFAULT_PASSWORD);
         WSS_USERNAMETOKEN_USER = SYSTEM_PROPERTIES.getString("WSS_USERNAMETOKEN_USER");
         WSS_USERNAMETOKEN_PASSWORD = SYSTEM_PROPERTIES.getStringWithSecurityWarning("WSS_USERNAMETOKEN_PASSWORD",
                 IProperties.INVESDWIN_DEFAULT_PASSWORD);
