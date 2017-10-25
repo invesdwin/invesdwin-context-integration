@@ -9,7 +9,6 @@ import java.util.List;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
-import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryOriginator;
@@ -141,10 +140,6 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
     private boolean checkDownloadPossible(final URI accessUri) {
         boolean isOk = false;
         if (accessUri != null) {
-            if (accessUri.toString().startsWith(IntegrationProperties.WEBSERVER_BIND_URI.toString())) {
-                //don't connect to yourself
-                return false;
-            }
             if (maybeWithBasicAuth(URIs.connect(accessUri)).isDownloadPossible()) {
                 isOk = true;
             } else {
