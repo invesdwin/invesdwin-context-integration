@@ -10,7 +10,9 @@
 		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<!-- Spring-MVC for REST-WS -->
-	<mvc:annotation-driven />
+	<mvc:annotation-driven>
+		<mvc:path-matching registered-suffixes-only="true" />
+	</mvc:annotation-driven>
 	<!-- log Spring-WS Exceptions/Faults correctly -->
 	<bean
 		class="org.springframework.ws.soap.server.endpoint.SoapFaultAnnotationExceptionResolver" />
