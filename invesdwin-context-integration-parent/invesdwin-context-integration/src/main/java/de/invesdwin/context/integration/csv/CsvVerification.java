@@ -60,8 +60,8 @@ public class CsvVerification {
             do {
                 item = items.read();
                 if (item != null && item.getFieldCount() == columns) {
-                    for (final String spalte : item.getValues()) {
-                        sb.append(spalte);
+                    for (final String column : item.getValues()) {
+                        sb.append(column);
                         sb.append(separator);
                     }
                     sb = Strings.removeEnd(sb, 1);
