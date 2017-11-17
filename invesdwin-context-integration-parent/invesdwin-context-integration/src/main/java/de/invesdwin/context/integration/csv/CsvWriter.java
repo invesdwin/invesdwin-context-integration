@@ -10,6 +10,7 @@ import java.util.List;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.loadingcache.ALoadingCache;
 import de.invesdwin.util.lang.Strings;
 
 @NotThreadSafe
@@ -18,20 +19,35 @@ public class CsvWriter implements Closeable {
     public static final String DEFAULT_QUOTE = "\"";
     public static final String DEFAULT_COLUMN_SEPARATOR = ",";
     public static final String DEFAULT_NEWLINE = "\n";
-    private static final byte[] DEFAULT_QUOTE_BYTES = DEFAULT_QUOTE.getBytes();
-    private static final byte[] DEFAULT_COLUMN_SEPARATOR_BYTES = DEFAULT_COLUMN_SEPARATOR.getBytes();
-    private static final byte[] DEFAULT_NEWLINE_BYTES = DEFAULT_NEWLINE.getBytes();
+    /**
+     * Cache the bytes so multiple csv writers share the same byte arrays to preserve memory
+     */
+    private static final ALoadingCache<String, byte[]> STR_BYTES = new ALoadingCache<String, byte[]>() {
+
+        @Override
+        protected Integer getInitialMaximumSize() {
+            return 100;
+        }
+
+        @Override
+        protected byte[] loadValue(final String key) {
+            return key.getBytes();
+        }
+    };
 
     private final OutputStream out;
-    private byte[] quoteBytes = DEFAULT_QUOTE_BYTES;
-    private byte[] columnSeparatorBytes = DEFAULT_COLUMN_SEPARATOR_BYTES;
-    private byte[] newlineBytes = DEFAULT_NEWLINE_BYTES;
+    private byte[] quoteBytes;
+    private byte[] columnSeparatorBytes;
+    private byte[] newlineBytes;
 
     private final List<Object> currentLine = new ArrayList<Object>();
     private Integer assertColumnCount;
 
     public CsvWriter(final OutputStream out) {
         this.out = out;
+        withQuote(DEFAULT_QUOTE);
+        withColumnSeparator(DEFAULT_COLUMN_SEPARATOR);
+        withNewLine(DEFAULT_NEWLINE);
     }
 
     public CsvWriter withAssertColumnCount(final Integer assertColumnCount) {
@@ -43,20 +59,20 @@ public class CsvWriter implements Closeable {
         if (Strings.isBlank(quote)) {
             quoteBytes = null;
         } else {
-            quoteBytes = quote.getBytes();
+            quoteBytes = STR_BYTES.get(quote);
         }
         return this;
     }
 
     public CsvWriter withColumnSeparator(final String columnSeparator) {
         Assertions.assertThat(columnSeparator).isNotEmpty();
-        columnSeparatorBytes = columnSeparator.getBytes();
+        columnSeparatorBytes = STR_BYTES.get(columnSeparator);
         return this;
     }
 
     public CsvWriter withNewLine(final String newline) {
         Assertions.assertThat(newline).isNotBlank();
-        newlineBytes = newline.getBytes();
+        newlineBytes = STR_BYTES.get(newline);
         return this;
     }
 
