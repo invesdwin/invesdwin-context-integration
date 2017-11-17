@@ -18,11 +18,14 @@ public class CsvWriter implements Closeable {
     public static final String DEFAULT_QUOTE = "\"";
     public static final String DEFAULT_COLUMN_SEPARATOR = ",";
     public static final String DEFAULT_NEWLINE = "\n";
+    private static final byte[] DEFAULT_QUOTE_BYTES = DEFAULT_QUOTE.getBytes();
+    private static final byte[] DEFAULT_COLUMN_SEPARATOR_BYTES = DEFAULT_COLUMN_SEPARATOR.getBytes();
+    private static final byte[] DEFAULT_NEWLINE_BYTES = DEFAULT_NEWLINE.getBytes();
 
     private final OutputStream out;
-    private byte[] quoteBytes = DEFAULT_QUOTE.getBytes();
-    private byte[] columnSeparatorBytes = DEFAULT_COLUMN_SEPARATOR.getBytes();
-    private byte[] newlineBytes = DEFAULT_NEWLINE.getBytes();
+    private byte[] quoteBytes = DEFAULT_QUOTE_BYTES;
+    private byte[] columnSeparatorBytes = DEFAULT_COLUMN_SEPARATOR_BYTES;
+    private byte[] newlineBytes = DEFAULT_NEWLINE_BYTES;
 
     private final List<Object> currentLine = new ArrayList<Object>();
     private Integer assertColumnCount;
