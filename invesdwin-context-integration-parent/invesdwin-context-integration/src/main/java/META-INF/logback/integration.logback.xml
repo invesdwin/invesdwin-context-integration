@@ -14,4 +14,7 @@
         <appender-ref ref="integration" />
     </logger>
     
+    <!-- disable kotlin warning -->
+    <logger name="org.springframework.http.converter.json.Jackson2ObjectMapperBuilder" additivity="true" level="ERROR" />
+    
 </configuration>
