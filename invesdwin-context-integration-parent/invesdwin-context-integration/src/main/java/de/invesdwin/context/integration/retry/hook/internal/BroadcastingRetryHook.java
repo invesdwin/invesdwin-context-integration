@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.retry.hook.internal;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -13,12 +12,12 @@ import de.invesdwin.util.collections.concurrent.AFastIterableDelegateSet;
 @ThreadSafe
 public class BroadcastingRetryHook implements IRetryHook {
 
-    private final Set<IRetryHook> hooks = Collections.synchronizedSet(new AFastIterableDelegateSet<IRetryHook>() {
+    private final AFastIterableDelegateSet<IRetryHook> hooks = new AFastIterableDelegateSet<IRetryHook>() {
         @Override
         protected Set<IRetryHook> newDelegate() {
             return new LinkedHashSet<IRetryHook>();
         }
-    });
+    };
 
     @Override
     public void onBeforeRetry(final RetryOriginator originator, final int retryCount, final Throwable cause) {

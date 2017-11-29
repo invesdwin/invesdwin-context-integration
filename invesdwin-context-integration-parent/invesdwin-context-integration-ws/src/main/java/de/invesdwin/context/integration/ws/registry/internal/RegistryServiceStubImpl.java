@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ws.registry.internal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -23,13 +22,12 @@ public class RegistryServiceStubImpl implements IRegistryService {
 
     private static boolean enabled = true;
     private static final Map<String, URI> SERVICENAME_ACCESSURI_OVERRIDES = new ConcurrentHashMap<String, URI>();
-    private final Set<ServiceBinding> registeredBindings = Collections
-            .synchronizedSet(new AFastIterableDelegateSet<ServiceBinding>() {
-                @Override
-                protected Set<ServiceBinding> newDelegate() {
-                    return new LinkedHashSet<ServiceBinding>();
-                }
-            });
+    private final AFastIterableDelegateSet<ServiceBinding> registeredBindings = new AFastIterableDelegateSet<ServiceBinding>() {
+        @Override
+        protected Set<ServiceBinding> newDelegate() {
+            return new LinkedHashSet<ServiceBinding>();
+        }
+    };
 
     public static void setEnabled(final boolean enabled) {
         RegistryServiceStubImpl.enabled = enabled;
