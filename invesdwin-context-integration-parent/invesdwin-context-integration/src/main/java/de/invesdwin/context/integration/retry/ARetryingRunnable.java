@@ -39,6 +39,6 @@ public abstract class ARetryingRunnable implements Runnable {
         }
     }
 
-    protected abstract void runRetryable();
+    protected abstract void runRetryable() throws Exception;
 
 }
