@@ -25,6 +25,9 @@
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
 		<module>invesdwin-context-integration-hadoop</module>
+		<module>invesdwin-context-integration-jppf</module>
+		<module>invesdwin-context-integration-jppf-admin</module>
+		<module>invesdwin-context-integration-jppf-server</module>
 		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>
@@ -58,6 +61,7 @@
 		<version.jersey>2.25.1</version.jersey>
 		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
+		<version.jppf>5.2.8</version.jppf>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
@@ -928,6 +932,42 @@
 				<artifactId>aether-transport-wagon</artifactId>
 				<version>${version.eclipse-aether}</version>
 			</dependency>
+
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-client</artifactId>
+				<version>${version.jppf}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-node</artifactId>
+				<version>${version.jppf}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-server</artifactId>
+				<version>${version.jppf}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-admin</artifactId>
+				<version>${version.jppf}</version>
+			</dependency>
+			<dependency>
+			<groupId>org.jppf</groupId>
+			<artifactId>jppf-common</artifactId>
+			<version>${version.jppf}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+				<exclusion>
+					<groupId>log4j</groupId>
+					<artifactId>log4j</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
 		</dependencies>
 	</dependencyManagement>
 
