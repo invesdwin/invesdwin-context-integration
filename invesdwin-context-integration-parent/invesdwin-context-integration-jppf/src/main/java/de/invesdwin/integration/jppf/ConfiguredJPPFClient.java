@@ -4,12 +4,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Named;
 
 import org.jppf.client.JPPFClient;
-import org.jppf.utils.JPPFConfiguration;
-import org.jppf.utils.TypedProperties;
-import org.jppf.utils.configuration.JPPFProperties;
 import org.springframework.beans.factory.FactoryBean;
 
-import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.assertions.Assertions;
 
 @Named
 @NotThreadSafe
@@ -18,15 +15,10 @@ public final class ConfiguredJPPFClient extends JPPFClient implements FactoryBea
     public static final ConfiguredJPPFClient INSTANCE;
 
     static {
-        final TypedProperties props = JPPFConfiguration.getProperties();
-        //use custom discovery only
-        props.set(JPPFProperties.DISCOVERY_ENABLED, false);
-        //might be a security risk
-        props.set(JPPFProperties.CLASSLOADER_FILE_LOOKUP, false);
-        //allow local execution if enabled
-        props.set(JPPFProperties.LOCAL_EXECUTION_ENABLED, JPPFClientProperties.LOCAL_EXECUTION_ENABLED);
-        props.set(JPPFProperties.LOCAL_EXECUTION_THREADS, Executors.getCpuThreadPoolCount());
+        Assertions.checkNotNull(JPPFClientProperties.class);
         INSTANCE = new ConfiguredJPPFClient();
+        INSTANCE.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
+        INSTANCE.addClientQueueListener(new ConnectionSizingClientQueueListener(INSTANCE.awaitWorkingConnectionPool()));
     }
 
     private ConfiguredJPPFClient() {
