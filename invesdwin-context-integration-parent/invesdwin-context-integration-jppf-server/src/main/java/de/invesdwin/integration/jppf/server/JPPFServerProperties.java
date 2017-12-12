@@ -16,7 +16,7 @@ public final class JPPFServerProperties {
     public static final int SERVER_PORT;
 
     static {
-        Assertions.checkNotNull(JPPFClientProperties.class);
+        Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
         final SystemProperties systemProperties = new SystemProperties(JPPFServerProperties.class);
         SERVER_PORT = systemProperties.getPort("SERVER_PORT", true);
     }

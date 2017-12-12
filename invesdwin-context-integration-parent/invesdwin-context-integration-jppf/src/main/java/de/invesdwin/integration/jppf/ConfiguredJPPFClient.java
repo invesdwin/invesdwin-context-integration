@@ -1,5 +1,7 @@
 package de.invesdwin.integration.jppf;
 
+import java.util.concurrent.ExecutorService;
+
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Named;
 
@@ -7,18 +9,28 @@ import org.jppf.client.JPPFClient;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.Executors;
 
 @Named
 @NotThreadSafe
-public final class ConfiguredJPPFClient extends JPPFClient implements FactoryBean<ConfiguredJPPFClient> {
+public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
-    public static final ConfiguredJPPFClient INSTANCE;
+    public static final JPPFClient INSTANCE;
 
     static {
-        Assertions.checkNotNull(JPPFClientProperties.class);
-        INSTANCE = new ConfiguredJPPFClient();
+        Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
+        INSTANCE = new JPPFClient();
         INSTANCE.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
-        INSTANCE.addClientQueueListener(new ConnectionSizingClientQueueListener(INSTANCE.awaitWorkingConnectionPool()));
+        final ExecutorService executor = Executors
+                .newFixedThreadPool(ConfiguredJPPFClient.class.getSimpleName() + "_INIT", 1);
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                INSTANCE.addClientQueueListener(
+                        new ConnectionSizingClientQueueListener(INSTANCE.awaitWorkingConnectionPool()));
+            }
+        });
+        executor.shutdown();
     }
 
     private ConfiguredJPPFClient() {
@@ -26,7 +38,7 @@ public final class ConfiguredJPPFClient extends JPPFClient implements FactoryBea
     }
 
     @Override
-    public ConfiguredJPPFClient getObject() throws Exception {
+    public JPPFClient getObject() throws Exception {
         return INSTANCE;
     }
 

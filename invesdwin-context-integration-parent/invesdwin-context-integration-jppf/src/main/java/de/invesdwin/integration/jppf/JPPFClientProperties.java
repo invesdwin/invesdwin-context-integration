@@ -12,6 +12,8 @@ import de.invesdwin.context.system.properties.SystemProperties;
 @Immutable
 public final class JPPFClientProperties {
 
+    public static final boolean INITIALIZED;
+
     static {
         //override values as defined in distribution/user properties
         final TypedProperties props = JPPFConfiguration.getProperties();
@@ -23,6 +25,7 @@ public final class JPPFClientProperties {
                 props.setString(key, value);
             }
         }
+        INITIALIZED = true;
     }
 
     private JPPFClientProperties() {}

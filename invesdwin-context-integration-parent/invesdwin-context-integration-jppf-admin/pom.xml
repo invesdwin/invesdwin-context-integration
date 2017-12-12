@@ -25,11 +25,10 @@
 		</plugins>
 	</build>
 
-
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-ws</artifactId>
+			<artifactId>invesdwin-context-integration-jppf</artifactId>
 		</dependency>
 
 		<dependency>
