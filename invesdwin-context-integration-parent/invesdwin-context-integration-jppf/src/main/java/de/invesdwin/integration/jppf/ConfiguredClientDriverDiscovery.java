@@ -37,6 +37,9 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
         while (!isShutdown()) {
             try {
                 final Collection<ServiceBinding> peers = registryService.queryServiceBindings(SERVICE_NAME);
+                if (peers == null || peers.isEmpty()) {
+                    throw new RetryLaterRuntimeException("No instances of service [" + SERVICE_NAME + "] found");
+                }
                 for (final ServiceBinding peer : peers) {
                     final URI accessUri = peer.getAccessUri();
                     final ClientConnectionPoolInfo info = new ClientConnectionPoolInfo(accessUri.toString(),
