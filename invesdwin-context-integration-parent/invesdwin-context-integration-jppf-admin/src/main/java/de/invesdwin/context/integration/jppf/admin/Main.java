@@ -17,7 +17,7 @@ public final class Main {
     private Main() {}
 
     public static void main(final String[] args) {
-        final JPPFSplash splash = new JPPFSplash("Connecting to Servers");
+        final JPPFSplash splash = new JPPFSplash("Connecting ...");
         splash.start();
         MergedContext.autowire(null);
         Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
