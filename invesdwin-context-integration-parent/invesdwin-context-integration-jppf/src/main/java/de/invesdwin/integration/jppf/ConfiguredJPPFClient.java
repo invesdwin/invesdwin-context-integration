@@ -6,16 +6,21 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Named;
 
 import org.jppf.client.JPPFClient;
+import org.jppf.client.concurrent.JPPFExecutorService;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.time.duration.Duration;
+import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Named
 @NotThreadSafe
 public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static final JPPFClient INSTANCE;
+    public static final int DEFAULT_BATCH_SIZE = 100;
+    public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
 
     static {
         Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
@@ -35,6 +40,13 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     private ConfiguredJPPFClient() {
         super();
+    }
+
+    public JPPFExecutorService newBatchedExecutorService() {
+        final JPPFExecutorService executorService = new JPPFExecutorService(INSTANCE);
+        executorService.setBatchSize(DEFAULT_BATCH_SIZE);
+        executorService.setBatchTimeout(DEFAULT_BATCH_TIMEOUT.longValue(FTimeUnit.MILLISECONDS));
+        return executorService;
     }
 
     @Override
