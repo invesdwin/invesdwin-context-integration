@@ -24,14 +24,9 @@ public final class JPPFServerProperties {
 
     private JPPFServerProperties() {}
 
-    public URI getServerBindUri() {
+    public static URI getServerBindUri() {
         return URIs.asUri(
                 "p://" + IntegrationProperties.HOSTNAME + ":" + JPPFConfiguration.get(JPPFProperties.SERVER_SSL_PORT));
-    }
-
-    public URI getManagementBindUri() {
-        return URIs.asUri("p://" + IntegrationProperties.HOSTNAME + ":"
-                + JPPFConfiguration.get(JPPFProperties.MANAGEMENT_SSL_PORT));
     }
 
 }

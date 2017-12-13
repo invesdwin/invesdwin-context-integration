@@ -1,12 +1,14 @@
 package de.invesdwin.integration.jppf.server;
 
 import javax.annotation.concurrent.Immutable;
+import javax.inject.Named;
 
 import org.jppf.server.JPPFDriver;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.util.assertions.Assertions;
 
+@Named
 @Immutable
 public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver> {
 

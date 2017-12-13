@@ -28,6 +28,7 @@
 		<module>invesdwin-context-integration-jppf</module>
 		<module>invesdwin-context-integration-jppf-admin</module>
 		<module>invesdwin-context-integration-jppf-server</module>
+		<module>invesdwin-context-integration-jppf-server-dist</module>
 		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>

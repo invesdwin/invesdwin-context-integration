@@ -2,7 +2,7 @@ package de.invesdwin.integration.jppf;
 
 import java.util.concurrent.ExecutorService;
 
-import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
 import org.jppf.client.JPPFClient;
@@ -15,7 +15,7 @@ import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Named
-@NotThreadSafe
+@Immutable
 public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static final JPPFClient INSTANCE;
