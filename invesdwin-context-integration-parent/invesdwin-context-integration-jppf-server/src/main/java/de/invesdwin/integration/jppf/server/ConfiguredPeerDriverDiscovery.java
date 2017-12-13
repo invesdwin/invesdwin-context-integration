@@ -43,15 +43,14 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
                 while (!isShutdown()) {
                     try {
                         final Collection<ServiceBinding> peers = registryService.queryServiceBindings(SERVICE_NAME);
-                        if (peers == null || peers.isEmpty()) {
-                            throw new RetryLaterRuntimeException(
-                                    "No instances of service [" + SERVICE_NAME + "] found");
-                        }
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();
-                            final DriverConnectionInfo info = new DriverConnectionInfo(accessUri.toString(),
-                                    JPPFServerProperties.PEER_SSL_ENABLED, accessUri.getHost(), accessUri.getPort());
-                            newConnection(info);
+                            if (!accessUri.equals(JPPFServerProperties.getServerBindUri())) {
+                                final DriverConnectionInfo info = new DriverConnectionInfo(accessUri.toString(),
+                                        JPPFServerProperties.PEER_SSL_ENABLED, accessUri.getHost(),
+                                        accessUri.getPort());
+                                newConnection(info);
+                            }
                         }
                         synchronized (this) { // wait a few seconds before the next lookup
                             wait(REFRESH_INTERVAL_MILLIS);
