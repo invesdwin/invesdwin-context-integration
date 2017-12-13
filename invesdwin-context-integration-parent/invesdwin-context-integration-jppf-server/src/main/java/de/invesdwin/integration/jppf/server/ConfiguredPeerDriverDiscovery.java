@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Collection;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 import org.jppf.discovery.DriverConnectionInfo;
 import org.jppf.discovery.PeerDriverDiscovery;
@@ -25,24 +24,21 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
     public static final String SERVICE_NAME = ConfiguredClientDriverDiscovery.SERVICE_NAME;
     public static final long REFRESH_INTERVAL_MILLIS = ConfiguredClientDriverDiscovery.REFRESH_INTERVAL_MILLIS;
 
-    @Inject
     private IRegistryService registryService;
 
     private boolean shutdown;
 
-    public ConfiguredPeerDriverDiscovery() {
-        MergedContext.autowire(this);
-    }
-
     @Override
     public void discover() throws InterruptedException {
+        MergedContext.awaitBootstrapFinished();
         final ARetryingRunnable retry = new ARetryingRunnable(
                 new RetryOriginator(ConfiguredClientDriverDiscovery.class, "discover")) {
             @Override
             protected void runRetryable() throws Exception {
                 while (!isShutdown()) {
                     try {
-                        final Collection<ServiceBinding> peers = registryService.queryServiceBindings(SERVICE_NAME);
+                        final Collection<ServiceBinding> peers = getRegistryService()
+                                .queryServiceBindings(SERVICE_NAME);
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();
                             if (!accessUri.equals(JPPFServerProperties.getServerBindUri())) {
@@ -62,6 +58,13 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
             }
         };
         retry.run();
+    }
+
+    private IRegistryService getRegistryService() {
+        if (registryService == null) {
+            registryService = MergedContext.getInstance().getBean(IRegistryService.class);
+        }
+        return registryService;
     }
 
     public synchronized boolean isShutdown() {

@@ -6,26 +6,20 @@ import javax.inject.Named;
 import org.jppf.server.JPPFDriver;
 import org.springframework.beans.factory.FactoryBean;
 
+import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.util.assertions.Assertions;
 
 @Named
 @Immutable
-public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver> {
+public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, IStartupHook {
 
-    public static final JPPFDriver INSTANCE;
-
-    static {
-        JPPFDriver.main("noLauncher");
-        INSTANCE = JPPFDriver.getInstance();
-        Assertions.checkNotNull(INSTANCE, "Startup failed!");
-        INSTANCE.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
-    }
+    private static JPPFDriver instance;
 
     private ConfiguredJPPFDriver() {}
 
     @Override
     public JPPFDriver getObject() throws Exception {
-        return INSTANCE;
+        return getInstance();
     }
 
     @Override
@@ -33,4 +27,18 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver> {
         return JPPFDriver.class;
     }
 
+    public static synchronized JPPFDriver getInstance() {
+        if (instance == null) {
+            JPPFDriver.main("noLauncher");
+            instance = JPPFDriver.getInstance();
+            Assertions.checkNotNull(instance, "Startup failed!");
+            instance.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
+        }
+        return instance;
+    }
+
+    @Override
+    public void startup() throws Exception {
+        Assertions.checkNotNull(getInstance());
+    }
 }

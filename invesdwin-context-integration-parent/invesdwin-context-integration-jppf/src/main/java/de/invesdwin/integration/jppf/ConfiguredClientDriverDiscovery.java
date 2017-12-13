@@ -5,7 +5,6 @@ import java.net.URI;
 import java.util.Collection;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 import org.jppf.discovery.ClientConnectionPoolInfo;
 import org.jppf.discovery.ClientDriverDiscovery;
@@ -26,24 +25,21 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final long REFRESH_INTERVAL_MILLIS = Duration.ONE_MINUTE.longValue(FTimeUnit.MILLISECONDS);
 
-    @Inject
     private IRegistryService registryService;
 
     private boolean shutdown;
 
-    public ConfiguredClientDriverDiscovery() {
-        MergedContext.autowire(this);
-    }
-
     @Override
     public void discover() throws InterruptedException {
+        MergedContext.awaitBootstrapFinished();
         final ARetryingRunnable retry = new ARetryingRunnable(
                 new RetryOriginator(ConfiguredClientDriverDiscovery.class, "discover")) {
             @Override
             protected void runRetryable() throws Exception {
                 while (!isShutdown()) {
                     try {
-                        final Collection<ServiceBinding> peers = registryService.queryServiceBindings(SERVICE_NAME);
+                        final Collection<ServiceBinding> peers = getRegistryService()
+                                .queryServiceBindings(SERVICE_NAME);
                         if (peers == null || peers.isEmpty()) {
                             throw new RetryLaterRuntimeException(
                                     "No instances of service [" + SERVICE_NAME + "] found");
@@ -64,6 +60,13 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
             }
         };
         retry.run();
+    }
+
+    private IRegistryService getRegistryService() {
+        if (registryService == null) {
+            registryService = MergedContext.getInstance().getBean(IRegistryService.class);
+        }
+        return registryService;
     }
 
     public synchronized boolean isShutdown() {
