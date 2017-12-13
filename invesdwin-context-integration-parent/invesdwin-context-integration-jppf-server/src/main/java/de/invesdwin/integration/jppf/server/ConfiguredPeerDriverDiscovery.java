@@ -50,7 +50,7 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();
                             final DriverConnectionInfo info = new DriverConnectionInfo(accessUri.toString(),
-                                    accessUri.getHost(), accessUri.getPort());
+                                    JPPFServerProperties.PEER_SSL_ENABLED, accessUri.getHost(), accessUri.getPort());
                             newConnection(info);
                         }
                         synchronized (this) { // wait a few seconds before the next lookup

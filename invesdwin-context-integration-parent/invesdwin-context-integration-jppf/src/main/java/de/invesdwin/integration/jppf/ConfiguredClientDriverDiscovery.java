@@ -51,7 +51,7 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();
                             final ClientConnectionPoolInfo info = new ClientConnectionPoolInfo(accessUri.toString(),
-                                    accessUri.getHost(), accessUri.getPort());
+                                    JPPFClientProperties.CLIENT_SSL_ENABLED, accessUri.getHost(), accessUri.getPort());
                             newConnection(info);
                         }
                         synchronized (this) { // wait a few seconds before the next lookup

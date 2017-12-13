@@ -13,7 +13,7 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver> {
     public static final JPPFDriver INSTANCE;
 
     static {
-        JPPFDriver.main(String.valueOf(JPPFServerProperties.SERVER_PORT));
+        JPPFDriver.main("noLauncher");
         INSTANCE = JPPFDriver.getInstance();
         Assertions.checkNotNull(INSTANCE, "Startup failed!");
         INSTANCE.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());

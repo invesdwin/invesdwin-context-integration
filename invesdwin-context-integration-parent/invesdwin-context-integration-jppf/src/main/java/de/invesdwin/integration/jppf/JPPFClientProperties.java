@@ -13,11 +13,17 @@ import de.invesdwin.context.system.properties.SystemProperties;
 public final class JPPFClientProperties {
 
     public static final boolean INITIALIZED;
+    public static final boolean CLIENT_SSL_ENABLED;
 
     static {
+        final SystemProperties systemProperties = new SystemProperties();
+        maybeValidatePort(systemProperties, JPPFProperties.SERVER_PORT.getName());
+        maybeValidatePort(systemProperties, JPPFProperties.SERVER_SSL_PORT.getName());
+        maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_PORT.getName());
+        maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
+
         //override values as defined in distribution/user properties
         final TypedProperties props = JPPFConfiguration.getProperties();
-        final SystemProperties systemProperties = new SystemProperties();
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();
             if (systemProperties.containsKey(key)) {
@@ -25,9 +31,20 @@ public final class JPPFClientProperties {
                 props.setString(key, value);
             }
         }
+        CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
         INITIALIZED = true;
     }
 
     private JPPFClientProperties() {}
+
+    private static void maybeValidatePort(final SystemProperties systemProperties, final String portKey) {
+        if (systemProperties.containsKey(portKey)) {
+            final Integer port = systemProperties.getInteger(portKey);
+            if (port == 0) {
+                //use random port
+                systemProperties.getPort(portKey, true);
+            }
+        }
+    }
 
 }
