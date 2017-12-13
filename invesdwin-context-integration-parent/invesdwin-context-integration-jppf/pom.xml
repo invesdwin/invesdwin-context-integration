@@ -37,5 +37,49 @@
 			<artifactId>jppf-client</artifactId>
 		</dependency>
 	</dependencies>
+	
+	<profiles>
+		<profile>
+			<!-- call with: mvn -Pgenerate-key-pair generate-resources -->
+			<id>generate-key-pair</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.codehaus.mojo</groupId>
+						<artifactId>keytool-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<goals>
+									<goal>generateKeyPair</goal>
+								</goals>
+								<phase>generate-resources</phase>
+							</execution>
+						</executions>
+						<configuration>
+							<keystore>${basedir}/src/main/java/META-INF/jppf/keystore.jks</keystore>
+							<storepass>invesdwin</storepass>
+							<keypass>invesdwin</keypass>
+							<![CDATA[
+							    CN - Common Name of the certificate owner
+							    OU - Organizational Unit of the certificate owner
+							    O - Organization to which the certificate owner belongs
+							    L - Locality name of the certificate owner
+							    S - State or province of the certificate owner
+							    C - Country of the certificate owner
+							]]>
+							<dname>CN=invesdwin.de, OU=None, O=invesdwin,
+								L=None, S=None, C=DE</dname>
+							<alias>invesdwin</alias>
+							<!-- 100 years = 365 * 100 days -->
+							<validity>365000</validity>
+							<!-- rsa is better compatible with browsers -->
+							<keyalg>RSA</keyalg>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
+	
 
 </project>
