@@ -1,4 +1,4 @@
-package de.invesdwin.integration.jppf;
+package de.invesdwin.integration.jppf.client;
 
 import java.io.IOException;
 import java.net.URI;
@@ -15,6 +15,7 @@ import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
+import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 

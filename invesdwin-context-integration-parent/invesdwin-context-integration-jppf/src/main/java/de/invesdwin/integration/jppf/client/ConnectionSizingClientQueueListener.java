@@ -1,4 +1,4 @@
-package de.invesdwin.integration.jppf;
+package de.invesdwin.integration.jppf.client;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;

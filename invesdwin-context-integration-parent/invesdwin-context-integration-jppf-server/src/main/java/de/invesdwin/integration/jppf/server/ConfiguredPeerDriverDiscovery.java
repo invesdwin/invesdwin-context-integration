@@ -15,7 +15,7 @@ import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
-import de.invesdwin.integration.jppf.ConfiguredClientDriverDiscovery;
+import de.invesdwin.integration.jppf.client.ConfiguredClientDriverDiscovery;
 
 // http://www.jppf.org/doc/5.2/index.php?title=Custom_discovery_of_peer_drivers
 @ThreadSafe
