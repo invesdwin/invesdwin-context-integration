@@ -27,11 +27,14 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     private static TopologyManager topologyManager;
     private static ProcessingThreadsCounter processingThreadsCounter;
+    private static JPPFExecutorService executorService;
 
-    public static JPPFExecutorService newBatchedExecutorService() {
-        final JPPFExecutorService executorService = new JPPFExecutorService(getInstance());
-        executorService.setBatchSize(DEFAULT_BATCH_SIZE);
-        executorService.setBatchTimeout(DEFAULT_BATCH_TIMEOUT.longValue(FTimeUnit.MILLISECONDS));
+    public static synchronized JPPFExecutorService getBatchedExecutorService() {
+        if (executorService == null) {
+            executorService = new JPPFExecutorService(getInstance());
+            executorService.setBatchSize(DEFAULT_BATCH_SIZE);
+            executorService.setBatchTimeout(DEFAULT_BATCH_TIMEOUT.longValue(FTimeUnit.MILLISECONDS));
+        }
         return executorService;
     }
 
