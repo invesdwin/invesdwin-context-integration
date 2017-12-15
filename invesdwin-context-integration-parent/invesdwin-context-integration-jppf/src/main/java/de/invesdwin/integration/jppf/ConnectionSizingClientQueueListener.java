@@ -23,21 +23,18 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     //reap connections only when they are not used after a while
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
 
-    private final JPPFConnectionPool connectionPool;
     @GuardedBy("this")
     private int activeJobsCount = 0;
-
-    public ConnectionSizingClientQueueListener(final JPPFConnectionPool connectionPool) {
-        this.connectionPool = connectionPool;
-    }
 
     @Override
     public synchronized void jobAdded(final ClientQueueEvent event) {
         activeJobsCount++;
         final int newCount = activeJobsCount;
-        // grow the connection pool
-        if (newCount > connectionPool.getSize()) {
-            connectionPool.setSize(newCount);
+        // grow the connection pools by one
+        if (newCount > event.getClient().getAllConnectionsCount()) {
+            for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                pool.setSize(pool.getSize() + 1);
+            }
         }
     }
 
@@ -48,9 +45,11 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         SCHEDULER.schedule(new Runnable() {
             @Override
             public void run() {
-                // shrink the connection pool
-                if (newCount < connectionPool.getSize()) {
-                    connectionPool.setSize(newCount);
+                // shrink the connection pools by one
+                if (newCount < event.getClient().getAllConnectionsCount()) {
+                    for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                        pool.setSize(pool.getSize() - 1);
+                    }
                 }
             }
         }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());

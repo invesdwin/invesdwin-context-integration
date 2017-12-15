@@ -41,13 +41,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             instance.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
             final ExecutorService executor = Executors
                     .newFixedThreadPool(ConfiguredJPPFClient.class.getSimpleName() + "_INIT", 1);
-            executor.execute(new Runnable() {
-                @Override
-                public void run() {
-                    instance.addClientQueueListener(
-                            new ConnectionSizingClientQueueListener(instance.awaitWorkingConnectionPool()));
-                }
-            });
+            instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
             executor.shutdown();
         }
         return instance;
