@@ -7,6 +7,7 @@ import javax.inject.Named;
 
 import org.jppf.client.JPPFClient;
 import org.jppf.client.concurrent.JPPFExecutorService;
+import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
 
@@ -26,6 +27,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     private static JPPFClient instance;
 
     private static TopologyManager topologyManager;
+    private static JobMonitor jobMonitor;
     private static ProcessingThreadsCounter processingThreadsCounter;
     private static JPPFExecutorService executorService;
 
@@ -45,8 +47,12 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         return processingThreadsCounter;
     }
 
-    public static int getProcessingThreads() {
-        return getProcessingThreadsCounter().getProcessingThreads();
+    public static int getProcessingThreadsCount() {
+        return getProcessingThreadsCounter().getProcessingThreadsCount();
+    }
+
+    public static int getNodesCount() {
+        return getProcessingThreadsCounter().getNodesCount();
     }
 
     public static synchronized TopologyManager getTopologyManager() {
@@ -54,6 +60,13 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             topologyManager = new TopologyManager(getInstance());
         }
         return topologyManager;
+    }
+
+    public static synchronized JobMonitor getJobMonitor() {
+        if (jobMonitor == null) {
+            jobMonitor = new JobMonitor(getTopologyManager());
+        }
+        return jobMonitor;
     }
 
     @Override

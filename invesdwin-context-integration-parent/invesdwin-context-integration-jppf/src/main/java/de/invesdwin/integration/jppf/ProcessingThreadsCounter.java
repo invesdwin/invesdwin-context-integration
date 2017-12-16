@@ -16,12 +16,15 @@ import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.bean.tuple.Pair;
 
 @ThreadSafe
 public class ProcessingThreadsCounter {
 
     @GuardedBy("this")
-    private int processingThreads;
+    private int processingThreadsCount;
+    @GuardedBy("this")
+    private int nodesCount;
     private final TopologyManager topologyManager;
 
     public ProcessingThreadsCounter(final TopologyManager topologyManager) {
@@ -35,17 +38,20 @@ public class ProcessingThreadsCounter {
             @Override
             public void nodeRemoved(final TopologyEvent event) {
                 synchronized (ProcessingThreadsCounter.this) {
-                    processingThreads -= extractProcessingThreads(
+                    processingThreadsCount -= extractProcessingThreads(
                             event.getNodeOrPeer().getManagementInfo().getSystemInfo());
-                    Assertions.assertThat(processingThreads).isGreaterThanOrEqualTo(0);
+                    nodesCount--;
+                    Assertions.assertThat(processingThreadsCount).isGreaterThanOrEqualTo(0);
+                    Assertions.assertThat(nodesCount).isGreaterThanOrEqualTo(0);
                 }
             }
 
             @Override
             public void nodeAdded(final TopologyEvent event) {
                 synchronized (ProcessingThreadsCounter.this) {
-                    processingThreads += extractProcessingThreads(
+                    processingThreadsCount += extractProcessingThreads(
                             event.getNodeOrPeer().getManagementInfo().getSystemInfo());
+                    nodesCount++;
                 }
             }
 
@@ -57,29 +63,37 @@ public class ProcessingThreadsCounter {
             @Override
             public void driverRemoved(final TopologyEvent event) {
                 synchronized (ProcessingThreadsCounter.this) {
-                    processingThreads = countProcessingThreads(topologyManager);
+                    final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads(topologyManager);
+                    processingThreadsCount = processingThreadsAndNodes.getFirst();
+                    nodesCount = processingThreadsAndNodes.getSecond();
                 }
             }
 
             @Override
             public void driverAdded(final TopologyEvent event) {
                 synchronized (ProcessingThreadsCounter.this) {
-                    processingThreads = countProcessingThreads(topologyManager);
+                    final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads(topologyManager);
+                    processingThreadsCount = processingThreadsAndNodes.getFirst();
+                    nodesCount = processingThreadsAndNodes.getSecond();
                 }
             }
         });
         synchronized (this) {
-            processingThreads = countProcessingThreads(topologyManager);
+            final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads(topologyManager);
+            processingThreadsCount = processingThreadsAndNodes.getFirst();
+            nodesCount = processingThreadsAndNodes.getSecond();
         }
     }
 
-    private int countProcessingThreads(final TopologyManager manager) {
+    private Pair<Integer, Integer> countProcessingThreads(final TopologyManager manager) {
         final AtomicInteger processingThreads = new AtomicInteger(0);
+        final AtomicInteger nodes = new AtomicInteger(0);
         new ATopologyVisitor() {
             @Override
             protected void visitNode(final TopologyNode node) {
                 final JPPFSystemInformation systemInfo = node.getManagementInfo().getSystemInfo();
                 processingThreads.addAndGet(extractProcessingThreads(systemInfo));
+                nodes.incrementAndGet();
             }
 
             @Override
@@ -87,7 +101,7 @@ public class ProcessingThreadsCounter {
                 //ignore
             }
         }.process(manager);
-        return processingThreads.get();
+        return Pair.of(processingThreads.get(), nodes.get());
     }
 
     private Integer extractProcessingThreads(final JPPFSystemInformation nodeConfig) {
@@ -107,8 +121,12 @@ public class ProcessingThreadsCounter {
         return nbThreads;
     }
 
-    public synchronized int getProcessingThreads() {
-        return processingThreads;
+    public synchronized int getProcessingThreadsCount() {
+        return processingThreadsCount;
+    }
+
+    public int getNodesCount() {
+        return nodesCount;
     }
 
     public TopologyManager getTopologyManager() {
