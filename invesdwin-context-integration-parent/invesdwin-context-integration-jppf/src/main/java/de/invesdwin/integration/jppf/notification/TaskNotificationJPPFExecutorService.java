@@ -7,18 +7,18 @@ import java.util.Map;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.jppf.client.concurrent.JPPFExecutorService;
 import org.jppf.client.event.JobEvent;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.jobs.JobMonitoringEvent;
 import org.jppf.client.monitoring.jobs.JobMonitoringListener;
 
+import de.invesdwin.integration.jppf.client.ConfiguredJPPFExecutorService;
 import de.invesdwin.integration.jppf.notification.internal.BroadcastingNotificationListener;
 import de.invesdwin.integration.jppf.notification.internal.NodeNotificationListeners;
 import de.invesdwin.util.assertions.Assertions;
 
 @ThreadSafe
-public class TaskNotificationJPPFExecutorService extends JPPFExecutorService
+public class TaskNotificationJPPFExecutorService extends ConfiguredJPPFExecutorService
         implements JobMonitoringListener, Closeable {
 
     private final JobMonitor jobMonitor;

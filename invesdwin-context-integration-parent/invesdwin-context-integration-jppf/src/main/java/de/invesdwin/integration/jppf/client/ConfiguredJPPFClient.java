@@ -6,7 +6,6 @@ import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
 import org.jppf.client.JPPFClient;
-import org.jppf.client.concurrent.JPPFExecutorService;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
@@ -29,11 +28,11 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     private static TopologyManager topologyManager;
     private static JobMonitor jobMonitor;
     private static ProcessingThreadsCounter processingThreadsCounter;
-    private static JPPFExecutorService executorService;
+    private static ConfiguredJPPFExecutorService executorService;
 
-    public static synchronized JPPFExecutorService getBatchedExecutorService() {
+    public static synchronized ConfiguredJPPFExecutorService getBatchedExecutorService() {
         if (executorService == null) {
-            executorService = new JPPFExecutorService(getInstance());
+            executorService = new ConfiguredJPPFExecutorService(getInstance());
             executorService.setBatchSize(DEFAULT_BATCH_SIZE);
             executorService.setBatchTimeout(DEFAULT_BATCH_TIMEOUT.longValue(FTimeUnit.MILLISECONDS));
         }
