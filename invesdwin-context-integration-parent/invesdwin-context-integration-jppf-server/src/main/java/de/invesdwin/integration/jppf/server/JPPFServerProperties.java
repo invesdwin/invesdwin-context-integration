@@ -8,7 +8,7 @@ import org.jppf.utils.JPPFConfiguration;
 import org.jppf.utils.configuration.JPPFProperties;
 
 import de.invesdwin.context.integration.IntegrationProperties;
-import de.invesdwin.integration.jppf.JPPFClientProperties;
+import de.invesdwin.integration.jppf.node.JPPFNodeProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
 
@@ -16,10 +16,14 @@ import de.invesdwin.util.lang.uri.URIs;
 public final class JPPFServerProperties {
 
     public static final boolean PEER_SSL_ENABLED;
+    public static final boolean LOCAL_NODE_ENABLED;
+    public static final boolean INITIALIZED;
 
     static {
-        Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
-        PEER_SSL_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.PEER_SSL_ENABLED);
+        Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
+        PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
+        LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
+        INITIALIZED = true;
     }
 
     private JPPFServerProperties() {}

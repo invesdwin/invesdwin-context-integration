@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-jppf-server</artifactId>
+	<artifactId>invesdwin-context-integration-jppf-node</artifactId>
 	<packaging>jar</packaging>
 
 	<build>
@@ -29,12 +29,12 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-jppf-node</artifactId>
+			<artifactId>invesdwin-context-integration-jppf</artifactId>
 		</dependency>
 
 		<dependency>
 			<groupId>org.jppf</groupId>
-			<artifactId>jppf-server</artifactId>
+			<artifactId>jppf-node</artifactId>
 		</dependency>
 	</dependencies>
 

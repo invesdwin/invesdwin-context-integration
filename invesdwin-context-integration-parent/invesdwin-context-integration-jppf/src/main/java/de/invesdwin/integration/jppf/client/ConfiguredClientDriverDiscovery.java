@@ -24,7 +24,8 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
 
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
-    public static final long REFRESH_INTERVAL_MILLIS = Duration.ONE_MINUTE.longValue(FTimeUnit.MILLISECONDS);
+    public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
+    public static final long REFRESH_INTERVAL_MILLIS = REFRESH_INTERVAL.longValue(FTimeUnit.MILLISECONDS);
 
     private IRegistryService registryService;
 
