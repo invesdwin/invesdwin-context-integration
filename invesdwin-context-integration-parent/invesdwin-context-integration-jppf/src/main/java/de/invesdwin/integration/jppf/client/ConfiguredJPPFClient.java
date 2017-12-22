@@ -1,5 +1,7 @@
 package de.invesdwin.integration.jppf.client;
 
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.Immutable;
@@ -8,10 +10,11 @@ import javax.inject.Named;
 import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
+import org.jppf.location.URLLocation;
+import org.jppf.node.protocol.ClassPath;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.integration.jppf.JPPFClientProperties;
-import de.invesdwin.integration.jppf.ProcessingThreadsCounter;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.time.duration.Duration;
@@ -89,6 +92,16 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     @Override
     public Class<?> getObjectType() {
         return ConfiguredJPPFClient.class;
+    }
+
+    public static void addContextJarsToClassPath(final ClassPath classPath) {
+        final URLClassLoader classLoader = (URLClassLoader) Thread.currentThread().getContextClassLoader();
+        for (final URL url : classLoader.getURLs()) {
+            final String urlStr = url.toString();
+            if (urlStr.endsWith(".jar")) {
+                classPath.add(urlStr, new URLLocation(url));
+            }
+        }
     }
 
 }

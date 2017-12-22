@@ -1,4 +1,4 @@
-package de.invesdwin.integration.jppf;
+package de.invesdwin.integration.jppf.client;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -15,6 +15,7 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
+import de.invesdwin.integration.jppf.ATopologyVisitor;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.bean.tuple.Pair;
 
