@@ -71,7 +71,7 @@ public class CsvWriter implements Closeable {
     }
 
     public CsvWriter withNewLine(final String newline) {
-        Assertions.assertThat(newline).isNotBlank();
+        Assertions.assertThat(newline).isNotEmpty();
         newlineBytes = STR_BYTES.get(newline);
         return this;
     }
