@@ -1,0 +1,63 @@
+package de.invesdwin.context.integration.streams;
+
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import javax.annotation.concurrent.Immutable;
+
+import de.invesdwin.util.math.decimal.Decimal;
+import de.invesdwin.util.math.decimal.scaled.ByteSize;
+import de.invesdwin.util.math.decimal.scaled.ByteSizeScale;
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
+import net.jpountz.lz4.LZ4Factory;
+import net.jpountz.xxhash.XXHashFactory;
+
+@Immutable
+public final class LZ4Streams {
+
+    public static final int DEFAULT_COMPRESSION_LEVEL = 99;
+    public static final int LARGE_BLOCK_SIZE = new ByteSize(new Decimal("1"), ByteSizeScale.MEGABYTES)
+            .getValue(ByteSizeScale.BYTES)
+            .intValue();
+    /*
+     * 64KB is default in LZ4OutputStream (1 << 16) though 128K is almost the same speed with a bit better compression
+     * on fast compressor
+     * 
+     * http://java-performance.info/performance-general-compression/
+     */
+    public static final int DEFAULT_BLOCK_SIZE = new ByteSize(new Decimal("64"), ByteSizeScale.KILOBYTES)
+            .getValue(ByteSizeScale.BYTES)
+            .intValue();
+    public static final int DEFAULT_SEED = 0x9747b28c;
+
+    private LZ4Streams() {}
+
+    public static LZ4BlockOutputStream newDefaultLZ4BlockOutputStream(final OutputStream out) {
+        return newHighLZ4BlockOutputStream(out, DEFAULT_BLOCK_SIZE, DEFAULT_COMPRESSION_LEVEL);
+    }
+
+    public static LZ4BlockOutputStream newLargeLZ4BlockOutputStream(final OutputStream out) {
+        return newHighLZ4BlockOutputStream(out, LARGE_BLOCK_SIZE, DEFAULT_COMPRESSION_LEVEL);
+    }
+
+    public static LZ4BlockOutputStream newHighLZ4BlockOutputStream(final OutputStream out, final int blockSize,
+            final int compressionLevel) {
+        return new LZ4BlockOutputStream(out, blockSize, LZ4Factory.fastestInstance().highCompressor(compressionLevel),
+                XXHashFactory.fastestInstance().newStreamingHash32(DEFAULT_SEED).asChecksum(), true);
+    }
+
+    public static LZ4BlockOutputStream newFastLZ4BlockOutputStream(final OutputStream out) {
+        return newFastLZ4BlockOutputStream(out, DEFAULT_BLOCK_SIZE);
+    }
+
+    public static LZ4BlockOutputStream newFastLZ4BlockOutputStream(final OutputStream out, final int blockSize) {
+        return new LZ4BlockOutputStream(out, blockSize, LZ4Factory.fastestInstance().fastCompressor(),
+                XXHashFactory.fastestInstance().newStreamingHash32(DEFAULT_SEED).asChecksum(), true);
+    }
+
+    public static LZ4BlockInputStream newDefaultLZ4BlockInputStream(final InputStream in) {
+        return new LZ4BlockInputStream(in, LZ4Factory.fastestInstance().fastDecompressor());
+    }
+
+}
