@@ -14,7 +14,7 @@ import org.apache.commons.compress.compressors.lz4.FramedLZ4CompressorOutputStre
 @Immutable
 public final class LZ4Streams {
 
-    public static final BlockSize LARGE_BLOCK_SIZE = BlockSize.M4;
+    public static final BlockSize LARGE_BLOCK_SIZE = BlockSize.M1;
     /*
      * 64KB is default in LZ4OutputStream (1 << 16) though 128K is almost the same speed with a bit better compression
      * on fast compressor
