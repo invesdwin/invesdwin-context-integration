@@ -18,7 +18,6 @@ import java.io.OutputStream;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.apache.commons.compress.compressors.lz4.FramedLZ4CompressorOutputStream;
 import org.jppf.serialization.JPPFCompositeSerialization;
 
 import de.invesdwin.context.integration.streams.LZ4Streams;
@@ -27,11 +26,11 @@ import de.invesdwin.context.integration.streams.LZ4Streams;
 public class HighLZ4Serialization extends JPPFCompositeSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
-        final FramedLZ4CompressorOutputStream lz4os = LZ4Streams.newLargeLZ4OutputStream(os);
+        final OutputStream lz4os = LZ4Streams.newLargeLZ4OutputStream(os);
         try {
             getDelegate().serialize(o, lz4os);
         } finally {
-            lz4os.finish();
+            lz4os.close();
         }
     }
 
