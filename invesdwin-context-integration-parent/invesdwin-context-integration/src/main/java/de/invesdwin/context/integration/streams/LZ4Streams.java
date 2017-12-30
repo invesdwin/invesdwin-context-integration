@@ -14,7 +14,7 @@ import org.apache.commons.compress.compressors.lz4.FramedLZ4CompressorOutputStre
 @Immutable
 public final class LZ4Streams {
 
-    public static final BlockSize LARGE_BLOCK_SIZE = BlockSize.M1;
+    public static final BlockSize LARGE_BLOCK_SIZE = BlockSize.M4;
     public static final BlockSize DEFAULT_BLOCK_SIZE = BlockSize.K64;
 
     private LZ4Streams() {}
