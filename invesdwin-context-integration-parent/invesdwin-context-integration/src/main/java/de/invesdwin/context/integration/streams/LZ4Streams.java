@@ -25,15 +25,15 @@ public final class LZ4Streams {
 
     private LZ4Streams() {}
 
-    public static FramedLZ4CompressorOutputStream newDefaultLZ4BlockOutputStream(final OutputStream out) {
-        return newHighLZ4BlockOutputStream(out, DEFAULT_BLOCK_SIZE);
+    public static FramedLZ4CompressorOutputStream newDefaultLZ4OutputStream(final OutputStream out) {
+        return newHighLZ4OutputStream(out, DEFAULT_BLOCK_SIZE);
     }
 
-    public static FramedLZ4CompressorOutputStream newLargeLZ4BlockOutputStream(final OutputStream out) {
-        return newHighLZ4BlockOutputStream(out, LARGE_BLOCK_SIZE);
+    public static FramedLZ4CompressorOutputStream newLargeLZ4OutputStream(final OutputStream out) {
+        return newHighLZ4OutputStream(out, LARGE_BLOCK_SIZE);
     }
 
-    public static FramedLZ4CompressorOutputStream newHighLZ4BlockOutputStream(final OutputStream out,
+    public static FramedLZ4CompressorOutputStream newHighLZ4OutputStream(final OutputStream out,
             final BlockSize blockSize) {
         try {
             return new FramedLZ4CompressorOutputStream(out, new FramedLZ4CompressorOutputStream.Parameters(blockSize,
@@ -43,11 +43,11 @@ public final class LZ4Streams {
         }
     }
 
-    public static FramedLZ4CompressorOutputStream newFastLZ4BlockOutputStream(final OutputStream out) {
-        return newFastLZ4BlockOutputStream(out, DEFAULT_BLOCK_SIZE);
+    public static FramedLZ4CompressorOutputStream newFastLZ4OutputStream(final OutputStream out) {
+        return newFastLZ4OutputStream(out, DEFAULT_BLOCK_SIZE);
     }
 
-    public static FramedLZ4CompressorOutputStream newFastLZ4BlockOutputStream(final OutputStream out,
+    public static FramedLZ4CompressorOutputStream newFastLZ4OutputStream(final OutputStream out,
             final BlockSize blockSize) {
         try {
             return new FramedLZ4CompressorOutputStream(out, new FramedLZ4CompressorOutputStream.Parameters(blockSize,
@@ -57,7 +57,7 @@ public final class LZ4Streams {
         }
     }
 
-    public static FramedLZ4CompressorInputStream newDefaultLZ4BlockInputStream(final InputStream in) {
+    public static FramedLZ4CompressorInputStream newDefaultLZ4InputStream(final InputStream in) {
         try {
             return new FramedLZ4CompressorInputStream(in);
         } catch (final IOException e) {
