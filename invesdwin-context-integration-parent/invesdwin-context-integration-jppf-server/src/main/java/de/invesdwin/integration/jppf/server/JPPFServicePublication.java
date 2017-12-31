@@ -14,6 +14,7 @@ public class JPPFServicePublication extends WebServicePublicationSupport {
 
     @Override
     public URI getUri() {
+        ConfiguredJPPFDriver.getInstance();
         return JPPFServerProperties.getServerBindUri();
     }
 
