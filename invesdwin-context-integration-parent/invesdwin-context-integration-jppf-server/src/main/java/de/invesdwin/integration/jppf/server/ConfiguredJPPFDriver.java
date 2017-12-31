@@ -17,7 +17,7 @@ import de.invesdwin.util.lang.Reflections;
 @Immutable
 public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, IStartupHook, IPreStartupHook {
 
-    private static boolean createInstance;
+    private static boolean createInstance = true;
     private static JPPFDriver instance;
 
     private ConfiguredJPPFDriver() {}
@@ -61,7 +61,10 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
 
     @Override
     public void startup() throws Exception {
-        Assertions.checkNotNull(getInstance());
+        if (isCreateInstance()) {
+            Assertions.checkNotNull(getInstance());
+        }
+
     }
 
     @Override

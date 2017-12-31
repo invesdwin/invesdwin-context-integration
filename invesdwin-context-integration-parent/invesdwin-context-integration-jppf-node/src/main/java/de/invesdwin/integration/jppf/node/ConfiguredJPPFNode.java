@@ -14,7 +14,7 @@ import de.invesdwin.util.assertions.Assertions;
 @Immutable
 public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartupHook {
 
-    private static boolean createInstance;
+    private static boolean createInstance = true;
     private static JPPFNode instance;
 
     private ConfiguredJPPFNode() {}
@@ -53,6 +53,8 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
 
     @Override
     public void startup() throws Exception {
-        Assertions.checkNotNull(getInstance());
+        if (isCreateInstance()) {
+            Assertions.checkNotNull(getInstance());
+        }
     }
 }
