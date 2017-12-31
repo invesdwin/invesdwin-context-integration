@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.retry.hook.RetryHookSupport;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.URIsConnect;
 
@@ -140,11 +141,15 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
     private boolean checkDownloadPossible(final URI accessUri) {
         boolean isOk = false;
         if (accessUri != null) {
-            if (maybeWithBasicAuth(URIs.connect(accessUri)).isDownloadPossible()) {
-                isOk = true;
+            if (Strings.equalsAnyIgnoreCase(accessUri.getScheme(), "http", "https")) {
+                if (maybeWithBasicAuth(URIs.connect(accessUri)).isDownloadPossible()) {
+                    isOk = true;
+                } else {
+                    //check rest service aswell
+                    isOk = maybeWithBasicAuth(URIs.connect(accessUri.toString() + "/")).isDownloadPossible();
+                }
             } else {
-                //check rest service aswell
-                isOk = maybeWithBasicAuth(URIs.connect(accessUri.toString() + "/")).isDownloadPossible();
+                isOk = URIs.connect(accessUri).isServerResponding();
             }
         }
         if (!isOk) {
