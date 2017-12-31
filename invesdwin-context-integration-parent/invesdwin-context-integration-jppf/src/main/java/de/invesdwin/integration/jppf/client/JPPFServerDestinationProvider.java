@@ -14,4 +14,9 @@ public class JPPFServerDestinationProvider extends RegistryDestinationProvider {
         setServiceName(JPPFClientProperties.SERVICE_NAME);
     }
 
+    @Override
+    public boolean isRetryWhenUnavailable() {
+        return false;
+    }
+
 }
