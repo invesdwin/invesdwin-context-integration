@@ -2,7 +2,6 @@ package de.invesdwin.integration.jppf.client;
 
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
@@ -16,7 +15,6 @@ import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
@@ -81,10 +79,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
             instance = new JPPFClient();
             instance.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
-            final ExecutorService executor = Executors
-                    .newFixedThreadPool(ConfiguredJPPFClient.class.getSimpleName() + "_INIT", 1);
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
-            executor.shutdown();
         }
         return instance;
     }
