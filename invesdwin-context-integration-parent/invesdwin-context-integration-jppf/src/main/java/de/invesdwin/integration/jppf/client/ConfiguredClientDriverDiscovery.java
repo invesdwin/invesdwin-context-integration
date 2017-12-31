@@ -23,7 +23,6 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @ThreadSafe
 public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
 
-    public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
     public static final long REFRESH_INTERVAL_MILLIS = REFRESH_INTERVAL.longValue(FTimeUnit.MILLISECONDS);
 
@@ -41,10 +40,10 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
                 while (!isShutdown()) {
                     try {
                         final Collection<ServiceBinding> peers = getRegistryService()
-                                .queryServiceBindings(SERVICE_NAME);
+                                .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
                         if (peers == null || peers.isEmpty()) {
                             throw new RetryLaterRuntimeException(
-                                    "No instances of service [" + SERVICE_NAME + "] found");
+                                    "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
                         }
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();

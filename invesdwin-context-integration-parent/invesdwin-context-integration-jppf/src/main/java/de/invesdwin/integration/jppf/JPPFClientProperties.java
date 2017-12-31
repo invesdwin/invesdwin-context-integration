@@ -12,6 +12,7 @@ import de.invesdwin.context.system.properties.SystemProperties;
 @Immutable
 public final class JPPFClientProperties {
 
+    public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
 

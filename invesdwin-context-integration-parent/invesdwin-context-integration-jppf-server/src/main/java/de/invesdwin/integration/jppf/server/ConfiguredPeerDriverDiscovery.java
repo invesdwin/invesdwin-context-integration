@@ -15,13 +15,13 @@ import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
+import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.integration.jppf.client.ConfiguredClientDriverDiscovery;
 
 // http://www.jppf.org/doc/5.2/index.php?title=Custom_discovery_of_peer_drivers
 @ThreadSafe
 public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
 
-    public static final String SERVICE_NAME = ConfiguredClientDriverDiscovery.SERVICE_NAME;
     public static final long REFRESH_INTERVAL_MILLIS = ConfiguredClientDriverDiscovery.REFRESH_INTERVAL_MILLIS;
 
     private IRegistryService registryService;
@@ -38,7 +38,7 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
                 while (!isShutdown()) {
                     try {
                         final Collection<ServiceBinding> peers = getRegistryService()
-                                .queryServiceBindings(SERVICE_NAME);
+                                .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
                         for (final ServiceBinding peer : peers) {
                             final URI accessUri = peer.getAccessUri();
                             if (!accessUri.equals(JPPFServerProperties.getServerBindUri())) {

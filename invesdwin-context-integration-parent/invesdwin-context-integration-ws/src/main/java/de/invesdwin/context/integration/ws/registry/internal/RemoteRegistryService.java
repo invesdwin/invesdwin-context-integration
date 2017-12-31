@@ -54,8 +54,8 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     @Override
     public Collection<ServiceBinding> queryServiceBindings(final String serviceName) throws IOException {
         final String serviceNameEncoded = URIs.encode(Strings.asStringEmptyText(serviceName));
-        final String response = connect(QUERY_SERVICE_BINDINGS.replace(SERVICE_NAME_PARAM, serviceNameEncoded))
-                .downloadThrowing();
+        final URIsConnect connect = connect(QUERY_SERVICE_BINDINGS.replace(SERVICE_NAME_PARAM, serviceNameEncoded));
+        final String response = connect.downloadThrowing();
         final Collection<ServiceBinding> result = Marshallers.fromJson(response, REF_SERVICE_BINDING_COLLECTION);
         return result;
     }

@@ -78,7 +78,9 @@ public class RegistryServiceStubImpl implements IRegistryService {
         }
         if (found.size() == 0) {
             final URI overrideURI = SERVICENAME_ACCESSURI_OVERRIDES.get(serviceName);
-            found.add(registerServiceBinding(serviceName, overrideURI));
+            if (overrideURI != null) {
+                found.add(registerServiceBinding(serviceName, overrideURI));
+            }
         }
         return found;
     }

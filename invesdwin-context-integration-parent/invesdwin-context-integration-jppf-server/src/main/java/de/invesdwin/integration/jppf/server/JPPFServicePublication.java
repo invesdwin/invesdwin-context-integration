@@ -6,8 +6,9 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Named;
 
 import de.invesdwin.context.integration.ws.registry.publication.WebServicePublicationSupport;
+import de.invesdwin.integration.jppf.JPPFClientProperties;
 
-@Named
+@Named(JPPFClientProperties.SERVICE_NAME)
 @ThreadSafe
 public class JPPFServicePublication extends WebServicePublicationSupport {
 
