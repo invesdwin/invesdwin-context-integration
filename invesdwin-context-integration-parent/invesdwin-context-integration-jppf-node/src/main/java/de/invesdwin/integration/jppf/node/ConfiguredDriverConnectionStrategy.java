@@ -21,6 +21,7 @@ import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
+import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.integration.jppf.client.ConfiguredClientDriverDiscovery;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
@@ -29,7 +30,6 @@ import de.invesdwin.util.time.fdate.FDate;
 @ThreadSafe
 public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrategy {
 
-    public static final String SERVICE_NAME = ConfiguredClientDriverDiscovery.SERVICE_NAME;
     public static final Duration REFRESH_INTERVAL = ConfiguredClientDriverDiscovery.REFRESH_INTERVAL;
 
     private IRegistryService registryService;
@@ -62,9 +62,11 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
     private Collection<? extends DriverConnectionInfo> discoverConnections() {
         try {
             final List<DriverConnectionInfo> connections = new ArrayList<>();
-            final Collection<ServiceBinding> peers = getRegistryService().queryServiceBindings(SERVICE_NAME);
+            final Collection<ServiceBinding> peers = getRegistryService()
+                    .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
             if (peers == null || peers.isEmpty()) {
-                throw new RetryLaterRuntimeException("No instances of service [" + SERVICE_NAME + "] found");
+                throw new RetryLaterRuntimeException(
+                        "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
             }
             for (final ServiceBinding peer : peers) {
                 final URI accessUri = peer.getAccessUri();
