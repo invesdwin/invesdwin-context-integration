@@ -8,6 +8,7 @@ import org.jppf.utils.JPPFConfiguration;
 import org.jppf.utils.configuration.JPPFProperties;
 
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.integration.jppf.node.JPPFNodeProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
@@ -29,8 +30,13 @@ public final class JPPFServerProperties {
     private JPPFServerProperties() {}
 
     public static URI getServerBindUri() {
-        return URIs.asUri(
-                "p://" + IntegrationProperties.HOSTNAME + ":" + JPPFConfiguration.get(JPPFProperties.SERVER_SSL_PORT));
+        final int port;
+        if (JPPFClientProperties.CLIENT_SSL_ENABLED) {
+            port = JPPFConfiguration.get(JPPFProperties.SERVER_SSL_PORT);
+        } else {
+            port = JPPFConfiguration.get(JPPFProperties.SERVER_PORT);
+        }
+        return URIs.asUri("p://" + IntegrationProperties.HOSTNAME + ":" + port);
     }
 
 }
