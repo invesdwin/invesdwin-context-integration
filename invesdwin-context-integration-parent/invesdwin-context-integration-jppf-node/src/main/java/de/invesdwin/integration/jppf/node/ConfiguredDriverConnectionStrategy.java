@@ -1,6 +1,5 @@
 package de.invesdwin.integration.jppf.node;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,10 +18,9 @@ import org.jppf.node.connection.JPPFDriverConnectionInfo;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.ws.registry.IRegistryService;
-import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.integration.jppf.client.ConfiguredClientDriverDiscovery;
+import de.invesdwin.integration.jppf.client.JPPFServerDestinationProvider;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 
@@ -32,7 +30,7 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
 
     public static final Duration REFRESH_INTERVAL = ConfiguredClientDriverDiscovery.REFRESH_INTERVAL;
 
-    private IRegistryService registryService;
+    private JPPFServerDestinationProvider destinationProvider;
 
     private FDate lastRefresh = FDate.MIN_DATE;
 
@@ -60,31 +58,25 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
 
     @Retry
     private Collection<? extends DriverConnectionInfo> discoverConnections() {
-        try {
-            final List<DriverConnectionInfo> connections = new ArrayList<>();
-            final Collection<ServiceBinding> peers = getRegistryService()
-                    .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
-            if (peers == null || peers.isEmpty()) {
-                throw new RetryLaterRuntimeException(
-                        "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
-            }
-            for (final ServiceBinding peer : peers) {
-                final URI accessUri = peer.getAccessUri();
-                final DriverConnectionInfo info = new JPPFDriverConnectionInfo(JPPFNodeProperties.PEER_SSL_ENABLED,
-                        accessUri.getHost(), accessUri.getPort(), -1);
-                connections.add(info);
-            }
-            return connections;
-        } catch (final IOException e) {
-            throw new RetryLaterRuntimeException(e);
+        final List<DriverConnectionInfo> connections = new ArrayList<>();
+        final Collection<URI> peers = getDestinationProvider().getDestinations();
+        if (peers == null || peers.isEmpty()) {
+            throw new RetryLaterRuntimeException(
+                    "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
         }
+        for (final URI peer : peers) {
+            final DriverConnectionInfo info = new JPPFDriverConnectionInfo(JPPFNodeProperties.PEER_SSL_ENABLED,
+                    peer.getHost(), peer.getPort(), -1);
+            connections.add(info);
+        }
+        return connections;
     }
 
-    private IRegistryService getRegistryService() {
-        if (registryService == null) {
-            registryService = MergedContext.getInstance().getBean(IRegistryService.class);
+    private JPPFServerDestinationProvider getDestinationProvider() {
+        if (destinationProvider == null) {
+            destinationProvider = MergedContext.getInstance().getBean(JPPFServerDestinationProvider.class);
         }
-        return registryService;
+        return destinationProvider;
     }
 
 }

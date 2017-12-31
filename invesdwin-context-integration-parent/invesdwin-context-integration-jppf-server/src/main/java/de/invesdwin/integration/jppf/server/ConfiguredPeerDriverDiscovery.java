@@ -1,6 +1,5 @@
 package de.invesdwin.integration.jppf.server;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
@@ -11,12 +10,9 @@ import org.jppf.discovery.PeerDriverDiscovery;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.retry.ARetryingRunnable;
-import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
-import de.invesdwin.context.integration.ws.registry.IRegistryService;
-import de.invesdwin.context.integration.ws.registry.ServiceBinding;
-import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.integration.jppf.client.ConfiguredClientDriverDiscovery;
+import de.invesdwin.integration.jppf.client.JPPFServerDestinationProvider;
 
 // http://www.jppf.org/doc/5.2/index.php?title=Custom_discovery_of_peer_drivers
 @ThreadSafe
@@ -24,7 +20,7 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
 
     public static final long REFRESH_INTERVAL_MILLIS = ConfiguredClientDriverDiscovery.REFRESH_INTERVAL_MILLIS;
 
-    private IRegistryService registryService;
+    private JPPFServerDestinationProvider destinationProvider;
 
     private boolean shutdown;
 
@@ -36,23 +32,16 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
             @Override
             protected void runRetryable() throws Exception {
                 while (!isShutdown()) {
-                    try {
-                        final Collection<ServiceBinding> peers = getRegistryService()
-                                .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
-                        for (final ServiceBinding peer : peers) {
-                            final URI accessUri = peer.getAccessUri();
-                            if (!accessUri.equals(JPPFServerProperties.getServerBindUri())) {
-                                final DriverConnectionInfo info = new DriverConnectionInfo(accessUri.toString(),
-                                        JPPFServerProperties.PEER_SSL_ENABLED, accessUri.getHost(),
-                                        accessUri.getPort());
-                                newConnection(info);
-                            }
+                    final Collection<URI> peers = getDestinationProvider().getDestinations();
+                    for (final URI peer : peers) {
+                        if (!peer.equals(JPPFServerProperties.getServerBindUri())) {
+                            final DriverConnectionInfo info = new DriverConnectionInfo(peer.toString(),
+                                    JPPFServerProperties.PEER_SSL_ENABLED, peer.getHost(), peer.getPort());
+                            newConnection(info);
                         }
-                        synchronized (this) { // wait a few seconds before the next lookup
-                            wait(REFRESH_INTERVAL_MILLIS);
-                        }
-                    } catch (final IOException e) {
-                        throw new RetryLaterRuntimeException(e);
+                    }
+                    synchronized (this) { // wait a few seconds before the next lookup
+                        wait(REFRESH_INTERVAL_MILLIS);
                     }
                 }
             }
@@ -60,11 +49,11 @@ public class ConfiguredPeerDriverDiscovery extends PeerDriverDiscovery {
         retry.run();
     }
 
-    private IRegistryService getRegistryService() {
-        if (registryService == null) {
-            registryService = MergedContext.getInstance().getBean(IRegistryService.class);
+    private JPPFServerDestinationProvider getDestinationProvider() {
+        if (destinationProvider == null) {
+            destinationProvider = MergedContext.getInstance().getBean(JPPFServerDestinationProvider.class);
         }
-        return registryService;
+        return destinationProvider;
     }
 
     public synchronized boolean isShutdown() {

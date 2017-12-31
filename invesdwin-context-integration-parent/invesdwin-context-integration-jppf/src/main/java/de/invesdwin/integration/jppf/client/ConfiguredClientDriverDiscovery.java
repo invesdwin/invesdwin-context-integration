@@ -1,6 +1,5 @@
 package de.invesdwin.integration.jppf.client;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.Collection;
 
@@ -13,8 +12,6 @@ import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.retry.ARetryingRunnable;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
-import de.invesdwin.context.integration.ws.registry.IRegistryService;
-import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -26,7 +23,7 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
     public static final long REFRESH_INTERVAL_MILLIS = REFRESH_INTERVAL.longValue(FTimeUnit.MILLISECONDS);
 
-    private IRegistryService registryService;
+    private JPPFServerDestinationProvider destinationProvider;
 
     private boolean shutdown;
 
@@ -38,24 +35,18 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
             @Override
             protected void runRetryable() throws Exception {
                 while (!isShutdown()) {
-                    try {
-                        final Collection<ServiceBinding> peers = getRegistryService()
-                                .queryServiceBindings(JPPFClientProperties.SERVICE_NAME);
-                        if (peers == null || peers.isEmpty()) {
-                            throw new RetryLaterRuntimeException(
-                                    "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
-                        }
-                        for (final ServiceBinding peer : peers) {
-                            final URI accessUri = peer.getAccessUri();
-                            final ClientConnectionPoolInfo info = new ClientConnectionPoolInfo(accessUri.toString(),
-                                    JPPFClientProperties.CLIENT_SSL_ENABLED, accessUri.getHost(), accessUri.getPort());
-                            newConnection(info);
-                        }
-                        synchronized (this) { // wait a few seconds before the next lookup
-                            wait(REFRESH_INTERVAL_MILLIS);
-                        }
-                    } catch (final IOException e) {
-                        throw new RetryLaterRuntimeException(e);
+                    final Collection<URI> peers = getDestinationProvider().getDestinations();
+                    if (peers == null || peers.isEmpty()) {
+                        throw new RetryLaterRuntimeException(
+                                "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
+                    }
+                    for (final URI peer : peers) {
+                        final ClientConnectionPoolInfo info = new ClientConnectionPoolInfo(peer.toString(),
+                                JPPFClientProperties.CLIENT_SSL_ENABLED, peer.getHost(), peer.getPort());
+                        newConnection(info);
+                    }
+                    synchronized (this) { // wait a few seconds before the next lookup
+                        wait(REFRESH_INTERVAL_MILLIS);
                     }
                 }
             }
@@ -63,11 +54,11 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
         retry.run();
     }
 
-    private IRegistryService getRegistryService() {
-        if (registryService == null) {
-            registryService = MergedContext.getInstance().getBean(IRegistryService.class);
+    private JPPFServerDestinationProvider getDestinationProvider() {
+        if (destinationProvider == null) {
+            destinationProvider = MergedContext.getInstance().getBean(JPPFServerDestinationProvider.class);
         }
-        return registryService;
+        return destinationProvider;
     }
 
     public synchronized boolean isShutdown() {
