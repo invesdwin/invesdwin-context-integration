@@ -1,6 +1,6 @@
 <configuration>
 
-	<logger name="org.jppf" additivity="false" level="TRACE">
+	<logger name="org.jppf" additivity="false" level="DEBUG">
 		<appender-ref ref="stdout" />
 		<appender-ref ref="stderr" />
 		<appender-ref ref="common" />
