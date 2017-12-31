@@ -22,9 +22,10 @@ import org.nustaq.serialization.simpleapi.FSTCoder;
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
-    private final FSTCoder coder = new DefaultCoder(true);
+    private final FSTCoder coder;
 
-    {
+    public RemoteFastJPPFSerialization() {
+        this.coder = new DefaultCoder(true);
         final FSTConfiguration conf = coder.getConf();
         conf.setStreamCoderFactory(new StreamCoderFactory() {
 
