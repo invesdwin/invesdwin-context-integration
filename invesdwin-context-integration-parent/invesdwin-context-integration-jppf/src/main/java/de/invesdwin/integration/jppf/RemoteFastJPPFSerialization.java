@@ -13,8 +13,6 @@ import org.nustaq.serialization.FSTDecoder;
 import org.nustaq.serialization.FSTEncoder;
 import org.nustaq.serialization.coders.FSTStreamDecoder;
 import org.nustaq.serialization.coders.FSTStreamEncoder;
-import org.nustaq.serialization.simpleapi.DefaultCoder;
-import org.nustaq.serialization.simpleapi.FSTCoder;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
@@ -22,11 +20,10 @@ import org.nustaq.serialization.simpleapi.FSTCoder;
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
-    private final FSTCoder coder;
+    private FSTConfiguration conf;
 
     public RemoteFastJPPFSerialization() {
-        this.coder = new DefaultCoder(true);
-        final FSTConfiguration conf = coder.getConf();
+        this.conf = FSTConfiguration.createDefaultConfiguration();
         conf.setStreamCoderFactory(new StreamCoderFactory() {
 
             private final ThreadLocal<?> input = new ThreadLocal<Object>();
@@ -65,13 +62,13 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
-        final byte[] bytes = coder.toByteArray(o);
+        final byte[] bytes = conf.asByteArray(o);
         IOUtils.write(bytes, os);
     }
 
     @Override
     public Object deserialize(final InputStream is) throws Exception {
         final byte[] bytes = IOUtils.toByteArray(is);
-        return coder.toObject(bytes);
+        return conf.asObject(bytes);
     }
 }
