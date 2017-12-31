@@ -30,7 +30,7 @@ public class ConfiguredJPPFExecutorServiceTest extends ATest {
             //CHECKSTYLE:OFF
             System.out.println("+++++++++++++ " + i);
             //CHECKSTYLE:ON
-            FTimeUnit.SECONDS.sleep(3);
+            FTimeUnit.SECONDS.sleep(1);
             //CHECKSTYLE:OFF
             System.out.println("------------- " + i);
             //CHECKSTYLE:ON
