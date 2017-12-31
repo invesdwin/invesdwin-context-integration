@@ -1,5 +1,6 @@
 package de.invesdwin.integration.jppf.client;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -17,7 +18,27 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @NotThreadSafe
 public class ConfiguredJPPFExecutorServiceTest extends ATest {
 
-    private static final int TASKS_COUNT = 100;
+    public static final class RemoteTask implements Callable<Integer>, Serializable {
+        private final int i;
+
+        private RemoteTask(final int i) {
+            this.i = i;
+        }
+
+        @Override
+        public Integer call() throws Exception {
+            //CHECKSTYLE:OFF
+            System.out.println("+++++++++++++ " + i);
+            //CHECKSTYLE:ON
+            FTimeUnit.SECONDS.sleep(3);
+            //CHECKSTYLE:OFF
+            System.out.println("------------- " + i);
+            //CHECKSTYLE:ON
+            return i;
+        }
+    }
+
+    private static final int TASKS_COUNT = 20;
 
     @Test
     public void test() throws InterruptedException {
@@ -26,17 +47,11 @@ public class ConfiguredJPPFExecutorServiceTest extends ATest {
         final List<Callable<Integer>> tasks = new ArrayList<>();
         for (int i = 0; i < TASKS_COUNT; i++) {
             final int finalI = i;
-            tasks.add(new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    FTimeUnit.SECONDS.sleep(10);
-                    return finalI;
-                }
-            });
+            tasks.add(new RemoteTask(finalI));
         }
         final List<Future<Integer>> futures = executor.invokeAll(tasks);
         final List<Integer> results = Futures.get(futures);
-        for (int i = 0; i < 100; i++) {
+        for (int i = 0; i < TASKS_COUNT; i++) {
             Assertions.checkEquals(results.get(i), i);
         }
     }
