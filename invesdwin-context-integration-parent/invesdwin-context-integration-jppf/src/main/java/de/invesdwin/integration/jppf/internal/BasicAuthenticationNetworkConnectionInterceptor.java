@@ -35,7 +35,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
             }
         } catch (final EOFException e) {
             //ignore eof, since checks for port availability will lead to this
-            return false;
+            return true;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
