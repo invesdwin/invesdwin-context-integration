@@ -27,7 +27,7 @@ import net.jpountz.lz4.LZ4BlockOutputStream;
 public class HighLZ4Serialization extends JPPFCompositeSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
-        final LZ4BlockOutputStream lz4os = LZ4Streams.newLargeLZ4OutputStream(os);
+        final LZ4BlockOutputStream lz4os = LZ4Streams.newDefaultLZ4OutputStream(os);
         try {
             getDelegate().serialize(o, lz4os);
         } finally {
