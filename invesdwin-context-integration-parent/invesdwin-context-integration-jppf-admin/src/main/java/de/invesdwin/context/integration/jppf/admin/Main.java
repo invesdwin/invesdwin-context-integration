@@ -23,7 +23,6 @@ public final class Main {
         Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
         final JPPFClient client = JPPFAdminConsole.getTopologyManager().getJPPFClient();
         client.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
-        client.awaitWorkingConnectionPool();
         JPPFAdminConsole.main(args);
         splash.stop();
     }
