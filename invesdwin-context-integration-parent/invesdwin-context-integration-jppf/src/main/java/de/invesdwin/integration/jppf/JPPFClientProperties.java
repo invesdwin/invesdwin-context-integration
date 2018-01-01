@@ -15,6 +15,7 @@ public final class JPPFClientProperties {
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
+    public static final String USER_NAME;
 
     static {
         final SystemProperties systemProperties = new SystemProperties();
@@ -22,6 +23,7 @@ public final class JPPFClientProperties {
         maybeValidatePort(systemProperties, JPPFProperties.SERVER_SSL_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
+        USER_NAME = systemProperties.getStringWithSecurityWarning("jppf.user.name", "invesdwin");
 
         //override values as defined in distribution/user properties
         final TypedProperties props = JPPFConfiguration.getProperties();

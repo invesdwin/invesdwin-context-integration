@@ -72,8 +72,7 @@
 							<alias>invesdwin</alias>
 							<!-- 100 years = 365 * 100 days -->
 							<validity>365000</validity>
-							<!-- rsa is better compatible with browsers -->
-							<keyalg>RSA</keyalg>
+							<keyalg>DES</keyalg>
 						</configuration>
 					</plugin>
 				</plugins>

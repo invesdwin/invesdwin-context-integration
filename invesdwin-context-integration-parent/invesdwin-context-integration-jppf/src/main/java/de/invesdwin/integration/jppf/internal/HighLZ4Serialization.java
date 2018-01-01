@@ -11,7 +11,7 @@
  * specific language governing permissions and limitations under the License.
  */
 
-package de.invesdwin.integration.jppf;
+package de.invesdwin.integration.jppf.internal;
 
 import java.io.InputStream;
 import java.io.OutputStream;
