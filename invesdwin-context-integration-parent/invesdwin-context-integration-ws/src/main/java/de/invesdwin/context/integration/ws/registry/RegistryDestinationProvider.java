@@ -23,7 +23,7 @@ import de.invesdwin.util.lang.uri.URIsConnect;
 @NotThreadSafe
 public class RegistryDestinationProvider extends RetryHookSupport implements IDestinationProvider {
 
-    private final Log log = new Log(this);
+    private static final Log LOG = new Log(RegistryDestinationProvider.class);
 
     @Inject
     private IRegistryService registry;
@@ -58,7 +58,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         if (cachedServiceUri == null) {
             try {
                 cachedServiceUri = tryGetDestination();
-                log.debug("Service [%s] will now be called by [%s].", serviceName, cachedServiceUri);
+                LOG.debug("Service [%s] will now be called by [%s].", serviceName, cachedServiceUri);
             } catch (final IOException e) {
                 throw Err.process(e);
             } catch (final InterruptedException e) {
@@ -76,7 +76,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         if (cachedServiceUris == null) {
             try {
                 cachedServiceUris = tryGetDestinations();
-                log.debug("Service [%s] will now be called by [%s].", serviceName, cachedServiceUris);
+                LOG.debug("Service [%s] will now be called by [%s].", serviceName, cachedServiceUris);
             } catch (final IOException e) {
                 throw Err.process(e);
             } catch (final InterruptedException e) {
@@ -153,7 +153,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
             }
         }
         if (!isOk) {
-            log.warn(
+            LOG.warn(
                     "Service [%s] is unreachable via [%s]! The instance seems to not have removed itself properly on shutdown!",
                     serviceName, accessUri);
         }
