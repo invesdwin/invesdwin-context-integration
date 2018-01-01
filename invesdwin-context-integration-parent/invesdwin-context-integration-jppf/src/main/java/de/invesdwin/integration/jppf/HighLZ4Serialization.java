@@ -21,16 +21,17 @@ import javax.annotation.concurrent.Immutable;
 import org.jppf.serialization.JPPFCompositeSerialization;
 
 import de.invesdwin.context.integration.streams.LZ4Streams;
+import net.jpountz.lz4.LZ4BlockOutputStream;
 
 @Immutable
 public class HighLZ4Serialization extends JPPFCompositeSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
-        final OutputStream lz4os = LZ4Streams.newLargeLZ4OutputStream(os);
+        final LZ4BlockOutputStream lz4os = LZ4Streams.newDefaultLZ4OutputStream(os);
         try {
             getDelegate().serialize(o, lz4os);
         } finally {
-            lz4os.close();
+            lz4os.finish();
         }
     }
 
