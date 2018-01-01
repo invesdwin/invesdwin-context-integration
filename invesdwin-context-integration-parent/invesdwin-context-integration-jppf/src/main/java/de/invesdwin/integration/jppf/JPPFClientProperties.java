@@ -34,10 +34,6 @@ public final class JPPFClientProperties {
                 props.setString(key, value);
             }
         }
-        if (props.get(JPPFProperties.JVM_OPTIONS) == null) {
-            //fix nullpointer during provisioning of nodes
-            props.set(JPPFProperties.JVM_OPTIONS, "");
-        }
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
         INITIALIZED = true;
     }
