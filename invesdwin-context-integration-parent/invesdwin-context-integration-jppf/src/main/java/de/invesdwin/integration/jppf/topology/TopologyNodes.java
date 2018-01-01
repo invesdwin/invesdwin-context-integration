@@ -40,6 +40,7 @@ public final class TopologyNodes {
     public static JMXNodeConnectionWrapper connect(final TopologyNode node) {
         final JPPFManagementInfo managementInfo = node.getManagementInfo();
         String host = managementInfo.getHost();
+        //local nodes advertise the host wrong
         if ("localhost".equals(host)) {
             host = node.getDriver().getManagementInfo().getHost();
         }
