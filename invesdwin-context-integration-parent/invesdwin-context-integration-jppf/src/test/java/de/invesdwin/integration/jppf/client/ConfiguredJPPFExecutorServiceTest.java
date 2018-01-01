@@ -13,7 +13,7 @@ import org.jppf.client.monitoring.topology.TopologyNode;
 import org.junit.Test;
 
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.integration.jppf.ATopologyVisitor;
+import de.invesdwin.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Futures;
 import de.invesdwin.util.time.fdate.FTimeUnit;

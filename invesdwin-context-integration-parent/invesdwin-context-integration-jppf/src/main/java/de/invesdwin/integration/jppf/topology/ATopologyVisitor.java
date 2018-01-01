@@ -1,4 +1,4 @@
-package de.invesdwin.integration.jppf;
+package de.invesdwin.integration.jppf.topology;
 
 import java.util.HashSet;
 import java.util.Set;

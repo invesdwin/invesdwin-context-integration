@@ -15,14 +15,11 @@ import org.jppf.comm.interceptor.AbstractNetworkConnectionInterceptor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.integration.jppf.JPPFClientProperties;
-import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Immutable
 public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNetworkConnectionInterceptor {
 
     private static final String OK = "OK";
-    private static final int SOCKET_TIMEOUT_MS = ContextProperties.DEFAULT_NETWORK_TIMEOUT
-            .intValue(FTimeUnit.MILLISECONDS);
 
     @Override
     public boolean onAccept(final Socket acceptedSocket) {
@@ -30,7 +27,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
         try {
             // set a timeout on read operations and store the previous setting, if any
             prevTimeout = acceptedSocket.getSoTimeout();
-            acceptedSocket.setSoTimeout(SOCKET_TIMEOUT_MS);
+            acceptedSocket.setSoTimeout(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS);
 
             final InputStream is = acceptedSocket.getInputStream();
             final OutputStream os = acceptedSocket.getOutputStream();
@@ -67,7 +64,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
         try {
             // set a timeout on read operations and store the previous setting, if any
             prevTimeout = connectedSocket.getSoTimeout();
-            connectedSocket.setSoTimeout(SOCKET_TIMEOUT_MS);
+            connectedSocket.setSoTimeout(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS);
 
             final InputStream is = connectedSocket.getInputStream();
             final OutputStream os = connectedSocket.getOutputStream();
