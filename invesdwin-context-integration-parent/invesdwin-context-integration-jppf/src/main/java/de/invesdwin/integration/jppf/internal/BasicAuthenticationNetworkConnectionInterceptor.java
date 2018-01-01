@@ -16,6 +16,14 @@ import org.jppf.comm.interceptor.AbstractNetworkConnectionInterceptor;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.integration.jppf.JPPFClientProperties;
 
+/**
+ * This network connection inteceptor checks the user name token to be correct for accepting a jppf client. This method
+ * is not secure against Man-In-The-Middle attacks but at least provides protection against simple bots that connect to
+ * open jppf instances (if there are some out there).
+ * 
+ * @author subes
+ *
+ */
 @Immutable
 public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNetworkConnectionInterceptor {
 
