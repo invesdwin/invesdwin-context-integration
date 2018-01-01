@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
@@ -32,6 +33,9 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
                 write("OK", os);
                 return true;
             }
+        } catch (final EOFException e) {
+            //ignore eof, since checks for port availability will lead to this
+            return false;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
