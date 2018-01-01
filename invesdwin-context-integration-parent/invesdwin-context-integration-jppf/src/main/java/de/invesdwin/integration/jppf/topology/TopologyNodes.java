@@ -17,9 +17,14 @@ public final class TopologyNodes {
     private TopologyNodes() {}
 
     public static JPPFSystemInformation extractSystemInfo(final TopologyNode node) {
+        final JPPFManagementInfo managementInfo = node.getManagementInfo();
+        if (managementInfo.getSystemInfo() != null) {
+            return managementInfo.getSystemInfo();
+        }
         final JMXNodeConnectionWrapper jmx = connect(node);
         try {
             final JPPFSystemInformation systemInfo = jmx.systemInformation();
+            managementInfo.setSystemInfo(systemInfo); //cache the system info
             return systemInfo;
         } catch (final Exception e) {
             throw new RuntimeException(e);

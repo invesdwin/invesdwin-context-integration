@@ -17,9 +17,14 @@ public final class TopologyDrivers {
     private TopologyDrivers() {}
 
     public static JPPFSystemInformation extractSystemInfo(final TopologyDriver driver) {
+        final JPPFManagementInfo managementInfo = driver.getManagementInfo();
+        if (managementInfo.getSystemInfo() != null) {
+            return managementInfo.getSystemInfo();
+        }
         final JMXDriverConnectionWrapper jmx = connect(driver);
         try {
             final JPPFSystemInformation systemInfo = jmx.systemInformation();
+            managementInfo.setSystemInfo(systemInfo); //cache the system info
             return systemInfo;
         } catch (final Exception e) {
             throw new RuntimeException(e);

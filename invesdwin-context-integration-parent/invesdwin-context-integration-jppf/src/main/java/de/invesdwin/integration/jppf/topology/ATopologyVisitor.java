@@ -22,6 +22,11 @@ public abstract class ATopologyVisitor {
         for (final TopologyDriver driver : manager.getDrivers()) {
             processComponents(manager, driver, duplicateUuidFilter);
         }
+        /*
+         * Sometimes nodes are not listed properly under drivers (maybe a race condition), but instead only appear in
+         * the nodes list. So we iterate over that as well. Duplicate UUID filter saves us from visiting them more than
+         * once.
+         */
         for (final TopologyNode node : manager.getNodes()) {
             processComponents(manager, node, duplicateUuidFilter);
         }
