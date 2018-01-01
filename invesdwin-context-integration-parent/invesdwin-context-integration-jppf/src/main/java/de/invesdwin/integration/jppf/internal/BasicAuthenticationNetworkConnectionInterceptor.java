@@ -13,15 +13,25 @@ import javax.annotation.concurrent.Immutable;
 
 import org.jppf.comm.interceptor.AbstractNetworkConnectionInterceptor;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.integration.jppf.JPPFClientProperties;
+import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Immutable
 public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNetworkConnectionInterceptor {
 
+    private static final String OK = "OK";
+    private static final int SOCKET_TIMEOUT_MS = ContextProperties.DEFAULT_NETWORK_TIMEOUT
+            .intValue(FTimeUnit.MILLISECONDS);
+
     @Override
     public boolean onAccept(final Socket acceptedSocket) {
+        int prevTimeout = -1;
         try {
-            System.out.println(acceptedSocket.getSoTimeout());
+            // set a timeout on read operations and store the previous setting, if any
+            prevTimeout = acceptedSocket.getSoTimeout();
+            acceptedSocket.setSoTimeout(SOCKET_TIMEOUT_MS);
+
             final InputStream is = acceptedSocket.getInputStream();
             final OutputStream os = acceptedSocket.getOutputStream();
             final String userName = read(is);
@@ -31,7 +41,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
                 return false;
             } else {
                 // send ok response
-                write("OK", os);
+                write(OK, os);
                 return true;
             }
         } catch (final EOFException e) {
@@ -39,47 +49,71 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
             return true;
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (prevTimeout >= 0) {
+                try {
+                    // restore the initial SO_TIMEOUT setting
+                    acceptedSocket.setSoTimeout(prevTimeout);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
     @Override
     public boolean onConnect(final Socket connectedSocket) {
+        int prevTimeout = -1;
         try {
+            // set a timeout on read operations and store the previous setting, if any
+            prevTimeout = connectedSocket.getSoTimeout();
+            connectedSocket.setSoTimeout(SOCKET_TIMEOUT_MS);
+
             final InputStream is = connectedSocket.getInputStream();
             final OutputStream os = connectedSocket.getOutputStream();
             // send the user name to the server
             write(JPPFClientProperties.USER_NAME, os);
             // read the server reponse
             final String response = read(is);
-            if (!"OK".equals(response)) {
+            if (!OK.equals(response)) {
                 throw new IllegalStateException("Invalid response from server: " + response);
             } else {
                 return true;
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            if (prevTimeout >= 0) {
+                try {
+                    // restore the initial SO_TIMEOUT setting
+                    connectedSocket.setSoTimeout(prevTimeout);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 
-    static void write(final String message, final OutputStream destination) throws Exception {
+    private void write(final String message, final OutputStream destination) throws Exception {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (DataOutputStream cos = new DataOutputStream(baos)) {
             cos.writeUTF(message);
         }
         final DataOutputStream dos = new DataOutputStream(destination);
-        final byte[] encrypted = baos.toByteArray();
-        dos.writeInt(encrypted.length);
-        dos.write(encrypted);
+        final byte[] bytes = baos.toByteArray();
+        dos.writeInt(bytes.length);
+        dos.write(bytes);
         dos.flush();
     }
 
-    static String read(final InputStream source) throws Exception {
+    private String read(final InputStream source) throws Exception {
         final DataInputStream dis = new DataInputStream(source);
         final int len = dis.readInt();
-        final byte[] message = new byte[len];
-        dis.read(message);
-        try (DataInputStream cis = new DataInputStream(new ByteArrayInputStream(message))) {
-            return cis.readUTF();
+        final byte[] bytes = new byte[len];
+        dis.read(bytes);
+        try (DataInputStream cis = new DataInputStream(new ByteArrayInputStream(bytes))) {
+            final String message = cis.readUTF();
+            return message;
         }
     }
 
