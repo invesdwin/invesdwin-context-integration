@@ -21,6 +21,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
     @Override
     public boolean onAccept(final Socket acceptedSocket) {
         try {
+            System.out.println(acceptedSocket.getSoTimeout());
             final InputStream is = acceptedSocket.getInputStream();
             final OutputStream os = acceptedSocket.getOutputStream();
             final String userName = read(is);
