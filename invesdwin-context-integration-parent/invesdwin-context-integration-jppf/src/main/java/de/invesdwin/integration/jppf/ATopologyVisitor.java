@@ -22,6 +22,9 @@ public abstract class ATopologyVisitor {
         for (final TopologyDriver driver : manager.getDrivers()) {
             processComponents(manager, driver, duplicateUuidFilter);
         }
+        for (final TopologyNode node : manager.getNodes()) {
+            processComponents(manager, node, duplicateUuidFilter);
+        }
     }
 
     protected abstract void visitDriver(TopologyDriver driver);

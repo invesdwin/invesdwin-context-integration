@@ -8,9 +8,12 @@ import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.jppf.client.monitoring.topology.TopologyDriver;
+import org.jppf.client.monitoring.topology.TopologyNode;
 import org.junit.Test;
 
 import de.invesdwin.context.test.ATest;
+import de.invesdwin.integration.jppf.ATopologyVisitor;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Futures;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -54,6 +57,23 @@ public class ConfiguredJPPFExecutorServiceTest extends ATest {
         for (int i = 0; i < TASKS_COUNT; i++) {
             Assertions.checkEquals(results.get(i), i);
         }
+    }
+
+    @Test
+    public void testTopologyVisitor() {
+        new ATopologyVisitor() {
+            @Override
+            protected void visitNode(final TopologyNode node) {
+                log.info("Node: %s", node);
+            }
+
+            @Override
+            protected void visitDriver(final TopologyDriver driver) {
+                log.info("Driver: %s", driver);
+            }
+        }.process(ConfiguredJPPFClient.getTopologyManager());
+        log.info("NodesCount: %s", ConfiguredJPPFClient.getNodesCount());
+        log.info("ProcessingThreadsCount: %s", ConfiguredJPPFClient.getProcessingThreadsCount());
     }
 
 }

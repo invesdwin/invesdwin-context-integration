@@ -57,7 +57,8 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static synchronized TopologyManager getTopologyManager() {
         if (topologyManager == null) {
-            topologyManager = new TopologyManager(getInstance());
+            Assertions.checkNotNull(getInstance());
+            Assertions.checkNotNull(topologyManager);
         }
         return topologyManager;
     }
@@ -78,8 +79,17 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         if (instance == null) {
             Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
             instance = new JPPFClient();
+            topologyManager = new TopologyManager(instance);
             instance.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
+
+            while (topologyManager.getNodeCount() == 0) {
+                try {
+                    FTimeUnit.SECONDS.sleep(1);
+                } catch (final InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
         return instance;
     }

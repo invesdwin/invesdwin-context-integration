@@ -48,7 +48,8 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
                 // shrink the connection pools by one
                 if (newCount < event.getClient().getAllConnectionsCount()) {
                     for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
-                        pool.setSize(pool.getSize() - 1);
+                        final int newPoolSize = Math.max(1, pool.getSize() - 1);
+                        pool.setSize(newPoolSize);
                     }
                 }
             }
