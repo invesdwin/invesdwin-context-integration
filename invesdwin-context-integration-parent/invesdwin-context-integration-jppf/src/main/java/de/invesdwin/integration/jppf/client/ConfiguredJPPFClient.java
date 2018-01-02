@@ -9,6 +9,7 @@ import javax.inject.Named;
 import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
+import org.jppf.location.MemoryLocation;
 import org.jppf.location.URLLocation;
 import org.jppf.node.protocol.ClassPath;
 import org.springframework.beans.factory.FactoryBean;
@@ -104,7 +105,12 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         for (final URL url : classLoader.getURLs()) {
             final String urlStr = url.toString();
             if (urlStr.endsWith(".jar")) {
-                classPath.add(urlStr, new URLLocation(url));
+                try {
+                    final MemoryLocation memory = new MemoryLocation(new URLLocation(url).toByteArray());
+                    classPath.add(urlStr, memory);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
