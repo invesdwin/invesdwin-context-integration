@@ -7,7 +7,7 @@
 		<appender-ref ref="error" />
 	</logger>
 	
-	<logger name="javax.management.remote" additivity="false" level="WARN">
+	<logger name="javax.management.remote" additivity="false" level="ERROR">
 		<appender-ref ref="stdout" />
 		<appender-ref ref="stderr" />
 		<appender-ref ref="common" />
