@@ -25,7 +25,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>de.invesdwin.integration.jppf.server.Main</mainClass>
+							<mainClass>de.invesdwin.context.integration.jppf.server.Main</mainClass>
 						</manifest>
 					</archive>
 				</configuration>
