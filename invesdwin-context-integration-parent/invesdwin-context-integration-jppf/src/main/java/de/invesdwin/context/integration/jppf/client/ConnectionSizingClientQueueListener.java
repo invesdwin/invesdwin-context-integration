@@ -30,7 +30,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @Override
     public synchronized void jobAdded(final ClientQueueEvent event) {
         activeJobsCount++;
-        final int newPoolSize = Math.max(JPPFClientProperties.MIN_POOL_SIZE, activeJobsCount);
+        final int newPoolSize = Math.max(JPPFClientProperties.IO_CHANNELS, activeJobsCount);
         // grow the connection pools by one
         if (newPoolSize > event.getClient().getAllConnectionsCount()) {
             for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
@@ -42,7 +42,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @Override
     public synchronized void jobRemoved(final ClientQueueEvent event) {
         activeJobsCount--;
-        final int newPoolSize = Math.max(JPPFClientProperties.MIN_POOL_SIZE, activeJobsCount);
+        final int newPoolSize = Math.max(JPPFClientProperties.IO_CHANNELS, activeJobsCount);
         SCHEDULER.schedule(new Runnable() {
             @Override
             public void run() {

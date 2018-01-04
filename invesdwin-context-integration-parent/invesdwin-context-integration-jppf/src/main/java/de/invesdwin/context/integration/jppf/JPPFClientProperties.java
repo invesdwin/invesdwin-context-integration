@@ -16,7 +16,7 @@ public final class JPPFClientProperties {
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
-    public static final int MIN_POOL_SIZE;
+    public static final int IO_CHANNELS;
     public static final String USER_NAME;
 
     static {
@@ -44,7 +44,7 @@ public final class JPPFClientProperties {
             }
         }
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
-        MIN_POOL_SIZE = props.get(JPPFProperties.POOL_SIZE);
+        IO_CHANNELS = props.get(JPPFProperties.POOL_SIZE);
         INITIALIZED = true;
     }
 
