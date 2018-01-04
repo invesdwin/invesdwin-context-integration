@@ -16,6 +16,7 @@ public final class JPPFClientProperties {
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
+    public static final int MIN_POOL_SIZE;
     public static final String USER_NAME;
 
     static {
@@ -30,6 +31,10 @@ public final class JPPFClientProperties {
         if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {
             props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
         }
+        if (!systemProperties.containsValue(JPPFProperties.POOL_SIZE.getName())) {
+            //use actual cores for parallel IO channels
+            props.set(JPPFProperties.POOL_SIZE, Runtime.getRuntime().availableProcessors());
+        }
         //override values as defined in distribution/user properties
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();
@@ -39,6 +44,7 @@ public final class JPPFClientProperties {
             }
         }
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
+        MIN_POOL_SIZE = props.get(JPPFProperties.POOL_SIZE);
         INITIALIZED = true;
     }
 
