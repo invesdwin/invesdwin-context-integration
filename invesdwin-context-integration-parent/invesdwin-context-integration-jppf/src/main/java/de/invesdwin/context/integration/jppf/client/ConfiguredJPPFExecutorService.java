@@ -10,7 +10,7 @@ public class ConfiguredJPPFExecutorService extends JPPFExecutorService {
 
     public ConfiguredJPPFExecutorService(final JPPFClient client) {
         super(client);
-        getConfiguration().getJobConfiguration().getClientSLA().setMaxChannels(-1);
+        getConfiguration().getJobConfiguration().getClientSLA().setMaxChannels(50);
     }
 
 }
