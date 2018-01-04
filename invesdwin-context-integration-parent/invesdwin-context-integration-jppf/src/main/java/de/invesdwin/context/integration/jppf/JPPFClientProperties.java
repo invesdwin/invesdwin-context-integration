@@ -7,6 +7,7 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
 
 @Immutable
@@ -25,8 +26,11 @@ public final class JPPFClientProperties {
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
         USER_NAME = systemProperties.getStringWithSecurityWarning("jppf.user.name", "invesdwin");
 
-        //override values as defined in distribution/user properties
         final TypedProperties props = JPPFConfiguration.getProperties();
+        if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {
+            props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
+        }
+        //override values as defined in distribution/user properties
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();
             if (systemProperties.containsKey(key)) {
