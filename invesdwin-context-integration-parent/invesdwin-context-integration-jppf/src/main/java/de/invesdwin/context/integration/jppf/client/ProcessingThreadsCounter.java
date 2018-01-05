@@ -93,7 +93,7 @@ public class ProcessingThreadsCounter {
         final AtomicInteger nodes = new AtomicInteger(0);
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
             nodes.incrementAndGet();
-            nodes.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
+            processingThreads.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
         }
         new ATopologyVisitor() {
             @Override
