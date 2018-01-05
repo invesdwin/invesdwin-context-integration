@@ -38,7 +38,7 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
             protected void runRetryable() throws Exception {
                 while (!isShutdown()) {
                     final Collection<URI> peers = getDestinationProvider().getDestinations();
-                    if (peers == null || peers.isEmpty()) {
+                    if ((peers == null || peers.isEmpty()) && !JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
                         throw new RetryLaterRuntimeException(
                                 "No instances of service [" + JPPFClientProperties.SERVICE_NAME + "] found");
                     }

@@ -7,7 +7,6 @@ import org.jppf.client.JPPFConnectionPool;
 import org.jppf.client.event.ClientQueueEvent;
 import org.jppf.client.event.ClientQueueListener;
 
-import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.time.duration.Duration;
@@ -30,11 +29,11 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @Override
     public synchronized void jobAdded(final ClientQueueEvent event) {
         activeJobsCount++;
-        final int newPoolSize = Math.max(JPPFClientProperties.IO_CHANNELS, activeJobsCount);
+        final int newCount = activeJobsCount;
         // grow the connection pools by one
-        if (newPoolSize > event.getClient().getAllConnectionsCount()) {
+        if (newCount > event.getClient().getAllConnectionsCount()) {
             for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
-                pool.setSize(newPoolSize);
+                pool.setSize(pool.getSize() + 1);
             }
         }
     }
@@ -42,13 +41,14 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @Override
     public synchronized void jobRemoved(final ClientQueueEvent event) {
         activeJobsCount--;
-        final int newPoolSize = Math.max(JPPFClientProperties.IO_CHANNELS, activeJobsCount);
+        final int newCount = activeJobsCount;
         SCHEDULER.schedule(new Runnable() {
             @Override
             public void run() {
                 // shrink the connection pools by one
-                if (newPoolSize < event.getClient().getAllConnectionsCount()) {
+                if (newCount < event.getClient().getAllConnectionsCount()) {
                     for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                        final int newPoolSize = Math.max(1, pool.getSize() - 1);
                         pool.setSize(newPoolSize);
                     }
                 }
