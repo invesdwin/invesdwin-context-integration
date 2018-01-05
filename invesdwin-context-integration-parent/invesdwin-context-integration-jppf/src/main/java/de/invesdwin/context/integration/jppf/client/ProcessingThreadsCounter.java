@@ -15,6 +15,7 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
+import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
 import de.invesdwin.util.assertions.Assertions;
@@ -90,6 +91,10 @@ public class ProcessingThreadsCounter {
     private Pair<Integer, Integer> countProcessingThreads() {
         final AtomicInteger processingThreads = new AtomicInteger(0);
         final AtomicInteger nodes = new AtomicInteger(0);
+        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
+            nodes.incrementAndGet();
+            nodes.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
+        }
         new ATopologyVisitor() {
             @Override
             protected void visitNode(final TopologyNode node) {

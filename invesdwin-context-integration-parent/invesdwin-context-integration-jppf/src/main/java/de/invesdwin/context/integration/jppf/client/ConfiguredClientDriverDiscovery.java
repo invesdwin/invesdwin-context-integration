@@ -2,8 +2,6 @@ package de.invesdwin.context.integration.jppf.client;
 
 import java.net.URI;
 import java.util.Collection;
-import java.util.Enumeration;
-import java.util.Properties;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -54,27 +52,6 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
             }
         };
         retry.run();
-    }
-
-    @Override
-    protected void newConnection(final ClientConnectionPoolInfo info) {
-        fixSystemProperties();
-        super.newConnection(info);
-    }
-
-    //TODO: remove as soon as this is fixed: http://www.jppf.org/tracker/tbg/jppf/issues/JPPF-523
-    private void fixSystemProperties() {
-        //CHECKSTYLE:OFF
-        final Properties sysProps = System.getProperties();
-        //CHECKSTYKE:ON
-        final Enumeration<?> en = sysProps.propertyNames();
-        while (en.hasMoreElements()) {
-            final String name = (String) en.nextElement();
-            final String value = sysProps.getProperty(name);
-            if (value == null) {
-                sysProps.setProperty(name, "");
-            }
-        }
     }
 
     private JPPFServerDestinationProvider getDestinationProvider() {
