@@ -7,7 +7,6 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
-import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
 
 @Immutable
@@ -29,13 +28,9 @@ public final class JPPFClientProperties {
         USER_NAME = systemProperties.getStringWithSecurityWarning("jppf.user.name", "invesdwin");
 
         final TypedProperties props = JPPFConfiguration.getProperties();
-        if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {
-            props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
-        }
-        if (!systemProperties.containsValue(JPPFProperties.POOL_SIZE.getName())) {
-            //use actual cores for parallel IO channels
-            props.set(JPPFProperties.POOL_SIZE, Runtime.getRuntime().availableProcessors());
-        }
+        //        if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {
+        //            props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
+        //        }
         //override values as defined in distribution/user properties
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();

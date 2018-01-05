@@ -88,6 +88,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 }
+                processingThreadsCounter.refresh();
             }
         }
         return instance;

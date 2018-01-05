@@ -81,6 +81,10 @@ public class ProcessingThreadsCounter {
                 }
             }
         });
+        refresh();
+    }
+
+    public synchronized void refresh() {
         synchronized (this) {
             final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
             processingThreadsCount = processingThreadsAndNodes.getFirst();
