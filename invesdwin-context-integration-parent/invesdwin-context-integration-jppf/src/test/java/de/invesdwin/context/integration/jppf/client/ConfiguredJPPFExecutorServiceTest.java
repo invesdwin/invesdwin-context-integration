@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.jppf;
+package de.invesdwin.context.integration.jppf.client;
 
 import java.io.Serializable;
 import java.util.ArrayList;
