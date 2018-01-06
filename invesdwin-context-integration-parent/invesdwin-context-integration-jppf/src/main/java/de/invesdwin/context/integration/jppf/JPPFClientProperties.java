@@ -43,8 +43,6 @@ public final class JPPFClientProperties {
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
         LOCAL_EXECUTION_ENABLED = props.get(JPPFProperties.LOCAL_EXECUTION_ENABLED);
         LOCAL_EXECUTION_THREADS = props.get(JPPFProperties.LOCAL_EXECUTION_THREADS);
-        props.set(JPPFProperties.NODE_CLASSLOADING_BATCH_PERIOD, 0L);
-        props.set(JPPFProperties.CLASSLOADER_CACHE_SIZE, 0);
         INITIALIZED = true;
     }
 
