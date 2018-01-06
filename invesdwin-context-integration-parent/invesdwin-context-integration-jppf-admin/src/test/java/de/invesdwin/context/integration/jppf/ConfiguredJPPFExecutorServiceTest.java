@@ -23,10 +23,10 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @NotThreadSafe
 public class ConfiguredJPPFExecutorServiceTest extends ATest {
 
-    public static final class RemoteTask implements Callable<Integer>, Serializable {
+    public static final class RemoteCallable implements Callable<Integer>, Serializable {
         private final int i;
 
-        private RemoteTask(final int i) {
+        public RemoteCallable(final int i) {
             this.i = i;
         }
 
@@ -52,7 +52,7 @@ public class ConfiguredJPPFExecutorServiceTest extends ATest {
         final List<Callable<Integer>> tasks = new ArrayList<>();
         for (int i = 0; i < TASKS_COUNT; i++) {
             final int finalI = i;
-            tasks.add(new RemoteTask(finalI));
+            tasks.add(new RemoteCallable(finalI));
         }
         final List<Future<Integer>> futures = executor.invokeAll(tasks);
         final List<Integer> results = Futures.get(futures);
