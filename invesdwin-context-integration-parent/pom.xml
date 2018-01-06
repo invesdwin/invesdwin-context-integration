@@ -31,6 +31,8 @@
 		<module>invesdwin-context-integration-jppf-node-dist</module>
 		<module>invesdwin-context-integration-jppf-server</module>
 		<module>invesdwin-context-integration-jppf-server-dist</module>
+		<module>invesdwin-context-integration-ftp</module>
+		<module>invesdwin-context-integration-ftp-server</module>
 		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>
@@ -65,6 +67,8 @@
 		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
 		<version.jppf>5.2.8</version.jppf>
+		<version.commons-net>3.6</version.commons-net>
+		<version.ftpserver>1.1.1</version.ftpserver>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
@@ -137,6 +141,16 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf-admin</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-ftp</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-ftp-server</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -994,6 +1008,17 @@
 						<artifactId>lz4</artifactId>
 					</exclusion>
 				</exclusions>
+			</dependency>
+
+			<dependency>
+				<groupId>commons-net</groupId>
+				<artifactId>commons-net</artifactId>
+				<version>${version.commons-net}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ftpserver</groupId>
+				<artifactId>ftpserver-core</artifactId>
+				<version>${version.ftpserver}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

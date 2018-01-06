@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-jppf</artifactId>
+	<artifactId>invesdwin-context-integration-ftp</artifactId>
 	<packaging>jar</packaging>
 
 	<build>
@@ -33,9 +33,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jppf</groupId>
-			<artifactId>jppf-client</artifactId>
+			<groupId>commons-net</groupId>
+			<artifactId>commons-net</artifactId>
 		</dependency>
 	</dependencies>
-	
+
 </project>
