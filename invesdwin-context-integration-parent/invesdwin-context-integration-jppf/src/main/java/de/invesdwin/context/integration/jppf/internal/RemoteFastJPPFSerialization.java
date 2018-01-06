@@ -27,7 +27,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     public RemoteFastJPPFSerialization() {}
 
     @Override
-    public synchronized void serialize(final Object o, final OutputStream os) throws Exception {
+    public void serialize(final Object o, final OutputStream os) throws Exception {
         try {
             final FSTConfiguration conf = confThreadLocal.get();
             final byte[] bytes = conf.asByteArray(o);
@@ -38,7 +38,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     }
 
     @Override
-    public synchronized Object deserialize(final InputStream is) throws Exception {
+    public Object deserialize(final InputStream is) throws Exception {
         try {
             final FSTConfiguration conf = confThreadLocal.get();
             final ClassLoader previousClassLoader = conf.getClassLoader();
