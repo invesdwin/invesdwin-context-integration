@@ -12,8 +12,6 @@ import org.jppf.client.monitoring.topology.TopologyDriver;
 import org.jppf.client.monitoring.topology.TopologyNode;
 import org.junit.Test;
 
-import de.invesdwin.context.integration.jppf.client.ConfiguredJPPFClient;
-import de.invesdwin.context.integration.jppf.client.ConfiguredJPPFExecutorService;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
