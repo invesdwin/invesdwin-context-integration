@@ -33,7 +33,6 @@ public class ConfiguredFtpServer implements FactoryBean<FtpServer>, IStartupHook
             //disable anonymous access
             final ConnectionConfigFactory connectionConfig = new ConnectionConfigFactory();
             connectionConfig.setAnonymousLoginEnabled(false);
-            connectionConfig.setMaxThreads(FtpServerProperties.MAX_THREADS);
             serverFactory.setConnectionConfig(connectionConfig.createConnectionConfig());
 
             // replace the default listener port
