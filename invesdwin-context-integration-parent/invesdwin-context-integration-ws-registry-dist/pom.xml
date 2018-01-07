@@ -17,6 +17,10 @@
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-ftp-server</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-webserver</artifactId>
 		</dependency>
 		<dependency>
