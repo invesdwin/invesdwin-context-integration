@@ -16,6 +16,7 @@ import org.apache.commons.net.ftp.FTPReply;
 
 import de.invesdwin.norva.marker.ISerializableValueObject;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.math.Bytes;
 
@@ -30,7 +31,8 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public FtpFileChannel(final URI serverUri, final String directory) {
         this.serverUri = serverUri;
-        this.directory = directory;
+        this.directory = Strings.eventuallyAddSuffix(
+                Strings.eventuallyAddPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
     }
 
     public URI getServerUri() {
@@ -47,6 +49,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public String getFilename() {
         return filename;
+    }
+
+    public String getAbsoluteFile() {
+        return directory + filename;
     }
 
     public byte[] getEmptyFileContent() {
@@ -110,11 +116,13 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         final String[] pathElements = directory.split("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
-                final boolean existed = ftpClient.changeWorkingDirectory(singleDir);
-                if (!existed) {
-                    final boolean created = ftpClient.makeDirectory(singleDir);
-                    if (created) {
-                        ftpClient.changeWorkingDirectory(singleDir);
+                if (singleDir.length() > 0) {
+                    final boolean existed = ftpClient.changeWorkingDirectory(singleDir);
+                    if (!existed) {
+                        final boolean created = ftpClient.makeDirectory(singleDir);
+                        if (created) {
+                            ftpClient.changeWorkingDirectory(singleDir);
+                        }
                     }
                 }
             }
@@ -143,8 +151,8 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void write(final InputStream in) {
         assertConnected();
         try (InputStream autoClose = in) {
-            if (!ftpClient.storeFile(filename, autoClose)) {
-                throw new IllegalStateException("storeFile returned false: " + filename);
+            if (!ftpClient.storeFile(getAbsoluteFile(), autoClose)) {
+                throw new IllegalStateException("storeFile returned false: " + getAbsoluteFile());
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -154,7 +162,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public InputStream read() {
         assertConnected();
         try {
-            return ftpClient.retrieveFileStream(filename);
+            return ftpClient.retrieveFileStream(getAbsoluteFile());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -163,7 +171,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public boolean delete() {
         assertConnected();
         try {
-            return ftpClient.deleteFile(filename);
+            return ftpClient.deleteFile(getAbsoluteFile());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -197,7 +205,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public OutputStream newOutputStream() {
         assertConnected();
         try {
-            return ftpClient.storeFileStream(filename);
+            return ftpClient.storeFileStream(getAbsoluteFile());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -206,7 +214,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public InputStream newInputStream() {
         assertConnected();
         try {
-            final InputStream inputStream = ftpClient.retrieveFileStream(filename);
+            final InputStream inputStream = ftpClient.retrieveFileStream(getAbsoluteFile());
             final int returnCode = ftpClient.getReplyCode();
             if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
                 return null;
