@@ -52,10 +52,14 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             final String filename = UUIDs.newRandomUUID() + ".channel";
             setFilename(filename);
             if (!exists()) {
-                write(new ByteArrayInputStream("".getBytes()));
+                write(new ByteArrayInputStream(newEmptyFileContent()));
                 break;
             }
         }
+    }
+
+    protected byte[] newEmptyFileContent() {
+        return "".getBytes();
     }
 
     public FTPClient getFtpClient() {
