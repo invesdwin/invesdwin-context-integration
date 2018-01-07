@@ -51,6 +51,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return filename;
     }
 
+    /**
+     * https://issues.apache.org/jira/browse/NET-12
+     */
     public String getAbsoluteFile() {
         return directory + filename;
     }
