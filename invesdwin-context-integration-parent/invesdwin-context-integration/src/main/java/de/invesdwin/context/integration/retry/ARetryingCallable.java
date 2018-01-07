@@ -20,7 +20,7 @@ public abstract class ARetryingCallable<E> implements Callable<E> {
     }
 
     @Override
-    public final E call() throws Exception {
+    public final E call() {
         final ExceptionCauseRetryCallback<E> retryCallback = new ExceptionCauseRetryCallback<E>(new Callable<E>() {
             @Override
             public E call() throws Exception {
