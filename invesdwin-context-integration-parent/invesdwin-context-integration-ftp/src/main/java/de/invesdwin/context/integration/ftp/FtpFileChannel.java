@@ -55,6 +55,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             setFilename(filename);
             if (!exists()) {
                 write(new ByteArrayInputStream(newEmptyFileContent()));
+                Assertions.checkTrue(exists());
                 break;
             }
         }
