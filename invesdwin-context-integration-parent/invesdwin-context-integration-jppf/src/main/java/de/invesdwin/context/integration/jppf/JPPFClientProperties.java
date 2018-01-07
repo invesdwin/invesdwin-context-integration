@@ -14,9 +14,9 @@ import de.invesdwin.context.system.properties.SystemProperties;
 public final class JPPFClientProperties {
 
     public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
+    public static final String USERNAMETOKEN_PASSWORD;
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
-    public static final String USER_NAME;
     public static final boolean LOCAL_EXECUTION_ENABLED;
     public static final int LOCAL_EXECUTION_THREADS;
 
@@ -26,7 +26,8 @@ public final class JPPFClientProperties {
         maybeValidatePort(systemProperties, JPPFProperties.SERVER_SSL_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
-        USER_NAME = systemProperties.getStringWithSecurityWarning("jppf.user.name", "invesdwin");
+        USERNAMETOKEN_PASSWORD = systemProperties.getStringWithSecurityWarning(
+                JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD", "invesdwin");
 
         final TypedProperties props = JPPFConfiguration.getProperties();
         if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {

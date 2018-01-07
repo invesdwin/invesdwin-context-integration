@@ -40,7 +40,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
             final InputStream is = acceptedSocket.getInputStream();
             final OutputStream os = acceptedSocket.getOutputStream();
             final String userName = read(is);
-            if (!userName.equals(JPPFClientProperties.USER_NAME)) {
+            if (!userName.equals(JPPFClientProperties.USERNAMETOKEN_PASSWORD)) {
                 // send invalid user response
                 write("invalid user name", os);
                 return false;
@@ -77,7 +77,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
             final InputStream is = connectedSocket.getInputStream();
             final OutputStream os = connectedSocket.getOutputStream();
             // send the user name to the server
-            write(JPPFClientProperties.USER_NAME, os);
+            write(JPPFClientProperties.USERNAMETOKEN_PASSWORD, os);
             // read the server reponse
             final String response = read(is);
             if (!OK.equals(response)) {
