@@ -154,8 +154,8 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void write(final InputStream in) {
         assertConnected();
         try (InputStream autoClose = in) {
-            if (!ftpClient.storeFile(getAbsoluteFile(), autoClose)) {
-                throw new IllegalStateException("storeFile returned false: " + getAbsoluteFile());
+            if (!ftpClient.storeFile(getFilename(), autoClose)) {
+                throw new IllegalStateException("storeFile returned false: " + getFilename());
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -174,7 +174,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public boolean delete() {
         assertConnected();
         try {
-            return ftpClient.deleteFile(getAbsoluteFile());
+            return ftpClient.deleteFile(getFilename());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -208,7 +208,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public OutputStream newOutputStream() {
         assertConnected();
         try {
-            return ftpClient.storeFileStream(getAbsoluteFile());
+            return ftpClient.storeFileStream(getFilename());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
