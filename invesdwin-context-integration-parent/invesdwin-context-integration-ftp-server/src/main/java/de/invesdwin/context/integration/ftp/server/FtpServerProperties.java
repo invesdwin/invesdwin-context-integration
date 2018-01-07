@@ -26,7 +26,7 @@ public final class FtpServerProperties {
     private static final String KEY_PURGE_FILES_OLDER_THAN_DURATION = "PURGE_FILES_OLDER_THAN_DURATION";
 
     static {
-        final SystemProperties systemProperties = new SystemProperties();
+        final SystemProperties systemProperties = new SystemProperties(FtpServerProperties.class);
         PORT = systemProperties.getPort("PORT", true);
         if (systemProperties.containsValue(KEY_MAX_THREADS)) {
             MAX_THREADS = systemProperties.getInteger(KEY_MAX_THREADS);
