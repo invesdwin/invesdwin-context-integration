@@ -25,6 +25,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     private final URI serverUri;
     private final String directory;
     private String filename;
+    private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
     private transient FTPClient ftpClient;
 
     public FtpFileChannel(final URI serverUri, final String directory) {
@@ -48,21 +49,25 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return filename;
     }
 
+    public byte[] getEmptyFileContent() {
+        return emptyFileContent;
+    }
+
+    public void setEmptyFileContent(final byte[] emptyFileContent) {
+        this.emptyFileContent = emptyFileContent;
+    }
+
     public void createUniqueFilename(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
             final String filename = UUIDs.newRandomUUID() + ".channel";
             setFilename(filename);
             if (!exists()) {
-                write(new ByteArrayInputStream(newEmptyFileContent()));
+                write(new ByteArrayInputStream(getEmptyFileContent()));
                 Assertions.checkTrue(exists());
                 break;
             }
         }
-    }
-
-    protected byte[] newEmptyFileContent() {
-        return Bytes.EMPTY_ARRAY;
     }
 
     public FTPClient getFtpClient() {
