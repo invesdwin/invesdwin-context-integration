@@ -88,7 +88,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                 throw new IllegalStateException("FTP server refused connection.");
             }
             if (!ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD)) {
-                throw new IllegalStateException();
+                throw new IllegalStateException("Login failed");
             }
             ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
             //be a bit more firewall friendly
