@@ -9,6 +9,7 @@ import java.net.URI;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPReply;
@@ -119,14 +120,12 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public boolean exists() {
-        try (InputStream inputStream = ftpClient.retrieveFileStream(filename)) {
-            final int returnCode = ftpClient.getReplyCode();
-            if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
-                return false;
-            }
+        final InputStream in = newInputStream();
+        if (in == null) {
+            return false;
+        } else {
+            IOUtils.closeQuietly(in);
             return true;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -193,6 +192,20 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         assertConnected();
         try {
             return ftpClient.storeFileStream(filename);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public InputStream newInputStream() {
+        assertConnected();
+        try {
+            final InputStream inputStream = ftpClient.retrieveFileStream(filename);
+            final int returnCode = ftpClient.getReplyCode();
+            if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
+                return null;
+            }
+            return inputStream;
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
