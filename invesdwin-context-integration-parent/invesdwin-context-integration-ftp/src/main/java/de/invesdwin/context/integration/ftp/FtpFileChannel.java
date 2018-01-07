@@ -16,6 +16,7 @@ import org.apache.commons.net.ftp.FTPReply;
 import de.invesdwin.norva.marker.ISerializableValueObject;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.math.Bytes;
 
 @NotThreadSafe
 public class FtpFileChannel implements Closeable, ISerializableValueObject {
@@ -59,7 +60,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     protected byte[] newEmptyFileContent() {
-        return "".getBytes();
+        return Bytes.EMPTY_ARRAY;
     }
 
     public FTPClient getFtpClient() {
