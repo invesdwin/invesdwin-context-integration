@@ -32,6 +32,7 @@ public class FtpFileChannelTest extends ATest {
         final String readStr = new String(read);
         Assertions.assertThat(readStr).isEqualTo(writeStr);
         channel.delete();
+        Assertions.checkNull(channel.read());
         Assertions.checkFalse(channel.exists());
         Assertions.assertThat(channel.size()).isEqualTo(-1);
         channel.close();
