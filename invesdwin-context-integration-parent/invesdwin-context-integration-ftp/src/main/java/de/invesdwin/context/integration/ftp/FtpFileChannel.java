@@ -87,9 +87,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             }
             Assertions.checkNull(ftpClient, "Already connected");
             ftpClient = new FTPClient();
+            //be a bit more firewall friendly
             ftpClient.enterLocalPassiveMode();
             login();
-            //be a bit more firewall friendly
             createAndChangeDirectory();
             if (filename == null) {
                 createUniqueFilename(FtpFileChannel.class.getSimpleName() + "_", ".channel");
