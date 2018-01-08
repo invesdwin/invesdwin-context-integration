@@ -17,7 +17,7 @@ import de.invesdwin.util.time.duration.Duration;
 @Immutable
 public final class FtpServerProperties {
 
-    public static final File BASE_DIRECTORY;
+    public static final File WORKING_DIR;
     public static final Integer PORT;
     public static final int MAX_THREADS;
     public static final Duration PURGE_FILES_OLDER_THAN_DURATION;
@@ -39,9 +39,9 @@ public final class FtpServerProperties {
         } else {
             PURGE_FILES_OLDER_THAN_DURATION = null;
         }
-        BASE_DIRECTORY = new File(ContextProperties.getCacheDirectory(), ConfiguredFtpServer.class.getSimpleName());
+        WORKING_DIR = new File(ContextProperties.getCacheDirectory(), ConfiguredFtpServer.class.getSimpleName());
         try {
-            FileUtils.forceMkdir(BASE_DIRECTORY);
+            FileUtils.forceMkdir(WORKING_DIR);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

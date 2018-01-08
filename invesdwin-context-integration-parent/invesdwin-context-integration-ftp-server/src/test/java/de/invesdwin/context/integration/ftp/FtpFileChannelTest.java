@@ -7,9 +7,11 @@ import javax.inject.Inject;
 
 import org.junit.Test;
 
+import de.invesdwin.context.integration.ftp.server.test.FtpServerTest;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 
+@FtpServerTest
 @NotThreadSafe
 public class FtpFileChannelTest extends ATest {
 

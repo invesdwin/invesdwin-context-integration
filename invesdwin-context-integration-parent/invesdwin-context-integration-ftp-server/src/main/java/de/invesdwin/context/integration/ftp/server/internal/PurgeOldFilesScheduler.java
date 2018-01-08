@@ -27,13 +27,13 @@ public class PurgeOldFilesScheduler implements IStartupHook {
             return;
         }
         final FDate threshold = new FDate().subtract(FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
-        final Iterator<File> filesToDelete = FileUtils.iterateFiles(FtpServerProperties.BASE_DIRECTORY,
+        final Iterator<File> filesToDelete = FileUtils.iterateFiles(FtpServerProperties.WORKING_DIR,
                 new AgeFileFilter(threshold.dateValue(), true), TrueFileFilter.INSTANCE);
         while (filesToDelete.hasNext()) {
             final File fileToDelete = filesToDelete.next();
             fileToDelete.delete();
         }
-        for (final File f : FtpServerProperties.BASE_DIRECTORY.listFiles()) {
+        for (final File f : FtpServerProperties.WORKING_DIR.listFiles()) {
             maybeDeleteEmptyDirectories(f);
         }
     }

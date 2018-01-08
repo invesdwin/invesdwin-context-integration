@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ftp.server;
 import java.util.Arrays;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Named;
 
 import org.apache.ftpserver.ConnectionConfigFactory;
 import org.apache.ftpserver.FtpServer;
@@ -13,21 +12,17 @@ import org.apache.ftpserver.listener.ListenerFactory;
 import org.apache.ftpserver.usermanager.Md5PasswordEncryptor;
 import org.apache.ftpserver.usermanager.impl.BaseUser;
 import org.apache.ftpserver.usermanager.impl.WritePermission;
-import org.springframework.beans.factory.FactoryBean;
 
-import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.context.integration.ftp.server.internal.InMemoryUserManager;
-import de.invesdwin.util.assertions.Assertions;
 
 @ThreadSafe
-@Named
-public class ConfiguredFtpServer implements FactoryBean<FtpServer>, IStartupHook {
+public class ConfiguredFtpServer implements FtpServer {
 
-    private static FtpServer instance;
+    private FtpServer delegate;
 
-    public static synchronized FtpServer getInstance() {
-        if (instance == null) {
+    private synchronized FtpServer getDelegate() {
+        if (delegate == null) {
             final FtpServerFactory serverFactory = new FtpServerFactory();
 
             //disable anonymous access
@@ -48,7 +43,7 @@ public class ConfiguredFtpServer implements FactoryBean<FtpServer>, IStartupHook
             user.setName(FtpClientProperties.USERNAME);
             user.setPassword(FtpClientProperties.PASSWORD);
             user.setEnabled(true);
-            user.setHomeDirectory(FtpServerProperties.BASE_DIRECTORY.getAbsolutePath());
+            user.setHomeDirectory(FtpServerProperties.WORKING_DIR.getAbsolutePath());
             user.setAuthorities(Arrays.asList(new WritePermission()));
             try {
                 userManager.save(user);
@@ -57,29 +52,44 @@ public class ConfiguredFtpServer implements FactoryBean<FtpServer>, IStartupHook
             }
             serverFactory.setUserManager(userManager);
 
-            instance = serverFactory.createServer();
-            try {
-                instance.start();
-            } catch (final FtpException e) {
-                throw new RuntimeException(e);
-            }
+            delegate = serverFactory.createServer();
+
         }
-        return instance;
+        return delegate;
     }
 
     @Override
-    public FtpServer getObject() throws Exception {
-        return getInstance();
+    public void start() {
+        try {
+            getDelegate().start();
+        } catch (final FtpException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public Class<?> getObjectType() {
-        return FtpServer.class;
+    public void stop() {
+        getDelegate().stop();
     }
 
     @Override
-    public void startup() throws Exception {
-        Assertions.checkNotNull(getInstance());
+    public boolean isStopped() {
+        return getDelegate().isStopped();
+    }
+
+    @Override
+    public void suspend() {
+        getDelegate().suspend();
+    }
+
+    @Override
+    public void resume() {
+        getDelegate().resume();
+    }
+
+    @Override
+    public boolean isSuspended() {
+        return getDelegate().isSuspended();
     }
 
 }
