@@ -5,13 +5,16 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.SocketException;
 import java.net.URI;
+import java.util.Arrays;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
+import org.apache.commons.net.ftp.FTPFile;
 import org.apache.commons.net.ftp.FTPReply;
 
 import de.invesdwin.norva.marker.ISerializableValueObject;
@@ -51,13 +54,6 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return filename;
     }
 
-    /**
-     * https://issues.apache.org/jira/browse/NET-12
-     */
-    public String getAbsoluteFile() {
-        return directory + filename;
-    }
-
     public byte[] getEmptyFileContent() {
         return emptyFileContent;
     }
@@ -91,18 +87,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             }
             Assertions.checkNull(ftpClient, "Already connected");
             ftpClient = new FTPClient();
-            ftpClient.connect(serverUri.getHost(), serverUri.getPort());
-            final int reply = ftpClient.getReplyCode();
-            if (!FTPReply.isPositiveCompletion(reply)) {
-                throw new IllegalStateException("FTP server refused connection.");
-            }
-            if (!ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD)) {
-                throw new IllegalStateException("Login failed");
-            }
-            ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-            //be a bit more firewall friendly
             ftpClient.enterLocalPassiveMode();
-            changeDirectory();
+            login();
+            //be a bit more firewall friendly
+            createAndChangeDirectory();
             if (filename == null) {
                 createUniqueFilename(FtpFileChannel.class.getSimpleName() + "_", ".channel");
             }
@@ -112,21 +100,44 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    private void login() throws SocketException, IOException {
+        ftpClient.connect(serverUri.getHost(), serverUri.getPort());
+        final int reply = ftpClient.getReplyCode();
+        if (!FTPReply.isPositiveCompletion(reply)) {
+            throw new IllegalStateException(
+                    "FTP server refused connection: " + Arrays.toString(ftpClient.getReplyStrings()));
+        }
+        if (!ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD)) {
+            throw new IllegalStateException("Login failed: " + Arrays.toString(ftpClient.getReplyStrings()));
+        }
+        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
+    }
+
     /**
      * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
      */
-    private void changeDirectory() throws IOException {
+    private void createAndChangeDirectory() throws IOException {
         final String[] pathElements = directory.split("/");
+        final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
                 if (singleDir.length() > 0) {
-                    final boolean existed = ftpClient.changeWorkingDirectory(singleDir);
-                    if (!existed) {
-                        final boolean created = ftpClient.makeDirectory(singleDir);
-                        if (created) {
-                            ftpClient.changeWorkingDirectory(singleDir);
-                        }
-                    }
+                    prevPathElements.append(singleDir).append("/");
+                    createAndChangeSingleDirectory(prevPathElements, singleDir);
+                }
+            }
+        }
+    }
+
+    private void createAndChangeSingleDirectory(final StringBuilder prevPathElements, final String singleDir)
+            throws IOException {
+        final boolean existed = ftpClient.changeWorkingDirectory(singleDir);
+        if (!existed) {
+            final boolean created = ftpClient.makeDirectory(singleDir);
+            if (created) {
+                if (!ftpClient.changeWorkingDirectory(singleDir)) {
+                    throw new IllegalStateException("Unable to create directory [" + prevPathElements + "]: "
+                            + Arrays.toString(ftpClient.getReplyStrings()));
                 }
             }
         }
@@ -137,12 +148,34 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public boolean exists() {
-        final InputStream in = newInputStream();
-        if (in == null) {
-            return false;
+        try {
+            return ftpClient.listFiles(getFilename()).length == 1;
+        } catch (final IOException e) {
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+        }
+    }
+
+    public long size() {
+        final FTPFile info = info();
+        if (info == null) {
+            return -1;
         } else {
-            IOUtils.closeQuietly(in);
-            return true;
+            return info.getSize();
+        }
+    }
+
+    public FTPFile info() {
+        try {
+            final FTPFile[] listFiles = ftpClient.listFiles(getFilename());
+            if (listFiles.length == 0) {
+                return null;
+            } else if (listFiles.length == 1) {
+                return listFiles[0];
+            } else {
+                throw new IllegalStateException("More than one result: " + listFiles.length);
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
     }
 
@@ -151,32 +184,43 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         Assertions.checkTrue(ftpClient.isConnected(), "Not connected yet");
     }
 
+    public void write(final byte[] bytes) {
+        write(new ByteArrayInputStream(bytes));
+    }
+
     public void write(final InputStream in) {
         assertConnected();
         try (InputStream autoClose = in) {
             if (!ftpClient.storeFile(getFilename(), autoClose)) {
-                throw new IllegalStateException("storeFile returned false: " + getFilename());
+                throw new IllegalStateException(
+                        "storeFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+        }
+    }
+
+    public byte[] read() {
+        try (InputStream in = newInputStream()) {
+            if (in == null) {
+                return null;
+            } else {
+                return IOUtils.toByteArray(in);
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public InputStream read() {
+    public void delete() {
         assertConnected();
         try {
-            return ftpClient.retrieveFileStream(getAbsoluteFile());
+            if (!ftpClient.deleteFile(getFilename())) {
+                throw new IllegalStateException(
+                        "deleteFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+            }
         } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public boolean delete() {
-        assertConnected();
-        try {
-            return ftpClient.deleteFile(getFilename());
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
     }
 
@@ -210,21 +254,21 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         try {
             return ftpClient.storeFileStream(getFilename());
         } catch (final IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
     }
 
     public InputStream newInputStream() {
         assertConnected();
         try {
-            final InputStream inputStream = ftpClient.retrieveFileStream(getAbsoluteFile());
+            final InputStream inputStream = ftpClient.retrieveFileStream(getFilename());
             final int returnCode = ftpClient.getReplyCode();
             if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
                 return null;
             }
             return inputStream;
         } catch (final IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
     }
 
