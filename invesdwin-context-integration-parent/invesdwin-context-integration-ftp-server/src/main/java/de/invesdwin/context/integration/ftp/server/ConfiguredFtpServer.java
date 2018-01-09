@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.ftp.server;
 
 import java.util.Arrays;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.ftpserver.ConnectionConfigFactory;
@@ -15,81 +16,96 @@ import org.apache.ftpserver.usermanager.impl.WritePermission;
 
 import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.context.integration.ftp.server.internal.InMemoryUserManager;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 
 @ThreadSafe
 public class ConfiguredFtpServer implements FtpServer {
 
-    private FtpServer delegate;
+    private final Log log = new Log(this);
 
-    private synchronized FtpServer getDelegate() {
-        if (delegate == null) {
-            final FtpServerFactory serverFactory = new FtpServerFactory();
-
-            //disable anonymous access
-            final ConnectionConfigFactory connectionConfig = new ConnectionConfigFactory();
-            connectionConfig.setAnonymousLoginEnabled(false);
-            connectionConfig.setMaxThreads(FtpServerProperties.MAX_THREADS);
-            serverFactory.setConnectionConfig(connectionConfig.createConnectionConfig());
-
-            // replace the default listener port
-            final ListenerFactory factory = new ListenerFactory();
-            factory.setPort(FtpServerProperties.PORT);
-            serverFactory.addListener("default", factory.createListener());
-
-            // create user
-            final InMemoryUserManager userManager = new InMemoryUserManager(new Md5PasswordEncryptor(),
-                    "admin_disabled");
-            final BaseUser user = new BaseUser();
-            user.setName(FtpClientProperties.USERNAME);
-            user.setPassword(FtpClientProperties.PASSWORD);
-            user.setEnabled(true);
-            user.setHomeDirectory(FtpServerProperties.WORKING_DIR.getAbsolutePath());
-            user.setAuthorities(Arrays.asList(new WritePermission()));
-            try {
-                userManager.save(user);
-            } catch (final FtpException e) {
-                throw new RuntimeException(e);
-            }
-            serverFactory.setUserManager(userManager);
-
-            delegate = serverFactory.createServer();
-
-        }
-        return delegate;
-    }
+    @GuardedBy("this")
+    private FtpServer ftpServer;
 
     @Override
-    public void start() {
+    public synchronized void start() {
+        Assertions.checkNull(ftpServer, "already started");
+
+        log.info("Starting ftp server at: %s", FtpServerProperties.getServerBindUri());
+        final FtpServerFactory serverFactory = new FtpServerFactory();
+
+        //disable anonymous access
+        final ConnectionConfigFactory connectionConfig = new ConnectionConfigFactory();
+        connectionConfig.setAnonymousLoginEnabled(false);
+        connectionConfig.setMaxThreads(FtpServerProperties.MAX_THREADS);
+        serverFactory.setConnectionConfig(connectionConfig.createConnectionConfig());
+
+        // replace the default listener port
+        final ListenerFactory factory = new ListenerFactory();
+        factory.setPort(FtpServerProperties.PORT);
+        serverFactory.addListener("default", factory.createListener());
+
+        // create user
+        final InMemoryUserManager userManager = new InMemoryUserManager(new Md5PasswordEncryptor(), "admin_disabled");
+        final BaseUser user = new BaseUser();
+        user.setName(FtpClientProperties.USERNAME);
+        user.setPassword(FtpClientProperties.PASSWORD);
+        user.setEnabled(true);
+        user.setHomeDirectory(FtpServerProperties.WORKING_DIR.getAbsolutePath());
+        user.setAuthorities(Arrays.asList(new WritePermission()));
         try {
-            getDelegate().start();
+            userManager.save(user);
+        } catch (final FtpException e) {
+            throw new RuntimeException(e);
+        }
+        serverFactory.setUserManager(userManager);
+
+        ftpServer = serverFactory.createServer();
+
+        try {
+            ftpServer.start();
         } catch (final FtpException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void stop() {
-        getDelegate().stop();
+    public synchronized void stop() {
+        if (ftpServer != null) {
+            ftpServer.stop();
+        }
     }
 
     @Override
-    public boolean isStopped() {
-        return getDelegate().isStopped();
+    public synchronized boolean isStopped() {
+        if (ftpServer != null) {
+            return ftpServer.isStopped();
+        } else {
+            return true;
+        }
     }
 
     @Override
-    public void suspend() {
-        getDelegate().suspend();
+    public synchronized void suspend() {
+        if (ftpServer != null) {
+            ftpServer.suspend();
+        }
     }
 
     @Override
-    public void resume() {
-        getDelegate().resume();
+    public synchronized void resume() {
+        if (ftpServer != null) {
+            ftpServer.resume();
+        }
     }
 
     @Override
-    public boolean isSuspended() {
-        return getDelegate().isSuspended();
+    public synchronized boolean isSuspended() {
+        if (ftpServer != null) {
+            return ftpServer.isSuspended();
+        } else {
+            return false;
+        }
     }
 
 }
