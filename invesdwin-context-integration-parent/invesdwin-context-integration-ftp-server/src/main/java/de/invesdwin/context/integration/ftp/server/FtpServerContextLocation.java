@@ -23,7 +23,7 @@ public class FtpServerContextLocation extends AConditionalContextLocation {
     public static final PositionedResource CONTEXT_LOCATION = PositionedResource
             .of(new ClassPathResource("/META-INF/ctx.ftp.server.xml"), ResourcePosition.START);
 
-    private static volatile boolean activated = false;
+    private static volatile boolean activated = true;
 
     @Override
     protected List<PositionedResource> getContextResourcesIfConditionSatisfied() {
