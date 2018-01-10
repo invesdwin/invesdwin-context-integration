@@ -7,7 +7,6 @@ import javax.inject.Inject;
 
 import org.junit.Test;
 
-import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.TestContext;
@@ -18,10 +17,6 @@ public class FtpFileChannelTest extends ATest {
 
     @Inject
     private FtpServerDestinationProvider destinationProvider;
-
-    static {
-        PlatformInitializerProperties.setKeepSystemHomeDuringTests(true);
-    }
 
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
