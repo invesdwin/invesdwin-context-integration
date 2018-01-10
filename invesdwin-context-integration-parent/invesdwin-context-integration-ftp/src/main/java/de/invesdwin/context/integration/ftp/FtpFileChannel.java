@@ -22,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.norva.marker.ISerializableValueObject;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.math.Bytes;
@@ -378,6 +379,15 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                 file.delete();
             }
         };
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("serverUri", serverUri)
+                .add("directory", directory)
+                .add("filename", filename)
+                .toString();
     }
 
 }
