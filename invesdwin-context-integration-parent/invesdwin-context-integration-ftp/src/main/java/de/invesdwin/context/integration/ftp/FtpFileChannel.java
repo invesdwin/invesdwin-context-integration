@@ -198,11 +198,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public void write(final InputStream input) {
         assertConnected();
-        try (InputStream inputAutoclose = input) {
-            try (OutputStream output = newOutputStream()) {
-                IOUtils.copy(input, output);
-            }
-        } catch (final IOException e) {
+        try {
+            ftpClient.upload(getFilename(), input, 0, 0, null);
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
