@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.Date;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -24,6 +25,7 @@ import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.streams.ADelegateOutputStream;
+import de.invesdwin.util.time.fdate.FDate;
 import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPCodes;
 import it.sauronsoftware.ftp4j.FTPException;
@@ -150,11 +152,35 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public long size() {
-        final FTPFile info = info();
-        if (info == null) {
-            return -1;
-        } else {
-            return info.getSize();
+        try {
+            return ftpClient.fileSize(getFilename());
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
+                return -1;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public FDate modified() {
+        try {
+            final Date date = ftpClient.modifiedDate(getFilename());
+            if (date == null) {
+                return null;
+            } else {
+                return new FDate(date);
+            }
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

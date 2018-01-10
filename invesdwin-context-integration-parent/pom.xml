@@ -151,6 +151,12 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-ftp</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp-server</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>

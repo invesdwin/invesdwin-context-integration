@@ -31,6 +31,12 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-ftp</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-ftp</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.ftpserver</groupId>

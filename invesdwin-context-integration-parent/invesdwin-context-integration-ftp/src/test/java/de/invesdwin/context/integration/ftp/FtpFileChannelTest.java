@@ -69,7 +69,7 @@ public class FtpFileChannelTest extends ATest {
         final byte[] write = writeStr.getBytes();
 
         for (int i = 0; i < 20; i++) {
-            final int random = RandomUtils.nextInt(0, 6);
+            final int random = RandomUtils.nextInt(0, 7);
             switch (random) {
             case 0:
                 log.info("read");
@@ -94,6 +94,10 @@ public class FtpFileChannelTest extends ATest {
             case 5:
                 log.info("delete");
                 channel.delete();
+                break;
+            case 6:
+                log.info("modified");
+                channel.modified();
                 break;
             default:
                 throw UnknownArgumentException.newInstance(int.class, random);
