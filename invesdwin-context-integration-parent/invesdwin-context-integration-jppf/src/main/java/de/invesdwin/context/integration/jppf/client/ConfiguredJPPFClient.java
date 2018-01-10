@@ -77,14 +77,24 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
 
             final int expectedDriversCount = clientDiscovery.getDestinationProvider().getDestinations().size();
-            while (processingThreadsCounter.getDriversCount() != expectedDriversCount) {
+            int minimumNodesCount = 0;
+            if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
+                minimumNodesCount += 1;
+            }
+            if (expectedDriversCount > 0) {
+                minimumNodesCount += 1;
+            }
+            int triesLeft = 10;
+            do {
                 try {
                     FTimeUnit.SECONDS.sleep(1);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 }
                 processingThreadsCounter.refresh();
-            }
+                triesLeft--;
+            } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
+                    || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
         }
         return instance;
     }
