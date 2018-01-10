@@ -12,6 +12,7 @@ import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -22,6 +23,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
+    private static final Log LOG = new Log(ConfiguredJPPFClient.class);
     private static JPPFClient instance;
 
     private static TopologyManager topologyManager;
@@ -76,27 +78,56 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             instance.addDriverDiscovery(clientDiscovery);
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
 
-            final int expectedDriversCount = clientDiscovery.getDestinationProvider().getDestinations().size();
-            int minimumNodesCount = 0;
-            if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
-                minimumNodesCount += 1;
-            }
-            if (expectedDriversCount > 0) {
-                minimumNodesCount += 1;
-            }
-            int triesLeft = 10;
-            do {
-                try {
-                    FTimeUnit.SECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                processingThreadsCounter.refresh();
-                triesLeft--;
-            } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
-                    || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
+            waitForWarmup(clientDiscovery);
         }
         return instance;
+    }
+
+    private static void waitForWarmup(final ConfiguredClientDriverDiscovery clientDiscovery) {
+        final int expectedDriversCount = clientDiscovery.getDestinationProvider().getDestinations().size();
+        int minimumNodesCount = 0;
+        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
+            minimumNodesCount += 1;
+        }
+        if (expectedDriversCount > 0) {
+            minimumNodesCount += 1;
+        }
+        int triesLeft = 10;
+        do {
+            try {
+                FTimeUnit.SECONDS.sleep(1);
+            } catch (final InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            processingThreadsCounter.refresh();
+            triesLeft--;
+        } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
+                || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
+        logWarmupFinished();
+    }
+
+    private static void logWarmupFinished() {
+        final StringBuilder message = new StringBuilder();
+        message.append(JPPFClient.class.getSimpleName());
+        message.append(" detected ");
+        message.append(processingThreadsCounter.getDriversCount());
+        message.append(" driver");
+        if (processingThreadsCounter.getDriversCount() != 1) {
+            message.append("s");
+        }
+        message.append(" for ");
+        message.append(processingThreadsCounter.getNodesCount());
+        message.append(" node");
+        if (processingThreadsCounter.getNodesCount() != 1) {
+            message.append("s");
+        }
+        message.append(" with ");
+        message.append(processingThreadsCounter.getProcessingThreadsCount());
+        message.append(" processing thread");
+        if (processingThreadsCounter.getProcessingThreadsCount() != 1) {
+            message.append("s");
+        }
+        LOG.info("%s", message);
     }
 
     @Override
