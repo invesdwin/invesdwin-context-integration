@@ -23,7 +23,8 @@ public class PurgeOldFilesScheduler implements IStartupHook {
     @SkipParallelExecution
     @Scheduled(cron = "0 0 0 * * ?") //check every day
     public void purgeOldFiles() {
-        if (FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION == null) {
+        if (FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION == null
+                || !FtpServerProperties.WORKING_DIRECTORY.exists()) {
             return;
         }
         final FDate threshold = new FDate().subtract(FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION);

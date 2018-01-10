@@ -1,10 +1,12 @@
 package de.invesdwin.context.integration.ftp.server;
 
+import java.io.IOException;
 import java.util.Arrays;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.ftpserver.ConnectionConfigFactory;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpServerFactory;
@@ -51,6 +53,11 @@ public class ConfiguredFtpServer implements FtpServer {
         user.setName(FtpClientProperties.USERNAME);
         user.setPassword(FtpClientProperties.PASSWORD);
         user.setEnabled(true);
+        try {
+            FileUtils.forceMkdir(FtpServerProperties.WORKING_DIRECTORY);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
         user.setHomeDirectory(FtpServerProperties.WORKING_DIRECTORY.getAbsolutePath());
         user.setAuthorities(Arrays.asList(new WritePermission()));
         try {
