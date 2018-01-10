@@ -14,6 +14,9 @@ import de.invesdwin.context.log.error.Err;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
+ * 
+ * WARNING: causes deadlocks right now, waiting for a fix before using it again:
+ * https://github.com/RuedigerMoeller/fast-serialization/issues/234
  */
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
