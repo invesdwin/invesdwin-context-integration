@@ -128,7 +128,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             message.append("s");
         }
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
-            message.append(" (with the local node contributing ");
+            message.append(" (of which 1 local node contributes ");
             message.append(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
             message.append(" processing thread");
             if (JPPFClientProperties.LOCAL_EXECUTION_THREADS != 1) {
