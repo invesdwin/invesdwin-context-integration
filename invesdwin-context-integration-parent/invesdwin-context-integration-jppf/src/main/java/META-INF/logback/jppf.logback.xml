@@ -14,4 +14,11 @@
 		<appender-ref ref="error" />
 	</logger>
 	
+	<logger name="org.jppf.nio.StateTransitionTask" additivity="false" level="ERROR">
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+		<appender-ref ref="common" />
+		<appender-ref ref="error" />
+	</logger>
+	
 </configuration>
