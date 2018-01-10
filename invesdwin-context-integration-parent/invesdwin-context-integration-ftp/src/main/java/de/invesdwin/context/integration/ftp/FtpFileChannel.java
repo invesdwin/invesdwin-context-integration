@@ -200,7 +200,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         assertConnected();
         try (InputStream inputAutoclose = input) {
             try (OutputStream output = newOutputStream()) {
-                IOUtils.copyLarge(input, output);
+                IOUtils.copy(input, output);
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -300,7 +300,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         };
     }
 
-    private File getLocalTempFile() {
+    public File getLocalTempFile() {
         final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getDirectory());
         try {
             FileUtils.forceMkdir(directory);
