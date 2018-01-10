@@ -22,6 +22,8 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.streams.ADelegateInputStream;
+import de.invesdwin.util.streams.ADelegateOutputStream;
 
 @NotThreadSafe
 public class FtpFileChannel implements Closeable, ISerializableValueObject {
@@ -190,10 +192,12 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public void write(final InputStream in) {
         assertConnected();
-        try (InputStream autoClose = in) {
-            if (!ftpClient.storeFile(getFilename(), autoClose)) {
-                throw new IllegalStateException(
-                        "storeFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+        try {
+            try (InputStream autoClose = in) {
+                if (!ftpClient.storeFile(getFilename(), autoClose)) {
+                    throw new IllegalStateException(
+                            "storeFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+                }
             }
         } catch (final IOException e) {
             throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
@@ -201,15 +205,19 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public byte[] read() {
-        try (InputStream in = newInputStream()) {
-            if (in == null) {
-                return null;
-            } else {
-                return IOUtils.toByteArray(in);
+        try {
+            try (InputStream in = newInputStream()) {
+                if (in == null) {
+                    return null;
+                } else {
+                    final byte[] bytes = IOUtils.toByteArray(in);
+                    return bytes;
+                }
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
+
     }
 
     public void delete() {
@@ -255,11 +263,26 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public OutputStream newOutputStream() {
         assertConnected();
-        try {
-            return ftpClient.storeFileStream(getFilename());
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
-        }
+        return new ADelegateOutputStream() {
+
+            @Override
+            protected OutputStream newDelegate() {
+                try {
+                    return ftpClient.storeFileStream(getFilename());
+                } catch (final IOException e) {
+                    throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                if (!ftpClient.completePendingCommand()) {
+                    throw new IllegalStateException(
+                            "completePendingCommand returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+                }
+            }
+        };
     }
 
     public InputStream newInputStream() {
@@ -275,7 +298,32 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                 }
                 return null;
             }
-            return inputStream;
+            return new ADelegateInputStream() {
+
+                private boolean somethingWasRead = false;
+
+                @Override
+                protected InputStream newDelegate() {
+                    return inputStream;
+                }
+
+                @Override
+                public int read() throws IOException {
+                    somethingWasRead = true;
+                    return super.read();
+                }
+
+                @Override
+                public void close() throws IOException {
+                    super.close();
+                    if (!somethingWasRead) {
+                        if (!ftpClient.completePendingCommand()) {
+                            throw new IllegalStateException("completePendingCommand returned false: "
+                                    + Arrays.toString(ftpClient.getReplyStrings()));
+                        }
+                    }
+                }
+            };
         } catch (final IOException e) {
             throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
