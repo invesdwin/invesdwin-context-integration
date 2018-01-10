@@ -8,6 +8,7 @@ import javax.annotation.concurrent.Immutable;
 import org.apache.commons.io.IOUtils;
 import org.jppf.serialization.JPPFSerialization;
 import org.nustaq.serialization.FSTConfiguration;
+import org.nustaq.serialization.simpleapi.DefaultCoder;
 
 import de.invesdwin.context.log.error.Err;
 
@@ -17,10 +18,10 @@ import de.invesdwin.context.log.error.Err;
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
-    private final ThreadLocal<FSTConfiguration> confThreadLocal = new ThreadLocal<FSTConfiguration>() {
+    private final ThreadLocal<ConfDefaultCoder> confThreadLocal = new ThreadLocal<ConfDefaultCoder>() {
         @Override
-        protected FSTConfiguration initialValue() {
-            return FSTConfiguration.createDefaultConfiguration();
+        protected ConfDefaultCoder initialValue() {
+            return new ConfDefaultCoder();
         }
     };
 
@@ -29,8 +30,8 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
         try {
-            final FSTConfiguration conf = confThreadLocal.get();
-            final byte[] bytes = conf.asByteArray(o);
+            final DefaultCoder coder = confThreadLocal.get();
+            final byte[] bytes = coder.toByteArray(o);
             IOUtils.write(bytes, os);
         } catch (final Throwable t) {
             throw Err.process(t);
@@ -40,17 +41,26 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     @Override
     public Object deserialize(final InputStream is) throws Exception {
         try {
-            final FSTConfiguration conf = confThreadLocal.get();
+            final DefaultCoder coder = confThreadLocal.get();
+            final FSTConfiguration conf = coder.getConf();
             final ClassLoader previousClassLoader = conf.getClassLoader();
             try {
                 final byte[] bytes = IOUtils.toByteArray(is);
                 conf.setClassLoader(Thread.currentThread().getContextClassLoader());
-                return conf.asObject(bytes);
+                return coder.toObject(bytes);
             } finally {
                 conf.setClassLoader(previousClassLoader);
             }
         } catch (final Throwable t) {
             throw Err.process(t);
+        }
+    }
+
+    private static class ConfDefaultCoder extends DefaultCoder {
+
+        @Override
+        public FSTConfiguration getConf() {
+            return super.getConf();
         }
     }
 }
