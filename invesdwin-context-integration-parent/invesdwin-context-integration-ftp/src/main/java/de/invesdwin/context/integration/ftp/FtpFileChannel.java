@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -197,24 +198,11 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public void write(final InputStream input) {
         assertConnected();
-        try {
-            ftpClient.upload(getFilename(), new ADelegateInputStream() {
-
-                @Override
-                protected InputStream newDelegate() {
-                    return input;
-                }
-
-                @Override
-                public long skip(final long n) throws IOException {
-                    if (n <= 0) {
-                        return 0;
-                    } else {
-                        return super.skip(n);
-                    }
-                }
-            }, 0, 0, null);
-        } catch (final Exception e) {
+        try (InputStream inputAutoclose = input) {
+            try (OutputStream output = newOutputStream()) {
+                IOUtils.copyLarge(input, output);
+            }
+        } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -298,6 +286,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             public void close() throws IOException {
                 try {
                     super.close();
+                    if (!file.exists()) {
+                        //write an empty file
+                        FileUtils.write(file, "", Charset.defaultCharset());
+                    }
                     ftpClient.upload(file);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
