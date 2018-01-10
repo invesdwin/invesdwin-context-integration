@@ -18,78 +18,70 @@ import org.jppf.utils.configuration.JPPFProperty;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.bean.tuple.Pair;
+import de.invesdwin.util.time.duration.Duration;
+import de.invesdwin.util.time.fdate.FDate;
 
 @ThreadSafe
 public class ProcessingThreadsCounter {
 
+    private final TopologyManager topologyManager;
     @GuardedBy("this")
     private int processingThreadsCount;
     @GuardedBy("this")
     private int nodesCount;
-    private final TopologyManager topologyManager;
+    @GuardedBy("this")
+    private FDate lastRefresh = FDate.MIN_DATE;
 
     public ProcessingThreadsCounter(final TopologyManager topologyManager) {
         this.topologyManager = topologyManager;
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
             public void nodeUpdated(final TopologyEvent event) {
-                //ignore
+                refresh();
             }
 
             @Override
             public void nodeRemoved(final TopologyEvent event) {
-                synchronized (ProcessingThreadsCounter.this) {
-                    processingThreadsCount -= extractProcessingThreads(
-                            event.getNodeOrPeer().getManagementInfo().getSystemInfo());
-                    nodesCount--;
-                    Assertions.assertThat(processingThreadsCount).isGreaterThanOrEqualTo(0);
-                    Assertions.assertThat(nodesCount).isGreaterThanOrEqualTo(0);
-                }
+                refresh();
             }
 
             @Override
             public void nodeAdded(final TopologyEvent event) {
-                synchronized (ProcessingThreadsCounter.this) {
-                    processingThreadsCount += extractProcessingThreads(
-                            event.getNodeOrPeer().getManagementInfo().getSystemInfo());
-                    nodesCount++;
-                }
+                refresh();
             }
 
             @Override
             public void driverUpdated(final TopologyEvent event) {
-                //ignore
+                refresh();
             }
 
             @Override
             public void driverRemoved(final TopologyEvent event) {
-                synchronized (ProcessingThreadsCounter.this) {
-                    final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
-                    processingThreadsCount = processingThreadsAndNodes.getFirst();
-                    nodesCount = processingThreadsAndNodes.getSecond();
-                }
+                refresh();
             }
 
             @Override
             public void driverAdded(final TopologyEvent event) {
-                synchronized (ProcessingThreadsCounter.this) {
-                    final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
-                    processingThreadsCount = processingThreadsAndNodes.getFirst();
-                    nodesCount = processingThreadsAndNodes.getSecond();
-                }
+                refresh();
             }
         });
         refresh();
+        //don't count the first refresh
+        lastRefresh = FDate.MIN_DATE;
+    }
+
+    public synchronized void maybeRefresh() {
+        if (new Duration(lastRefresh).isGreaterThan(Duration.ONE_MINUTE)) {
+            refresh();
+        }
     }
 
     public synchronized void refresh() {
-        synchronized (this) {
-            final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
-            processingThreadsCount = processingThreadsAndNodes.getFirst();
-            nodesCount = processingThreadsAndNodes.getSecond();
-        }
+        final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
+        processingThreadsCount = processingThreadsAndNodes.getFirst();
+        nodesCount = processingThreadsAndNodes.getSecond();
+        lastRefresh = new FDate();
     }
 
     private Pair<Integer, Integer> countProcessingThreads() {

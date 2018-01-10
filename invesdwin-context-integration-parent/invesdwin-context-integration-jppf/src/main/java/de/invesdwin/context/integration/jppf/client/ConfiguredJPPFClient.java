@@ -10,7 +10,9 @@ import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
+import org.springframework.beans.factory.InitializingBean;
 
+import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.time.duration.Duration;
@@ -18,7 +20,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Named
 @Immutable
-public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
+public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFClient>, IStartupHook, InitializingBean {
 
     public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
@@ -38,19 +40,11 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         return executorService;
     }
 
-    private static synchronized ProcessingThreadsCounter getProcessingThreadsCounter() {
+    public static synchronized ProcessingThreadsCounter getProcessingThreadsCounter() {
         if (processingThreadsCounter == null) {
             processingThreadsCounter = new ProcessingThreadsCounter(getTopologyManager());
         }
         return processingThreadsCounter;
-    }
-
-    public static int getProcessingThreadsCount() {
-        return getProcessingThreadsCounter().getProcessingThreadsCount();
-    }
-
-    public static int getNodesCount() {
-        return getProcessingThreadsCounter().getNodesCount();
     }
 
     public static synchronized TopologyManager getTopologyManager() {
@@ -69,8 +63,22 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     }
 
     @Override
-    public JPPFClient getObject() throws Exception {
-        return getInstance();
+    public ConfiguredJPPFClient getObject() throws Exception {
+        //initialize as early as possible to get the nodes count initialized properly
+        Assertions.checkNotNull(getInstance());
+        return this;
+    }
+
+    @Override
+    public void startup() throws Exception {
+        //initialize as early as possible to get the nodes count initialized properly
+        Assertions.checkNotNull(getInstance());
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        //initialize as early as possible to get the nodes count initialized properly
+        Assertions.checkNotNull(getInstance());
     }
 
     public static synchronized JPPFClient getInstance() {
@@ -79,10 +87,11 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             fixSystemProperties();
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
+            Assertions.checkNotNull(getProcessingThreadsCounter());
             instance.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
 
-            while (getNodesCount() == 0) {
+            while (getProcessingThreadsCounter().getNodesCount() == 0) {
                 try {
                     FTimeUnit.SECONDS.sleep(1);
                 } catch (final InterruptedException e) {

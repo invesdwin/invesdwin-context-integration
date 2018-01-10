@@ -176,6 +176,8 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             } else {
                 return new FDate(date);
             }
+        } catch (final NumberFormatException e) {
+            return null;
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return null;
