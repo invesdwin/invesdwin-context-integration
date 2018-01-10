@@ -11,7 +11,6 @@ import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
 
-import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.time.duration.Duration;
@@ -19,7 +18,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Named
 @Immutable
-public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFClient>, IStartupHook {
+public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
@@ -62,14 +61,8 @@ public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFCli
     }
 
     @Override
-    public ConfiguredJPPFClient getObject() throws Exception {
-        return this;
-    }
-
-    @Override
-    public void startup() throws Exception {
-        //initialize as early as possible to get the nodes count initialized properly
-        Assertions.checkNotNull(getInstance());
+    public JPPFClient getObject() throws Exception {
+        return getInstance();
     }
 
     public static synchronized JPPFClient getInstance() {
