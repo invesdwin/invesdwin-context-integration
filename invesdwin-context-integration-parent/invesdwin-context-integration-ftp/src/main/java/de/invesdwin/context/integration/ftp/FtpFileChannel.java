@@ -2,20 +2,19 @@ package de.invesdwin.context.integration.ftp;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.SocketException;
 import java.net.URI;
-import java.util.Arrays;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.net.ftp.FTP;
-import org.apache.commons.net.ftp.FTPClient;
-import org.apache.commons.net.ftp.FTPFile;
-import org.apache.commons.net.ftp.FTPReply;
 
 import de.invesdwin.norva.marker.ISerializableValueObject;
 import de.invesdwin.util.assertions.Assertions;
@@ -24,6 +23,10 @@ import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.streams.ADelegateOutputStream;
+import it.sauronsoftware.ftp4j.FTPClient;
+import it.sauronsoftware.ftp4j.FTPCodes;
+import it.sauronsoftware.ftp4j.FTPException;
+import it.sauronsoftware.ftp4j.FTPFile;
 
 @NotThreadSafe
 public class FtpFileChannel implements Closeable, ISerializableValueObject {
@@ -71,7 +74,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
-            final String filename = UUIDs.newRandomUUID() + ".channel";
+            final String filename = filenamePrefix + UUIDs.newRandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
                 write(new ByteArrayInputStream(getEmptyFileContent()));
@@ -93,9 +96,11 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             }
             Assertions.checkNull(ftpClient, "Already connected");
             ftpClient = new FTPClient();
-            login();
             //be a bit more firewall friendly
-            ftpClient.enterLocalPassiveMode();
+            ftpClient.setPassive(true);
+            ftpClient.setType(FTPClient.TYPE_BINARY);
+            ftpClient.connect(serverUri.getHost(), serverUri.getPort());
+            ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
             createAndChangeDirectory();
             if (filename == null) {
                 createUniqueFile();
@@ -106,46 +111,32 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
-    private void login() throws SocketException, IOException {
-        ftpClient.connect(serverUri.getHost(), serverUri.getPort());
-        final int reply = ftpClient.getReplyCode();
-        if (!FTPReply.isPositiveCompletion(reply)) {
-            throw new IllegalStateException(
-                    "FTP server refused connection: " + Arrays.toString(ftpClient.getReplyStrings()));
-        }
-        if (!ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD)) {
-            throw new IllegalStateException("Login failed: " + Arrays.toString(ftpClient.getReplyStrings()));
-        }
-        ftpClient.setFileType(FTP.BINARY_FILE_TYPE);
-    }
-
     /**
      * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
      */
-    private void createAndChangeDirectory() throws IOException {
+    private void createAndChangeDirectory() {
         final String[] pathElements = directory.split("/");
         final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
                 if (singleDir.length() > 0) {
                     prevPathElements.append(singleDir).append("/");
-                    createAndChangeSingleDirectory(prevPathElements, singleDir);
+                    try {
+                        createAndChangeSingleDirectory(singleDir);
+                    } catch (final Throwable t) {
+                        throw new RuntimeException("At: " + prevPathElements, t);
+                    }
                 }
             }
         }
     }
 
-    private void createAndChangeSingleDirectory(final StringBuilder prevPathElements, final String singleDir)
-            throws IOException {
-        final boolean existed = ftpClient.changeWorkingDirectory(singleDir);
-        if (!existed) {
-            final boolean created = ftpClient.makeDirectory(singleDir);
-            if (created) {
-                if (!ftpClient.changeWorkingDirectory(singleDir)) {
-                    throw new IllegalStateException("Unable to create directory [" + prevPathElements + "]: "
-                            + Arrays.toString(ftpClient.getReplyStrings()));
-                }
-            }
+    private void createAndChangeSingleDirectory(final String singleDir) throws Exception {
+        try {
+            ftpClient.changeDirectory(singleDir);
+        } catch (final FTPException e) {
+            ftpClient.createDirectory(singleDir);
+            ftpClient.changeDirectory(singleDir);
         }
     }
 
@@ -168,7 +159,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public FTPFile info() {
         try {
-            final FTPFile[] listFiles = ftpClient.listFiles(getFilename());
+            final FTPFile[] listFiles = ftpClient.list(getFilename());
             if (listFiles.length == 0) {
                 return null;
             } else if (listFiles.length == 1) {
@@ -176,14 +167,28 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             } else {
                 throw new IllegalStateException("More than one result: " + listFiles.length);
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
     private void assertConnected() {
         Assertions.checkNotNull(ftpClient, "Please call connect() first");
         Assertions.checkTrue(ftpClient.isConnected(), "Not connected yet");
+    }
+
+    public void write(final File file) {
+        try {
+            ftpClient.upload(file);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void write(final byte[] bytes) {
@@ -193,14 +198,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void write(final InputStream input) {
         assertConnected();
         try {
-            if (!ftpClient.storeFile(getFilename(), input)) {
-                throw new IllegalStateException(
-                        "storeFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
-            }
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
-        } finally {
-            reconnect();
+            ftpClient.upload(getFilename(), input, 0, 0, null);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -214,7 +214,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                     return bytes;
                 }
             }
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             throw new RuntimeException(e);
         }
 
@@ -223,16 +223,15 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void delete() {
         assertConnected();
         try {
-            if (exists()) {
-                if (!ftpClient.deleteFile(getFilename())) {
-                    throw new IllegalStateException(
-                            "deleteFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
-                }
+            ftpClient.deleteFile(getFilename());
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
+                return;
+            } else {
+                throw new RuntimeException(e);
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
-        } finally {
-            reconnect();
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -252,9 +251,13 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                     // do nothing
                 }
                 try {
-                    ftpClient.disconnect();
+                    ftpClient.disconnect(true);
                 } catch (final Throwable t) {
-                    // do nothing
+                    try {
+                        ftpClient.disconnect(false);
+                    } catch (final Throwable t1) {
+                        // do nothing
+                    }
                 }
             }
             ftpClient = null;
@@ -263,34 +266,43 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public OutputStream newOutputStream() {
         assertConnected();
-        try {
-            final OutputStream outputStream = ftpClient.storeFileStream(getFilename());
-            if (!FTPReply.isPositiveIntermediate(ftpClient.getReplyCode())) {
-                if (outputStream != null) {
-                    outputStream.close();
+        return new ADelegateOutputStream() {
+
+            private final File file = getLocalTempFile();
+
+            @Override
+            protected OutputStream newDelegate() {
+                try {
+                    return new FileOutputStream(file);
+                } catch (final FileNotFoundException e) {
+                    throw new RuntimeException(e);
                 }
-                return null;
             }
-            return new ADelegateOutputStream() {
 
-                @Override
-                protected OutputStream newDelegate() {
-                    return outputStream;
-                }
-
-                @Override
-                public void close() throws IOException {
+            @Override
+            public void close() throws IOException {
+                try {
                     super.close();
-                    if (!ftpClient.completePendingCommand()) {
-                        throw new IllegalStateException("completePendingCommand returned false: "
-                                + Arrays.toString(ftpClient.getReplyStrings()));
-                    }
-                    reconnect();
+                    ftpClient.upload(file);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    file.delete();
                 }
-            };
+            }
+        };
+    }
+
+    private File getLocalTempFile() {
+        final File directory = new File(FtpClientProperties.LOCAL_TEMP_DIRECTORY, getDirectory());
+        try {
+            FileUtils.forceMkdir(directory);
         } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+            throw new RuntimeException(e);
         }
+        final File file = new File(directory, getFilename());
+        FileUtils.deleteQuietly(file);
+        return file;
     }
 
     public void reconnect() {
@@ -301,42 +313,35 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public InputStream newInputStream() {
         assertConnected();
+        final File file = getLocalTempFile();
         try {
-            final InputStream inputStream = ftpClient.retrieveFileStream(getFilename());
-            if (!FTPReply.isPositiveIntermediate(ftpClient.getReplyCode())) {
-                if (inputStream != null) {
-                    inputStream.close();
-                }
+            ftpClient.download(getFilename(), file);
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return null;
+            } else {
+                throw new RuntimeException(e);
             }
-            final int returnCode = ftpClient.getReplyCode();
-            if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
-                if (inputStream != null) {
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
-                }
-                return null;
-            }
-            return new ADelegateInputStream() {
-                @Override
-                protected InputStream newDelegate() {
-                    return inputStream;
-                }
-
-                @Override
-                public void close() throws IOException {
-                    super.close();
-                    if (!ftpClient.completePendingCommand()) {
-                        throw new IllegalStateException("completePendingCommand returned false: "
-                                + Arrays.toString(ftpClient.getReplyStrings()));
-                    }
-                    reconnect();
-                }
-            };
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
+        return new ADelegateInputStream() {
+
+            @Override
+            protected InputStream newDelegate() {
+                try {
+                    return new FileInputStream(file);
+                } catch (final FileNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void close() throws IOException {
+                super.close();
+                file.delete();
+            }
+        };
     }
 
 }

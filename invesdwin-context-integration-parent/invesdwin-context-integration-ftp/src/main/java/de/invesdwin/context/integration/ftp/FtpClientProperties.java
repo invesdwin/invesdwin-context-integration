@@ -1,12 +1,17 @@
 package de.invesdwin.context.integration.ftp;
 
+import java.io.File;
+
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
 
 @Immutable
 public final class FtpClientProperties {
 
+    public static final File LOCAL_TEMP_DIRECTORY = new File(ContextProperties.TEMP_DIRECTORY,
+            FtpFileChannel.class.getSimpleName());
     public static final String SERVICE_NAME = "invesdwin-context-integration-ftp-server";
     public static final String USERNAME;
     public static final String PASSWORD;

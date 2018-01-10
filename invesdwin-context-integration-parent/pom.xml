@@ -68,7 +68,7 @@
 		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
 		<version.jppf>5.2.8</version.jppf>
-		<version.commons-net>3.6</version.commons-net>
+		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
@@ -1012,9 +1012,9 @@
 			</dependency>
 
 			<dependency>
-				<groupId>commons-net</groupId>
-				<artifactId>commons-net</artifactId>
-				<version>${version.commons-net}</version>
+				<groupId>com.github.asbachb</groupId>
+				<artifactId>ftp4j</artifactId>
+				<version>${version.ftp4j}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.ftpserver</groupId>

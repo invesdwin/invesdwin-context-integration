@@ -62,7 +62,7 @@ public class FtpFileChannelTest extends ATest {
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
 
-        for (int i = 0; i < 1000; i++) {
+        for (int i = 0; i < 20; i++) {
             final int random = RandomUtils.nextInt(0, 6);
             switch (random) {
             case 0:
