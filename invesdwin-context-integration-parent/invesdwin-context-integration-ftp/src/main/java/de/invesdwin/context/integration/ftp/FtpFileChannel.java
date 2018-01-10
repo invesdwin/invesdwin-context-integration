@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.ftp;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -300,7 +302,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             @Override
             protected OutputStream newDelegate() {
                 try {
-                    return new FileOutputStream(file);
+                    return new BufferedOutputStream(new FileOutputStream(file));
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -364,7 +366,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             @Override
             protected InputStream newDelegate() {
                 try {
-                    return new FileInputStream(file);
+                    return new BufferedInputStream(new FileInputStream(file));
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
