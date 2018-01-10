@@ -198,7 +198,22 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void write(final InputStream input) {
         assertConnected();
         try {
-            ftpClient.upload(getFilename(), input, 0, 0, null);
+            ftpClient.upload(getFilename(), new ADelegateInputStream() {
+
+                @Override
+                protected InputStream newDelegate() {
+                    return input;
+                }
+
+                @Override
+                public long skip(final long n) throws IOException {
+                    if (n <= 0) {
+                        return 0;
+                    } else {
+                        return super.skip(n);
+                    }
+                }
+            }, 0, 0, null);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -324,6 +339,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        }
+        if (!file.exists()) {
+            return null;
         }
         return new ADelegateInputStream() {
 
