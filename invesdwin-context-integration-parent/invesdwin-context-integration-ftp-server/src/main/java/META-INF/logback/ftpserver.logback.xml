@@ -1,0 +1,13 @@
+<configuration>
+
+	<!-- 2018-01-10 02:45:21,099 [ |pool-3-thread-2 ] WARN org.apache.ftpserver.impl.PassivePorts.releasePort 
+		- Releasing unreserved passive port: 35477 -->
+	<logger name="org.apache.ftpserver.impl.PassivePorts"
+		additivity="false" level="ERROR">
+		<appender-ref ref="stdout" />
+		<appender-ref ref="stderr" />
+		<appender-ref ref="common" />
+		<appender-ref ref="error" />
+	</logger>
+
+</configuration>

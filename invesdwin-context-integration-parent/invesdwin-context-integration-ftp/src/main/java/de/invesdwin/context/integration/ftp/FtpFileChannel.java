@@ -62,7 +62,11 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         this.emptyFileContent = emptyFileContent;
     }
 
-    public void createUniqueFilename(final String filenamePrefix, final String filenameSuffix) {
+    public void createUniqueFile() {
+        createUniqueFile(FtpFileChannel.class.getSimpleName() + "_", ".channel");
+    }
+
+    public void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
             final String filename = UUIDs.newRandomUUID() + ".channel";
@@ -87,12 +91,12 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             }
             Assertions.checkNull(ftpClient, "Already connected");
             ftpClient = new FTPClient();
+            login();
             //be a bit more firewall friendly
             ftpClient.enterLocalPassiveMode();
-            login();
             createAndChangeDirectory();
             if (filename == null) {
-                createUniqueFilename(FtpFileChannel.class.getSimpleName() + "_", ".channel");
+                createUniqueFile();
             }
         } catch (final Throwable e) {
             close();
@@ -148,11 +152,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public boolean exists() {
-        try {
-            return ftpClient.listFiles(getFilename()).length == 1;
-        } catch (final IOException e) {
-            throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
-        }
+        return info() != null;
     }
 
     public long size() {
@@ -219,6 +219,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
                 throw new IllegalStateException(
                         "deleteFile returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
             }
+            if (!ftpClient.completePendingCommand()) {
+                throw new IllegalStateException(
+                        "completePendingCommand returned false: " + Arrays.toString(ftpClient.getReplyStrings()));
+            }
         } catch (final IOException e) {
             throw new RuntimeException(Arrays.toString(ftpClient.getReplyStrings()), e);
         }
@@ -264,6 +268,11 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             final InputStream inputStream = ftpClient.retrieveFileStream(getFilename());
             final int returnCode = ftpClient.getReplyCode();
             if (inputStream == null || returnCode == FTPReply.FILE_UNAVAILABLE) {
+                if (inputStream != null) {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                }
                 return null;
             }
             return inputStream;
