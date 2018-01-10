@@ -10,7 +10,6 @@ import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;
 import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
-import org.springframework.beans.factory.InitializingBean;
 
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
@@ -20,7 +19,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @Named
 @Immutable
-public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFClient>, IStartupHook, InitializingBean {
+public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFClient>, IStartupHook {
 
     public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
@@ -64,19 +63,11 @@ public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFCli
 
     @Override
     public ConfiguredJPPFClient getObject() throws Exception {
-        //initialize as early as possible to get the nodes count initialized properly
-        Assertions.checkNotNull(getInstance());
         return this;
     }
 
     @Override
     public void startup() throws Exception {
-        //initialize as early as possible to get the nodes count initialized properly
-        Assertions.checkNotNull(getInstance());
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
         //initialize as early as possible to get the nodes count initialized properly
         Assertions.checkNotNull(getInstance());
     }
@@ -88,10 +79,12 @@ public final class ConfiguredJPPFClient implements FactoryBean<ConfiguredJPPFCli
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
             Assertions.checkNotNull(getProcessingThreadsCounter());
-            instance.addDriverDiscovery(new ConfiguredClientDriverDiscovery());
+            final ConfiguredClientDriverDiscovery clientDiscovery = new ConfiguredClientDriverDiscovery();
+            instance.addDriverDiscovery(clientDiscovery);
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
 
-            while (getProcessingThreadsCounter().getNodesCount() == 0) {
+            final int expectedDriversCount = clientDiscovery.getDestinationProvider().getDestinations().size();
+            while (processingThreadsCounter.getDriversCount() != expectedDriversCount) {
                 try {
                     FTimeUnit.SECONDS.sleep(1);
                 } catch (final InterruptedException e) {

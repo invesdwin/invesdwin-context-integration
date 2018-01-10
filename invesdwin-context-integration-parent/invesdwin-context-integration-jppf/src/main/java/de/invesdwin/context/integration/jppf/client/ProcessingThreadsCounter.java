@@ -18,7 +18,7 @@ import org.jppf.utils.configuration.JPPFProperty;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
-import de.invesdwin.util.bean.tuple.Pair;
+import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 
@@ -28,6 +28,8 @@ public class ProcessingThreadsCounter {
     private final TopologyManager topologyManager;
     @GuardedBy("this")
     private int processingThreadsCount;
+    @GuardedBy("this")
+    private int driversCount;
     @GuardedBy("this")
     private int nodesCount;
     @GuardedBy("this")
@@ -78,15 +80,17 @@ public class ProcessingThreadsCounter {
     }
 
     public synchronized void refresh() {
-        final Pair<Integer, Integer> processingThreadsAndNodes = countProcessingThreads();
-        processingThreadsCount = processingThreadsAndNodes.getFirst();
-        nodesCount = processingThreadsAndNodes.getSecond();
+        final Triple<Integer, Integer, Integer> processingThreadsAndNodesAndDrivers = countProcessingThreads();
+        processingThreadsCount = processingThreadsAndNodesAndDrivers.getFirst();
+        nodesCount = processingThreadsAndNodesAndDrivers.getSecond();
+        driversCount = processingThreadsAndNodesAndDrivers.getThird();
         lastRefresh = new FDate();
     }
 
-    private Pair<Integer, Integer> countProcessingThreads() {
+    private Triple<Integer, Integer, Integer> countProcessingThreads() {
         final AtomicInteger processingThreads = new AtomicInteger(0);
         final AtomicInteger nodes = new AtomicInteger(0);
+        final AtomicInteger drivers = new AtomicInteger(0);
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
             nodes.incrementAndGet();
             processingThreads.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
@@ -103,10 +107,10 @@ public class ProcessingThreadsCounter {
 
             @Override
             protected void visitDriver(final TopologyDriver driver) {
-                //ignore driver since we are only interested in nodes
+                drivers.incrementAndGet();
             }
         }.process(topologyManager);
-        return Pair.of(processingThreads.get(), nodes.get());
+        return Triple.of(processingThreads.get(), nodes.get(), drivers.get());
     }
 
     private Integer extractProcessingThreads(final JPPFSystemInformation nodeConfig) {
@@ -128,6 +132,10 @@ public class ProcessingThreadsCounter {
 
     public synchronized int getProcessingThreadsCount() {
         return processingThreadsCount;
+    }
+
+    public int getDriversCount() {
+        return driversCount;
     }
 
     public int getNodesCount() {

@@ -54,7 +54,7 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
         retry.run();
     }
 
-    private JPPFServerDestinationProvider getDestinationProvider() {
+    public synchronized JPPFServerDestinationProvider getDestinationProvider() {
         if (destinationProvider == null) {
             destinationProvider = MergedContext.getInstance().getBean(JPPFServerDestinationProvider.class);
         }
