@@ -10,6 +10,7 @@ import org.springframework.beans.factory.FactoryBean;
 import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Reflections;
 
@@ -17,6 +18,7 @@ import de.invesdwin.util.lang.Reflections;
 @Immutable
 public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, IStartupHook, IPreStartupHook {
 
+    private static final Log LOG = new Log(ConfiguredJPPFDriver.class);
     private static boolean createInstance = true;
     private static JPPFDriver instance;
 
@@ -42,6 +44,7 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
 
     public static synchronized JPPFDriver getInstance() {
         if (instance == null && createInstance) {
+            LOG.info("Starting jppf server at: %s", JPPFServerProperties.getServerBindUri());
             JPPFDriver.main("noLauncher");
             instance = JPPFDriver.getInstance();
             Assertions.checkNotNull(instance, "Startup failed!");
