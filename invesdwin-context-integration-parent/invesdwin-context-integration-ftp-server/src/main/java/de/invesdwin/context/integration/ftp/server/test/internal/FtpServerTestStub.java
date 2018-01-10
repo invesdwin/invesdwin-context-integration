@@ -36,7 +36,7 @@ public class FtpServerTestStub extends StubSupport {
                 maybeStopLastServer();
             }
         });
-        ContextDirectoriesStub.addProtectedDirectory(FtpServerProperties.WORKING_DIR);
+        ContextDirectoriesStub.addProtectedDirectory(FtpServerProperties.WORKING_DIRECTORY);
     }
 
     @Override
@@ -56,8 +56,8 @@ public class FtpServerTestStub extends StubSupport {
     @Override
     public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
         //clean up for next test
-        FileUtils.deleteQuietly(FtpServerProperties.WORKING_DIR);
-        FileUtils.forceMkdir(FtpServerProperties.WORKING_DIR);
+        FileUtils.deleteQuietly(FtpServerProperties.WORKING_DIRECTORY);
+        FileUtils.forceMkdir(FtpServerProperties.WORKING_DIRECTORY);
     }
 
     @Override

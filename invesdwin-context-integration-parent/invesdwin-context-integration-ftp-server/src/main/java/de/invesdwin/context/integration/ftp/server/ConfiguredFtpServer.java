@@ -51,7 +51,7 @@ public class ConfiguredFtpServer implements FtpServer {
         user.setName(FtpClientProperties.USERNAME);
         user.setPassword(FtpClientProperties.PASSWORD);
         user.setEnabled(true);
-        user.setHomeDirectory(FtpServerProperties.WORKING_DIR.getAbsolutePath());
+        user.setHomeDirectory(FtpServerProperties.WORKING_DIRECTORY.getAbsolutePath());
         user.setAuthorities(Arrays.asList(new WritePermission()));
         try {
             userManager.save(user);

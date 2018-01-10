@@ -294,7 +294,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     private File getLocalTempFile() {
-        final File directory = new File(FtpClientProperties.LOCAL_TEMP_DIRECTORY, getDirectory());
+        final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getDirectory());
         try {
             FileUtils.forceMkdir(directory);
         } catch (final IOException e) {

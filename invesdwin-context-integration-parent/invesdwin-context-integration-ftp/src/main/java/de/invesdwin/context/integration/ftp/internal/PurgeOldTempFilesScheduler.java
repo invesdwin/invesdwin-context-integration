@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.ftp.server.internal;
+package de.invesdwin.context.integration.ftp.internal;
 
 import java.io.File;
 import java.util.Iterator;
@@ -13,27 +13,27 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
-import de.invesdwin.context.integration.ftp.server.FtpServerProperties;
+import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.util.time.fdate.FDate;
 
 @Named
 @NotThreadSafe
-public class PurgeOldFilesScheduler implements IStartupHook {
+public class PurgeOldTempFilesScheduler implements IStartupHook {
 
     @SkipParallelExecution
     @Scheduled(cron = "0 0 0 * * ?") //check every day
     public void purgeOldFiles() {
-        if (FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION == null) {
+        if (FtpClientProperties.PURGE_TEMP_FILES_OLDER_THAN_DURATION == null) {
             return;
         }
-        final FDate threshold = new FDate().subtract(FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
-        final Iterator<File> filesToDelete = FileUtils.iterateFiles(FtpServerProperties.WORKING_DIRECTORY,
+        final FDate threshold = new FDate().subtract(FtpClientProperties.PURGE_TEMP_FILES_OLDER_THAN_DURATION);
+        final Iterator<File> filesToDelete = FileUtils.iterateFiles(FtpClientProperties.TEMP_DIRECTORY,
                 new AgeFileFilter(threshold.dateValue(), true), TrueFileFilter.INSTANCE);
         while (filesToDelete.hasNext()) {
             final File fileToDelete = filesToDelete.next();
             fileToDelete.delete();
         }
-        for (final File f : FtpServerProperties.WORKING_DIRECTORY.listFiles()) {
+        for (final File f : FtpClientProperties.TEMP_DIRECTORY.listFiles()) {
             maybeDeleteEmptyDirectories(f);
         }
     }
