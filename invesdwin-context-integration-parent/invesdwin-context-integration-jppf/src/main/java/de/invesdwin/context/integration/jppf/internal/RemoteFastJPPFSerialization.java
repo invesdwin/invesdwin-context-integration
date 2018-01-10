@@ -21,10 +21,10 @@ import de.invesdwin.context.log.error.Err;
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
-    private final ThreadLocal<ConfDefaultCoder> confThreadLocal = new ThreadLocal<ConfDefaultCoder>() {
+    private final ThreadLocal<DefaultCoder> confThreadLocal = new ThreadLocal<DefaultCoder>() {
         @Override
-        protected ConfDefaultCoder initialValue() {
-            return new ConfDefaultCoder();
+        protected DefaultCoder initialValue() {
+            return new DefaultCoder();
         }
     };
 
@@ -59,11 +59,4 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         }
     }
 
-    private static class ConfDefaultCoder extends DefaultCoder {
-
-        @Override
-        public FSTConfiguration getConf() {
-            return super.getConf();
-        }
-    }
 }
