@@ -7,6 +7,7 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.commons.io.IOUtils;
 import org.jppf.serialization.JPPFSerialization;
+import org.nustaq.serialization.FSTClazzInfo;
 import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.simpleapi.DefaultCoder;
 
@@ -14,12 +15,15 @@ import de.invesdwin.context.log.error.Err;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
- * 
- * WARNING: causes deadlocks right now, waiting for a fix before using it again:
- * https://github.com/RuedigerMoeller/fast-serialization/issues/234
  */
 @Immutable
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
+
+    static {
+        // https://github.com/RuedigerMoeller/fast-serialization/issues/234
+        FSTClazzInfo.BufferConstructorMeta = false;
+        FSTClazzInfo.BufferFieldMeta = false;
+    }
 
     private final ThreadLocal<DefaultCoder> confThreadLocal = new ThreadLocal<DefaultCoder>() {
         @Override
