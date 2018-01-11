@@ -21,6 +21,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     static {
         // https://github.com/RuedigerMoeller/fast-serialization/issues/234
+        FSTClazzInfo.BufferConstructorMeta = false;
         FSTClazzInfo.BufferFieldMeta = false;
     }
 
