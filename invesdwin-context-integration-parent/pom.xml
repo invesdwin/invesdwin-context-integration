@@ -18,7 +18,6 @@
 		</license>
 	</licenses>
 
-
 	<modules>
 		<module>invesdwin-context-integration</module>
 		<module>invesdwin-context-integration-amqp</module>
@@ -1055,6 +1054,12 @@
 			<url>http://invesdwin.de/artifactory/invesdwin-oss-remote</url>
 		</pluginRepository>
 	</pluginRepositories>
+	
+	<scm>
+		<url>https://github.com/subes/invesdwin-context-integration</url>
+		<connection>scm:git:https://github.com/subes/invesdwin-context-integration.git</connection>
+		<tag>HEAD</tag>
+	</scm>
 
 </project>
 
