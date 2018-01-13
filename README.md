@@ -20,7 +20,7 @@ Dependency declaration:
 
 ## Integration Modules
 
-The core integration module resides in the [invesdwin-context](https://github.com/subes/invesdwin-context/blob/master/README.md#integration-module) repository. You can read more about it there. The modules here build on top of it to provider more specific integration functionality:
+The core integration module resides in the [invesdwin-context](https://github.com/subes/invesdwin-context/blob/master/README.md#integration-module) repository. You can read more about it there. The modules here build on top of it to provide more specific integration functionality:
 
 - **invesdwin-context-integration-amqp**: this module allows to connect easily to a [RabbitMQ](https://www.rabbitmq.com/) ([AMQP](https://en.wikipedia.org/wiki/Advanced_Message_Queuing_Protocol)) server via [spring-amqp](https://projects.spring.io/spring-amqp/). The channels are defined in your own spring-integration xml files as can be seen in the respective test cases. There are system properties available to define the connection parameters to the default server (create your own RabbitTemplate instances for additional connections):
 ```properties
