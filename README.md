@@ -13,7 +13,7 @@ Dependency declaration:
 ```xml
 <dependency>
 	<groupId>de.invesdwin</groupId>
-	<artifactId>invesdwin-context-integration</artifactId>
+	<artifactId>invesdwin-context-integration-ws</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 </dependency>
 ```
