@@ -21,6 +21,7 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
     private static final Log LOG = new Log(ConfiguredJPPFDriver.class);
     private static boolean createInstance = true;
     private static JPPFDriver instance;
+    private static boolean createNodeAllowed = true;
 
     private ConfiguredJPPFDriver() {}
 
@@ -49,10 +50,15 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
             instance = JPPFDriver.getInstance();
             Assertions.checkNotNull(instance, "Startup failed!");
             instance.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
-            if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
-                final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(instance).get();
-                ConfiguredJPPFNode.setInstance(localNode);
-                Assertions.assertThat(ConfiguredJPPFNode.getInstance()).isSameAs(localNode);
+            if (createNodeAllowed) {
+                if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
+                    final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(instance).get();
+                    ConfiguredJPPFNode.setInstance(localNode);
+                    Assertions.assertThat(ConfiguredJPPFNode.getInstance()).isSameAs(localNode);
+                } else {
+                    ConfiguredJPPFNode.setCreateInstance(true);
+                    Assertions.checkNotNull(ConfiguredJPPFNode.getInstance());
+                }
             }
         }
         return instance;
@@ -72,7 +78,9 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
 
     @Override
     public void preStartup() throws Exception {
-        if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
+        createNodeAllowed = ConfiguredJPPFNode.isCreateInstance();
+        if (createNodeAllowed) {
+            //delay node startup
             ConfiguredJPPFNode.setCreateInstance(false);
         }
     }
