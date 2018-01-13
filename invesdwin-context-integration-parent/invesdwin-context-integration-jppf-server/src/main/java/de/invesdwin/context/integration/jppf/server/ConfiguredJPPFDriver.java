@@ -50,16 +50,6 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
             instance = JPPFDriver.getInstance();
             Assertions.checkNotNull(instance, "Startup failed!");
             instance.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
-            if (createNodeAllowed) {
-                if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
-                    final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(instance).get();
-                    ConfiguredJPPFNode.setInstance(localNode);
-                    Assertions.assertThat(ConfiguredJPPFNode.getInstance()).isSameAs(localNode);
-                } else {
-                    ConfiguredJPPFNode.setCreateInstance(true);
-                    Assertions.checkNotNull(ConfiguredJPPFNode.getInstance());
-                }
-            }
         }
         return instance;
     }
@@ -72,8 +62,17 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
     public void startup() throws Exception {
         if (isCreateInstance()) {
             Assertions.checkNotNull(getInstance());
+            if (createNodeAllowed) {
+                if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
+                    final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(instance).get();
+                    ConfiguredJPPFNode.setInstance(localNode);
+                    Assertions.assertThat(ConfiguredJPPFNode.getInstance()).isSameAs(localNode);
+                } else {
+                    ConfiguredJPPFNode.setCreateInstance(true);
+                    Assertions.checkNotNull(ConfiguredJPPFNode.getInstance());
+                }
+            }
         }
-
     }
 
     @Override
