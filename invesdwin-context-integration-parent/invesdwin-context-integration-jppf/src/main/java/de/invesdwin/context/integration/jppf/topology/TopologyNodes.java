@@ -10,6 +10,7 @@ import org.jppf.management.JPPFManagementInfo;
 import org.jppf.management.JPPFSystemInformation;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.util.lang.Strings;
 
 @Immutable
 public final class TopologyNodes {
@@ -41,7 +42,7 @@ public final class TopologyNodes {
         final JPPFManagementInfo managementInfo = node.getManagementInfo();
         String host = managementInfo.getHost();
         //local nodes advertise the host wrong
-        if ("localhost".equals(host)) {
+        if (Strings.equalsAnyIgnoreCase(host, "localhost", "localhost.localdomain")) {
             host = node.getDriver().getManagementInfo().getHost();
         }
         final int port = managementInfo.getPort();

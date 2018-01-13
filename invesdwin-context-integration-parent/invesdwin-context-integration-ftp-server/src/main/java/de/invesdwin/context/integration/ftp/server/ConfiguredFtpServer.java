@@ -40,6 +40,7 @@ public class ConfiguredFtpServer implements FtpServer {
         final ConnectionConfigFactory connectionConfig = new ConnectionConfigFactory();
         connectionConfig.setAnonymousLoginEnabled(false);
         connectionConfig.setMaxThreads(FtpServerProperties.MAX_THREADS);
+        connectionConfig.setMaxLogins(0); //unlimited logins
         serverFactory.setConnectionConfig(connectionConfig.createConnectionConfig());
 
         // replace the default listener port
