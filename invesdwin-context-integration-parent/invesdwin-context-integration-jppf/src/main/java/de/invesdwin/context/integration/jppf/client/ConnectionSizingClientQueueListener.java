@@ -9,6 +9,7 @@ import org.jppf.client.event.ClientQueueListener;
 
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
@@ -23,38 +24,44 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     //reap connections only when they are not used after a while
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
 
-    @GuardedBy("this")
-    private int activeJobsCount = 0;
+    @GuardedBy("ConnectionSizingClientQueueListener.class")
+    private static int activeJobsCount = 0;
 
     @Override
-    public synchronized void jobAdded(final ClientQueueEvent event) {
-        activeJobsCount++;
-        final int newCount = activeJobsCount;
-        // grow the connection pools by one
+    public void jobAdded(final ClientQueueEvent event) {
+        synchronized (ConnectionSizingClientQueueListener.class) {
+            ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
+                    ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
+            final int newCount = Integers.max(1, ConnectionSizingClientQueueListener.activeJobsCount);
+            // grow the connection pools by one
 
-        while (newCount > event.getClient().getAllConnectionsCount()) {
-            for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
-                pool.setSize(pool.getSize() + 1);
+            while (newCount > event.getClient().getAllConnectionsCount()) {
+                for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                    pool.setSize(pool.getSize() + 1);
+                }
             }
         }
     }
 
     @Override
-    public synchronized void jobRemoved(final ClientQueueEvent event) {
-        activeJobsCount--;
-        final int newCount = activeJobsCount;
-        SCHEDULER.schedule(new Runnable() {
-            @Override
-            public void run() {
-                // shrink the connection pools by one
-                while (newCount < event.getClient().getAllConnectionsCount()) {
-                    for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
-                        final int newPoolSize = Math.max(1, pool.getSize() - 1);
-                        pool.setSize(newPoolSize);
+    public void jobRemoved(final ClientQueueEvent event) {
+        synchronized (ConnectionSizingClientQueueListener.class) {
+            ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
+                    ConnectionSizingClientQueueListener.activeJobsCount - 1, event.getQueueSize());
+            final int newCount = Integers.max(1, ConnectionSizingClientQueueListener.activeJobsCount);
+            SCHEDULER.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    // shrink the connection pools by one
+                    while (newCount < event.getClient().getAllConnectionsCount()) {
+                        for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                            final int newPoolSize = Integers.max(1, pool.getSize() - 1);
+                            pool.setSize(newPoolSize);
+                        }
                     }
                 }
-            }
-        }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
+            }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
+        }
     }
 
 }
