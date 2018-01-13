@@ -39,6 +39,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
 
     public static synchronized JPPFNode getInstance() {
         if (instance == null && createInstance) {
+            Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
             NodeRunner.main("noLauncher");
             instance = (JPPFNode) NodeRunner.getNode();
             Assertions.checkNotNull(instance, "Startup failed!");
