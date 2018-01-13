@@ -28,7 +28,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
 
     @Override
     public synchronized void jobAdded(final ClientQueueEvent event) {
-        activeJobsCount = event.getQueueSize();
+        activeJobsCount++;
         final int newCount = activeJobsCount;
         // grow the connection pools by one
 
@@ -41,7 +41,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
 
     @Override
     public synchronized void jobRemoved(final ClientQueueEvent event) {
-        activeJobsCount = event.getQueueSize();
+        activeJobsCount--;
         final int newCount = activeJobsCount;
         SCHEDULER.schedule(new Runnable() {
             @Override
