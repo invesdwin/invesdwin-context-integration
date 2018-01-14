@@ -19,6 +19,8 @@ import de.invesdwin.context.integration.ftp.FtpFileChannel;
 import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.fdate.FDate;
@@ -57,8 +59,27 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
     public static synchronized JPPFNode getInstance() {
         if (instance == null && createInstance) {
             Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
-            NodeRunner.main("noLauncher");
-            instance = (JPPFNode) NodeRunner.getNode();
+            final WrappedExecutorService nodeThread = Executors
+                    .newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(), 1);
+            nodeThread.execute(new Runnable() {
+                @Override
+                public void run() {
+                    NodeRunner.main("noLauncher");
+                }
+            });
+            int triesLeft = 60;
+            while (instance == null) {
+                instance = (JPPFNode) NodeRunner.getNode();
+                try {
+                    FTimeUnit.SECONDS.sleep(1);
+                } catch (final InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                triesLeft--;
+                if (triesLeft < 0) {
+                    break;
+                }
+            }
             Assertions.checkNotNull(instance, "Startup failed!");
         }
         return instance;
