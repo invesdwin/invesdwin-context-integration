@@ -7,6 +7,7 @@ import org.jppf.client.JPPFConnectionPool;
 import org.jppf.client.event.ClientQueueEvent;
 import org.jppf.client.event.ClientQueueListener;
 
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.math.Integers;
@@ -27,19 +28,24 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @GuardedBy("ConnectionSizingClientQueueListener.class")
     private static int activeJobsCount = 0;
 
+    private final Log log = new Log(this);
+
     @Override
     public void jobAdded(final ClientQueueEvent event) {
         synchronized (ConnectionSizingClientQueueListener.class) {
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
-            final int newCount = Integers.max(1, ConnectionSizingClientQueueListener.activeJobsCount);
+            final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
             // grow the connection pools by one
 
+            final int connectionsBefore = event.getClient().getAllConnectionsCount();
             while (newCount > event.getClient().getAllConnectionsCount()) {
                 for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
                     pool.setSize(pool.getSize() + 1);
                 }
             }
+            final int connectionsAfter = event.getClient().getAllConnectionsCount();
+            logConnectionsChanged(connectionsBefore, connectionsAfter);
         }
     }
 
@@ -48,19 +54,33 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         synchronized (ConnectionSizingClientQueueListener.class) {
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount - 1, event.getQueueSize());
-            final int newCount = Integers.max(1, ConnectionSizingClientQueueListener.activeJobsCount);
+            final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
             SCHEDULER.schedule(new Runnable() {
                 @Override
                 public void run() {
                     // shrink the connection pools by one
+                    final int connectionsBefore = event.getClient().getAllConnectionsCount();
                     while (newCount < event.getClient().getAllConnectionsCount()) {
                         for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
                             final int newPoolSize = Integers.max(1, pool.getSize() - 1);
                             pool.setSize(newPoolSize);
                         }
                     }
+                    final int connectionsAfter = event.getClient().getAllConnectionsCount();
+                    logConnectionsChanged(connectionsBefore, connectionsAfter);
                 }
             }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
+        }
+    }
+
+    private int determineNewConnectionsCount(final int activeJobsCount) {
+        final int nodesCount = ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount();
+        return Integers.max(1, activeJobsCount, nodesCount);
+    }
+
+    protected void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
+        if (connectionsBefore != connectionsAfter) {
+            log.info("Modified JPPF connections from %s to %s", connectionsBefore, connectionsAfter);
         }
     }
 

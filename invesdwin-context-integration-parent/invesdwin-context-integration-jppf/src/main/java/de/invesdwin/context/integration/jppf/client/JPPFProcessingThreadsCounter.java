@@ -108,7 +108,7 @@ public class JPPFProcessingThreadsCounter {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    refresh();
+                    maybeRefresh();
                 }
             });
         }
