@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.jppf.client;
 
+import java.util.List;
+
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -39,13 +41,22 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
             // grow the connection pools by one
 
             final int connectionsBefore = event.getClient().getAllConnectionsCount();
-            while (newCount > event.getClient().getAllConnectionsCount()) {
-                for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+            int curConnections = connectionsBefore;
+            while (newCount > curConnections) {
+                final List<JPPFConnectionPool> connectionPools = event.getClient().getConnectionPools();
+                if (connectionPools.isEmpty()) {
+                    break;
+                }
+                for (final JPPFConnectionPool pool : connectionPools) {
                     pool.setSize(pool.getSize() + 1);
                 }
+                final int newConnections = event.getClient().getAllConnectionsCount();
+                if (newConnections == curConnections) {
+                    break;
+                }
+                curConnections = newConnections;
             }
-            final int connectionsAfter = event.getClient().getAllConnectionsCount();
-            logConnectionsChanged(connectionsBefore, connectionsAfter);
+            logConnectionsChanged(connectionsBefore, curConnections);
         }
     }
 
@@ -60,14 +71,23 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
                 public void run() {
                     // shrink the connection pools by one
                     final int connectionsBefore = event.getClient().getAllConnectionsCount();
-                    while (newCount < event.getClient().getAllConnectionsCount()) {
-                        for (final JPPFConnectionPool pool : event.getClient().getConnectionPools()) {
+                    int curConnections = connectionsBefore;
+                    while (newCount < curConnections) {
+                        final List<JPPFConnectionPool> connectionPools = event.getClient().getConnectionPools();
+                        if (connectionPools.isEmpty()) {
+                            break;
+                        }
+                        for (final JPPFConnectionPool pool : connectionPools) {
                             final int newPoolSize = Integers.max(1, pool.getSize() - 1);
                             pool.setSize(newPoolSize);
                         }
+                        final int newConnections = event.getClient().getAllConnectionsCount();
+                        if (newConnections == curConnections) {
+                            break;
+                        }
+                        curConnections = newConnections;
                     }
-                    final int connectionsAfter = event.getClient().getAllConnectionsCount();
-                    logConnectionsChanged(connectionsBefore, connectionsAfter);
+                    logConnectionsChanged(connectionsBefore, curConnections);
                 }
             }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
         }
