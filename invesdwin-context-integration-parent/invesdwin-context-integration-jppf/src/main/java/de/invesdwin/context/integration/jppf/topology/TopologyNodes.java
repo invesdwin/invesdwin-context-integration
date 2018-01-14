@@ -42,6 +42,9 @@ public final class TopologyNodes {
         final JPPFManagementInfo managementInfo = node.getManagementInfo();
         String host = managementInfo.getHost();
         //local nodes advertise the host wrong
+        if (host.startsWith(TopologyDrivers.NODE_FORWARDING_HOST_PREFIX)) {
+            throw new IllegalStateException("please use node forwarding requests");
+        }
         if (Strings.equalsAnyIgnoreCase(host, "localhost", "localhost.localdomain")) {
             host = node.getDriver().getManagementInfo().getHost();
         }

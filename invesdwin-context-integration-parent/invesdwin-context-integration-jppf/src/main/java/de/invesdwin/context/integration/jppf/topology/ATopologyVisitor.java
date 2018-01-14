@@ -21,6 +21,9 @@ public abstract class ATopologyVisitor {
         final Set<String> duplicateUuidFilter = new HashSet<>();
         for (final TopologyDriver driver : manager.getDrivers()) {
             processComponents(manager, driver, duplicateUuidFilter);
+            for (final TopologyNode hiddenNode : TopologyDrivers.discoverHiddenNodes(driver)) {
+                processComponents(manager, hiddenNode, duplicateUuidFilter);
+            }
         }
         /*
          * Sometimes nodes are not listed properly under drivers (maybe a race condition), but instead only appear in

@@ -1,20 +1,72 @@
 package de.invesdwin.context.integration.jppf.topology;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
 
 import org.jppf.client.monitoring.topology.TopologyDriver;
+import org.jppf.client.monitoring.topology.TopologyNode;
+import org.jppf.management.AllNodesSelector;
 import org.jppf.management.JMXDriverConnectionWrapper;
 import org.jppf.management.JPPFManagementInfo;
 import org.jppf.management.JPPFSystemInformation;
+import org.jppf.management.NodeSelector;
+import org.jppf.management.forwarding.JPPFNodeForwardingMBean;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 
 @Immutable
 public final class TopologyDrivers {
 
+    public static final String NODE_FORWARDING_HOST_PREFIX = "forwarding:";
+
     private TopologyDrivers() {}
+
+    public static List<TopologyNode> discoverHiddenNodes(final TopologyDriver driver) {
+        final JMXDriverConnectionWrapper driverJmx = connect(driver);
+
+        try {
+            final JPPFNodeForwardingMBean proxy = driverJmx.getNodeForwarder();
+
+            // this selector selects all nodes attached to the driver
+            final NodeSelector selector = new AllNodesSelector();
+
+            // invoke the state() method on the remote 'JPPFNodeAdminMBean' node MBeans
+            // note that the MBean name does not need to be stated explicitely
+            final Map<String, Object> results = proxy.systemInformation(selector);
+
+            // handling the results
+            final List<TopologyNode> nodes = new ArrayList<>();
+            for (final Map.Entry<String, Object> entry : results.entrySet()) {
+                if (entry.getValue() instanceof Exception) {
+                    final Exception exc = (Exception) entry.getValue();
+                    throw exc;
+                } else {
+                    final JPPFSystemInformation systemInfo = (JPPFSystemInformation) entry.getValue();
+                    final JPPFManagementInfo nodeInformation = new JPPFManagementInfo(
+                            NODE_FORWARDING_HOST_PREFIX + driver.getManagementInfo().getHost(),
+                            driver.getManagementInfo().getPort(), systemInfo.getUuid().getProperty("jppf.uuid"),
+                            JPPFManagementInfo.NODE, JPPFClientProperties.CLIENT_SSL_ENABLED);
+                    nodeInformation.setSystemInfo(systemInfo);
+                    final TopologyNode node = new TopologyNode(nodeInformation);
+                    nodes.add(node);
+                }
+            }
+            return nodes;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                driverJmx.close();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
 
     public static JPPFSystemInformation extractSystemInfo(final TopologyDriver driver) {
         final JPPFManagementInfo managementInfo = driver.getManagementInfo();
