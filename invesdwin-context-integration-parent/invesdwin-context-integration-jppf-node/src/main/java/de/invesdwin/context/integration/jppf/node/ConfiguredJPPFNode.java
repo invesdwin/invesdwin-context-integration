@@ -74,11 +74,18 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
         if (isCreateInstance()) {
             Assertions.checkNotNull(getInstance());
         }
+        final JPPFNode node;
+        synchronized (ConfiguredJPPFNode.class) {
+            node = instance;
+        }
+        if (node != null) {
+            uploadHeartbeat();
+        }
     }
 
     @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
     @SkipParallelExecution
-    private void createHeartbeatContent() {
+    private void uploadHeartbeat() {
         if (ShutdownHookManager.isShuttingDown()) {
             return;
         }
