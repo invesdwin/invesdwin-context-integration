@@ -12,6 +12,7 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.simpleapi.DefaultCoder;
 
 import de.invesdwin.context.log.error.Err;
+import io.netty.util.concurrent.FastThreadLocal;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
@@ -25,7 +26,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         FSTClazzInfo.BufferFieldMeta = false;
     }
 
-    private static final ThreadLocal<DefaultCoder> CONF_THREADLOCAL = new ThreadLocal<DefaultCoder>() {
+    private static final FastThreadLocal<DefaultCoder> CONF_THREADLOCAL = new FastThreadLocal<DefaultCoder>() {
         @Override
         protected DefaultCoder initialValue() {
             return new DefaultCoder();
