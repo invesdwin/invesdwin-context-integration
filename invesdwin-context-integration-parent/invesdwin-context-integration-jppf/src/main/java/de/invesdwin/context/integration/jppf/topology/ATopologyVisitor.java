@@ -21,6 +21,7 @@ public abstract class ATopologyVisitor {
         final Set<String> duplicateUuidFilter = new HashSet<>();
         for (final TopologyDriver driver : manager.getDrivers()) {
             processComponents(manager, driver, duplicateUuidFilter);
+            //discover hidden nodes that are only accessible via node forwarding
             for (final TopologyNode hiddenNode : TopologyDrivers.discoverHiddenNodes(driver)) {
                 processComponents(manager, hiddenNode, duplicateUuidFilter);
             }
