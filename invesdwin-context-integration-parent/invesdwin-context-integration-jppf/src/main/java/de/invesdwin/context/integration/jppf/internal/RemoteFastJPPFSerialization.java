@@ -25,7 +25,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         FSTClazzInfo.BufferFieldMeta = false;
     }
 
-    private final ThreadLocal<DefaultCoder> confThreadLocal = new ThreadLocal<DefaultCoder>() {
+    private static final ThreadLocal<DefaultCoder> CONF_THREADLOCAL = new ThreadLocal<DefaultCoder>() {
         @Override
         protected DefaultCoder initialValue() {
             return new DefaultCoder();
@@ -37,7 +37,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
         try {
-            final DefaultCoder coder = confThreadLocal.get();
+            final DefaultCoder coder = CONF_THREADLOCAL.get();
             final byte[] bytes = coder.toByteArray(o);
             IOUtils.write(bytes, os);
         } catch (final Throwable t) {
@@ -48,7 +48,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     @Override
     public Object deserialize(final InputStream is) throws Exception {
         try {
-            final DefaultCoder coder = confThreadLocal.get();
+            final DefaultCoder coder = CONF_THREADLOCAL.get();
             final FSTConfiguration conf = coder.getConf();
             final ClassLoader previousClassLoader = conf.getClassLoader();
             try {
