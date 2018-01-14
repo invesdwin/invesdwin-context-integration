@@ -39,7 +39,7 @@ public class JPPFProcessingThreadsCounter {
     public static final String FTP_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
     public static final String FTP_CONTENT_SEPARATOR = ";";
     public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
-    public static final Duration HEARTBEAT_TIMEOUT = new Duration(10, FTimeUnit.MINUTES);
+    public static final Duration HEARTBEAT_TIMEOUT = new Duration(3, FTimeUnit.MINUTES);
 
     private final TopologyManager topologyManager;
     private final FtpServerDestinationProvider ftpServerDestinationProvider;
