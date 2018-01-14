@@ -21,10 +21,6 @@ public abstract class ATopologyVisitor {
         final Set<String> duplicateUuidFilter = new HashSet<>();
         for (final TopologyDriver driver : manager.getDrivers()) {
             processComponents(manager, driver, duplicateUuidFilter);
-            //discover hidden nodes that are only accessible via node forwarding
-            for (final TopologyNode hiddenNode : TopologyDrivers.discoverHiddenNodes(driver)) {
-                processComponents(manager, hiddenNode, duplicateUuidFilter);
-            }
         }
         /*
          * Sometimes nodes are not listed properly under drivers (maybe a race condition), but instead only appear in
@@ -48,6 +44,10 @@ public abstract class ATopologyVisitor {
         if (comp.isDriver()) {
             final TopologyDriver driver = (TopologyDriver) comp;
             visitDriver(driver);
+            //discover hidden nodes that are only accessible via node forwarding
+            for (final TopologyNode hiddenNode : TopologyDrivers.discoverHiddenNodes(driver)) {
+                processComponents(manager, hiddenNode, duplicateUuidFilter);
+            }
         } else if (comp.isNode()) {
             final TopologyNode node = (TopologyNode) comp;
             visitNode(node);
