@@ -148,31 +148,33 @@ public class JPPFProcessingThreadsCounter {
                 drivers.incrementAndGet();
             }
         }.process(topologyManager);
-        for (final URI ftpServerUri : ftpServerDestinationProvider.getDestinations()) {
-            try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri, FTP_DIRECTORY)) {
-                channel.connect();
-                for (final FTPFile file : channel.listFiles()) {
-                    channel.setFilename(file.getName());
-                    final FDate modified = FDate.valueOf(file.getModifiedDate());
-                    if (new Duration(modified).isGreaterThan(HEARTBEAT_TIMEOUT)) {
-                        channel.delete();
-                        continue;
-                    }
-                    final byte[] content = channel.read();
-                    if (content != null && content.length > 0) {
-                        final String contentStr = new String(content);
-                        final String[] split = Strings.split(contentStr, FTP_CONTENT_SEPARATOR);
-                        if (split.length == 3) {
-                            final String nodeUuid = split[0];
-                            final Integer processingThreadsCount = Integer.valueOf(split[1]);
-                            final FDate heartbeat = FDate.valueOf(split[2], FTP_CONTENT_DATEFORMAT);
-                            if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
-                                channel.delete();
-                                continue;
-                            }
-                            if (nodeUuids.add(nodeUuid)) {
-                                nodes.incrementAndGet();
-                                processingThreads.addAndGet(processingThreadsCount);
+        if (drivers.get() > 0) {
+            for (final URI ftpServerUri : ftpServerDestinationProvider.getDestinations()) {
+                try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri, FTP_DIRECTORY)) {
+                    channel.connect();
+                    for (final FTPFile file : channel.listFiles()) {
+                        channel.setFilename(file.getName());
+                        final FDate modified = FDate.valueOf(file.getModifiedDate());
+                        if (new Duration(modified).isGreaterThan(HEARTBEAT_TIMEOUT)) {
+                            channel.delete();
+                            continue;
+                        }
+                        final byte[] content = channel.read();
+                        if (content != null && content.length > 0) {
+                            final String contentStr = new String(content);
+                            final String[] split = Strings.split(contentStr, FTP_CONTENT_SEPARATOR);
+                            if (split.length == 3) {
+                                final String nodeUuid = split[0];
+                                final Integer processingThreadsCount = Integer.valueOf(split[1]);
+                                final FDate heartbeat = FDate.valueOf(split[2], FTP_CONTENT_DATEFORMAT);
+                                if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
+                                    channel.delete();
+                                    continue;
+                                }
+                                if (nodeUuids.add(nodeUuid)) {
+                                    nodes.incrementAndGet();
+                                    processingThreads.addAndGet(processingThreadsCount);
+                                }
                             }
                         }
                     }
