@@ -13,7 +13,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -62,6 +66,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public String getFilename() {
+        if (filename == null) {
+            throw new NullPointerException("please call setFilename(...) first");
+        }
         return filename;
     }
 
@@ -108,9 +115,6 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             ftpClient.connect(serverUri.getHost(), serverUri.getPort());
             ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
             createAndChangeDirectory();
-            if (filename == null) {
-                createUniqueFile();
-            }
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
@@ -208,6 +212,42 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public List<FTPFile> list() {
+        try {
+            return Arrays.asList(ftpClient.list());
+        } catch (final FTPException e) {
+            if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
+                return Collections.emptyList();
+            } else {
+                throw new RuntimeException(e);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public List<FTPFile> listFiles() {
+        final List<FTPFile> list = list();
+        final List<FTPFile> files = new ArrayList<>();
+        for (final FTPFile file : list) {
+            if (file.getType() == FTPFile.TYPE_FILE) {
+                files.add(file);
+            }
+        }
+        return files;
+    }
+
+    public List<FTPFile> listDirectories() {
+        final List<FTPFile> list = list();
+        final List<FTPFile> directories = new ArrayList<>();
+        for (final FTPFile directory : list) {
+            if (directory.getType() == FTPFile.TYPE_DIRECTORY) {
+                directories.add(directory);
+            }
+        }
+        return directories;
     }
 
     private void assertConnected() {

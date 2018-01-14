@@ -28,7 +28,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     private static TopologyManager topologyManager;
     private static JobMonitor jobMonitor;
-    private static ProcessingThreadsCounter processingThreadsCounter;
+    private static JPPFProcessingThreadsCounter processingThreadsCounter;
     private static ConfiguredJPPFExecutorService executorService;
 
     public static synchronized ConfiguredJPPFExecutorService getBatchedExecutorService() {
@@ -40,9 +40,9 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         return executorService;
     }
 
-    public static synchronized ProcessingThreadsCounter getProcessingThreadsCounter() {
+    public static synchronized JPPFProcessingThreadsCounter getProcessingThreadsCounter() {
         if (processingThreadsCounter == null) {
-            processingThreadsCounter = new ProcessingThreadsCounter(getTopologyManager());
+            processingThreadsCounter = new JPPFProcessingThreadsCounter(getTopologyManager());
         }
         return processingThreadsCounter;
     }

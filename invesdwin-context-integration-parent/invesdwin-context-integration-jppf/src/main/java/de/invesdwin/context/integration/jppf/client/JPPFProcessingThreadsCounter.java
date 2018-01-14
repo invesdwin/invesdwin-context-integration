@@ -1,5 +1,8 @@
 package de.invesdwin.context.integration.jppf.client;
 
+import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -15,17 +18,31 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
+import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.ftp.FtpFileChannel;
+import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
 import de.invesdwin.util.bean.tuple.Triple;
+import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.fdate.FTimeUnit;
+import it.sauronsoftware.ftp4j.FTPFile;
 
 @ThreadSafe
-public class ProcessingThreadsCounter {
+public class JPPFProcessingThreadsCounter {
+
+    public static final Duration REFRESH_DURATION = Duration.ONE_MINUTE;
+
+    public static final String FTP_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
+    public static final String FTP_CONTENT_SEPARATOR = ";";
+    public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
+    public static final Duration HEARTBEAT_TIMEOUT = new Duration(10, FTimeUnit.MINUTES);
 
     private final TopologyManager topologyManager;
+    private final FtpServerDestinationProvider ftpServerDestinationProvider;
     @GuardedBy("this")
     private int processingThreadsCount;
     @GuardedBy("this")
@@ -35,8 +52,9 @@ public class ProcessingThreadsCounter {
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
 
-    public ProcessingThreadsCounter(final TopologyManager topologyManager) {
+    public JPPFProcessingThreadsCounter(final TopologyManager topologyManager) {
         this.topologyManager = topologyManager;
+        this.ftpServerDestinationProvider = MergedContext.getInstance().getBean(FtpServerDestinationProvider.class);
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
             public void nodeUpdated(final TopologyEvent event) {
@@ -74,7 +92,7 @@ public class ProcessingThreadsCounter {
     }
 
     public synchronized void maybeRefresh() {
-        if (new Duration(lastRefresh).isGreaterThan(Duration.ONE_MINUTE)) {
+        if (new Duration(lastRefresh).isGreaterThan(REFRESH_DURATION)) {
             refresh();
         }
     }
@@ -95,13 +113,16 @@ public class ProcessingThreadsCounter {
             nodes.incrementAndGet();
             processingThreads.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
         }
+        final Set<String> nodeUuids = new HashSet<>();
         new ATopologyVisitor() {
             @Override
             protected void visitNode(final TopologyNode node) {
-                final JPPFSystemInformation systemInfo = TopologyNodes.extractSystemInfo(node);
-                if (systemInfo != null) {
-                    processingThreads.addAndGet(extractProcessingThreads(systemInfo));
-                    nodes.incrementAndGet();
+                if (nodeUuids.add(node.getUuid())) {
+                    final JPPFSystemInformation systemInfo = TopologyNodes.extractSystemInfo(node);
+                    if (systemInfo != null) {
+                        processingThreads.addAndGet(extractProcessingThreads(systemInfo));
+                        nodes.incrementAndGet();
+                    }
                 }
             }
 
@@ -110,6 +131,37 @@ public class ProcessingThreadsCounter {
                 drivers.incrementAndGet();
             }
         }.process(topologyManager);
+        for (final URI ftpServerUri : ftpServerDestinationProvider.getDestinations()) {
+            try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri, FTP_DIRECTORY)) {
+                channel.connect();
+                for (final FTPFile file : channel.listFiles()) {
+                    channel.setFilename(file.getName());
+                    final FDate modified = FDate.valueOf(file.getModifiedDate());
+                    if (new Duration(modified).isGreaterThan(HEARTBEAT_TIMEOUT)) {
+                        channel.delete();
+                        continue;
+                    }
+                    final byte[] content = channel.read();
+                    if (content != null && content.length > 0) {
+                        final String contentStr = new String(content);
+                        final String[] split = Strings.split(contentStr, FTP_CONTENT_SEPARATOR);
+                        if (split.length == 3) {
+                            final String nodeUuid = split[0];
+                            final Integer processingThreadsCount = Integer.valueOf(split[1]);
+                            final FDate heartbeat = FDate.valueOf(split[2], FTP_CONTENT_DATEFORMAT);
+                            if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
+                                channel.delete();
+                                continue;
+                            }
+                            if (nodeUuids.add(nodeUuid)) {
+                                nodes.incrementAndGet();
+                                processingThreads.addAndGet(processingThreadsCount);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return Triple.of(processingThreads.get(), nodes.get(), drivers.get());
     }
 
@@ -131,14 +183,17 @@ public class ProcessingThreadsCounter {
     }
 
     public synchronized int getProcessingThreadsCount() {
+        maybeRefresh();
         return processingThreadsCount;
     }
 
-    public int getDriversCount() {
+    public synchronized int getDriversCount() {
+        maybeRefresh();
         return driversCount;
     }
 
-    public int getNodesCount() {
+    public synchronized int getNodesCount() {
+        maybeRefresh();
         return nodesCount;
     }
 
