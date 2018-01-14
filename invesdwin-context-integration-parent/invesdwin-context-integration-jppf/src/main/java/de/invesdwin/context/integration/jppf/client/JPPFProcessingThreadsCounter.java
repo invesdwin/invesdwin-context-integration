@@ -25,6 +25,8 @@ import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
 import de.invesdwin.util.bean.tuple.Triple;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
@@ -52,38 +54,42 @@ public class JPPFProcessingThreadsCounter {
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
 
+    private final WrappedExecutorService executor;
+
     public JPPFProcessingThreadsCounter(final TopologyManager topologyManager) {
         this.topologyManager = topologyManager;
         this.ftpServerDestinationProvider = MergedContext.getInstance().getBean(FtpServerDestinationProvider.class);
+        this.executor = Executors.newFixedThreadPool(JPPFProcessingThreadsCounter.class.getSimpleName() + "_refresh",
+                1);
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
             public void nodeUpdated(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void nodeRemoved(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void nodeAdded(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void driverUpdated(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void driverRemoved(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
 
             @Override
             public void driverAdded(final TopologyEvent event) {
-                refresh();
+                refreshAsync();
             }
         });
         refresh();
@@ -94,6 +100,17 @@ public class JPPFProcessingThreadsCounter {
     public synchronized void maybeRefresh() {
         if (new Duration(lastRefresh).isGreaterThan(REFRESH_DURATION)) {
             refresh();
+        }
+    }
+
+    private void refreshAsync() {
+        if (executor.getPendingCount() == 0) {
+            executor.execute(new Runnable() {
+                @Override
+                public void run() {
+                    refresh();
+                }
+            });
         }
     }
 
