@@ -40,6 +40,7 @@
 		<module>invesdwin-context-integration-ws-registry</module>
 		<module>invesdwin-context-integration-ws-registry-dist</module>
 		<module>invesdwin-context-integration-maven</module>
+		<module>invesdwin-context-integration-affinity</module>
 	</modules>
 
 	<properties>
@@ -67,6 +68,8 @@
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
+		
+		<version.affinity>3.1.7</version.affinity>
 	</properties>
 
 	<dependencyManagement>
@@ -193,6 +196,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-maven</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-affinity</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
 
@@ -949,6 +957,12 @@
 				<groupId>org.apache.ftpserver</groupId>
 				<artifactId>ftpserver-core</artifactId>
 				<version>${version.ftpserver}</version>
+			</dependency>
+			
+			<dependency>
+				<groupId>net.openhft</groupId>
+				<artifactId>affinity</artifactId>
+				<version>${version.affinity}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
