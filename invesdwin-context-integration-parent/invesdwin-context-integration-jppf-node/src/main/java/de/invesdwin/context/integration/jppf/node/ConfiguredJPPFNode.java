@@ -18,6 +18,7 @@ import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
 import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
+import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -106,6 +107,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
 
     @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
     @SkipParallelExecution
+    @Retry
     private void uploadHeartbeat() {
         if (ShutdownHookManager.isShuttingDown()) {
             return;
