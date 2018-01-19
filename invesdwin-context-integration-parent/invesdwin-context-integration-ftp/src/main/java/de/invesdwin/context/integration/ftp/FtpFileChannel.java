@@ -33,6 +33,7 @@ import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.streams.ADelegateOutputStream;
 import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.fdate.FTimeUnit;
 import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPCodes;
 import it.sauronsoftware.ftp4j.FTPException;
@@ -111,6 +112,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             ftpClient = new FTPClient();
             //be a bit more firewall friendly
             ftpClient.setPassive(true);
+            final int timeoutSeconds = FtpClientProperties.SOCKET_TIMEOUT.intValue(FTimeUnit.SECONDS);
+            ftpClient.getConnector().setConnectionTimeout(timeoutSeconds);
+            ftpClient.getConnector().setReadTimeout(timeoutSeconds);
+            ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
             ftpClient.setType(FTPClient.TYPE_BINARY);
             ftpClient.connect(serverUri.getHost(), serverUri.getPort());
             ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);

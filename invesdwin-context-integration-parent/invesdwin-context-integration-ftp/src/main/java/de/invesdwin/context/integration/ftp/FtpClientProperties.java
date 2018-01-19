@@ -17,11 +17,13 @@ public final class FtpClientProperties {
     public static final String SERVICE_NAME = "invesdwin-context-integration-ftp-server";
     public static final String USERNAME;
     public static final String PASSWORD;
+    public static final Duration SOCKET_TIMEOUT;
 
     static {
         final SystemProperties systemProperties = new SystemProperties(FtpClientProperties.class);
         USERNAME = systemProperties.getString("USERNAME");
         PASSWORD = systemProperties.getStringWithSecurityWarning("PASSWORD", "invesdwin");
+        SOCKET_TIMEOUT = systemProperties.getDuration("SOCKET_TIMEOUT");
     }
 
     private FtpClientProperties() {}
