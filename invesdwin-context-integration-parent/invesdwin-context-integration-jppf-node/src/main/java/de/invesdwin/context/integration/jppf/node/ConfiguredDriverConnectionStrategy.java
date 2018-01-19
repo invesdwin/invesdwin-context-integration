@@ -39,19 +39,15 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
     @Override
     public synchronized DriverConnectionInfo nextConnectionInfo(final DriverConnectionInfo currentInfo,
             final ConnectionContext context) {
-        // if the reconnection is requested via management, keep the current driver info
         if ((currentInfo != null) && (context.getReason() == ConnectionReason.MANAGEMENT_REQUEST)) {
             return currentInfo;
         } else {
-            if (new Duration(lastRefresh).isGreaterThan(REFRESH_INTERVAL)) {
+            if (queue.isEmpty() || new Duration(lastRefresh).isGreaterThan(REFRESH_INTERVAL)) {
                 queue.clear();
                 queue.addAll(discoverConnections());
                 lastRefresh = new FDate();
             }
-            // extract the next info from the queue
             final DriverConnectionInfo info = queue.poll();
-            // put it back at the end of the queue
-            queue.offer(info);
             return info;
         }
     }
