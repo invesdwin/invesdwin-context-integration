@@ -46,6 +46,7 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
     public static synchronized JPPFDriver getInstance() {
         if (instance == null && createInstance) {
             LOG.info("Starting jppf server at: %s", JPPFServerProperties.getServerBindUri());
+
             JPPFDriver.main("noLauncher");
             instance = JPPFDriver.getInstance();
             Assertions.checkNotNull(instance, "Startup failed!");
