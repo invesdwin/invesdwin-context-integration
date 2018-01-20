@@ -46,7 +46,7 @@ public class JPPFProcessingThreadsCounter {
     public static final String FTP_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
     public static final String FTP_CONTENT_SEPARATOR = ";";
     public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
-    public static final Duration HEARTBEAT_TIMEOUT = new Duration(3, FTimeUnit.MINUTES);
+    public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
 
     private static final Log LOG = new Log(JPPFProcessingThreadsCounter.class);
 
@@ -208,7 +208,7 @@ public class JPPFProcessingThreadsCounter {
                                     continue;
                                 }
                                 if (!nodeInfos.containsKey(nodeUuid)) {
-                                    nodeInfos.put(nodeUuid, nodeUuid + ":" + processingThreadsCount);
+                                    nodeInfos.put(nodeUuid, "offline:" + nodeUuid + ":" + processingThreadsCount);
                                     processingThreads.addAndGet(processingThreadsCount);
                                 }
                             }
