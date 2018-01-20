@@ -8,7 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.topology.TopologyDriver;
 import org.jppf.client.monitoring.topology.TopologyEvent;
 import org.jppf.client.monitoring.topology.TopologyListener;
@@ -244,7 +243,7 @@ public class JPPFProcessingThreadsCounter {
 
     private void logDetectedCounts() {
         final StringBuilder message = new StringBuilder();
-        message.append(JPPFClient.class.getSimpleName());
+        message.append(JPPFProcessingThreadsCounter.class.getSimpleName());
         message.append(" detected ");
         message.append(driversCount);
         message.append(" driver");
