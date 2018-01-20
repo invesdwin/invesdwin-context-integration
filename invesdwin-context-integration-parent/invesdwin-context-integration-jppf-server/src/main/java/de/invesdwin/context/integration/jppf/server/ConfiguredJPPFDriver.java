@@ -1,9 +1,12 @@
 package de.invesdwin.context.integration.jppf.server;
 
+import java.lang.reflect.Field;
+
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
 import org.jppf.server.JPPFDriver;
+import org.jppf.server.nio.classloader.ClassCache;
 import org.jppf.server.node.JPPFNode;
 import org.springframework.beans.factory.FactoryBean;
 
@@ -49,10 +52,20 @@ public final class ConfiguredJPPFDriver implements FactoryBean<JPPFDriver>, ISta
 
             JPPFDriver.main("noLauncher");
             instance = JPPFDriver.getInstance();
+            assertClassCacheEnabledMatchesConfig();
             Assertions.checkNotNull(instance, "Startup failed!");
             instance.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
         }
         return instance;
+    }
+
+    private static void assertClassCacheEnabledMatchesConfig() {
+        final Field enabledField = Reflections.findField(ClassCache.class, "enabled");
+        Reflections.makeAccessible(enabledField);
+        final boolean actualServerClassCacheEnabled = (boolean) Reflections.getField(enabledField,
+                instance.getInitializer().getClassCache());
+        Assertions.assertThat(actualServerClassCacheEnabled)
+                .isEqualTo(JPPFServerProperties.SERVER_CLASS_CACHE_ENABLED);
     }
 
     public static void setInstance(final JPPFDriver instance) {
