@@ -38,8 +38,6 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
             final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
-            // grow the connection pools by one
-
             final int connectionsBefore = event.getClient().getAllConnectionsCount();
             int curConnections = connectionsBefore;
             while (newCount > curConnections) {
@@ -65,31 +63,35 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         synchronized (ConnectionSizingClientQueueListener.class) {
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount - 1, event.getQueueSize());
-            final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
-            SCHEDULER.schedule(new Runnable() {
-                @Override
-                public void run() {
-                    // shrink the connection pools by one
-                    final int connectionsBefore = event.getClient().getAllConnectionsCount();
-                    int curConnections = connectionsBefore;
-                    while (newCount < curConnections) {
-                        final List<JPPFConnectionPool> connectionPools = event.getClient().getConnectionPools();
-                        if (connectionPools.isEmpty()) {
-                            break;
+            if (SCHEDULER.getPendingCount() == 0) {
+                SCHEDULER.schedule(new Runnable() {
+                    @Override
+                    public void run() {
+                        synchronized (ConnectionSizingClientQueueListener.class) {
+                            final int newCount = determineNewConnectionsCount(
+                                    ConnectionSizingClientQueueListener.activeJobsCount);
+                            final int connectionsBefore = event.getClient().getAllConnectionsCount();
+                            int curConnections = connectionsBefore;
+                            while (newCount < curConnections) {
+                                final List<JPPFConnectionPool> connectionPools = event.getClient().getConnectionPools();
+                                if (connectionPools.isEmpty()) {
+                                    break;
+                                }
+                                for (final JPPFConnectionPool pool : connectionPools) {
+                                    final int newPoolSize = Integers.max(1, pool.getSize() - 1);
+                                    pool.setSize(newPoolSize);
+                                }
+                                final int newConnections = event.getClient().getAllConnectionsCount();
+                                if (newConnections == curConnections) {
+                                    break;
+                                }
+                                curConnections = newConnections;
+                            }
+                            logConnectionsChanged(connectionsBefore, curConnections);
                         }
-                        for (final JPPFConnectionPool pool : connectionPools) {
-                            final int newPoolSize = Integers.max(1, pool.getSize() - 1);
-                            pool.setSize(newPoolSize);
-                        }
-                        final int newConnections = event.getClient().getAllConnectionsCount();
-                        if (newConnections == curConnections) {
-                            break;
-                        }
-                        curConnections = newConnections;
                     }
-                    logConnectionsChanged(connectionsBefore, curConnections);
-                }
-            }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
+                }, REAPER_DELAY.longValue(FTimeUnit.MILLISECONDS), FTimeUnit.MILLISECONDS.timeUnitValue());
+            }
         }
     }
 
