@@ -12,7 +12,6 @@ import org.jppf.client.monitoring.topology.TopologyManager;
 import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.time.duration.Duration;
@@ -24,7 +23,6 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
-    private static final Log LOG = new Log(ConfiguredJPPFClient.class);
     private static JPPFClient instance;
 
     private static TopologyManager topologyManager;
@@ -104,40 +102,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             triesLeft--;
         } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
                 || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
-        logWarmupFinished();
-    }
-
-    private static void logWarmupFinished() {
-        final StringBuilder message = new StringBuilder();
-        message.append(JPPFClient.class.getSimpleName());
-        message.append(" detected ");
-        message.append(processingThreadsCounter.getDriversCount());
-        message.append(" driver");
-        if (processingThreadsCounter.getDriversCount() != 1) {
-            message.append("s");
-        }
-        message.append(" for ");
-        message.append(processingThreadsCounter.getNodesCount());
-        message.append(" node");
-        if (processingThreadsCounter.getNodesCount() != 1) {
-            message.append("s");
-        }
-        message.append(" with ");
-        message.append(processingThreadsCounter.getProcessingThreadsCount());
-        message.append(" processing thread");
-        if (processingThreadsCounter.getProcessingThreadsCount() != 1) {
-            message.append("s");
-        }
-        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
-            message.append(" (of which 1 local node contributes ");
-            message.append(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
-            message.append(" processing thread");
-            if (JPPFClientProperties.LOCAL_EXECUTION_THREADS != 1) {
-                message.append("s");
-            }
-            message.append(")");
-        }
-        LOG.info("%s", message);
+        processingThreadsCounter.logWarumupFinished();
     }
 
     @Override

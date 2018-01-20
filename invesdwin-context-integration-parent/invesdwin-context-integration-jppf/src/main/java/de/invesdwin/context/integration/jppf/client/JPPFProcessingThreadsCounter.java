@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.topology.TopologyDriver;
 import org.jppf.client.monitoring.topology.TopologyEvent;
 import org.jppf.client.monitoring.topology.TopologyListener;
@@ -24,6 +25,7 @@ import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -43,6 +45,8 @@ public class JPPFProcessingThreadsCounter {
     public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(3, FTimeUnit.MINUTES);
 
+    private static final Log LOG = new Log(JPPFProcessingThreadsCounter.class);
+
     private final TopologyManager topologyManager;
     private final FtpServerDestinationProvider ftpServerDestinationProvider;
     @GuardedBy("this")
@@ -53,6 +57,8 @@ public class JPPFProcessingThreadsCounter {
     private int nodesCount;
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
+    @GuardedBy("this")
+    private boolean warmupFinished = false;
 
     private final WrappedExecutorService executor;
 
@@ -115,11 +121,22 @@ public class JPPFProcessingThreadsCounter {
     }
 
     public synchronized void refresh() {
+        final int processingThreadsCountBefore = processingThreadsCount;
+        final int nodesCountBefore = nodesCount;
+        final int driversCountBefore = driversCount;
+
         final Triple<Integer, Integer, Integer> processingThreadsAndNodesAndDrivers = countProcessingThreads();
         processingThreadsCount = processingThreadsAndNodesAndDrivers.getFirst();
         nodesCount = processingThreadsAndNodesAndDrivers.getSecond();
         driversCount = processingThreadsAndNodesAndDrivers.getThird();
         lastRefresh = new FDate();
+
+        if (warmupFinished) {
+            if (processingThreadsCountBefore != processingThreadsCount || nodesCountBefore != nodesCount
+                    || driversCountBefore != driversCount) {
+                logDetectedCounts();
+            }
+        }
     }
 
     private Triple<Integer, Integer, Integer> countProcessingThreads() {
@@ -134,9 +151,9 @@ public class JPPFProcessingThreadsCounter {
         new ATopologyVisitor() {
             @Override
             protected void visitNode(final TopologyNode node) {
-                if (nodeUuids.add(node.getUuid())) {
-                    final JPPFSystemInformation systemInfo = TopologyNodes.extractSystemInfo(node);
-                    if (systemInfo != null) {
+                final JPPFSystemInformation systemInfo = TopologyNodes.extractSystemInfo(node);
+                if (systemInfo != null) {
+                    if (nodeUuids.add(node.getUuid())) {
                         processingThreads.addAndGet(extractProcessingThreads(systemInfo));
                         nodes.incrementAndGet();
                     }
@@ -218,6 +235,44 @@ public class JPPFProcessingThreadsCounter {
 
     public TopologyManager getTopologyManager() {
         return topologyManager;
+    }
+
+    public synchronized void logWarumupFinished() {
+        warmupFinished = true;
+        logDetectedCounts();
+    }
+
+    private void logDetectedCounts() {
+        final StringBuilder message = new StringBuilder();
+        message.append(JPPFClient.class.getSimpleName());
+        message.append(" detected ");
+        message.append(driversCount);
+        message.append(" driver");
+        if (driversCount != 1) {
+            message.append("s");
+        }
+        message.append(" for ");
+        message.append(nodesCount);
+        message.append(" node");
+        if (nodesCount != 1) {
+            message.append("s");
+        }
+        message.append(" with ");
+        message.append(processingThreadsCount);
+        message.append(" processing thread");
+        if (processingThreadsCount != 1) {
+            message.append("s");
+        }
+        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
+            message.append(" (of which 1 local node contributes ");
+            message.append(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
+            message.append(" processing thread");
+            if (JPPFClientProperties.LOCAL_EXECUTION_THREADS != 1) {
+                message.append("s");
+            }
+            message.append(")");
+        }
+        LOG.info("%s", message);
     }
 
 }

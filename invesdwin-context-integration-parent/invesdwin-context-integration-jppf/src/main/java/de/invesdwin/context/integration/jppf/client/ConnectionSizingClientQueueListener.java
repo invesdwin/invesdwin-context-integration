@@ -78,7 +78,8 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
                                     break;
                                 }
                                 for (final JPPFConnectionPool pool : connectionPools) {
-                                    final int newPoolSize = Integers.max(1, pool.getSize() - 1);
+                                    final int curPoolSize = pool.getSize();
+                                    final int newPoolSize = Integers.max(1, curPoolSize - 1);
                                     pool.setSize(newPoolSize);
                                 }
                                 final int newConnections = event.getClient().getAllConnectionsCount();
