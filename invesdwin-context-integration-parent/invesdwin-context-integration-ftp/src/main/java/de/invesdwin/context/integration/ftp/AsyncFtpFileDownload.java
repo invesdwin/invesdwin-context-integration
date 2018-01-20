@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeoutException;
 
-import javax.annotation.concurrent.Immutable;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.retry.ARetryingCallable;
 import de.invesdwin.context.integration.retry.RetryDisabledRuntimeException;
@@ -18,7 +18,7 @@ import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
-@Immutable
+@NotThreadSafe
 public class AsyncFtpFileDownload implements Callable<InputStream> {
 
     private final FtpFileChannel channel;
