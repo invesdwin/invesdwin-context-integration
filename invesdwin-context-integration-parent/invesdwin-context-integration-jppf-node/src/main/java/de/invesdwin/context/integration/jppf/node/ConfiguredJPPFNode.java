@@ -17,8 +17,8 @@ import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
+import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
-import de.invesdwin.context.integration.jppf.client.JPPFServerDestinationProvider;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -142,7 +142,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
                 heartbeatFtpFileChannel = null;
             }
             final URI ftpServerUri = MergedContext.getInstance()
-                    .getBean(JPPFServerDestinationProvider.class)
+                    .getBean(FtpServerDestinationProvider.class)
                     .getDestination();
             final FtpFileChannel channel = new FtpFileChannel(ftpServerUri, JPPFProcessingThreadsCounter.FTP_DIRECTORY);
             if (!channel.isConnected()) {
