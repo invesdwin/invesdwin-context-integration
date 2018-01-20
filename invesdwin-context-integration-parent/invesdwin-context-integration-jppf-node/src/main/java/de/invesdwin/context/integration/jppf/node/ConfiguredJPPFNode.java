@@ -2,8 +2,8 @@ package de.invesdwin.context.integration.jppf.node;
 
 import java.net.URI;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Inject;
 import javax.inject.Named;
 
 import org.jppf.node.NodeRunner;
@@ -15,10 +15,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
+import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
-import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
+import de.invesdwin.context.integration.jppf.client.JPPFServerDestinationProvider;
 import de.invesdwin.context.integration.retry.Retry;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -31,11 +33,11 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @Immutable
 public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartupHook, IShutdownHook {
 
+    private static final Log LOG = new Log(ConfiguredJPPFNode.class);
     private static boolean createInstance = true;
     private static JPPFNode instance;
-
-    @Inject
-    private FtpServerDestinationProvider ftpServerDestinationProvider;
+    @GuardedBy("ConfiguredJPPFNode.class")
+    private static FtpFileChannel heartbeatFtpFileChannel;
 
     private ConfiguredJPPFNode() {}
 
@@ -89,6 +91,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
     public static synchronized void setInstance(final JPPFNode instance) {
         Assertions.checkNull(ConfiguredJPPFNode.instance);
         ConfiguredJPPFNode.instance = instance;
+        afterStartup();
     }
 
     @Override
@@ -96,19 +99,28 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
         if (isCreateInstance()) {
             Assertions.checkNotNull(getInstance());
         }
+        afterStartup();
+    }
+
+    private static void afterStartup() {
         final JPPFNode node;
         synchronized (ConfiguredJPPFNode.class) {
             node = instance;
         }
         if (node != null) {
             uploadHeartbeat();
+            LOG.info("Initialized %s with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), node.getUuid());
         }
     }
 
     @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
     @SkipParallelExecution
     @Retry
-    private void uploadHeartbeat() {
+    private void scheduledUploadHeartbeat() {
+        uploadHeartbeat();
+    }
+
+    private static void uploadHeartbeat() {
         if (ShutdownHookManager.isShuttingDown()) {
             return;
         }
@@ -123,18 +135,27 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
             final String content = nodeUuid + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR + processingThreads
                     + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR
                     + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
-            final URI ftpServerUri = ftpServerDestinationProvider.getDestination();
-            try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri,
-                    JPPFProcessingThreadsCounter.FTP_DIRECTORY)) {
-                channel.setFilename(newFtpHeartbeatFilename(nodeUuid));
-                channel.connect();
+            synchronized (ConfiguredJPPFNode.class) {
+                final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
                 channel.write(content.getBytes());
             }
         }
     }
 
-    private String newFtpHeartbeatFilename(final String nodeUuid) {
-        return "node_" + nodeUuid + ".heartbeat";
+    @Retry
+    private static FtpFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
+        if (heartbeatFtpFileChannel == null || !heartbeatFtpFileChannel.getFilename().contains(nodeUuid)) {
+            final URI ftpServerUri = MergedContext.getInstance()
+                    .getBean(JPPFServerDestinationProvider.class)
+                    .getDestination();
+            final FtpFileChannel channel = new FtpFileChannel(ftpServerUri, JPPFProcessingThreadsCounter.FTP_DIRECTORY);
+            if (!channel.isConnected()) {
+                channel.setFilename("node_" + nodeUuid + ".heartbeat");
+                channel.connect();
+            }
+            heartbeatFtpFileChannel = channel;
+        }
+        return heartbeatFtpFileChannel;
     }
 
     @Override
@@ -145,11 +166,8 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
         }
         if (node != null) {
             final String nodeUuid = node.getUuid();
-            final URI ftpServerUri = ftpServerDestinationProvider.getDestination();
-            try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri,
-                    JPPFProcessingThreadsCounter.FTP_DIRECTORY)) {
-                channel.setFilename(newFtpHeartbeatFilename(nodeUuid));
-                channel.connect();
+            synchronized (ConfiguredJPPFNode.class) {
+                final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
                 channel.delete();
             }
         }
