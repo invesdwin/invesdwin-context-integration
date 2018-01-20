@@ -270,20 +270,30 @@ public class JPPFProcessingThreadsCounter {
         if (driverInfos.size() != 1) {
             message.append("s");
         }
-        message.append(" ").append(driverInfos.values());
-        message.append(driverInfos);
         message.append(" for ");
         message.append(nodeInfos.size());
         message.append(" node");
         if (nodeInfos.size() != 1) {
             message.append("s");
         }
-        message.append(" ").append(nodeInfos.values());
         message.append(" with ");
         message.append(processingThreadsCount);
         message.append(" processing thread");
         if (processingThreadsCount != 1) {
             message.append("s");
+        }
+        message.append(": ");
+        if (!driverInfos.isEmpty()) {
+            message.append("\nDrivers: ");
+            for (final String driver : driverInfos.values()) {
+                message.append("\n    - ");
+                message.append(driver);
+            }
+        }
+        message.append("\nNodes: ");
+        for (final String node : nodeInfos.values()) {
+            message.append("\n    - ");
+            message.append(node);
         }
         LOG.info("%s", message);
     }
