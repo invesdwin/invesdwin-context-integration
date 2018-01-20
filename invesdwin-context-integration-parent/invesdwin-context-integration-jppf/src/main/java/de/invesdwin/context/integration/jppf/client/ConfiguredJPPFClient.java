@@ -102,7 +102,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             triesLeft--;
         } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
                 || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
-        processingThreadsCounter.logWarumupFinished();
+        processingThreadsCounter.logWarmupFinished();
     }
 
     @Override

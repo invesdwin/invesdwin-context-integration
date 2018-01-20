@@ -236,7 +236,7 @@ public class JPPFProcessingThreadsCounter {
         return topologyManager;
     }
 
-    public synchronized void logWarumupFinished() {
+    public synchronized void logWarmupFinished() {
         warmupFinished = true;
         logDetectedCounts();
     }
