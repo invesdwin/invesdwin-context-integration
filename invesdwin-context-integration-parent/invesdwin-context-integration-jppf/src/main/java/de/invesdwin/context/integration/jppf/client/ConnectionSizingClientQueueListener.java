@@ -78,10 +78,20 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
                                 if (connectionPools.isEmpty()) {
                                     break;
                                 }
+                                int connectionsToDrop = curConnections - newCount;
                                 for (final JPPFConnectionPool pool : connectionPools) {
                                     final int curPoolSize = pool.getSize();
                                     final int newPoolSize = Integers.max(1, curPoolSize - 1);
                                     pool.setSize(newPoolSize);
+                                    connectionsToDrop--;
+                                    if (connectionsToDrop <= 0) {
+                                        break;
+                                    }
+                                }
+                                try {
+                                    FTimeUnit.SECONDS.sleep(1);
+                                } catch (final InterruptedException e) {
+                                    throw new RuntimeException(e);
                                 }
                                 final int newConnections = event.getClient().getAllConnectionsCount();
                                 if (newConnections == curConnections) {
