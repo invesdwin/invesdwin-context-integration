@@ -92,8 +92,8 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
         Assertions.checkNull(ConfiguredJPPFNode.instance);
         ConfiguredJPPFNode.instance = instance;
         if (instance != null) {
-            LOG.info("%s started with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), instance.getUuid());
             uploadHeartbeat();
+            LOG.info("%s started with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), instance.getUuid());
         }
     }
 
