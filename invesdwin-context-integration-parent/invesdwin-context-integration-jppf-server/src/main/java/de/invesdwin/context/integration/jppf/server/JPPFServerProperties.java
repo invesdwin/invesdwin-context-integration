@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.jppf.server;
 
+import java.lang.reflect.Field;
 import java.net.URI;
 
 import javax.annotation.concurrent.Immutable;
@@ -29,10 +30,9 @@ public final class JPPFServerProperties {
         PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
         LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
         SERVER_CLASS_CACHE_ENABLED = new SystemProperties().getBoolean("jppf.server.class.cache.enabled");
-        final boolean actualServerClassCacheEnabled = Reflections.field("enabled")
-                .ofType(boolean.class)
-                .in(ClassCache.class)
-                .get();
+        final Field enabledField = Reflections.findField(ClassCache.class, "enabled");
+        Reflections.makeAccessible(enabledField);
+        final boolean actualServerClassCacheEnabled = (boolean) Reflections.getField(enabledField, null);
         Assertions.assertThat(actualServerClassCacheEnabled).isEqualTo(SERVER_CLASS_CACHE_ENABLED);
         INITIALIZED = true;
     }
