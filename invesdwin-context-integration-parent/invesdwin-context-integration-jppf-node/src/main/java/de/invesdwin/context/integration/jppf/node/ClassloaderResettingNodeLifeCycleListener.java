@@ -16,4 +16,9 @@ public class ClassloaderResettingNodeLifeCycleListener extends NodeLifeCycleList
         event.getNode().resetTaskClassLoader();
     }
 
+    @Override
+    public void beforeNextJob(final NodeLifeCycleEvent event) {
+        event.getNode().resetTaskClassLoader();
+    }
+
 }
