@@ -24,19 +24,19 @@ public class AsyncFtpFileUpload implements Runnable {
 
     private final FtpFileChannel channel;
     private final String channelFileName;
-    private final File temporaryInputFile;
+    private final File localTempFile;
     private int tries = 0;
 
-    public AsyncFtpFileUpload(final FtpFileChannel channel, final File temporaryInputFile) {
+    public AsyncFtpFileUpload(final FtpFileChannel channel, final File localTempFile) {
         this.channel = channel;
-        this.temporaryInputFile = temporaryInputFile;
+        this.localTempFile = localTempFile;
         this.channelFileName = channel.getFilename();
         Assertions.checkNotNull(channelFileName);
     }
 
     @Override
     public void run() {
-        new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "run", channel, temporaryInputFile)) {
+        new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "run", channel, localTempFile)) {
             @Override
             protected void runRetryable() throws Exception {
                 try {
@@ -65,13 +65,13 @@ public class AsyncFtpFileUpload implements Runnable {
 
     private void upload() {
         EXECUTOR.execute(
-                new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "upload", channel, temporaryInputFile)) {
+                new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "upload", channel, localTempFile)) {
                     @Override
                     protected void runRetryable() throws Exception {
                         try {
                             cleanupForUpload();
                             channel.setFilename(channelFileName);
-                            channel.write(temporaryInputFile);
+                            channel.write(localTempFile);
                             deleteInputFileAutomatically();
                             closeChannelAutomatically();
                         } catch (final Throwable t) {
@@ -92,7 +92,7 @@ public class AsyncFtpFileUpload implements Runnable {
     }
 
     protected void deleteInputFileAutomatically() {
-        temporaryInputFile.delete();
+        localTempFile.delete();
     }
 
     protected void closeChannelAutomatically() {
