@@ -22,18 +22,18 @@ public final class JPPFServerProperties {
     public static final boolean PEER_SSL_ENABLED;
     public static final boolean LOCAL_NODE_ENABLED;
     public static final boolean INITIALIZED;
-    public static final boolean SERVER_CLASS_CACHE_ENALED;
+    public static final boolean SERVER_CLASS_CACHE_ENABLED;
 
     static {
         Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
         PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
         LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
-        SERVER_CLASS_CACHE_ENALED = new SystemProperties().getBoolean("jppf.server.class.cache.enabled");
+        SERVER_CLASS_CACHE_ENABLED = new SystemProperties().getBoolean("jppf.server.class.cache.enabled");
         final boolean actualServerClassCacheEnabled = Reflections.field("enabled")
                 .ofType(boolean.class)
                 .in(ClassCache.class)
                 .get();
-        Assertions.assertThat(actualServerClassCacheEnabled).isEqualTo(SERVER_CLASS_CACHE_ENALED);
+        Assertions.assertThat(actualServerClassCacheEnabled).isEqualTo(SERVER_CLASS_CACHE_ENABLED);
         INITIALIZED = true;
     }
 
