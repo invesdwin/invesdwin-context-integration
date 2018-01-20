@@ -65,6 +65,7 @@ public class FtpFileChannelTest extends ATest {
         final URI destination = destinationProvider.getDestination();
         final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
         channel.connect();
+        channel.createUniqueFile();
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
 

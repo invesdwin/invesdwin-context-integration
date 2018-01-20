@@ -24,6 +24,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.norva.marker.ISerializableValueObject;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Objects;
@@ -112,7 +113,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             ftpClient = new FTPClient();
             //be a bit more firewall friendly
             ftpClient.setPassive(true);
-            final int timeoutSeconds = FtpClientProperties.SOCKET_TIMEOUT.intValue(FTimeUnit.SECONDS);
+            final int timeoutSeconds = ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.SECONDS);
             ftpClient.getConnector().setConnectionTimeout(timeoutSeconds);
             ftpClient.getConnector().setReadTimeout(timeoutSeconds);
             ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
