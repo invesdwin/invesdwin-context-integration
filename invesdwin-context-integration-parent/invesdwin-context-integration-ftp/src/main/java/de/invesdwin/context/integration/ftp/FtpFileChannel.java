@@ -88,7 +88,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     public void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
-            final String filename = filenamePrefix + UUIDs.newRandomUUID() + filenameSuffix;
+            final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
                 write(new ByteArrayInputStream(getEmptyFileContent()));
