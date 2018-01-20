@@ -72,7 +72,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
             });
             int triesLeft = 60;
             while (instance == null) {
-                instance = (JPPFNode) NodeRunner.getNode();
+                setInstance((JPPFNode) NodeRunner.getNode());
                 try {
                     FTimeUnit.SECONDS.sleep(1);
                 } catch (final InterruptedException e) {
@@ -91,25 +91,16 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
     public static synchronized void setInstance(final JPPFNode instance) {
         Assertions.checkNull(ConfiguredJPPFNode.instance);
         ConfiguredJPPFNode.instance = instance;
-        afterStartup();
+        if (instance != null) {
+            LOG.info("%s started with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), instance.getUuid());
+            uploadHeartbeat();
+        }
     }
 
     @Override
     public void startup() throws Exception {
         if (isCreateInstance()) {
             Assertions.checkNotNull(getInstance());
-        }
-        afterStartup();
-    }
-
-    private static void afterStartup() {
-        final JPPFNode node;
-        synchronized (ConfiguredJPPFNode.class) {
-            node = instance;
-        }
-        if (node != null) {
-            uploadHeartbeat();
-            LOG.info("Initialized %s with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), node.getUuid());
         }
     }
 
@@ -144,7 +135,12 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
 
     @Retry
     private static FtpFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
-        if (heartbeatFtpFileChannel == null || !heartbeatFtpFileChannel.getFilename().contains(nodeUuid)) {
+        if (heartbeatFtpFileChannel == null || !heartbeatFtpFileChannel.getFilename().contains(nodeUuid)
+                || !heartbeatFtpFileChannel.isConnected()) {
+            if (heartbeatFtpFileChannel != null) {
+                heartbeatFtpFileChannel.close();
+                heartbeatFtpFileChannel = null;
+            }
             final URI ftpServerUri = MergedContext.getInstance()
                     .getBean(JPPFServerDestinationProvider.class)
                     .getDestination();
