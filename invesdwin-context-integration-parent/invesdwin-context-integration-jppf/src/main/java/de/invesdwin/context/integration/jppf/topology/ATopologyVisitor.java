@@ -19,13 +19,14 @@ public abstract class ATopologyVisitor {
 
     public void process(final TopologyManager manager) {
         // iterate over the discovered drivers
-        final Set<String> duplicateUuidFilter = new HashSet<>();
+        final Set<String> duplicateDriverUuidFilter = new HashSet<>();
+        final Set<String> duplicateNodeUuidFilter = new HashSet<>();
         for (final TopologyDriver driver : manager.getDrivers()) {
-            processComponents(manager, driver, duplicateUuidFilter);
+            processComponents(manager, driver, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
             //discover hidden nodes that are only accessible via node forwarding
             final List<TopologyNode> hiddenNodes = TopologyDrivers.discoverHiddenNodes(driver);
             for (final TopologyNode hiddenNode : hiddenNodes) {
-                processComponents(manager, hiddenNode, duplicateUuidFilter);
+                processComponents(manager, hiddenNode, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
             }
         }
         /*
@@ -34,7 +35,7 @@ public abstract class ATopologyVisitor {
          * once.
          */
         for (final TopologyNode node : manager.getNodes()) {
-            processComponents(manager, node, duplicateUuidFilter);
+            processComponents(manager, node, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
         }
     }
 
@@ -43,26 +44,32 @@ public abstract class ATopologyVisitor {
     protected abstract void visitNode(TopologyNode node);
 
     private void processComponents(final TopologyManager manager, final AbstractTopologyComponent comp,
-            final Set<String> duplicateUuidFilter) {
-        if (!duplicateUuidFilter.add(comp.getUuid())) {
-            return;
-        }
+            final Set<String> duplicateDriverUuidFilter, final Set<String> duplicateNodeUuidFilter) {
         if (comp.isDriver()) {
+            if (!duplicateDriverUuidFilter.add(comp.getUuid())) {
+                return;
+            }
             final TopologyDriver driver = (TopologyDriver) comp;
             visitDriver(driver);
         } else if (comp.isNode()) {
             final TopologyNode node = (TopologyNode) comp;
+            if (!duplicateNodeUuidFilter.add(comp.getUuid())) {
+                return;
+            }
             visitNode(node);
         } else if (comp.isPeer()) {
             final TopologyPeer peer = (TopologyPeer) comp;
             // retrieve the actual driver the peer refers to
             final TopologyDriver actualDriver = manager.getDriver(peer.getUuid());
+            if (!duplicateDriverUuidFilter.add(comp.getUuid())) {
+                return;
+            }
             visitDriver(actualDriver);
         } else {
             throw UnknownArgumentException.newInstance(AbstractTopologyComponent.class, comp);
         }
         for (final AbstractTopologyComponent child : comp.getChildren()) {
-            processComponents(manager, child, duplicateUuidFilter);
+            processComponents(manager, child, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
         }
     }
 

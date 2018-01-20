@@ -1,8 +1,12 @@
 package de.invesdwin.context.integration.jppf.client;
 
 import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -51,9 +55,9 @@ public class JPPFProcessingThreadsCounter {
     @GuardedBy("this")
     private int processingThreadsCount;
     @GuardedBy("this")
-    private int driversCount;
+    private Map<String, String> driverInfos;
     @GuardedBy("this")
-    private int nodesCount;
+    private Map<String, String> nodeInfos;
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
     @GuardedBy("this")
@@ -121,50 +125,66 @@ public class JPPFProcessingThreadsCounter {
 
     public synchronized void refresh() {
         final int processingThreadsCountBefore = processingThreadsCount;
-        final int nodesCountBefore = nodesCount;
-        final int driversCountBefore = driversCount;
+        final int nodesCountBefore = nodeInfos.size();
+        final int driversCountBefore = driverInfos.size();
 
-        final Triple<Integer, Integer, Integer> processingThreadsAndNodesAndDrivers = countProcessingThreads();
+        final Triple<Integer, Map<String, String>, Map<String, String>> processingThreadsAndNodesAndDrivers = countProcessingThreads();
         processingThreadsCount = processingThreadsAndNodesAndDrivers.getFirst();
-        nodesCount = processingThreadsAndNodesAndDrivers.getSecond();
-        driversCount = processingThreadsAndNodesAndDrivers.getThird();
+        nodeInfos = sortInfos(processingThreadsAndNodesAndDrivers.getSecond());
+        driverInfos = sortInfos(processingThreadsAndNodesAndDrivers.getThird());
         lastRefresh = new FDate();
 
         if (warmupFinished) {
-            if (processingThreadsCountBefore != processingThreadsCount || nodesCountBefore != nodesCount
-                    || driversCountBefore != driversCount) {
+            if (processingThreadsCountBefore != processingThreadsCount || nodesCountBefore != nodeInfos.size()
+                    || driversCountBefore != driverInfos.size()) {
                 logDetectedCounts();
             }
         }
     }
 
-    private Triple<Integer, Integer, Integer> countProcessingThreads() {
-        final AtomicInteger processingThreads = new AtomicInteger(0);
-        final AtomicInteger nodes = new AtomicInteger(0);
-        final AtomicInteger drivers = new AtomicInteger(0);
-        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
-            nodes.incrementAndGet();
-            processingThreads.addAndGet(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
+    private Map<String, String> sortInfos(final Map<String, String> infos) {
+        final List<String> sortedUUIDs = new ArrayList<>(infos.keySet());
+        Collections.sort(sortedUUIDs);
+        final Map<String, String> sortedInfos = new LinkedHashMap<>();
+        for (final String uuid : sortedUUIDs) {
+            sortedInfos.put(uuid, infos.get(uuid));
         }
-        final Set<String> nodeUuids = new HashSet<>();
+        return sortedInfos;
+    }
+
+    private Triple<Integer, Map<String, String>, Map<String, String>> countProcessingThreads() {
+        final AtomicInteger processingThreads = new AtomicInteger(0);
+        final Map<String, String> nodeInfos = new HashMap<String, String>();
+        final Map<String, String> driverInfos = new HashMap<String, String>();
+        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
+            final int threads = JPPFClientProperties.LOCAL_EXECUTION_THREADS;
+            final String uuid = topologyManager.getJPPFClient().getUuid();
+            nodeInfos.put(uuid, "local:" + uuid + ":" + threads);
+            processingThreads.addAndGet(threads);
+        }
         new ATopologyVisitor() {
             @Override
             protected void visitNode(final TopologyNode node) {
                 final JPPFSystemInformation systemInfo = TopologyNodes.extractSystemInfo(node);
                 if (systemInfo != null) {
-                    if (nodeUuids.add(node.getUuid())) {
-                        processingThreads.addAndGet(extractProcessingThreads(systemInfo));
-                        nodes.incrementAndGet();
+                    final String uuid = node.getUuid();
+                    if (!nodeInfos.containsKey(uuid)) {
+                        final Integer threads = extractProcessingThreads(systemInfo);
+                        processingThreads.addAndGet(threads);
+                        nodeInfos.put(uuid, uuid + ":" + threads);
                     }
                 }
             }
 
             @Override
             protected void visitDriver(final TopologyDriver driver) {
-                drivers.incrementAndGet();
+                final String uuid = driver.getUuid();
+                if (!driverInfos.containsKey(uuid)) {
+                    driverInfos.put(uuid, uuid);
+                }
             }
         }.process(topologyManager);
-        if (drivers.get() > 0) {
+        if (!driverInfos.isEmpty()) {
             for (final URI ftpServerUri : ftpServerDestinationProvider.getDestinations()) {
                 try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri, FTP_DIRECTORY)) {
                     channel.connect();
@@ -187,8 +207,8 @@ public class JPPFProcessingThreadsCounter {
                                     channel.delete();
                                     continue;
                                 }
-                                if (nodeUuids.add(nodeUuid)) {
-                                    nodes.incrementAndGet();
+                                if (!nodeInfos.containsKey(nodeUuid)) {
+                                    nodeInfos.put(nodeUuid, nodeUuid + ":" + processingThreadsCount);
                                     processingThreads.addAndGet(processingThreadsCount);
                                 }
                             }
@@ -197,7 +217,7 @@ public class JPPFProcessingThreadsCounter {
                 }
             }
         }
-        return Triple.of(processingThreads.get(), nodes.get(), drivers.get());
+        return Triple.of(processingThreads.get(), nodeInfos, driverInfos);
     }
 
     private Integer extractProcessingThreads(final JPPFSystemInformation nodeConfig) {
@@ -224,12 +244,12 @@ public class JPPFProcessingThreadsCounter {
 
     public synchronized int getDriversCount() {
         maybeRefresh();
-        return driversCount;
+        return driverInfos.size();
     }
 
     public synchronized int getNodesCount() {
         maybeRefresh();
-        return nodesCount;
+        return nodeInfos.size();
     }
 
     public TopologyManager getTopologyManager() {
@@ -245,31 +265,25 @@ public class JPPFProcessingThreadsCounter {
         final StringBuilder message = new StringBuilder();
         message.append(JPPFProcessingThreadsCounter.class.getSimpleName());
         message.append(" detected ");
-        message.append(driversCount);
+        message.append(driverInfos.size());
         message.append(" driver");
-        if (driversCount != 1) {
+        if (driverInfos.size() != 1) {
             message.append("s");
         }
+        message.append(" ").append(driverInfos.values());
+        message.append(driverInfos);
         message.append(" for ");
-        message.append(nodesCount);
+        message.append(nodeInfos.size());
         message.append(" node");
-        if (nodesCount != 1) {
+        if (nodeInfos.size() != 1) {
             message.append("s");
         }
+        message.append(" ").append(nodeInfos.values());
         message.append(" with ");
         message.append(processingThreadsCount);
         message.append(" processing thread");
         if (processingThreadsCount != 1) {
             message.append("s");
-        }
-        if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
-            message.append(" (of which 1 local node contributes ");
-            message.append(JPPFClientProperties.LOCAL_EXECUTION_THREADS);
-            message.append(" processing thread");
-            if (JPPFClientProperties.LOCAL_EXECUTION_THREADS != 1) {
-                message.append("s");
-            }
-            message.append(")");
         }
         LOG.info("%s", message);
     }
