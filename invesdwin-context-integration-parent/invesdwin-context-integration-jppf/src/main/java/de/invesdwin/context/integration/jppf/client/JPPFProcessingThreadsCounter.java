@@ -55,9 +55,9 @@ public class JPPFProcessingThreadsCounter {
     @GuardedBy("this")
     private int processingThreadsCount;
     @GuardedBy("this")
-    private Map<String, String> driverInfos;
+    private Map<String, String> driverInfos = Collections.emptyMap();
     @GuardedBy("this")
-    private Map<String, String> nodeInfos;
+    private Map<String, String> nodeInfos = Collections.emptyMap();
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
     @GuardedBy("this")
