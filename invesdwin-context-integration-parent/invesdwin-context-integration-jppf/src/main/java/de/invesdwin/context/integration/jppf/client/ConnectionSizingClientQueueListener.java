@@ -26,6 +26,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
             .newScheduledThreadPool(ConnectionSizingClientQueueListener.class.getSimpleName() + "_REAPER", 1);
     //reap connections only when they are not used after a while
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
+    private static final int MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 2;
 
     @GuardedBy("ConnectionSizingClientQueueListener.class")
     private static int activeJobsCount = 0;
@@ -98,7 +99,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
 
     private int determineNewConnectionsCount(final int activeJobsCount) {
         final int nodesCount = ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount();
-        return Integers.max(1, activeJobsCount, nodesCount);
+        return Integers.max(1, Math.min(activeJobsCount, nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER), nodesCount);
     }
 
     protected void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
