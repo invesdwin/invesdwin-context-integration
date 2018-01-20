@@ -1,5 +1,8 @@
 package de.invesdwin.context.integration.jppf;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import javax.annotation.concurrent.Immutable;
 
 import org.jppf.utils.JPPFConfiguration;
@@ -34,11 +37,22 @@ public final class JPPFClientProperties {
             props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
         }
         //override values as defined in distribution/user properties
+        final Set<String> visitedProperties = new HashSet<>();
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();
+            visitedProperties.add(key);
             if (systemProperties.containsKey(key)) {
                 final String value = systemProperties.getString(key);
                 props.setString(key, value);
+            }
+        }
+        //CHECKSTYLE:OFF
+        for (final Object property : System.getProperties().keySet()) {
+            //CHECKSTYLE:ON
+            final String key = property.toString();
+            if (key.startsWith("jppf.") && !visitedProperties.contains(key)) {
+                final String value = systemProperties.getString(key);
+                JPPFConfiguration.getProperties().setString(key, value);
             }
         }
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
