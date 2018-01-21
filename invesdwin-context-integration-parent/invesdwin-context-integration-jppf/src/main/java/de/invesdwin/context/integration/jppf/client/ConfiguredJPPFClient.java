@@ -1,8 +1,5 @@
 package de.invesdwin.context.integration.jppf.client;
 
-import java.util.Enumeration;
-import java.util.Properties;
-
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
@@ -68,7 +65,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     public static synchronized JPPFClient getInstance() {
         if (instance == null) {
             Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
-            fixSystemProperties();
+            JPPFClientProperties.fixSystemProperties();
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
             Assertions.checkNotNull(getProcessingThreadsCounter());
@@ -107,21 +104,6 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     @Override
     public Class<?> getObjectType() {
         return ConfiguredJPPFClient.class;
-    }
-
-    //TODO: remove as soon as this is fixed: http://www.jppf.org/tracker/tbg/jppf/issues/JPPF-523
-    public static void fixSystemProperties() {
-        //CHECKSTYLE:OFF
-        final Properties sysProps = System.getProperties();
-        //CHECKSTYKE:ON
-        final Enumeration<?> en = sysProps.propertyNames();
-        while (en.hasMoreElements()) {
-            final String name = (String) en.nextElement();
-            final String value = sysProps.getProperty(name);
-            if (value == null) {
-                sysProps.setProperty(name, "");
-            }
-        }
     }
 
 }

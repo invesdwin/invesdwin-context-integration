@@ -1,6 +1,8 @@
 package de.invesdwin.context.integration.jppf;
 
+import java.util.Enumeration;
 import java.util.HashSet;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.annotation.concurrent.Immutable;
@@ -69,6 +71,21 @@ public final class JPPFClientProperties {
             if (port == 0) {
                 //use random port
                 systemProperties.getPort(portKey, true);
+            }
+        }
+    }
+
+    //TODO: remove as soon as this is fixed: http://www.jppf.org/tracker/tbg/jppf/issues/JPPF-523
+    public static void fixSystemProperties() {
+        //CHECKSTYLE:OFF
+        final Properties sysProps = System.getProperties();
+        //CHECKSTYKE:ON
+        final Enumeration<?> en = sysProps.propertyNames();
+        while (en.hasMoreElements()) {
+            final String name = (String) en.nextElement();
+            final String value = sysProps.getProperty(name);
+            if (value == null) {
+                sysProps.setProperty(name, "");
             }
         }
     }

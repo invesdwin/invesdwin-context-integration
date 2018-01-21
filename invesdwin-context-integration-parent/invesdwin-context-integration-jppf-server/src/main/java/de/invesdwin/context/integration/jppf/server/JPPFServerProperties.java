@@ -17,6 +17,7 @@ import de.invesdwin.util.lang.uri.URIs;
 @Immutable
 public final class JPPFServerProperties {
 
+    public static final boolean STARTUP_ENABLED;
     public static final boolean PEER_SSL_ENABLED;
     public static final boolean LOCAL_NODE_ENABLED;
     public static final boolean INITIALIZED;
@@ -27,6 +28,9 @@ public final class JPPFServerProperties {
         PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
         LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
         SERVER_CLASS_CACHE_ENABLED = new SystemProperties().getBoolean("jppf.server.class.cache.enabled");
+
+        final SystemProperties systemProperties = new SystemProperties(JPPFServerProperties.class);
+        STARTUP_ENABLED = systemProperties.getBoolean("STARTUP_ENABLED");
         INITIALIZED = true;
     }
 

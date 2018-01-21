@@ -14,6 +14,7 @@ import de.invesdwin.util.time.duration.Duration;
 @Immutable
 public final class FtpServerProperties {
 
+    public static final boolean STARTUP_ENABLED;
     public static final File WORKING_DIRECTORY;
     public static final Integer PORT;
     public static final int MAX_THREADS;
@@ -23,6 +24,7 @@ public final class FtpServerProperties {
 
     static {
         final SystemProperties systemProperties = new SystemProperties(FtpServerProperties.class);
+        STARTUP_ENABLED = systemProperties.getBoolean("STARTUP_ENABLED");
         PORT = systemProperties.getPort("PORT", true);
         MAX_THREADS = systemProperties.getInteger("MAX_THREADS");
         if (systemProperties.containsValue(KEY_PURGE_FILES_OLDER_THAN_DURATION)) {

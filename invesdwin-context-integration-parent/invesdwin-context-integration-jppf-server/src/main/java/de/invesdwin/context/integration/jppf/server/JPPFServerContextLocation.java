@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.ftp.server;
+package de.invesdwin.context.integration.jppf.server;
 
 import java.util.Arrays;
 import java.util.List;
@@ -18,12 +18,12 @@ import de.invesdwin.context.beans.init.locations.PositionedResource.ResourcePosi
  */
 @ThreadSafe
 @Named
-public class FtpServerContextLocation extends AConditionalContextLocation {
+public class JPPFServerContextLocation extends AConditionalContextLocation {
 
     public static final PositionedResource CONTEXT_LOCATION = PositionedResource
-            .of(new ClassPathResource("/META-INF/ctx.ftp.server.xml"), ResourcePosition.START);
+            .of(new ClassPathResource("/META-INF/ctx.jppf.server.xml"), ResourcePosition.START);
 
-    private static volatile boolean activated = FtpServerProperties.STARTUP_ENABLED;
+    private static volatile boolean activated = JPPFServerProperties.STARTUP_ENABLED;
 
     @Override
     protected List<PositionedResource> getContextResourcesIfConditionSatisfied() {

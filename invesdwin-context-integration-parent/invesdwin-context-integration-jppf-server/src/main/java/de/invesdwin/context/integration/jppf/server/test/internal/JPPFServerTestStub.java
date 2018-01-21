@@ -1,20 +1,19 @@
-package de.invesdwin.context.integration.ftp.server.test.internal;
+package de.invesdwin.context.integration.jppf.server.test.internal;
 
 import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Named;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.ftpserver.FtpServer;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-import de.invesdwin.context.ContextDirectoriesStub;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.beans.init.locations.PositionedResource;
-import de.invesdwin.context.integration.ftp.server.FtpServerContextLocation;
-import de.invesdwin.context.integration.ftp.server.FtpServerProperties;
-import de.invesdwin.context.integration.ftp.server.test.FtpServerTest;
+import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
+import de.invesdwin.context.integration.jppf.node.test.JPPFNodeTestStub;
+import de.invesdwin.context.integration.jppf.server.ConfiguredJPPFServer;
+import de.invesdwin.context.integration.jppf.server.JPPFServerContextLocation;
+import de.invesdwin.context.integration.jppf.server.test.JPPFServerTest;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.TestContext;
 import de.invesdwin.context.test.stub.StubSupport;
@@ -24,9 +23,9 @@ import de.invesdwin.util.shutdown.ShutdownHookManager;
 
 @Named
 @NotThreadSafe
-public class FtpServerTestStub extends StubSupport {
+public class JPPFServerTestStub extends StubSupport {
 
-    private static volatile FtpServer lastServer;
+    private static volatile ConfiguredJPPFServer lastServer;
 
     static {
         ShutdownHookManager.register(new IShutdownHook() {
@@ -35,34 +34,38 @@ public class FtpServerTestStub extends StubSupport {
                 maybeStopLastServer();
             }
         });
-        ContextDirectoriesStub.addProtectedDirectory(FtpServerProperties.WORKING_DIRECTORY);
     }
 
     @Override
     public void setUpContextLocations(final ATest test, final List<PositionedResource> locations) throws Exception {
+        //invoke that stub before this one
+        new JPPFNodeTestStub().setUpContextLocations(test, locations);
+
         //if for some reason the tearDownOnce was not executed on the last test (maybe maven killed it?), then try to stop here aswell
         maybeStopLastServer();
-        final FtpServerTest annotation = Reflections.getAnnotation(test, FtpServerTest.class);
+        final JPPFServerTest annotation = Reflections.getAnnotation(test, JPPFServerTest.class);
         if (annotation != null) {
             if (annotation.value()) {
-                locations.add(FtpServerContextLocation.CONTEXT_LOCATION);
+                locations.add(JPPFServerContextLocation.CONTEXT_LOCATION);
+                if (locations.contains(JPPFNodeContextLocation.CONTEXT_LOCATION)) {
+                    ConfiguredJPPFServer.setNodeStartupEnabled(true);
+                    locations.remove(JPPFNodeContextLocation.CONTEXT_LOCATION);
+                }
             } else {
-                locations.remove(FtpServerContextLocation.CONTEXT_LOCATION);
+                locations.remove(JPPFServerContextLocation.CONTEXT_LOCATION);
             }
         }
     }
 
     @Override
     public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
-        //clean up for next test
-        FileUtils.deleteQuietly(FtpServerProperties.WORKING_DIRECTORY);
-        FileUtils.forceMkdir(FtpServerProperties.WORKING_DIRECTORY);
+        ctx.deactivate(JPPFNodeTestStub.class);
     }
 
     @Override
     public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
         try {
-            lastServer = MergedContext.getInstance().getBean(FtpServer.class);
+            lastServer = MergedContext.getInstance().getBean(ConfiguredJPPFServer.class);
         } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
             //ignore
         }

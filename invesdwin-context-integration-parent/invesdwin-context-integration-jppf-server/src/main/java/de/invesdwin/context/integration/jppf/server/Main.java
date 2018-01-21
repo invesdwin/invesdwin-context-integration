@@ -14,9 +14,13 @@ public final class Main extends AMain {
     }
 
     @Override
-    protected void startApplication(final CmdLineParser parser) throws Exception {}
+
+    protected void startApplication(final CmdLineParser parser) throws Exception {
+        waitForShutdown();
+    }
 
     public static void main(final String[] args) {
+        JPPFServerContextLocation.activate();
         new Main(args);
     }
 }
