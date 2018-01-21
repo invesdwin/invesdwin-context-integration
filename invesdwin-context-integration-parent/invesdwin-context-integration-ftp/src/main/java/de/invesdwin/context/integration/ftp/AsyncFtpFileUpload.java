@@ -55,7 +55,7 @@ public class AsyncFtpFileUpload implements Runnable {
         retry.run();
     }
 
-    private void cleanupForUpload() {
+    protected void cleanupForUpload() {
         if (!channel.isConnected()) {
             channel.connect();
         }

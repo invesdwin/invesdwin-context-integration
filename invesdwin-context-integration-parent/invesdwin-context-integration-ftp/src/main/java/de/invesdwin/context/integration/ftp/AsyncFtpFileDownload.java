@@ -55,7 +55,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
                         }
                     }
                     channel.setFilename(channelFileName);
-                    final InputStream input = channel.downloadInputStream();
+                    final InputStream input = download();
                     return new ADelegateInputStream() {
 
                         @Override
@@ -77,8 +77,13 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
                     throw handleRetry(t);
                 }
             }
+
         };
         return retry.call();
+    }
+
+    protected InputStream download() {
+        return channel.downloadInputStream();
     }
 
     private RuntimeException handleRetry(final Throwable t) {
