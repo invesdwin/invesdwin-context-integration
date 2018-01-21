@@ -12,6 +12,7 @@ import org.jppf.utils.configuration.JPPFProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
+import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
 import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
@@ -28,9 +29,11 @@ import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @ThreadSafe
-public final class ConfiguredJPPFNode implements IShutdownHook {
+public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     private static final Log LOG = new Log(ConfiguredJPPFNode.class);
+    private boolean startupInvoked = false;
+    private boolean startDelayed = false;
     private JPPFNode node;
     @GuardedBy("ConfiguredJPPFNode.class")
     private FtpFileChannel heartbeatFtpFileChannel;
@@ -49,6 +52,10 @@ public final class ConfiguredJPPFNode implements IShutdownHook {
     }
 
     public synchronized void start() {
+        if (!startupInvoked) {
+            startDelayed = true;
+            return;
+        }
         Assertions.checkNull(node, "already started");
         Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
         final WrappedExecutorService nodeThread = Executors.newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(),
@@ -74,6 +81,14 @@ public final class ConfiguredJPPFNode implements IShutdownHook {
             }
         }
         Assertions.checkNotNull(node, "Startup failed!");
+    }
+
+    @Override
+    public synchronized void startup() throws Exception {
+        startupInvoked = true;
+        if (startDelayed) {
+            start();
+        }
     }
 
     public synchronized void stop() {
