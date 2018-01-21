@@ -18,6 +18,7 @@ import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
 import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
+import de.invesdwin.context.integration.jppf.client.ConfiguredJPPFClient;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.log.Log;
@@ -64,6 +65,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
             Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
             final WrappedExecutorService nodeThread = Executors
                     .newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(), 1);
+            ConfiguredJPPFClient.fixSystemProperties();
             nodeThread.execute(new Runnable() {
                 @Override
                 public void run() {

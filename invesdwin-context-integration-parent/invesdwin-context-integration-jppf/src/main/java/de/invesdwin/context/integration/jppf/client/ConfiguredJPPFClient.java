@@ -110,7 +110,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     }
 
     //TODO: remove as soon as this is fixed: http://www.jppf.org/tracker/tbg/jppf/issues/JPPF-523
-    private static void fixSystemProperties() {
+    public static void fixSystemProperties() {
         //CHECKSTYLE:OFF
         final Properties sysProps = System.getProperties();
         //CHECKSTYKE:ON
