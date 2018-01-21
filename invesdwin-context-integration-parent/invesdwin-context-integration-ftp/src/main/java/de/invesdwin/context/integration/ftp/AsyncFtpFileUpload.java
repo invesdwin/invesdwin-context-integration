@@ -43,7 +43,7 @@ public class AsyncFtpFileUpload implements Runnable {
                 try {
                     cleanupForUpload();
                     EXECUTOR.awaitPendingCount(MAX_PARALLEL_UPLOADS);
-                    upload();
+                    uploadAsync();
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 } catch (final Throwable t) {
@@ -55,7 +55,7 @@ public class AsyncFtpFileUpload implements Runnable {
         retry.run();
     }
 
-    protected void cleanupForUpload() {
+    private void cleanupForUpload() {
         if (!channel.isConnected()) {
             channel.connect();
         }
@@ -65,24 +65,29 @@ public class AsyncFtpFileUpload implements Runnable {
         channel.delete();
     }
 
-    private void upload() {
+    private void uploadAsync() {
         EXECUTOR.execute(
                 new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "upload", channel, localTempFile)) {
                     @Override
                     protected void runRetryable() throws Exception {
                         try {
                             cleanupForUpload();
-                            channel.setFilename(channelFileName);
-                            channel.upload(localTempFile);
-                            channel.setFilename(channelFileName + FINISHED_FILENAME_SUFFIX);
-                            channel.upload(channel.getEmptyFileContent());
+                            upload();
                             deleteInputFileAutomatically();
                             closeChannelAutomatically();
                         } catch (final Throwable t) {
                             throw handleRetry(t);
                         }
                     }
+
                 });
+    }
+
+    protected void upload() {
+        channel.setFilename(channelFileName);
+        channel.upload(localTempFile);
+        channel.setFilename(channelFileName + FINISHED_FILENAME_SUFFIX);
+        channel.upload(channel.getEmptyFileContent());
     }
 
     private RuntimeException handleRetry(final Throwable t) {
