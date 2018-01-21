@@ -128,7 +128,7 @@ public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartup
                     + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
             synchronized (ConfiguredJPPFNode.class) {
                 final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
-                channel.write(content.getBytes());
+                channel.upload(content.getBytes());
             }
         }
     }

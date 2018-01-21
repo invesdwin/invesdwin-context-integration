@@ -55,7 +55,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
                         }
                     }
                     channel.setFilename(channelFileName);
-                    final InputStream input = channel.newInputStream();
+                    final InputStream input = channel.downloadInputStream();
                     return new ADelegateInputStream() {
 
                         @Override

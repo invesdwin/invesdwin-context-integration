@@ -92,7 +92,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
-                write(new ByteArrayInputStream(getEmptyFileContent()));
+                upload(new ByteArrayInputStream(getEmptyFileContent()));
                 Assertions.checkTrue(exists());
                 break;
             }
@@ -261,7 +261,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         Assertions.checkTrue(ftpClient.isConnected(), "Not connected yet");
     }
 
-    public void write(final File file) {
+    public void upload(final File file) {
         try {
             ftpClient.upload(file);
         } catch (final Exception e) {
@@ -269,11 +269,11 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
-    public void write(final byte[] bytes) {
-        write(new ByteArrayInputStream(bytes));
+    public void upload(final byte[] bytes) {
+        upload(new ByteArrayInputStream(bytes));
     }
 
-    public void write(final InputStream input) {
+    public void upload(final InputStream input) {
         assertConnected();
         try {
             ftpClient.upload(getFilename(), input, 0, 0, null);
@@ -282,9 +282,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
-    public byte[] read() {
+    public byte[] download() {
         try {
-            try (InputStream in = newInputStream()) {
+            try (InputStream in = downloadInputStream()) {
                 if (in == null) {
                     return null;
                 } else {
@@ -342,7 +342,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
-    public OutputStream newOutputStream() {
+    public OutputStream uploadOutputStream() {
         assertConnected();
         return new ADelegateOutputStream() {
 
@@ -393,7 +393,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         connect();
     }
 
-    public InputStream newInputStream() {
+    public InputStream downloadInputStream() {
         assertConnected();
         final File file = getLocalTempFile();
         try {

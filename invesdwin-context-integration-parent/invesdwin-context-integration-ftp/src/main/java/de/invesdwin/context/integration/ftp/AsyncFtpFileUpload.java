@@ -73,7 +73,7 @@ public class AsyncFtpFileUpload implements Runnable {
                         try {
                             cleanupForUpload();
                             channel.setFilename(channelFileName);
-                            channel.write(localTempFile);
+                            channel.upload(localTempFile);
                             deleteInputFileAutomatically();
                             closeChannelAutomatically();
                         } catch (final Throwable t) {

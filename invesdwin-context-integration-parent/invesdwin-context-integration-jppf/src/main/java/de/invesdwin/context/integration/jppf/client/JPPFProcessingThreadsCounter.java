@@ -195,7 +195,7 @@ public class JPPFProcessingThreadsCounter {
                             channel.delete();
                             continue;
                         }
-                        final byte[] content = channel.read();
+                        final byte[] content = channel.download();
                         if (content != null && content.length > 0) {
                             final String contentStr = new String(content);
                             final String[] split = Strings.split(contentStr, FTP_CONTENT_SEPARATOR);

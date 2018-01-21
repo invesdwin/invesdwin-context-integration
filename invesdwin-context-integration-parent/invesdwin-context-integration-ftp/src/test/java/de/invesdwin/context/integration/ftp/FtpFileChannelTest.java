@@ -32,7 +32,7 @@ public class FtpFileChannelTest extends ATest {
         final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
         channel.setFilename("noexisting");
         channel.connect();
-        Assertions.checkNull(channel.read());
+        Assertions.checkNull(channel.download());
         Assertions.checkFalse(channel.exists());
         Assertions.assertThat(channel.size()).isEqualTo(-1);
         channel.createUniqueFile();
@@ -40,20 +40,20 @@ public class FtpFileChannelTest extends ATest {
         Assertions.assertThat(channel.size()).isEqualTo(0);
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
-        channel.write(write);
+        channel.upload(write);
         Assertions.checkTrue(channel.exists());
         Assertions.assertThat(channel.size()).isEqualTo(write.length);
-        final byte[] read = channel.read();
+        final byte[] read = channel.download();
         final String readStr = new String(read);
         Assertions.assertThat(readStr).isEqualTo(writeStr);
         channel.delete();
-        Assertions.checkNull(channel.read());
+        Assertions.checkNull(channel.download());
         Assertions.checkFalse(channel.exists());
         Assertions.assertThat(channel.size()).isEqualTo(-1);
-        channel.write(write);
+        channel.upload(write);
         Assertions.checkTrue(channel.exists());
         Assertions.assertThat(channel.size()).isEqualTo(write.length);
-        final byte[] read2 = channel.read();
+        final byte[] read2 = channel.download();
         final String readStr2 = new String(read2);
         Assertions.assertThat(readStr2).isEqualTo(writeStr);
         channel.delete();
@@ -73,8 +73,8 @@ public class FtpFileChannelTest extends ATest {
             final int random = RandomUtils.nextInt(0, 7);
             switch (random) {
             case 0:
-                log.info("read");
-                channel.read();
+                log.info("download");
+                channel.download();
                 break;
             case 1:
                 log.info("exists");
@@ -89,8 +89,8 @@ public class FtpFileChannelTest extends ATest {
                 channel.createUniqueFile();
                 break;
             case 4:
-                log.info("write");
-                channel.write(write);
+                log.info("upload");
+                channel.upload(write);
                 break;
             case 5:
                 log.info("delete");
