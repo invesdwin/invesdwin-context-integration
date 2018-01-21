@@ -31,7 +31,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
 
     @Override
     public boolean onAccept(final Socket acceptedSocket) {
-        if (acceptedSocket.getPort() == JPPFClientProperties.RECOVERY_SERVER_PORT) {
+        if (acceptedSocket.getLocalPort() == JPPFClientProperties.RECOVERY_SERVER_PORT) {
             return true;
         }
         Integer prevTimeout = null;
