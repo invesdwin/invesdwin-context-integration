@@ -5,6 +5,7 @@ import javax.annotation.concurrent.Immutable;
 import org.jppf.node.event.NodeLifeCycleEvent;
 import org.jppf.node.event.NodeLifeCycleListenerAdapter;
 
+import de.invesdwin.context.integration.jppf.RemoteFastJPPFSerialization;
 import de.invesdwin.context.log.Log;
 
 @Immutable
@@ -19,6 +20,7 @@ public class ClassLoaderResettingNodeLifeCycleListener extends NodeLifeCycleList
     public void jobHeaderLoaded(final NodeLifeCycleEvent event) {
         log.info("Resetting task class loader");
         event.getNode().resetTaskClassLoader();
+        RemoteFastJPPFSerialization.refresh();
     }
 
 }

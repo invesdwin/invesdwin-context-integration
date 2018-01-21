@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.jppf.internal;
+package de.invesdwin.context.integration.jppf;
 
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,6 +12,7 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.simpleapi.DefaultCoder;
 
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.time.fdate.FDate;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
@@ -25,19 +26,25 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         FSTClazzInfo.BufferFieldMeta = false;
     }
 
-    private static final ThreadLocal<DefaultCoder> CONF_THREADLOCAL = new ThreadLocal<DefaultCoder>() {
+    private static final ThreadLocal<RefreshingCoderReference> CONF_THREADLOCAL = new ThreadLocal<RefreshingCoderReference>() {
         @Override
-        protected DefaultCoder initialValue() {
-            return new DefaultCoder();
+        protected RefreshingCoderReference initialValue() {
+            return new RefreshingCoderReference();
         }
     };
 
+    private static volatile FDate lastRefreshTrigger = new FDate();
+
     public RemoteFastJPPFSerialization() {}
+
+    public static void refresh() {
+        lastRefreshTrigger = new FDate();
+    }
 
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
         try {
-            final DefaultCoder coder = CONF_THREADLOCAL.get();
+            final DefaultCoder coder = CONF_THREADLOCAL.get().get();
             final byte[] bytes = coder.toByteArray(o);
             IOUtils.write(bytes, os);
         } catch (final Throwable t) {
@@ -48,7 +55,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     @Override
     public Object deserialize(final InputStream is) throws Exception {
         try {
-            final DefaultCoder coder = CONF_THREADLOCAL.get();
+            final DefaultCoder coder = CONF_THREADLOCAL.get().get();
             final FSTConfiguration conf = coder.getConf();
             final ClassLoader previousClassLoader = conf.getClassLoader();
             try {
@@ -60,6 +67,20 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
             }
         } catch (final Throwable t) {
             throw Err.process(t);
+        }
+    }
+
+    private static class RefreshingCoderReference {
+
+        private DefaultCoder coder = new DefaultCoder();
+        private FDate lastRefresh = new FDate();
+
+        public DefaultCoder get() {
+            if (lastRefresh.isBefore(lastRefreshTrigger)) {
+                coder = new DefaultCoder();
+                lastRefresh = new FDate();
+            }
+            return coder;
         }
     }
 
