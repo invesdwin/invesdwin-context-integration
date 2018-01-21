@@ -18,6 +18,7 @@ import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ftp.FtpFileChannel;
 import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
+import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.log.Log;
@@ -34,7 +35,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 public final class ConfiguredJPPFNode implements FactoryBean<JPPFNode>, IStartupHook, IShutdownHook {
 
     private static final Log LOG = new Log(ConfiguredJPPFNode.class);
-    private static boolean createInstance = true;
+    private static boolean createInstance = !JPPFClientProperties.LOCAL_EXECUTION_ENABLED;
     private static JPPFNode instance;
     @GuardedBy("ConfiguredJPPFNode.class")
     private static FtpFileChannel heartbeatFtpFileChannel;
