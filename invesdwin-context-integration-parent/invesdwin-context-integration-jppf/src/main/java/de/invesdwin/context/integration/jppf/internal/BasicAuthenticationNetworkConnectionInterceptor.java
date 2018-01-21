@@ -31,7 +31,10 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
 
     @Override
     public boolean onAccept(final Socket acceptedSocket) {
-        int prevTimeout = -1;
+        if (acceptedSocket.getPort() == JPPFClientProperties.RECOVERY_SERVER_PORT) {
+            return true;
+        }
+        Integer prevTimeout = null;
         try {
             // set a timeout on read operations and store the previous setting, if any
             prevTimeout = acceptedSocket.getSoTimeout();
@@ -55,7 +58,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (prevTimeout >= 0) {
+            if (prevTimeout != null) {
                 try {
                     // restore the initial SO_TIMEOUT setting
                     acceptedSocket.setSoTimeout(prevTimeout);
@@ -68,7 +71,10 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
 
     @Override
     public boolean onConnect(final Socket connectedSocket) {
-        int prevTimeout = -1;
+        if (connectedSocket.getPort() == JPPFClientProperties.RECOVERY_SERVER_PORT) {
+            return true;
+        }
+        Integer prevTimeout = null;
         try {
             // set a timeout on read operations and store the previous setting, if any
             prevTimeout = connectedSocket.getSoTimeout();
@@ -88,7 +94,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
-            if (prevTimeout >= 0) {
+            if (prevTimeout != null) {
                 try {
                     // restore the initial SO_TIMEOUT setting
                     connectedSocket.setSoTimeout(prevTimeout);

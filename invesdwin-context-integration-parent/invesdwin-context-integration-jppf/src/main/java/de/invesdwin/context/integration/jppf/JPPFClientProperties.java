@@ -24,6 +24,7 @@ public final class JPPFClientProperties {
     public static final boolean CLIENT_SSL_ENABLED;
     public static final boolean LOCAL_EXECUTION_ENABLED;
     public static final int LOCAL_EXECUTION_THREADS;
+    public static final int RECOVERY_SERVER_PORT;
 
     static {
         final SystemProperties systemProperties = new SystemProperties();
@@ -61,6 +62,7 @@ public final class JPPFClientProperties {
         CLIENT_SSL_ENABLED = props.get(JPPFProperties.SSL_ENABLED);
         LOCAL_EXECUTION_ENABLED = props.get(JPPFProperties.LOCAL_EXECUTION_ENABLED);
         LOCAL_EXECUTION_THREADS = props.get(JPPFProperties.LOCAL_EXECUTION_THREADS);
+        RECOVERY_SERVER_PORT = props.get(JPPFProperties.RECOVERY_SERVER_PORT);
         INITIALIZED = true;
     }
 
