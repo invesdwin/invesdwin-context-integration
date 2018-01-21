@@ -36,7 +36,8 @@ public class AsyncFtpFileUpload implements Runnable {
 
     @Override
     public void run() {
-        new ARetryingRunnable(new RetryOriginator(AsyncFtpFileUpload.class, "run", channel, localTempFile)) {
+        final Runnable retry = new ARetryingRunnable(
+                new RetryOriginator(AsyncFtpFileUpload.class, "run", channel, localTempFile)) {
             @Override
             protected void runRetryable() throws Exception {
                 try {
@@ -51,6 +52,7 @@ public class AsyncFtpFileUpload implements Runnable {
             }
 
         };
+        retry.run();
     }
 
     private void cleanupForUpload() {
