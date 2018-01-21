@@ -190,11 +190,6 @@ public class JPPFProcessingThreadsCounter {
                     channel.connect();
                     for (final FTPFile file : channel.listFiles()) {
                         channel.setFilename(file.getName());
-                        final FDate modified = FDate.valueOf(file.getModifiedDate());
-                        if (new Duration(modified).isGreaterThan(HEARTBEAT_TIMEOUT)) {
-                            channel.delete();
-                            continue;
-                        }
                         final byte[] content = channel.download();
                         if (content != null && content.length > 0) {
                             final String contentStr = new String(content);
