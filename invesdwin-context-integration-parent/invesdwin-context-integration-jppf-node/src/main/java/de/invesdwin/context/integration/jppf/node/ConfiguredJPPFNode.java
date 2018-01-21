@@ -52,12 +52,12 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
     }
 
     public synchronized void start() {
+        Assertions.checkNull(node, "already started");
+        Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
         if (!startupInvoked) {
             startDelayed = true;
             return;
         }
-        Assertions.checkNull(node, "already started");
-        Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
         final WrappedExecutorService nodeThread = Executors.newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(),
                 1);
         JPPFClientProperties.fixSystemProperties();
