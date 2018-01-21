@@ -59,9 +59,9 @@ public class AsyncFtpFileUpload implements Runnable {
         if (!channel.isConnected()) {
             channel.connect();
         }
-        channel.setFilename(channelFileName);
-        channel.delete();
         channel.setFilename(channelFileName + FINISHED_FILENAME_SUFFIX);
+        channel.delete();
+        channel.setFilename(channelFileName);
         channel.delete();
     }
 
@@ -88,6 +88,7 @@ public class AsyncFtpFileUpload implements Runnable {
         channel.upload(localTempFile);
         channel.setFilename(channelFileName + FINISHED_FILENAME_SUFFIX);
         channel.upload(channel.getEmptyFileContent());
+        channel.setFilename(channelFileName);
     }
 
     private RuntimeException handleRetry(final Throwable t) {
