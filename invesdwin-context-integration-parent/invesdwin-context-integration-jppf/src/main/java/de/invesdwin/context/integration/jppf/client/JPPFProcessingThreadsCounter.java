@@ -159,7 +159,7 @@ public class JPPFProcessingThreadsCounter {
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
             final int threads = JPPFClientProperties.LOCAL_EXECUTION_THREADS;
             final String uuid = topologyManager.getJPPFClient().getUuid();
-            nodeInfos.put(uuid, "local:" + uuid + ":" + threads);
+            nodeInfos.put(uuid, uuid + ":" + threads + ":local");
             processingThreads.addAndGet(threads);
         }
         new ATopologyVisitor() {
@@ -208,7 +208,7 @@ public class JPPFProcessingThreadsCounter {
                                     continue;
                                 }
                                 if (!nodeInfos.containsKey(nodeUuid)) {
-                                    nodeInfos.put(nodeUuid, "offline:" + nodeUuid + ":" + processingThreadsCount);
+                                    nodeInfos.put(nodeUuid, nodeUuid + ":" + processingThreadsCount + ":offline");
                                     processingThreads.addAndGet(processingThreadsCount);
                                 }
                             }
