@@ -31,6 +31,7 @@ public final class JPPFClientProperties {
         maybeValidatePort(systemProperties, JPPFProperties.SERVER_SSL_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
+        maybeValidatePort(systemProperties, JPPFProperties.RECOVERY_SERVER_PORT.getName());
         USERNAMETOKEN_PASSWORD = systemProperties.getStringWithSecurityWarning(
                 JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD", "invesdwin");
 
