@@ -13,7 +13,6 @@ import org.springframework.beans.factory.FactoryBean;
 
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
@@ -70,7 +69,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         if (instance == null) {
             Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
             fixSystemProperties();
-            instance = new JPPFClient(UUIDs.newPseudorandomUUID());
+            instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
             Assertions.checkNotNull(getProcessingThreadsCounter());
             final ConfiguredClientDriverDiscovery clientDiscovery = new ConfiguredClientDriverDiscovery();
