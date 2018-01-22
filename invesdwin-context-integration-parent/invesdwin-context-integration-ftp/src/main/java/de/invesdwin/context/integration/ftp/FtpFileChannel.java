@@ -113,7 +113,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             ftpClient = new FTPClient();
             //be a bit more firewall friendly
             ftpClient.setPassive(true);
+
             final int timeoutSeconds = ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.SECONDS);
+            ftpClient.setAutoNoopTimeout(timeoutSeconds * FTimeUnit.MILLISECONDS_IN_SECOND);
             ftpClient.getConnector().setConnectionTimeout(timeoutSeconds);
             ftpClient.getConnector().setReadTimeout(timeoutSeconds);
             ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
