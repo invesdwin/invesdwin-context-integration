@@ -37,9 +37,6 @@ public final class JPPFClientProperties {
                 JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD", "invesdwin");
 
         final TypedProperties props = JPPFConfiguration.getProperties();
-        if (!systemProperties.containsValue(JPPFProperties.RECOVERY_READ_TIMEOUT.getName())) {
-            props.set(JPPFProperties.RECOVERY_READ_TIMEOUT, ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS);
-        }
         if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {
             props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
         }
