@@ -23,4 +23,9 @@ public class ClassLoaderResettingNodeLifeCycleListener extends NodeLifeCycleList
         RemoteFastJPPFSerialization.refresh();
     }
 
+    @Override
+    public void beforeNextJob(final NodeLifeCycleEvent event) {
+        log.info("Finished with job");
+    }
+
 }
