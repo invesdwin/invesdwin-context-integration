@@ -10,7 +10,7 @@ import org.jppf.management.JPPFManagementInfo;
 import org.jppf.management.JPPFSystemInformation;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.uri.URIs;
 
 @Immutable
 public final class TopologyNodes {
@@ -23,6 +23,9 @@ public final class TopologyNodes {
             return managementInfo.getSystemInfo();
         }
         final JMXNodeConnectionWrapper jmx = connect(node);
+        if (jmx == null) {
+            return null;
+        }
         try {
             final JPPFSystemInformation systemInfo = jmx.systemInformation();
             managementInfo.setSystemInfo(systemInfo); //cache the system info
@@ -40,15 +43,15 @@ public final class TopologyNodes {
 
     public static JMXNodeConnectionWrapper connect(final TopologyNode node) {
         final JPPFManagementInfo managementInfo = node.getManagementInfo();
-        String host = managementInfo.getHost();
+        final String host = managementInfo.getHost();
         //local nodes advertise the host wrong
         if (host.startsWith(TopologyDrivers.NODE_FORWARDING_HOST_PREFIX)) {
             throw new IllegalStateException("please use node forwarding requests");
         }
-        if (Strings.equalsAnyIgnoreCase(host, "localhost", "localhost.localdomain")) {
-            host = node.getDriver().getManagementInfo().getHost();
-        }
         final int port = managementInfo.getPort();
+        if (!URIs.connect("p://" + host + ":" + port).isServerResponding()) {
+            return null;
+        }
         final boolean secure = managementInfo.isSecure();
         final JMXNodeConnectionWrapper jmx = new JMXNodeConnectionWrapper(host, port, secure);
         try {

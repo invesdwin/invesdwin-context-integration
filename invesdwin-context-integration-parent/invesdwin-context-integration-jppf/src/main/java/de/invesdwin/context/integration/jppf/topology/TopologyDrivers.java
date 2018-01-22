@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.jppf.topology;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -18,6 +19,7 @@ import org.jppf.management.forwarding.JPPFNodeForwardingMBean;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
+import de.invesdwin.util.lang.uri.URIs;
 
 @Immutable
 public final class TopologyDrivers {
@@ -28,6 +30,10 @@ public final class TopologyDrivers {
 
     public static List<TopologyNode> discoverHiddenNodes(final TopologyDriver driver) {
         final JMXDriverConnectionWrapper driverJmx = connect(driver);
+
+        if (driverJmx == null) {
+            return Collections.emptyList();
+        }
 
         try {
             final JPPFNodeForwardingMBean proxy = driverJmx.getNodeForwarder();
@@ -74,6 +80,9 @@ public final class TopologyDrivers {
             return managementInfo.getSystemInfo();
         }
         final JMXDriverConnectionWrapper jmx = connect(driver);
+        if (jmx == null) {
+            return null;
+        }
         try {
             final JPPFSystemInformation systemInfo = jmx.systemInformation();
             managementInfo.setSystemInfo(systemInfo); //cache the system info
@@ -93,6 +102,9 @@ public final class TopologyDrivers {
         final JPPFManagementInfo managementInfo = driver.getManagementInfo();
         final String host = managementInfo.getHost();
         final int port = managementInfo.getPort();
+        if (!URIs.connect("p://" + host + ":" + port).isServerResponding()) {
+            return null;
+        }
         final boolean secure = managementInfo.isSecure();
         final JMXDriverConnectionWrapper jmx = new JMXDriverConnectionWrapper(host, port, secure);
         try {
