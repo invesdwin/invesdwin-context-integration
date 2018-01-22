@@ -5,6 +5,7 @@ import java.util.List;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.jppf.client.JPPFClient;
 import org.jppf.client.JPPFConnectionPool;
 import org.jppf.client.event.ClientQueueEvent;
 import org.jppf.client.event.ClientQueueListener;
@@ -26,37 +27,41 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
             .newScheduledThreadPool(ConnectionSizingClientQueueListener.class.getSimpleName() + "_REAPER", 1);
     //reap connections only when they are not used after a while
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
-    private static final int MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 1;
+    private static final double MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 2;
 
     @GuardedBy("ConnectionSizingClientQueueListener.class")
     private static int activeJobsCount = 0;
 
-    private final Log log = new Log(this);
+    private static final Log LOG = new Log(ConnectionSizingClientQueueListener.class);
 
     @Override
     public void jobAdded(final ClientQueueEvent event) {
         synchronized (ConnectionSizingClientQueueListener.class) {
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
-            final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
-            final int connectionsBefore = event.getClient().getAllConnectionsCount();
-            int curConnections = connectionsBefore;
-            while (newCount > curConnections) {
-                final List<JPPFConnectionPool> connectionPools = event.getClient().getConnectionPools();
-                if (connectionPools.isEmpty()) {
-                    break;
-                }
-                for (final JPPFConnectionPool pool : connectionPools) {
-                    pool.setSize(pool.getSize() + 1);
-                }
-                final int newConnections = event.getClient().getAllConnectionsCount();
-                if (newConnections == curConnections) {
-                    break;
-                }
-                curConnections = newConnections;
-            }
-            logConnectionsChanged(connectionsBefore, curConnections);
+            maybeIncreaseConnectionsCount(event.getClient());
         }
+    }
+
+    public static void maybeIncreaseConnectionsCount(final JPPFClient client) {
+        final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
+        final int connectionsBefore = client.getAllConnectionsCount();
+        int curConnections = connectionsBefore;
+        while (newCount > curConnections) {
+            final List<JPPFConnectionPool> connectionPools = client.getConnectionPools();
+            if (connectionPools.isEmpty()) {
+                break;
+            }
+            for (final JPPFConnectionPool pool : connectionPools) {
+                pool.setSize(pool.getSize() + 1);
+            }
+            final int newConnections = client.getAllConnectionsCount();
+            if (newConnections == curConnections) {
+                break;
+            }
+            curConnections = newConnections;
+        }
+        logConnectionsChanged(connectionsBefore, curConnections);
     }
 
     @Override
@@ -107,14 +112,15 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         }
     }
 
-    private int determineNewConnectionsCount(final int activeJobsCount) {
+    private static int determineNewConnectionsCount(final int activeJobsCount) {
         final int nodesCount = ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount();
-        return Integers.max(1, Math.min(activeJobsCount, nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER), nodesCount);
+        final int nodesCountMultiplied = (int) (nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER);
+        return Integers.max(1, Math.min(activeJobsCount, nodesCountMultiplied), nodesCount);
     }
 
-    protected void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
+    private static void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
         if (connectionsBefore != connectionsAfter) {
-            log.info("Modified JPPF connections from %s to %s", connectionsBefore, connectionsAfter);
+            LOG.info("Modified JPPF connections from %s to %s", connectionsBefore, connectionsAfter);
         }
     }
 
