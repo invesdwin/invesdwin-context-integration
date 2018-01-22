@@ -138,9 +138,19 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     @Retry
     private FtpFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
-        if (heartbeatFtpFileChannel == null || !heartbeatFtpFileChannel.getFilename().contains(nodeUuid)
-                || !heartbeatFtpFileChannel.isConnected()) {
+        final boolean differentNodeUuid = !heartbeatFtpFileChannel.getFilename().contains(nodeUuid);
+        if (heartbeatFtpFileChannel == null || differentNodeUuid || !heartbeatFtpFileChannel.isConnected()) {
             if (heartbeatFtpFileChannel != null) {
+                if (differentNodeUuid) {
+                    try {
+                        if (!heartbeatFtpFileChannel.isConnected()) {
+                            heartbeatFtpFileChannel.connect();
+                        }
+                        heartbeatFtpFileChannel.delete();
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
+                }
                 heartbeatFtpFileChannel.close();
                 heartbeatFtpFileChannel = null;
             }
