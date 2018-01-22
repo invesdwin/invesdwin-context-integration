@@ -321,6 +321,7 @@ public class JPPFProcessingThreadsCounter {
     public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)
             throws TimeoutException {
         final Instant start = new Instant();
+        boolean firstRun = !warmupFinished;
         do {
             if ((timeout != null && start.toDuration().isGreaterThan(timeout))) {
                 throw new TimeoutException("timeout exceeded: " + timeout);
@@ -330,7 +331,10 @@ public class JPPFProcessingThreadsCounter {
             } catch (final InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            refresh();
+            if (!firstRun) {
+                refresh();
+            }
+            firstRun = false;
         } while ((getDriversCount() < minimumDriversCount || getNodesCount() < minimumNodesCount));
     }
 
