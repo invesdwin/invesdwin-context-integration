@@ -67,7 +67,6 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 NodeRunner.main("noLauncher");
             }
         });
-        int triesLeft = 60;
         while (node == null) {
             setNode((JPPFNode) NodeRunner.getNode());
             try {
@@ -75,12 +74,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             } catch (final InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            triesLeft--;
-            if (triesLeft < 0) {
-                break;
-            }
         }
-        Assertions.checkNotNull(node, "Startup failed!");
     }
 
     @Override
@@ -138,9 +132,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     @Retry
     private FtpFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
-        final boolean differentNodeUuid = heartbeatFtpFileChannel != null
-                && heartbeatFtpFileChannel.getFilename() != null
-                && !heartbeatFtpFileChannel.getFilename().contains(nodeUuid);
+        final boolean differentNodeUuid = !heartbeatFtpFileChannel.getFilename().contains(nodeUuid);
         if (heartbeatFtpFileChannel == null || differentNodeUuid || !heartbeatFtpFileChannel.isConnected()) {
             if (heartbeatFtpFileChannel != null) {
                 if (differentNodeUuid) {
