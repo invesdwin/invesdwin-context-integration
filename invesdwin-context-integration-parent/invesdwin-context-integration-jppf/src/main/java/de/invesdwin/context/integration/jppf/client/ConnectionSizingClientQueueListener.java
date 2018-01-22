@@ -26,7 +26,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
             .newScheduledThreadPool(ConnectionSizingClientQueueListener.class.getSimpleName() + "_REAPER", 1);
     //reap connections only when they are not used after a while
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
-    private static final int MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 2;
+    private static final int MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 1;
 
     @GuardedBy("ConnectionSizingClientQueueListener.class")
     private static int activeJobsCount = 0;

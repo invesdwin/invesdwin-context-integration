@@ -33,6 +33,7 @@ import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -41,23 +42,28 @@ import it.sauronsoftware.ftp4j.FTPFile;
 @ThreadSafe
 public class JPPFProcessingThreadsCounter {
 
-    public static final Duration REFRESH_DURATION = Duration.ONE_MINUTE;
+    public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
 
     public static final String FTP_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
     public static final String FTP_CONTENT_SEPARATOR = ";";
     public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
+    private static final int MAX_COUNT_HISTORY = 60;
 
     private static final Log LOG = new Log(JPPFProcessingThreadsCounter.class);
 
     private final TopologyManager topologyManager;
     private final FtpServerDestinationProvider ftpServerDestinationProvider;
     @GuardedBy("this")
-    private int processingThreadsCount;
-    @GuardedBy("this")
     private Map<String, String> driverInfos = Collections.emptyMap();
     @GuardedBy("this")
     private Map<String, String> nodeInfos = Collections.emptyMap();
+    @GuardedBy("this")
+    private final List<Integer> nodesCounts = new ArrayList<Integer>();
+    @GuardedBy("this")
+    private final List<Integer> driversCounts = new ArrayList<Integer>();
+    @GuardedBy("this")
+    private final List<Integer> processingThreadsCounts = new ArrayList<>();
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
     @GuardedBy("this")
@@ -72,9 +78,7 @@ public class JPPFProcessingThreadsCounter {
                 1);
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
-            public void nodeUpdated(final TopologyEvent event) {
-                refreshAsync();
-            }
+            public void nodeUpdated(final TopologyEvent event) {}
 
             @Override
             public void nodeRemoved(final TopologyEvent event) {
@@ -87,9 +91,7 @@ public class JPPFProcessingThreadsCounter {
             }
 
             @Override
-            public void driverUpdated(final TopologyEvent event) {
-                refreshAsync();
-            }
+            public void driverUpdated(final TopologyEvent event) {}
 
             @Override
             public void driverRemoved(final TopologyEvent event) {
@@ -107,7 +109,7 @@ public class JPPFProcessingThreadsCounter {
     }
 
     public synchronized void maybeRefresh() {
-        if (new Duration(lastRefresh).isGreaterThan(REFRESH_DURATION)) {
+        if (new Duration(lastRefresh).isGreaterThan(REFRESH_INTERVAL)) {
             refresh();
         }
     }
@@ -124,22 +126,35 @@ public class JPPFProcessingThreadsCounter {
     }
 
     public synchronized void refresh() {
-        final int processingThreadsCountBefore = processingThreadsCount;
-        final int nodesCountBefore = nodeInfos.size();
-        final int driversCountBefore = driverInfos.size();
+        lastRefresh = new FDate(); //prevent recursion
+
+        final int processingThreadsCountBefore = getProcessingThreadsCount();
+        final int nodesCountBefore = getNodesCount();
+        final int driversCountBefore = getDriversCount();
 
         final Triple<Integer, Map<String, String>, Map<String, String>> processingThreadsAndNodesAndDrivers = countProcessingThreads();
-        processingThreadsCount = processingThreadsAndNodesAndDrivers.getFirst();
+        processingThreadsCounts.add(processingThreadsAndNodesAndDrivers.getFirst());
+        while (processingThreadsCounts.size() > MAX_COUNT_HISTORY) {
+            processingThreadsCounts.remove(0);
+        }
         nodeInfos = sortInfos(processingThreadsAndNodesAndDrivers.getSecond());
         driverInfos = sortInfos(processingThreadsAndNodesAndDrivers.getThird());
-        lastRefresh = new FDate();
+        nodesCounts.add(nodeInfos.size());
+        while (nodesCounts.size() > MAX_COUNT_HISTORY) {
+            nodesCounts.remove(0);
+        }
+        driversCounts.add(driverInfos.size());
+        while (driversCounts.size() > MAX_COUNT_HISTORY) {
+            driversCounts.remove(0);
+        }
 
         if (warmupFinished) {
-            if (processingThreadsCountBefore != processingThreadsCount || nodesCountBefore != nodeInfos.size()
-                    || driversCountBefore != driverInfos.size()) {
+            if (processingThreadsCountBefore != getProcessingThreadsCount() || nodesCountBefore != getNodesCount()
+                    || driversCountBefore != getDriversCount()) {
                 logDetectedCounts();
             }
         }
+        lastRefresh = new FDate();
     }
 
     private Map<String, String> sortInfos(final Map<String, String> infos) {
@@ -234,17 +249,17 @@ public class JPPFProcessingThreadsCounter {
 
     public synchronized int getProcessingThreadsCount() {
         maybeRefresh();
-        return processingThreadsCount;
+        return Integers.max(processingThreadsCounts);
     }
 
     public synchronized int getDriversCount() {
         maybeRefresh();
-        return driverInfos.size();
+        return Integers.max(driversCounts);
     }
 
     public synchronized int getNodesCount() {
         maybeRefresh();
-        return nodeInfos.size();
+        return Integers.max(nodesCounts);
     }
 
     public TopologyManager getTopologyManager() {
@@ -261,20 +276,24 @@ public class JPPFProcessingThreadsCounter {
         message.append(JPPFProcessingThreadsCounter.class.getSimpleName());
         message.append(" detected ");
         message.append(driverInfos.size());
+        message.append(" (~").append(getDriversCount()).append(")");
         message.append(" driver");
         if (driverInfos.size() != 1) {
             message.append("s");
         }
         message.append(" for ");
         message.append(nodeInfos.size());
+        message.append(" (~").append(getNodesCount()).append(")");
         message.append(" node");
         if (nodeInfos.size() != 1) {
             message.append("s");
         }
         message.append(" with ");
-        message.append(processingThreadsCount);
+        final int lastProcessingThreadsCount = processingThreadsCounts.get(processingThreadsCounts.size() - 1);
+        message.append(lastProcessingThreadsCount);
+        message.append(" (~").append(getProcessingThreadsCount()).append(")");
         message.append(" processing thread");
-        if (processingThreadsCount != 1) {
+        if (lastProcessingThreadsCount != 1) {
             message.append("s");
         }
         message.append(": ");
