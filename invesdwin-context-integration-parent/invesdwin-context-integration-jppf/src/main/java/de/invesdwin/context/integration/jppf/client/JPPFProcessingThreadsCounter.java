@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -34,6 +35,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -310,6 +312,22 @@ public class JPPFProcessingThreadsCounter {
             message.append(node);
         }
         LOG.info("%s", message);
+    }
+
+    public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)
+            throws TimeoutException {
+        final Instant start = new Instant();
+        do {
+            if ((timeout != null && start.toDuration().isLessThan(timeout))) {
+                throw new TimeoutException("timeout exceeded: " + timeout);
+            }
+            try {
+                FTimeUnit.SECONDS.sleep(1);
+            } catch (final InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            refresh();
+        } while ((getDriversCount() < minimumDriversCount || getNodesCount() < minimumNodesCount));
     }
 
 }

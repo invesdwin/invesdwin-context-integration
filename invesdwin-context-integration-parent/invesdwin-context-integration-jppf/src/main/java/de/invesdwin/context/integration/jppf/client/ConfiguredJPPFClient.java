@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.jppf.client;
 
+import java.util.concurrent.TimeoutException;
+
 import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
@@ -87,17 +89,11 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         if (expectedDriversCount > 0) {
             minimumNodesCount += 1;
         }
-        int triesLeft = 10;
-        do {
-            try {
-                FTimeUnit.SECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            processingThreadsCounter.refresh();
-            triesLeft--;
-        } while ((processingThreadsCounter.getDriversCount() != expectedDriversCount
-                || processingThreadsCounter.getNodesCount() < minimumNodesCount) && triesLeft > 0);
+        try {
+            processingThreadsCounter.waitForMinimumCounts(expectedDriversCount, minimumNodesCount, Duration.ONE_MINUTE);
+        } catch (final TimeoutException e) {
+            //ignore
+        }
         processingThreadsCounter.logWarmupFinished();
     }
 
