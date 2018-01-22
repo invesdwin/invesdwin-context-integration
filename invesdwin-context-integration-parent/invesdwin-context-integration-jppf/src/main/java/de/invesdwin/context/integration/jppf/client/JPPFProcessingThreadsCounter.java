@@ -157,7 +157,8 @@ public class JPPFProcessingThreadsCounter {
             }
         }
 
-        ConnectionSizingClientQueueListener.maybeIncreaseConnectionsCount(topologyManager.getJPPFClient());
+        ConnectionSizingClientQueueListener.maybeIncreaseConnectionsCount(topologyManager.getJPPFClient(),
+                getNodesCount());
 
         lastRefresh = new FDate();
     }

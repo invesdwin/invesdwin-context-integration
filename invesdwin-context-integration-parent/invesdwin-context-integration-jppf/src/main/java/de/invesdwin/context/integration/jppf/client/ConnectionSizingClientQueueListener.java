@@ -39,12 +39,14 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         synchronized (ConnectionSizingClientQueueListener.class) {
             ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
                     ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
-            maybeIncreaseConnectionsCount(event.getClient());
+            maybeIncreaseConnectionsCount(event.getClient(),
+                    ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount());
         }
     }
 
-    public static void maybeIncreaseConnectionsCount(final JPPFClient client) {
-        final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount);
+    public static void maybeIncreaseConnectionsCount(final JPPFClient client, final int nodesCount) {
+        final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount,
+                nodesCount);
         final int connectionsBefore = client.getAllConnectionsCount();
         int curConnections = connectionsBefore;
         while (newCount > curConnections) {
@@ -75,7 +77,8 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
                     public void run() {
                         synchronized (ConnectionSizingClientQueueListener.class) {
                             final int newCount = determineNewConnectionsCount(
-                                    ConnectionSizingClientQueueListener.activeJobsCount);
+                                    ConnectionSizingClientQueueListener.activeJobsCount,
+                                    ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount());
                             final int connectionsBefore = event.getClient().getAllConnectionsCount();
                             int curConnections = connectionsBefore;
                             while (newCount < curConnections) {
@@ -112,8 +115,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         }
     }
 
-    private static int determineNewConnectionsCount(final int activeJobsCount) {
-        final int nodesCount = ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount();
+    private static int determineNewConnectionsCount(final int activeJobsCount, final int nodesCount) {
         final int nodesCountMultiplied = (int) (nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER);
         return Integers.max(1, Math.min(activeJobsCount, nodesCountMultiplied), nodesCount);
     }
