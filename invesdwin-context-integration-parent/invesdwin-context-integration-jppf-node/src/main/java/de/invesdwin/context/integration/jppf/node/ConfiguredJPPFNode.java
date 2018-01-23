@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
@@ -88,8 +89,12 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
     public synchronized void stop() {
         if (node != null) {
             final String nodeUuid = node.getUuid();
-            final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
-            channel.delete();
+            try {
+                final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
+                channel.delete();
+            } catch (final Throwable e) {
+                //ignore
+            }
 
             node.stopNode();
             try {
@@ -103,11 +108,11 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
     @SkipParallelExecution
-    @Retry
     private void scheduledUploadHeartbeat() {
         uploadHeartbeat();
     }
 
+    @Retry
     private void uploadHeartbeat() {
         if (ShutdownHookManager.isShuttingDown()) {
             return;
@@ -117,20 +122,24 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             node = this.node;
         }
         if (node != null) {
-            final String nodeUuid = node.getUuid();
-            final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
-            final FDate heartbeat = new FDate();
-            final String content = nodeUuid + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR + processingThreads
-                    + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR
-                    + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
-            synchronized (this) {
-                final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
-                channel.upload(content.getBytes());
+            try {
+                final String nodeUuid = node.getUuid();
+                final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
+                final FDate heartbeat = new FDate();
+                final String content = nodeUuid + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR + processingThreads
+                        + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR
+                        + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
+                synchronized (this) {
+                    final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
+                    channel.upload(content.getBytes());
+                }
+            } catch (final Throwable t) {
+                throw new RetryLaterRuntimeException(t);
+
             }
         }
     }
 
-    @Retry
     private FtpFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
         final boolean differentNodeUuid = heartbeatFtpFileChannel != null
                 && heartbeatFtpFileChannel.getFilename() != null
