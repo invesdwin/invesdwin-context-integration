@@ -50,6 +50,9 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     private transient FTPClient ftpClient;
 
     public FtpFileChannel(final URI serverUri, final String directory) {
+        if (serverUri == null) {
+            throw new NullPointerException("serverUri should not be null");
+        }
         this.serverUri = serverUri;
         this.directory = Strings.eventuallyAddSuffix(
                 Strings.eventuallyAddPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
