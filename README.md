@@ -57,6 +57,21 @@ de.invesdwin.context.integration.maven.MavenProperties.REMOTE_REPOSITORY_1_URL=h
 #de.invesdwin.context.integration.maven.MavenProperties.REMOTE_REPOSITORY_2_URL=
 ```
 - **invesdwin-context-integration-affinity**: this module integrates a library to configure the [Java-Thread-Affinity](https://github.com/OpenHFT/Java-Thread-Affinity). It helps to increase throughput for communication threads when a cpu is reserved for a given task by making wakeups on events faster. Though in our experience this decrease in latency comes at a cost of throughput depending on the cpu and operating system, because cpu intensive workloads on fixed cores disable the heat and power consumption optimizations of the scheduler algorithm in the operating system. So always test your performance properly before applying a thread affinity. For this purpose you can use `AffinityProperties.setEnabled(boolean)` to enable/disable the affinity during runtime without having to remove the affinity setup code during testing. Please read the original documentation of the library to learn how to adjust your threads to actually apply the affinity.
+- **invesdwin-context-integration-jppf**:
+- **invesdwin-context-integration-ftp**: here you find [ftp4j](http://www.sauronsoftware.it/projects/ftp4j/) as a client library for FTP access. Usage is simplified by `FtpFileChannel` which provides a way to transmit information for a communication channel for FTP transfers by serializing the object. This is useful for JPPF because you can get faster result upload speeds by uploading to FTP and sending the `FtpFileChannel` as a result of the computation to the client, which then downloads the results from the FTP server. By utilizing `AsyncFtpFileUpload` you can even make this process asynchronous which enables the JPPF computation node to continue with the next task while uploading the results in parallel. The client which utilizes `AsyncFtpFileDownload` will wait until the upload is finished by the node to start the download. Timeouts and retries are being applied to handle any failures that might happen. Though if this fails completely, the client should resubmit the job. The following system properties are available to configure the FTP credentials (you can override the `FtpFileChannel.login()` method to use different credentials; FTP server discovery is supposed to happen via `FtpServerDestinationProvider` as a ws-registry lookup):
+```properties
+de.invesdwin.context.integration.ftp.FtpClientProperties.USERNAME=invesdwin
+de.invesdwin.context.integration.ftp.FtpClientProperties.PASSWORD=invesdwin
+```
+- **invesdwin-context-integration-ftp-server**: this is an embedded FTP server which is provided by [Apache MINA FtpServer](https://mina.apache.org/ftpserver-project/). As usual you can annotate your tests with `FtpServerTest` to enabled the server in your unit tests. The following system properties are available:
+```properties
+#per default the server is disabled, though it can be enabled with this property in production mode
+de.invesdwin.context.integration.ftp.server.FtpServerProperties.STARTUP_ENABLED=false
+de.invesdwin.context.integration.ftp.server.FtpServerProperties.PORT=2221
+de.invesdwin.context.integration.ftp.server.FtpServerProperties.MAX_THREADS=200
+# set to clean the server directory regularly of old files, keep empty or unset to disable this feature
+de.invesdwin.context.integration.ftp.server.FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 WEEKS
+```
 
 ## Web Concerns
 
