@@ -28,6 +28,7 @@ public class AsyncFtpFileUpload implements Runnable {
     private int tries = 0;
 
     public AsyncFtpFileUpload(final FtpFileChannel channel, final File localTempFile) {
+        Assertions.checkNotNull(channel);
         this.channel = channel;
         this.localTempFile = localTempFile;
         this.channelFileName = channel.getFilename();
@@ -45,6 +46,7 @@ public class AsyncFtpFileUpload implements Runnable {
                     EXECUTOR.awaitPendingCount(MAX_PARALLEL_UPLOADS);
                     uploadAsync();
                 } catch (final InterruptedException e) {
+                    channel.close();
                     throw new RuntimeException(e);
                 } catch (final Throwable t) {
                     throw handleRetry(t);
@@ -92,6 +94,7 @@ public class AsyncFtpFileUpload implements Runnable {
     }
 
     private RuntimeException handleRetry(final Throwable t) {
+        channel.close();
         tries++;
         if (tries >= MAX_TRIES) {
             return new RetryDisabledRuntimeException(

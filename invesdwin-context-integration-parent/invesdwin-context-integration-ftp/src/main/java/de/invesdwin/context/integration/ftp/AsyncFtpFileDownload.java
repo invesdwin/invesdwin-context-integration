@@ -30,6 +30,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
     private int tries = 0;
 
     public AsyncFtpFileDownload(final FtpFileChannel channel, final Duration downloadTimeout) {
+        Assertions.checkNotNull(channel);
         this.channel = channel;
         this.channelFileName = channel.getFilename();
         Assertions.checkNotNull(channelFileName);
@@ -72,6 +73,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
 
                     };
                 } catch (InterruptedException | TimeoutException e) {
+                    channel.close();
                     throw new RetryDisabledRuntimeException(e);
                 } catch (final Throwable t) {
                     throw handleRetry(t);
@@ -87,6 +89,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
     }
 
     private RuntimeException handleRetry(final Throwable t) {
+        channel.close();
         tries++;
         if (tries >= AsyncFtpFileUpload.MAX_TRIES) {
             return new RetryDisabledRuntimeException(

@@ -131,7 +131,12 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                         + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
                 synchronized (this) {
                     final FtpFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
-                    channel.upload(content.getBytes());
+                    try {
+                        channel.upload(content.getBytes());
+                    } catch (final Throwable t) {
+                        channel.close();
+                        throw t;
+                    }
                 }
             } catch (final Throwable t) {
                 throw new RetryLaterRuntimeException(t);
