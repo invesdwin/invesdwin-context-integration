@@ -39,6 +39,7 @@ import it.sauronsoftware.ftp4j.FTPClient;
 import it.sauronsoftware.ftp4j.FTPCodes;
 import it.sauronsoftware.ftp4j.FTPException;
 import it.sauronsoftware.ftp4j.FTPFile;
+import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
 
 @NotThreadSafe
 public class FtpFileChannel implements Closeable, ISerializableValueObject {
@@ -124,12 +125,20 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
             ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
             ftpClient.setType(FTPClient.TYPE_BINARY);
             ftpClient.connect(serverUri.getHost(), serverUri.getPort());
-            ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
+            login();
             createAndChangeDirectory();
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Can be overridden to change the login credentials. We don't use properties for this since it would be wise to
+     * transfer them over the wire with this object in serialized form.
+     */
+    protected void login() throws IOException, FTPIllegalReplyException, FTPException {
+        ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
     }
 
     /**
