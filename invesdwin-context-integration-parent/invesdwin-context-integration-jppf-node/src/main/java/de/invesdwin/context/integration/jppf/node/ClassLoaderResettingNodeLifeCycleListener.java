@@ -18,8 +18,10 @@ public class ClassLoaderResettingNodeLifeCycleListener extends NodeLifeCycleList
      */
     @Override
     public void jobHeaderLoaded(final NodeLifeCycleEvent event) {
-        log.info("Resetting task class loader for next job");
-        event.getNode().resetTaskClassLoader();
+        log.info("Preparing for next job");
+        if (JPPFNodeProperties.RESET_TASK_CLASS_LOADER) {
+            event.getNode().resetTaskClassLoader();
+        }
         RemoteFastJPPFSerialization.refresh();
     }
 
