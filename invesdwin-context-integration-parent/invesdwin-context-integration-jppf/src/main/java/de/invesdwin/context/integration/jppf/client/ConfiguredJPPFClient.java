@@ -19,7 +19,6 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @Immutable
 public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
-    public static final int DEFAULT_BATCH_SIZE = 100;
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
     private static JPPFClient instance;
 
@@ -31,7 +30,6 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     public static synchronized ConfiguredJPPFExecutorService getBatchedExecutorService() {
         if (executorService == null) {
             executorService = new ConfiguredJPPFExecutorService(getInstance());
-            executorService.setBatchSize(DEFAULT_BATCH_SIZE);
             executorService.setBatchTimeout(DEFAULT_BATCH_TIMEOUT.longValue(FTimeUnit.MILLISECONDS));
         }
         return executorService;
