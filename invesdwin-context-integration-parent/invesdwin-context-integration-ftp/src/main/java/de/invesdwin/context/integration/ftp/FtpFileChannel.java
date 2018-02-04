@@ -110,7 +110,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     public void connect() {
         try {
-            if (ftpClient != null && !ftpClient.isConnected()) {
+            if (ftpClient != null && (!ftpClient.isConnected() || !isAuthenticated())) {
                 close();
             }
             Assertions.checkNull(ftpClient, "Already connected");
@@ -139,6 +139,10 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
      */
     protected void login() throws IOException, FTPIllegalReplyException, FTPException {
         ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
+    }
+
+    protected boolean isAuthenticated() {
+        return ftpClient.isAuthenticated();
     }
 
     /**
@@ -171,7 +175,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
     }
 
     public boolean isConnected() {
-        return ftpClient != null && ftpClient.isConnected();
+        return ftpClient != null && ftpClient.isConnected() && isAuthenticated();
     }
 
     public boolean exists() {
