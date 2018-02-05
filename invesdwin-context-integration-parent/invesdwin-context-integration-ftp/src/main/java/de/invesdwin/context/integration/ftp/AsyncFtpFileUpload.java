@@ -17,7 +17,7 @@ public class AsyncFtpFileUpload implements Runnable {
 
     public static final String FINISHED_FILENAME_SUFFIX = ".finished";
     public static final int MAX_TRIES = 3;
-    private static final int MAX_PARALLEL_UPLOADS = 2;
+    public static final int MAX_PARALLEL_UPLOADS = 2;
 
     private static final WrappedExecutorService EXECUTOR = Executors
             .newFixedThreadPool(AsyncFtpFileUpload.class.getSimpleName(), MAX_PARALLEL_UPLOADS);
