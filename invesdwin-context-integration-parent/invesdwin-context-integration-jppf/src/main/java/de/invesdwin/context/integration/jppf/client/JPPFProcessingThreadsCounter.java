@@ -316,6 +316,8 @@ public class JPPFProcessingThreadsCounter {
             message.append(node);
         }
         LOG.info("%s", message);
+
+        ConfiguredJPPFClient.getBatchedExecutorService().setBatchSize((getProcessingThreadsCount() / getNodesCount()));
     }
 
     public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)
