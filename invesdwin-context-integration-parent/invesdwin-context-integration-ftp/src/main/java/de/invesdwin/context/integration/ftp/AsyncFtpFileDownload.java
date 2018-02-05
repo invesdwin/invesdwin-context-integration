@@ -27,7 +27,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
     private static final int MAX_PARALLEL_DOWNLOADS = AsyncFtpFileUpload.MAX_PARALLEL_UPLOADS;
 
     private static final WrappedExecutorService EXECUTOR = Executors
-            .newFixedThreadPool(AsyncFtpFileUpload.class.getSimpleName(), MAX_PARALLEL_DOWNLOADS);
+            .newFixedThreadPool(AsyncFtpFileDownload.class.getSimpleName(), MAX_PARALLEL_DOWNLOADS);
 
     private final FtpFileChannel channel;
     private final String channelFileName;
