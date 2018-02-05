@@ -23,12 +23,14 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
+import com.github.sardine.DavResource;
+
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.ftp.FtpFileChannel;
-import de.invesdwin.context.integration.ftp.FtpServerDestinationProvider;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.jppf.topology.TopologyNodes;
+import de.invesdwin.context.integration.webdav.WebdavFileChannel;
+import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.concurrent.Executors;
@@ -39,14 +41,13 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
-import it.sauronsoftware.ftp4j.FTPFile;
 
 @ThreadSafe
 public class JPPFProcessingThreadsCounter {
 
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
 
-    public static final String FTP_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
+    public static final String WEBDAV_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
     public static final String FTP_CONTENT_SEPARATOR = ";";
     public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
@@ -55,7 +56,7 @@ public class JPPFProcessingThreadsCounter {
     private static final Log LOG = new Log(JPPFProcessingThreadsCounter.class);
 
     private final TopologyManager topologyManager;
-    private final FtpServerDestinationProvider ftpServerDestinationProvider;
+    private final WebdavServerDestinationProvider webdavServerDestinationProvider;
     @GuardedBy("this")
     private Map<String, String> driverInfos = Collections.emptyMap();
     @GuardedBy("this")
@@ -75,7 +76,8 @@ public class JPPFProcessingThreadsCounter {
 
     public JPPFProcessingThreadsCounter(final TopologyManager topologyManager) {
         this.topologyManager = topologyManager;
-        this.ftpServerDestinationProvider = MergedContext.getInstance().getBean(FtpServerDestinationProvider.class);
+        this.webdavServerDestinationProvider = MergedContext.getInstance()
+                .getBean(WebdavServerDestinationProvider.class);
         this.executor = Executors.newFixedThreadPool(JPPFProcessingThreadsCounter.class.getSimpleName() + "_refresh",
                 1);
         topologyManager.addTopologyListener(new TopologyListener() {
@@ -206,10 +208,10 @@ public class JPPFProcessingThreadsCounter {
             }
         }.process(topologyManager);
         if (!driverInfos.isEmpty()) {
-            for (final URI ftpServerUri : ftpServerDestinationProvider.getDestinations()) {
-                try (FtpFileChannel channel = new FtpFileChannel(ftpServerUri, FTP_DIRECTORY)) {
+            for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
+                try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
                     channel.connect();
-                    for (final FTPFile file : channel.listFiles()) {
+                    for (final DavResource file : channel.listFiles()) {
                         channel.setFilename(file.getName());
                         final byte[] content = channel.download();
                         if (content != null && content.length > 0) {

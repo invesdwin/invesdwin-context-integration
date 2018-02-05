@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-jppf</artifactId>
+	<artifactId>invesdwin-context-integration-webdav-server</artifactId>
 	<packaging>jar</packaging>
 
 	<build>
@@ -29,17 +29,24 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-ws</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jppf</groupId>
-			<artifactId>jppf-client</artifactId>
+			<artifactId>invesdwin-context-integration-webdav</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-webdav</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-webserver</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.webdav-servlet</groupId>
+			<artifactId>webdav-servlet</artifactId>
 		</dependency>
 	</dependencies>
-	
+
 </project>

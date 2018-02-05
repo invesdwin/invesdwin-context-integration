@@ -33,6 +33,9 @@
 		<module>invesdwin-context-integration-ftp</module>
 		<module>invesdwin-context-integration-ftp-server</module>
 		<module>invesdwin-context-integration-ftp-server-dist</module>
+		<module>invesdwin-context-integration-webdav</module>
+		<module>invesdwin-context-integration-webdav-server</module>
+		<module>invesdwin-context-integration-webdav-server-dist</module>
 		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>
@@ -63,12 +66,15 @@
 		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.ow2asm>5.0.4</version.ow2asm>
 		<version.jppf>5.2.8</version.jppf>
+		
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
+		<version.webdav-servlet>2.0.1</version.webdav-servlet>
+		<version.sardine>5.8</version.sardine>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
-		
+
 		<version.affinity>3.1.7</version.affinity>
 	</properties>
 
@@ -155,6 +161,22 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp-server</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-webdav</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-webdav</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-webdav-server</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -958,11 +980,22 @@
 				<artifactId>ftpserver-core</artifactId>
 				<version>${version.ftpserver}</version>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>net.openhft</groupId>
 				<artifactId>affinity</artifactId>
 				<version>${version.affinity}</version>
+			</dependency>
+
+			<dependency>
+				<groupId>net.sf.webdav-servlet</groupId>
+				<artifactId>webdav-servlet</artifactId>
+				<version>${version.webdav-servlet}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.lookfirst</groupId>
+				<artifactId>sardine</artifactId>
+				<version>${version.sardine}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
@@ -992,7 +1025,7 @@
 			<url>http://invesdwin.de/artifactory/invesdwin-oss-remote</url>
 		</pluginRepository>
 	</pluginRepositories>
-	
+
 	<scm>
 		<url>https://github.com/subes/invesdwin-context-integration</url>
 		<connection>scm:git:https://github.com/subes/invesdwin-context-integration.git</connection>

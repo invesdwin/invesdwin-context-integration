@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ftp;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -26,7 +25,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.norva.marker.ISerializableValueObject;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
@@ -43,7 +42,7 @@ import it.sauronsoftware.ftp4j.FTPFile;
 import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
 
 @ThreadSafe
-public class FtpFileChannel implements Closeable, ISerializableValueObject {
+public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     private final URI serverUri;
     private final String directory;
@@ -67,14 +66,17 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return serverUri;
     }
 
+    @Override
     public String getDirectory() {
         return directory;
     }
 
+    @Override
     public synchronized void setFilename(final String filename) {
         this.filename = filename;
     }
 
+    @Override
     public synchronized String getFilename() {
         if (filename == null) {
             throw new NullPointerException("please call setFilename(...) first");
@@ -82,18 +84,22 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return filename;
     }
 
+    @Override
     public synchronized byte[] getEmptyFileContent() {
         return emptyFileContent;
     }
 
+    @Override
     public synchronized void setEmptyFileContent(final byte[] emptyFileContent) {
         this.emptyFileContent = emptyFileContent;
     }
 
+    @Override
     public synchronized void createUniqueFile() {
         createUniqueFile(FtpFileChannel.class.getSimpleName() + "_", ".channel");
     }
 
+    @Override
     public synchronized void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
@@ -112,6 +118,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return ftpClient;
     }
 
+    @Override
     public synchronized void connect() {
         try {
             if (ftpClient != null && (!ftpClient.isConnected() || !isAuthenticated())) {
@@ -178,14 +185,17 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized boolean isConnected() {
         return ftpClient != null && ftpClient.isConnected() && isAuthenticated();
     }
 
+    @Override
     public synchronized boolean exists() {
         return info() != null;
     }
 
+    @Override
     public synchronized long size() {
         try {
             return ftpClient.fileSize(getFilename());
@@ -200,6 +210,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized FDate modified() {
         try {
             final Date date = ftpClient.modifiedDate(getFilename());
@@ -221,6 +232,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized FTPFile info() {
         try {
             final FTPFile[] listFiles = ftpClient.list(getFilename());
@@ -242,6 +254,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized List<FTPFile> list() {
         try {
             return Arrays.asList(ftpClient.list());
@@ -256,6 +269,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized List<FTPFile> listFiles() {
         final List<FTPFile> list = list();
         final List<FTPFile> files = new ArrayList<>();
@@ -267,6 +281,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return files;
     }
 
+    @Override
     public synchronized List<FTPFile> listDirectories() {
         final List<FTPFile> list = list();
         final List<FTPFile> directories = new ArrayList<>();
@@ -283,6 +298,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         Assertions.checkTrue(ftpClient.isConnected(), "Not connected yet");
     }
 
+    @Override
     public synchronized void upload(final File file) {
         try {
             ftpClient.upload(file);
@@ -291,10 +307,12 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized void upload(final byte[] bytes) {
         upload(new ByteArrayInputStream(bytes));
     }
 
+    @Override
     public synchronized void upload(final InputStream input) {
         assertConnected();
         try {
@@ -304,6 +322,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized byte[] download() {
         try {
             try (InputStream in = downloadInputStream()) {
@@ -320,6 +339,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
 
     }
 
+    @Override
     public synchronized void delete() {
         assertConnected();
         try {
@@ -364,6 +384,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         }
     }
 
+    @Override
     public synchronized OutputStream uploadOutputStream() {
         assertConnected();
         return new ADelegateOutputStream() {
@@ -397,6 +418,7 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         };
     }
 
+    @Override
     public synchronized File getLocalTempFile() {
         final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getDirectory());
         try {
@@ -409,12 +431,14 @@ public class FtpFileChannel implements Closeable, ISerializableValueObject {
         return file;
     }
 
+    @Override
     public synchronized void reconnect() {
         assertConnected();
         close();
         connect();
     }
 
+    @Override
     public synchronized InputStream downloadInputStream() {
         assertConnected();
         final File file = getLocalTempFile();
