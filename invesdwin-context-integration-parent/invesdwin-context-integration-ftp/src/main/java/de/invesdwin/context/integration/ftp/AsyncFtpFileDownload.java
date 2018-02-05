@@ -12,6 +12,9 @@ import de.invesdwin.context.integration.retry.RetryDisabledRuntimeException;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.RetryOriginator;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.Futures;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
@@ -20,6 +23,11 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @NotThreadSafe
 public class AsyncFtpFileDownload implements Callable<InputStream> {
+
+    private static final int MAX_PARALLEL_DOWNLOADS = AsyncFtpFileUpload.MAX_PARALLEL_UPLOADS;
+
+    private static final WrappedExecutorService EXECUTOR = Executors
+            .newFixedThreadPool(AsyncFtpFileUpload.class.getSimpleName(), MAX_PARALLEL_DOWNLOADS);
 
     private final FtpFileChannel channel;
     private final String channelFileName;
@@ -39,7 +47,7 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
 
     @Override
     public InputStream call() throws Exception {
-        final Callable<InputStream> retry = new ARetryingCallable<InputStream>(
+        final Callable<InputStream> downloadAsync = new ARetryingCallable<InputStream>(
                 new RetryOriginator(AsyncFtpFileDownload.class, "call", channel)) {
             @Override
             protected InputStream callRetryable() {
@@ -81,7 +89,8 @@ public class AsyncFtpFileDownload implements Callable<InputStream> {
             }
 
         };
-        return retry.call();
+        EXECUTOR.awaitPendingCount(MAX_PARALLEL_DOWNLOADS);
+        return Futures.submitAndGet(EXECUTOR, downloadAsync);
     }
 
     protected InputStream download() {
