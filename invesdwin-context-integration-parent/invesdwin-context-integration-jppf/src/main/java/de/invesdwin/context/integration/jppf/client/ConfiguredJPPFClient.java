@@ -19,7 +19,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @Immutable
 public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
-    public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(100, FTimeUnit.MILLISECONDS);
+    public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(1, FTimeUnit.SECONDS);
     private static JPPFClient instance;
 
     private static TopologyManager topologyManager;
