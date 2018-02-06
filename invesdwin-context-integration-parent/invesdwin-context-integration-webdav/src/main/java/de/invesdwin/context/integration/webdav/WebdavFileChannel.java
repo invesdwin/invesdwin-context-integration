@@ -206,6 +206,12 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         assertConnected();
         try {
             return webdavClient.list(getDirectoryUrl());
+        } catch (final SardineException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
