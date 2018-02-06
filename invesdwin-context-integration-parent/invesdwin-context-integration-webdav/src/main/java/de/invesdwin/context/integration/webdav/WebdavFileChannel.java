@@ -19,10 +19,12 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.http.HttpStatus;
 
 import com.github.sardine.DavResource;
 import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
+import com.github.sardine.impl.SardineException;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
@@ -123,24 +125,16 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized void connect() {
         try {
             Assertions.checkNull(webdavClient, "Already connected");
-            webdavClient = SardineFactory.begin(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
+            webdavClient = login();
             webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
-            createAndChangeDirectory();
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
         }
     }
 
-    /**
-     * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
-     */
-    private synchronized void createAndChangeDirectory() {
-        try {
-            webdavClient.createDirectory(getDirectoryUrl());
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+    protected Sardine login() {
+        return SardineFactory.begin(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
     }
 
     @Override
@@ -195,6 +189,12 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
                 return listFiles.get(0);
             } else {
                 throw new IllegalStateException("More than one result: " + listFiles.size());
+            }
+        } catch (final SardineException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -286,6 +286,12 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         assertConnected();
         try {
             webdavClient.delete(getFileUrl());
+        } catch (final SardineException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return;
+            } else {
+                throw new RuntimeException(e);
+            }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -368,6 +374,12 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         assertConnected();
         try {
             return webdavClient.get(getFileUrl());
+        } catch (final SardineException e) {
+            if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
+                return null;
+            } else {
+                throw new RuntimeException(e);
+            }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

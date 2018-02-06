@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:sws="http://www.springframework.org/schema/web-services"
+	xmlns:security="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<security:http authentication-manager-ref="webdavAuthenticationManager"
+		use-expressions="true" pattern="/webdav/**">
+
+		<security:csrf disabled="true" />
+		<security:headers>
+			<security:frame-options policy="SAMEORIGIN" />
+		</security:headers>
+
+		<security:http-basic />
+
+		<security:intercept-url pattern="/webdav/**"
+			access="hasRole('_WEBDAV_')" />
+	</security:http>
+
+	<security:authentication-manager id="webdavAuthenticationManager">
+		<security:authentication-provider>
+			<security:user-service>
+				<security:user
+					name="${de.invesdwin.context.integration.webdav.WebdavClientProperties.USERNAME}"
+					password="${de.invesdwin.context.integration.webdav.WebdavClientProperties.PASSWORD}"
+					authorities="_WEBDAV_" />
+			</security:user-service>
+		</security:authentication-provider>
+	</security:authentication-manager>
+
+
+</beans>

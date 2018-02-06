@@ -28,7 +28,7 @@ public class WebdavFileChannelTest extends ATest {
 
     @Test
     public void test() {
-        final URI destination = destinationProvider.getDestination();
+        final URI destination = getDestination();
         final WebdavFileChannel channel = new WebdavFileChannel(destination,
                 WebdavFileChannelTest.class.getSimpleName());
         channel.setFilename("noexisting");
@@ -61,9 +61,13 @@ public class WebdavFileChannelTest extends ATest {
         channel.close();
     }
 
+    protected URI getDestination() {
+        return destinationProvider.getDestination();
+    }
+
     @Test
     public void testRandom() {
-        final URI destination = destinationProvider.getDestination();
+        final URI destination = getDestination();
         final WebdavFileChannel channel = new WebdavFileChannel(destination,
                 WebdavFileChannelTest.class.getSimpleName());
         channel.connect();

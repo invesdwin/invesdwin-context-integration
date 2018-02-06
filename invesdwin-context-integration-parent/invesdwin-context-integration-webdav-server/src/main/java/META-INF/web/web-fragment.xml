@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-fragment>
+
+	<name>de.invesdwin.context.integration.webdav.server</name>
+
+	<servlet>
+		<servlet-name>webdav</servlet-name>
+		<servlet-class>de.invesdwin.context.integration.webdav.server.internal.ConfiguredWebdavServlet</servlet-class>
+		<load-on-startup>1</load-on-startup>
+	</servlet>
+
+	<servlet-mapping>
+		<servlet-name>webdav</servlet-name>
+		<url-pattern>/webdav/*</url-pattern>
+	</servlet-mapping>
+
+</web-fragment>

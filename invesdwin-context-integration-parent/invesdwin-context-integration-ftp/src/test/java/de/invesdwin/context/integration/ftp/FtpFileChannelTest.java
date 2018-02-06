@@ -28,7 +28,7 @@ public class FtpFileChannelTest extends ATest {
 
     @Test
     public void test() {
-        final URI destination = destinationProvider.getDestination();
+        final URI destination = getDestination();
         final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
         channel.setFilename("noexisting");
         channel.connect();
@@ -60,9 +60,13 @@ public class FtpFileChannelTest extends ATest {
         channel.close();
     }
 
+    protected URI getDestination() {
+        return destinationProvider.getDestination();
+    }
+
     @Test
     public void testRandom() {
-        final URI destination = destinationProvider.getDestination();
+        final URI destination = getDestination();
         final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
         channel.connect();
         channel.createUniqueFile();

@@ -7,6 +7,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.webdav.server.internal.ConfiguredWebdavServlet;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.duration.Duration;
@@ -26,7 +27,8 @@ public final class WebdavServerProperties {
         } else {
             PURGE_FILES_OLDER_THAN_DURATION = null;
         }
-        WORKING_DIRECTORY = new File(ContextProperties.getCacheDirectory(), "webdav");
+        WORKING_DIRECTORY = new File(ContextProperties.getCacheDirectory(),
+                ConfiguredWebdavServlet.class.getSimpleName());
     }
 
     private WebdavServerProperties() {}
