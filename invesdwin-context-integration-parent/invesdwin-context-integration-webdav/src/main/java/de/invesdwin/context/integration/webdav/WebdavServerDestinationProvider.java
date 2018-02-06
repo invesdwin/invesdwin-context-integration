@@ -4,6 +4,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Named;
 
 import de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider;
+import de.invesdwin.util.lang.uri.URIsConnect;
 
 @ThreadSafe
 @Named
@@ -16,6 +17,11 @@ public class WebdavServerDestinationProvider extends RegistryDestinationProvider
     @Override
     public boolean isRetryWhenUnavailable() {
         return true;
+    }
+
+    @Override
+    protected URIsConnect maybeWithBasicAuth(final URIsConnect connect) {
+        return connect.withBasicAuth(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
     }
 
 }

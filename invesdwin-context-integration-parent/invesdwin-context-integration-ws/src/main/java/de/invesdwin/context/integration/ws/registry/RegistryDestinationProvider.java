@@ -160,7 +160,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         return isOk;
     }
 
-    private URIsConnect maybeWithBasicAuth(final URIsConnect connect) {
+    protected URIsConnect maybeWithBasicAuth(final URIsConnect connect) {
         if (String.valueOf(connect.getUrl()).contains("/spring-web/")) {
             connect.withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
         }
