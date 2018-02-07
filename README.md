@@ -79,7 +79,7 @@ jppf.management.port=0
 de.invesdwin.context.integration.ftp.FtpClientProperties.USERNAME=invesdwin
 de.invesdwin.context.integration.ftp.FtpClientProperties.PASSWORD=invesdwin
 ```
-- **invesdwin-context-integration-ftp-server**: this is an embedded FTP server which is provided by [Apache MINA FtpServer](https://mina.apache.org/ftpserver-project/). As usual you can annotate your tests with `@FtpServerTest` to enabled the server in your unit tests. The following system properties are available:
+- **invesdwin-context-integration-ftp-server**: this is an embedded FTP server which is provided by [Apache MINA FtpServer](https://mina.apache.org/ftpserver-project/). As usual you can annotate your tests with `@FtpServerTest` to enable the server in your unit tests. The following system properties are available:
 ```properties
 de.invesdwin.context.integration.ftp.server.FtpServerProperties.PORT=2221
 de.invesdwin.context.integration.ftp.server.FtpServerProperties.MAX_THREADS=200
@@ -91,7 +91,7 @@ de.invesdwin.context.integration.ftp.server.FtpServerProperties.PURGE_FILES_OLDE
 de.invesdwin.context.integration.webdav.WebdavClientProperties.USERNAME=invesdwin
 de.invesdwin.context.integration.webdav.WebdavClientProperties.PASSWORD=invesdwin
 ```
-- **invesdwin-context-integration-webdav-server**: this is an embedded WebDAV server which is provided by [WebDAV Servlet](https://sourceforge.net/projects/webdav-servlet/). It is a simple implementation that also provides support for advanced WebDAV features like file locking. As usual you can annotate your tests with `@WebserverTest` when using `invesdwin-context-webserver` to enabled the server in your unit tests. The following system properties are available:
+- **invesdwin-context-integration-webdav-server**: this is an embedded WebDAV server which is provided by [WebDAV Servlet](https://sourceforge.net/projects/webdav-servlet/). It is a simple implementation that also provides support for advanced WebDAV features like file locking. As usual you can annotate your tests with `@WebserverTest` when using `invesdwin-context-webserver` to enable the server in your unit tests. The following system properties are available:
 ```properties
 # set to clean the server directory regularly of old files, keep empty or unset to disable this feature
 de.invesdwin.context.integration.webdav.server.WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 WEEKS
