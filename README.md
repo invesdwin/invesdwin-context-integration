@@ -84,7 +84,7 @@ de.invesdwin.context.integration.ftp.FtpClientProperties.PASSWORD=invesdwin
 de.invesdwin.context.integration.ftp.server.FtpServerProperties.PORT=2221
 de.invesdwin.context.integration.ftp.server.FtpServerProperties.MAX_THREADS=200
 # set to clean the server directory regularly of old files, keep empty or unset to disable this feature
-de.invesdwin.context.integration.ftp.server.FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 WEEKS
+de.invesdwin.context.integration.ftp.server.FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 DAYS
 ```
 - **invesdwin-context-integration-webdav**: since FTP has a high protocol overhead when being used for lots of short lived connections, we also provide a more light weight alternative via WebDAV for file transmissions. It works over HTTP so it is designed for low protocol overhead since it reduces the amount of round trips needed and does not require a socket connection to be kept alive between requests. The client library in use is [sardine](https://github.com/lookfirst/sardine) which is available as a `WebdavFileChannel` for use in `AsyncFileChannelUpload` and `AsyncFileChannelDownload`. The following system properties are available to configure the WebDAV credentials (you can override the `WebdavFileChannel.login()` method to use different credentials; WebDAV server discovery is supposed to happen via `WebdavServerDestinationProvider` as a ws-registry lookup):
 ```properties
@@ -94,7 +94,7 @@ de.invesdwin.context.integration.webdav.WebdavClientProperties.PASSWORD=invesdwi
 - **invesdwin-context-integration-webdav-server**: this is an embedded WebDAV server which is provided by [WebDAV Servlet](https://sourceforge.net/projects/webdav-servlet/). It is a simple implementation that also provides support for advanced WebDAV features like file locking. As usual you can annotate your tests with `@WebserverTest` when using `invesdwin-context-webserver` to enable the server in your unit tests. The following system properties are available:
 ```properties
 # set to clean the server directory regularly of old files, keep empty or unset to disable this feature
-de.invesdwin.context.integration.webdav.server.WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 WEEKS
+de.invesdwin.context.integration.webdav.server.WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 DAYS
 ```
 
 ## Web Concerns
