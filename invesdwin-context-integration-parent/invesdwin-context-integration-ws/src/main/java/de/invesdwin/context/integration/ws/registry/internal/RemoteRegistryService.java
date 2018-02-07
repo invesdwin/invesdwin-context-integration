@@ -79,7 +79,8 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     }
 
     private String getBaseUri() {
-        return IntegrationWsProperties.getRegistryServerUri() + "/" + REGISTRY;
+        return Strings.eventuallyAddSuffix(
+                Strings.removeEnd(IntegrationWsProperties.getRegistryServerUri().toString(), "/"), "/" + REGISTRY);
     }
 
 }
