@@ -319,7 +319,7 @@ public class JPPFProcessingThreadsCounter {
         }
         LOG.info("%s", message);
 
-        ConfiguredJPPFClient.getBatchedExecutorService().setBatchSize((getProcessingThreadsCount() / getNodesCount()));
+        ConfiguredJPPFClient.getBatchedExecutorService().setBatchSize((getProcessingThreadsCount()));
     }
 
     public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)
