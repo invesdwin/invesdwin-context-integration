@@ -393,11 +393,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("serverUrl", serverUrl)
-                .add("directory", directory)
-                .add("filename", filename)
-                .toString();
+        return Objects.toStringHelper(this).addValue(getFileUrl()).toString();
     }
 
 }
