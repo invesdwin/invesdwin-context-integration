@@ -5,6 +5,7 @@ import java.net.URI;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.fest.reflect.field.Invoker;
 import org.jppf.classloader.AbstractJPPFClassLoader;
 import org.jppf.node.NodeRunner;
 import org.jppf.server.node.JPPFNode;
@@ -110,9 +111,14 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             } catch (final InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            NodeRunner.getJPPFClassLoader().close();
-            Reflections.field("classLoader").ofType(AbstractJPPFClassLoader.class).in(NodeRunner.class).set(null);
-            Assertions.checkSame(NodeRunner.getNode(), node);
+            final Invoker<AbstractJPPFClassLoader> classLoaderField = Reflections.field("classLoader")
+                    .ofType(AbstractJPPFClassLoader.class)
+                    .in(NodeRunner.class);
+            final AbstractJPPFClassLoader classLoader = classLoaderField.get();
+            if (classLoader != null) {
+                classLoader.close();
+                classLoaderField.set(null);
+            }
             node = null;
 
             Reflections.field("node").ofType(JPPFNode.class).in(NodeRunner.class).set(null);

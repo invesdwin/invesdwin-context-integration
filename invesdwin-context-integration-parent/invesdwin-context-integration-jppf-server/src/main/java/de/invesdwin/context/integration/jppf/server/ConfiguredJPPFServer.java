@@ -1,12 +1,14 @@
 package de.invesdwin.context.integration.jppf.server;
 
 import java.lang.reflect.Field;
+import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jppf.nio.StateTransitionManager;
 import org.jppf.server.JPPFDriver;
 import org.jppf.server.nio.acceptor.AcceptorNioServer;
 import org.jppf.server.nio.classloader.ClassCache;
@@ -18,6 +20,7 @@ import org.jppf.server.node.JPPFNode;
 
 import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
+import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;
 import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
 import de.invesdwin.context.log.Log;
@@ -49,6 +52,9 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         Assertions.checkNotNull(driver, "Startup failed!");
         driver.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
         LOG.info("%s started with UUID: %s", ConfiguredJPPFServer.class.getSimpleName(), driver.getUuid());
+        if (MergedContext.isBootstrapFinished()) {
+            startup();
+        }
     }
 
     private void assertClassCacheEnabledMatchesConfig() {
@@ -65,7 +71,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     }
 
     @Override
-    public synchronized void startup() throws Exception {
+    public synchronized void startup() {
         if (driver != null) {
             if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
                 final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(driver).get();
@@ -104,10 +110,13 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             }
 
             driver.shutdown();
-            driver = null;
             if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
                 node.stop();
             }
+            Reflections.field("globalExecutor").ofType(ExecutorService.class).in(StateTransitionManager.class).set(
+                    null);
+
+            driver = null;
         }
     }
 
