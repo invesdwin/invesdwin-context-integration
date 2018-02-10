@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -66,7 +65,9 @@ public class JPPFProcessingThreadsCounter {
     @GuardedBy("this")
     private final List<Integer> driversCounts = new ArrayList<Integer>();
     @GuardedBy("this")
-    private final List<Integer> processingThreadsCounts = new ArrayList<>();
+    private final List<Integer> sumProcessingThreadsCounts = new ArrayList<>();
+    @GuardedBy("this")
+    private final List<Integer> medianProcessingThreadsCounts = new ArrayList<>();
     @GuardedBy("this")
     private FDate lastRefresh = FDate.MIN_DATE;
     @GuardedBy("this")
@@ -132,14 +133,18 @@ public class JPPFProcessingThreadsCounter {
     public synchronized void refresh() {
         lastRefresh = new FDate(); //prevent recursion
 
-        final int processingThreadsCountBefore = getProcessingThreadsCount();
+        final int processingThreadsCountBefore = getSumProcessingThreadsCount();
         final int nodesCountBefore = getNodesCount();
         final int driversCountBefore = getDriversCount();
 
-        final Triple<Integer, Map<String, String>, Map<String, String>> processingThreadsAndNodesAndDrivers = countProcessingThreads();
-        processingThreadsCounts.add(processingThreadsAndNodesAndDrivers.getFirst());
-        while (processingThreadsCounts.size() > MAX_COUNT_HISTORY) {
-            processingThreadsCounts.remove(0);
+        final Triple<List<Integer>, Map<String, String>, Map<String, String>> processingThreadsAndNodesAndDrivers = countProcessingThreads();
+        sumProcessingThreadsCounts.add(Integers.sum(processingThreadsAndNodesAndDrivers.getFirst()));
+        medianProcessingThreadsCounts.add(Integers.median(processingThreadsAndNodesAndDrivers.getFirst()));
+        while (sumProcessingThreadsCounts.size() > MAX_COUNT_HISTORY) {
+            sumProcessingThreadsCounts.remove(0);
+        }
+        while (medianProcessingThreadsCounts.size() > MAX_COUNT_HISTORY) {
+            medianProcessingThreadsCounts.remove(0);
         }
         nodeInfos = sortInfos(processingThreadsAndNodesAndDrivers.getSecond());
         driverInfos = sortInfos(processingThreadsAndNodesAndDrivers.getThird());
@@ -153,7 +158,7 @@ public class JPPFProcessingThreadsCounter {
         }
 
         if (warmupFinished) {
-            if (processingThreadsCountBefore != getProcessingThreadsCount() || nodesCountBefore != getNodesCount()
+            if (processingThreadsCountBefore != getSumProcessingThreadsCount() || nodesCountBefore != getNodesCount()
                     || driversCountBefore != getDriversCount()) {
                 logDetectedCounts();
             }
@@ -175,15 +180,15 @@ public class JPPFProcessingThreadsCounter {
         return sortedInfos;
     }
 
-    private Triple<Integer, Map<String, String>, Map<String, String>> countProcessingThreads() {
-        final AtomicInteger processingThreads = new AtomicInteger(0);
+    private Triple<List<Integer>, Map<String, String>, Map<String, String>> countProcessingThreads() {
+        final List<Integer> processingThreads = new ArrayList<>();
         final Map<String, String> nodeInfos = new HashMap<String, String>();
         final Map<String, String> driverInfos = new HashMap<String, String>();
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
             final int threads = JPPFClientProperties.LOCAL_EXECUTION_THREADS;
             final String uuid = topologyManager.getJPPFClient().getUuid();
             nodeInfos.put(uuid, uuid + ":" + threads + ":local");
-            processingThreads.addAndGet(threads);
+            processingThreads.add(threads);
         }
         new ATopologyVisitor() {
             @Override
@@ -193,7 +198,7 @@ public class JPPFProcessingThreadsCounter {
                     final String uuid = node.getUuid();
                     if (!nodeInfos.containsKey(uuid)) {
                         final Integer threads = extractProcessingThreads(systemInfo);
-                        processingThreads.addAndGet(threads);
+                        processingThreads.add(threads);
                         nodeInfos.put(uuid, uuid + ":" + threads);
                     }
                 }
@@ -227,7 +232,7 @@ public class JPPFProcessingThreadsCounter {
                                 }
                                 if (!nodeInfos.containsKey(nodeUuid)) {
                                     nodeInfos.put(nodeUuid, nodeUuid + ":" + processingThreadsCount + ":offline");
-                                    processingThreads.addAndGet(processingThreadsCount);
+                                    processingThreads.add(processingThreadsCount);
                                 }
                             }
                         }
@@ -235,7 +240,7 @@ public class JPPFProcessingThreadsCounter {
                 }
             }
         }
-        return Triple.of(processingThreads.get(), nodeInfos, driverInfos);
+        return Triple.of(processingThreads, nodeInfos, driverInfos);
     }
 
     private Integer extractProcessingThreads(final JPPFSystemInformation nodeConfig) {
@@ -255,9 +260,14 @@ public class JPPFProcessingThreadsCounter {
         return nbThreads;
     }
 
-    public synchronized int getProcessingThreadsCount() {
+    public synchronized int getSumProcessingThreadsCount() {
         maybeRefresh();
-        return Integers.max(processingThreadsCounts);
+        return Integers.max(sumProcessingThreadsCounts);
+    }
+
+    public synchronized int getMedianProcessingThreadsCount() {
+        maybeRefresh();
+        return Integers.max(medianProcessingThreadsCounts);
     }
 
     public synchronized int getDriversCount() {
@@ -297,9 +307,13 @@ public class JPPFProcessingThreadsCounter {
             message.append("s");
         }
         message.append(" with ");
-        final int lastProcessingThreadsCount = processingThreadsCounts.get(processingThreadsCounts.size() - 1);
+        final int lastProcessingThreadsCount = sumProcessingThreadsCounts.get(sumProcessingThreadsCounts.size() - 1);
         message.append(lastProcessingThreadsCount);
-        message.append(" (~").append(getProcessingThreadsCount()).append(")");
+        message.append(" (~")
+                .append(getSumProcessingThreadsCount())
+                .append("; median ~")
+                .append(getMedianProcessingThreadsCount())
+                .append(")");
         message.append(" processing thread");
         if (lastProcessingThreadsCount != 1) {
             message.append("s");
@@ -319,7 +333,7 @@ public class JPPFProcessingThreadsCounter {
         }
         LOG.info("%s", message);
 
-        ConfiguredJPPFClient.getBatchedExecutorService().setBatchSize((getProcessingThreadsCount() / getNodesCount()));
+        ConfiguredJPPFClient.getBatchedExecutorService().setBatchSize(getMedianProcessingThreadsCount());
     }
 
     public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)

@@ -74,7 +74,7 @@ public class ConfiguredJPPFExecutorServiceTest extends ATest {
         }.process(ConfiguredJPPFClient.getTopologyManager());
         log.info("NodesCount: %s", ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount());
         log.info("ProcessingThreadsCount: %s",
-                ConfiguredJPPFClient.getProcessingThreadsCounter().getProcessingThreadsCount());
+                ConfiguredJPPFClient.getProcessingThreadsCounter().getSumProcessingThreadsCount());
     }
 
 }
