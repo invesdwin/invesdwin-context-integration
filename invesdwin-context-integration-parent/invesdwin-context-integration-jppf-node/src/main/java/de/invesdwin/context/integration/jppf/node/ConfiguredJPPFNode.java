@@ -5,6 +5,7 @@ import java.net.URI;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.jppf.classloader.AbstractJPPFClassLoader;
 import org.jppf.node.NodeRunner;
 import org.jppf.server.node.JPPFNode;
 import org.jppf.utils.JPPFConfiguration;
@@ -24,6 +25,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.lang.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.fdate.FDate;
@@ -32,6 +34,8 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @ThreadSafe
 public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
+    private static final WrappedExecutorService NODE_EXECUTOR = Executors
+            .newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(), 1);
     private static final Log LOG = new Log(ConfiguredJPPFNode.class);
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
@@ -59,10 +63,8 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             startDelayed = true;
             return;
         }
-        final WrappedExecutorService nodeThread = Executors.newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(),
-                1);
         JPPFClientProperties.fixSystemProperties();
-        nodeThread.execute(new Runnable() {
+        NODE_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
                 NodeRunner.main("noLauncher");
@@ -96,13 +98,26 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 //ignore
             }
 
+            NodeRunner.getShuttingDown().set(true);
             node.stopNode();
             try {
                 node.stopJmxServer();
             } catch (final Exception e) {
                 //ignore
             }
+            try {
+                NODE_EXECUTOR.awaitPendingCount(0);
+            } catch (final InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            NodeRunner.getJPPFClassLoader().close();
+            Reflections.field("classLoader").ofType(AbstractJPPFClassLoader.class).in(NodeRunner.class).set(null);
+            Assertions.checkSame(NodeRunner.getNode(), node);
             node = null;
+
+            Reflections.field("node").ofType(JPPFNode.class).in(NodeRunner.class).set(null);
+            Assertions.checkNull(NodeRunner.getNode());
+            NodeRunner.getShuttingDown().set(false);
         }
     }
 
