@@ -8,7 +8,12 @@ import javax.inject.Inject;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.jppf.server.JPPFDriver;
+import org.jppf.server.nio.acceptor.AcceptorNioServer;
 import org.jppf.server.nio.classloader.ClassCache;
+import org.jppf.server.nio.classloader.client.ClientClassNioServer;
+import org.jppf.server.nio.classloader.node.NodeClassNioServer;
+import org.jppf.server.nio.client.ClientNioServer;
+import org.jppf.server.nio.nodeserver.NodeNioServer;
 import org.jppf.server.node.JPPFNode;
 
 import de.invesdwin.context.beans.hook.IPreStartupHook;
@@ -77,6 +82,27 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
 
     public synchronized void stop() {
         if (driver != null) {
+            final AcceptorNioServer acceptorServer = driver.getAcceptorServer();
+            if (acceptorServer != null) {
+                acceptorServer.shutdown();
+            }
+            final ClientClassNioServer clientClassServer = driver.getClientClassServer();
+            if (clientClassServer != null) {
+                clientClassServer.shutdown();
+            }
+            final NodeClassNioServer nodeClassServer = driver.getNodeClassServer();
+            if (nodeClassServer != null) {
+                nodeClassServer.shutdown();
+            }
+            final NodeNioServer nodeNioServer = driver.getNodeNioServer();
+            if (nodeNioServer != null) {
+                nodeNioServer.shutdown();
+            }
+            final ClientNioServer clientNioServer = driver.getClientNioServer();
+            if (clientNioServer != null) {
+                clientNioServer.shutdown();
+            }
+
             driver.shutdown();
             driver = null;
             if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
