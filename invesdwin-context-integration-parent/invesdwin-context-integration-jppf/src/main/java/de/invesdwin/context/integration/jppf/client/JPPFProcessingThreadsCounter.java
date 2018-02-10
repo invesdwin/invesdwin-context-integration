@@ -307,17 +307,18 @@ public class JPPFProcessingThreadsCounter {
             message.append("s");
         }
         message.append(" with ");
-        final int lastProcessingThreadsCount = sumProcessingThreadsCounts.get(sumProcessingThreadsCounts.size() - 1);
-        message.append(lastProcessingThreadsCount);
-        message.append(" (~")
-                .append(getSumProcessingThreadsCount())
-                .append("; median ~")
-                .append(getMedianProcessingThreadsCount())
-                .append(")");
+        final int lastSumProcessingThreadsCount = sumProcessingThreadsCounts.get(sumProcessingThreadsCounts.size() - 1);
+        message.append(lastSumProcessingThreadsCount);
+        message.append(" (~").append(getSumProcessingThreadsCount()).append(")");
         message.append(" processing thread");
-        if (lastProcessingThreadsCount != 1) {
-            message.append("s");
+        if (lastSumProcessingThreadsCount != 1) {
+            message.append("s sum");
         }
+        message.append(" and a median of ");
+        final int lastMedianProcessingThreadsCount = medianProcessingThreadsCounts
+                .get(medianProcessingThreadsCounts.size() - 1);
+        message.append(lastMedianProcessingThreadsCount);
+        message.append(" (~").append(getMedianProcessingThreadsCount()).append(")");
         message.append(": ");
         if (!driverInfos.isEmpty()) {
             message.append("\nDrivers: ");
