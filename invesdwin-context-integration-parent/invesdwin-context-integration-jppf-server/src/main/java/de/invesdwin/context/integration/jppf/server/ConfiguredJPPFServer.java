@@ -1,13 +1,17 @@
 package de.invesdwin.context.integration.jppf.server;
 
+import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.commons.lang3.BooleanUtils;
+import org.jppf.management.spi.JPPFDriverMBeanProvider;
 import org.jppf.nio.StateTransitionManager;
 import org.jppf.server.JPPFDriver;
 import org.jppf.server.nio.acceptor.AcceptorNioServer;
@@ -17,6 +21,9 @@ import org.jppf.server.nio.classloader.node.NodeClassNioServer;
 import org.jppf.server.nio.client.ClientNioServer;
 import org.jppf.server.nio.nodeserver.NodeNioServer;
 import org.jppf.server.node.JPPFNode;
+import org.jppf.utils.hooks.Hook;
+import org.jppf.utils.hooks.HookFactory;
+import org.jppf.utils.hooks.HookInstance;
 
 import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
@@ -115,8 +122,23 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             }
             Reflections.field("globalExecutor").ofType(ExecutorService.class).in(StateTransitionManager.class).set(
                     null);
+            unregisterMBeans(JPPFDriverMBeanProvider.class);
 
             driver = null;
+        }
+    }
+
+    private <S> void unregisterMBeans(final Class<S> clazz) {
+        final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+        final ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        final Hook<S> hook = HookFactory.registerSPIMultipleHook(clazz, null, loader);
+        for (final HookInstance<S> hookInstance : hook.getInstances()) {
+            try {
+                final String mbeanName = (String) hookInstance.invoke("getMBeanName");
+                server.unregisterMBean(new ObjectName(mbeanName));
+            } catch (final Exception e) {
+                //ignore
+            }
         }
     }
 
