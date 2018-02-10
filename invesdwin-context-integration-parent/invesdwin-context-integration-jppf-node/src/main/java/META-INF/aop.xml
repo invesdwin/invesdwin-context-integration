@@ -1,0 +1,12 @@
+<!DOCTYPE aspectj PUBLIC    
+  "-//AspectJ//DTD//EN"    "http://www.eclipse.org/aspectj/dtd/aspectj.dtd">
+
+<aspectj>
+	<weaver>
+		<include within="org.jppf.server.node.JPPFNode"/>
+	</weaver>
+	<aspects>
+		<aspect
+			name="de.invesdwin.context.integration.jppf.node.internal.OverrideNodeRestartAdminRequestAspect" />
+	</aspects>
+</aspectj>
