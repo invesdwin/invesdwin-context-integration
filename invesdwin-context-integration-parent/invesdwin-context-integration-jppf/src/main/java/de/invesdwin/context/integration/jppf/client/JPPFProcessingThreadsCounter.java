@@ -312,13 +312,14 @@ public class JPPFProcessingThreadsCounter {
         message.append(" (~").append(getSumProcessingThreadsCount()).append(")");
         message.append(" processing thread");
         if (lastSumProcessingThreadsCount != 1) {
-            message.append("s sum");
+            message.append("s");
         }
-        message.append(" and a median of ");
+        message.append(" and ");
         final int lastMedianProcessingThreadsCount = medianProcessingThreadsCounts
                 .get(medianProcessingThreadsCounts.size() - 1);
         message.append(lastMedianProcessingThreadsCount);
         message.append(" (~").append(getMedianProcessingThreadsCount()).append(")");
+        message.append(" median batch size");
         message.append(": ");
         if (!driverInfos.isEmpty()) {
             message.append("\nDrivers: ");
