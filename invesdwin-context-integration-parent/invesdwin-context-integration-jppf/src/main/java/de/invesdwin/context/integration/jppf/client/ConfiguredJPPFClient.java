@@ -52,7 +52,8 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
 
     public static synchronized JobMonitor getJobMonitor() {
         if (jobMonitor == null) {
-            jobMonitor = new JobMonitor(getTopologyManager());
+            Assertions.checkNotNull(getInstance());
+            Assertions.checkNotNull(jobMonitor);
         }
         return jobMonitor;
     }
@@ -68,6 +69,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             JPPFClientProperties.fixSystemProperties();
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
+            jobMonitor = new JobMonitor(topologyManager);
             Assertions.checkNotNull(getProcessingThreadsCounter());
             final ConfiguredClientDriverDiscovery clientDiscovery = new ConfiguredClientDriverDiscovery();
             instance.addDriverDiscovery(clientDiscovery);
