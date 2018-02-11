@@ -10,10 +10,11 @@ public class ConfiguredJPPFExecutorService extends JPPFExecutorService {
 
     public ConfiguredJPPFExecutorService(final JPPFClient client) {
         super(client);
-        getConfiguration().getJobConfiguration().getClientSLA().setMaxChannels(-1);
+        getConfiguration().getJobConfiguration().getClientSLA().setMaxChannels(1);
         //this prevents the same task from being executed more than once in parallel, it is better to relaunch the task in a new job instead
         getConfiguration().getJobConfiguration().getSLA().setMaxTaskResubmits(0);
         getConfiguration().getJobConfiguration().getSLA().setApplyMaxResubmitsUponNodeError(true);
+        getConfiguration().getJobConfiguration().getSLA().setMaxNodes(1);
     }
 
 }
