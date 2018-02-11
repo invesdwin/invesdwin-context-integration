@@ -44,8 +44,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>net.sf.webdav-servlet</groupId>
-			<artifactId>webdav-servlet</artifactId>
+			<groupId>org.commonjava.web</groupId>
+			<artifactId>webdav-handler-servlet</artifactId>
 		</dependency>
 	</dependencies>
 

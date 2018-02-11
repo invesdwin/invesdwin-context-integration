@@ -127,9 +127,44 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             Assertions.checkNull(webdavClient, "Already connected");
             webdavClient = login();
             webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
+            if (!webdavClient.exists(getDirectoryUrl())) {
+                createAndChangeDirectory();
+            }
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
+     */
+    private synchronized void createAndChangeDirectory() {
+        final String[] pathElements = directory.split("/");
+        final StringBuilder prevPathElements = new StringBuilder("/");
+        if (pathElements != null && pathElements.length > 0) {
+            for (final String singleDir : pathElements) {
+                if (singleDir.length() > 0) {
+                    prevPathElements.append(singleDir).append("/");
+                    try {
+                        createAndChangeSingleDirectory(prevPathElements.toString());
+                    } catch (final Throwable t) {
+                        throw new RuntimeException("At: " + prevPathElements, t);
+                    }
+                }
+            }
+        }
+    }
+
+    private synchronized void createAndChangeSingleDirectory(final String singleDir) throws Exception {
+        try {
+            webdavClient.createDirectory(getServerUri() + singleDir);
+        } catch (final SardineException e) {
+            if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT) {
+                return;
+            } else {
+                throw e;
+            }
         }
     }
 

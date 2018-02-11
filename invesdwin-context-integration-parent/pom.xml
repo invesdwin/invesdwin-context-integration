@@ -69,7 +69,7 @@
 
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
-		<version.webdav-servlet>2.0.1</version.webdav-servlet>
+		<version.webdav-handler>3.3.0</version.webdav-handler>
 		<version.sardine>5.8</version.sardine>
 
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
@@ -988,19 +988,9 @@
 			</dependency>
 
 			<dependency>
-				<groupId>net.sf.webdav-servlet</groupId>
-				<artifactId>webdav-servlet</artifactId>
-				<version>${version.webdav-servlet}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>slf4j-log4j12</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>log4j</groupId>
-						<artifactId>log4j</artifactId>
-					</exclusion>
-				</exclusions>
+				<groupId>org.commonjava.web</groupId>
+				<artifactId>webdav-handler-servlet</artifactId>
+				<version>${version.webdav-handler}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.lookfirst</groupId>

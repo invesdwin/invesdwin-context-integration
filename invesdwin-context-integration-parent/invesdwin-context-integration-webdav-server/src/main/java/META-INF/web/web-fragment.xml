@@ -5,7 +5,8 @@
 
 	<servlet>
 		<servlet-name>webdav</servlet-name>
-		<servlet-class>de.invesdwin.context.integration.webdav.server.internal.ConfiguredWebdavServlet</servlet-class>
+		<servlet-class>de.invesdwin.context.integration.webdav.server.internal.ConfiguredWebdavServlet
+		</servlet-class>
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
