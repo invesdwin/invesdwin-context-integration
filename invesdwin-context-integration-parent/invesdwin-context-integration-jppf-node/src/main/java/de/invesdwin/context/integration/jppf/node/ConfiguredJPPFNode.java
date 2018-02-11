@@ -109,7 +109,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             try {
                 NODE_EXECUTOR.awaitPendingCount(0);
             } catch (final InterruptedException e) {
-                throw new RuntimeException(e);
+                Thread.currentThread().interrupt();
             }
             final Invoker<AbstractJPPFClassLoader> classLoaderField = Reflections.field("classLoader")
                     .ofType(AbstractJPPFClassLoader.class)
