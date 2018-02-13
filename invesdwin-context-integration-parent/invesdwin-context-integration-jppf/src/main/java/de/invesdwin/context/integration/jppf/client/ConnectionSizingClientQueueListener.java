@@ -2,13 +2,15 @@ package de.invesdwin.context.integration.jppf.client;
 
 import java.util.List;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.jppf.client.JPPFClient;
 import org.jppf.client.JPPFConnectionPool;
 import org.jppf.client.event.ClientQueueEvent;
 import org.jppf.client.event.ClientQueueListener;
+import org.jppf.client.monitoring.jobs.JobMonitor;
+import org.jppf.client.monitoring.jobs.JobMonitoringEvent;
+import org.jppf.client.monitoring.jobs.JobMonitoringListenerAdapter;
 
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
@@ -29,24 +31,39 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     private static final Duration REAPER_DELAY = Duration.ONE_MINUTE;
     private static final double MAX_CONNECTIONS_PER_NODE_MULTIPLIER = 2;
 
-    @GuardedBy("ConnectionSizingClientQueueListener.class")
-    private static int activeJobsCount = 0;
+    private static volatile int queuedJobsCount = 0;
+    private static volatile int activeJobsCount = 0;
 
     private static final Log LOG = new Log(ConnectionSizingClientQueueListener.class);
+
+    public ConnectionSizingClientQueueListener(final JobMonitor jobMonitor) {
+        jobMonitor.addJobMonitoringListener(new JobMonitoringListenerAdapter() {
+
+            @Override
+            public void jobRemoved(final JobMonitoringEvent event) {
+                activeJobsCount--;
+            }
+
+            @Override
+            public void jobAdded(final JobMonitoringEvent event) {
+                activeJobsCount++;
+            }
+
+        });
+    }
 
     @Override
     public void jobAdded(final ClientQueueEvent event) {
         synchronized (ConnectionSizingClientQueueListener.class) {
-            ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
-                    ConnectionSizingClientQueueListener.activeJobsCount + 1, event.getQueueSize());
+            ConnectionSizingClientQueueListener.queuedJobsCount = Integers.max(0,
+                    ConnectionSizingClientQueueListener.queuedJobsCount + 1, event.getQueueSize());
             maybeIncreaseConnectionsCount(event.getClient(),
                     ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount());
         }
     }
 
     public static void maybeIncreaseConnectionsCount(final JPPFClient client, final int nodesCount) {
-        final int newCount = determineNewConnectionsCount(ConnectionSizingClientQueueListener.activeJobsCount,
-                nodesCount);
+        final int newCount = determineNewConnectionsCount(nodesCount);
         final int connectionsBefore = client.getAllConnectionsCount();
         int curConnections = connectionsBefore;
         while (newCount > curConnections) {
@@ -69,15 +86,14 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
     @Override
     public void jobRemoved(final ClientQueueEvent event) {
         synchronized (ConnectionSizingClientQueueListener.class) {
-            ConnectionSizingClientQueueListener.activeJobsCount = Integers.max(0,
-                    ConnectionSizingClientQueueListener.activeJobsCount - 1, event.getQueueSize());
+            ConnectionSizingClientQueueListener.queuedJobsCount = Integers.max(0,
+                    ConnectionSizingClientQueueListener.queuedJobsCount - 1, event.getQueueSize());
             if (SCHEDULER.getPendingCount() == 0) {
                 SCHEDULER.schedule(new Runnable() {
                     @Override
                     public void run() {
                         synchronized (ConnectionSizingClientQueueListener.class) {
                             final int newCount = determineNewConnectionsCount(
-                                    ConnectionSizingClientQueueListener.activeJobsCount,
                                     ConfiguredJPPFClient.getProcessingThreadsCounter().getNodesCount());
                             final int connectionsBefore = event.getClient().getAllConnectionsCount();
                             int curConnections = connectionsBefore;
@@ -115,9 +131,11 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         }
     }
 
-    private static int determineNewConnectionsCount(final int activeJobsCount, final int nodesCount) {
+    private static int determineNewConnectionsCount(final int nodesCount) {
+        final int jobsCount = ConnectionSizingClientQueueListener.queuedJobsCount
+                + ConnectionSizingClientQueueListener.activeJobsCount;
         final int nodesCountMultiplied = (int) (nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER);
-        return Integers.max(1, Math.min(activeJobsCount, nodesCountMultiplied), nodesCount);
+        return Integers.max(1, Math.min(jobsCount, nodesCountMultiplied), nodesCount);
     }
 
     private static void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
