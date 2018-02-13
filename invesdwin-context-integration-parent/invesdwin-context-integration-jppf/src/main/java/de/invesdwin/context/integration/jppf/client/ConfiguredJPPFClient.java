@@ -73,7 +73,7 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             Assertions.checkNotNull(getProcessingThreadsCounter());
             final ConfiguredClientDriverDiscovery clientDiscovery = new ConfiguredClientDriverDiscovery();
             instance.addDriverDiscovery(clientDiscovery);
-            instance.addClientQueueListener(new ConnectionSizingClientQueueListener());
+            instance.addClientQueueListener(new ConnectionSizingClientQueueListener(jobMonitor));
 
             waitForWarmup(clientDiscovery);
         }
