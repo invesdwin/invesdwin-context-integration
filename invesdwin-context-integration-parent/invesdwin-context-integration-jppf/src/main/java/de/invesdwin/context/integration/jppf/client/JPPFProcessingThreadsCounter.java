@@ -357,6 +357,9 @@ public class JPPFProcessingThreadsCounter {
         boolean firstRun = !warmupFinished;
         do {
             if ((timeout != null && start.toDuration().isGreaterThan(timeout))) {
+                if (getDriversCount() == 0) {
+                    topologyManager.getJPPFClient().reset();
+                }
                 throw new TimeoutException("timeout exceeded: " + timeout);
             }
             try {
