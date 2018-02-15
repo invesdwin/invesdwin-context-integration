@@ -214,11 +214,13 @@ public class JPPFProcessingThreadsCounter {
                 }
             }
         }.process(topologyManager);
-        for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
-            try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
-                channel.connect();
-                for (final DavResource file : channel.listFiles()) {
-                    processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
+        if (topologyManager.getJPPFClient().getAllConnectionsCount() > 0) {
+            for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
+                try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
+                    channel.connect();
+                    for (final DavResource file : channel.listFiles()) {
+                        processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
+                    }
                 }
             }
         }
