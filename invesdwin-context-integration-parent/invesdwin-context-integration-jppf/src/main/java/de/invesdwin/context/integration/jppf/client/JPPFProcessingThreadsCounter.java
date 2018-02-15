@@ -214,7 +214,7 @@ public class JPPFProcessingThreadsCounter {
                 }
             }
         }.process(topologyManager);
-        if (topologyManager.getJPPFClient().getAllConnectionsCount() > 0) {
+        if (driverInfos.size() > 0) {
             for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
                 try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
                     channel.connect();
