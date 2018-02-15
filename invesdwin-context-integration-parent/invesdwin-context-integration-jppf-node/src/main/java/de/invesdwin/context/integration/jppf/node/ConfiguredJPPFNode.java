@@ -42,7 +42,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
     private boolean startDelayed = false;
     private JPPFNode node;
     @GuardedBy("ConfiguredJPPFNode.class")
-    private WebdavFileChannel heartbeatFtpFileChannel;
+    private WebdavFileChannel heartbeatWebdavFileChannel;
 
     public synchronized JPPFNode getNode() {
         return node;
@@ -93,7 +93,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         if (node != null) {
             final String nodeUuid = node.getUuid();
             try {
-                final WebdavFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
+                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                 channel.delete();
             } catch (final Throwable e) {
                 //ignore
@@ -147,11 +147,11 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 final String nodeUuid = node.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
                 final FDate heartbeat = new FDate();
-                final String content = nodeUuid + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR + processingThreads
-                        + JPPFProcessingThreadsCounter.FTP_CONTENT_SEPARATOR
-                        + heartbeat.toString(JPPFProcessingThreadsCounter.FTP_CONTENT_DATEFORMAT);
+                final String content = nodeUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
                 synchronized (this) {
-                    final WebdavFileChannel channel = getHeartbeatFtpFileChannel(nodeUuid);
+                    final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                     try {
                         channel.upload(content.getBytes());
                     } catch (final Throwable t) {
@@ -166,24 +166,24 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         }
     }
 
-    private WebdavFileChannel getHeartbeatFtpFileChannel(final String nodeUuid) {
-        final boolean differentNodeUuid = heartbeatFtpFileChannel != null
-                && heartbeatFtpFileChannel.getFilename() != null
-                && !heartbeatFtpFileChannel.getFilename().contains(nodeUuid);
-        if (heartbeatFtpFileChannel == null || differentNodeUuid || !heartbeatFtpFileChannel.isConnected()) {
-            if (heartbeatFtpFileChannel != null) {
+    private WebdavFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
+        final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
+                && heartbeatWebdavFileChannel.getFilename() != null
+                && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
+        if (heartbeatWebdavFileChannel == null || differentNodeUuid || !heartbeatWebdavFileChannel.isConnected()) {
+            if (heartbeatWebdavFileChannel != null) {
                 if (differentNodeUuid) {
                     try {
-                        if (!heartbeatFtpFileChannel.isConnected()) {
-                            heartbeatFtpFileChannel.connect();
+                        if (!heartbeatWebdavFileChannel.isConnected()) {
+                            heartbeatWebdavFileChannel.connect();
                         }
-                        heartbeatFtpFileChannel.delete();
+                        heartbeatWebdavFileChannel.delete();
                     } catch (final Throwable t) {
                         //ignore
                     }
                 }
-                heartbeatFtpFileChannel.close();
-                heartbeatFtpFileChannel = null;
+                heartbeatWebdavFileChannel.close();
+                heartbeatWebdavFileChannel = null;
             }
             final URI ftpServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
@@ -191,12 +191,12 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
                     JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
-                channel.setFilename("node_" + nodeUuid + ".heartbeat");
+                channel.setFilename(JPPFProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX + nodeUuid + ".heartbeat");
                 channel.connect();
             }
-            heartbeatFtpFileChannel = channel;
+            heartbeatWebdavFileChannel = channel;
         }
-        return heartbeatFtpFileChannel;
+        return heartbeatWebdavFileChannel;
     }
 
     @Override

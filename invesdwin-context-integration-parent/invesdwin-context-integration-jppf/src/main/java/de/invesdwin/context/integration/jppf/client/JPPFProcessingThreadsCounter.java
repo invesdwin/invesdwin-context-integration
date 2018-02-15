@@ -47,9 +47,11 @@ public class JPPFProcessingThreadsCounter {
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
 
     public static final String WEBDAV_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
-    public static final String FTP_CONTENT_SEPARATOR = ";";
-    public static final String FTP_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
+    public static final String WEBDAV_CONTENT_SEPARATOR = ";";
+    public static final String WEBDAV_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
+    public static final String DRIVER_HEARTBEAT_FILE_PREFIX = "driver_";
+    public static final String NODE_HEARTBEAT_FILE_PREFIX = "node_";
     private static final int MAX_COUNT_HISTORY = 60;
 
     private static final Log LOG = new Log(JPPFProcessingThreadsCounter.class);
@@ -212,35 +214,44 @@ public class JPPFProcessingThreadsCounter {
                 }
             }
         }.process(topologyManager);
-        if (!driverInfos.isEmpty()) {
-            for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
-                try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
-                    channel.connect();
-                    for (final DavResource file : channel.listFiles()) {
-                        channel.setFilename(file.getName());
-                        final byte[] content = channel.download();
-                        if (content != null && content.length > 0) {
-                            final String contentStr = new String(content);
-                            final String[] split = Strings.split(contentStr, FTP_CONTENT_SEPARATOR);
-                            if (split.length == 3) {
-                                final String nodeUuid = split[0];
-                                final Integer processingThreadsCount = Integer.valueOf(split[1]);
-                                final FDate heartbeat = FDate.valueOf(split[2], FTP_CONTENT_DATEFORMAT);
-                                if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
-                                    channel.delete();
-                                    continue;
-                                }
-                                if (!nodeInfos.containsKey(nodeUuid)) {
-                                    nodeInfos.put(nodeUuid, nodeUuid + ":" + processingThreadsCount + ":offline");
-                                    processingThreads.add(processingThreadsCount);
-                                }
-                            }
-                        }
-                    }
+        for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
+            try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
+                channel.connect();
+                for (final DavResource file : channel.listFiles()) {
+                    processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
                 }
             }
         }
         return Triple.of(processingThreads, nodeInfos, driverInfos);
+    }
+
+    private void processHeartbeat(final List<Integer> processingThreads, final Map<String, String> nodeInfos,
+            final Map<String, String> driverInfos, final WebdavFileChannel channel, final DavResource file) {
+        channel.setFilename(file.getName());
+        final byte[] content = channel.download();
+        if (content != null && content.length > 0) {
+            final String contentStr = new String(content);
+            final String[] split = Strings.split(contentStr, WEBDAV_CONTENT_SEPARATOR);
+            if (split.length == 3) {
+                final String uuid = split[0];
+                final Integer processingThreadsCount = Integer.valueOf(split[1]);
+                final FDate heartbeat = FDate.valueOf(split[2], WEBDAV_CONTENT_DATEFORMAT);
+                if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
+                    channel.delete();
+                    return;
+                }
+                if (file.getName().startsWith(DRIVER_HEARTBEAT_FILE_PREFIX)) {
+                    if (!driverInfos.containsKey(uuid)) {
+                        driverInfos.put(uuid, uuid + ":offline");
+                    }
+                } else if (file.getName().startsWith(NODE_HEARTBEAT_FILE_PREFIX)) {
+                    if (!nodeInfos.containsKey(uuid)) {
+                        nodeInfos.put(uuid, uuid + ":" + processingThreadsCount + ":offline");
+                        processingThreads.add(processingThreadsCount);
+                    }
+                }
+            }
+        }
     }
 
     private Integer extractProcessingThreads(final JPPFSystemInformation nodeConfig) {

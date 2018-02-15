@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.jppf.server;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -21,26 +22,41 @@ import org.jppf.server.nio.classloader.node.NodeClassNioServer;
 import org.jppf.server.nio.client.ClientNioServer;
 import org.jppf.server.nio.nodeserver.NodeNioServer;
 import org.jppf.server.node.JPPFNode;
+import org.jppf.utils.JPPFConfiguration;
+import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.hooks.Hook;
 import org.jppf.utils.hooks.HookFactory;
 import org.jppf.utils.hooks.HookInstance;
+import org.springframework.scheduling.annotation.Scheduled;
 
+import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;
 import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
+import de.invesdwin.context.integration.retry.Retry;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.integration.webdav.WebdavFileChannel;
+import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Reflections;
+import de.invesdwin.util.shutdown.IShutdownHook;
+import de.invesdwin.util.shutdown.ShutdownHookManager;
+import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @ThreadSafe
-public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook {
+public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook, IShutdownHook {
 
     private static final Log LOG = new Log(ConfiguredJPPFServer.class);
     @GuardedBy("ConfiguredJPPFServer.class")
     private static Boolean nodeStartupEnabled;
     private JPPFDriver driver;
+    @GuardedBy("ConfiguredJPPFServer.class")
+    private WebdavFileChannel heartbeatWebdavFileChannel;
 
     @Inject
     private ConfiguredJPPFNode node;
@@ -58,6 +74,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         assertClassCacheEnabledMatchesConfig();
         Assertions.checkNotNull(driver, "Startup failed!");
         driver.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
+        uploadHeartbeat();
         LOG.info("%s started with UUID: %s", ConfiguredJPPFServer.class.getSimpleName(), driver.getUuid());
         if (MergedContext.isBootstrapFinished()) {
             startup();
@@ -162,4 +179,83 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             }
         }
     }
+
+    @Override
+    public void shutdown() throws Exception {
+        stop();
+    }
+
+    @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
+    @SkipParallelExecution
+    private void scheduledUploadHeartbeat() {
+        uploadHeartbeat();
+    }
+
+    @Retry
+    private void uploadHeartbeat() {
+        if (ShutdownHookManager.isShuttingDown()) {
+            return;
+        }
+        final JPPFDriver driver;
+        synchronized (this) {
+            driver = this.driver;
+        }
+        if (driver != null) {
+            try {
+                final String driverUuid = driver.getUuid();
+                final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
+                final FDate heartbeat = new FDate();
+                final String content = driverUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
+                synchronized (this) {
+                    final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);
+                    try {
+                        channel.upload(content.getBytes());
+                    } catch (final Throwable t) {
+                        channel.close();
+                        throw t;
+                    }
+                }
+            } catch (final Throwable t) {
+                throw new RetryLaterRuntimeException(t);
+
+            }
+        }
+    }
+
+    private WebdavFileChannel getHeartbeatWebdavFileChannel(final String driverUuid) {
+        final boolean differentDriverUuid = heartbeatWebdavFileChannel != null
+                && heartbeatWebdavFileChannel.getFilename() != null
+                && !heartbeatWebdavFileChannel.getFilename().contains(driverUuid);
+        if (heartbeatWebdavFileChannel == null || differentDriverUuid || !heartbeatWebdavFileChannel.isConnected()) {
+            if (heartbeatWebdavFileChannel != null) {
+                if (differentDriverUuid) {
+                    try {
+                        if (!heartbeatWebdavFileChannel.isConnected()) {
+                            heartbeatWebdavFileChannel.connect();
+                        }
+                        heartbeatWebdavFileChannel.delete();
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
+                }
+                heartbeatWebdavFileChannel.close();
+                heartbeatWebdavFileChannel = null;
+            }
+            final URI ftpServerUri = MergedContext.getInstance()
+                    .getBean(WebdavServerDestinationProvider.class)
+                    .getDestination();
+            final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
+                    JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            if (!channel.isConnected()) {
+                channel.setFilename(
+                        JPPFProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX + driverUuid + ".heartbeat");
+                channel.connect();
+            }
+            heartbeatWebdavFileChannel = channel;
+        }
+        return heartbeatWebdavFileChannel;
+    }
+
 }
