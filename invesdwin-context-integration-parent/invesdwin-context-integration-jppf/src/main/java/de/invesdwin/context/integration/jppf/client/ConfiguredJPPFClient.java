@@ -102,4 +102,15 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         return ConfiguredJPPFClient.class;
     }
 
+    public static synchronized void reset() {
+        instance.close();
+        instance = null;
+        topologyManager = null;
+        jobMonitor = null;
+        processingThreadsCounter = null;
+        executorService.shutdownNow();
+        executorService = null;
+        Assertions.checkNotNull(getInstance());
+    }
+
 }
