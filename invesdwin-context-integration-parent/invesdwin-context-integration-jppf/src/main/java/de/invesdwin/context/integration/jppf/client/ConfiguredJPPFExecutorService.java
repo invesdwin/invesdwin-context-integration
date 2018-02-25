@@ -5,6 +5,8 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.jppf.client.JPPFClient;
 import org.jppf.client.concurrent.JPPFExecutorService;
 
+import de.invesdwin.util.assertions.Assertions;
+
 @ThreadSafe
 public class ConfiguredJPPFExecutorService extends JPPFExecutorService {
 
@@ -12,6 +14,7 @@ public class ConfiguredJPPFExecutorService extends JPPFExecutorService {
 
     public ConfiguredJPPFExecutorService(final JPPFClient client) {
         super(client);
+        Assertions.checkNotNull(client);
         this.client = client;
         getConfiguration().getJobConfiguration().getClientSLA().setMaxChannels(1);
         //this prevents the same task from being executed more than once in parallel, it is better to relaunch the task in a new job instead
