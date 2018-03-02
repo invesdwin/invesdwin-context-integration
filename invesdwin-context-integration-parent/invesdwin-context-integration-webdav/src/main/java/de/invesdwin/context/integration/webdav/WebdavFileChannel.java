@@ -160,7 +160,9 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         try {
             webdavClient.createDirectory(getServerUri() + singleDir);
         } catch (final SardineException e) {
-            if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT) {
+            //500 might happen when creating directories in parallel, the others when folders already exist or parent folders are missing
+            if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT
+                    || e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                 return;
             } else {
                 throw e;
