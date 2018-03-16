@@ -275,22 +275,22 @@ public class JPPFProcessingThreadsCounter {
 
     public synchronized int getSumProcessingThreadsCount() {
         maybeRefresh();
-        return Integers.max(sumProcessingThreadsCounts);
+        return Integers.max(0, Integers.max(sumProcessingThreadsCounts));
     }
 
     public synchronized int getMedianProcessingThreadsCount() {
         maybeRefresh();
-        return Integers.max(medianProcessingThreadsCounts);
+        return Integers.max(0, Integers.max(medianProcessingThreadsCounts));
     }
 
     public synchronized int getDriversCount() {
         maybeRefresh();
-        return Integers.max(driversCounts);
+        return Integers.max(0, Integers.max(driversCounts));
     }
 
     public synchronized int getNodesCount() {
         maybeRefresh();
-        return Integers.max(nodesCounts);
+        return Integers.max(0, Integers.max(nodesCounts));
     }
 
     public TopologyManager getTopologyManager() {
@@ -320,7 +320,8 @@ public class JPPFProcessingThreadsCounter {
             message.append("s");
         }
         message.append(" with ");
-        final int lastSumProcessingThreadsCount = sumProcessingThreadsCounts.get(sumProcessingThreadsCounts.size() - 1);
+        final int lastSumProcessingThreadsCount = Integers.max(0,
+                sumProcessingThreadsCounts.get(sumProcessingThreadsCounts.size() - 1));
         message.append(lastSumProcessingThreadsCount);
         message.append(" (~").append(getSumProcessingThreadsCount()).append(")");
         message.append(" processing thread");
@@ -328,10 +329,10 @@ public class JPPFProcessingThreadsCounter {
             message.append("s");
         }
         message.append(" and ");
-        final int lastMedianProcessingThreadsCount = medianProcessingThreadsCounts
-                .get(medianProcessingThreadsCounts.size() - 1);
+        final int lastMedianProcessingThreadsCount = Integers.max(0,
+                medianProcessingThreadsCounts.get(medianProcessingThreadsCounts.size() - 1));
         message.append(lastMedianProcessingThreadsCount);
-        message.append(" (~").append(getMedianProcessingThreadsCount()).append(")");
+        message.append(" (~").append(Integers.max(0, getMedianProcessingThreadsCount())).append(")");
         message.append(" median batch size");
         message.append(": ");
         if (!driverInfos.isEmpty()) {
