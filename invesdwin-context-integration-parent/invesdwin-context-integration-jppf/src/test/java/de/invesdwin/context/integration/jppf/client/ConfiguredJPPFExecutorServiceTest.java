@@ -15,7 +15,7 @@ import org.junit.Test;
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Futures;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @NotThreadSafe
