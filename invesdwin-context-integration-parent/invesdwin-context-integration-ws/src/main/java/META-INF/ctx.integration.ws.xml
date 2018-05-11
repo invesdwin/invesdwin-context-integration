@@ -54,7 +54,7 @@
 		</property>
 	</bean>
 	<bean id="authenticationHandler"
-		class="org.springframework.ws.soap.security.wss4j.callback.SimplePasswordValidationCallbackHandler">
+		class="org.springframework.ws.soap.security.wss4j2.callback.SimplePasswordValidationCallbackHandler">
 		<property name="users">
 			<props>
 				<prop
