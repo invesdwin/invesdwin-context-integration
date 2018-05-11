@@ -42,7 +42,8 @@
 		<property name="securementPassword"
 			value="${de.invesdwin.context.integration.ws.IntegrationWsProperties.WSS_USERNAMETOKEN_PASSWORD}" />
 		<property name="securementPasswordType" value="PasswordDigest" />
-		<property name="securementUsernameTokenElements" value="Nonce Created" />
+		<property name="securementUsernameTokenNonce" value="true" />
+		<property name="securementUsernameTokenCreated" value="true" />
 
 		<!-- IN -->
 		<property name="validationActions" value="UsernameToken" />
