@@ -229,6 +229,11 @@
 				<artifactId>invesdwin-context-integration-affinity</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-quasar</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
 
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
