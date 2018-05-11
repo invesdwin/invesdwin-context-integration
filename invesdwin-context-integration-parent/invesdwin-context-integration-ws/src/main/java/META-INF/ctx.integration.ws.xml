@@ -31,7 +31,7 @@
 	<bean id="IntegrationWsProperties"
 		class="de.invesdwin.context.system.properties.SystemPropertiesDefinition" />
 	<bean id="wssInterceptor"
-		class="org.springframework.ws.soap.security.wss4j.Wss4jSecurityInterceptor">
+		class="org.springframework.ws.soap.security.wss4j2.Wss4jSecurityInterceptor">
 
 		<!-- OUT -->
 		<property name="securementActions" value="UsernameToken" />
