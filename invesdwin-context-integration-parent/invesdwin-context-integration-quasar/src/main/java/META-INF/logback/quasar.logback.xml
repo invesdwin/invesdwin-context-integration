@@ -1,7 +1,8 @@
 <configuration>
 
-	<logger name="co.paralleluniverse" additivity="false"
-		level="ERROR">
+	<logger
+		name="de.invesdwin.context.integration.quasar.internal.QuasarLog"
+		additivity="false" level="ERROR">
 		<appender-ref ref="stdout" />
 		<appender-ref ref="stderr" />
 		<appender-ref ref="common" />
