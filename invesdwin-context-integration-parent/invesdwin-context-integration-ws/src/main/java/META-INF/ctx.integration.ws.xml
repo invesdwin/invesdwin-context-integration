@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:context="http://www.springframework.org/schema/context"
 	xmlns:sws="http://www.springframework.org/schema/web-services"
-	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:security="http://www.springframework.org/schema/security"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xmlns:security="http://www.springframework.org/schema/security"
 	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
 		http://www.springframework.org/schema/web-services http://www.springframework.org/schema/web-services/web-services.xsd
 		http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
@@ -41,7 +43,8 @@
 			value="${de.invesdwin.context.integration.ws.IntegrationWsProperties.WSS_USERNAMETOKEN_USER}" />
 		<property name="securementPassword"
 			value="${de.invesdwin.context.integration.ws.IntegrationWsProperties.WSS_USERNAMETOKEN_PASSWORD}" />
-		<property name="securementPasswordType" value="PasswordDigest" />
+		<property name="securementPasswordType"
+			value="PasswordDigest" />
 		<property name="securementUsernameTokenNonce" value="true" />
 		<property name="securementUsernameTokenCreated" value="true" />
 
@@ -68,7 +71,8 @@
 
 	<!-- securing rest services here per default, specific services can be reconfigured 
 		by addin more security http tags for those and overriding this config thus -->
-	<security:http authentication-manager-ref="springWebAuthenticationManager"
+	<security:http
+		authentication-manager-ref="springWebAuthenticationManager"
 		use-expressions="true" pattern="/spring-web/**">
 
 		<security:csrf disabled="true" />
@@ -78,12 +82,15 @@
 
 		<security:http-basic />
 
-		<security:intercept-url pattern="/spring-web/**"
-			access="hasRole('_SPRING_WEB_')" />
+		<security:intercept-url
+			pattern="/spring-web/**" access="hasRole('_SPRING_WEB_')" />
 	</security:http>
 
-	<security:authentication-manager id="springWebAuthenticationManager">
+	<security:authentication-manager
+		id="springWebAuthenticationManager">
 		<security:authentication-provider>
+			<security:password-encoder
+				ref="noopPasswordEncoder" />
 			<security:user-service>
 				<security:user
 					name="${de.invesdwin.context.integration.ws.IntegrationWsProperties.SPRING_WEB_USER}"
