@@ -999,6 +999,12 @@
 				<groupId>co.paralleluniverse</groupId>
 				<artifactId>quasar-core</artifactId>
 				<version>${version.quasar}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>com.esotericsoftware</groupId>
+						<artifactId>minlog</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>co.paralleluniverse</groupId>
