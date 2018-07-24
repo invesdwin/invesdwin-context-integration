@@ -66,7 +66,7 @@
 		<version.hadoop>2.8.1</version.hadoop>
 		<version.jersey>2.25.1</version.jersey>
 		<version.xmlsec>2.1.0</version.xmlsec>
-		<version.ow2asm>5.0.4</version.ow2asm>
+		<version.ow2asm>6.0</version.ow2asm>
 		<version.jppf>5.2.8</version.jppf>
 
 		<version.ftp4j>1.7.3</version.ftp4j>
