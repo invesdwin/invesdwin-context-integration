@@ -87,7 +87,7 @@ public class RegistryServerTest extends APersistenceTest {
 
         final String restQueryResult = URIs
                 .connect(IntegrationProperties.WEBSERVER_BIND_URI
-                        + "/spring-web/registry/queryservicebindings_testService")
+                        + "/spring-web/registry/queryServiceBindings_testService")
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(restQueryResult).contains(accessURI.toString());
