@@ -14,7 +14,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.concurrent.AFastIterableDelegateSet;
+import de.invesdwin.util.collections.fast.concurrent.ASynchronizedFastIterableDelegateSet;
 import de.invesdwin.util.time.fdate.FDate;
 
 @ThreadSafe
@@ -22,7 +22,7 @@ public class RegistryServiceStubImpl implements IRegistryService {
 
     private static boolean enabled = true;
     private static final Map<String, URI> SERVICENAME_ACCESSURI_OVERRIDES = new ConcurrentHashMap<String, URI>();
-    private final AFastIterableDelegateSet<ServiceBinding> registeredBindings = new AFastIterableDelegateSet<ServiceBinding>() {
+    private final ASynchronizedFastIterableDelegateSet<ServiceBinding> registeredBindings = new ASynchronizedFastIterableDelegateSet<ServiceBinding>() {
         @Override
         protected Set<ServiceBinding> newDelegate() {
             return new LinkedHashSet<ServiceBinding>();
