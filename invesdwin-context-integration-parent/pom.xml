@@ -59,14 +59,13 @@
 		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
 		<version.activemq>5.15.0</version.activemq>
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
-		<version.httpclient>4.5.5</version.httpclient>
+		<version.httpclient>4.5.6</version.httpclient>
 		<version.mail>1.4.7</version.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.1.7</version.cxf>
 		<version.hadoop>2.8.1</version.hadoop>
 		<version.jersey>2.25.1</version.jersey>
 		<version.xmlsec>2.1.0</version.xmlsec>
-		<version.ow2asm>6.0</version.ow2asm>
 		<version.jppf>5.2.8</version.jppf>
 
 		<version.ftp4j>1.7.3</version.ftp4j>
@@ -334,21 +333,6 @@
 				<groupId>org.apache.santuario</groupId>
 				<artifactId>xmlsec</artifactId>
 				<version>${version.xmlsec}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.ow2.asm</groupId>
-				<artifactId>asm</artifactId>
-				<version>${version.ow2asm}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.ow2.asm</groupId>
-				<artifactId>asm-commons</artifactId>
-				<version>${version.ow2asm}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.ow2.asm</groupId>
-				<artifactId>asm-tree</artifactId>
-				<version>${version.ow2asm}</version>
 			</dependency>
 
 			<dependency>
