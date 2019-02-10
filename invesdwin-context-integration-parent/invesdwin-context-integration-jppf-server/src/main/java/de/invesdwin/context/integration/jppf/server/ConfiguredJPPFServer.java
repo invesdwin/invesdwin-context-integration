@@ -14,8 +14,8 @@ import javax.management.ObjectName;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jppf.management.spi.JPPFDriverMBeanProvider;
 import org.jppf.nio.StateTransitionManager;
+import org.jppf.nio.acceptor.AcceptorNioServer;
 import org.jppf.server.JPPFDriver;
-import org.jppf.server.nio.acceptor.AcceptorNioServer;
 import org.jppf.server.nio.classloader.ClassCache;
 import org.jppf.server.nio.classloader.client.ClientClassNioServer;
 import org.jppf.server.nio.classloader.node.NodeClassNioServer;
@@ -137,8 +137,10 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
                 node.stop();
             }
-            Reflections.field("globalExecutor").ofType(ExecutorService.class).in(StateTransitionManager.class).set(
-                    null);
+            Reflections.field("globalExecutor")
+                    .ofType(ExecutorService.class)
+                    .in(StateTransitionManager.class)
+                    .set(null);
             unregisterMBeans(JPPFDriverMBeanProvider.class);
 
             driver = null;

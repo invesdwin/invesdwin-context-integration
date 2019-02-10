@@ -27,6 +27,7 @@
 		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-jppf</module>
 		<module>invesdwin-context-integration-jppf-admin</module>
+		<module>invesdwin-context-integration-jppf-admin-web</module>
 		<module>invesdwin-context-integration-jppf-node</module>
 		<module>invesdwin-context-integration-jppf-node-dist</module>
 		<module>invesdwin-context-integration-jppf-server</module>
@@ -66,7 +67,7 @@
 		<version.hadoop>2.8.1</version.hadoop>
 		<version.jersey>2.25.1</version.jersey>
 		<version.xmlsec>2.1.0</version.xmlsec>
-		<version.jppf>5.2.8</version.jppf>
+		<version.jppf>6.0.2</version.jppf>
 
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
@@ -148,6 +149,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf-admin</artifactId>
+				<version>${version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-jppf-admin-web</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -942,6 +948,24 @@
 				<groupId>org.jppf</groupId>
 				<artifactId>jppf-admin</artifactId>
 				<version>${version.jppf}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>jfree</groupId>
+						<artifactId>jfreechart</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-admin-web</artifactId>
+				<version>${version.jppf}</version>
+				<type>war</type>
+			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-admin-web</artifactId>
+				<version>${version.jppf}</version>
+				<type>warpath</type>
 			</dependency>
 			<dependency>
 				<groupId>org.jppf</groupId>

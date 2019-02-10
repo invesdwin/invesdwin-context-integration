@@ -55,8 +55,9 @@ public final class TopologyDrivers {
                     final JPPFSystemInformation systemInfo = (JPPFSystemInformation) entry.getValue();
                     final JPPFManagementInfo nodeInformation = new JPPFManagementInfo(
                             NODE_FORWARDING_HOST_PREFIX + driver.getManagementInfo().getHost(),
-                            driver.getManagementInfo().getPort(), systemInfo.getUuid().getProperty("jppf.uuid"),
-                            JPPFManagementInfo.NODE, JPPFClientProperties.CLIENT_SSL_ENABLED);
+                            driver.getManagementInfo().getIpAddress(), driver.getManagementInfo().getPort(),
+                            systemInfo.getUuid().getProperty("jppf.uuid"), JPPFManagementInfo.NODE,
+                            JPPFClientProperties.CLIENT_SSL_ENABLED);
                     nodeInformation.setSystemInfo(systemInfo);
                     final TopologyNode node = new TopologyNode(nodeInformation);
                     nodes.add(node);
