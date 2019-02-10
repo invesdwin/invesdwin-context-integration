@@ -27,7 +27,6 @@
 		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-jppf</module>
 		<module>invesdwin-context-integration-jppf-admin</module>
-		<module>invesdwin-context-integration-jppf-admin-web</module>
 		<module>invesdwin-context-integration-jppf-node</module>
 		<module>invesdwin-context-integration-jppf-node-dist</module>
 		<module>invesdwin-context-integration-jppf-server</module>
