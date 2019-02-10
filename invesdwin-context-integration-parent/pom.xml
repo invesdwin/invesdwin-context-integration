@@ -153,11 +153,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-admin-web</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp</artifactId>
 				<version>${version.invesdwin-context-integration}</version>
 			</dependency>
@@ -954,18 +949,6 @@
 						<artifactId>jfreechart</artifactId>
 					</exclusion>
 				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.jppf</groupId>
-				<artifactId>jppf-admin-web</artifactId>
-				<version>${version.jppf}</version>
-				<type>war</type>
-			</dependency>
-			<dependency>
-				<groupId>org.jppf</groupId>
-				<artifactId>jppf-admin-web</artifactId>
-				<version>${version.jppf}</version>
-				<type>warpath</type>
 			</dependency>
 			<dependency>
 				<groupId>org.jppf</groupId>
