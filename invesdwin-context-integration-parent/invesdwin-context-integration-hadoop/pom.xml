@@ -98,11 +98,6 @@
 		</dependency>
 		<dependency>
 			<!-- require upperbound dependency -->
-			<groupId>javax.xml.bind</groupId>
-			<artifactId>jaxb-api</artifactId>
-		</dependency>
-		<dependency>
-			<!-- require upperbound dependency -->
 			<groupId>commons-configuration</groupId>
 			<artifactId>commons-configuration</artifactId>
 		</dependency>

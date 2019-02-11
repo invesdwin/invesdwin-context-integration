@@ -64,7 +64,7 @@
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.1.7</version.cxf>
 		<version.hadoop>2.8.1</version.hadoop>
-		<version.jersey>2.25.1</version.jersey>
+		<version.jersey>2.28</version.jersey>
 		<version.xmlsec>2.1.0</version.xmlsec>
 		<version.jppf>6.0.2</version.jppf>
 
@@ -631,6 +631,10 @@
 						<artifactId>jackson-xc</artifactId>
 						<groupId>org.codehaus.jackson</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>javax.xml.bind</groupId>
+						<artifactId>jaxb-api</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -876,7 +880,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.ext</groupId>
-				<artifactId>jersey-spring3</artifactId>
+				<artifactId>jersey-spring4</artifactId>
 				<version>${version.jersey}</version>
 			</dependency>
 			<dependency>
