@@ -61,7 +61,8 @@ public class JobService implements IJobService {
             } else {
                 executionId = jobOperator.startNextInstance(jobName);
             }
-            while (jobOperator.getRunningExecutions(jobName).contains(executionId)) {
+            while (jobOperator.getRunningExecutions(jobName).contains(executionId)
+                    || jobExplorer.getJobExecution(executionId).getStatus() == BatchStatus.STARTING) {
                 pollTimeUnit.sleep(pollTimeout);
             }
             final JobExecution jobExecution = jobExplorer.getJobExecution(executionId);
