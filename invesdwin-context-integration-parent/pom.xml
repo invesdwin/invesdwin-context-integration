@@ -77,12 +77,33 @@
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 
 		<version.affinity>3.1.7</version.affinity>
-		<version.quasar>0.8.0</version.quasar>
 		<version.reactive-streams>1.0.2</version.reactive-streams>
 
 		<version.javax.xml.soap-api>1.4.0</version.javax.xml.soap-api>
 		<version.saaj-impl>1.5.1</version.saaj-impl>
 	</properties>
+
+	<profiles>
+		<profile>
+			<id>quasar java 11 and higher</id>
+			<activation>
+				<jdk>[11,)</jdk>
+			</activation>
+			<properties>
+				<version.quasar>0.8.0</version.quasar>
+			</properties>
+			<dependencies />
+		</profile>
+		<profile>
+			<id>quasar before java 11</id>
+			<activation>
+				<jdk>[,11)</jdk>
+			</activation>
+			<properties>
+				<version.quasar>0.7.10</version.quasar>
+			</properties>
+		</profile>
+	</profiles>
 
 	<dependencyManagement>
 		<dependencies>
