@@ -30,6 +30,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.streams.ADelegateOutputStream;
@@ -50,8 +51,9 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     private String filename;
     @GuardedBy("this")
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
+
     @GuardedBy("this")
-    private transient FTPClient ftpClient;
+    private transient FtpFileFinalizer finalizer;
 
     public FtpFileChannel(final URI serverUri, final String directory) {
         if (serverUri == null) {
@@ -115,27 +117,31 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     public synchronized FTPClient getFtpClient() {
         assertConnected();
-        return ftpClient;
+        return finalizer.ftpClient;
     }
 
     @Override
     public synchronized void connect() {
         try {
-            if (ftpClient != null && (!ftpClient.isConnected() || !isAuthenticated())) {
+            if (finalizer == null) {
+                finalizer = new FtpFileFinalizer();
+                finalizer.register(this);
+            }
+            if (finalizer.ftpClient != null && (!finalizer.ftpClient.isConnected() || !isAuthenticated())) {
                 close();
             }
-            Assertions.checkNull(ftpClient, "Already connected");
-            ftpClient = new FTPClient();
+            Assertions.checkNull(finalizer.ftpClient, "Already connected");
+            finalizer.ftpClient = new FTPClient();
             //be a bit more firewall friendly
-            ftpClient.setPassive(true);
+            finalizer.ftpClient.setPassive(true);
 
             final int timeoutSeconds = ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.SECONDS);
-            ftpClient.setAutoNoopTimeout(timeoutSeconds * FTimeUnit.MILLISECONDS_IN_SECOND);
-            ftpClient.getConnector().setConnectionTimeout(timeoutSeconds);
-            ftpClient.getConnector().setReadTimeout(timeoutSeconds);
-            ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
-            ftpClient.setType(FTPClient.TYPE_BINARY);
-            ftpClient.connect(serverUri.getHost(), serverUri.getPort());
+            finalizer.ftpClient.setAutoNoopTimeout(timeoutSeconds * FTimeUnit.MILLISECONDS_IN_SECOND);
+            finalizer.ftpClient.getConnector().setConnectionTimeout(timeoutSeconds);
+            finalizer.ftpClient.getConnector().setReadTimeout(timeoutSeconds);
+            finalizer.ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
+            finalizer.ftpClient.setType(FTPClient.TYPE_BINARY);
+            finalizer.ftpClient.connect(serverUri.getHost(), serverUri.getPort());
             login();
             createAndChangeDirectory();
         } catch (final Throwable e) {
@@ -149,11 +155,11 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
      * transfer them over the wire with this object in serialized form.
      */
     protected synchronized void login() throws IOException, FTPIllegalReplyException, FTPException {
-        ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
+        finalizer.ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
     }
 
     protected synchronized boolean isAuthenticated() {
-        return ftpClient.isAuthenticated();
+        return finalizer.ftpClient.isAuthenticated();
     }
 
     /**
@@ -178,16 +184,17 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     private synchronized void createAndChangeSingleDirectory(final String singleDir) throws Exception {
         try {
-            ftpClient.changeDirectory(singleDir);
+            finalizer.ftpClient.changeDirectory(singleDir);
         } catch (final FTPException e) {
-            ftpClient.createDirectory(singleDir);
-            ftpClient.changeDirectory(singleDir);
+            finalizer.ftpClient.createDirectory(singleDir);
+            finalizer.ftpClient.changeDirectory(singleDir);
         }
     }
 
     @Override
     public synchronized boolean isConnected() {
-        return ftpClient != null && ftpClient.isConnected() && isAuthenticated();
+        return finalizer != null && finalizer.ftpClient != null && finalizer.ftpClient.isConnected()
+                && isAuthenticated();
     }
 
     @Override
@@ -197,8 +204,9 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public synchronized long size() {
+        assertConnected();
         try {
-            return ftpClient.fileSize(getFilename());
+            return finalizer.ftpClient.fileSize(getFilename());
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return -1;
@@ -212,8 +220,9 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public synchronized FDate modified() {
+        assertConnected();
         try {
-            final Date date = ftpClient.modifiedDate(getFilename());
+            final Date date = finalizer.ftpClient.modifiedDate(getFilename());
             if (date == null) {
                 return null;
             } else {
@@ -234,8 +243,9 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public synchronized FTPFile info() {
+        assertConnected();
         try {
-            final FTPFile[] listFiles = ftpClient.list(getFilename());
+            final FTPFile[] listFiles = finalizer.ftpClient.list(getFilename());
             if (listFiles.length == 0) {
                 return null;
             } else if (listFiles.length == 1) {
@@ -256,8 +266,9 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public synchronized List<FTPFile> list() {
+        assertConnected();
         try {
-            return Arrays.asList(ftpClient.list());
+            return Arrays.asList(finalizer.ftpClient.list());
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return Collections.emptyList();
@@ -293,15 +304,15 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         return directories;
     }
 
-    private synchronized void assertConnected() {
-        Assertions.checkNotNull(ftpClient, "Please call connect() first");
-        Assertions.checkTrue(ftpClient.isConnected(), "Not connected yet");
+    private void assertConnected() {
+        Assertions.checkTrue(isConnected(), "Please call connect() first");
     }
 
     @Override
     public synchronized void upload(final File file) {
+        assertConnected();
         try {
-            ftpClient.upload(file);
+            finalizer.ftpClient.upload(file);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -316,7 +327,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     public synchronized void upload(final InputStream input) {
         assertConnected();
         try {
-            ftpClient.upload(getFilename(), input, 0, 0, null);
+            finalizer.ftpClient.upload(getFilename(), input, 0, 0, null);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -343,7 +354,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     public synchronized void delete() {
         assertConnected();
         try {
-            ftpClient.deleteFile(getFilename());
+            finalizer.ftpClient.deleteFile(getFilename());
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return;
@@ -356,31 +367,10 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        close();
-    }
-
-    @Override
     public synchronized void close() {
-        if (ftpClient != null) {
-            if (ftpClient.isConnected()) {
-                try {
-                    ftpClient.logout();
-                } catch (final Throwable t) {
-                    // do nothing
-                }
-                try {
-                    ftpClient.disconnect(true);
-                } catch (final Throwable t) {
-                    try {
-                        ftpClient.disconnect(false);
-                    } catch (final Throwable t1) {
-                        // do nothing
-                    }
-                }
-            }
-            ftpClient = null;
+        if (finalizer != null) {
+            finalizer.close();
+            finalizer = null;
         }
     }
 
@@ -408,7 +398,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                         //write an empty file
                         FileUtils.write(file, "", Charset.defaultCharset());
                     }
-                    ftpClient.upload(file);
+                    finalizer.ftpClient.upload(file);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 } finally {
@@ -443,7 +433,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         assertConnected();
         final File file = getLocalTempFile();
         try {
-            ftpClient.download(getFilename(), file);
+            finalizer.ftpClient.download(getFilename(), file);
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return null;
@@ -482,6 +472,38 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                 .add("directory", directory)
                 .add("filename", filename)
                 .toString();
+    }
+
+    private static final class FtpFileFinalizer extends AFinalizer {
+
+        private FTPClient ftpClient;
+
+        @Override
+        protected void clean() {
+            if (ftpClient.isConnected()) {
+                try {
+                    ftpClient.logout();
+                } catch (final Throwable t) {
+                    // do nothing
+                }
+                try {
+                    ftpClient.disconnect(true);
+                } catch (final Throwable t) {
+                    try {
+                        ftpClient.disconnect(false);
+                    } catch (final Throwable t1) {
+                        // do nothing
+                    }
+                }
+            }
+            ftpClient = null;
+        }
+
+        @Override
+        public boolean isClosed() {
+            return ftpClient != null;
+        }
+
     }
 
 }

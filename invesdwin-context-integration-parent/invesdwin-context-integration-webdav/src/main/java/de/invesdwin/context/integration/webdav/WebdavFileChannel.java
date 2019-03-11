@@ -31,6 +31,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateOutputStream;
@@ -45,8 +46,9 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     private String filename;
     @GuardedBy("this")
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
+
     @GuardedBy("this")
-    private transient Sardine webdavClient;
+    private transient WebdavFileChannelFinalizer finalizer;
 
     public WebdavFileChannel(final URI serverUri, final String directory) {
         if (serverUri == null) {
@@ -118,16 +120,20 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     public synchronized Sardine getWebdavClient() {
         assertConnected();
-        return webdavClient;
+        return finalizer.webdavClient;
     }
 
     @Override
     public synchronized void connect() {
         try {
-            Assertions.checkNull(webdavClient, "Already connected");
-            webdavClient = login();
-            webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
-            if (!webdavClient.exists(getDirectoryUrl())) {
+            if (finalizer == null) {
+                finalizer = new WebdavFileChannelFinalizer();
+                finalizer.register(this);
+            }
+            Assertions.checkNull(finalizer.webdavClient, "Already connected");
+            finalizer.webdavClient = login();
+            finalizer.webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
+            if (!finalizer.webdavClient.exists(getDirectoryUrl())) {
                 createAndChangeDirectory();
             }
         } catch (final Throwable e) {
@@ -158,7 +164,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     private synchronized void createAndChangeSingleDirectory(final String singleDir) throws Exception {
         try {
-            webdavClient.createDirectory(getServerUri() + singleDir);
+            finalizer.webdavClient.createDirectory(getServerUri() + singleDir);
         } catch (final SardineException e) {
             //500 might happen when creating directories in parallel, the others when folders already exist or parent folders are missing
             if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT
@@ -176,14 +182,14 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     @Override
     public synchronized boolean isConnected() {
-        return webdavClient != null;
+        return finalizer != null && finalizer.webdavClient != null;
     }
 
     @Override
     public synchronized boolean exists() {
         assertConnected();
         try {
-            return webdavClient.exists(getFileUrl());
+            return finalizer.webdavClient.exists(getFileUrl());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -219,7 +225,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized DavResource info() {
         assertConnected();
         try {
-            final List<DavResource> listFiles = webdavClient.list(getFileUrl());
+            final List<DavResource> listFiles = finalizer.webdavClient.list(getFileUrl());
             if (listFiles.size() == 0) {
                 return null;
             } else if (listFiles.size() == 1) {
@@ -242,7 +248,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized List<DavResource> list() {
         assertConnected();
         try {
-            return webdavClient.list(getDirectoryUrl());
+            return finalizer.webdavClient.list(getDirectoryUrl());
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return null;
@@ -278,15 +284,15 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         return directories;
     }
 
-    private synchronized void assertConnected() {
-        Assertions.checkNotNull(webdavClient, "Please call connect() first");
+    private void assertConnected() {
+        Assertions.checkTrue(isConnected(), "Please call connect() first");
     }
 
     @Override
     public synchronized void upload(final File file) {
         assertConnected();
         try {
-            webdavClient.put(getFileUrl(), file, null);
+            finalizer.webdavClient.put(getFileUrl(), file, null);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -301,7 +307,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized void upload(final InputStream input) {
         assertConnected();
         try {
-            webdavClient.put(getFileUrl(), input);
+            finalizer.webdavClient.put(getFileUrl(), input);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -328,7 +334,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized void delete() {
         assertConnected();
         try {
-            webdavClient.delete(getFileUrl());
+            finalizer.webdavClient.delete(getFileUrl());
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return;
@@ -341,20 +347,10 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    protected void finalize() throws Throwable {
-        super.finalize();
-        close();
-    }
-
-    @Override
     public synchronized void close() {
-        if (webdavClient != null) {
-            try {
-                webdavClient.shutdown();
-            } catch (final IOException e) {
-                //ignore
-            }
-            webdavClient = null;
+        if (finalizer != null) {
+            finalizer.close();
+            finalizer = null;
         }
     }
 
@@ -416,7 +412,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized InputStream downloadInputStream() {
         assertConnected();
         try {
-            return webdavClient.get(getFileUrl());
+            return finalizer.webdavClient.get(getFileUrl());
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return null;
@@ -431,6 +427,25 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public String toString() {
         return Objects.toStringHelper(this).addValue(getFileUrl()).toString();
+    }
+
+    private static final class WebdavFileChannelFinalizer extends AFinalizer {
+        private Sardine webdavClient;
+
+        @Override
+        protected void clean() {
+            try {
+                webdavClient.shutdown();
+            } catch (final IOException e) {
+                //ignore
+            }
+            webdavClient = null;
+        }
+
+        @Override
+        public boolean isClosed() {
+            return webdavClient != null;
+        }
     }
 
 }
