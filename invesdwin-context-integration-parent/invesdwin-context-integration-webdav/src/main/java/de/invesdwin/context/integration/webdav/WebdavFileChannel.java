@@ -444,7 +444,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
         @Override
         public boolean isClosed() {
-            return webdavClient != null;
+            return webdavClient == null;
         }
     }
 

@@ -501,7 +501,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
         @Override
         public boolean isClosed() {
-            return ftpClient != null;
+            return ftpClient == null;
         }
 
     }
