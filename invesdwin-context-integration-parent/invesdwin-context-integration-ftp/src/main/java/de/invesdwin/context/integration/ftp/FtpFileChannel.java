@@ -125,7 +125,6 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         try {
             if (finalizer == null) {
                 finalizer = new FtpFileFinalizer();
-                finalizer.register(this);
             }
             if (finalizer.ftpClient != null && (!finalizer.ftpClient.isConnected() || !isAuthenticated())) {
                 close();
@@ -142,6 +141,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             finalizer.ftpClient.getConnector().setCloseTimeout(timeoutSeconds);
             finalizer.ftpClient.setType(FTPClient.TYPE_BINARY);
             finalizer.ftpClient.connect(serverUri.getHost(), serverUri.getPort());
+            finalizer.register(this);
             login();
             createAndChangeDirectory();
         } catch (final Throwable e) {
