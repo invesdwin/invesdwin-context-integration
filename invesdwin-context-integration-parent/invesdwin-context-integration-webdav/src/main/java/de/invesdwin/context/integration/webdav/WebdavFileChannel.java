@@ -128,7 +128,6 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         try {
             if (finalizer == null) {
                 finalizer = new WebdavFileChannelFinalizer();
-                finalizer.register(this);
             }
             Assertions.checkNull(finalizer.webdavClient, "Already connected");
             finalizer.webdavClient = login();
@@ -136,6 +135,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             if (!finalizer.webdavClient.exists(getDirectoryUrl())) {
                 createAndChangeDirectory();
             }
+            finalizer.register(this);
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
