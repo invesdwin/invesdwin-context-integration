@@ -18,7 +18,7 @@ public final class TaskExecutionDispatchers {
 
     static {
         final Field bundleField = Reflections.findField(TaskExecutionDispatcher.class, "bundle");
-        Reflections.makeAccessibleFinal(bundleField);
+        Reflections.makeAccessible(bundleField);
         try {
             TASKEXECUTIONDISPATCHER_BUNDLE_GETTER = MethodHandles.lookup().unreflectGetter(bundleField);
         } catch (final IllegalAccessException e) {
