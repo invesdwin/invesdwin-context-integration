@@ -32,7 +32,7 @@ public class HadoopJobTest extends ATest {
 
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
-        ctx.activate(HadoopJobTestContextLocation.class);
+        ctx.activateBean(HadoopJobTestContextLocation.class);
     }
 
     @Test

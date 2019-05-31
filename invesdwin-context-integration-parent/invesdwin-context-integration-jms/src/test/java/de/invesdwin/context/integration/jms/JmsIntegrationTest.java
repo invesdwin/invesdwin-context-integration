@@ -27,7 +27,7 @@ public class JmsIntegrationTest extends ATest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.activate(JmsIntegrationTestContextLocation.class);
+        ctx.activateBean(JmsIntegrationTestContextLocation.class);
     }
 
     @Test

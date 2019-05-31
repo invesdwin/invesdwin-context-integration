@@ -47,7 +47,7 @@ public class RegistryServerTest extends APersistenceTest {
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
         publicationTest.setUpContext(ctx);
-        ctx.deactivate(RegistryServiceStub.class);
+        ctx.deactivateBean(RegistryServiceStub.class);
     }
 
     @SuppressWarnings("JUnit4SetUpNotRun")

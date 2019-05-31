@@ -20,7 +20,7 @@ public class BatchAdminWebServerTest extends APersistenceTest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.deactivate(de.invesdwin.context.integration.batch.internal.DisabledBatchJobTestContext.class);
+        ctx.deactivateBean(de.invesdwin.context.integration.batch.internal.DisabledBatchJobTestContext.class);
     }
 
     @Test

@@ -17,7 +17,7 @@ public class RegistryServiceStub extends StubSupport {
     @Override
     public void setUpContext(final ATest test, final TestContext ctx) {
         if (isEnabled()) {
-            ctx.replace(IRegistryService.class, RegistryServiceStubImpl.class);
+            ctx.replaceBean(IRegistryService.class, RegistryServiceStubImpl.class);
         }
     }
 

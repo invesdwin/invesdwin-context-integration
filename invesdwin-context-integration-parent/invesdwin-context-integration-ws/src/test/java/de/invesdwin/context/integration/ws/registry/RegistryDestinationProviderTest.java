@@ -18,8 +18,8 @@ public class RegistryDestinationProviderTest extends ATest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.deactivate(RegistryServiceStub.class);
-        ctx.activate(RegistryDestinationProvider.class);
+        ctx.deactivateBean(RegistryServiceStub.class);
+        ctx.activateBean(RegistryDestinationProvider.class);
     }
 
     @Test

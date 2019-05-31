@@ -59,7 +59,7 @@ public class JPPFServerTestStub extends StubSupport {
 
     @Override
     public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
-        ctx.deactivate(JPPFNodeTestStub.class);
+        ctx.deactivateBean(JPPFNodeTestStub.class);
     }
 
     @Override

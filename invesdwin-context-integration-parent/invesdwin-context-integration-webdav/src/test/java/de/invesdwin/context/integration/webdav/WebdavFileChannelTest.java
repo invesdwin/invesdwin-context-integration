@@ -23,7 +23,7 @@ public class WebdavFileChannelTest extends ATest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.deactivate(RegistryServiceStub.class);
+        ctx.deactivateBean(RegistryServiceStub.class);
     }
 
     @Test

@@ -27,7 +27,7 @@ public class BatchJobTest extends APersistenceTest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.deactivate(DisabledBatchJobTestContext.class);
+        ctx.deactivateBean(DisabledBatchJobTestContext.class);
     }
 
     @Test

@@ -27,7 +27,7 @@ public class AmqpIntegrationTest extends ATest {
     @Override
     public void setUpContext(final TestContext ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.activate(AmqpIntegrationTestContextLocation.class);
+        ctx.activateBean(AmqpIntegrationTestContextLocation.class);
     }
 
     @Test
