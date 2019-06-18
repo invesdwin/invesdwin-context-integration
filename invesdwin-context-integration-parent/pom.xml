@@ -1107,6 +1107,11 @@
 		<connection>scm:git:https://github.com/subes/invesdwin-context-integration.git</connection>
 		<tag>HEAD</tag>
 	</scm>
+	
+	<ciManagement>
+		<system>jenkins</system>
+		<url>https://invesdwin.de/jenkins/job/dgr-deploy-invesdwin-context-integration/</url>
+	</ciManagement>
 
 </project>
 
