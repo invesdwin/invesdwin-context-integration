@@ -443,7 +443,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         }
 
         @Override
-        public boolean isClosed() {
+        protected boolean isCleaned() {
             return webdavClient == null;
         }
     }
