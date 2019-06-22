@@ -28,6 +28,7 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @NotThreadSafe
 public class QuasarTest extends ATest {
 
+    private static final int REPETITIONS = 1;
     private static final int THREADS_COUNT = Executors.getCpuThreadPoolCount();
     private static final int STRATEGY_COUNT = 1000;
     private static final int CHUNK_SIZE = Integers.max(1, STRATEGY_COUNT / THREADS_COUNT / 10);
@@ -41,7 +42,7 @@ public class QuasarTest extends ATest {
 
     @Test
     public void test() throws InterruptedException {
-        for (int i = 1; i <= 10; i++) {
+        for (int i = 1; i <= REPETITIONS; i++) {
             log.info("***************************** " + i);
             FTimeUnit.SECONDS.sleep(1);
             testSingle();
