@@ -50,7 +50,7 @@
 
 	<properties>
 		<version.invesdwin-context>1.0.0-SNAPSHOT</version.invesdwin-context>
-		<version.invesdwin-context-integration>${project.version}</version.invesdwin-context-integration>
+		<version.invesdwin-context-integration>1.0.0-SNAPSHOT</version.invesdwin-context-integration>
 		<version.invesdwin-context-persistence>1.0.0-SNAPSHOT</version.invesdwin-context-persistence>
 		<version.invesdwin-context-security>1.0.0-SNAPSHOT</version.invesdwin-context-security>
 
