@@ -52,7 +52,7 @@
 		<project.version.invesdwin-context>1.0.0</project.version.invesdwin-context>
 		<project.version.invesdwin-context-integration>${project.version}</project.version.invesdwin-context-integration>
 		<project.version.invesdwin-context-persistence>1.0.0</project.version.invesdwin-context-persistence>
-		<project.version.invesdwin-context-security>1.0.0-SNAPSHOT</project.version.invesdwin-context-security>
+		<project.version.invesdwin-context-security>1.0.0</project.version.invesdwin-context-security>
 
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
