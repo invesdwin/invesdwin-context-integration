@@ -49,10 +49,10 @@
 	</modules>
 
 	<properties>
-		<version.invesdwin-context>1.0.0-SNAPSHOT</version.invesdwin-context>
-		<version.invesdwin-context-integration>${project.version}</version.invesdwin-context-integration>
-		<version.invesdwin-context-persistence>1.0.0-SNAPSHOT</version.invesdwin-context-persistence>
-		<version.invesdwin-context-security>1.0.0-SNAPSHOT</version.invesdwin-context-security>
+		<project.version.invesdwin-context>1.0.0-SNAPSHOT</project.version.invesdwin-context>
+		<project.version.invesdwin-context-integration>${project.version}</project.version.invesdwin-context-integration>
+		<project.version.invesdwin-context-persistence>1.0.0-SNAPSHOT</project.version.invesdwin-context-persistence>
+		<project.version.invesdwin-context-security>1.0.0-SNAPSHOT</project.version.invesdwin-context-security>
 
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
@@ -111,14 +111,14 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-persistence-parent</artifactId>
-				<version>${version.invesdwin-context-persistence}</version>
+				<version>${project.version.invesdwin-context-persistence}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-security-parent</artifactId>
-				<version>${version.invesdwin-context-security}</version>
+				<version>${project.version.invesdwin-context-security}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -126,137 +126,137 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-amqp</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch-admin</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf-server</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf-node</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jppf-admin</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ftp-server</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-webdav</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-webdav</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-webdav-server</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-jms</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws-jaxrs</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws-jaxws</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws-registry</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-ws-registry-dist</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-maven</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-affinity</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-quasar</artifactId>
-				<version>${version.invesdwin-context-integration}</version>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 
 			<dependency>
