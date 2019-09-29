@@ -87,7 +87,7 @@ public class RegistryServerTest extends APersistenceTest {
 
         final String restQueryResult = URIs
                 .connect(IntegrationProperties.WEBSERVER_BIND_URI
-                        + "/spring-web/registry/queryServiceBindings_testService")
+                        + "/spring-web/registry/queryServiceBindings+testService")
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(restQueryResult).contains(accessURI.toString());
@@ -100,8 +100,10 @@ public class RegistryServerTest extends APersistenceTest {
         final String restInfoResult = URIs.connect(infoUri)
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
-        Assertions.assertThat(restInfoResult).as("Unexpected: " + restInfoResult).startsWith(
-                "There is 1 Service:\n1. Service [testService] has 1 ServiceBinding:\n1.1. ServiceBinding [http://localhost:8080/something] exists since [");
+        Assertions.assertThat(restInfoResult)
+                .as("Unexpected: " + restInfoResult)
+                .startsWith(
+                        "There is 1 Service:\n1. Service [testService] has 1 ServiceBinding:\n1.1. ServiceBinding [http://localhost:8080/something] exists since [");
         Assertions.assertThat(restInfoResult).contains(FDate.valueOf(refreshed.getUpdated()).toString());
 
         first.setUpdated(new FDate(0));
@@ -109,8 +111,10 @@ public class RegistryServerTest extends APersistenceTest {
         final String restInfoResultAgain = URIs.connect(infoUri)
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
-        Assertions.assertThat(restInfoResultAgain).as("Unexpected: " + restInfoResultAgain).startsWith(
-                "There is 1 Service:\n1. Service [testService] has 1 ServiceBinding:\n1.1. ServiceBinding [http://localhost:8080/something] exists since [");
+        Assertions.assertThat(restInfoResultAgain)
+                .as("Unexpected: " + restInfoResultAgain)
+                .startsWith(
+                        "There is 1 Service:\n1. Service [testService] has 1 ServiceBinding:\n1.1. ServiceBinding [http://localhost:8080/something] exists since [");
         Assertions.assertThat(restInfoResultAgain).contains("1970-01-01T00:00:00.000");
 
         Assertions.assertThat(URIs.connect(infoUri).isDownloadPossible()).isFalse();
