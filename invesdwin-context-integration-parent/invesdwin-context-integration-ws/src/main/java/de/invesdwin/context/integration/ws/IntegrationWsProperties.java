@@ -13,10 +13,10 @@ import de.invesdwin.util.time.fdate.FTimeUnit;
 @Immutable
 public final class IntegrationWsProperties {
 
-    public static final long SERVICE_BINDING_HEARTBEAT_REFRESH_INVERVAL_MILLIS = 1 * FTimeUnit.MINUTES_IN_HOUR
-            * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND; //4 Hours
-    public static final long SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS = 6 * FTimeUnit.MINUTES_IN_HOUR
-            * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND; //6 Hours
+    public static final long SERVICE_BINDING_HEARTBEAT_REFRESH_INVERVAL_MILLIS = 1 * FTimeUnit.SECONDS_IN_MINUTE
+            * FTimeUnit.MILLISECONDS_IN_SECOND; //5 minutes
+    public static final long SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS = 1 * FTimeUnit.MINUTES_IN_HOUR
+            * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND; //1 hour
     public static final String WSS_USERNAMETOKEN_USER;
     public static final String WSS_USERNAMETOKEN_PASSWORD;
     public static final String SPRING_WEB_USER;
