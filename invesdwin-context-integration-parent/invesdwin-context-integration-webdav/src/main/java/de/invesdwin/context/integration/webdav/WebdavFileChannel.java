@@ -446,6 +446,11 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         protected boolean isCleaned() {
             return webdavClient == null;
         }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
+        }
     }
 
 }

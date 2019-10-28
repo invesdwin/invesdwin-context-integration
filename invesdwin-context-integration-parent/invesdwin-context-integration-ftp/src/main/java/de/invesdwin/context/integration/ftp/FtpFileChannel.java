@@ -53,7 +53,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
 
     @GuardedBy("this")
-    private transient FtpFileFinalizer finalizer;
+    private transient FtpFileChannelFinalizer finalizer;
 
     public FtpFileChannel(final URI serverUri, final String directory) {
         if (serverUri == null) {
@@ -124,7 +124,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     public synchronized void connect() {
         try {
             if (finalizer == null) {
-                finalizer = new FtpFileFinalizer();
+                finalizer = new FtpFileChannelFinalizer();
             }
             if (finalizer.ftpClient != null && (!finalizer.ftpClient.isConnected() || !isAuthenticated())) {
                 close();
@@ -474,7 +474,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                 .toString();
     }
 
-    private static final class FtpFileFinalizer extends AFinalizer {
+    private static final class FtpFileChannelFinalizer extends AFinalizer {
 
         private FTPClient ftpClient;
 
@@ -502,6 +502,11 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         @Override
         protected boolean isCleaned() {
             return ftpClient == null;
+        }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
         }
 
     }
