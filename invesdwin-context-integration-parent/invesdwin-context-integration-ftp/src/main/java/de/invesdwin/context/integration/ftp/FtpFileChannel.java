@@ -4,7 +4,6 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -34,6 +33,7 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
 import de.invesdwin.util.streams.ADelegateOutputStream;
+import de.invesdwin.util.streams.DeletingFileInputStream;
 import de.invesdwin.util.time.fdate.FDate;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 import it.sauronsoftware.ftp4j.FTPClient;
@@ -447,20 +447,13 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             return null;
         }
         return new ADelegateInputStream() {
-
             @Override
             protected InputStream newDelegate() {
                 try {
-                    return new BufferedInputStream(new FileInputStream(file));
+                    return new BufferedInputStream(new DeletingFileInputStream(file));
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
-            }
-
-            @Override
-            public void close() throws IOException {
-                super.close();
-                file.delete();
             }
         };
     }
