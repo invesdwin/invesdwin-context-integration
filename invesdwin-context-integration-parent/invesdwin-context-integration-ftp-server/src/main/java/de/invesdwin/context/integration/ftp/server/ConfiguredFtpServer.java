@@ -6,7 +6,6 @@ import java.util.Arrays;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.ftpserver.ConnectionConfigFactory;
 import org.apache.ftpserver.FtpServer;
 import org.apache.ftpserver.FtpServerFactory;
@@ -20,6 +19,7 @@ import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.context.integration.ftp.server.internal.InMemoryUserManager;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Files;
 
 @ThreadSafe
 public class ConfiguredFtpServer implements FtpServer {
@@ -55,7 +55,7 @@ public class ConfiguredFtpServer implements FtpServer {
         user.setPassword(FtpClientProperties.PASSWORD);
         user.setEnabled(true);
         try {
-            FileUtils.forceMkdir(FtpServerProperties.WORKING_DIRECTORY);
+            Files.forceMkdir(FtpServerProperties.WORKING_DIRECTORY);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

@@ -21,12 +21,12 @@ import java.util.List;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
@@ -396,7 +396,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                     super.close();
                     if (!file.exists()) {
                         //write an empty file
-                        FileUtils.write(file, "", Charset.defaultCharset());
+                        Files.write(file, "", Charset.defaultCharset());
                     }
                     finalizer.ftpClient.upload(file);
                 } catch (final Exception e) {
@@ -412,12 +412,12 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     public synchronized File getLocalTempFile() {
         final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getDirectory());
         try {
-            FileUtils.forceMkdir(directory);
+            Files.forceMkdir(directory);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
         final File file = new File(directory, getFilename());
-        FileUtils.deleteQuietly(file);
+        Files.deleteQuietly(file);
         return file;
     }
 
