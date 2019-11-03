@@ -31,6 +31,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.description.TextDescription;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
@@ -357,7 +358,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public synchronized OutputStream uploadOutputStream() {
         assertConnected();
-        return new ADelegateOutputStream() {
+        return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
             private final File file = getLocalTempFile();
 

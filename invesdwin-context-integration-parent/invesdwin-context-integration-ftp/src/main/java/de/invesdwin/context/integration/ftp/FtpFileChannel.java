@@ -29,6 +29,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.description.TextDescription;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateInputStream;
@@ -377,7 +378,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     @Override
     public synchronized OutputStream uploadOutputStream() {
         assertConnected();
-        return new ADelegateOutputStream() {
+        return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
             private final File file = getLocalTempFile();
 
@@ -446,7 +447,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         if (!file.exists()) {
             return null;
         }
-        return new ADelegateInputStream() {
+        return new ADelegateInputStream(new TextDescription("%s: downloadInputStream()", this)) {
             @Override
             protected InputStream newDelegate() {
                 try {
