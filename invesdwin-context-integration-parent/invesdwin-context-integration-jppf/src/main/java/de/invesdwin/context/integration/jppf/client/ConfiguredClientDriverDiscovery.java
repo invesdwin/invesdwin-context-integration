@@ -11,7 +11,7 @@ import org.jppf.discovery.ClientDriverDiscovery;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.retry.task.ARetryingRunnable;
+import de.invesdwin.context.integration.retry.task.ARetryRunnable;
 import de.invesdwin.context.integration.retry.task.RetryOriginator;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
@@ -30,10 +30,10 @@ public class ConfiguredClientDriverDiscovery extends ClientDriverDiscovery {
     @Override
     public void discover() throws InterruptedException {
         MergedContext.awaitBootstrapFinished();
-        final ARetryingRunnable retry = new ARetryingRunnable(
+        final ARetryRunnable retry = new ARetryRunnable(
                 new RetryOriginator(ConfiguredClientDriverDiscovery.class, "discover")) {
             @Override
-            protected void runRetryable() throws Exception {
+            protected void runRetry() throws Exception {
                 while (!isShutdown()) {
                     final Collection<URI> peers = getDestinationProvider().getDestinations();
                     if ((peers == null || peers.isEmpty()) && !JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
