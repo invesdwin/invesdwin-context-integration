@@ -10,9 +10,9 @@ import org.jppf.discovery.ClientDriverDiscovery;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
-import de.invesdwin.context.integration.retry.ARetryingRunnable;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.retry.RetryOriginator;
+import de.invesdwin.context.integration.retry.task.ARetryingRunnable;
+import de.invesdwin.context.integration.retry.task.RetryOriginator;
 import de.invesdwin.util.time.duration.Duration;
 import de.invesdwin.util.time.fdate.FTimeUnit;
 

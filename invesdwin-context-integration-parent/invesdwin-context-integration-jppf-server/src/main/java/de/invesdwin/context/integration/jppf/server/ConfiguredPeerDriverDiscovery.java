@@ -11,8 +11,8 @@ import org.jppf.discovery.PeerDriverDiscovery;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.jppf.client.ConfiguredClientDriverDiscovery;
 import de.invesdwin.context.integration.jppf.client.JPPFServerDestinationProvider;
-import de.invesdwin.context.integration.retry.ARetryingRunnable;
-import de.invesdwin.context.integration.retry.RetryOriginator;
+import de.invesdwin.context.integration.retry.task.ARetryingRunnable;
+import de.invesdwin.context.integration.retry.task.RetryOriginator;
 
 // http://www.jppf.org/doc/5.2/index.php?title=Custom_discovery_of_peer_drivers
 @ThreadSafe

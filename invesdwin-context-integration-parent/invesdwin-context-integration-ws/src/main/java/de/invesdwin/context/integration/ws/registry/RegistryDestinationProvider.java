@@ -11,8 +11,8 @@ import javax.inject.Inject;
 
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.integration.retry.Retry;
-import de.invesdwin.context.integration.retry.RetryOriginator;
 import de.invesdwin.context.integration.retry.hook.RetryHookSupport;
+import de.invesdwin.context.integration.retry.task.RetryOriginator;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
