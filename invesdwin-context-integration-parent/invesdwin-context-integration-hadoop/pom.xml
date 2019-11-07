@@ -106,6 +106,12 @@
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 		</dependency>
+		<dependency>
+			<!-- require upperbound dependency -->
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<version>${version.protobuf}</version>
+		</dependency>
 	</dependencies>
 
 </project>
