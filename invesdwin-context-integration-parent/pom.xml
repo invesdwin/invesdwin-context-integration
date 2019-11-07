@@ -366,7 +366,7 @@
 				<version>${version.xmlsec}</version>
 				<exclusions>
 					<exclusion>
-						<groupId>akarta.activation</groupId>
+						<groupId>jakarta.activation</groupId>
 						<artifactId>jakarta.activation-api</artifactId>
 					</exclusion>
 				</exclusions>
