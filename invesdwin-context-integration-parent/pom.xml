@@ -64,7 +64,7 @@
 		<version.cxf>3.1.7</version.cxf>
 		<version.hadoop>2.8.1</version.hadoop>
 		<version.jersey>2.28</version.jersey>
-		<version.xmlsec>2.1.0</version.xmlsec>
+		<version.xmlsec>2.1.4</version.xmlsec>
 		<version.jppf>6.0.2</version.jppf>
 
 		<version.ftp4j>1.7.3</version.ftp4j>
