@@ -357,7 +357,7 @@ public class JPPFProcessingThreadsCounter {
         final Instant start = new Instant();
         boolean firstRun = !warmupFinished;
         do {
-            if ((timeout != null && start.toDuration().isGreaterThan(timeout))) {
+            if ((timeout != null && start.isGreaterThan(timeout))) {
                 throw new TimeoutException("timeout exceeded: " + timeout);
             }
             try {
