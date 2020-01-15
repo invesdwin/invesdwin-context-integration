@@ -74,13 +74,13 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     }
 
     private URIsConnect connect(final String request) {
-        return URIs.connect(getBaseUri() + "/" + request).withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER,
-                IntegrationWsProperties.SPRING_WEB_PASSWORD);
+        return URIs.connect(getBaseUri() + "/" + request)
+                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
     }
 
     private String getBaseUri() {
-        return Strings.eventuallyAddSuffix(
-                Strings.removeEnd(IntegrationWsProperties.getRegistryServerUri().toString(), "/"), "/" + REGISTRY);
+        return Strings.putSuffix(Strings.removeEnd(IntegrationWsProperties.getRegistryServerUri().toString(), "/"),
+                "/" + REGISTRY);
     }
 
 }

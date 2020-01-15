@@ -61,8 +61,8 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             throw new NullPointerException("serverUri should not be null");
         }
         this.serverUri = serverUri;
-        this.directory = Strings.eventuallyAddSuffix(
-                Strings.eventuallyAddPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
+        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
+                "/");
     }
 
     public URI getServerUri() {

@@ -56,8 +56,8 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             throw new NullPointerException("serverUri should not be null");
         }
         this.serverUrl = Strings.removeEnd(serverUri.toString(), "/");
-        this.directory = Strings.eventuallyAddSuffix(
-                Strings.eventuallyAddPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
+        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
+                "/");
     }
 
     public URI getServerUri() {
