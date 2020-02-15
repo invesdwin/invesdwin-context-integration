@@ -66,7 +66,6 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
     public static synchronized JPPFClient getInstance() {
         if (instance == null) {
             Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
-            JPPFClientProperties.fixSystemProperties();
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
             jobMonitor = new JobMonitor(topologyManager);

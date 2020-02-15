@@ -16,7 +16,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
@@ -64,7 +63,6 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             startDelayed = true;
             return;
         }
-        JPPFClientProperties.fixSystemProperties();
         NODE_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
