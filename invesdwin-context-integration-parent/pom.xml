@@ -93,7 +93,31 @@
 			<properties>
 				<version.quasar>0.8.0</version.quasar>
 			</properties>
-			<dependencies />
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-core</artifactId>
+						<version>${version.quasar}</version>
+						<exclusions>
+							<exclusion>
+								<groupId>com.esotericsoftware</groupId>
+								<artifactId>minlog</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-actors</artifactId>
+						<version>${version.quasar}</version>
+					</dependency>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-reactive-streams</artifactId>
+						<version>${version.quasar}</version>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
 		</profile>
 		<profile>
 			<id>quasar before java 11</id>
@@ -103,6 +127,34 @@
 			<properties>
 				<version.quasar>0.7.10</version.quasar>
 			</properties>
+			<dependencyManagement>
+				<dependencies>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-core</artifactId>
+						<version>${version.quasar}</version>
+						<classifier>jdk8</classifier>
+						<exclusions>
+							<exclusion>
+								<groupId>com.esotericsoftware</groupId>
+								<artifactId>minlog</artifactId>
+							</exclusion>
+						</exclusions>
+					</dependency>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-actors</artifactId>
+						<version>${version.quasar}</version>
+						<classifier>jdk8</classifier>
+					</dependency>
+					<dependency>
+						<groupId>co.paralleluniverse</groupId>
+						<artifactId>quasar-reactive-streams</artifactId>
+						<version>${version.quasar}</version>
+						<classifier>jdk8</classifier>
+					</dependency>
+				</dependencies>
+			</dependencyManagement>
 		</profile>
 	</profiles>
 
@@ -1031,27 +1083,6 @@
 				<groupId>net.openhft</groupId>
 				<artifactId>affinity</artifactId>
 				<version>${version.affinity}</version>
-			</dependency>
-			<dependency>
-				<groupId>co.paralleluniverse</groupId>
-				<artifactId>quasar-core</artifactId>
-				<version>${version.quasar}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>com.esotericsoftware</groupId>
-						<artifactId>minlog</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>co.paralleluniverse</groupId>
-				<artifactId>quasar-actors</artifactId>
-				<version>${version.quasar}</version>
-			</dependency>
-			<dependency>
-				<groupId>co.paralleluniverse</groupId>
-				<artifactId>quasar-reactive-streams</artifactId>
-				<version>${version.quasar}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.reactivestreams</groupId>
