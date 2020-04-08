@@ -97,7 +97,6 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
                     final URI accessUri = binding.getAccessUri();
                     if (checkDownloadPossible(accessUri)) {
                         serviceUris.add(accessUri);
-                        break;
                     }
                 }
             }
