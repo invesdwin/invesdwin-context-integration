@@ -85,7 +85,8 @@ public class JPPFProcessingThreadsCounter {
                 1);
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
-            public void nodeUpdated(final TopologyEvent event) {}
+            public void nodeUpdated(final TopologyEvent event) {
+            }
 
             @Override
             public void nodeRemoved(final TopologyEvent event) {
@@ -98,7 +99,8 @@ public class JPPFProcessingThreadsCounter {
             }
 
             @Override
-            public void driverUpdated(final TopologyEvent event) {}
+            public void driverUpdated(final TopologyEvent event) {
+            }
 
             @Override
             public void driverRemoved(final TopologyEvent event) {
@@ -233,7 +235,7 @@ public class JPPFProcessingThreadsCounter {
         final byte[] content = channel.download();
         if (content != null && content.length > 0) {
             final String contentStr = new String(content);
-            final String[] split = Strings.split(contentStr, WEBDAV_CONTENT_SEPARATOR);
+            final String[] split = Strings.splitPreserveAllTokens(contentStr, WEBDAV_CONTENT_SEPARATOR);
             if (split.length == 3) {
                 final String uuid = split[0];
                 final Integer processingThreadsCount = Integer.valueOf(split[1]);

@@ -53,7 +53,7 @@ public class BatchAdminWebServerTest extends APersistenceTest {
         Assertions.assertThat(jobsJson).contains("\"name\" : \"batchTestJob2\",");
         Assertions.assertThat(jobsJson).contains("\"launchable\" : true,");
         int countLaunchable = 0;
-        for (final String line : Strings.split(jobsJson, "\n")) {
+        for (final String line : Strings.splitPreserveAllTokens(jobsJson, "\n")) {
             if (line.contains("\"launchable\" : true,")) {
                 countLaunchable++;
             }
