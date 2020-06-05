@@ -59,7 +59,6 @@
 		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
 		<version.activemq>5.15.0</version.activemq>
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
-		<version.httpclient>4.5.6</version.httpclient>
 		<version.javax.mail>1.6.2</version.javax.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.1.7</version.cxf>
@@ -420,17 +419,6 @@
 				<groupId>javax.jms</groupId>
 				<artifactId>javax.jms-api</artifactId>
 				<version>${version.javax.jms-api}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.httpcomponents</groupId>
-				<artifactId>httpclient</artifactId>
-				<version>${version.httpclient}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>com.sun.mail</groupId>
