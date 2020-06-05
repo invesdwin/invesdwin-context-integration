@@ -50,7 +50,6 @@ public class RegistryServerTest extends APersistenceTest {
         ctx.deactivateBean(RegistryServiceStub.class);
     }
 
-    @SuppressWarnings("JUnit4SetUpNotRun")
     @Override
     public void setUp() throws Exception {
         MergedContext.autowire(publicationTest);
