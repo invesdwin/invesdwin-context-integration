@@ -73,6 +73,10 @@ public class RegistryServerTest extends APersistenceTest {
 
     @Test
     public void testServiceBindingHeartbeatChecker() throws IOException, InterruptedException {
+        final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
+        //check this first because connection caching might lead to wrong result since it remembers basic auth
+        Assertions.assertThat(URIs.connect(infoUri).isDownloadPossible()).isFalse();
+
         final long countBindingsPreviously = serviceBindingDao.count();
 
         final String serviceName = "testService";
@@ -95,7 +99,6 @@ public class RegistryServerTest extends APersistenceTest {
         final ServiceBinding refreshed = registry.registerServiceBinding(first.getName(), first.getAccessUri());
         Assertions.assertThat(refreshed.getUpdated()).isAfter(first.getUpdated());
 
-        final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
         final String restInfoResult = URIs.connect(infoUri)
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
@@ -116,7 +119,6 @@ public class RegistryServerTest extends APersistenceTest {
                         "There is 1 Service:\n1. Service [testService] has 1 ServiceBinding:\n1.1. ServiceBinding [http://localhost:8080/something] exists since [");
         Assertions.assertThat(restInfoResultAgain).contains("1970-01-01T00:00:00.000");
 
-        Assertions.assertThat(URIs.connect(infoUri).isDownloadPossible()).isFalse();
         Assertions.assertThat(URIs.connect(infoUri)
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .isDownloadPossible()).isTrue();
