@@ -19,7 +19,7 @@ import de.invesdwin.context.integration.ws.registry.IRestRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.uri.URIs;
-import de.invesdwin.util.lang.uri.URIsConnect;
+import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 
 @Immutable
 public class RemoteRegistryService implements IRegistryService, IRestRegistryService {
@@ -54,7 +54,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     @Override
     public Collection<ServiceBinding> queryServiceBindings(final String serviceName) throws IOException {
         final String serviceNameEncoded = URIs.encode(Strings.asStringEmptyText(serviceName));
-        final URIsConnect connect = connect(QUERY_SERVICE_BINDINGS.replace(SERVICE_NAME_PARAM, serviceNameEncoded));
+        final IURIsConnect connect = connect(QUERY_SERVICE_BINDINGS.replace(SERVICE_NAME_PARAM, serviceNameEncoded));
         final String response = connect.downloadThrowing();
         final Collection<ServiceBinding> result = Marshallers.fromJson(response, REF_SERVICE_BINDING_COLLECTION);
         return result;
@@ -73,7 +73,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
         }
     }
 
-    private URIsConnect connect(final String request) {
+    private IURIsConnect connect(final String request) {
         return URIs.connect(getBaseUri() + "/" + request)
                 .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
     }

@@ -18,7 +18,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.lang.uri.URIs;
-import de.invesdwin.util.lang.uri.URIsConnect;
+import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 
 @NotThreadSafe
 public class RegistryDestinationProvider extends RetryHookSupport implements IDestinationProvider {
@@ -159,7 +159,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         return isOk;
     }
 
-    protected URIsConnect maybeWithBasicAuth(final URIsConnect connect) {
+    protected IURIsConnect maybeWithBasicAuth(final IURIsConnect connect) {
         if (String.valueOf(connect.getUri()).contains("/spring-web/")) {
             connect.withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
         }
