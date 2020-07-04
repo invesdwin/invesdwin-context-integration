@@ -26,7 +26,7 @@ import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
 import de.invesdwin.instrument.DynamicInstrumentationReflections;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.loadingcache.ALoadingCache;
-import de.invesdwin.util.lang.Reflections;
+import de.invesdwin.util.lang.reflection.Reflections;
 import hadoop.test.job.mapper.isolated.HadoopTestJobMapperIsolatedBean;
 import hadoop.test.job.mapper.isolated.scanned.HadoopTestJobMapperIsolatedScannedBean;
 

@@ -17,7 +17,7 @@ import org.springframework.core.io.Resource;
 import de.invesdwin.context.beans.init.PreMergedContext;
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.Reflections;
+import de.invesdwin.util.lang.reflection.Reflections;
 
 @NotThreadSafe
 public class BatchContextIgnoringJobLoader extends DefaultJobLoader {

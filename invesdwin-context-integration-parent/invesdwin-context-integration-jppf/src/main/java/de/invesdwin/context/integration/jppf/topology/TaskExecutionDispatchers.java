@@ -9,7 +9,7 @@ import javax.annotation.concurrent.Immutable;
 import org.jppf.node.protocol.TaskBundle;
 import org.jppf.node.protocol.TaskExecutionDispatcher;
 
-import de.invesdwin.util.lang.Reflections;
+import de.invesdwin.util.lang.reflection.Reflections;
 
 @Immutable
 public final class TaskExecutionDispatchers {
