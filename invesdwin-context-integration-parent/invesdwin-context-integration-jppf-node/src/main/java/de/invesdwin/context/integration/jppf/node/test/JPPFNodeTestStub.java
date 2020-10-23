@@ -50,7 +50,7 @@ public class JPPFNodeTestStub extends StubSupport {
     @Override
     public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
         try {
-            lastNode = MergedContext.getInstance().getBean(ConfiguredJPPFNode.class);
+            JPPFNodeTestStub.lastNode = MergedContext.getInstance().getBean(ConfiguredJPPFNode.class);
         } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
             //ignore
         }

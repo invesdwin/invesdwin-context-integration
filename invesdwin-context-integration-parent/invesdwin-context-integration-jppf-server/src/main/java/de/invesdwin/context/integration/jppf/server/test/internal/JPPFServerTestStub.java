@@ -65,7 +65,7 @@ public class JPPFServerTestStub extends StubSupport {
     @Override
     public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
         try {
-            lastServer = MergedContext.getInstance().getBean(ConfiguredJPPFServer.class);
+            JPPFServerTestStub.lastServer = MergedContext.getInstance().getBean(ConfiguredJPPFServer.class);
         } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
             //ignore
         }

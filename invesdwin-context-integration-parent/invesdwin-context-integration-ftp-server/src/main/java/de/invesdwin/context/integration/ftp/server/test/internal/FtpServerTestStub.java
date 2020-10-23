@@ -62,7 +62,7 @@ public class FtpServerTestStub extends StubSupport {
     @Override
     public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
         try {
-            lastServer = MergedContext.getInstance().getBean(FtpServer.class);
+            FtpServerTestStub.lastServer = MergedContext.getInstance().getBean(FtpServer.class);
         } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
             //ignore
         }
