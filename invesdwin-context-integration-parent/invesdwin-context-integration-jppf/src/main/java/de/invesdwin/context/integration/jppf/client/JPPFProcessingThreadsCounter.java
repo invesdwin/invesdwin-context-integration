@@ -357,7 +357,10 @@ public class JPPFProcessingThreadsCounter {
     public void waitForMinimumCounts(final int minimumDriversCount, final int minimumNodesCount, final Duration timeout)
             throws TimeoutException {
         final Instant start = new Instant();
-        boolean firstRun = !warmupFinished;
+        boolean firstRun;
+        synchronized (this) {
+            firstRun = !warmupFinished;
+        }
         do {
             if ((timeout != null && start.isGreaterThan(timeout))) {
                 throw new TimeoutException("timeout exceeded: " + timeout);
