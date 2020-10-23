@@ -73,7 +73,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         return serverUrl + directory;
     }
 
-    public String getFileUrl() {
+    public synchronized String getFileUrl() {
         return serverUrl + directory + filename;
     }
 
