@@ -105,7 +105,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 //ignore
             }
             try {
-                NODE_EXECUTOR.awaitPendingCount(0);
+                NODE_EXECUTOR.awaitPendingCountZero();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
