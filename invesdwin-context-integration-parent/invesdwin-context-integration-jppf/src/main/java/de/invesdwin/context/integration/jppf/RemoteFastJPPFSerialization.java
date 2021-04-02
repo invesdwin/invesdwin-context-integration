@@ -13,6 +13,7 @@ import org.nustaq.serialization.simpleapi.DefaultCoder;
 
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.time.fdate.FDate;
+import io.netty.util.concurrent.FastThreadLocal;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
@@ -26,7 +27,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         FSTClazzInfo.BufferFieldMeta = false;
     }
 
-    private static final ThreadLocal<RefreshingCoderReference> CONF_THREADLOCAL = new ThreadLocal<RefreshingCoderReference>() {
+    private static final FastThreadLocal<RefreshingCoderReference> CONF_THREADLOCAL = new FastThreadLocal<RefreshingCoderReference>() {
         @Override
         protected RefreshingCoderReference initialValue() {
             return new RefreshingCoderReference();
@@ -35,7 +36,8 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     private static volatile FDate lastRefreshTrigger = new FDate();
 
-    public RemoteFastJPPFSerialization() {}
+    public RemoteFastJPPFSerialization() {
+    }
 
     public static void refresh() {
         lastRefreshTrigger = new FDate();
