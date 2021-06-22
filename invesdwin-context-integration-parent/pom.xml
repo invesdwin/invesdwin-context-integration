@@ -50,7 +50,7 @@
 	<properties>
 		<project.version.invesdwin-context>1.0.3</project.version.invesdwin-context>
 		<project.version.invesdwin-context-integration>${project.version}</project.version.invesdwin-context-integration>
-		<project.version.invesdwin-context-persistence>1.0.3-SNAPSHOT</project.version.invesdwin-context-persistence>
+		<project.version.invesdwin-context-persistence>1.0.3</project.version.invesdwin-context-persistence>
 		<project.version.invesdwin-context-security>1.0.2-SNAPSHOT</project.version.invesdwin-context-security>
 
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
