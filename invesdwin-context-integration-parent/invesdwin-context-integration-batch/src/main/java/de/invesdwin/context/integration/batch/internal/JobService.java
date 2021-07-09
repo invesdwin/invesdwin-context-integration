@@ -29,7 +29,7 @@ import org.springframework.batch.core.step.StepLocator;
 import de.invesdwin.context.integration.batch.IJobService;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
 @Named

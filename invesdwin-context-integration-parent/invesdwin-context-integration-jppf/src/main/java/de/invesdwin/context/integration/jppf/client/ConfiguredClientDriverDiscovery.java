@@ -13,8 +13,8 @@ import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.retry.task.ARetryRunnable;
 import de.invesdwin.context.integration.retry.task.RetryOriginator;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
-import de.invesdwin.util.time.fdate.FTimeUnit;
 
 // http://www.jppf.org/doc/5.2/index.php?title=Custom_discovery_of_remote_drivers
 @ThreadSafe

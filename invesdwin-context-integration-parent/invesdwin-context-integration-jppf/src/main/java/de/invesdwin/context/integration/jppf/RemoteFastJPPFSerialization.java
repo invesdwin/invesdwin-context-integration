@@ -12,7 +12,7 @@ import org.nustaq.serialization.FSTConfiguration;
 import org.nustaq.serialization.simpleapi.DefaultCoder;
 
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.date.FDate;
 import io.netty.util.concurrent.FastThreadLocal;
 
 /**

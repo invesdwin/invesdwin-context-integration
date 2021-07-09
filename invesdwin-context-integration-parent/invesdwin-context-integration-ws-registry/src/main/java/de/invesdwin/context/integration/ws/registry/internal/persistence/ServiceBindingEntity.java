@@ -16,8 +16,8 @@ import de.invesdwin.context.persistence.jpa.api.dao.entity.AUnversionedEntity;
 import de.invesdwin.context.persistence.jpa.api.index.Index;
 import de.invesdwin.context.persistence.jpa.api.index.Indexes;
 import de.invesdwin.util.time.DateTimes;
-import de.invesdwin.util.time.fdate.FDate;
-import de.invesdwin.util.time.fdate.FDates;
+import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FDates;
 
 @Entity
 @NotThreadSafe

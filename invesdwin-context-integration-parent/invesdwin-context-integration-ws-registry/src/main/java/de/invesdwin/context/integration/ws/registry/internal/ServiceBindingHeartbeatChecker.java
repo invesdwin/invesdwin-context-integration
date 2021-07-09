@@ -14,9 +14,9 @@ import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingDao;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingEntity;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
-import de.invesdwin.util.time.fdate.FDate;
-import de.invesdwin.util.time.fdate.FTimeUnit;
 
 @ThreadSafe
 @Named

@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.time.fdate.FTimeUnit;
+import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
 public class ConfiguredJPPFExecutorServiceTest extends ATest {

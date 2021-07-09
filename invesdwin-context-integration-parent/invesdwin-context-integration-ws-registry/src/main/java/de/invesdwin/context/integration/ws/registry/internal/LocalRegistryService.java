@@ -19,7 +19,7 @@ import de.invesdwin.context.integration.ws.registry.internal.persistence.Service
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingEntity;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Strings;
-import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
 @Named

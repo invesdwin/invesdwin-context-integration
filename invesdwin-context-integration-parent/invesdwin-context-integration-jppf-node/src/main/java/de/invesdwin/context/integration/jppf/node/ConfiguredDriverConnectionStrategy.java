@@ -21,8 +21,8 @@ import de.invesdwin.context.integration.jppf.client.ConfiguredClientDriverDiscov
 import de.invesdwin.context.integration.jppf.client.JPPFServerDestinationProvider;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
-import de.invesdwin.util.time.fdate.FDate;
 
 // http://www.jppf.org/doc/4.2/index.php?title=Defining_the_node_connection_strategy
 @ThreadSafe

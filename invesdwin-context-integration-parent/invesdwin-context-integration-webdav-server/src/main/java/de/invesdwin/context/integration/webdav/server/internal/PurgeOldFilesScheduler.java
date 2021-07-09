@@ -14,7 +14,7 @@ import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.webdav.server.WebdavServerProperties;
 import de.invesdwin.util.lang.Files;
-import de.invesdwin.util.time.fdate.FDate;
+import de.invesdwin.util.time.date.FDate;
 
 @Named
 @NotThreadSafe
