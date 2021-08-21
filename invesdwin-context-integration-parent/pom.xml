@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>de.invesdwin</groupId>
@@ -79,12 +81,15 @@
 
 		<version.javax.xml.soap-api>1.4.0</version.javax.xml.soap-api>
 		<version.saaj-impl>1.5.1</version.saaj-impl>
-		
+
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.agrona>1.12.0</version.agrona>
 		<version.jctools>3.3.0</version.jctools>
 		<version.conversant-disruptor>1.2.19</version.conversant-disruptor>
 		<version.aeron>1.35.0</version.aeron>
+		<version.jeromq>0.5.2</version.jeromq>
+		<version.czmq-jni>4.1.1</version.czmq-jni>
+
 	</properties>
 
 	<dependencyManagement>
@@ -1043,7 +1048,7 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-			
+
 			<dependency>
 				<groupId>com.lmax</groupId>
 				<artifactId>disruptor</artifactId>
@@ -1068,6 +1073,16 @@
 				<groupId>io.aeron</groupId>
 				<artifactId>aeron-driver</artifactId>
 				<version>${version.aeron}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.zeromq</groupId>
+				<artifactId>jeromq</artifactId>
+				<version>${version.jeromq}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.zeromq</groupId>
+				<artifactId>czmq-jni</artifactId>
+				<version>${version.czmq-jni}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

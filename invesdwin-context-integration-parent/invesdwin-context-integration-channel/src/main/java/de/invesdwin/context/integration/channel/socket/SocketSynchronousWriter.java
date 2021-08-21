@@ -15,8 +15,8 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
 
     private BufferedOutputStream out;
 
-    public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server, final int maxMessageSize) {
-        super(socketAddress, server, maxMessageSize);
+    public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        super(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
@@ -51,9 +51,9 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
     }
 
     private void checkSize(final int size) {
-        if (size > maxMessageSize) {
+        if (size > estimatedMaxMessageSize) {
             throw new IllegalStateException(
-                    "messageSize [" + size + "] exceeds maxMessageSize [" + maxMessageSize + "]");
+                    "messageSize [" + size + "] exceeds maxMessageSize [" + estimatedMaxMessageSize + "]");
         }
     }
 

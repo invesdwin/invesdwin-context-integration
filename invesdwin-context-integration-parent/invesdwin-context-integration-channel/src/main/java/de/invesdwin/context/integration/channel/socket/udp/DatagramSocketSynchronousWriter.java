@@ -13,8 +13,8 @@ import de.invesdwin.util.math.Bytes;
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<byte[]> {
 
-    public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int maxMessageSize) {
-        super(socketAddress, false, maxMessageSize);
+    public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+        super(socketAddress, false, estimatedMaxMessageSize);
     }
 
     @Override

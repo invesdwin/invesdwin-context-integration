@@ -13,9 +13,6 @@ import io.aeron.driver.ThreadingMode;
 @NotThreadSafe
 public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
 
-    public static final MediaDriver MEDIA_DRIVER = MediaDriver.launchEmbedded(
-            new Context().dirDeleteOnShutdown(true).dirDeleteOnStart(true).threadingMode(ThreadingMode.SHARED));
-
     protected static final int TYPE_INDEX = 0;
     protected static final int TYPE_SIZE = Integer.SIZE;
 
@@ -23,6 +20,8 @@ public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
     protected static final int SEQUENCE_SIZE = Integer.SIZE;
 
     protected static final int MESSAGE_INDEX = SEQUENCE_INDEX + SEQUENCE_SIZE;
+
+    private static MediaDriver mediaDriver = newDefaultMediaDriver();
 
     protected final String channel;
     protected final int streamId;
@@ -33,9 +32,25 @@ public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
         this.streamId = streamId;
     }
 
+    public static synchronized MediaDriver getMediadriver() {
+        if (mediaDriver == null) {
+            mediaDriver = newDefaultMediaDriver();
+        }
+        return mediaDriver;
+    }
+
+    public static synchronized void setMediaDriver(final MediaDriver mediaDriver) {
+        AAeronSynchronousChannel.mediaDriver = mediaDriver;
+    }
+
+    public static MediaDriver newDefaultMediaDriver() {
+        return MediaDriver.launchEmbedded(
+                new Context().dirDeleteOnShutdown(true).dirDeleteOnStart(true).threadingMode(ThreadingMode.SHARED));
+    }
+
     @Override
     public void open() throws IOException {
-        this.aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(MEDIA_DRIVER.aeronDirectoryName()));
+        this.aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(getMediadriver().aeronDirectoryName()));
     }
 
     @Override

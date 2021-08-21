@@ -34,7 +34,7 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int MESSAGE_POS = SIZE_POS + SIZE_OFFSET;
 
-    protected final int maxMessageSize;
+    protected final int estimatedMaxMessageSize;
     protected final int bufferSize;
     protected Socket socket;
     private final SocketAddress socketAddress;
@@ -42,11 +42,11 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     private ServerSocket serverSocket;
 
     public ASocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int maxMessageSize) {
+            final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
-        this.maxMessageSize = maxMessageSize;
-        this.bufferSize = maxMessageSize + MESSAGE_POS;
+        this.estimatedMaxMessageSize = estimatedMaxMessageSize;
+        this.bufferSize = estimatedMaxMessageSize + MESSAGE_POS;
     }
 
     @Override

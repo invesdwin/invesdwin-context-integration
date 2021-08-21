@@ -24,7 +24,6 @@ import org.jctools.queues.SpscArrayQueue;
 import org.jctools.queues.SpscLinkedQueue;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 import org.jctools.queues.atomic.SpscLinkedAtomicQueue;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.conversantmedia.util.concurrent.ConcurrentQueue;
@@ -62,6 +61,10 @@ import de.invesdwin.context.integration.channel.socket.SocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.SocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.zeromq.jeromq.JeromqSynchronousReader;
+import de.invesdwin.context.integration.channel.zeromq.jeromq.JeromqSynchronousWriter;
+import de.invesdwin.context.integration.channel.zeromq.jeromq.type.IJeromqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.jeromq.type.JeromqSocketType;
 import de.invesdwin.context.integration.serde.basic.FDateSerde;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -93,7 +96,7 @@ import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 
 // CHECKSTYLE:OFF
 @NotThreadSafe
-@Ignore("manual test")
+//@Ignore("manual test")
 public class ChannelPerformanceTest extends ATest {
     //CHECKSTYLE:ON
 
@@ -101,7 +104,7 @@ public class ChannelPerformanceTest extends ATest {
     private static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     private static final int MESSAGE_TYPE = 1;
     private static final int MESSAGE_SEQUENCE = 1;
-    private static final int VALUES = DEBUG ? 10 : 100_000_000;
+    private static final int VALUES = DEBUG ? 10 : 10_000_000;
     private static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
@@ -596,6 +599,28 @@ public class ChannelPerformanceTest extends ATest {
         executor.execute(new WriterTask(requestReader, responseWriter));
         final ISynchronousWriter<byte[]> requestWriter = new AeronSynchronousWriter(requestChannel, requestStreamId);
         final ISynchronousReader<byte[]> responseReader = new AeronSynchronousReader(responseChannel, responseStreamId);
+        read(requestWriter, responseReader);
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testJeromqInprocPerformance() throws InterruptedException {
+        final String responseChannel = "inproc://response";
+        final String requestChannel = "inproc://request";
+        runJeromqPerformanceTest(JeromqSocketType.PAIR, responseChannel, requestChannel);
+    }
+
+    private void runJeromqPerformanceTest(final IJeromqSocketType socketType, final String responseChannel,
+            final String requestChannel) throws InterruptedException {
+        final ISynchronousWriter<byte[]> responseWriter = new JeromqSynchronousWriter(socketType, responseChannel,
+                true);
+        final ISynchronousReader<byte[]> requestReader = new JeromqSynchronousReader(socketType, requestChannel, true);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
+        executor.execute(new WriterTask(requestReader, responseWriter));
+        final ISynchronousWriter<byte[]> requestWriter = new JeromqSynchronousWriter(socketType, requestChannel, false);
+        final ISynchronousReader<byte[]> responseReader = new JeromqSynchronousReader(socketType, responseChannel,
+                false);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();

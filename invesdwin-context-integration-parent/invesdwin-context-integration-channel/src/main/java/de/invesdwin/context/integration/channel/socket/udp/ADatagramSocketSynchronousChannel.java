@@ -39,7 +39,7 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
 
     public static final int MESSAGE_POS = SIZE_POS + SIZE_OFFSET;
 
-    protected final int maxMessageSize;
+    protected final int estimatedMaxMessageSize;
     protected final int bufferSize;
     protected final byte[] packetBytes;
     protected ByteBuffer packetBuffer;
@@ -49,11 +49,11 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     private final boolean server;
 
     public ADatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int maxMessageSize) {
+            final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
-        this.maxMessageSize = maxMessageSize;
-        this.bufferSize = maxMessageSize + MESSAGE_POS;
+        this.estimatedMaxMessageSize = estimatedMaxMessageSize;
+        this.bufferSize = estimatedMaxMessageSize + MESSAGE_POS;
         this.packetBytes = new byte[bufferSize];
         this.packetBuffer = ByteBuffer.wrap(packetBytes);
         this.packet = new DatagramPacket(packetBytes, packetBytes.length);
@@ -114,9 +114,9 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     }
 
     private void setSize(final int val) {
-        if (val > maxMessageSize) {
+        if (val > estimatedMaxMessageSize) {
             throw new IllegalStateException(
-                    "messageSize [" + val + "] exceeds maxMessageSize [" + maxMessageSize + "]");
+                    "messageSize [" + val + "] exceeds maxMessageSize [" + estimatedMaxMessageSize + "]");
         }
         packetBuffer.putInt(SIZE_POS, val);
     }

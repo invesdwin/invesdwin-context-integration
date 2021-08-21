@@ -1,4 +1,6 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>de.invesdwin</groupId>
@@ -13,7 +15,7 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.lmax</groupId>
 			<artifactId>disruptor</artifactId>
@@ -37,6 +39,17 @@
 		<dependency>
 			<groupId>io.aeron</groupId>
 			<artifactId>aeron-driver</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.zeromq</groupId>
+			<artifactId>jeromq</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.zeromq</groupId>
+			<artifactId>czmq-jni</artifactId>
 			<scope>provided</scope>
 		</dependency>
 

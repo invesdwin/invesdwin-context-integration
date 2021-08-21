@@ -22,8 +22,8 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
     private final byte[] sizeBuffer = new byte[SIZE_OFFSET];
     private BufferedInputStream in;
 
-    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server, final int maxMessageSize) {
-        super(socketAddress, server, maxMessageSize);
+    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        super(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

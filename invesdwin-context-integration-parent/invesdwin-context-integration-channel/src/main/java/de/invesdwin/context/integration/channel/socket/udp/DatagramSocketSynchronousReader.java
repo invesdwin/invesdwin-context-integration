@@ -13,8 +13,8 @@ import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMess
 public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousChannel
         implements ISynchronousReader<byte[]> {
 
-    public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int maxMessageSize) {
-        super(socketAddress, true, maxMessageSize);
+    public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+        super(socketAddress, true, estimatedMaxMessageSize);
     }
 
     @Override
