@@ -74,7 +74,7 @@
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 
-		<version.affinity>3.1.7</version.affinity>
+		<version.affinity>3.21ea5</version.affinity>
 		<version.reactive-streams>1.0.3</version.reactive-streams>
 
 		<version.javax.xml.soap-api>1.4.0</version.javax.xml.soap-api>
