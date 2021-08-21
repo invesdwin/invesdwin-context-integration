@@ -128,7 +128,9 @@ Mapped Memory (tmpfs)      Records:  4237.29/ms  in   2360 ms    => ~15 times fa
 ```
 New Benchmarks (2021, Core i9-9900k with SSD; best in class marked by `*`):
 ```
+Network    CzmqTcp                        Records:    35.24/ms  in  283741 ms    => ~62% slower
 Process    JeromqIpc                      Records:    37.40/ms  in  267379 ms    => ~60% slower
+Network    JzmqTcp                        Records:    39.37/ms  in  253990 ms    => ~58% slower
 Network    JeromqTcp                      Records:    41.16/ms  in  242928 ms    => ~55% slower
 Process    CzmqIpc                        Records:    45.13/ms  in  221602 ms    => ~50% slower
 Process    JzmqIpc                        Records:    55.35/ms  in  180669 ms    => ~40% slower
