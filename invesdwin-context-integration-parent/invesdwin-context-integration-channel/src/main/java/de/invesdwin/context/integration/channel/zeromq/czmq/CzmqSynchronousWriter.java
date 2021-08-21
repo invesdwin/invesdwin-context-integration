@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq;
+package de.invesdwin.context.integration.channel.zeromq.czmq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -19,17 +19,17 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
 
 @NotThreadSafe
-public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class CzmqSynchronousWriter extends ACzmqSynchronousChannel implements ISynchronousWriter<byte[]> {
 
     private static final double BUFFER_GROWTH_FACTOR = 1.25;
     private byte[] bytes = Bytes.EMPTY_ARRAY;
     private ByteBuffer buffer;
 
-    public JeromqSynchronousWriter(final IJeromqSocketType socketType, final String addr, final boolean server) {
+    public CzmqSynchronousWriter(final IJeromqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getWriterSocketType(), addr, server);
     }
 
-    public JeromqSynchronousWriter(final SocketType socketType, final String addr, final boolean server) {
+    public CzmqSynchronousWriter(final SocketType socketType, final String addr, final boolean server) {
         super(socketType, addr, server);
     }
 

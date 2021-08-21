@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq;
+package de.invesdwin.context.integration.channel.zeromq.czmq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -17,7 +17,7 @@ import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
+public abstract class ACzmqSynchronousChannel implements ISynchronousChannel {
 
     private static final int TYPE_INDEX = 0;
     private static final int TYPE_SIZE = Integer.BYTES;
@@ -39,7 +39,7 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
     protected int sequenceIndex = -1;
     protected int messageIndex = -1;
 
-    public AJeromqSynchronousChannel(final SocketType socketType, final String addr, final boolean server) {
+    public ACzmqSynchronousChannel(final SocketType socketType, final String addr, final boolean server) {
         this.socketType = socketType;
         this.addr = addr;
         this.server = server;
@@ -53,7 +53,7 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
     }
 
     public static synchronized void setContext(final ZContext context) {
-        AJeromqSynchronousChannel.context = context;
+        ACzmqSynchronousChannel.context = context;
     }
 
     public static ZContext newDefaultContext() {

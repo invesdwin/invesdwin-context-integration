@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq;
+package de.invesdwin.context.integration.channel.zeromq.czmq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -18,15 +18,15 @@ import de.invesdwin.util.math.Bytes;
 import zmq.ZError;
 
 @NotThreadSafe
-public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<byte[]> {
+public class CzmqSynchronousReader extends ACzmqSynchronousChannel implements ISynchronousReader<byte[]> {
 
     private ImmutableSynchronousMessage<byte[]> polledValue;
 
-    public JeromqSynchronousReader(final IJeromqSocketType socketType, final String addr, final boolean server) {
+    public CzmqSynchronousReader(final IJeromqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getReaderSocketType(), addr, server);
     }
 
-    public JeromqSynchronousReader(final SocketType socketType, final String addr, final boolean server) {
+    public CzmqSynchronousReader(final SocketType socketType, final String addr, final boolean server) {
         super(socketType, addr, server);
     }
 
