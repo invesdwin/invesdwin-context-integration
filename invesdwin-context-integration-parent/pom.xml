@@ -43,6 +43,7 @@
 		<module>invesdwin-context-integration-ws-registry-dist</module>
 		<module>invesdwin-context-integration-maven</module>
 		<module>invesdwin-context-integration-affinity</module>
+		<module>invesdwin-context-integration-channel</module>
 	</modules>
 
 	<properties>
@@ -78,6 +79,12 @@
 
 		<version.javax.xml.soap-api>1.4.0</version.javax.xml.soap-api>
 		<version.saaj-impl>1.5.1</version.saaj-impl>
+		
+		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
+		<version.agrona>1.12.0</version.agrona>
+		<version.jctools>3.3.0</version.jctools>
+		<version.conversant-disruptor>1.2.19</version.conversant-disruptor>
+		<version.aeron>1.35.0</version.aeron>
 	</properties>
 
 	<dependencyManagement>
@@ -231,6 +238,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-affinity</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 
@@ -1030,6 +1042,32 @@
 						<artifactId>jakarta.activation-api</artifactId>
 					</exclusion>
 				</exclusions>
+			</dependency>
+			
+			<dependency>
+				<groupId>com.lmax</groupId>
+				<artifactId>disruptor</artifactId>
+				<version>${version.lmax-disruptor}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.agrona</groupId>
+				<artifactId>agrona</artifactId>
+				<version>${version.agrona}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.jctools</groupId>
+				<artifactId>jctools-core</artifactId>
+				<version>${version.jctools}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.conversantmedia</groupId>
+				<artifactId>disruptor</artifactId>
+				<version>${version.conversant-disruptor}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.aeron</groupId>
+				<artifactId>aeron-driver</artifactId>
+				<version>${version.aeron}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
