@@ -99,7 +99,7 @@ de.invesdwin.context.integration.webdav.server.WebdavServerProperties.PURGE_FILE
 
 ### Synchronous Channels
 
-Quote from [golang](https://go.dev/blog/codelab-share): Do not communicate by sharing memory; instead, share memory by communicating.
+Quote from [golang](https://go.dev/blog/codelab-share): *Do not communicate by sharing memory; instead, share memory by communicating.*
 
 This abstraction has its origin in the [invesdwin-context-persistence-timeseries](https://github.com/invesdwin/invesdwin-context-persistence#timeseries-module) module. Though it can be used for inter-network, inter-process and inter-thread communication. The idea is to use the channel implementation that best fits the task at hand (blocking/non-blocking, unbounded/bounded, queued/direct) with the transport that is most efficient or useful at that spot. To switch to a different communication, simply change the channel implementation without having to modify the underlying code.
 
