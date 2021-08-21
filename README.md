@@ -128,32 +128,38 @@ Mapped Memory (tmpfs)      Records:  4237.29/ms  in   2360 ms    => ~15 times fa
 ```
 New Benchmarks (2021, Core i9-9900k with SSD; best in class marked by `*`):
 ```
-Network    Socket (loopback)              Records:    94.37/ms  in  90491 ms    => using this as baseline
-Network    DatagramSocket (loopback)      Records:   113.54/ms  in  88078 ms    => ~20% faster than TCP
-Process    Named Pipes                    Records:   137.14/ms  in  72917 ms    => ~50% faster than TCP
-Network*   AeronUDP (loopback)            Records:   173.76/ms  in  57549 ms    => ~85% faster than TCP
-Process    ChronicleQueue                 Records:   288.45/ms  in  34668 ms    => ~3 times faster than TCP
-Thread     LockedReference                Records:   784.74/ms  in  12743 ms    => ~8 times faster than TCP
-Thread     ArrayBlockingQueue             Records:  1602.05/ms  in   6242 ms    => ~17 times faster than TCP
-Thread     ArrayDeque (synced)            Records:  1803.10/ms  in   5546 ms    => ~19 times faster than TCP
-Thread     LinkedBlockingQueue            Records:  1806.68/ms  in   5535 ms    => ~19 times faster than TCP
-Thread     SynchronizedReference          Records:  1860.33/ms  in   5375 ms    => ~19 times faster than TCP
-Thread     SynchronousQueue               Records:  2320.19/ms  in   4310 ms    => ~24 times faster than TCP
-Thread     LinkedTransferQueue            Records:  2724.13/ms  in   3670 ms    => ~29 times faster than TCP
-Thread     AtomicReference                Records:  2937.72/ms  in   3404 ms    => ~31 times faster than TCP
-Thread     ConversantDisruptorBlocking    Records:  3273.11/ms  in   3055 ms    => ~34 times faster than TCP
-Thread     JctoolsSpscLinked              Records:  3278.69/ms  in   3050 ms    => ~34 times faster than TCP
-Thread     JctoolsSpscLinkedAtomic        Records:  3311.92/ms  in   3019 ms    => ~35 times faster than TCP
-Thread     VolatileReference              Records:  3434.89/ms  in   2911 ms    => ~36 times faster than TCP
-Process    AeronIPC                       Records:  3542.08/ms  in   2823 ms    => ~37 times faster than TCP
-Thread     AgronaOneToOne                 Records:  3646.04/ms  in   2742 ms    => ~38 times faster than TCP
-Thread     ConversantPushPullConcurrent   Records:  3767.33/ms  in   2654 ms    => ~40 times faster than TCP
-Thread     AgronaManyToMany               Records:  3959.46/ms  in   2525 ms    => ~42 times faster than TCP
-Thread     JctoolsSpscArray               Records:  4269.31/ms  in   2342 ms    => ~45 times faster than TCP
-Thread     JctoolsSpscAtomicArray         Records:  4311.65/ms  in   2319 ms    => ~45 times faster than TCP
-Thread*    LmaxDisruptor                  Records:  4542.15/ms  in   2201 ms    => ~48 times faster than TCP
-Process    Mapped Memory                  Records:  6257.82/ms  in   1598 ms    => ~66 times faster than TCP
-Process*   Mapped Memory (tmpfs)          Records:  7119.46/ms  in   1404 ms    => ~75 times faster than TCP
+Process    JeromqIpc                      Records:    37.40/ms  in  267379 ms    => ~60% slower
+Network    JeromqTcp                      Records:    41.16/ms  in  242928 ms    => ~55% slower
+Process    CzmqIpc                        Records:    45.13/ms  in  221602 ms    => ~50% slower
+Process    JzmqIpc                        Records:    55.35/ms  in  180669 ms    => ~40% slower
+Network    Socket (loopback)              Records:    94.37/ms  in   90491 ms    => using this as baseline
+Network    DatagramSocket (loopback)      Records:   113.54/ms  in   88078 ms    => ~20% faster
+Thread     CzmqInproc                     Records:   132.52/ms  in   75458 ms    => ~40% faster
+Process    Named Pipes                    Records:   137.14/ms  in   72917 ms    => ~50% faster
+Network*   AeronUDP (loopback)            Records:   173.76/ms  in   57549 ms    => ~85% faster
+Process    ChronicleQueue                 Records:   288.45/ms  in   34668 ms    => ~3 times faster
+Thread     JeromqInproc                   Records:   294.52/ms  in   33954 ms    => ~3 times faster
+Thread     LockedReference                Records:   784.74/ms  in   12743 ms    => ~8 times faster
+Thread     ArrayBlockingQueue             Records:  1602.05/ms  in    6242 ms    => ~17 times faster
+Thread     ArrayDeque (synced)            Records:  1803.10/ms  in    5546 ms    => ~19 times faster
+Thread     LinkedBlockingQueue            Records:  1806.68/ms  in    5535 ms    => ~19 times faster
+Thread     SynchronizedReference          Records:  1860.33/ms  in    5375 ms    => ~19 times faster
+Thread     SynchronousQueue               Records:  2320.19/ms  in    4310 ms    => ~24 times faster
+Thread     LinkedTransferQueue            Records:  2724.13/ms  in    3670 ms    => ~29 times faster
+Thread     AtomicReference                Records:  2937.72/ms  in    3404 ms    => ~31 times faster
+Thread     ConversantDisruptorBlocking    Records:  3273.11/ms  in    3055 ms    => ~34 times faster
+Thread     JctoolsSpscLinked              Records:  3278.69/ms  in    3050 ms    => ~34 times faster
+Thread     JctoolsSpscLinkedAtomic        Records:  3311.92/ms  in    3019 ms    => ~35 times faster
+Thread     VolatileReference              Records:  3434.89/ms  in    2911 ms    => ~36 times faster
+Process    AeronIPC                       Records:  3542.08/ms  in    2823 ms    => ~37 times faster
+Thread     AgronaOneToOne                 Records:  3646.04/ms  in    2742 ms    => ~38 times faster
+Thread     ConversantPushPullConcurrent   Records:  3767.33/ms  in    2654 ms    => ~40 times faster
+Thread     AgronaManyToMany               Records:  3959.46/ms  in    2525 ms    => ~42 times faster
+Thread     JctoolsSpscArray               Records:  4269.31/ms  in    2342 ms    => ~45 times faster
+Thread     JctoolsSpscAtomicArray         Records:  4311.65/ms  in    2319 ms    => ~45 times faster
+Thread*    LmaxDisruptor                  Records:  4542.15/ms  in    2201 ms    => ~48 times faster
+Process    Mapped Memory                  Records:  6257.82/ms  in    1598 ms    => ~66 times faster
+Process*   Mapped Memory (tmpfs)          Records:  7119.46/ms  in    1404 ms    => ~75 times faster
 ```
 - **Dynamic Client/Server**: you could utilize RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endspoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
 
