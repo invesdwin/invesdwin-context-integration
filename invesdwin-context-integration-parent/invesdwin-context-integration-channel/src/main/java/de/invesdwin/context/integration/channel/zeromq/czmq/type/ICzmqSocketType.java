@@ -1,11 +1,9 @@
 package de.invesdwin.context.integration.channel.zeromq.czmq.type;
 
-import org.zeromq.SocketType;
-
 public interface ICzmqSocketType {
 
-    SocketType getWriterSocketType();
+    ICzmqSocketFactory newWriterSocketFactory();
 
-    SocketType getReaderSocketType();
+    ICzmqSocketFactory newReaderSocketFactory();
 
 }

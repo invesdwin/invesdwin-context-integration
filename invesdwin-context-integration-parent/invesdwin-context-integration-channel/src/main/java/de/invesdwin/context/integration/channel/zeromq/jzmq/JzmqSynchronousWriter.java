@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.czmq;
+package de.invesdwin.context.integration.channel.zeromq.jzmq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -7,30 +7,27 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeromq.czmq.Zframe;
-
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
 import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketFactory;
-import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.ZeromqFlags;
+import de.invesdwin.context.integration.channel.zeromq.jzmq.type.IJzmqSocketType;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class CzmqSynchronousWriter extends ACzmqSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class JzmqSynchronousWriter extends AJzmqSynchronousChannel implements ISynchronousWriter<byte[]> {
 
     private static final double BUFFER_GROWTH_FACTOR = 1.25;
-    private static final int ZFRAME_DONTWAIT = 4;
     private byte[] bytes = Bytes.EMPTY_ARRAY;
     private ByteBuffer buffer;
 
-    public CzmqSynchronousWriter(final ICzmqSocketType socketType, final String addr, final boolean server) {
-        this(socketType.newWriterSocketFactory(), addr, server);
+    public JzmqSynchronousWriter(final IJzmqSocketType socketType, final String addr, final boolean server) {
+        this(socketType.getWriterSocketType(), addr, server);
     }
 
-    public CzmqSynchronousWriter(final ICzmqSocketFactory socketFactory, final String addr, final boolean server) {
-        super(socketFactory, addr, server);
+    public JzmqSynchronousWriter(final int socketType, final String addr, final boolean server) {
+        super(socketType, addr, server);
     }
 
     @Override
@@ -70,34 +67,23 @@ public class CzmqSynchronousWriter extends ACzmqSynchronousChannel implements IS
     }
 
     private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
-        try (Zframe frame = new Zframe(bytes, size)) {
-            if (frame.self == 0) {
-                throw new IOException("no frame");
-            }
-            final long pointer = frame.self;
-            while (!sendTry(frame, pointer)) {
-                try {
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                    interrupt.initCause(e);
-                    throw interrupt;
-                }
+        while (!sendTry(size)) {
+            try {
+                FTimeUnit.MILLISECONDS.sleep(1);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+                final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
+                interrupt.initCause(e);
+                throw interrupt;
             }
         }
     }
 
-    private boolean sendTry(final Zframe frame, final long pointer) throws IOException, EOFException {
-        frame.send(socket.self, ZFRAME_DONTWAIT);
-        final boolean sent = frame.self == 0;
+    private boolean sendTry(final int size) throws IOException, EOFException {
+        final boolean sent = socket.send(bytes, 0, size, ZeromqFlags.DONTWAIT);
         if (!sent) {
-            if (frame.self == pointer) {
-                return false;
-            } else {
-                close();
-                throw new EOFException("closed by other side");
-            }
+            //maybe backpressure
+            return false;
         }
         return true;
     }

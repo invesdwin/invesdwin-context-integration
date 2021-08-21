@@ -2,33 +2,102 @@ package de.invesdwin.context.integration.channel.zeromq.czmq.type;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.zeromq.SocketType;
+import org.zeromq.czmq.Zsock;
+
+import de.invesdwin.context.integration.channel.zeromq.ZeromqSocketTypes;
 
 @Immutable
 public enum CzmqSocketType implements ICzmqSocketType {
-    PAIR(SocketType.PAIR, SocketType.PAIR),
-    PUBSUB(SocketType.PUB, SocketType.SUB),
-    REQREP(SocketType.REQ, SocketType.REP),
-    PUSHPULL(SocketType.PUSH, SocketType.PULL),
-    XPUBXSUB(SocketType.XPUB, SocketType.XSUB),
-    STREAM(SocketType.STREAM, SocketType.STREAM);
+    PAIR {
+        @Override
+        public ICzmqSocketFactory newWriterSocketFactory() {
+            return new ICzmqSocketFactory() {
 
-    private final SocketType writer;
-    private final SocketType reader;
+                @Override
+                public Zsock newSocket(final String endpoint, final String topic) {
+                    return Zsock.newPair(endpoint);
+                }
 
-    CzmqSocketType(final SocketType writer, final SocketType reader) {
-        this.writer = writer;
-        this.reader = reader;
-    }
+                @Override
+                public int getSocketType() {
+                    return ZeromqSocketTypes.PAIR;
+                }
+            };
+        }
 
-    @Override
-    public SocketType getWriterSocketType() {
-        return writer;
-    }
+        @Override
+        public ICzmqSocketFactory newReaderSocketFactory() {
+            return newWriterSocketFactory();
+        }
+    },
+    PUSHPULL {
+        @Override
+        public ICzmqSocketFactory newWriterSocketFactory() {
+            return new ICzmqSocketFactory() {
 
-    @Override
-    public SocketType getReaderSocketType() {
-        return reader;
+                @Override
+                public Zsock newSocket(final String endpoint, final String topic) {
+                    return Zsock.newPush(endpoint);
+                }
+
+                @Override
+                public int getSocketType() {
+                    return ZeromqSocketTypes.PUSH;
+                }
+            };
+        }
+
+        @Override
+        public ICzmqSocketFactory newReaderSocketFactory() {
+            return new ICzmqSocketFactory() {
+
+                @Override
+                public Zsock newSocket(final String endpoint, final String topic) {
+                    return Zsock.newPull(endpoint);
+                }
+
+                @Override
+                public int getSocketType() {
+                    return ZeromqSocketTypes.PULL;
+                }
+            };
+        }
+    },
+    PUBSUB {
+        @Override
+        public ICzmqSocketFactory newWriterSocketFactory() {
+            return new ICzmqSocketFactory() {
+
+                @Override
+                public Zsock newSocket(final String endpoint, final String topic) {
+                    return Zsock.newPub(endpoint);
+                }
+
+                @Override
+                public int getSocketType() {
+                    return ZeromqSocketTypes.PUB;
+                }
+            };
+        }
+
+        @Override
+        public ICzmqSocketFactory newReaderSocketFactory() {
+            return new ICzmqSocketFactory() {
+
+                @Override
+                public Zsock newSocket(final String endpoint, final String topic) {
+                    return Zsock.newSub(endpoint, topic);
+                }
+
+                @Override
+                public int getSocketType() {
+                    return ZeromqSocketTypes.SUB;
+                }
+            };
+        }
+    };
+
+    CzmqSocketType() {
     }
 
 }

@@ -8,10 +8,7 @@ import org.zeromq.SocketType;
 public enum JeromqSocketType implements IJeromqSocketType {
     PAIR(SocketType.PAIR, SocketType.PAIR),
     PUBSUB(SocketType.PUB, SocketType.SUB),
-    REQREP(SocketType.REQ, SocketType.REP),
-    PUSHPULL(SocketType.PUSH, SocketType.PULL),
-    XPUBXSUB(SocketType.XPUB, SocketType.XSUB),
-    STREAM(SocketType.STREAM, SocketType.STREAM);
+    PUSHPULL(SocketType.PUSH, SocketType.PULL);
 
     private final SocketType writer;
     private final SocketType reader;

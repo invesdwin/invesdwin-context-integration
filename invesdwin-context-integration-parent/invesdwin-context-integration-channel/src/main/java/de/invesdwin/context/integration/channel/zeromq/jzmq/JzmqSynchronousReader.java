@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq;
+package de.invesdwin.context.integration.channel.zeromq.jzmq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -6,27 +6,24 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeromq.SocketType;
-
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
 import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
 import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
-import de.invesdwin.context.integration.channel.zeromq.ZeromqErrors;
 import de.invesdwin.context.integration.channel.zeromq.ZeromqFlags;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.type.IJeromqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.jzmq.type.IJzmqSocketType;
 import de.invesdwin.util.math.Bytes;
 
 @NotThreadSafe
-public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<byte[]> {
+public class JzmqSynchronousReader extends AJzmqSynchronousChannel implements ISynchronousReader<byte[]> {
 
     private ImmutableSynchronousMessage<byte[]> polledValue;
 
-    public JeromqSynchronousReader(final IJeromqSocketType socketType, final String addr, final boolean server) {
+    public JzmqSynchronousReader(final IJzmqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getReaderSocketType(), addr, server);
     }
 
-    public JeromqSynchronousReader(final SocketType socketType, final String addr, final boolean server) {
+    public JzmqSynchronousReader(final int socketType, final String addr, final boolean server) {
         super(socketType, addr, server);
     }
 
@@ -65,10 +62,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
     private ImmutableSynchronousMessage<byte[]> poll() throws IOException {
         final byte[] recv = socket.recv(ZeromqFlags.DONTWAIT);
         if (recv == null) {
-            if (socket.errno() != ZeromqErrors.EAGAIN) {
-                close();
-                throw new EOFException("closed by other side");
-            }
+            //If Socket#recv() returns null and no ZMQException was thrown, an EAGAIN error occurred.
             return null;
         }
         final ByteBuffer buf = ByteBuffer.wrap(recv);

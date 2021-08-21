@@ -8,15 +8,15 @@ import java.nio.ByteBuffer;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.zeromq.SocketType;
-import org.zeromq.ZMQ;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
 import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.zeromq.ZeromqErrors;
+import de.invesdwin.context.integration.channel.zeromq.ZeromqFlags;
 import de.invesdwin.context.integration.channel.zeromq.jeromq.type.IJeromqSocketType;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
-import zmq.ZError;
 
 @NotThreadSafe
 public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<byte[]> {
@@ -83,9 +83,9 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
     }
 
     private boolean sendTry(final int size) throws IOException, EOFException {
-        final boolean sent = socket.send(bytes, 0, size, ZMQ.DONTWAIT);
+        final boolean sent = socket.send(bytes, 0, size, ZeromqFlags.DONTWAIT);
         if (!sent) {
-            if (socket.errno() == ZError.EAGAIN) {
+            if (socket.errno() == ZeromqErrors.EAGAIN) {
                 //backpressure
                 return false;
             }

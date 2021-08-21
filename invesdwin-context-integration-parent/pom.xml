@@ -88,7 +88,8 @@
 		<version.conversant-disruptor>1.2.19</version.conversant-disruptor>
 		<version.aeron>1.35.0</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
-		<version.czmq-jni>4.1.1</version.czmq-jni>
+		<version.jzmq>3.1.1-SNAPSHOT</version.jzmq>
+		<version.czmq-jni>4.2.2-inv</version.czmq-jni>
 
 	</properties>
 
@@ -1081,7 +1082,17 @@
 			</dependency>
 			<dependency>
 				<groupId>org.zeromq</groupId>
+				<artifactId>jzmq</artifactId>
+				<version>${version.jzmq}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.zeromq.czmq</groupId>
 				<artifactId>czmq-jni</artifactId>
+				<version>${version.czmq-jni}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.zeromq.czmq</groupId>
+				<artifactId>czmq-jni-linux-x86_64</artifactId>
 				<version>${version.czmq-jni}</version>
 			</dependency>
 		</dependencies>
