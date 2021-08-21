@@ -97,7 +97,7 @@ de.invesdwin.context.integration.webdav.WebdavClientProperties.PASSWORD=invesdwi
 de.invesdwin.context.integration.webdav.server.WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION=1 DAYS
 ```
 
-### Synchronous Channels
+## Synchronous Channels
 
 Quote from [golang](https://go.dev/blog/codelab-share): *Do not communicate by sharing memory; instead, share memory by communicating.*
 
