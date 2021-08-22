@@ -10,6 +10,7 @@ import com.esotericsoftware.kryonet.Serialization;
 
 import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
 import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.math.Bytes;
 
@@ -39,7 +40,8 @@ public final class SynchronousMessageSerialization implements Serialization {
     public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
         if (object instanceof ISynchronousMessage) {
             final ISynchronousMessage<byte[]> cObject = (ISynchronousMessage<byte[]>) object;
-            Booleans.putBoolean(buffer, false);
+            final int position = Booleans.putBoolean(ByteBuffers.wrap(buffer), 0, false);
+            buffer.position(position);
             buffer.putInt(cObject.getType());
             buffer.putInt(cObject.getSequence());
             final byte[] message = cObject.getMessage();
@@ -47,14 +49,15 @@ public final class SynchronousMessageSerialization implements Serialization {
                 buffer.put(message);
             }
         } else {
-            Booleans.putBoolean(buffer, true);
+            final int position = Booleans.putBoolean(ByteBuffers.wrap(buffer), 0, true);
+            buffer.position(position);
             DELEGATE.write(connection, buffer, object);
         }
     }
 
     @Override
     public Object read(final Connection connection, final ByteBuffer buffer) {
-        final boolean kryo = Booleans.extractBoolean(buffer);
+        final boolean kryo = Booleans.extractBoolean(ByteBuffers.wrap(buffer), 0);
         if (kryo) {
             return DELEGATE.read(connection, buffer);
         } else {
