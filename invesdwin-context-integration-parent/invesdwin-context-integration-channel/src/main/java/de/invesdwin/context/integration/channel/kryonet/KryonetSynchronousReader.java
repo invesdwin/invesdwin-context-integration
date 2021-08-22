@@ -31,14 +31,15 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
             @SuppressWarnings("unchecked")
             @Override
             public void received(final Connection connection, final Object object) {
-                polledValue = (ImmutableSynchronousMessage<byte[]>) object;
+                if (object instanceof ImmutableSynchronousMessage) {
+                    polledValue = (ImmutableSynchronousMessage<byte[]>) object;
+                }
             }
         });
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        connection.update();
         return polledValue != null;
     }
 
@@ -59,7 +60,6 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
             return value;
         }
         try {
-            connection.update();
             if (polledValue != null) {
                 final ImmutableSynchronousMessage<byte[]> value = polledValue;
                 polledValue = null;

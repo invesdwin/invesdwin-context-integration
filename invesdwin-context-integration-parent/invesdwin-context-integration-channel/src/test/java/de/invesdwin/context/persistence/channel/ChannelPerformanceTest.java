@@ -3,6 +3,7 @@ package de.invesdwin.context.persistence.channel;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayDeque;
@@ -43,6 +44,8 @@ import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousRe
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousWriter;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousReader;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousWriter;
+import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousReader;
+import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousWriter;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousReader;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousWriter;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousReader;
@@ -91,6 +94,7 @@ import de.invesdwin.util.concurrent.reference.VolatileReference;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.ProcessedEventsRateString;
+import de.invesdwin.util.lang.uri.Addresses;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.math.decimal.scaled.Percent;
@@ -589,24 +593,51 @@ public class ChannelPerformanceTest extends ATest {
     public void testAeronDatagramSocketPerformance() throws InterruptedException {
         final String responseChannel = "aeron:udp?endpoint=localhost:7878";
         final String requestChannel = "aeron:udp?endpoint=localhost:7879";
-        runAeronSocketPerformanceTest(responseChannel, 1001, requestChannel, 1002);
+        runAeronPerformanceTest(responseChannel, 1001, requestChannel, 1002);
     }
 
     @Test
     public void testAeronIpcPerformance() throws InterruptedException {
         final String responseChannel = "aeron:ipc";
         final String requestChannel = "aeron:ipc";
-        runAeronSocketPerformanceTest(responseChannel, 1001, requestChannel, 1002);
+        runAeronPerformanceTest(responseChannel, 1001, requestChannel, 1002);
     }
 
-    private void runAeronSocketPerformanceTest(final String responseChannel, final int responseStreamId,
+    private void runAeronPerformanceTest(final String responseChannel, final int responseStreamId,
             final String requestChannel, final int requestStreamId) throws InterruptedException {
         final ISynchronousWriter<byte[]> responseWriter = new AeronSynchronousWriter(responseChannel, responseStreamId);
         final ISynchronousReader<byte[]> requestReader = new AeronSynchronousReader(requestChannel, requestStreamId);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronSocketPerformanceTest", 1);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
         final ISynchronousWriter<byte[]> requestWriter = new AeronSynchronousWriter(requestChannel, requestStreamId);
         final ISynchronousReader<byte[]> responseReader = new AeronSynchronousReader(responseChannel, responseStreamId);
+        read(requestWriter, responseReader);
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testKryonetTcpPerformance() throws InterruptedException {
+        runKryonetPerformanceTest(Addresses.asAddress("localhost"), 7878, -1, 7879, -1);
+    }
+
+    @Test
+    public void testKryonetUdpPerformance() throws InterruptedException {
+        runKryonetPerformanceTest(Addresses.asAddress("localhost"), 7878, 7878, 8879, 8879);
+    }
+
+    private void runKryonetPerformanceTest(final InetAddress address, final int responseTcpPort,
+            final int responseUdpPort, final int requestTcpPort, final int requestUdpPort) throws InterruptedException {
+        final ISynchronousWriter<byte[]> responseWriter = new KryonetSynchronousWriter(address, responseTcpPort,
+                responseUdpPort, true);
+        final ISynchronousReader<byte[]> requestReader = new KryonetSynchronousReader(address, requestTcpPort,
+                requestUdpPort, false);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
+        executor.execute(new WriterTask(requestReader, responseWriter));
+        final ISynchronousWriter<byte[]> requestWriter = new KryonetSynchronousWriter(address, requestTcpPort,
+                requestUdpPort, true);
+        final ISynchronousReader<byte[]> responseReader = new KryonetSynchronousReader(address, responseTcpPort,
+                responseUdpPort, false);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();

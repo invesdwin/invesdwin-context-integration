@@ -90,8 +90,10 @@
 		<version.jeromq>0.5.2</version.jeromq>
 		<version.jzmq>3.1.1-SNAPSHOT</version.jzmq>
 		<version.czmq-jni>4.2.2-inv</version.czmq-jni>
-
 		<version.kryonet>2.22.0-RC1</version.kryonet>
+		<version.chronicle-network>2.21ea90</version.chronicle-network>
+		<version.tomcat-jni>10.1.0-M4</version.tomcat-jni>
+		<version.netty-tcnative>2.0.41.Final</version.netty-tcnative>
 	</properties>
 
 	<dependencyManagement>
@@ -1096,12 +1098,27 @@
 				<artifactId>czmq-jni-linux-x86_64</artifactId>
 				<version>${version.czmq-jni}</version>
 			</dependency>
-			
+
 			<dependency>
-			<groupId>com.esotericsoftware</groupId>
-			<artifactId>kryonet</artifactId>
-			<version>${version.kryonet}</version>
-		</dependency>
+				<groupId>com.esotericsoftware</groupId>
+				<artifactId>kryonet</artifactId>
+				<version>${version.kryonet}</version>
+			</dependency>
+			<dependency>
+				<groupId>net.openhft</groupId>
+				<artifactId>chronicle-network</artifactId>
+				<version>${version.chronicle-network}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat</groupId>
+				<artifactId>tomcat-jni</artifactId>
+				<version>${version.tomcat-jni}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.netty</groupId>
+				<artifactId>netty-tcnative</artifactId>
+				<version>${version.netty-tcnative}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 

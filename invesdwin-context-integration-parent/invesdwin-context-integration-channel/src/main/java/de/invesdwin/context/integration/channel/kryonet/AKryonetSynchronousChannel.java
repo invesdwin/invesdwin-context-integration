@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.kryonet.connection.IKryonetConne
 import de.invesdwin.context.integration.channel.kryonet.connection.ServerTcpConnection;
 import de.invesdwin.context.integration.channel.kryonet.connection.ServerUdpConnection;
 import de.invesdwin.context.integration.channel.kryonet.connection.SynchronousMessageSerialization;
+import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public abstract class AKryonetSynchronousChannel implements ISynchronousChannel {
@@ -39,6 +40,7 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
     public void open() throws IOException {
         if (server) {
             final Server server = new Server(16384, 2048, SynchronousMessageSerialization.INSTANCE);
+            server.start();
             final InetSocketAddress tcpAddress;
             if (tcpPort >= 0) {
                 tcpAddress = new InetSocketAddress(address, tcpPort);
@@ -59,13 +61,37 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
             }
         } else {
             final Client client = new Client(8192, 2048, SynchronousMessageSerialization.INSTANCE);
-            client.connect(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS, address, tcpPort, udpPort);
+            client.start();
+            for (int tries = 0;; tries++) {
+                try {
+                    client.connect(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS, address, tcpPort, udpPort);
+                    break;
+                } catch (final IOException e) {
+                    if (tries < getMaxConnectRetries()) {
+                        try {
+                            getConnectRetryDelay().sleep();
+                        } catch (final InterruptedException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+            }
             if (udpPort >= 0) {
                 connection = new ClientUdpConnection(client);
             } else {
                 connection = new ClientTcpConnection(client);
             }
         }
+    }
+
+    protected Duration getConnectRetryDelay() {
+        return Duration.ONE_SECOND;
+    }
+
+    protected int getMaxConnectRetries() {
+        return 10;
     }
 
     @Override
