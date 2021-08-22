@@ -134,6 +134,8 @@ Network    JzmqTcp                        Records:    39.37/ms  in  253990 ms   
 Network    JeromqTcp                      Records:    41.16/ms  in  242928 ms    => ~55% slower
 Process    CzmqIpc                        Records:    45.13/ms  in  221602 ms    => ~50% slower
 Process    JzmqIpc                        Records:    55.35/ms  in  180669 ms    => ~40% slower
+Network    KryonetTcp                     Records:    66.82/ms  in  149650 ms    => ~30% slower
+Network    KryonetUdp                     Records:    87.74/ms  in  113976 ms    => ~7% slower
 Network    Socket (loopback)              Records:    94.37/ms  in   90491 ms    => using this as baseline
 Network    DatagramSocket (loopback)      Records:   113.54/ms  in   88078 ms    => ~20% faster
 Thread     CzmqInproc                     Records:   132.52/ms  in   75458 ms    => ~40% faster
