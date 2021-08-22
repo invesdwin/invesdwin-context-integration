@@ -92,8 +92,7 @@
 		<version.czmq-jni>4.2.2-inv</version.czmq-jni>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
-		<version.tomcat-jni>10.1.0-M4</version.tomcat-jni>
-		<version.netty-tcnative>2.0.41.Final</version.netty-tcnative>
+		<version.jocket>0.2.0</version.jocket>
 	</properties>
 
 	<dependencyManagement>
@@ -1110,14 +1109,9 @@
 				<version>${version.chronicle-network}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.tomcat</groupId>
-				<artifactId>tomcat-jni</artifactId>
-				<version>${version.tomcat-jni}</version>
-			</dependency>
-			<dependency>
-				<groupId>io.netty</groupId>
-				<artifactId>netty-tcnative</artifactId>
-				<version>${version.netty-tcnative}</version>
+				<groupId>com.github.pcdv.jocket</groupId>
+				<artifactId>jocket</artifactId>
+				<version>${version.jocket}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

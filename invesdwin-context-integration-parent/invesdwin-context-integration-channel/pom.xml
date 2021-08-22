@@ -72,14 +72,12 @@
 		<dependency>
 			<groupId>net.openhft</groupId>
 			<artifactId>chronicle-network</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.tomcat</groupId>
-			<artifactId>tomcat-jni</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-tcnative</artifactId>
+			<groupId>com.github.pcdv.jocket</groupId>
+			<artifactId>jocket</artifactId>
+			<scope>provided</scope>
 		</dependency>
 
 	</dependencies>
