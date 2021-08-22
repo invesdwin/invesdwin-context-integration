@@ -91,6 +91,7 @@
 		<version.jzmq>3.1.1-SNAPSHOT</version.jzmq>
 		<version.czmq-jni>4.2.2-inv</version.czmq-jni>
 
+		<version.kryonet>2.22.0-RC1</version.kryonet>
 	</properties>
 
 	<dependencyManagement>
@@ -1095,6 +1096,12 @@
 				<artifactId>czmq-jni-linux-x86_64</artifactId>
 				<version>${version.czmq-jni}</version>
 			</dependency>
+			
+			<dependency>
+			<groupId>com.esotericsoftware</groupId>
+			<artifactId>kryonet</artifactId>
+			<version>${version.kryonet}</version>
+		</dependency>
 		</dependencies>
 	</dependencyManagement>
 
