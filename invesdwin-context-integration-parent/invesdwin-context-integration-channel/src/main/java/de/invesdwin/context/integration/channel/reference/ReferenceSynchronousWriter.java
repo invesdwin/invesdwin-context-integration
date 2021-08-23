@@ -5,18 +5,18 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.concurrent.reference.DisabledReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
 
 @NotThreadSafe
 public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
-    private IMutableReference<ISynchronousMessage<M>> reference;
+    private IMutableReference<ISynchronousCommand<M>> reference;
 
-    public ReferenceSynchronousWriter(final IMutableReference<ISynchronousMessage<M>> reference) {
+    public ReferenceSynchronousWriter(final IMutableReference<ISynchronousCommand<M>> reference) {
         this.reference = reference;
     }
 
@@ -26,17 +26,17 @@ public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void close() throws IOException {
-        reference.set(EmptySynchronousMessage.getInstance());
+        reference.set(EmptySynchronousCommand.getInstance());
         reference = DisabledReference.getInstance();
     }
 
     @Override
     public void write(final int type, final int sequence, final M message) throws IOException {
-        write(new ImmutableSynchronousMessage<M>(type, sequence, message));
+        write(new ImmutableSynchronousCommand<M>(type, sequence, message));
     }
 
     @Override
-    public void write(final ISynchronousMessage<M> message) throws IOException {
+    public void write(final ISynchronousCommand<M> message) throws IOException {
         reference.set(message);
     }
 

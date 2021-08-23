@@ -1,9 +1,9 @@
-package de.invesdwin.context.integration.channel.message;
+package de.invesdwin.context.integration.channel.command;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
-public class MutableSynchronousMessage<M> implements ISynchronousMessage<M> {
+public class MutableSynchronousCommand<M> implements ISynchronousCommand<M> {
 
     protected int type;
     protected int sequence;

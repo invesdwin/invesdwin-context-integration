@@ -7,16 +7,16 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.lmax.disruptor.RingBuffer;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.MutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.MutableSynchronousCommand;
 
 @NotThreadSafe
 public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
 
-    private RingBuffer<MutableSynchronousMessage<M>> ringBuffer;
+    private RingBuffer<MutableSynchronousCommand<M>> ringBuffer;
 
-    public LmaxSynchronousWriter(final RingBuffer<MutableSynchronousMessage<M>> ringBuffer) {
+    public LmaxSynchronousWriter(final RingBuffer<MutableSynchronousCommand<M>> ringBuffer) {
         this.ringBuffer = ringBuffer;
     }
 
@@ -26,14 +26,14 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void close() throws IOException {
-        write(EmptySynchronousMessage.getInstance());
+        write(EmptySynchronousCommand.getInstance());
         ringBuffer = null;
     }
 
     @Override
     public void write(final int type, final int sequence, final M message) throws IOException {
         final long seq = ringBuffer.next(); // blocked by ringBuffer's gatingSequence
-        final MutableSynchronousMessage<M> event = ringBuffer.get(seq);
+        final MutableSynchronousCommand<M> event = ringBuffer.get(seq);
         event.setType(type);
         event.setSequence(sequence);
         event.setMessage(message);
@@ -41,7 +41,7 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public void write(final ISynchronousMessage<M> message) throws IOException {
+    public void write(final ISynchronousCommand<M> message) throws IOException {
         write(message.getType(), message.getSequence(), message.getMessage());
     }
 

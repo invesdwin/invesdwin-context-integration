@@ -8,8 +8,8 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.KryoSerialization;
 import com.esotericsoftware.kryonet.Serialization;
 
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.lang.buffer.ByteBuffers;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.math.Bytes;
@@ -38,8 +38,8 @@ public final class SynchronousMessageSerialization implements Serialization {
     @SuppressWarnings("unchecked")
     @Override
     public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
-        if (object instanceof ISynchronousMessage) {
-            final ISynchronousMessage<byte[]> cObject = (ISynchronousMessage<byte[]>) object;
+        if (object instanceof ISynchronousCommand) {
+            final ISynchronousCommand<byte[]> cObject = (ISynchronousCommand<byte[]>) object;
             final int position = ByteBuffers.wrap(buffer).putBoolean(0, false);
             buffer.position(position);
             buffer.putInt(cObject.getType());
@@ -71,7 +71,7 @@ public final class SynchronousMessageSerialization implements Serialization {
                 message = new byte[size];
                 buffer.get(message);
             }
-            return new ImmutableSynchronousMessage<byte[]>(type, sequence, message);
+            return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
         }
     }
 

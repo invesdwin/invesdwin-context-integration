@@ -1,21 +1,21 @@
-package de.invesdwin.context.integration.channel.message;
+package de.invesdwin.context.integration.channel.command;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public final class ImmutableSynchronousMessage<M> implements ISynchronousMessage<M> {
+public final class ImmutableSynchronousCommand<M> implements ISynchronousCommand<M> {
 
     private final int type;
     private final int sequence;
     private final M message;
 
-    public ImmutableSynchronousMessage(final int type, final int sequence, final M message) {
+    public ImmutableSynchronousCommand(final int type, final int sequence, final M message) {
         this.type = type;
         this.sequence = sequence;
         this.message = message;
     }
 
-    private ImmutableSynchronousMessage(final ISynchronousMessage<M> response) {
+    private ImmutableSynchronousCommand(final ISynchronousCommand<M> response) {
         this(response.getType(), response.getSequence(), response.getMessage());
     }
 
@@ -34,13 +34,13 @@ public final class ImmutableSynchronousMessage<M> implements ISynchronousMessage
         return message;
     }
 
-    public static <T> ImmutableSynchronousMessage<T> valueOf(final ISynchronousMessage<T> response) {
+    public static <T> ImmutableSynchronousCommand<T> valueOf(final ISynchronousCommand<T> response) {
         if (response == null) {
             return null;
-        } else if (response instanceof ImmutableSynchronousMessage) {
-            return (ImmutableSynchronousMessage<T>) response;
+        } else if (response instanceof ImmutableSynchronousCommand) {
+            return (ImmutableSynchronousCommand<T>) response;
         } else {
-            return new ImmutableSynchronousMessage<T>(response);
+            return new ImmutableSynchronousCommand<T>(response);
         }
     }
 

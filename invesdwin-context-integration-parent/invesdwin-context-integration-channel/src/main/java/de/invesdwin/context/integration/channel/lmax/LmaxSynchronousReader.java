@@ -9,24 +9,24 @@ import com.lmax.disruptor.EventPoller;
 import com.lmax.disruptor.RingBuffer;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
-import de.invesdwin.context.integration.channel.message.MutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
+import de.invesdwin.context.integration.channel.command.MutableSynchronousCommand;
 
 @NotThreadSafe
 public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private RingBuffer<MutableSynchronousMessage<M>> ringBuffer;
-    private EventPoller<MutableSynchronousMessage<M>> eventPoller;
-    private ImmutableSynchronousMessage<M> polledValue;
+    private RingBuffer<MutableSynchronousCommand<M>> ringBuffer;
+    private EventPoller<MutableSynchronousCommand<M>> eventPoller;
+    private ImmutableSynchronousCommand<M> polledValue;
 
-    private final EventPoller.Handler<MutableSynchronousMessage<M>> pollerHandler = (event, sequence, endOfBatch) -> {
-        polledValue = ImmutableSynchronousMessage.valueOf(event);
+    private final EventPoller.Handler<MutableSynchronousCommand<M>> pollerHandler = (event, sequence, endOfBatch) -> {
+        polledValue = ImmutableSynchronousCommand.valueOf(event);
         return false;
     };
 
-    public LmaxSynchronousReader(final RingBuffer<MutableSynchronousMessage<M>> ringBuffer) {
+    public LmaxSynchronousReader(final RingBuffer<MutableSynchronousCommand<M>> ringBuffer) {
         this.ringBuffer = ringBuffer;
         this.eventPoller = ringBuffer.newPoller();
         ringBuffer.addGatingSequences(eventPoller.getSequence());
@@ -56,25 +56,25 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousMessage<M> readMessage() throws IOException {
-        final ISynchronousMessage<M> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousMessage.TYPE) {
+    public ISynchronousCommand<M> readMessage() throws IOException {
+        final ISynchronousCommand<M> message = getPolledMessage();
+        if (message.getType() == EmptySynchronousCommand.TYPE) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousMessage<M> getPolledMessage() {
+    private ISynchronousCommand<M> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousMessage<M> value = polledValue;
+            final ImmutableSynchronousCommand<M> value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             final EventPoller.PollState poll = eventPoller.poll(pollerHandler);
             if (poll == EventPoller.PollState.PROCESSING) {
-                final ImmutableSynchronousMessage<M> value = polledValue;
+                final ImmutableSynchronousCommand<M> value = polledValue;
                 polledValue = null;
                 return value;
             } else {

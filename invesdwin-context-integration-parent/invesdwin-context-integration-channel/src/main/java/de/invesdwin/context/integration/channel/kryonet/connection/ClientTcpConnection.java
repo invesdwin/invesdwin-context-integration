@@ -7,7 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import com.esotericsoftware.kryonet.Client;
 import com.esotericsoftware.kryonet.Listener;
 
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 
 @Immutable
 public class ClientTcpConnection implements IKryonetConnection {
@@ -24,7 +24,7 @@ public class ClientTcpConnection implements IKryonetConnection {
     }
 
     @Override
-    public void send(final ISynchronousMessage<byte[]> message) {
+    public void send(final ISynchronousCommand<byte[]> message) {
         client.sendTCP(message);
     }
 

@@ -8,17 +8,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.conversantmedia.util.concurrent.ConcurrentQueue;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.assertions.Assertions;
 
 @NotThreadSafe
 public class ConversantSynchronousWriter<M> implements ISynchronousWriter<M> {
 
-    private ConcurrentQueue<ISynchronousMessage<M>> queue;
+    private ConcurrentQueue<ISynchronousCommand<M>> queue;
 
-    public ConversantSynchronousWriter(final ConcurrentQueue<ISynchronousMessage<M>> queue) {
+    public ConversantSynchronousWriter(final ConcurrentQueue<ISynchronousCommand<M>> queue) {
         Assertions.assertThat(queue)
                 .as("this implementation does not support non-blocking calls")
                 .isNotInstanceOf(SynchronousQueue.class);
@@ -31,17 +31,17 @@ public class ConversantSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void close() throws IOException {
-        queue.offer(EmptySynchronousMessage.getInstance());
+        queue.offer(EmptySynchronousCommand.getInstance());
         queue = null;
     }
 
     @Override
     public void write(final int type, final int sequence, final M message) throws IOException {
-        queue.offer(new ImmutableSynchronousMessage<M>(type, sequence, message));
+        queue.offer(new ImmutableSynchronousCommand<M>(type, sequence, message));
     }
 
     @Override
-    public void write(final ISynchronousMessage<M> message) throws IOException {
+    public void write(final ISynchronousCommand<M> message) throws IOException {
         queue.offer(message);
     }
 

@@ -7,7 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 
 @Immutable
 public class ServerUdpConnection implements IKryonetConnection {
@@ -24,7 +24,7 @@ public class ServerUdpConnection implements IKryonetConnection {
     }
 
     @Override
-    public void send(final ISynchronousMessage<byte[]> message) {
+    public void send(final ISynchronousCommand<byte[]> message) {
         server.sendToAllUDP(message);
     }
 

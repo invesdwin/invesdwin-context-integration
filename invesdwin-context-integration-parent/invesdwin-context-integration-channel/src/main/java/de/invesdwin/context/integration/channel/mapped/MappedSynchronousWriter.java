@@ -7,7 +7,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.
@@ -52,7 +52,7 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
     }
 
     @Override
-    public void write(final ISynchronousMessage<byte[]> message) throws IOException {
+    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
         write(message.getType(), message.getSequence(), message.getMessage());
     }
 

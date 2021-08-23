@@ -7,9 +7,9 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.math.Bytes;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
@@ -46,9 +46,9 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel imp
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() throws IOException {
+    public ISynchronousCommand<byte[]> readMessage() throws IOException {
         final int type = bytes.readInt();
-        if (type == EmptySynchronousMessage.TYPE) {
+        if (type == EmptySynchronousCommand.TYPE) {
             close();
             throw new EOFException("closed by other side");
         }
@@ -61,7 +61,7 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel imp
             message = new byte[size];
             bytes.read(message);
         }
-        return new ImmutableSynchronousMessage<byte[]>(type, sequence, message);
+        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
     }
 
 }

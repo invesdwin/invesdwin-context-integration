@@ -6,8 +6,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
@@ -29,7 +29,7 @@ public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel imp
     @Override
     public void close() throws IOException {
         if (appender != null) {
-            write(EmptySynchronousMessage.getInstance());
+            write(EmptySynchronousCommand.getInstance());
             appender.close();
             appender = null;
         }
@@ -52,7 +52,7 @@ public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel imp
     }
 
     @Override
-    public void write(final ISynchronousMessage<byte[]> message) throws IOException {
+    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
         write(message.getType(), message.getSequence(), message.getMessage());
     }
 

@@ -1,18 +1,18 @@
-package de.invesdwin.context.integration.channel.message;
+package de.invesdwin.context.integration.channel.command;
 
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public class EmptySynchronousMessage<M> implements ISynchronousMessage<M> {
+public class EmptySynchronousCommand<M> implements ISynchronousCommand<M> {
 
     public static final int TYPE = -1;
     public static final int SEQUENCE = -1;
 
     @SuppressWarnings("rawtypes")
-    private static final EmptySynchronousMessage INSTANCE = new EmptySynchronousMessage<>();
+    private static final EmptySynchronousCommand INSTANCE = new EmptySynchronousCommand<>();
 
     @SuppressWarnings("unchecked")
-    public static <T> EmptySynchronousMessage<T> getInstance() {
+    public static <T> EmptySynchronousCommand<T> getInstance() {
         return INSTANCE;
     }
 

@@ -9,16 +9,16 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.conversantmedia.util.concurrent.ConcurrentQueue;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.assertions.Assertions;
 
 @NotThreadSafe
 public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private ConcurrentQueue<ISynchronousMessage<M>> queue;
+    private ConcurrentQueue<ISynchronousCommand<M>> queue;
 
-    public ConversantSynchronousReader(final ConcurrentQueue<ISynchronousMessage<M>> queue) {
+    public ConversantSynchronousReader(final ConcurrentQueue<ISynchronousCommand<M>> queue) {
         Assertions.assertThat(queue)
                 .as("this implementation does not support non-blocking calls")
                 .isNotInstanceOf(SynchronousQueue.class);
@@ -40,9 +40,9 @@ public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousMessage<M> readMessage() throws IOException {
-        final ISynchronousMessage<M> message = queue.poll();
-        if (message == EmptySynchronousMessage.getInstance()) {
+    public ISynchronousCommand<M> readMessage() throws IOException {
+        final ISynchronousCommand<M> message = queue.poll();
+        if (message == EmptySynchronousCommand.getInstance()) {
             close();
             throw new EOFException("closed by other side");
         }

@@ -7,8 +7,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 
 /**
  * There can be multiple readers per file, but it is better to only have one.
@@ -56,9 +56,9 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() {
+    public ISynchronousCommand<byte[]> readMessage() {
         lastTransaction = getTransaction();
-        return new ImmutableSynchronousMessage<byte[]>(getType(), getSequence(), getMessage());
+        return new ImmutableSynchronousCommand<byte[]>(getType(), getSequence(), getMessage());
     }
 
 }

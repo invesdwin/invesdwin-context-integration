@@ -9,8 +9,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.assertions.Assertions;
 
 @NotThreadSafe
@@ -47,7 +47,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() throws IOException {
+    public ISynchronousCommand<byte[]> readMessage() throws IOException {
         Assertions.checkTrue(read(typeBuffer));
         final int type = TYPE_SERDE.fromBytes(typeBuffer);
         if (type == TYPE_CLOSED_VALUE) {
@@ -61,7 +61,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         if (size > 0) {
             Assertions.checkTrue(read(message));
         }
-        return new ImmutableSynchronousMessage<byte[]>(type, sequence, message);
+        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
     }
 
     private boolean read(final byte[] buffer) throws IOException {

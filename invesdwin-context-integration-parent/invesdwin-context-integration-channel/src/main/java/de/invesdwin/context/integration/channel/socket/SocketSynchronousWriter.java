@@ -7,7 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.math.Bytes;
 
 @NotThreadSafe
@@ -64,7 +64,7 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
     }
 
     @Override
-    public void write(final ISynchronousMessage<byte[]> message) throws IOException {
+    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
         write(message.getType(), message.getSequence(), message.getMessage());
     }
 

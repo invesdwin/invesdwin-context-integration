@@ -10,9 +10,9 @@ import org.zeromq.czmq.Zframe;
 import org.zeromq.czmq.Zpoller;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketFactory;
 import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketType;
 import de.invesdwin.util.math.Bytes;
@@ -20,7 +20,7 @@ import de.invesdwin.util.math.Bytes;
 @NotThreadSafe
 public class CzmqSynchronousReader extends ACzmqSynchronousChannel implements ISynchronousReader<byte[]> {
 
-    private ImmutableSynchronousMessage<byte[]> polledValue;
+    private ImmutableSynchronousCommand<byte[]> polledValue;
     private Zpoller poller;
 
     public CzmqSynchronousReader(final ICzmqSocketType socketType, final String addr, final boolean server) {
@@ -56,18 +56,18 @@ public class CzmqSynchronousReader extends ACzmqSynchronousChannel implements IS
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() throws IOException {
-        final ISynchronousMessage<byte[]> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousMessage.TYPE) {
+    public ISynchronousCommand<byte[]> readMessage() throws IOException {
+        final ISynchronousCommand<byte[]> message = getPolledMessage();
+        if (message.getType() == EmptySynchronousCommand.TYPE) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousMessage<byte[]> getPolledMessage() {
+    private ISynchronousCommand<byte[]> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousMessage<byte[]> value = polledValue;
+            final ImmutableSynchronousCommand<byte[]> value = polledValue;
             polledValue = null;
             return value;
         }
@@ -78,7 +78,7 @@ public class CzmqSynchronousReader extends ACzmqSynchronousChannel implements IS
         }
     }
 
-    private ImmutableSynchronousMessage<byte[]> poll() throws IOException {
+    private ImmutableSynchronousCommand<byte[]> poll() throws IOException {
         //        final long socketPointer = poller.Wait(0);
         //        if (socketPointer != socket.self) {
         //            if (poller.expired()) {
@@ -107,7 +107,7 @@ public class CzmqSynchronousReader extends ACzmqSynchronousChannel implements IS
                 message = new byte[size];
                 buf.get(messageIndex, message);
             }
-            return new ImmutableSynchronousMessage<byte[]>(type, sequence, message);
+            return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
         }
     }
 

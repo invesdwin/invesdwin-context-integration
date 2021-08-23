@@ -10,14 +10,14 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 
 @NotThreadSafe
 public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<byte[]> {
 
-    private ImmutableSynchronousMessage<byte[]> polledValue;
+    private ImmutableSynchronousCommand<byte[]> polledValue;
 
     public KryonetSynchronousReader(final InetAddress address, final int tcpPort, final int udpPort,
             final boolean server) {
@@ -31,8 +31,8 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
             @SuppressWarnings("unchecked")
             @Override
             public void received(final Connection connection, final Object object) {
-                if (object instanceof ImmutableSynchronousMessage) {
-                    polledValue = (ImmutableSynchronousMessage<byte[]>) object;
+                if (object instanceof ImmutableSynchronousCommand) {
+                    polledValue = (ImmutableSynchronousCommand<byte[]>) object;
                 }
             }
         });
@@ -44,24 +44,24 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() throws IOException {
-        final ISynchronousMessage<byte[]> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousMessage.TYPE) {
+    public ISynchronousCommand<byte[]> readMessage() throws IOException {
+        final ISynchronousCommand<byte[]> message = getPolledMessage();
+        if (message.getType() == EmptySynchronousCommand.TYPE) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousMessage<byte[]> getPolledMessage() {
+    private ISynchronousCommand<byte[]> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousMessage<byte[]> value = polledValue;
+            final ImmutableSynchronousCommand<byte[]> value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             if (polledValue != null) {
-                final ImmutableSynchronousMessage<byte[]> value = polledValue;
+                final ImmutableSynchronousCommand<byte[]> value = polledValue;
                 polledValue = null;
                 return value;
             } else {

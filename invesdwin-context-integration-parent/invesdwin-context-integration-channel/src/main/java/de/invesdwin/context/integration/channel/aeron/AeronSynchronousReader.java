@@ -6,9 +6,9 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ImmutableSynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.math.Bytes;
 import io.aeron.FragmentAssembler;
 import io.aeron.Subscription;
@@ -28,10 +28,10 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
             message = new byte[size];
             buffer.getBytes(offset + MESSAGE_INDEX, message);
         }
-        polledValue = new ImmutableSynchronousMessage<byte[]>(type, sequence, message);
+        polledValue = new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
     });
 
-    private ImmutableSynchronousMessage<byte[]> polledValue;
+    private ImmutableSynchronousCommand<byte[]> polledValue;
     private Subscription subscription;
 
     public AeronSynchronousReader(final String channel, final int streamId) {
@@ -63,25 +63,25 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
     }
 
     @Override
-    public ISynchronousMessage<byte[]> readMessage() throws IOException {
-        final ISynchronousMessage<byte[]> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousMessage.TYPE) {
+    public ISynchronousCommand<byte[]> readMessage() throws IOException {
+        final ISynchronousCommand<byte[]> message = getPolledMessage();
+        if (message.getType() == EmptySynchronousCommand.TYPE) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousMessage<byte[]> getPolledMessage() {
+    private ISynchronousCommand<byte[]> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousMessage<byte[]> value = polledValue;
+            final ImmutableSynchronousCommand<byte[]> value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             final int fragmentsRead = subscription.poll(fragmentHandler, 1);
             if (fragmentsRead == 1) {
-                final ImmutableSynchronousMessage<byte[]> value = polledValue;
+                final ImmutableSynchronousCommand<byte[]> value = polledValue;
                 polledValue = null;
                 return value;
             } else {

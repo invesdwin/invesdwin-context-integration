@@ -10,8 +10,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.zeromq.czmq.Zframe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.message.EmptySynchronousMessage;
-import de.invesdwin.context.integration.channel.message.ISynchronousMessage;
+import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
+import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketFactory;
 import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketType;
 import de.invesdwin.util.math.Bytes;
@@ -37,7 +37,7 @@ public class CzmqSynchronousWriter extends ACzmqSynchronousChannel implements IS
     public void close() throws IOException {
         if (socket != null) {
             try {
-                write(EmptySynchronousMessage.getInstance());
+                write(EmptySynchronousCommand.getInstance());
             } catch (final Throwable t) {
                 //ignore
             }
@@ -103,7 +103,7 @@ public class CzmqSynchronousWriter extends ACzmqSynchronousChannel implements IS
     }
 
     @Override
-    public void write(final ISynchronousMessage<byte[]> message) throws IOException {
+    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
         write(message.getType(), message.getSequence(), message.getMessage());
     }
 
