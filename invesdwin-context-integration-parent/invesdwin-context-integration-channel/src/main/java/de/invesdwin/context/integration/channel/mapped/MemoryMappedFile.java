@@ -26,7 +26,7 @@ public class MemoryMappedFile {
     private static final Method UNMMAP;
     private static final int BYTE_ARRAY_OFFSET;
 
-    private long addr;
+    private final long address;
     private final long size;
     private final String loc;
 
@@ -54,7 +54,15 @@ public class MemoryMappedFile {
     public MemoryMappedFile(final String loc, final long len) throws Exception {
         this.loc = loc;
         this.size = roundTo4096(len);
-        mapAndSetOffset();
+        this.address = mapAndSetOffset();
+    }
+
+    public long getAddress() {
+        return address;
+    }
+
+    public long getSize() {
+        return size;
     }
 
     @FunctionalInterface
@@ -87,17 +95,18 @@ public class MemoryMappedFile {
         return (i + 0xfffL) & ~0xfffL;
     }
 
-    private void mapAndSetOffset() throws Exception {
+    private long mapAndSetOffset() throws Exception {
         final RandomAccessFile backingFile = new RandomAccessFile(this.loc, "rw");
         backingFile.setLength(this.size);
         final FileChannel ch = backingFile.getChannel();
-        this.addr = MMAP.map0(ch, 1, 0L, this.size);
+        final long address = MMAP.map0(ch, 1, 0L, this.size);
         ch.close();
         backingFile.close();
+        return address;
     }
 
     public void unmap() throws Exception {
-        UNMMAP.invoke(null, addr, this.size);
+        UNMMAP.invoke(null, address, this.size);
     }
 
     /**
@@ -108,7 +117,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public byte getByte(final long pos) {
-        return UNSAFE.getByte(pos + addr);
+        return UNSAFE.getByte(pos + address);
     }
 
     /**
@@ -119,7 +128,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public byte getByteVolatile(final long pos) {
-        return UNSAFE.getByteVolatile(null, pos + addr);
+        return UNSAFE.getByteVolatile(null, pos + address);
     }
 
     /**
@@ -130,7 +139,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public int getInt(final long pos) {
-        return UNSAFE.getInt(pos + addr);
+        return UNSAFE.getInt(pos + address);
     }
 
     /**
@@ -141,7 +150,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public int getIntVolatile(final long pos) {
-        return UNSAFE.getIntVolatile(null, pos + addr);
+        return UNSAFE.getIntVolatile(null, pos + address);
     }
 
     /**
@@ -152,7 +161,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public long getLong(final long pos) {
-        return UNSAFE.getLong(pos + addr);
+        return UNSAFE.getLong(pos + address);
     }
 
     /**
@@ -163,7 +172,7 @@ public class MemoryMappedFile {
      * @return the value read
      */
     public long getLongVolatile(final long pos) {
-        return UNSAFE.getLongVolatile(null, pos + addr);
+        return UNSAFE.getLongVolatile(null, pos + address);
     }
 
     /**
@@ -175,7 +184,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putByte(final long pos, final byte val) {
-        UNSAFE.putByte(pos + addr, val);
+        UNSAFE.putByte(pos + address, val);
     }
 
     /**
@@ -187,7 +196,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putByteVolatile(final long pos, final byte val) {
-        UNSAFE.putByteVolatile(null, pos + addr, val);
+        UNSAFE.putByteVolatile(null, pos + address, val);
     }
 
     /**
@@ -199,7 +208,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putInt(final long pos, final int val) {
-        UNSAFE.putInt(pos + addr, val);
+        UNSAFE.putInt(pos + address, val);
     }
 
     /**
@@ -211,7 +220,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putIntVolatile(final long pos, final int val) {
-        UNSAFE.putIntVolatile(null, pos + addr, val);
+        UNSAFE.putIntVolatile(null, pos + address, val);
     }
 
     /**
@@ -223,7 +232,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putLong(final long pos, final long val) {
-        UNSAFE.putLong(pos + addr, val);
+        UNSAFE.putLong(pos + address, val);
     }
 
     /**
@@ -235,7 +244,7 @@ public class MemoryMappedFile {
      *            the value to write
      */
     public void putLongVolatile(final long pos, final long val) {
-        UNSAFE.putLongVolatile(null, pos + addr, val);
+        UNSAFE.putLongVolatile(null, pos + address, val);
     }
 
     /**
@@ -251,7 +260,7 @@ public class MemoryMappedFile {
      *            the length of the data
      */
     public void getBytes(final long pos, final byte[] data, final int offset, final int length) {
-        UNSAFE.copyMemory(null, pos + addr, data, BYTE_ARRAY_OFFSET + offset, length);
+        UNSAFE.copyMemory(null, pos + address, data, BYTE_ARRAY_OFFSET + offset, length);
     }
 
     /**
@@ -267,18 +276,18 @@ public class MemoryMappedFile {
      *            the length of the data
      */
     public void setBytes(final long pos, final byte[] data, final int offset, final int length) {
-        UNSAFE.copyMemory(data, BYTE_ARRAY_OFFSET + offset, null, pos + addr, length);
+        UNSAFE.copyMemory(data, BYTE_ARRAY_OFFSET + offset, null, pos + address, length);
     }
 
     public boolean compareAndSwapInt(final long pos, final int expected, final int value) {
-        return UNSAFE.compareAndSwapInt(null, pos + addr, expected, value);
+        return UNSAFE.compareAndSwapInt(null, pos + address, expected, value);
     }
 
     public boolean compareAndSwapLong(final long pos, final long expected, final long value) {
-        return UNSAFE.compareAndSwapLong(null, pos + addr, expected, value);
+        return UNSAFE.compareAndSwapLong(null, pos + address, expected, value);
     }
 
     public long getAndAddLong(final long pos, final long delta) {
-        return UNSAFE.getAndAddLong(null, pos + addr, delta);
+        return UNSAFE.getAndAddLong(null, pos + address, delta);
     }
 }
