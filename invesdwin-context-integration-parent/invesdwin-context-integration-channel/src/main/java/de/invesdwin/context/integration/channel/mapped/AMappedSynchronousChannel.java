@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.context.integration.serde.basic.IntegerSerde;
+import de.invesdwin.util.marshallers.serde.basic.IntegerSerde;
 
 @NotThreadSafe
 public abstract class AMappedSynchronousChannel implements ISynchronousChannel {

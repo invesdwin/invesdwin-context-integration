@@ -11,8 +11,8 @@ import java.nio.ByteBuffer;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.context.integration.serde.ISerde;
-import de.invesdwin.context.integration.serde.basic.IntegerSerde;
+import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.marshallers.serde.basic.IntegerSerde;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
