@@ -40,7 +40,8 @@ public final class SynchronousMessageSerialization implements Serialization {
     public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
         if (object instanceof ISynchronousCommand) {
             final ISynchronousCommand<byte[]> cObject = (ISynchronousCommand<byte[]>) object;
-            final int position = ByteBuffers.wrap(buffer).putBoolean(0, false);
+            ByteBuffers.wrap(buffer).putBoolean(0, false);
+            final int position = Booleans.BYTES;
             buffer.position(position);
             buffer.putInt(cObject.getType());
             buffer.putInt(cObject.getSequence());
@@ -49,7 +50,8 @@ public final class SynchronousMessageSerialization implements Serialization {
                 buffer.put(message);
             }
         } else {
-            final int position = ByteBuffers.wrap(buffer).putBoolean(0, true);
+            ByteBuffers.wrap(buffer).putBoolean(0, true);
+            final int position = Booleans.BYTES;
             buffer.position(position);
             DELEGATE.write(connection, buffer, object);
         }
