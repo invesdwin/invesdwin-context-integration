@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jzmq;
+package de.invesdwin.context.integration.channel.zeromq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -7,26 +7,29 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.zeromq.api.MessageFlag;
+import org.zeromq.api.SocketType;
+
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.zeromq.ZeromqFlags;
-import de.invesdwin.context.integration.channel.zeromq.jzmq.type.IJzmqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
+import zmq.ZError;
 
 @NotThreadSafe
-public class JzmqSynchronousWriter extends AJzmqSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<byte[]> {
 
     private static final double BUFFER_GROWTH_FACTOR = 1.25;
     private byte[] bytes = Bytes.EMPTY_ARRAY;
     private ByteBuffer buffer;
 
-    public JzmqSynchronousWriter(final IJzmqSocketType socketType, final String addr, final boolean server) {
+    public JeromqSynchronousWriter(final IJeromqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getWriterSocketType(), addr, server);
     }
 
-    public JzmqSynchronousWriter(final int socketType, final String addr, final boolean server) {
+    public JeromqSynchronousWriter(final SocketType socketType, final String addr, final boolean server) {
         super(socketType, addr, server);
     }
 
@@ -80,10 +83,14 @@ public class JzmqSynchronousWriter extends AJzmqSynchronousChannel implements IS
     }
 
     private boolean sendTry(final int size) throws IOException, EOFException {
-        final boolean sent = socket.send(bytes, 0, size, ZeromqFlags.DONTWAIT);
+        final boolean sent = socket.send(bytes, 0, size, MessageFlag.DONT_WAIT);
         if (!sent) {
-            //maybe backpressure
-            return false;
+            if (socket.getZMQSocket().errno() == ZError.EAGAIN) {
+                //backpressure
+                return false;
+            }
+            close();
+            throw new EOFException("closed by other side");
         }
         return true;
     }

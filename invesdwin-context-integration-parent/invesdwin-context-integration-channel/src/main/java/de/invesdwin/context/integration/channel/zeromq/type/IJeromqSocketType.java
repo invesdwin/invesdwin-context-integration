@@ -1,6 +1,6 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq.type;
+package de.invesdwin.context.integration.channel.zeromq.type;
 
-import org.zeromq.SocketType;
+import org.zeromq.api.SocketType;
 
 public interface IJeromqSocketType {
 

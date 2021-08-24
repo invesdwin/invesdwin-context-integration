@@ -41,27 +41,9 @@
 			<artifactId>aeron-driver</artifactId>
 			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>org.zeromq</groupId>
-			<artifactId>jeromq</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<!-- you need to install the native library manually -->
-			<groupId>org.zeromq</groupId>
-			<artifactId>jzmq</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.zeromq.czmq</groupId>
-			<artifactId>czmq-jni</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.zeromq.czmq</groupId>
-			<artifactId>czmq-jni-linux-x86_64</artifactId>
-			<scope>provided</scope>
+			<artifactId>jzmq-api</artifactId>
 		</dependency>
 
 		<dependency>

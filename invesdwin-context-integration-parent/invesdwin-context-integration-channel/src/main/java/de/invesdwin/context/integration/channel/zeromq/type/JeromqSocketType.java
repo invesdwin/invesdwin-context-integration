@@ -1,8 +1,8 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq.type;
+package de.invesdwin.context.integration.channel.zeromq.type;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.zeromq.SocketType;
+import org.zeromq.api.SocketType;
 
 @Immutable
 public enum JeromqSocketType implements IJeromqSocketType {

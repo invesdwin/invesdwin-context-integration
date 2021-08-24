@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.zeromq.jeromq;
+package de.invesdwin.context.integration.channel.zeromq;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -6,16 +6,16 @@ import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeromq.SocketType;
+import org.zeromq.api.MessageFlag;
+import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
-import de.invesdwin.context.integration.channel.zeromq.ZeromqErrors;
-import de.invesdwin.context.integration.channel.zeromq.ZeromqFlags;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.type.IJeromqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.math.Bytes;
+import zmq.ZError;
 
 @NotThreadSafe
 public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<byte[]> {
@@ -63,9 +63,9 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
     }
 
     private ImmutableSynchronousCommand<byte[]> poll() throws IOException {
-        final byte[] recv = socket.recv(ZeromqFlags.DONTWAIT);
+        final byte[] recv = socket.receive(MessageFlag.DONT_WAIT);
         if (recv == null) {
-            if (socket.errno() != ZeromqErrors.EAGAIN) {
+            if (socket.getZMQSocket().errno() != ZError.EAGAIN) {
                 close();
                 throw new EOFException("closed by other side");
             }

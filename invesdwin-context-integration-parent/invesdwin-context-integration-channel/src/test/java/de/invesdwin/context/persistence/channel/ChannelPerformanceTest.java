@@ -64,18 +64,10 @@ import de.invesdwin.context.integration.channel.socket.SocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.SocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.zeromq.czmq.CzmqSynchronousReader;
-import de.invesdwin.context.integration.channel.zeromq.czmq.CzmqSynchronousWriter;
-import de.invesdwin.context.integration.channel.zeromq.czmq.type.CzmqSocketType;
-import de.invesdwin.context.integration.channel.zeromq.czmq.type.ICzmqSocketType;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.JeromqSynchronousReader;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.JeromqSynchronousWriter;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.type.IJeromqSocketType;
-import de.invesdwin.context.integration.channel.zeromq.jeromq.type.JeromqSocketType;
-import de.invesdwin.context.integration.channel.zeromq.jzmq.JzmqSynchronousReader;
-import de.invesdwin.context.integration.channel.zeromq.jzmq.JzmqSynchronousWriter;
-import de.invesdwin.context.integration.channel.zeromq.jzmq.type.IJzmqSocketType;
-import de.invesdwin.context.integration.channel.zeromq.jzmq.type.JzmqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.JeromqSynchronousReader;
+import de.invesdwin.context.integration.channel.zeromq.JeromqSynchronousWriter;
+import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
+import de.invesdwin.context.integration.channel.zeromq.type.JeromqSocketType;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
@@ -116,7 +108,7 @@ public class ChannelPerformanceTest extends ATest {
     private static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     private static final int MESSAGE_TYPE = 1;
     private static final int MESSAGE_SEQUENCE = 1;
-    private static final int VALUES = DEBUG ? 10 : 10_000_000;
+    private static final int VALUES = DEBUG ? 10 : 1_000_000;
     private static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
@@ -695,130 +687,6 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousWriter<byte[]> requestWriter = new JeromqSynchronousWriter(socketType, requestChannel, false);
         final ISynchronousReader<byte[]> responseReader = new JeromqSynchronousReader(socketType, responseChannel,
                 false);
-        read(requestWriter, responseReader);
-        executor.shutdown();
-        executor.awaitTermination();
-    }
-
-    @Test
-    public void testCzmqTcpPairPerformance() throws InterruptedException {
-        final String responseChannel = "tcp://127.0.0.1:7878";
-        final String requestChannel = "tcp://127.0.0.1:7879";
-        runCzmqPerformanceTest(CzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqTcpPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "tcp://127.0.0.1:7878";
-        final String requestChannel = "tcp://127.0.0.1:7879";
-        runCzmqPerformanceTest(CzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqIpcPairPerformance() throws InterruptedException {
-        final String responseChannel = "ipc://response";
-        final String requestChannel = "ipc://request";
-        runCzmqPerformanceTest(CzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqIpcPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "ipc://response";
-        final String requestChannel = "ipc://request";
-        runCzmqPerformanceTest(CzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqInprocPairPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runCzmqPerformanceTest(CzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqInprocPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runCzmqPerformanceTest(CzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testCzmqInprocPubSubPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runCzmqPerformanceTest(CzmqSocketType.PUBSUB, responseChannel, requestChannel);
-    }
-
-    private void runCzmqPerformanceTest(final ICzmqSocketType socketType, final String responseChannel,
-            final String requestChannel) throws InterruptedException {
-        final ISynchronousWriter<byte[]> responseWriter = new CzmqSynchronousWriter(socketType, responseChannel, true);
-        final ISynchronousReader<byte[]> requestReader = new CzmqSynchronousReader(socketType, requestChannel, false);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<byte[]> requestWriter = new CzmqSynchronousWriter(socketType, requestChannel, true);
-        final ISynchronousReader<byte[]> responseReader = new CzmqSynchronousReader(socketType, responseChannel, false);
-        read(requestWriter, responseReader);
-        executor.shutdown();
-        executor.awaitTermination();
-    }
-
-    @Test
-    public void testJzmqTcpPairPerformance() throws InterruptedException {
-        final String responseChannel = "tcp://127.0.0.1:7878";
-        final String requestChannel = "tcp://127.0.0.1:7879";
-        runJzmqPerformanceTest(JzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqTcpPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "tcp://127.0.0.1:7878";
-        final String requestChannel = "tcp://127.0.0.1:7879";
-        runJzmqPerformanceTest(JzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqIpcPairPerformance() throws InterruptedException {
-        final String responseChannel = "ipc://response";
-        final String requestChannel = "ipc://request";
-        runJzmqPerformanceTest(JzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqIpcPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "ipc://response";
-        final String requestChannel = "ipc://request";
-        runJzmqPerformanceTest(JzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqInprocPairPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runJzmqPerformanceTest(JzmqSocketType.PAIR, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqInprocPushPullPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runJzmqPerformanceTest(JzmqSocketType.PUSHPULL, responseChannel, requestChannel);
-    }
-
-    @Test
-    public void testJzmqInprocPubSubPerformance() throws InterruptedException {
-        final String responseChannel = "inproc://response";
-        final String requestChannel = "inproc://request";
-        runJzmqPerformanceTest(JzmqSocketType.PUBSUB, responseChannel, requestChannel);
-    }
-
-    private void runJzmqPerformanceTest(final IJzmqSocketType socketType, final String responseChannel,
-            final String requestChannel) throws InterruptedException {
-        final ISynchronousWriter<byte[]> responseWriter = new JzmqSynchronousWriter(socketType, responseChannel, true);
-        final ISynchronousReader<byte[]> requestReader = new JzmqSynchronousReader(socketType, requestChannel, true);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<byte[]> requestWriter = new JzmqSynchronousWriter(socketType, requestChannel, false);
-        final ISynchronousReader<byte[]> responseReader = new JzmqSynchronousReader(socketType, responseChannel, false);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
