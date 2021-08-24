@@ -1,13 +1,15 @@
 package de.invesdwin.context.integration.channel.mapped;
 
 import java.io.RandomAccessFile;
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
+import java.nio.channels.FileChannel.MapMode;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.BufferUtil;
+import org.agrona.IoUtil;
+
 import de.invesdwin.instrument.DynamicInstrumentationReflections;
-import de.invesdwin.util.lang.reflection.Reflections;
 
 /**
  * Class for direct access to a memory mapped file.
@@ -22,24 +24,10 @@ import de.invesdwin.util.lang.reflection.Reflections;
 public class MemoryMappedFile {
 
     private static final sun.misc.Unsafe UNSAFE = DynamicInstrumentationReflections.getUnsafe();
-    private static final IMap0Invoker MMAP;
-    private static final Method UNMMAP;
-    private static final int BYTE_ARRAY_OFFSET;
 
     private final long address;
     private final long size;
     private final String loc;
-
-    static {
-        try {
-            final Class<Object> fileChannelImplClass = Reflections.classForName("sun.nio.ch.FileChannelImpl");
-            MMAP = getMmap(fileChannelImplClass);
-            UNMMAP = getMethod(fileChannelImplClass, "unmap0", long.class, long.class);
-            BYTE_ARRAY_OFFSET = UNSAFE.arrayBaseOffset(byte[].class);
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * Constructs a new memory mapped file.
@@ -65,32 +53,6 @@ public class MemoryMappedFile {
         return size;
     }
 
-    @FunctionalInterface
-    private interface IMap0Invoker {
-        long map0(FileChannel channel, int prot, long position, long length) throws Exception;
-    }
-
-    private static IMap0Invoker getMmap(final Class<Object> fileChannelImplClass) throws Exception {
-        try {
-            //java < 14
-            final Method method = getMethod(fileChannelImplClass, "map0", int.class, long.class, long.class);
-            return (channel, prot, position, length) -> (long) method.invoke(channel, prot, position, length);
-        } catch (final Throwable t) {
-            //java >= 14
-            final Method method = getMethod(fileChannelImplClass, "map0", int.class, long.class, long.class,
-                    boolean.class);
-            //https://github.com/OpenHFT/Chronicle-Core/blob/ea/src/main/java/net/openhft/chronicle/core/OS.java they also use sync=false
-            final boolean isSync = false;
-            return (channel, prot, position, length) -> (long) method.invoke(channel, prot, position, length, isSync);
-        }
-    }
-
-    private static Method getMethod(final Class<?> cls, final String name, final Class<?>... params) throws Exception {
-        final Method m = cls.getDeclaredMethod(name, params);
-        m.setAccessible(true);
-        return m;
-    }
-
     private static long roundTo4096(final long i) {
         return (i + 0xfffL) & ~0xfffL;
     }
@@ -99,14 +61,14 @@ public class MemoryMappedFile {
         final RandomAccessFile backingFile = new RandomAccessFile(this.loc, "rw");
         backingFile.setLength(this.size);
         final FileChannel ch = backingFile.getChannel();
-        final long address = MMAP.map0(ch, 1, 0L, this.size);
+        final long address = IoUtil.map(ch, MapMode.READ_WRITE, 0L, this.size);
         ch.close();
         backingFile.close();
         return address;
     }
 
     public void unmap() throws Exception {
-        UNMMAP.invoke(null, address, this.size);
+        IoUtil.unmap(null, address, this.size);
     }
 
     /**
@@ -260,7 +222,7 @@ public class MemoryMappedFile {
      *            the length of the data
      */
     public void getBytes(final long pos, final byte[] data, final int offset, final int length) {
-        UNSAFE.copyMemory(null, pos + address, data, BYTE_ARRAY_OFFSET + offset, length);
+        UNSAFE.copyMemory(null, pos + address, data, BufferUtil.ARRAY_BASE_OFFSET + offset, length);
     }
 
     /**
@@ -276,7 +238,7 @@ public class MemoryMappedFile {
      *            the length of the data
      */
     public void setBytes(final long pos, final byte[] data, final int offset, final int length) {
-        UNSAFE.copyMemory(data, BYTE_ARRAY_OFFSET + offset, null, pos + address, length);
+        UNSAFE.copyMemory(data, BufferUtil.ARRAY_BASE_OFFSET + offset, null, pos + address, length);
     }
 
     public boolean compareAndSwapInt(final long pos, final int expected, final int value) {
