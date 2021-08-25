@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
 import de.invesdwin.util.math.Bytes;
 import zmq.ZError;
 
@@ -80,7 +81,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
             message = Bytes.EMPTY_ARRAY;
         } else {
             message = new byte[size];
-            buf.get(messageIndex, message);
+            ByteBuffers.get(buf, messageIndex, message);
         }
         return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
     }

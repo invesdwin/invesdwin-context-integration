@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
@@ -58,13 +59,13 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
             bytes = new byte[newLength];
             buffer = ByteBuffer.wrap(bytes);
             if (topic.length > 0) {
-                buffer.put(0, topic);
+                ByteBuffers.put(buffer, 0, topic);
             }
         }
         buffer.putInt(typeIndex, type);
         buffer.putInt(sequenceIndex, sequence);
         if (message != null) {
-            buffer.put(messageIndex, message);
+            ByteBuffers.put(buffer, messageIndex, message);
         }
         sendRetrying(size);
     }
