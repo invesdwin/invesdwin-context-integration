@@ -8,13 +8,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.
  *
  */
 @NotThreadSafe
-public class MappedSynchronousWriter extends AMappedSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class MappedSynchronousWriter extends AMappedSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
 
     public MappedSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);

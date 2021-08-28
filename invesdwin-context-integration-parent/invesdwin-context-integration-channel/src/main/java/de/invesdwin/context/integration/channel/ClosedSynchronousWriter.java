@@ -4,8 +4,6 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-
 @Immutable
 public class ClosedSynchronousWriter<M> implements ISynchronousWriter<M> {
 
@@ -26,10 +24,6 @@ public class ClosedSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public void write(final int type, final int sequence, final Object message) {
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<M> message) throws IOException {
+    public void write(final M message) throws IOException {
     }
 }

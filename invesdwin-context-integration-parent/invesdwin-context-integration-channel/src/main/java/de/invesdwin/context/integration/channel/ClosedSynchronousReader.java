@@ -5,8 +5,6 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-
 @Immutable
 public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
 
@@ -26,7 +24,7 @@ public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() {
+    public M readMessage() {
         return null;
     }
 

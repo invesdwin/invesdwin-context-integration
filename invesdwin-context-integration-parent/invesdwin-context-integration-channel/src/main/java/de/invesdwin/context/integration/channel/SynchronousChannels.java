@@ -13,7 +13,6 @@ import org.zeroturnaround.exec.stop.ProcessStopper;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.instrument.DynamicInstrumentationProperties;
 import de.invesdwin.util.lang.Files;
 
@@ -43,7 +42,7 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public synchronized ISynchronousCommand<T> readMessage() throws IOException {
+            public synchronized T readMessage() throws IOException {
                 return delegate.readMessage();
             }
 
@@ -68,12 +67,7 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public synchronized void write(final int type, final int sequence, final T message) throws IOException {
-                delegate.write(type, sequence, message);
-            }
-
-            @Override
-            public synchronized void write(final ISynchronousCommand<T> message) throws IOException {
+            public synchronized void write(final T message) throws IOException {
                 delegate.write(message);
             }
 
@@ -98,7 +92,7 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public ISynchronousCommand<T> readMessage() throws IOException {
+            public T readMessage() throws IOException {
                 synchronized (lock) {
                     return delegate.readMessage();
                 }
@@ -131,14 +125,7 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public void write(final int type, final int sequence, final T message) throws IOException {
-                synchronized (lock) {
-                    delegate.write(type, sequence, message);
-                }
-            }
-
-            @Override
-            public void write(final ISynchronousCommand<T> message) throws IOException {
+            public void write(final T message) throws IOException {
                 synchronized (lock) {
                     delegate.write(message);
                 }

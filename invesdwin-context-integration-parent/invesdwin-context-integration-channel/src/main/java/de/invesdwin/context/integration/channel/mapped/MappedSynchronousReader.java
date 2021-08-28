@@ -9,6 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 /**
  * There can be multiple readers per file, but it is better to only have one.
@@ -22,7 +23,7 @@ import de.invesdwin.context.integration.channel.command.ImmutableSynchronousComm
  *
  */
 @NotThreadSafe
-public class MappedSynchronousReader extends AMappedSynchronousChannel implements ISynchronousReader<byte[]> {
+public class MappedSynchronousReader extends AMappedSynchronousChannel implements ISynchronousReader<IByteBuffer> {
     private int lastTransaction;
 
     public MappedSynchronousReader(final File file, final int maxMessageSize) {
