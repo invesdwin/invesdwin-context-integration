@@ -6,12 +6,14 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
-        implements ISynchronousWriter<byte[]> {
+        implements ISynchronousWriter<IByteBuffer> {
+
+    private static final double BUFFER_GROWTH_FACTOR = 1.25;
 
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
@@ -21,7 +23,7 @@ public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousC
     public void close() throws IOException {
         if (socket != null) {
             try {
-                writeWithoutTypeCheck(TYPE_CLOSED_VALUE, SEQUENCE_CLOSED_VALUE, Bytes.EMPTY_ARRAY);
+                write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -29,28 +31,13 @@ public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousC
         super.close();
     }
 
-    private void checkType(final int type) {
-        if (type == TYPE_CLOSED_VALUE) {
-            throw new IllegalArgumentException(
-                    "type [" + type + "] is reserved for close notification, please use a different type number");
-        }
-    }
-
     @Override
-    public void write(final int type, final int sequence, final byte[] message) throws IOException {
-        checkType(type);
-        writeWithoutTypeCheck(type, sequence, message);
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
-    }
-
-    private void writeWithoutTypeCheck(final int type, final int sequence, final byte[] message) throws IOException {
-        setType(type);
-        setSequence(sequence);
-        setMessage(message);
+    public void write(final IByteBuffer message) throws IOException {
+        final int size = message.capacity();
+        setSize(size);
+        packetBuffer.putBytes(MESSAGE_INDEX, message);
+        packet.setLength(MESSAGE_INDEX + size);
         socket.send(packet);
     }
+
 }

@@ -8,28 +8,26 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
-import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class SocketSynchronousReader extends ASocketSynchronousChannel implements ISynchronousReader<byte[]> {
+public class SocketSynchronousReader extends ASocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private static final int CLOSED_READ_COUNT = -1;
-    private static final int TIMEOUT_READ_COUNT = 0;
-    private final byte[] typeBuffer = new byte[TYPE_OFFSET];
-    private final byte[] sequenceBuffer = new byte[SEQUENCE_OFFSET];
-    private final byte[] sizeBuffer = new byte[SIZE_OFFSET];
     private BufferedInputStream in;
+    private IByteBuffer buffer;
 
-    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
+            final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
     public void open() throws IOException {
         super.open();
-        in = new BufferedInputStream(socket.getInputStream(), bufferSize);
+        in = new BufferedInputStream(socket.getInputStream(), socketSize);
+        buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
     }
 
     @Override
@@ -37,6 +35,7 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
         if (in != null) {
             in.close();
             in = null;
+            buffer = null;
         }
         super.close();
     }
@@ -44,49 +43,26 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
     @Override
     public boolean hasNext() throws IOException {
         try {
-            return in.available() >= TYPE_OFFSET;
+            return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
             throw newEofException(e);
         }
     }
 
     @Override
-    public ISynchronousCommand<byte[]> readMessage() throws IOException {
-        Assertions.checkTrue(read(typeBuffer));
-        final int type = TYPE_SERDE.fromBytes(typeBuffer);
-        if (type == TYPE_CLOSED_VALUE) {
-            throw new EOFException("Channel was closed by the other endpoint");
-        }
-        Assertions.checkTrue(read(sequenceBuffer));
-        final int sequence = SEQUENCE_SERDE.fromBytes(sequenceBuffer);
-        Assertions.checkTrue(read(sizeBuffer));
-        final int size = SIZE_SERDE.fromBytes(sizeBuffer);
-        final byte[] message = new byte[size];
-        if (size > 0) {
-            Assertions.checkTrue(read(message));
-        }
-        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
-    }
-
-    private boolean read(final byte[] buffer) throws IOException {
+    public IByteBuffer readMessage() throws IOException {
         try {
-            if (in.available() <= 0) {
-                return false;
+            buffer.putBytesTo(0, in, MESSAGE_INDEX);
+            final int size = buffer.getInt(SIZE_INDEX);
+            buffer.putBytesTo(0, in, size);
+            if (ClosedByteBuffer.isClosed(buffer)) {
+                close();
+                throw new EOFException("closed by other side");
             }
+            return buffer.sliceTo(size);
         } catch (final IOException e) {
             throw newEofException(e);
         }
-        final int read = in.read(buffer);
-        if (read == TIMEOUT_READ_COUNT) {
-            return false;
-        }
-        if (read == CLOSED_READ_COUNT) {
-            throw new EOFException("Pipe closed");
-        }
-        if (read != buffer.length) {
-            throw new IllegalStateException("Read less bytes [" + read + "] than expected [" + buffer.length + "]");
-        }
-        return true;
     }
 
 }

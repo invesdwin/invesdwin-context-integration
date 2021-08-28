@@ -7,11 +7,12 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousChannel
-        implements ISynchronousReader<byte[]> {
+        implements ISynchronousReader<IByteBuffer> {
 
     public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
@@ -24,14 +25,14 @@ public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousC
     }
 
     @Override
-    public ImmutableSynchronousCommand<byte[]> readMessage() throws IOException {
-        final int type = getType();
-        if (type == TYPE_CLOSED_VALUE) {
-            throw new EOFException("Channel was closed by the other endpoint");
+    public IByteBuffer readMessage() throws IOException {
+        final int size = getSize();
+        final IByteBuffer message = packetBuffer.slice(MESSAGE_INDEX, size);
+        if (ClosedByteBuffer.isClosed(message)) {
+            close();
+            throw new EOFException("closed by other side");
         }
-        final int sequence = getSequence();
-        final byte[] message = getMessage();
-        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
+        return message;
     }
 
 }

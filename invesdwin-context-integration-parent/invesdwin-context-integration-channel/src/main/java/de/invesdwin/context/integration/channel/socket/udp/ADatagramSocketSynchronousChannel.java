@@ -6,13 +6,12 @@ import java.net.ConnectException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.basic.IntegerSerde;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -23,40 +22,28 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     public static final int IPTOS_THROUGHPUT = 0x08;
     public static final int IPTOS_LOWDELAY = 0x10;
 
-    public static final int TYPE_POS = 0;
-    public static final ISerde<Integer> TYPE_SERDE = IntegerSerde.GET;
-    public static final int TYPE_OFFSET = TYPE_SERDE.toBytes(Integer.MAX_VALUE).length;
-    public static final byte TYPE_CLOSED_VALUE = -1;
+    public static final double BUFFER_GROWTH_FACTOR = 1.25;
 
-    public static final int SEQUENCE_POS = TYPE_POS + TYPE_OFFSET;
-    public static final ISerde<Integer> SEQUENCE_SERDE = TYPE_SERDE;
-    public static final int SEQUENCE_OFFSET = TYPE_OFFSET;
-    public static final byte SEQUENCE_CLOSED_VALUE = -1;
+    public static final int SIZE_INDEX = 0;
+    public static final int SIZE_SIZE = Integer.BYTES;
 
-    public static final int SIZE_POS = SEQUENCE_POS + SEQUENCE_OFFSET;
-    public static final ISerde<Integer> SIZE_SERDE = SEQUENCE_SERDE;
-    public static final int SIZE_OFFSET = SEQUENCE_OFFSET;
+    public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
-    public static final int MESSAGE_POS = SIZE_POS + SIZE_OFFSET;
-
+    protected final SocketAddress socketAddress;
+    protected final boolean server;
     protected final int estimatedMaxMessageSize;
-    protected final int bufferSize;
-    protected final byte[] packetBytes;
-    protected ByteBuffer packetBuffer;
-    protected final DatagramPacket packet;
+    protected final int socketSize;
     protected DatagramSocket socket;
-    private final SocketAddress socketAddress;
-    private final boolean server;
+    protected IByteBuffer packetBuffer;
+    protected DatagramPacket packet;
 
     public ADatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.bufferSize = estimatedMaxMessageSize + MESSAGE_POS;
-        this.packetBytes = new byte[bufferSize];
-        this.packetBuffer = ByteBuffer.wrap(packetBytes);
-        this.packet = new DatagramPacket(packetBytes, packetBytes.length);
+        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+
     }
 
     @Override
@@ -84,9 +71,17 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
                 }
             }
         }
-        socket.setSendBufferSize(bufferSize);
-        socket.setReceiveBufferSize(bufferSize);
+        socket.setSendBufferSize(socketSize);
+        socket.setReceiveBufferSize(socketSize);
         socket.setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT);
+
+        initPacket(socketSize);
+    }
+
+    private void initPacket(final int size) {
+        final byte[] packetBytes = new byte[size];
+        this.packetBuffer = ByteBuffers.wrap(packetBytes);
+        this.packet = new DatagramPacket(packetBytes, packetBytes.length);
     }
 
     protected Duration getConnectRetryDelay() {
@@ -97,46 +92,16 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
         return 10;
     }
 
-    protected void setType(final int val) {
-        packetBuffer.putInt(TYPE_POS, val);
-    }
-
-    protected int getType() {
-        return packetBuffer.getInt(TYPE_POS);
-    }
-
-    protected int getSequence() {
-        return packetBuffer.getInt(SEQUENCE_POS);
-    }
-
-    protected void setSequence(final int val) {
-        packetBuffer.putInt(SEQUENCE_POS, val);
-    }
-
-    private void setSize(final int val) {
-        if (val > estimatedMaxMessageSize) {
-            throw new IllegalStateException(
-                    "messageSize [" + val + "] exceeds maxMessageSize [" + estimatedMaxMessageSize + "]");
+    protected void setSize(final int size) {
+        if (size > estimatedMaxMessageSize) {
+            final int newSize = (int) (size * BUFFER_GROWTH_FACTOR);
+            initPacket(newSize);
         }
-        packetBuffer.putInt(SIZE_POS, val);
+        packetBuffer.putInt(SIZE_INDEX, size);
     }
 
-    private int getSize() {
-        return packetBuffer.getInt(SIZE_POS);
-    }
-
-    protected byte[] getMessage() {
-        final int size = getSize();
-        final byte[] data = new byte[size];
-        System.arraycopy(packetBytes, MESSAGE_POS, data, 0, size);
-        return data;
-    }
-
-    protected void setMessage(final byte[] data) {
-        final int size = data.length;
-        setSize(size);
-        System.arraycopy(data, 0, packetBytes, MESSAGE_POS, size);
-        packet.setLength(MESSAGE_POS + size);
+    protected int getSize() {
+        return packetBuffer.getInt(SIZE_INDEX);
     }
 
     @Override
@@ -144,6 +109,9 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
         if (socket != null) {
             socket.close();
             socket = null;
+
+            this.packetBuffer = null;
+            this.packet = null;
         }
     }
 

@@ -11,6 +11,7 @@ import org.zeromq.api.MessageFlag;
 import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.udp.ADatagramSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.lang.buffer.ByteBuffers;
 import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
@@ -22,7 +23,7 @@ import zmq.ZError;
 @NotThreadSafe
 public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
 
-    private static final double BUFFER_GROWTH_FACTOR = 1.25;
+    private static final double BUFFER_GROWTH_FACTOR = ADatagramSocketSynchronousChannel.BUFFER_GROWTH_FACTOR;
     private byte[] bytes = Bytes.EMPTY_ARRAY;
     private ByteBuffer buffer;
 

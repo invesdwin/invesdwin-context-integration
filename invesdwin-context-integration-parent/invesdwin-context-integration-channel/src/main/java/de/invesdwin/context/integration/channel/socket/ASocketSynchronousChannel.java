@@ -11,31 +11,18 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.socket.udp.ADatagramSocketSynchronousChannel;
-import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.basic.IntegerSerde;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
 
-    public static final int TYPE_POS = 0;
-    public static final ISerde<Integer> TYPE_SERDE = IntegerSerde.GET;
-    public static final int TYPE_OFFSET = TYPE_SERDE.toBytes(Integer.MAX_VALUE).length;
-    public static final byte TYPE_CLOSED_VALUE = -1;
+    public static final int SIZE_INDEX = 0;
+    public static final int SIZE_SIZE = Integer.BYTES;
 
-    public static final int SEQUENCE_POS = TYPE_POS + TYPE_OFFSET;
-    public static final ISerde<Integer> SEQUENCE_SERDE = TYPE_SERDE;
-    public static final int SEQUENCE_OFFSET = TYPE_OFFSET;
-    public static final byte SEQUENCE_CLOSED_VALUE = -1;
-
-    public static final int SIZE_POS = SEQUENCE_POS + SEQUENCE_OFFSET;
-    public static final ISerde<Integer> SIZE_SERDE = SEQUENCE_SERDE;
-    public static final int SIZE_OFFSET = SEQUENCE_OFFSET;
-
-    public static final int MESSAGE_POS = SIZE_POS + SIZE_OFFSET;
+    public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
     protected final int estimatedMaxMessageSize;
-    protected final int bufferSize;
+    protected final int socketSize;
     protected Socket socket;
     private final SocketAddress socketAddress;
     private final boolean server;
@@ -46,7 +33,7 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.bufferSize = estimatedMaxMessageSize + MESSAGE_POS;
+        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     @Override
@@ -78,8 +65,8 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
         }
         socket.setTrafficClass(
                 ADatagramSocketSynchronousChannel.IPTOS_LOWDELAY | ADatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
-        socket.setReceiveBufferSize(bufferSize);
-        socket.setSendBufferSize(bufferSize);
+        socket.setReceiveBufferSize(socketSize);
+        socket.setSendBufferSize(socketSize);
         socket.setTcpNoDelay(true);
     }
 

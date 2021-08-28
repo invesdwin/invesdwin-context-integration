@@ -7,29 +7,30 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class SocketSynchronousWriter extends ASocketSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class SocketSynchronousWriter extends ASocketSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
 
     private BufferedOutputStream out;
 
-    public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+    public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
+            final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
     public void open() throws IOException {
         super.open();
-        out = new BufferedOutputStream(socket.getOutputStream(), bufferSize);
+        out = new BufferedOutputStream(socket.getOutputStream(), socketSize);
     }
 
     @Override
     public void close() throws IOException {
         if (out != null) {
             try {
-                writeWithoutTypeCheck(TYPE_CLOSED_VALUE, SEQUENCE_CLOSED_VALUE, Bytes.EMPTY_ARRAY);
+                write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -43,46 +44,15 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
         super.close();
     }
 
-    private void checkType(final int type) {
-        if (type == TYPE_CLOSED_VALUE) {
-            throw new IllegalArgumentException(
-                    "type [" + type + "] is reserved for close notification, please use a different type number");
-        }
-    }
-
-    private void checkSize(final int size) {
-        if (size > estimatedMaxMessageSize) {
-            throw new IllegalStateException(
-                    "messageSize [" + size + "] exceeds maxMessageSize [" + estimatedMaxMessageSize + "]");
-        }
-    }
-
     @Override
-    public void write(final int type, final int sequence, final byte[] message) throws IOException {
-        checkType(type);
-        writeWithoutTypeCheck(type, sequence, message);
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
-    }
-
-    private void writeWithoutTypeCheck(final int type, final int sequence, final byte[] message) throws IOException {
-        checkSize(message.length);
-        final byte[] typeBuffer = TYPE_SERDE.toBytes(type);
-        out.write(typeBuffer);
-        final byte[] sequenceBuffer = SEQUENCE_SERDE.toBytes(sequence);
-        out.write(sequenceBuffer);
-        final byte[] sizeBuffer = SIZE_SERDE.toBytes(message.length);
-        out.write(sizeBuffer);
-        if (message.length > 0) {
-            out.write(message);
-        }
+    public void write(final IByteBuffer message) throws IOException {
+        message.putInt(SIZE_INDEX, message.capacity());
+        message.getBytes(MESSAGE_INDEX, out);
         try {
             out.flush();
         } catch (final IOException e) {
             throw newEofException(e);
         }
     }
+
 }
