@@ -42,10 +42,6 @@ import de.invesdwin.context.integration.channel.aeron.AeronSynchronousReader;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousWriter;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousReader;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousWriter;
-import de.invesdwin.context.integration.channel.command.CommandSynchronousReader;
-import de.invesdwin.context.integration.channel.command.CommandSynchronousWriter;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.MutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousReader;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousWriter;
 import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousReader;
@@ -62,6 +58,8 @@ import de.invesdwin.context.integration.channel.queue.blocking.BlockingQueueSync
 import de.invesdwin.context.integration.channel.queue.blocking.BlockingQueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.reference.ReferenceSynchronousReader;
 import de.invesdwin.context.integration.channel.reference.ReferenceSynchronousWriter;
+import de.invesdwin.context.integration.channel.serde.SerdeSynchronousReader;
+import de.invesdwin.context.integration.channel.serde.SerdeSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.SocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.SocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousReader;
@@ -80,8 +78,10 @@ import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.reference.AtomicReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
+import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.concurrent.reference.JavaLockedReference;
 import de.invesdwin.util.concurrent.reference.LockedReference;
+import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.concurrent.reference.SynchronizedReference;
 import de.invesdwin.util.concurrent.reference.VolatileReference;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -106,10 +106,9 @@ import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 public class ChannelPerformanceTest extends ATest {
     //CHECKSTYLE:ON
 
+    private static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
     private static final boolean DEBUG = false;
     private static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
-    private static final int MESSAGE_TYPE = 1;
-    private static final int MESSAGE_SEQUENCE = 1;
     private static final int VALUES = DEBUG ? 10 : 1_000_000;
     private static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
@@ -212,10 +211,10 @@ public class ChannelPerformanceTest extends ATest {
             final ISynchronousWriter<IByteBuffer> responseWriter = new ChronicleSynchronousWriter(responseFile);
             final ISynchronousReader<IByteBuffer> requestReader = new ChronicleSynchronousReader(requestFile);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new WriterTask(requestReader, responseWriter));
+            executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBuffer> requestWriter = new ChronicleSynchronousWriter(requestFile);
             final ISynchronousReader<IByteBuffer> responseReader = new ChronicleSynchronousReader(responseFile);
-            read(requestWriter, responseReader);
+            read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
             executor.awaitTermination();
         } finally {
@@ -227,189 +226,161 @@ public class ChannelPerformanceTest extends ATest {
     @Test
     public void testArrayDequePerformance() throws InterruptedException {
         //ArrayDeque is not threadsafe, thus requires manual synchronization
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new ArrayDeque<ISynchronousCommand<IByteBuffer>>(
-                1);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new ArrayDeque<ISynchronousCommand<IByteBuffer>>(
-                1);
+        final Queue<IReference<FDate>> responseQueue = new ArrayDeque<IReference<FDate>>(1);
+        final Queue<IReference<FDate>> requestQueue = new ArrayDeque<IReference<FDate>>(1);
         runQueuePerformanceTest(responseQueue, requestQueue, requestQueue, responseQueue);
     }
 
     @Test
     public void testLinkedBlockingQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new LinkedBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new LinkedBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new LinkedBlockingQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new LinkedBlockingQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testLinkedBlockingQueuePerformanceWithBlocking() throws InterruptedException {
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new LinkedBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new LinkedBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
+        final BlockingQueue<IReference<FDate>> responseQueue = new LinkedBlockingQueue<IReference<FDate>>(1);
+        final BlockingQueue<IReference<FDate>> requestQueue = new LinkedBlockingQueue<IReference<FDate>>(1);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testArrayBlockingQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new ArrayBlockingQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testArrayBlockingQueuePerformanceWithBlocking() throws InterruptedException {
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1, false);
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1, false);
+        final BlockingQueue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(1, false);
+        final BlockingQueue<IReference<FDate>> requestQueue = new ArrayBlockingQueue<IReference<FDate>>(1, false);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testArrayBlockingQueuePerformanceWithBlockingFair() throws InterruptedException {
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1, true);
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new ArrayBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1, true);
+        final BlockingQueue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(1, true);
+        final BlockingQueue<IReference<FDate>> requestQueue = new ArrayBlockingQueue<IReference<FDate>>(1, true);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testLinkedTransferQueuePerformance() throws InterruptedException {
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new LinkedTransferQueue<ISynchronousCommand<IByteBuffer>>();
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new LinkedTransferQueue<ISynchronousCommand<IByteBuffer>>();
+        final BlockingQueue<IReference<FDate>> responseQueue = new LinkedTransferQueue<IReference<FDate>>();
+        final BlockingQueue<IReference<FDate>> requestQueue = new LinkedTransferQueue<IReference<FDate>>();
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testLinkedTransferQueuePerformanceWithBlocking() throws InterruptedException {
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new LinkedTransferQueue<ISynchronousCommand<IByteBuffer>>();
-        final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new LinkedTransferQueue<ISynchronousCommand<IByteBuffer>>();
+        final BlockingQueue<IReference<FDate>> responseQueue = new LinkedTransferQueue<IReference<FDate>>();
+        final BlockingQueue<IReference<FDate>> requestQueue = new LinkedTransferQueue<IReference<FDate>>();
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test(expected = AssertionError.class)
     public void testSynchronousQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                false);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                false);
+        final Queue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(false);
+        final Queue<IReference<FDate>> requestQueue = new SynchronousQueue<IReference<FDate>>(false);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testSynchronousQueuePerformanceWithBlocking() throws InterruptedException {
-        final SynchronousQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                false);
-        final SynchronousQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                false);
+        final SynchronousQueue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(false);
+        final SynchronousQueue<IReference<FDate>> requestQueue = new SynchronousQueue<IReference<FDate>>(false);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testSynchronousQueuePerformanceWithBlockingFair() throws InterruptedException {
-        final SynchronousQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                true);
-        final SynchronousQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new SynchronousQueue<ISynchronousCommand<IByteBuffer>>(
-                true);
+        final SynchronousQueue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(true);
+        final SynchronousQueue<IReference<FDate>> requestQueue = new SynchronousQueue<IReference<FDate>>(true);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaOneToOneConcurrentArrayQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new OneToOneConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new OneToOneConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
+        final Queue<IReference<FDate>> responseQueue = new OneToOneConcurrentArrayQueue<IReference<FDate>>(256);
+        final Queue<IReference<FDate>> requestQueue = new OneToOneConcurrentArrayQueue<IReference<FDate>>(256);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaManyToOneConcurrentArrayQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new ManyToOneConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new ManyToOneConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaManyToManyConcurrentArrayQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new ManyToManyConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new ManyToManyConcurrentArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testJctoolsSpscAtomicArrayQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new SpscAtomicArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new SpscAtomicArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testJctoolsSpscLinkedAtomicQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new SpscLinkedAtomicQueue<ISynchronousCommand<IByteBuffer>>();
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new SpscLinkedAtomicQueue<ISynchronousCommand<IByteBuffer>>();
+        final Queue<IReference<FDate>> responseQueue = new SpscLinkedAtomicQueue<IReference<FDate>>();
+        final Queue<IReference<FDate>> requestQueue = new SpscLinkedAtomicQueue<IReference<FDate>>();
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testJctoolsSpscLinkedQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new SpscLinkedQueue<ISynchronousCommand<IByteBuffer>>();
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new SpscLinkedQueue<ISynchronousCommand<IByteBuffer>>();
+        final Queue<IReference<FDate>> responseQueue = new SpscLinkedQueue<IReference<FDate>>();
+        final Queue<IReference<FDate>> requestQueue = new SpscLinkedQueue<IReference<FDate>>();
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testJctoolsSpscArrayQueuePerformance() throws InterruptedException {
-        final Queue<ISynchronousCommand<IByteBuffer>> responseQueue = new SpscArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
-        final Queue<ISynchronousCommand<IByteBuffer>> requestQueue = new SpscArrayQueue<ISynchronousCommand<IByteBuffer>>(
-                2);
+        final Queue<IReference<FDate>> responseQueue = new SpscArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new SpscArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
-    private void runQueuePerformanceTest(final Queue<ISynchronousCommand<IByteBuffer>> responseQueue,
-            final Queue<ISynchronousCommand<IByteBuffer>> requestQueue, final Object synchronizeRequest,
+    private void runQueuePerformanceTest(final Queue<IReference<FDate>> responseQueue,
+            final Queue<IReference<FDate>> requestQueue, final Object synchronizeRequest,
             final Object synchronizeResponse) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = maybeSynchronize(
-                new QueueSynchronousWriter<IByteBuffer>(responseQueue), synchronizeResponse);
-        final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(
-                new QueueSynchronousReader<IByteBuffer>(requestQueue), synchronizeRequest);
+        final ISynchronousWriter<FDate> responseWriter = maybeSynchronize(
+                new QueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
+        final ISynchronousReader<FDate> requestReader = maybeSynchronize(
+                new QueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<IByteBuffer> requestWriter = maybeSynchronize(
-                new QueueSynchronousWriter<IByteBuffer>(requestQueue), synchronizeRequest);
-        final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(
-                new QueueSynchronousReader<IByteBuffer>(responseQueue), synchronizeResponse);
+        final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
+                new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
+        final ISynchronousReader<FDate> responseReader = maybeSynchronize(
+                new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
     }
 
-    private void runBlockingQueuePerformanceTest(final BlockingQueue<ISynchronousCommand<IByteBuffer>> responseQueue,
-            final BlockingQueue<ISynchronousCommand<IByteBuffer>> requestQueue, final Object synchronizeRequest,
+    private void runBlockingQueuePerformanceTest(final BlockingQueue<IReference<FDate>> responseQueue,
+            final BlockingQueue<IReference<FDate>> requestQueue, final Object synchronizeRequest,
             final Object synchronizeResponse) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = maybeSynchronize(
-                new BlockingQueueSynchronousWriter<IByteBuffer>(responseQueue), synchronizeResponse);
-        final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(
-                new BlockingQueueSynchronousReader<IByteBuffer>(requestQueue), synchronizeRequest);
+        final ISynchronousWriter<FDate> responseWriter = maybeSynchronize(
+                new BlockingQueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
+        final ISynchronousReader<FDate> requestReader = maybeSynchronize(
+                new BlockingQueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBlockingQueuePerformance", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<IByteBuffer> requestWriter = maybeSynchronize(
-                new BlockingQueueSynchronousWriter<IByteBuffer>(requestQueue), synchronizeRequest);
-        final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(
-                new BlockingQueueSynchronousReader<IByteBuffer>(responseQueue), synchronizeResponse);
+        final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
+                new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
+        final ISynchronousReader<FDate> responseReader = maybeSynchronize(
+                new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
@@ -417,18 +388,16 @@ public class ChannelPerformanceTest extends ATest {
 
     @Test
     public void testSynchronizedReferencePerformance() throws InterruptedException {
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue = new SynchronizedReference<ISynchronousCommand<IByteBuffer>>();
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue = new SynchronizedReference<ISynchronousCommand<IByteBuffer>>();
+        final IMutableReference<IReference<FDate>> responseQueue = new SynchronizedReference<IReference<FDate>>();
+        final IMutableReference<IReference<FDate>> requestQueue = new SynchronizedReference<IReference<FDate>>();
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testLockedReferencePerformance() throws InterruptedException {
         final ILock lock = ILockCollectionFactory.getInstance(true).newLock("asdf");
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue = new LockedReference<ISynchronousCommand<IByteBuffer>>(
-                lock);
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue = new LockedReference<ISynchronousCommand<IByteBuffer>>(
-                lock);
+        final IMutableReference<IReference<FDate>> responseQueue = new LockedReference<IReference<FDate>>(lock);
+        final IMutableReference<IReference<FDate>> requestQueue = new LockedReference<IReference<FDate>>(lock);
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
@@ -437,37 +406,33 @@ public class ChannelPerformanceTest extends ATest {
         //CHECKSTYLE:OFF
         final Lock lock = new ReentrantLock();
         //CHECKSTYLE:ON
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue = new JavaLockedReference<ISynchronousCommand<IByteBuffer>>(
-                lock);
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue = new JavaLockedReference<ISynchronousCommand<IByteBuffer>>(
-                lock);
+        final IMutableReference<IReference<FDate>> responseQueue = new JavaLockedReference<IReference<FDate>>(lock);
+        final IMutableReference<IReference<FDate>> requestQueue = new JavaLockedReference<IReference<FDate>>(lock);
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testAtomicReferencePerformance() throws InterruptedException {
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue = new AtomicReference<ISynchronousCommand<IByteBuffer>>();
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue = new AtomicReference<ISynchronousCommand<IByteBuffer>>();
+        final IMutableReference<IReference<FDate>> responseQueue = new AtomicReference<IReference<FDate>>();
+        final IMutableReference<IReference<FDate>> requestQueue = new AtomicReference<IReference<FDate>>();
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testVolatileReferencePerformance() throws InterruptedException {
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue = new VolatileReference<ISynchronousCommand<IByteBuffer>>();
-        final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue = new VolatileReference<ISynchronousCommand<IByteBuffer>>();
+        final IMutableReference<IReference<FDate>> responseQueue = new VolatileReference<IReference<FDate>>();
+        final IMutableReference<IReference<FDate>> requestQueue = new VolatileReference<IReference<FDate>>();
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
-    private void runReferencePerformanceTest(final IMutableReference<ISynchronousCommand<IByteBuffer>> responseQueue,
-            final IMutableReference<ISynchronousCommand<IByteBuffer>> requestQueue) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new ReferenceSynchronousWriter<IByteBuffer>(
-                responseQueue);
-        final ISynchronousReader<IByteBuffer> requestReader = new ReferenceSynchronousReader<IByteBuffer>(requestQueue);
+    private void runReferencePerformanceTest(final IMutableReference<IReference<FDate>> responseQueue,
+            final IMutableReference<IReference<FDate>> requestQueue) throws InterruptedException {
+        final ISynchronousWriter<FDate> responseWriter = new ReferenceSynchronousWriter<FDate>(responseQueue);
+        final ISynchronousReader<FDate> requestReader = new ReferenceSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new ReferenceSynchronousWriter<IByteBuffer>(requestQueue);
-        final ISynchronousReader<IByteBuffer> responseReader = new ReferenceSynchronousReader<IByteBuffer>(
-                responseQueue);
+        final ISynchronousWriter<FDate> requestWriter = new ReferenceSynchronousWriter<FDate>(requestQueue);
+        final ISynchronousReader<FDate> responseReader = new ReferenceSynchronousReader<FDate>(responseQueue);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
@@ -475,52 +440,40 @@ public class ChannelPerformanceTest extends ATest {
 
     @Test
     public void testConversantPushPullConcurrentPerformance() throws InterruptedException {
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new PushPullConcurrentQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new PushPullConcurrentQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
+        final ConcurrentQueue<IReference<FDate>> responseQueue = new PushPullConcurrentQueue<IReference<FDate>>(1);
+        final ConcurrentQueue<IReference<FDate>> requestQueue = new PushPullConcurrentQueue<IReference<FDate>>(1);
         runConversantPerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testConversantPushPullBlockingPerformance() throws InterruptedException {
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new PushPullBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new PushPullBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                1);
+        final ConcurrentQueue<IReference<FDate>> responseQueue = new PushPullBlockingQueue<IReference<FDate>>(1);
+        final ConcurrentQueue<IReference<FDate>> requestQueue = new PushPullBlockingQueue<IReference<FDate>>(1);
         runConversantPerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testConversantDisruptorConcurrentPerformance() throws InterruptedException {
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new MultithreadConcurrentQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new MultithreadConcurrentQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
+        final ConcurrentQueue<IReference<FDate>> responseQueue = new MultithreadConcurrentQueue<IReference<FDate>>(256);
+        final ConcurrentQueue<IReference<FDate>> requestQueue = new MultithreadConcurrentQueue<IReference<FDate>>(256);
         runConversantPerformanceTest(responseQueue, requestQueue);
     }
 
     @Test
     public void testConversantDisruptorBlockingPerformance() throws InterruptedException {
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> responseQueue = new DisruptorBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
-        final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> requestQueue = new DisruptorBlockingQueue<ISynchronousCommand<IByteBuffer>>(
-                256);
+        final ConcurrentQueue<IReference<FDate>> responseQueue = new DisruptorBlockingQueue<IReference<FDate>>(256);
+        final ConcurrentQueue<IReference<FDate>> requestQueue = new DisruptorBlockingQueue<IReference<FDate>>(256);
         runConversantPerformanceTest(responseQueue, requestQueue);
     }
 
-    private void runConversantPerformanceTest(final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> responseQueue,
-            final ConcurrentQueue<ISynchronousCommand<IByteBuffer>> requestQueue) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new ConversantSynchronousWriter<IByteBuffer>(
-                responseQueue);
-        final ISynchronousReader<IByteBuffer> requestReader = new ConversantSynchronousReader<IByteBuffer>(
-                requestQueue);
+    private void runConversantPerformanceTest(final ConcurrentQueue<IReference<FDate>> responseQueue,
+            final ConcurrentQueue<IReference<FDate>> requestQueue) throws InterruptedException {
+        final ISynchronousWriter<FDate> responseWriter = new ConversantSynchronousWriter<FDate>(responseQueue);
+        final ISynchronousReader<FDate> requestReader = new ConversantSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new ConversantSynchronousWriter<IByteBuffer>(
-                requestQueue);
-        final ISynchronousReader<IByteBuffer> responseReader = new ConversantSynchronousReader<IByteBuffer>(
-                responseQueue);
+        final ISynchronousWriter<FDate> requestWriter = new ConversantSynchronousWriter<FDate>(requestQueue);
+        final ISynchronousReader<FDate> responseReader = new ConversantSynchronousReader<FDate>(responseQueue);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
@@ -528,21 +481,21 @@ public class ChannelPerformanceTest extends ATest {
 
     @Test
     public void testLmaxDisruptorPerformance() throws InterruptedException {
-        final RingBuffer<MutableSynchronousCommand<IByteBuffer>> responseQueue = RingBuffer
-                .createSingleProducer(() -> new MutableSynchronousCommand<IByteBuffer>(), Integers.pow(2, 8));
-        final RingBuffer<MutableSynchronousCommand<IByteBuffer>> requestQueue = RingBuffer
-                .createSingleProducer(() -> new MutableSynchronousCommand<IByteBuffer>(), Integers.pow(2, 8));
+        final RingBuffer<IMutableReference<FDate>> responseQueue = RingBuffer
+                .createSingleProducer(() -> new MutableReference<FDate>(), Integers.pow(2, 8));
+        final RingBuffer<IMutableReference<FDate>> requestQueue = RingBuffer
+                .createSingleProducer(() -> new MutableReference<FDate>(), Integers.pow(2, 8));
         runLmaxPerformanceTest(responseQueue, requestQueue);
     }
 
-    private void runLmaxPerformanceTest(final RingBuffer<MutableSynchronousCommand<IByteBuffer>> responseQueue,
-            final RingBuffer<MutableSynchronousCommand<IByteBuffer>> requestQueue) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new LmaxSynchronousWriter<IByteBuffer>(responseQueue);
-        final ISynchronousReader<IByteBuffer> requestReader = new LmaxSynchronousReader<IByteBuffer>(requestQueue);
+    private void runLmaxPerformanceTest(final RingBuffer<IMutableReference<FDate>> responseQueue,
+            final RingBuffer<IMutableReference<FDate>> requestQueue) throws InterruptedException {
+        final ISynchronousWriter<FDate> responseWriter = new LmaxSynchronousWriter<FDate>(responseQueue);
+        final ISynchronousReader<FDate> requestReader = new LmaxSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
         executor.execute(new WriterTask(requestReader, responseWriter));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new LmaxSynchronousWriter<IByteBuffer>(requestQueue);
-        final ISynchronousReader<IByteBuffer> responseReader = new LmaxSynchronousReader<IByteBuffer>(responseQueue);
+        final ISynchronousWriter<FDate> requestWriter = new LmaxSynchronousWriter<FDate>(requestQueue);
+        final ISynchronousReader<FDate> responseReader = new LmaxSynchronousReader<FDate>(responseQueue);
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
@@ -562,12 +515,12 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBuffer> requestWriter = new SocketSynchronousWriter(requestAddress, false,
                 MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
                 MESSAGE_SIZE);
-        read(requestWriter, responseReader);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -586,12 +539,12 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousReader<IByteBuffer> requestReader = new DatagramSocketSynchronousReader(requestAddress,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBuffer> requestWriter = new DatagramSocketSynchronousWriter(requestAddress,
                 MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> responseReader = new DatagramSocketSynchronousReader(responseAddress,
                 MESSAGE_SIZE);
-        read(requestWriter, responseReader);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -617,12 +570,12 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousReader<IByteBuffer> requestReader = new AeronSynchronousReader(requestChannel,
                 requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBuffer> requestWriter = new AeronSynchronousWriter(requestChannel,
                 requestStreamId);
         final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(responseChannel,
                 responseStreamId);
-        read(requestWriter, responseReader);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -644,12 +597,12 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousReader<IByteBuffer> requestReader = new KryonetSynchronousReader(address, requestTcpPort,
                 requestUdpPort, false);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBuffer> requestWriter = new KryonetSynchronousWriter(address, requestTcpPort,
                 requestUdpPort, true);
         final ISynchronousReader<IByteBuffer> responseReader = new KryonetSynchronousReader(address, responseTcpPort,
                 responseUdpPort, false);
-        read(requestWriter, responseReader);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -771,18 +724,15 @@ public class ChannelPerformanceTest extends ATest {
         }
     }
 
-    private ISynchronousReader<ISynchronousCommand<FDate>> newCommandReader(
-            final ISynchronousReader<IByteBuffer> reader) {
-        return new CommandSynchronousReader<FDate>(reader, FDateSerde.GET);
+    private ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBuffer> reader) {
+        return new SerdeSynchronousReader<FDate>(reader, FDateSerde.GET);
     }
 
-    private ISynchronousWriter<ISynchronousCommand<FDate>> newCommandWriter(
-            final ISynchronousWriter<IByteBuffer> writer) {
-        return new CommandSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
+    private ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBuffer> writer) {
+        return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    private void read(final ISynchronousWriter<ISynchronousCommand<FDate>> requestWriter,
-            final ISynchronousReader<ISynchronousCommand<FDate>> responseReader) {
+    private void read(final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
 
         final Instant readsStart = new Instant();
         FDate prevValue = null;
@@ -803,31 +753,21 @@ public class ChannelPerformanceTest extends ATest {
                 }
             };
             long waitingSinceNanos = System.nanoTime();
-            final MutableSynchronousCommand<FDate> command = new MutableSynchronousCommand<>();
             while (true) {
-                command.setType(MESSAGE_TYPE);
-                command.setSequence(MESSAGE_SEQUENCE);
-                command.setMessage(null);
-                requestWriter.write(command);
+                requestWriter.write(REQUEST_MESSAGE);
                 if (DEBUG) {
                     log.info("client request out");
                 }
                 Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
-                final ISynchronousCommand<FDate> readMessage = responseReader.readMessage();
+                final FDate readMessage = responseReader.readMessage();
                 if (DEBUG) {
                     log.info("client response in");
                 }
-                final int messageType = readMessage.getType();
-                final int messageSequence = readMessage.getSequence();
-                Assertions.checkEquals(messageType, MESSAGE_TYPE);
-                Assertions.checkEquals(messageSequence, MESSAGE_SEQUENCE);
-                final FDate value = readMessage.getMessage();
-                readMessage.close(); //free memory
-                Assertions.checkNotNull(value);
+                Assertions.checkNotNull(readMessage);
                 if (prevValue != null) {
-                    Assertions.checkTrue(prevValue.isBefore(value));
+                    Assertions.checkTrue(prevValue.isBefore(readMessage));
                 }
-                prevValue = value;
+                prevValue = readMessage;
                 count++;
                 waitingSinceNanos = System.nanoTime();
             }
@@ -866,11 +806,10 @@ public class ChannelPerformanceTest extends ATest {
 
     private class WriterTask implements Runnable {
 
-        private final ISynchronousReader<ISynchronousCommand<FDate>> requestReader;
-        private final ISynchronousWriter<ISynchronousCommand<FDate>> responseWriter;
+        private final ISynchronousReader<FDate> requestReader;
+        private final ISynchronousWriter<FDate> responseWriter;
 
-        WriterTask(final ISynchronousReader<ISynchronousCommand<FDate>> requestReader,
-                final ISynchronousWriter<ISynchronousCommand<FDate>> responseWriter) {
+        WriterTask(final ISynchronousReader<FDate> requestReader, final ISynchronousWriter<FDate> responseWriter) {
             this.requestReader = requestReader;
             this.responseWriter = responseWriter;
         }
@@ -895,21 +834,14 @@ public class ChannelPerformanceTest extends ATest {
                 }
                 responseWriter.open();
                 long waitingSinceNanos = System.nanoTime();
-                final MutableSynchronousCommand<FDate> command = new MutableSynchronousCommand<>();
                 for (final FDate date : newValues()) {
                     Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                     if (DEBUG) {
                         log.info("server request in");
                     }
-                    final ISynchronousCommand<FDate> readMessage = requestReader.readMessage();
-                    Assertions.checkEquals(readMessage.getType(), MESSAGE_TYPE);
-                    Assertions.checkEquals(readMessage.getSequence(), MESSAGE_SEQUENCE);
-                    Assertions.checkNull(readMessage.getMessage());
-                    readMessage.close(); //free memory
-                    command.setType(MESSAGE_TYPE);
-                    command.setSequence(MESSAGE_SEQUENCE);
-                    command.setMessage(date);
-                    responseWriter.write(command);
+                    final FDate readMessage = requestReader.readMessage();
+                    Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
+                    responseWriter.write(date);
                     if (DEBUG) {
                         log.info("server response out");
                     }

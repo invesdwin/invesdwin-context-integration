@@ -7,17 +7,16 @@ import java.util.concurrent.BlockingQueue;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.util.concurrent.reference.IReference;
 
 @NotThreadSafe
 public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronousChannel<M>
         implements ISynchronousReader<M> {
     ;
 
-    private ISynchronousCommand<M> next;
+    private IReference<M> next;
 
-    public BlockingQueueSynchronousReader(final BlockingQueue<ISynchronousCommand<M>> queue) {
+    public BlockingQueueSynchronousReader(final BlockingQueue<IReference<M>> queue) {
         super(queue);
     }
 
@@ -31,11 +30,12 @@ public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronous
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() throws IOException {
-        final ISynchronousCommand<M> message;
-        message = next;
+    public M readMessage() throws IOException {
+        final IReference<M> holder;
+        holder = next;
         next = null;
-        if (message == EmptySynchronousCommand.getInstance()) {
+        final M message = holder.get();
+        if (message == null) {
             close();
             throw new EOFException("closed by other side");
         }

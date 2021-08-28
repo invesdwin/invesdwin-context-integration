@@ -6,17 +6,16 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.concurrent.reference.DisabledReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
+import de.invesdwin.util.concurrent.reference.IReference;
 
 @NotThreadSafe
 public class ReferenceSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private IMutableReference<ISynchronousCommand<M>> reference;
+    private IMutableReference<IReference<M>> reference;
 
-    public ReferenceSynchronousReader(final IMutableReference<ISynchronousCommand<M>> reference) {
+    public ReferenceSynchronousReader(final IMutableReference<IReference<M>> reference) {
         this.reference = reference;
     }
 
@@ -35,9 +34,10 @@ public class ReferenceSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() throws IOException {
-        final ISynchronousCommand<M> message = reference.getAndSet(null);
-        if (message == EmptySynchronousCommand.getInstance()) {
+    public M readMessage() throws IOException {
+        final IReference<M> holder = reference.getAndSet(null);
+        final M message = holder.get();
+        if (message == null) {
             close();
             throw new EOFException("closed by other side");
         }

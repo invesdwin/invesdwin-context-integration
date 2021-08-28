@@ -8,16 +8,15 @@ import java.util.concurrent.SynchronousQueue;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.reference.IReference;
 
 @NotThreadSafe
 public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private Queue<ISynchronousCommand<M>> queue;
+    private Queue<IReference<M>> queue;
 
-    public QueueSynchronousReader(final Queue<ISynchronousCommand<M>> queue) {
+    public QueueSynchronousReader(final Queue<IReference<M>> queue) {
         Assertions.assertThat(queue)
                 .as("this implementation does not support non-blocking calls")
                 .isNotInstanceOf(SynchronousQueue.class);
@@ -39,9 +38,10 @@ public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() throws IOException {
-        final ISynchronousCommand<M> message = queue.remove();
-        if (message == EmptySynchronousCommand.getInstance()) {
+    public M readMessage() throws IOException {
+        final IReference<M> holder = queue.remove();
+        final M message = holder.get();
+        if (message == null) {
             close();
             throw new EOFException("closed by other side");
         }

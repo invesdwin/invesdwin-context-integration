@@ -6,23 +6,22 @@ import java.util.concurrent.BlockingQueue;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
+import de.invesdwin.util.concurrent.reference.IReference;
+import de.invesdwin.util.concurrent.reference.ImmutableReference;
 
 @NotThreadSafe
 public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronousChannel<M>
         implements ISynchronousWriter<M> {
 
-    public BlockingQueueSynchronousWriter(final BlockingQueue<ISynchronousCommand<M>> queue) {
+    public BlockingQueueSynchronousWriter(final BlockingQueue<IReference<M>> queue) {
         super(queue);
     }
 
     @Override
-    public void write(final int type, final int sequence, final M message) throws IOException {
-        final ISynchronousCommand<M> closedMessage = queue.poll();
-        if (closedMessage != null) {
-            if (closedMessage != EmptySynchronousCommand.getInstance()) {
+    public void write(final M message) throws IOException {
+        final IReference<M> closedHolder = queue.poll();
+        if (closedHolder != null) {
+            if (closedHolder.get() != null) {
                 throw new IllegalStateException("Multiple writers on queue are not supported!");
             } else {
                 close();
@@ -31,26 +30,7 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
         }
 
         try {
-            queue.put(new ImmutableSynchronousCommand<M>(type, sequence, message));
-        } catch (final InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<M> message) throws IOException {
-        final ISynchronousCommand<M> closedMessage = queue.poll();
-        if (closedMessage != null) {
-            if (closedMessage != EmptySynchronousCommand.getInstance()) {
-                throw new IllegalStateException("Multiple writers on queue are not supported!");
-            } else {
-                close();
-                return;
-            }
-        }
-
-        try {
-            queue.put(message);
+            queue.put(ImmutableReference.of(message));
         } catch (final InterruptedException e) {
             throw new RuntimeException(e);
         }

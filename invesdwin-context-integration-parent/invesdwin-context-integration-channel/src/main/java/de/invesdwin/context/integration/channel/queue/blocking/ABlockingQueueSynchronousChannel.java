@@ -10,9 +10,10 @@ import org.apache.commons.math3.random.RandomGenerator;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.reference.EmptyReference;
+import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.math.random.RandomGenerators;
 
 @NotThreadSafe
@@ -21,9 +22,9 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
     public static final WrappedExecutorService CLOSED_SYNCHRONIZER = Executors
             .newCachedThreadPool(ABlockingQueueSynchronousChannel.class.getSimpleName() + "_closedSynchronizer");
 
-    protected BlockingQueue<ISynchronousCommand<M>> queue;
+    protected BlockingQueue<IReference<M>> queue;
 
-    public ABlockingQueueSynchronousChannel(final BlockingQueue<ISynchronousCommand<M>> queue) {
+    public ABlockingQueueSynchronousChannel(final BlockingQueue<IReference<M>> queue) {
         this.queue = queue;
     }
 
@@ -40,7 +41,7 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
     }
 
     protected void sendClosedMessage() {
-        final BlockingQueue<ISynchronousCommand<M>> queueCopy = queue;
+        final BlockingQueue<IReference<M>> queueCopy = queue;
         CLOSED_SYNCHRONIZER.execute(new Runnable() {
             @Override
             public void run() {
@@ -54,8 +55,7 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
                                 .getInstance()) {
                             closedMessageReceived = true;
                         }
-                        if (queueCopy.offer(EmptySynchronousCommand.getInstance(), random.nextInt(2),
-                                TimeUnit.MILLISECONDS)) {
+                        if (queueCopy.offer(EmptyReference.getInstance(), random.nextInt(2), TimeUnit.MILLISECONDS)) {
                             closedMessageSent = true;
                         }
                     }
