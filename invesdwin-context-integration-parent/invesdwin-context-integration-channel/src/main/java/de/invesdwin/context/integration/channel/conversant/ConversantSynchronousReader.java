@@ -2,26 +2,20 @@ package de.invesdwin.context.integration.channel.conversant;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import com.conversantmedia.util.concurrent.ConcurrentQueue;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.reference.IReference;
 
 @NotThreadSafe
 public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private ConcurrentQueue<ISynchronousCommand<M>> queue;
+    private ConcurrentQueue<IReference<M>> queue;
 
-    public ConversantSynchronousReader(final ConcurrentQueue<ISynchronousCommand<M>> queue) {
-        Assertions.assertThat(queue)
-                .as("this implementation does not support non-blocking calls")
-                .isNotInstanceOf(SynchronousQueue.class);
+    public ConversantSynchronousReader(final ConcurrentQueue<IReference<M>> queue) {
         this.queue = queue;
     }
 
@@ -40,9 +34,10 @@ public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() throws IOException {
-        final ISynchronousCommand<M> message = queue.poll();
-        if (message == EmptySynchronousCommand.getInstance()) {
+    public M readMessage() throws IOException {
+        final IReference<M> reference = queue.poll();
+        final M message = reference.get();
+        if (message == null) {
             close();
             throw new EOFException("closed by other side");
         }

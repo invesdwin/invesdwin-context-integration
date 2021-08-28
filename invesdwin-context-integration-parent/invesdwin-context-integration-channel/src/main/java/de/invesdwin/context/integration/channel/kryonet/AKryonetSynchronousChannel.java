@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.channel.kryonet.connection.ClientUdpConn
 import de.invesdwin.context.integration.channel.kryonet.connection.IKryonetConnection;
 import de.invesdwin.context.integration.channel.kryonet.connection.ServerTcpConnection;
 import de.invesdwin.context.integration.channel.kryonet.connection.ServerUdpConnection;
-import de.invesdwin.context.integration.channel.kryonet.connection.SynchronousMessageSerialization;
+import de.invesdwin.context.integration.channel.kryonet.connection.ByteBufferMessageSerialization;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -39,7 +39,7 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
     @Override
     public void open() throws IOException {
         if (server) {
-            final Server server = new Server(16384, 2048, SynchronousMessageSerialization.INSTANCE);
+            final Server server = new Server(16384, 2048, ByteBufferMessageSerialization.INSTANCE);
             server.start();
             final InetSocketAddress tcpAddress;
             if (tcpPort >= 0) {
@@ -60,7 +60,7 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
                 connection = new ServerTcpConnection(server);
             }
         } else {
-            final Client client = new Client(8192, 2048, SynchronousMessageSerialization.INSTANCE);
+            final Client client = new Client(8192, 2048, ByteBufferMessageSerialization.INSTANCE);
             client.start();
             for (int tries = 0;; tries++) {
                 try {

@@ -9,24 +9,23 @@ import com.lmax.disruptor.EventPoller;
 import com.lmax.disruptor.RingBuffer;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
-import de.invesdwin.context.integration.channel.command.MutableSynchronousCommand;
+import de.invesdwin.util.concurrent.reference.IMutableReference;
+import de.invesdwin.util.concurrent.reference.ImmutableReference;
 
 @NotThreadSafe
 public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private RingBuffer<MutableSynchronousCommand<M>> ringBuffer;
-    private EventPoller<MutableSynchronousCommand<M>> eventPoller;
-    private ImmutableSynchronousCommand<M> polledValue;
+    private RingBuffer<IMutableReference<M>> ringBuffer;
+    private EventPoller<IMutableReference<M>> eventPoller;
+    private ImmutableReference<M> polledValue;
 
-    private final EventPoller.Handler<MutableSynchronousCommand<M>> pollerHandler = (event, sequence, endOfBatch) -> {
-        polledValue = ImmutableSynchronousCommand.valueOf(event);
+    private final EventPoller.Handler<IMutableReference<M>> pollerHandler = (event, sequence, endOfBatch) -> {
+        polledValue = ImmutableReference.of(event.get());
+        event.set(null); //free memory
         return false;
     };
 
-    public LmaxSynchronousReader(final RingBuffer<MutableSynchronousCommand<M>> ringBuffer) {
+    public LmaxSynchronousReader(final RingBuffer<IMutableReference<M>> ringBuffer) {
         this.ringBuffer = ringBuffer;
         this.eventPoller = ringBuffer.newPoller();
         ringBuffer.addGatingSequences(eventPoller.getSequence());
@@ -56,25 +55,26 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public ISynchronousCommand<M> readMessage() throws IOException {
-        final ISynchronousCommand<M> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousCommand.TYPE) {
+    public M readMessage() throws IOException {
+        final ImmutableReference<M> holder = getPolledMessage();
+        final M message = holder.get();
+        if (message == null) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousCommand<M> getPolledMessage() {
+    private ImmutableReference<M> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousCommand<M> value = polledValue;
+            final ImmutableReference<M> value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             final EventPoller.PollState poll = eventPoller.poll(pollerHandler);
             if (poll == EventPoller.PollState.PROCESSING) {
-                final ImmutableSynchronousCommand<M> value = polledValue;
+                final ImmutableReference<M> value = polledValue;
                 polledValue = null;
                 return value;
             } else {

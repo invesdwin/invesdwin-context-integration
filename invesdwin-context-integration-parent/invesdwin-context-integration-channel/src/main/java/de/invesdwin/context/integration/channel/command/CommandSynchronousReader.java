@@ -9,7 +9,7 @@ import de.invesdwin.util.lang.buffer.IByteBuffer;
 import de.invesdwin.util.marshallers.serde.ISerde;
 
 @NotThreadSafe
-public class CommandSynchronousReader<M> implements ISynchronousReader<MutableSynchronousCommand<M>> {
+public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchronousCommand<M>> {
 
     private final ISynchronousReader<IByteBuffer> delegate;
     private final ISerde<M> messageSerde;
@@ -41,7 +41,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<MutableSy
     }
 
     @Override
-    public MutableSynchronousCommand<M> readMessage() throws IOException {
+    public ISynchronousCommand<M> readMessage() throws IOException {
         final IByteBuffer buffer = delegate.readMessage();
         final int type = buffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = buffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.zeromq;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -10,18 +9,16 @@ import org.zeromq.api.MessageFlag;
 import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.lang.buffer.ByteBuffers;
-import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 import zmq.ZError;
 
 @NotThreadSafe
-public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<byte[]> {
+public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private ImmutableSynchronousCommand<byte[]> polledValue;
+    private IByteBuffer polledValue;
 
     public JeromqSynchronousReader(final IJeromqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getReaderSocketType(), addr, server);
@@ -41,18 +38,18 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
     }
 
     @Override
-    public ISynchronousCommand<byte[]> readMessage() throws IOException {
-        final ISynchronousCommand<byte[]> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousCommand.TYPE) {
+    public IByteBuffer readMessage() throws IOException {
+        final IByteBuffer message = getPolledMessage();
+        if (message == null || ClosedByteBuffer.isClosed(message)) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousCommand<byte[]> getPolledMessage() {
+    private IByteBuffer getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousCommand<byte[]> value = polledValue;
+            final IByteBuffer value = polledValue;
             polledValue = null;
             return value;
         }
@@ -63,7 +60,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         }
     }
 
-    private ImmutableSynchronousCommand<byte[]> poll() throws IOException {
+    private IByteBuffer poll() throws IOException {
         final byte[] recv = socket.receive(MessageFlag.DONT_WAIT);
         if (recv == null) {
             if (socket.getZMQSocket().errno() != ZError.EAGAIN) {
@@ -72,18 +69,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
             }
             return null;
         }
-        final ByteBuffer buf = ByteBuffer.wrap(recv);
-        final int type = buf.getInt(typeIndex);
-        final int sequence = buf.getInt(sequenceIndex);
-        final int size = recv.length - messageIndex;
-        final byte[] message;
-        if (size <= 0) {
-            message = Bytes.EMPTY_ARRAY;
-        } else {
-            message = new byte[size];
-            ByteBuffers.get(buf, messageIndex, message);
-        }
-        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
+        return ByteBuffers.wrap(recv);
     }
 
 }

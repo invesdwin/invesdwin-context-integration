@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.command;
 
+import java.io.IOException;
+
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
@@ -32,6 +34,11 @@ public final class ImmutableSynchronousCommand<M> implements ISynchronousCommand
     @Override
     public M getMessage() {
         return message;
+    }
+
+    @Override
+    public void close() throws IOException {
+        //noop
     }
 
     public static <T> ImmutableSynchronousCommand<T> valueOf(final ISynchronousCommand<T> response) {

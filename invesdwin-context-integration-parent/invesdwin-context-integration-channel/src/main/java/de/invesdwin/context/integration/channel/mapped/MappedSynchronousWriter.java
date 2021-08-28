@@ -7,7 +7,6 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 /**
@@ -28,6 +27,9 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
         setTransaction(TRANSACTION_INITIAL_VALUE);
     }
 
+    protected void putMessage(final byte[] data, final int length) {
+    }
+
     /**
      * Writes a message.
      *
@@ -37,24 +39,15 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final int type, final int sequence, final byte[] message) {
+    public void write(final IByteBuffer message) {
         final byte nextTransaction = getNextTransaction();
         //open transaction
         setTransaction(TRANSACTION_WRITING_VALUE);
 
-        setType(type);
-
-        setSequence(sequence);
-
-        setMessage(message);
+        buffer.putBytes(MESSAGE_INDEX, message);
 
         //commit
         setTransaction(nextTransaction);
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
     }
 
     @Override

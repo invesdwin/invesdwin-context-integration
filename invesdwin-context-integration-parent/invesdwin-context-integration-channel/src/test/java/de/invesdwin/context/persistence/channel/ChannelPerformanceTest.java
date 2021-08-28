@@ -703,12 +703,12 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousReader<IByteBuffer> requestReader = new JeromqSynchronousReader(socketType, requestChannel,
                 true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBuffer> requestWriter = new JeromqSynchronousWriter(socketType, requestChannel,
                 false);
         final ISynchronousReader<IByteBuffer> responseReader = new JeromqSynchronousReader(socketType, responseChannel,
                 false);
-        read(requestWriter, responseReader);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -737,12 +737,12 @@ public class ChannelPerformanceTest extends ATest {
             final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(newReader(requestFile, pipes),
                     synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new WriterTask(requestReader, responseWriter));
+            executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBuffer> requestWriter = maybeSynchronize(newWriter(requestFile, pipes),
                     synchronizeRequest);
             final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(newReader(responseFile, pipes),
                     synchronizeResponse);
-            read(requestWriter, responseReader);
+            read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
             executor.awaitTermination();
         } finally {
@@ -771,12 +771,18 @@ public class ChannelPerformanceTest extends ATest {
         }
     }
 
-    private void read(final ISynchronousWriter<IByteBuffer> requestWriter,
-            final ISynchronousReader<IByteBuffer> responseReader) {
-        final ISynchronousReader<MutableSynchronousCommand<FDate>> responseCommandReader = new CommandSynchronousReader<FDate>(
-                responseReader, FDateSerde.GET);
-        final ISynchronousWriter<ISynchronousCommand<FDate>> requestCommandWriter = new CommandSynchronousWriter<FDate>(
-                requestWriter, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
+    private ISynchronousReader<ISynchronousCommand<FDate>> newCommandReader(
+            final ISynchronousReader<IByteBuffer> reader) {
+        return new CommandSynchronousReader<FDate>(reader, FDateSerde.GET);
+    }
+
+    private ISynchronousWriter<ISynchronousCommand<FDate>> newCommandWriter(
+            final ISynchronousWriter<IByteBuffer> writer) {
+        return new CommandSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
+    }
+
+    private void read(final ISynchronousWriter<ISynchronousCommand<FDate>> requestWriter,
+            final ISynchronousReader<ISynchronousCommand<FDate>> responseReader) {
 
         final Instant readsStart = new Instant();
         FDate prevValue = null;
@@ -802,12 +808,12 @@ public class ChannelPerformanceTest extends ATest {
                 command.setType(MESSAGE_TYPE);
                 command.setSequence(MESSAGE_SEQUENCE);
                 command.setMessage(null);
-                requestCommandWriter.write(command);
+                requestWriter.write(command);
                 if (DEBUG) {
                     log.info("client request out");
                 }
                 Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
-                final MutableSynchronousCommand<FDate> readMessage = responseCommandReader.readMessage();
+                final ISynchronousCommand<FDate> readMessage = responseReader.readMessage();
                 if (DEBUG) {
                     log.info("client response in");
                 }
@@ -816,7 +822,7 @@ public class ChannelPerformanceTest extends ATest {
                 Assertions.checkEquals(messageType, MESSAGE_TYPE);
                 Assertions.checkEquals(messageSequence, MESSAGE_SEQUENCE);
                 final FDate value = readMessage.getMessage();
-                //readMessage.setMessage(null); //might want to free memory here
+                readMessage.close(); //free memory
                 Assertions.checkNotNull(value);
                 if (prevValue != null) {
                     Assertions.checkTrue(prevValue.isBefore(value));
@@ -835,11 +841,11 @@ public class ChannelPerformanceTest extends ATest {
             if (DEBUG) {
                 log.info("client close response reader");
             }
-            responseCommandReader.close();
+            responseReader.close();
             if (DEBUG) {
                 log.info("client close request writer");
             }
-            requestCommandWriter.close();
+            requestWriter.close();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -860,14 +866,13 @@ public class ChannelPerformanceTest extends ATest {
 
     private class WriterTask implements Runnable {
 
-        private final ISynchronousReader<MutableSynchronousCommand<FDate>> requestReader;
+        private final ISynchronousReader<ISynchronousCommand<FDate>> requestReader;
         private final ISynchronousWriter<ISynchronousCommand<FDate>> responseWriter;
 
-        WriterTask(final ISynchronousReader<IByteBuffer> requestReader,
-                final ISynchronousWriter<IByteBuffer> responseWriter) {
-            this.requestReader = new CommandSynchronousReader<FDate>(requestReader, FDateSerde.GET);
-            this.responseWriter = new CommandSynchronousWriter<FDate>(responseWriter, FDateSerde.GET,
-                    FDateSerde.FIXED_LENGTH);
+        WriterTask(final ISynchronousReader<ISynchronousCommand<FDate>> requestReader,
+                final ISynchronousWriter<ISynchronousCommand<FDate>> responseWriter) {
+            this.requestReader = requestReader;
+            this.responseWriter = responseWriter;
         }
 
         @Override
@@ -900,7 +905,7 @@ public class ChannelPerformanceTest extends ATest {
                     Assertions.checkEquals(readMessage.getType(), MESSAGE_TYPE);
                     Assertions.checkEquals(readMessage.getSequence(), MESSAGE_SEQUENCE);
                     Assertions.checkNull(readMessage.getMessage());
-                    //readMessage.setMessage(null); //might want to free memory here
+                    readMessage.close(); //free memory
                     command.setType(MESSAGE_TYPE);
                     command.setSequence(MESSAGE_SEQUENCE);
                     command.setMessage(date);

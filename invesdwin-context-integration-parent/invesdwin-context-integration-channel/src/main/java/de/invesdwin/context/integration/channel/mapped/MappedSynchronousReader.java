@@ -7,8 +7,6 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
 import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 /**
@@ -57,9 +55,10 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
     }
 
     @Override
-    public ISynchronousCommand<byte[]> readMessage() {
+    public IByteBuffer readMessage() {
         lastTransaction = getTransaction();
-        return new ImmutableSynchronousCommand<byte[]>(getType(), getSequence(), getMessage());
+        final int size = getSize();
+        return buffer.slice(MESSAGE_INDEX, size);
     }
 
 }

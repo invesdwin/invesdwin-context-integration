@@ -1,6 +1,8 @@
 package de.invesdwin.context.integration.channel.command;
 
-public interface ISynchronousCommand<M> {
+import java.io.Closeable;
+
+public interface ISynchronousCommand<M> extends Closeable {
 
     int getType();
 

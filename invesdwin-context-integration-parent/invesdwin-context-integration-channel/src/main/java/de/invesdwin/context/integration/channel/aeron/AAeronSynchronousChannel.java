@@ -13,14 +13,6 @@ import io.aeron.driver.ThreadingMode;
 @NotThreadSafe
 public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
 
-    protected static final int TYPE_INDEX = 0;
-    protected static final int TYPE_SIZE = Integer.SIZE;
-
-    protected static final int SEQUENCE_INDEX = TYPE_INDEX + TYPE_SIZE;
-    protected static final int SEQUENCE_SIZE = Integer.SIZE;
-
-    protected static final int MESSAGE_INDEX = SEQUENCE_INDEX + SEQUENCE_SIZE;
-
     private static MediaDriver mediaDriver = newDefaultMediaDriver();
 
     protected final String channel;

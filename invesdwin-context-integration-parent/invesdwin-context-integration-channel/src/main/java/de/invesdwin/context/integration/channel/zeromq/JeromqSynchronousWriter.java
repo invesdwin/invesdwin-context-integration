@@ -11,16 +11,16 @@ import org.zeromq.api.MessageFlag;
 import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.lang.buffer.ByteBuffers;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
 
 @NotThreadSafe
-public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
 
     private static final double BUFFER_GROWTH_FACTOR = 1.25;
     private byte[] bytes = Bytes.EMPTY_ARRAY;
@@ -38,7 +38,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
     public void close() throws IOException {
         if (socket != null) {
             try {
-                write(EmptySynchronousCommand.getInstance());
+                write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -47,13 +47,8 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
     }
 
     @Override
-    public void write(final int type, final int sequence, final byte[] message) throws IOException {
-        final int size;
-        if (message == null) {
-            size = messageIndex;
-        } else {
-            size = messageIndex + message.length;
-        }
+    public void write(final IByteBuffer message) throws IOException {
+        final int size = message.capacity();
         if (bytes.length < size) {
             final int newLength = (int) (size * BUFFER_GROWTH_FACTOR);
             bytes = new byte[newLength];
@@ -62,11 +57,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
                 ByteBuffers.put(buffer, 0, topic);
             }
         }
-        buffer.putInt(typeIndex, type);
-        buffer.putInt(sequenceIndex, sequence);
-        if (message != null) {
-            ByteBuffers.put(buffer, messageIndex, message);
-        }
+        message.getBytesTo(0, buffer, size);
         sendRetrying(size);
     }
 
@@ -94,11 +85,6 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel implement
             throw new EOFException("closed by other side");
         }
         return true;
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
     }
 
 }

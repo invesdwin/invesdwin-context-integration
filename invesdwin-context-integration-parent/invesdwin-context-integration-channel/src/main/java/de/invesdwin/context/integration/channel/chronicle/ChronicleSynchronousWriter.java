@@ -6,13 +6,14 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
-public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel
+        implements ISynchronousWriter<IByteBuffer> {
 
     private ExcerptAppender appender;
 
@@ -29,7 +30,7 @@ public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel imp
     @Override
     public void close() throws IOException {
         if (appender != null) {
-            write(EmptySynchronousCommand.getInstance());
+            write(ClosedByteBuffer.INSTANCE);
             appender.close();
             appender = null;
         }
@@ -37,23 +38,14 @@ public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel imp
     }
 
     @Override
-    public void write(final int type, final int sequence, final byte[] message) throws IOException {
+    public void write(final IByteBuffer message) throws IOException {
         try (DocumentContext doc = appender.writingDocument()) {
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
-            bytes.writeInt(type);
-            bytes.writeInt(sequence);
-            if (message == null || message.length == 0) {
-                bytes.writeInt(0);
-            } else {
-                bytes.writeInt(message.length);
-                bytes.write(message);
+            final int length = message.capacity();
+            for (int i = 0; i < length; i++) {
+                bytes.writeByte(i, message.getByte(i));
             }
         }
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
     }
 
 }

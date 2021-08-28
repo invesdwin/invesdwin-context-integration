@@ -6,21 +6,17 @@ import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.agrona.ExpandableArrayBuffer;
-import org.agrona.MutableDirectBuffer;
-
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
+import de.invesdwin.util.lang.buffer.EmptyByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import io.aeron.ConcurrentPublication;
 import io.aeron.Publication;
 
 @NotThreadSafe
-public class AeronSynchronousWriter extends AAeronSynchronousChannel implements ISynchronousWriter<byte[]> {
+public class AeronSynchronousWriter extends AAeronSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
 
     private ConcurrentPublication publication;
-    private MutableDirectBuffer buffer;
     private boolean connected;
 
     public AeronSynchronousWriter(final String channel, final int streamId) {
@@ -31,7 +27,6 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
     public void open() throws IOException {
         super.open();
         this.publication = aeron.addPublication(channel, streamId);
-        this.buffer = new ExpandableArrayBuffer();
         this.connected = false;
     }
 
@@ -40,7 +35,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
         if (publication != null) {
             if (connected) {
                 try {
-                    write(EmptySynchronousCommand.getInstance());
+                    write(EmptyByteBuffer.INSTANCE);
                 } catch (final Throwable t) {
                     //ignore
                 }
@@ -48,7 +43,6 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
             if (publication != null) {
                 publication.close();
                 publication = null;
-                buffer = null;
                 this.connected = false;
             }
         }
@@ -56,21 +50,12 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
     }
 
     @Override
-    public void write(final int type, final int sequence, final byte[] message) throws IOException {
-        buffer.putInt(TYPE_INDEX, type);
-        buffer.putInt(SEQUENCE_INDEX, sequence);
-        final int size;
-        if (message == null || message.length == 0) {
-            size = MESSAGE_INDEX;
-        } else {
-            buffer.putBytes(MESSAGE_INDEX, message);
-            size = MESSAGE_INDEX + message.length;
-        }
-        sendRetrying(size);
+    public void write(final IByteBuffer message) throws IOException {
+        sendRetrying(message);
     }
 
-    private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
-        while (!sendTry(size)) {
+    private void sendRetrying(final IByteBuffer message) throws IOException, EOFException, InterruptedIOException {
+        while (!sendTry(message)) {
             try {
                 FTimeUnit.MILLISECONDS.sleep(1);
             } catch (final InterruptedException e) {
@@ -83,8 +68,8 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
         connected = true;
     }
 
-    private boolean sendTry(final int size) throws IOException, EOFException {
-        final long result = publication.offer(buffer, 0, size);
+    private boolean sendTry(final IByteBuffer message) throws IOException, EOFException {
+        final long result = publication.offer(message.asDirectBuffer(), 0, message.capacity());
         if (result <= 0) {
             if (result == Publication.NOT_CONNECTED) {
                 if (connected) {
@@ -105,11 +90,6 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
             }
         }
         return true;
-    }
-
-    @Override
-    public void write(final ISynchronousCommand<byte[]> message) throws IOException {
-        write(message.getType(), message.getSequence(), message.getMessage());
     }
 
 }

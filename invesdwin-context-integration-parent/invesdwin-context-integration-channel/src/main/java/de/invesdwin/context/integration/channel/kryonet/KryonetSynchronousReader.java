@@ -10,14 +10,13 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<byte[]> {
+public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private ImmutableSynchronousCommand<byte[]> polledValue;
+    private IByteBuffer polledValue;
 
     public KryonetSynchronousReader(final InetAddress address, final int tcpPort, final int udpPort,
             final boolean server) {
@@ -28,11 +27,10 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
     public void open() throws IOException {
         super.open();
         connection.addListener(new Listener() {
-            @SuppressWarnings("unchecked")
             @Override
             public void received(final Connection connection, final Object object) {
-                if (object instanceof ImmutableSynchronousCommand) {
-                    polledValue = (ImmutableSynchronousCommand<byte[]>) object;
+                if (object instanceof IByteBuffer) {
+                    polledValue = (IByteBuffer) object;
                 }
             }
         });
@@ -44,24 +42,24 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
     }
 
     @Override
-    public ISynchronousCommand<byte[]> readMessage() throws IOException {
-        final ISynchronousCommand<byte[]> message = getPolledMessage();
-        if (message.getType() == EmptySynchronousCommand.TYPE) {
+    public IByteBuffer readMessage() throws IOException {
+        final IByteBuffer message = getPolledMessage();
+        if (ClosedByteBuffer.isClosed(message)) {
             close();
             throw new EOFException("closed by other side");
         }
         return message;
     }
 
-    private ISynchronousCommand<byte[]> getPolledMessage() {
+    private IByteBuffer getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableSynchronousCommand<byte[]> value = polledValue;
+            final IByteBuffer value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             if (polledValue != null) {
-                final ImmutableSynchronousCommand<byte[]> value = polledValue;
+                final IByteBuffer value = polledValue;
                 polledValue = null;
                 return value;
             } else {

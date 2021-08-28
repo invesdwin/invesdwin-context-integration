@@ -6,30 +6,27 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.util.marshallers.serde.basic.IntegerSerde;
+import de.invesdwin.util.lang.buffer.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
 
-    public static final long TRANSACTION_POS = 0;
-    public static final int TRANSACTION_OFFSET = 1;
     public static final byte TRANSACTION_INITIAL_VALUE = 0;
     public static final byte TRANSACTION_WRITING_VALUE = -1;
     public static final byte TRANSACTION_CLOSED_VALUE = -2;
 
-    public static final long TYPE_POS = TRANSACTION_POS + TRANSACTION_OFFSET;
-    public static final int TYPE_OFFSET = IntegerSerde.FIXED_LENGTH;
+    public static final int TRANSACTION_INDEX = 0;
+    public static final int TRANSACTION_SIZE = Byte.BYTES;
 
-    public static final long SEQUENCE_POS = TYPE_POS + TYPE_OFFSET;
-    public static final int SEQUENCE_OFFSET = TYPE_OFFSET;
+    public static final int SIZE_INDEX = TRANSACTION_INDEX + TRANSACTION_SIZE;
+    public static final int SIZE_SIZE = Integer.BYTES;
 
-    public static final long SIZE_POS = SEQUENCE_POS + SEQUENCE_OFFSET;
-    public static final int SIZE_OFFSET = SEQUENCE_OFFSET;
+    public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
-    public static final long MESSAGE_POS = SIZE_POS + SIZE_OFFSET;
-    public static final int MIN_PHYSICAL_MESSAGE_SIZE = 4096 - (int) MESSAGE_POS;
+    public static final int MIN_PHYSICAL_MESSAGE_SIZE = 4096 - MESSAGE_INDEX;
 
     protected MemoryMappedFile mem;
+    protected UnsafeByteBuffer buffer;
     protected final File file;
     private final int maxMessageSize;
 
@@ -43,9 +40,10 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
 
     @Override
     public void open() throws IOException {
-        final long fileSize = maxMessageSize + MESSAGE_POS;
+        final int fileSize = maxMessageSize + MESSAGE_INDEX;
         try {
             this.mem = new MemoryMappedFile(file.getAbsolutePath(), fileSize);
+            this.buffer = new UnsafeByteBuffer(mem.getAddress(), mem.getSize());
         } catch (final Exception e) {
             throw new IOException("Unable to open file: " + file, e);
         }
@@ -65,52 +63,23 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     }
 
     protected void setTransaction(final byte val) {
-        mem.putByteVolatile(TRANSACTION_POS, val);
+        buffer.putByteVolatile(TRANSACTION_INDEX, val);
     }
 
     protected byte getTransaction() {
-        return mem.getByteVolatile(TRANSACTION_POS);
+        return buffer.getByteVolatile(TRANSACTION_INDEX);
     }
 
-    protected void setType(final int val) {
-        mem.putInt(TYPE_POS, val);
-    }
-
-    protected int getType() {
-        return mem.getInt(TYPE_POS);
-    }
-
-    protected void setSequence(final int val) {
-        mem.putInt(SEQUENCE_POS, val);
-    }
-
-    protected int getSequence() {
-        return mem.getInt(SEQUENCE_POS);
-    }
-
-    private void setSize(final int val) {
+    protected void setSize(final int val) {
         if (val > maxMessageSize) {
             throw new IllegalStateException(
                     "messageSize [" + val + "] exceeds maxMessageSize [" + maxMessageSize + "]");
         }
-        mem.putInt(SIZE_POS, val);
+        buffer.putInt(SIZE_INDEX, val);
     }
 
-    private int getSize() {
-        return mem.getInt(SIZE_POS);
-    }
-
-    protected byte[] getMessage() {
-        final int size = getSize();
-        final byte[] data = new byte[size];
-        mem.getBytes(MESSAGE_POS, data, 0, size);
-        return data;
-    }
-
-    protected void setMessage(final byte[] data) {
-        final int size = data.length;
-        setSize(size);
-        mem.setBytes(MESSAGE_POS, data, 0, size);
+    protected int getSize() {
+        return buffer.getInt(SIZE_INDEX);
     }
 
     @Override

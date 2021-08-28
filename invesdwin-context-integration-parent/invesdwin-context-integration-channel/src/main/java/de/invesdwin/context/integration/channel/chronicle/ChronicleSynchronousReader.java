@@ -7,17 +7,20 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.command.EmptySynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ISynchronousCommand;
-import de.invesdwin.context.integration.channel.command.ImmutableSynchronousCommand;
-import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.lang.buffer.ByteBuffers;
+import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
+import de.invesdwin.util.lang.buffer.IByteBuffer;
+import de.invesdwin.util.lang.buffer.delegate.ChronicleDelegateByteBuffer;
+import de.invesdwin.util.lang.buffer.delegate.OrderedDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
 @NotThreadSafe
-public class ChronicleSynchronousReader extends AChronicleSynchronousChannel implements ISynchronousReader<byte[]> {
+public class ChronicleSynchronousReader extends AChronicleSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
 
     private ExcerptTailer tailer;
     private net.openhft.chronicle.bytes.Bytes<?> bytes;
+    private IByteBuffer buffer;
 
     public ChronicleSynchronousReader(final File file) {
         super(file);
@@ -28,6 +31,9 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel imp
         super.open();
         this.tailer = queue.createTailer();
         this.bytes = net.openhft.chronicle.bytes.Bytes.elasticByteBuffer();
+        //chronicle bytes uses native order per default
+        this.buffer = OrderedDelegateByteBuffer.maybeWrap(ByteBuffers.DEFAULT_ORDER,
+                new ChronicleDelegateByteBuffer(bytes));
     }
 
     @Override
@@ -36,6 +42,7 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel imp
             tailer.close();
             tailer = null;
             bytes = null;
+            buffer = null;
         }
         super.close();
     }
@@ -46,22 +53,14 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel imp
     }
 
     @Override
-    public ISynchronousCommand<byte[]> readMessage() throws IOException {
-        final int type = bytes.readInt();
-        if (type == EmptySynchronousCommand.TYPE) {
+    public IByteBuffer readMessage() throws IOException {
+        final int length = (int) bytes.writePosition();
+        if (ClosedByteBuffer.isClosed(buffer, length)) {
             close();
             throw new EOFException("closed by other side");
         }
-        final int sequence = bytes.readInt();
-        final int size = bytes.readInt();
-        final byte[] message;
-        if (size == 0) {
-            message = Bytes.EMPTY_ARRAY;
-        } else {
-            message = new byte[size];
-            bytes.read(message);
-        }
-        return new ImmutableSynchronousCommand<byte[]>(type, sequence, message);
+        bytes.writePosition(0);
+        return buffer.slice(0, length);
     }
 
 }

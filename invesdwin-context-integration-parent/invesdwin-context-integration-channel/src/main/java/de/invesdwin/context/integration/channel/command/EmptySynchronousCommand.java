@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.command;
 
+import java.io.IOException;
+
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
@@ -29,6 +31,11 @@ public class EmptySynchronousCommand<M> implements ISynchronousCommand<M> {
     @Override
     public M getMessage() {
         return null;
+    }
+
+    @Override
+    public void close() throws IOException {
+        //noop
     }
 
 }

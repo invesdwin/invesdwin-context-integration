@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.command;
 
+import java.io.IOException;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 @NotThreadSafe
@@ -34,6 +36,11 @@ public class MutableSynchronousCommand<M> implements ISynchronousCommand<M> {
 
     public void setMessage(final M message) {
         this.message = message;
+    }
+
+    @Override
+    public void close() throws IOException {
+        message = null; //free memory
     }
 
 }
