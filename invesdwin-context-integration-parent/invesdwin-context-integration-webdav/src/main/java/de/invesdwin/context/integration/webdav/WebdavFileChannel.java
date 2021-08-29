@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.webdav;
 
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -365,7 +364,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             @Override
             protected OutputStream newDelegate() {
                 try {
-                    return new BufferedOutputStream(new FileOutputStream(file));
+                    return new FileOutputStream(file);
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }

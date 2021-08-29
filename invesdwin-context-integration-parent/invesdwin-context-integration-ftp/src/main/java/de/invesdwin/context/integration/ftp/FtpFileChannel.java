@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.ftp;
 
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -385,7 +384,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             @Override
             protected OutputStream newDelegate() {
                 try {
-                    return new BufferedOutputStream(new FileOutputStream(file));
+                    return new FileOutputStream(file);
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }
@@ -451,7 +450,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             @Override
             protected InputStream newDelegate() {
                 try {
-                    return new BufferedInputStream(new DeletingFileInputStream(file));
+                    return new DeletingFileInputStream(file);
                 } catch (final FileNotFoundException e) {
                     throw new RuntimeException(e);
                 }

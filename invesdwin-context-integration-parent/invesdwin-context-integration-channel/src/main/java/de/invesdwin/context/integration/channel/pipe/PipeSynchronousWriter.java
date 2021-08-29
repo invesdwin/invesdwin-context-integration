@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.pipe;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -16,7 +15,7 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 @NotThreadSafe
 public class PipeSynchronousWriter extends APipeSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
 
-    private BufferedOutputStream out;
+    private FileOutputStream out;
 
     public PipeSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
@@ -24,7 +23,7 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
 
     @Override
     public void open() throws IOException {
-        out = new BufferedOutputStream(new FileOutputStream(file, true), fileSize);
+        out = new FileOutputStream(file, true);
     }
 
     @Override

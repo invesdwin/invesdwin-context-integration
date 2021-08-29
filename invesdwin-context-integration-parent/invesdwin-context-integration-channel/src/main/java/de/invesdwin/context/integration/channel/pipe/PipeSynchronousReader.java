@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.pipe;
 
-import java.io.BufferedInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,7 +15,7 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 @NotThreadSafe
 public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private BufferedInputStream in;
+    private FileInputStream in;
     private IByteBuffer buffer;
 
     public PipeSynchronousReader(final File file, final int maxMessageSize) {
@@ -25,7 +24,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
     @Override
     public void open() throws IOException {
-        in = new BufferedInputStream(new FileInputStream(file), fileSize);
+        in = new FileInputStream(file);
         buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
     }
 

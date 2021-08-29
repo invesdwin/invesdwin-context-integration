@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.channel.socket;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 public class SocketSynchronousWriter extends ASocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    private BufferedOutputStream out;
+    private OutputStream out;
 
     public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
@@ -26,7 +26,7 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
-        out = new BufferedOutputStream(socket.getOutputStream(), socketSize);
+        out = socket.getOutputStream();
     }
 
     @Override
