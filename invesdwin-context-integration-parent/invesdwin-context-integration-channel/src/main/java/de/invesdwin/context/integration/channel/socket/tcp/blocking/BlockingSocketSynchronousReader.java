@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.old;
+package de.invesdwin.context.integration.channel.socket.tcp.blocking;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -13,13 +13,13 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel
+public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     private InputStream in;
     private IByteBuffer buffer;
 
-    public OldSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
+    public BlockingSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }

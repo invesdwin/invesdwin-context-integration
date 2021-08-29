@@ -60,14 +60,14 @@ import de.invesdwin.context.integration.channel.reference.ReferenceSynchronousRe
 import de.invesdwin.context.integration.channel.reference.ReferenceSynchronousWriter;
 import de.invesdwin.context.integration.channel.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.serde.SerdeSynchronousWriter;
-import de.invesdwin.context.integration.channel.socket.nio.NioSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.socket.nio.NioSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.socket.nio.udp.NioDatagramSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.socket.nio.udp.NioDatagramSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.socket.old.OldSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.socket.old.OldSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.socket.old.udp.OldDatagramSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.socket.old.udp.OldDatagramSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.tcp.SocketSynchronousReader;
+import de.invesdwin.context.integration.channel.socket.tcp.SocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.tcp.blocking.BlockingSocketSynchronousReader;
+import de.invesdwin.context.integration.channel.socket.tcp.blocking.BlockingSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousReader;
+import de.invesdwin.context.integration.channel.socket.udp.DatagramSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.udp.blocking.BlockingDatagramSocketSynchronousReader;
+import de.invesdwin.context.integration.channel.socket.udp.blocking.BlockingDatagramSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.zeromq.JeromqSynchronousReader;
 import de.invesdwin.context.integration.channel.zeromq.JeromqSynchronousWriter;
 import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
@@ -515,63 +515,15 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NioSocketSynchronousWriter(responseAddress,
-                true, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new NioSocketSynchronousReader(requestAddress, true,
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(responseAddress, true,
+                MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NioSocketSynchronousWriter(requestAddress,
-                false, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new NioSocketSynchronousReader(responseAddress, false,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(requestAddress, false,
                 MESSAGE_SIZE);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
-        executor.shutdown();
-        executor.awaitTermination();
-    }
-
-    @Test
-    public void testOldSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
-        runOldSocketPerformanceTest(responseAddress, requestAddress);
-    }
-
-    private void runOldSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
-            throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new OldSocketSynchronousWriter(responseAddress,
-                true, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new OldSocketSynchronousReader(requestAddress, true,
-                MESSAGE_SIZE);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new OldSocketSynchronousWriter(requestAddress,
-                false, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new OldSocketSynchronousReader(responseAddress, false,
-                MESSAGE_SIZE);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
-        executor.shutdown();
-        executor.awaitTermination();
-    }
-
-    @Test
-    public void testOldDatagramSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
-        runOldDatagramSocketPerformanceTest(responseAddress, requestAddress);
-    }
-
-    private void runOldDatagramSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new OldDatagramSocketSynchronousWriter(
-                responseAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new OldDatagramSocketSynchronousReader(requestAddress,
-                MESSAGE_SIZE);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new OldDatagramSocketSynchronousWriter(
-                requestAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new OldDatagramSocketSynchronousReader(responseAddress,
+        final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
                 MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
@@ -587,16 +539,64 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NioDatagramSocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSocketSynchronousWriter(
                 responseAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new NioDatagramSocketSynchronousReader(requestAddress,
+        final ISynchronousReader<IByteBuffer> requestReader = new DatagramSocketSynchronousReader(requestAddress,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NioDatagramSocketSynchronousWriter(
-                requestAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new NioDatagramSocketSynchronousReader(responseAddress,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new DatagramSocketSynchronousWriter(requestAddress,
                 MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> responseReader = new DatagramSocketSynchronousReader(responseAddress,
+                MESSAGE_SIZE);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testBlockingSocketPerformance() throws InterruptedException {
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        runBlockingSocketPerformanceTest(responseAddress, requestAddress);
+    }
+
+    private void runBlockingSocketPerformanceTest(final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingSocketSynchronousWriter(
+                responseAddress, true, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(requestAddress, true,
+                MESSAGE_SIZE);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingSocketSynchronousWriter(requestAddress,
+                false, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(responseAddress,
+                false, MESSAGE_SIZE);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testBlockingDatagramSocketPerformance() throws InterruptedException {
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        runBlockingDatagramSocketPerformanceTest(responseAddress, requestAddress);
+    }
+
+    private void runBlockingDatagramSocketPerformanceTest(final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingDatagramSocketSynchronousWriter(
+                responseAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSocketSynchronousReader(
+                requestAddress, MESSAGE_SIZE);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingDatagramSocketSynchronousWriter(
+                requestAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSocketSynchronousReader(
+                responseAddress, MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

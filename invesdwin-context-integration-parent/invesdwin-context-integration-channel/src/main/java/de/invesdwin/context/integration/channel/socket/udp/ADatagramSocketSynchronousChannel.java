@@ -1,10 +1,11 @@
-package de.invesdwin.context.integration.channel.socket.old.udp;
+package de.invesdwin.context.integration.channel.socket.udp;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,7 +13,7 @@ import de.invesdwin.context.integration.channel.ISynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class AOldDatagramSocketSynchronousChannel implements ISynchronousChannel {
+public abstract class ADatagramSocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
@@ -28,9 +29,10 @@ public abstract class AOldDatagramSocketSynchronousChannel implements ISynchrono
     protected final boolean server;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
+    protected DatagramChannel socketChannel;
     protected DatagramSocket socket;
 
-    public AOldDatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public ADatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -42,16 +44,23 @@ public abstract class AOldDatagramSocketSynchronousChannel implements ISynchrono
     @Override
     public void open() throws IOException {
         if (server) {
-            socket = new DatagramSocket(socketAddress);
+            socketChannel = DatagramChannel.open();
+            socketChannel.bind(socketAddress);
+            socket = socketChannel.socket();
         } else {
             for (int tries = 0;; tries++) {
                 try {
-                    socket = new DatagramSocket();
-                    socket.connect(socketAddress);
+                    socketChannel = DatagramChannel.open();
+                    socketChannel.connect(socketAddress);
+                    socket = socketChannel.socket();
                     break;
                 } catch (final ConnectException e) {
-                    socket.close();
-                    socket = null;
+                    socketChannel.close();
+                    socketChannel = null;
+                    if (socket != null) {
+                        socket.close();
+                        socket = null;
+                    }
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -64,6 +73,8 @@ public abstract class AOldDatagramSocketSynchronousChannel implements ISynchrono
                 }
             }
         }
+        //non-blocking datagrams are a lot faster than blocking ones
+        socketChannel.configureBlocking(false);
         socket.setSendBufferSize(socketSize);
         socket.setReceiveBufferSize(socketSize);
         socket.setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT);
@@ -79,6 +90,10 @@ public abstract class AOldDatagramSocketSynchronousChannel implements ISynchrono
 
     @Override
     public void close() throws IOException {
+        if (socketChannel != null) {
+            socketChannel.close();
+            socketChannel = null;
+        }
         if (socket != null) {
             socket.close();
             socket = null;

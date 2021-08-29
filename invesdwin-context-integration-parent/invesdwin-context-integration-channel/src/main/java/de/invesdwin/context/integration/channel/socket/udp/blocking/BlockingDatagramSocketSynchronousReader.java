@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.old.udp;
+package de.invesdwin.context.integration.channel.socket.udp.blocking;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -13,13 +13,13 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class OldDatagramSocketSynchronousReader extends AOldDatagramSocketSynchronousChannel
+public class BlockingDatagramSocketSynchronousReader extends ABlockingDatagramSocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     protected IByteBuffer packetBuffer;
     protected DatagramPacket packet;
 
-    public OldDatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public BlockingDatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
     }
 

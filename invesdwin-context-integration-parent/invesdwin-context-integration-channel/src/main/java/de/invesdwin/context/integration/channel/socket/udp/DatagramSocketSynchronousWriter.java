@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.nio;
+package de.invesdwin.context.integration.channel.socket.udp;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -13,34 +13,33 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class NioSocketSynchronousWriter extends ANioSocketSynchronousChannel
+public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    private IByteBuffer buffer;
-    private SlicedFromDelegateByteBuffer messageBuffer;
+    protected IByteBuffer packetBuffer;
+    protected IByteBuffer messageBuffer;
 
-    public NioSocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+        super(socketAddress, false, estimatedMaxMessageSize);
     }
 
     @Override
     public void open() throws IOException {
         super.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        packetBuffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
     }
 
     @Override
     public void close() throws IOException {
-        if (buffer != null) {
+        if (socket != null) {
             try {
                 write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
-            buffer = null;
+            packetBuffer = null;
             messageBuffer = null;
         }
         super.close();
@@ -48,13 +47,9 @@ public class NioSocketSynchronousWriter extends ANioSocketSynchronousChannel
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        try {
-            final int size = message.write(messageBuffer);
-            buffer.putInt(SIZE_INDEX, size);
-            buffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
-        } catch (final IOException e) {
-            throw newEofException(e);
-        }
+        final int size = message.write(messageBuffer);
+        packetBuffer.putInt(SIZE_INDEX, size);
+        packetBuffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
     }
 
 }

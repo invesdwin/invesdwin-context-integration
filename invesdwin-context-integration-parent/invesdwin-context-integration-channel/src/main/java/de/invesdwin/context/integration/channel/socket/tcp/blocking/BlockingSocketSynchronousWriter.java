@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.old;
+package de.invesdwin.context.integration.channel.socket.tcp.blocking;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,14 +14,14 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class OldSocketSynchronousWriter extends AOldSocketSynchronousChannel
+public class BlockingSocketSynchronousWriter extends ABlockingSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private OutputStream out;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public OldSocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
+    public BlockingSocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }

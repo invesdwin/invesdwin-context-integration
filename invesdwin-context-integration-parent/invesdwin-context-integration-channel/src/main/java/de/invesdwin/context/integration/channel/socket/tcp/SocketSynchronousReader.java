@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.nio;
+package de.invesdwin.context.integration.channel.socket.tcp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -14,14 +14,14 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
+public class SocketSynchronousReader extends ASocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     private InputStream in;
     private IByteBuffer buffer;
     private ByteBuffer messageBuffer;
 
-    public NioSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
+    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }

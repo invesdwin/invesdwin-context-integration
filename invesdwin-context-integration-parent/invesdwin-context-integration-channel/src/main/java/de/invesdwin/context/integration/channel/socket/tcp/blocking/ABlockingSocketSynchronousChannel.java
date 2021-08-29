@@ -1,66 +1,56 @@
-package de.invesdwin.context.integration.channel.socket.nio.udp;
+package de.invesdwin.context.integration.channel.socket.tcp.blocking;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class ANioDatagramSocketSynchronousChannel implements ISynchronousChannel {
-
-    public static final int IPTOS_LOWCOST = 0x02;
-    public static final int IPTOS_RELIABILITY = 0x04;
-    public static final int IPTOS_THROUGHPUT = 0x08;
-    public static final int IPTOS_LOWDELAY = 0x10;
+public abstract class ABlockingSocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
 
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
-    protected final SocketAddress socketAddress;
-    protected final boolean server;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected DatagramChannel socketChannel;
-    protected DatagramSocket socket;
+    protected Socket socket;
+    private final SocketAddress socketAddress;
+    private final boolean server;
+    private ServerSocket serverSocket;
 
-    public ANioDatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public ABlockingSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
-
     }
 
     @Override
     public void open() throws IOException {
         if (server) {
-            socketChannel = DatagramChannel.open();
-            socketChannel.bind(socketAddress);
-            socket = socketChannel.socket();
+            serverSocket = new ServerSocket();
+            serverSocket.bind(socketAddress);
+            socket = serverSocket.accept();
         } else {
             for (int tries = 0;; tries++) {
                 try {
-                    socketChannel = DatagramChannel.open();
-                    socketChannel.connect(socketAddress);
-                    socket = socketChannel.socket();
+                    socket = new Socket();
+                    socket.connect(socketAddress);
                     break;
                 } catch (final ConnectException e) {
-                    socketChannel.close();
-                    socketChannel = null;
-                    if (socket != null) {
-                        socket.close();
-                        socket = null;
-                    }
+                    socket.close();
+                    socket = null;
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -73,9 +63,11 @@ public abstract class ANioDatagramSocketSynchronousChannel implements ISynchrono
                 }
             }
         }
-        socket.setSendBufferSize(socketSize);
+        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
+                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
         socket.setReceiveBufferSize(socketSize);
-        socket.setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT);
+        socket.setSendBufferSize(socketSize);
+        socket.setTcpNoDelay(true);
     }
 
     protected Duration getConnectRetryDelay() {
@@ -88,13 +80,13 @@ public abstract class ANioDatagramSocketSynchronousChannel implements ISynchrono
 
     @Override
     public void close() throws IOException {
-        if (socketChannel != null) {
-            socketChannel.close();
-            socketChannel = null;
-        }
         if (socket != null) {
             socket.close();
             socket = null;
+        }
+        if (serverSocket != null) {
+            serverSocket.close();
+            serverSocket = null;
         }
     }
 

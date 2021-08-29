@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.old;
+package de.invesdwin.context.integration.channel.socket.tcp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -6,15 +6,17 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.socket.old.udp.AOldDatagramSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class AOldSocketSynchronousChannel implements ISynchronousChannel {
+public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -24,11 +26,13 @@ public abstract class AOldSocketSynchronousChannel implements ISynchronousChanne
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected Socket socket;
+    protected SocketChannel socketChannel;
     private final SocketAddress socketAddress;
     private final boolean server;
+    private ServerSocketChannel serverSocketChannel;
     private ServerSocket serverSocket;
 
-    public AOldSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public ASocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -39,18 +43,25 @@ public abstract class AOldSocketSynchronousChannel implements ISynchronousChanne
     @Override
     public void open() throws IOException {
         if (server) {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(socketAddress);
-            socket = serverSocket.accept();
+            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.bind(socketAddress);
+            serverSocket = serverSocketChannel.socket();
+            socketChannel = serverSocketChannel.accept();
+            socket = socketChannel.socket();
         } else {
             for (int tries = 0;; tries++) {
+                socketChannel = SocketChannel.open();
                 try {
-                    socket = new Socket();
-                    socket.connect(socketAddress);
+                    socketChannel.connect(socketAddress);
+                    socket = socketChannel.socket();
                     break;
                 } catch (final ConnectException e) {
-                    socket.close();
-                    socket = null;
+                    socketChannel.close();
+                    socketChannel = null;
+                    if (socket != null) {
+                        socket.close();
+                        socket = null;
+                    }
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -63,8 +74,10 @@ public abstract class AOldSocketSynchronousChannel implements ISynchronousChanne
                 }
             }
         }
-        socket.setTrafficClass(
-                AOldDatagramSocketSynchronousChannel.IPTOS_LOWDELAY | AOldDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+        //non-blocking sockets are a bit faster than blocking ones
+        socketChannel.configureBlocking(false);
+        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
+                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
         socket.setReceiveBufferSize(socketSize);
         socket.setSendBufferSize(socketSize);
         socket.setTcpNoDelay(true);
@@ -80,9 +93,17 @@ public abstract class AOldSocketSynchronousChannel implements ISynchronousChanne
 
     @Override
     public void close() throws IOException {
+        if (socketChannel != null) {
+            socketChannel.close();
+            socketChannel = null;
+        }
         if (socket != null) {
             socket.close();
             socket = null;
+        }
+        if (serverSocketChannel != null) {
+            serverSocketChannel.close();
+            serverSocketChannel = null;
         }
         if (serverSocket != null) {
             serverSocket.close();
