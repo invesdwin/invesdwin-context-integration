@@ -61,7 +61,7 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
     }
 
     @Override
-    public IByteBuffer asByteBuffer() {
+    public IByteBuffer asBuffer() {
         if (buffer == null) {
             buffer = ByteBuffers.allocate(this.fixedLength);
         }

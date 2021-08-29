@@ -6,6 +6,8 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -39,18 +41,23 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     @Override
     public void open() throws IOException {
         if (server) {
-            serverSocket = new ServerSocket();
-            serverSocket.bind(socketAddress);
-            socket = serverSocket.accept();
+            final ServerSocketChannel channel = ServerSocketChannel.open();
+            channel.bind(socketAddress);
+            serverSocket = channel.socket();
+            socket = channel.accept().socket();
         } else {
             for (int tries = 0;; tries++) {
+                final SocketChannel channel = SocketChannel.open();
                 try {
-                    socket = new Socket();
-                    socket.connect(socketAddress);
+                    channel.connect(socketAddress);
+                    socket = channel.socket();
                     break;
                 } catch (final ConnectException e) {
-                    socket.close();
-                    socket = null;
+                    channel.close();
+                    if (socket != null) {
+                        socket.close();
+                        socket = null;
+                    }
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -81,10 +88,18 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     @Override
     public void close() throws IOException {
         if (socket != null) {
+            final SocketChannel socketChannel = socket.getChannel();
+            if (socketChannel != null) {
+                socketChannel.close();
+            }
             socket.close();
             socket = null;
         }
         if (serverSocket != null) {
+            final ServerSocketChannel serverSocketChannel = serverSocket.getChannel();
+            if (serverSocketChannel != null) {
+                serverSocketChannel.close();
+            }
             serverSocket.close();
             serverSocket = null;
         }

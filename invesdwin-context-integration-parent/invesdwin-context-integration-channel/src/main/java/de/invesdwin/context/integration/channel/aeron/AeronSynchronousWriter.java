@@ -52,7 +52,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        sendRetrying(message.asByteBuffer());
+        sendRetrying(message.asBuffer());
     }
 
     private void sendRetrying(final IByteBuffer message) throws IOException, EOFException, InterruptedIOException {

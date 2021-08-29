@@ -52,9 +52,9 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            buffer.putBytesTo(0, in, MESSAGE_INDEX);
+            buffer.putBytesTo(0, socket.getChannel(), MESSAGE_INDEX);
             final int size = buffer.getInt(SIZE_INDEX);
-            buffer.putBytesTo(0, in, size);
+            buffer.putBytesTo(0, socket.getChannel(), size);
             if (ClosedByteBuffer.isClosed(buffer, size)) {
                 close();
                 throw new EOFException("closed by other side");

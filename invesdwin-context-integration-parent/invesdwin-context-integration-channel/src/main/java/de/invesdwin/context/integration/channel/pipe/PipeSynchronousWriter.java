@@ -11,7 +11,7 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
 public class PipeSynchronousWriter extends APipeSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
@@ -27,7 +27,7 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     @Override
     public void open() throws IOException {
         out = new FileOutputStream(file, true);
-        buffer = new ExpandableArrayByteBuffer(fileSize);
+        buffer = new ArrayExpandableByteBuffer(fileSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 

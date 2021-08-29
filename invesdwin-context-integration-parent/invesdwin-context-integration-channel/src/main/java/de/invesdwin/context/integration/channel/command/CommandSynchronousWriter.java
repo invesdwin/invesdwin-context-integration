@@ -73,7 +73,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     }
 
     @Override
-    public IByteBuffer asByteBuffer() {
+    public IByteBuffer asBuffer() {
         if (buffer == null) {
             buffer = ByteBuffers.allocate(this.fixedLength);
         }

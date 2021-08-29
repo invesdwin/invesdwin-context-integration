@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.socket;
 
 import java.io.IOException;
-import java.io.OutputStream;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -11,13 +10,12 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.DirectExpandableByteBuffer;
 
 @NotThreadSafe
 public class SocketSynchronousWriter extends ASocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    private OutputStream out;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
@@ -29,25 +27,18 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
-        out = socket.getOutputStream();
-        buffer = new ExpandableArrayByteBuffer(socketSize);
+        buffer = new DirectExpandableByteBuffer(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
     public void close() throws IOException {
-        if (out != null) {
+        if (buffer != null) {
             try {
                 write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
-            try {
-                out.close();
-            } catch (final Throwable t) {
-                //ignore
-            }
-            out = null;
             buffer = null;
             messageBuffer = null;
         }
@@ -59,8 +50,7 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
         try {
             final int size = message.write(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
-            buffer.getBytesTo(0, out, MESSAGE_INDEX + size);
-            out.flush();
+            buffer.getBytesTo(0, socket.getChannel(), MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw newEofException(e);
         }

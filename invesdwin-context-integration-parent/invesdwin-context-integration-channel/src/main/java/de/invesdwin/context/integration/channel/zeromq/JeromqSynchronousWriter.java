@@ -15,7 +15,7 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
 
@@ -23,7 +23,7 @@ import zmq.ZError;
 public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    private ExpandableArrayByteBuffer buffer;
+    private ArrayExpandableByteBuffer buffer;
     private IByteBuffer messageBuffer;
 
     public JeromqSynchronousWriter(final IJeromqSocketType socketType, final String addr, final boolean server) {
@@ -37,7 +37,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
-        buffer = new ExpandableArrayByteBuffer();
+        buffer = new ArrayExpandableByteBuffer();
         if (topic.length > 0) {
             buffer.putBytes(0, topic);
             messageBuffer = new SlicedFromDelegateByteBuffer(buffer, topic.length);

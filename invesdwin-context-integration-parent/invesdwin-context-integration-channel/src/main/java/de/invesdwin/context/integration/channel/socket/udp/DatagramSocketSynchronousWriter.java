@@ -11,13 +11,13 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    protected ExpandableArrayByteBuffer packetBuffer = new ExpandableArrayByteBuffer();
+    protected ArrayExpandableByteBuffer packetBuffer = new ArrayExpandableByteBuffer();
     protected IByteBuffer messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
     protected DatagramPacket packet;
 
