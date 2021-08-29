@@ -14,8 +14,7 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class SocketSynchronousReader extends ASocketSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class SocketSynchronousReader extends ASocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private InputStream in;
     private IByteBuffer buffer;
@@ -49,7 +48,7 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel
     @Override
     public boolean hasNext() throws IOException {
         try {
-            //this is a lot faster then directly reading on the channel
+            //this is a lot faster than directly reading on the channel
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
             throw newEofException(e);

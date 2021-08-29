@@ -48,40 +48,42 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
     @Override
     public boolean hasNext() throws IOException {
-        if (messageBuffer.position() > 0) {
-            return true;
+        try {
+            //this is a lot faster than directly reading on the channel
+            return in.available() >= MESSAGE_INDEX;
+        } catch (final IOException e) {
+            throw newEofException(e);
         }
-        final int read = fileChannel.read(messageBuffer);
-        if (read < 0) {
-            throw new EOFException("closed by other side");
-        }
-        return read > 0;
     }
 
     @Override
     public IByteBuffer readMessage() throws IOException {
+        ByteBuffers.position(messageBuffer, 0);
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
-        while (messageBuffer.position() < targetPosition) {
+        while (true) {
             final int read = fileChannel.read(messageBuffer);
             if (read < 0) {
                 throw new EOFException("closed by other side");
             }
+            if (read > 0 && messageBuffer.position() >= targetPosition) {
+                size = buffer.getInt(SIZE_INDEX);
+                targetPosition += size;
+                break;
+            }
         }
-        size = buffer.getInt(SIZE_INDEX);
-        targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
             buffer.putBytesTo(messageBuffer.position(), fileChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
+                //update reference to underlying storage
                 messageBuffer = buffer.asByteBuffer(0, fileSize);
             }
         }
 
-        ByteBuffers.position(messageBuffer, 0);
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
             throw new EOFException("closed by other side");

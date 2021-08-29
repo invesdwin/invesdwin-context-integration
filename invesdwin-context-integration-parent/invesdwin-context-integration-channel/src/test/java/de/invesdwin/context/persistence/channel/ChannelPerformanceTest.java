@@ -52,6 +52,8 @@ import de.invesdwin.context.integration.channel.mapped.MappedSynchronousReader;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousWriter;
 import de.invesdwin.context.integration.channel.pipe.PipeSynchronousReader;
 import de.invesdwin.context.integration.channel.pipe.PipeSynchronousWriter;
+import de.invesdwin.context.integration.channel.pipe.stream.StreamingPipeSynchronousReader;
+import de.invesdwin.context.integration.channel.pipe.stream.StreamingPipeSynchronousWriter;
 import de.invesdwin.context.integration.channel.queue.QueueSynchronousReader;
 import de.invesdwin.context.integration.channel.queue.QueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.queue.blocking.BlockingQueueSynchronousReader;
@@ -119,6 +121,7 @@ public class ChannelPerformanceTest extends ATest {
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
     private enum FileChannelType {
+        PIPE_STREAMING,
         PIPE,
         MAPPED;
     }
@@ -133,7 +136,7 @@ public class ChannelPerformanceTest extends ATest {
         final File file = new File(baseFolder, name);
         Files.deleteQuietly(file);
         Assertions.checkFalse(file.exists(), "%s", file);
-        if (pipes == FileChannelType.PIPE) {
+        if (pipes == FileChannelType.PIPE || pipes == FileChannelType.PIPE_STREAMING) {
             Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
         } else if (pipes == FileChannelType.MAPPED) {
             try {
@@ -161,6 +164,24 @@ public class ChannelPerformanceTest extends ATest {
     public void testNamedPipePerformanceWithTmpfs() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.PIPE;
+        final File requestFile = newFile("testNamedPipePerformanceWithTmpfs_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testNamedPipePerformanceWithTmpfs_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+    }
+
+    @Test
+    public void testNamedPipeStreamingPerformance() throws InterruptedException {
+        final boolean tmpfs = false;
+        final FileChannelType pipes = FileChannelType.PIPE_STREAMING;
+        final File requestFile = newFile("testNamedPipePerformance_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testNamedPipePerformance_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+    }
+
+    @Test
+    public void testNamedPipeStreamingPerformanceWithTmpfs() throws InterruptedException {
+        final boolean tmpfs = true;
+        final FileChannelType pipes = FileChannelType.PIPE_STREAMING;
         final File requestFile = newFile("testNamedPipePerformanceWithTmpfs_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testNamedPipePerformanceWithTmpfs_response.pipe", tmpfs, pipes);
         runPerformanceTest(pipes, requestFile, responseFile, null, null);
@@ -765,7 +786,9 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     private ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE) {
+        if (pipes == FileChannelType.PIPE_STREAMING) {
+            return new StreamingPipeSynchronousReader(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.PIPE) {
             return new PipeSynchronousReader(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousReader(file, MESSAGE_SIZE);
@@ -775,7 +798,9 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     private ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE) {
+        if (pipes == FileChannelType.PIPE_STREAMING) {
+            return new StreamingPipeSynchronousWriter(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.PIPE) {
             return new PipeSynchronousWriter(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousWriter(file, MESSAGE_SIZE);

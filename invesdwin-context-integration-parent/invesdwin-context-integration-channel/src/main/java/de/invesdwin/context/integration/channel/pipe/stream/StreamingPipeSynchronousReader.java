@@ -13,12 +13,12 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class StreamPipeSynchronousReader extends AStreamPipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private FileInputStream in;
     private IByteBuffer buffer;
 
-    public StreamPipeSynchronousReader(final File file, final int maxMessageSize) {
+    public StreamingPipeSynchronousReader(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 

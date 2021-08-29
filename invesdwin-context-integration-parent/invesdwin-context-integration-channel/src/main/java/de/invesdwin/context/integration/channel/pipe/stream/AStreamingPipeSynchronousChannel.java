@@ -9,7 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
 
 @NotThreadSafe
-public abstract class AStreamPipeSynchronousChannel implements ISynchronousChannel {
+public abstract class AStreamingPipeSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -20,7 +20,7 @@ public abstract class AStreamPipeSynchronousChannel implements ISynchronousChann
     protected final int estimatedMaxMessageSize;
     protected final int fileSize;
 
-    public AStreamPipeSynchronousChannel(final File file, final int estimatedMaxMessageSize) {
+    public AStreamingPipeSynchronousChannel(final File file, final int estimatedMaxMessageSize) {
         this.file = file;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.fileSize = estimatedMaxMessageSize + MESSAGE_INDEX;

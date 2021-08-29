@@ -14,14 +14,14 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
-public class StreamPipeSynchronousWriter extends AStreamPipeSynchronousChannel
+public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private FileOutputStream out;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public StreamPipeSynchronousWriter(final File file, final int maxMessageSize) {
+    public StreamingPipeSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 
