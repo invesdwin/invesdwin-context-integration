@@ -29,6 +29,7 @@ public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchr
     @Override
     public void open() throws IOException {
         super.open();
+        //old socket would actually slow down with direct buffer because it requires a byte[]
         packetBuffer = ByteBuffers.allocateExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
         packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0);

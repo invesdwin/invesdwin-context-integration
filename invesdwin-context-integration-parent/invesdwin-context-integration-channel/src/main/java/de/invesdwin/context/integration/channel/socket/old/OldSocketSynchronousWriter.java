@@ -30,6 +30,7 @@ public class OldSocketSynchronousWriter extends AOldSocketSynchronousChannel
     public void open() throws IOException {
         super.open();
         out = socket.getOutputStream();
+        //old socket would actually slow down with direct buffer because it requires a byte[]
         buffer = ByteBuffers.allocateExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }

@@ -28,6 +28,7 @@ public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel
     public void open() throws IOException {
         super.open();
         in = socket.getInputStream();
+        //old socket would actually slow down with direct buffer because it requires a byte[]
         buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
     }
 

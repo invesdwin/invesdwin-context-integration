@@ -29,6 +29,7 @@ public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
     public void open() throws IOException {
         super.open();
         in = socket.getInputStream();
+        //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(estimatedMaxMessageSize);
     }
 
@@ -45,7 +46,7 @@ public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
     @Override
     public boolean hasNext() throws IOException {
         try {
-            //this is a lot faster then directly using read on the channel for the size
+            //this is a lot faster then directly reading on the channel
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
             throw newEofException(e);

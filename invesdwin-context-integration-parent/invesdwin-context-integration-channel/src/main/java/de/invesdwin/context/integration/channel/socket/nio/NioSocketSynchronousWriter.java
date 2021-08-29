@@ -27,6 +27,7 @@ public class NioSocketSynchronousWriter extends ANioSocketSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
+        //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
