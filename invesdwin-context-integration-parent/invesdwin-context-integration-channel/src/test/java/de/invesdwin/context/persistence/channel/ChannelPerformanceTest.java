@@ -110,7 +110,7 @@ public class ChannelPerformanceTest extends ATest {
     private static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
     private static final boolean DEBUG = false;
     private static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
-    private static final int VALUES = DEBUG ? 10 : 1_000_000;
+    private static final int VALUES = DEBUG ? 10 : 10_000_000;
     private static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
