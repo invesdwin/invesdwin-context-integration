@@ -27,9 +27,6 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
         setTransaction(TRANSACTION_INITIAL_VALUE);
     }
 
-    protected void putMessage(final byte[] data, final int length) {
-    }
-
     /**
      * Writes a message.
      *

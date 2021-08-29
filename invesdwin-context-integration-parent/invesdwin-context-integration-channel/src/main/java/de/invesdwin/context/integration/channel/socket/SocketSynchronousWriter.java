@@ -9,6 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
 import de.invesdwin.util.lang.buffer.IByteBuffer;
+import de.invesdwin.util.streams.OutputStreams;
 
 @NotThreadSafe
 public class SocketSynchronousWriter extends ASocketSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
@@ -46,7 +47,7 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
 
     @Override
     public void write(final IByteBuffer message) throws IOException {
-        message.putInt(SIZE_INDEX, message.capacity());
+        OutputStreams.writeInt(out, message.capacity());
         message.getBytes(MESSAGE_INDEX, out);
         try {
             out.flush();

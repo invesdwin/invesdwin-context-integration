@@ -13,8 +13,6 @@ import de.invesdwin.util.lang.buffer.IByteBuffer;
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBuffer> {
 
-    private static final double BUFFER_GROWTH_FACTOR = 1.25;
-
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
     }
