@@ -13,7 +13,8 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
 
     private InputStream in;
     private IByteBuffer buffer;
@@ -55,7 +56,7 @@ public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel imp
             buffer.putBytesTo(0, in, MESSAGE_INDEX);
             final int size = buffer.getInt(SIZE_INDEX);
             buffer.putBytesTo(0, in, size);
-            if (ClosedByteBuffer.isClosed(buffer, size)) {
+            if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();
                 throw new EOFException("closed by other side");
             }

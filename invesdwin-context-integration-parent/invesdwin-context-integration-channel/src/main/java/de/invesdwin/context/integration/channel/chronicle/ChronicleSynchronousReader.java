@@ -55,7 +55,7 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel
     @Override
     public IByteBuffer readMessage() throws IOException {
         final int length = (int) bytes.writePosition();
-        if (ClosedByteBuffer.isClosed(buffer, length)) {
+        if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
             close();
             throw new EOFException("closed by other side");
         }

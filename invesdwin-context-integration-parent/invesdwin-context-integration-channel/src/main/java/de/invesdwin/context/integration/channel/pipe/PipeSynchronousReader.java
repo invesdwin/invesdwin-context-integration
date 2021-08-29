@@ -52,7 +52,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             buffer.putBytesTo(0, in, MESSAGE_INDEX);
             final int size = buffer.getInt(SIZE_INDEX);
             buffer.putBytesTo(0, in, size);
-            if (ClosedByteBuffer.isClosed(buffer, size)) {
+            if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();
                 throw new EOFException("closed by other side");
             }

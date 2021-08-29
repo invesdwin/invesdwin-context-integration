@@ -16,9 +16,7 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 public class NioDatagramSocketSynchronousReader extends ANioDatagramSocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
-    protected ByteBuffer sizeBuffer;
-    protected int size = 0;
-    protected IByteBuffer messageBuffer;
+    protected IByteBuffer buffer;
 
     public NioDatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
@@ -27,42 +25,48 @@ public class NioDatagramSocketSynchronousReader extends ANioDatagramSocketSynchr
     @Override
     public void open() throws IOException {
         super.open();
-        sizeBuffer = ByteBuffer.allocateDirect(MESSAGE_INDEX);
-        messageBuffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        size = 0;
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
     }
 
     @Override
     public void close() throws IOException {
         super.close();
-        sizeBuffer = null;
-        messageBuffer = null;
-        size = 0;
+        buffer = null;
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        if (size > 0) {
-            return true;
-        }
-        final int read = socketChannel.read(sizeBuffer);
-        if (read > 0 && sizeBuffer.position() == MESSAGE_INDEX) {
-            size = sizeBuffer.getInt(0);
-            ByteBuffers.position(sizeBuffer, 0);
-        }
-        return size > 0;
+        return true;
     }
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        messageBuffer.putBytesTo(0, socketChannel, size);
-        if (ClosedByteBuffer.isClosed(messageBuffer, size)) {
+        final ByteBuffer byteBuffer = buffer.asByteBuffer(0, socketSize);
+        int targetPosition = MESSAGE_INDEX;
+        int size = 0;
+        //read size
+        while (true) {
+            final int read = socketChannel.read(byteBuffer);
+            if (read < 0) {
+                throw new EOFException("closed by other side");
+            }
+            if (read > 0 && byteBuffer.position() >= targetPosition) {
+                size = byteBuffer.getInt(SIZE_INDEX);
+                targetPosition += size;
+                break;
+            }
+        }
+        //read message if not complete yet
+        final int remaining = targetPosition - byteBuffer.position();
+        if (remaining > 0) {
+            buffer.putBytesTo(byteBuffer.position(), socketChannel, remaining);
+        }
+
+        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
             throw new EOFException("closed by other side");
         }
-        final IByteBuffer message = messageBuffer.sliceTo(size);
-        size = 0;
-        return message;
+        return buffer.slice(MESSAGE_INDEX, size);
     }
 
 }
