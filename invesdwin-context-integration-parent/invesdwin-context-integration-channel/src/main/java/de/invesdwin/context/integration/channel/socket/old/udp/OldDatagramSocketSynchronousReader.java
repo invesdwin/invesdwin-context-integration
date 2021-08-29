@@ -48,7 +48,7 @@ public class OldDatagramSocketSynchronousReader extends AOldDatagramSocketSynchr
     public IByteBuffer readMessage() throws IOException {
         final int size = packetBuffer.getInt(SIZE_INDEX);
         final IByteBuffer message = packetBuffer.slice(MESSAGE_INDEX, size);
-        if (ClosedByteBuffer.isClosed(message)) {
+        if (ClosedByteBuffer.isClosed(message, size)) {
             close();
             throw new EOFException("closed by other side");
         }
