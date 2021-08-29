@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.pipe.blocking;
+package de.invesdwin.context.integration.channel.pipe.stream;
 
 import java.io.EOFException;
 import java.io.File;
@@ -13,12 +13,12 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class BlockingPipeSynchronousReader extends ABlockingPipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class StreamPipeSynchronousReader extends AStreamPipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private FileInputStream in;
     private IByteBuffer buffer;
 
-    public BlockingPipeSynchronousReader(final File file, final int maxMessageSize) {
+    public StreamPipeSynchronousReader(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 

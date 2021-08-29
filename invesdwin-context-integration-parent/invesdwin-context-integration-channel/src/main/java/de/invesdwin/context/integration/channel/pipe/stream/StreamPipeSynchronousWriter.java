@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.pipe.blocking;
+package de.invesdwin.context.integration.channel.pipe.stream;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,13 +14,14 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
-public class BlockingPipeSynchronousWriter extends ABlockingPipeSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
+public class StreamPipeSynchronousWriter extends AStreamPipeSynchronousChannel
+        implements ISynchronousWriter<IByteBufferWriter> {
 
     private FileOutputStream out;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public BlockingPipeSynchronousWriter(final File file, final int maxMessageSize) {
+    public StreamPipeSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 
@@ -41,10 +42,10 @@ public class BlockingPipeSynchronousWriter extends ABlockingPipeSynchronousChann
             }
             try {
                 out.close();
-                out = null;
             } catch (final Throwable t) {
                 //ignore
             }
+            out = null;
             buffer = null;
             messageBuffer = null;
         }

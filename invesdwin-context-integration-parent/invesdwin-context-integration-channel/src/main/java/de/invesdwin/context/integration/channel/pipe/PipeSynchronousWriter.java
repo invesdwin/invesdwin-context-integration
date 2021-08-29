@@ -3,20 +3,22 @@ package de.invesdwin.context.integration.channel.pipe;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.channels.FileChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
 public class PipeSynchronousWriter extends APipeSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
 
     private FileOutputStream out;
+    private FileChannel fileChannel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
@@ -27,7 +29,9 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     @Override
     public void open() throws IOException {
         out = new FileOutputStream(file, true);
-        buffer = new ArrayExpandableByteBuffer(fileSize);
+        fileChannel = out.getChannel();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(fileSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
@@ -41,10 +45,11 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
             }
             try {
                 out.close();
-                out = null;
             } catch (final Throwable t) {
                 //ignore
             }
+            out = null;
+            fileChannel = null;
             buffer = null;
             messageBuffer = null;
         }
@@ -52,14 +57,9 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        try {
-            final int size = message.write(messageBuffer);
-            buffer.putInt(SIZE_INDEX, size);
-            buffer.getBytesTo(0, out, MESSAGE_INDEX + size);
-            out.flush();
-        } catch (final IOException e) {
-            throw newEofException(e);
-        }
+        final int size = message.write(messageBuffer);
+        buffer.putInt(SIZE_INDEX, size);
+        buffer.getBytesTo(0, fileChannel, MESSAGE_INDEX + size);
     }
 
 }
