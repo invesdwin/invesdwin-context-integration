@@ -616,6 +616,13 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     @Test
+    public void testJeromqTcpPushPullPerformance() throws InterruptedException {
+        final String responseChannel = "tcp://localhost:7878";
+        final String requestChannel = "tcp://localhost:7879";
+        runJeromqPerformanceTest(JeromqSocketType.PUSHPULL, responseChannel, requestChannel);
+    }
+
+    @Test
     public void testJeromqIpcPairPerformance() throws InterruptedException {
         final String responseChannel = "ipc://response";
         final String requestChannel = "ipc://request";

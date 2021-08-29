@@ -19,14 +19,6 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
 
-    private static final int TYPE_INDEX = 0;
-    private static final int TYPE_SIZE = Integer.BYTES;
-
-    private static final int SEQUENCE_INDEX = TYPE_INDEX + TYPE_SIZE;
-    private static final int SEQUENCE_SIZE = Integer.BYTES;
-
-    private static final int MESSAGE_INDEX = SEQUENCE_INDEX + SEQUENCE_SIZE;
-
     private static Context context;
 
     protected Socket socket;
@@ -35,8 +27,6 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
     protected final String addr;
     protected final boolean server;
     protected byte[] topic = Bytes.EMPTY_ARRAY;
-    protected int typeIndex = -1;
-    protected int sequenceIndex = -1;
     protected int messageIndex = -1;
 
     public AJeromqSynchronousChannel(final SocketType socketType, final String addr, final boolean server) {
@@ -82,9 +72,7 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
 
     private void updateIndexes() {
         final int topicSize = topic.length;
-        typeIndex = topicSize + TYPE_INDEX;
-        sequenceIndex = topicSize + SEQUENCE_INDEX;
-        messageIndex = topicSize + MESSAGE_INDEX;
+        messageIndex = topicSize;
     }
 
     /**

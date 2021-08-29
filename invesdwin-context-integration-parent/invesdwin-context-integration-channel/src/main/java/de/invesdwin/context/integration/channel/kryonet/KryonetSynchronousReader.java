@@ -44,7 +44,7 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
-        if (ClosedByteBuffer.isClosed(message)) {
+        if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
             throw new EOFException("closed by other side");
         }

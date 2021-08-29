@@ -40,7 +40,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
-        if (message == null || ClosedByteBuffer.isClosed(message)) {
+        if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
             throw new EOFException("closed by other side");
         }

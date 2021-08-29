@@ -31,13 +31,15 @@ public final class ByteBufferMessageSerialization implements Serialization {
     @Override
     public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
+        final int position = buffer.position();
         if (object instanceof IByteBufferWriter) {
             final IByteBufferWriter cObject = (IByteBufferWriter) object;
-            wrapped.putBoolean(KRYO_INDEX, false);
-            cObject.write(wrapped.sliceFrom(MESSAGE_INDEX));
+            wrapped.putBoolean(position + KRYO_INDEX, false);
+            final int length = cObject.write(wrapped.sliceFrom(position + MESSAGE_INDEX));
+            ByteBuffers.position(buffer, position + length + MESSAGE_INDEX);
         } else {
-            wrapped.putBoolean(0, true);
-            buffer.position(MESSAGE_INDEX);
+            wrapped.putBoolean(position + KRYO_INDEX, true);
+            ByteBuffers.position(buffer, position + MESSAGE_INDEX);
             DELEGATE.write(connection, buffer, object);
         }
     }
@@ -45,13 +47,18 @@ public final class ByteBufferMessageSerialization implements Serialization {
     @Override
     public Object read(final Connection connection, final ByteBuffer buffer) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
-        final boolean kryo = wrapped.getBoolean(KRYO_INDEX);
+        final int position = buffer.position();
+        final boolean kryo = wrapped.getBoolean(position + KRYO_INDEX);
         if (kryo) {
-            buffer.position(MESSAGE_INDEX);
+            ByteBuffers.position(buffer, position + MESSAGE_INDEX);
             return DELEGATE.read(connection, buffer);
         } else {
             //since each message is read asynchronously we need to create a snapshot of the byte array here (sadly)
-            return ByteBuffers.wrap(wrapped.asByteArrayCopyFrom(MESSAGE_INDEX));
+            final int length = buffer.limit() - position;
+            final IByteBuffer copy = ByteBuffers
+                    .wrap(wrapped.asByteArrayCopy(position + MESSAGE_INDEX, length - MESSAGE_INDEX));
+            ByteBuffers.position(buffer, position + length);
+            return copy;
         }
     }
 
