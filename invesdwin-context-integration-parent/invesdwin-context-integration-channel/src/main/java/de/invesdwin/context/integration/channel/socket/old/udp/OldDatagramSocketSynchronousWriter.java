@@ -7,18 +7,19 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
+import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
 public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    protected ArrayExpandableByteBuffer packetBuffer = new ArrayExpandableByteBuffer();
-    protected IByteBuffer messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
+    protected IByteBuffer packetBuffer;
+    protected IByteBuffer messageBuffer;
     protected DatagramPacket packet;
 
     public OldDatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
@@ -28,6 +29,9 @@ public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchr
     @Override
     public void open() throws IOException {
         super.open();
+        packetBuffer = ByteBuffers.allocateExpandable(socketSize);
+        messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
+        packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0);
     }
 
     @Override
@@ -38,6 +42,9 @@ public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchr
             } catch (final Throwable t) {
                 //ignore
             }
+            packet = null;
+            packetBuffer = null;
+            packet = null;
         }
         super.close();
     }
