@@ -2,8 +2,8 @@ package de.invesdwin.context.integration.channel.socket.nio;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -16,9 +16,8 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
-    private ByteBuffer sizeBuffer;
-    private IByteBuffer messageBuffer;
-    private int size;
+    private InputStream in;
+    private IByteBuffer buffer;
 
     public NioSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
@@ -28,33 +27,25 @@ public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
-        sizeBuffer = ByteBuffer.allocateDirect(MESSAGE_INDEX);
-        messageBuffer = ByteBuffers.allocateDirectExpandable(estimatedMaxMessageSize);
-        size = 0;
+        in = socket.getInputStream();
+        buffer = ByteBuffers.allocateDirectExpandable(estimatedMaxMessageSize);
     }
 
     @Override
     public void close() throws IOException {
-        if (sizeBuffer != null) {
-            sizeBuffer = null;
-            messageBuffer = null;
-            size = 0;
+        if (in != null) {
+            in.close();
+            in = null;
+            buffer = null;
         }
         super.close();
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        if (size > 0) {
-            return true;
-        }
         try {
-            final int read = socketChannel.read(sizeBuffer);
-            if (read > 0 && sizeBuffer.position() == MESSAGE_INDEX) {
-                size = sizeBuffer.getInt(0);
-                ByteBuffers.position(sizeBuffer, 0);
-            }
-            return size > 0;
+            //this is a lot faster then directly using read on the channel for the size
+            return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
             throw newEofException(e);
         }
@@ -63,14 +54,14 @@ public class NioSocketSynchronousReader extends ANioSocketSynchronousChannel
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            messageBuffer.putBytesTo(0, socketChannel, size);
-            if (ClosedByteBuffer.isClosed(messageBuffer, size)) {
+            buffer.putBytesTo(0, socketChannel, MESSAGE_INDEX);
+            final int size = buffer.getInt(SIZE_INDEX);
+            buffer.putBytesTo(0, socketChannel, size);
+            if (ClosedByteBuffer.isClosed(buffer, size)) {
                 close();
                 throw new EOFException("closed by other side");
             }
-            final IByteBuffer message = messageBuffer.sliceTo(size);
-            size = 0;
-            return message;
+            return buffer.sliceTo(size);
         } catch (final IOException e) {
             throw newEofException(e);
         }
