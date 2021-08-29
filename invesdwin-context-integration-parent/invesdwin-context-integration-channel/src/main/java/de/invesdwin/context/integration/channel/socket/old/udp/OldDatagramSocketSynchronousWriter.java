@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.udp;
+package de.invesdwin.context.integration.channel.socket.old.udp;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -14,14 +14,14 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import de.invesdwin.util.streams.buffer.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
-public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
+public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     protected ArrayExpandableByteBuffer packetBuffer = new ArrayExpandableByteBuffer();
     protected IByteBuffer messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
     protected DatagramPacket packet;
 
-    public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public OldDatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
     }
 

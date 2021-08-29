@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket;
+package de.invesdwin.context.integration.channel.socket.old;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -13,12 +13,12 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class SocketSynchronousReader extends ASocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class OldSocketSynchronousReader extends AOldSocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private InputStream in;
     private IByteBuffer buffer;
 
-    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
+    public OldSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         super(socketAddress, server, estimatedMaxMessageSize);
     }
@@ -52,9 +52,9 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            buffer.putBytesTo(0, socket.getChannel(), MESSAGE_INDEX);
+            buffer.putBytesTo(0, in, MESSAGE_INDEX);
             final int size = buffer.getInt(SIZE_INDEX);
-            buffer.putBytesTo(0, socket.getChannel(), size);
+            buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, size)) {
                 close();
                 throw new EOFException("closed by other side");

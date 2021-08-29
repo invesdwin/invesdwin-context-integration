@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket.udp;
+package de.invesdwin.context.integration.channel.socket.old.udp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.ISynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class ADatagramSocketSynchronousChannel implements ISynchronousChannel {
+public abstract class AOldDatagramSocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
@@ -30,7 +30,7 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     protected final int socketSize;
     protected DatagramSocket socket;
 
-    public ADatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public AOldDatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;

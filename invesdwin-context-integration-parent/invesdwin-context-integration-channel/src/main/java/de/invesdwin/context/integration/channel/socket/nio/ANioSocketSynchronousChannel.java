@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.socket;
+package de.invesdwin.context.integration.channel.socket.nio;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -12,11 +12,11 @@ import java.nio.channels.SocketChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.socket.udp.ADatagramSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.socket.old.udp.AOldDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
+public abstract class ANioSocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -26,11 +26,13 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected Socket socket;
+    protected SocketChannel socketChannel;
     private final SocketAddress socketAddress;
     private final boolean server;
+    private ServerSocketChannel serverSocketChannel;
     private ServerSocket serverSocket;
 
-    public ASocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public ANioSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -41,19 +43,21 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     @Override
     public void open() throws IOException {
         if (server) {
-            final ServerSocketChannel channel = ServerSocketChannel.open();
-            channel.bind(socketAddress);
-            serverSocket = channel.socket();
-            socket = channel.accept().socket();
+            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel.bind(socketAddress);
+            serverSocket = serverSocketChannel.socket();
+            socketChannel = serverSocketChannel.accept();
+            socket = socketChannel.socket();
         } else {
             for (int tries = 0;; tries++) {
-                final SocketChannel channel = SocketChannel.open();
+                socketChannel = SocketChannel.open();
                 try {
-                    channel.connect(socketAddress);
-                    socket = channel.socket();
+                    socketChannel.connect(socketAddress);
+                    socket = socketChannel.socket();
                     break;
                 } catch (final ConnectException e) {
-                    channel.close();
+                    socketChannel.close();
+                    socketChannel = null;
                     if (socket != null) {
                         socket.close();
                         socket = null;
@@ -71,7 +75,7 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
             }
         }
         socket.setTrafficClass(
-                ADatagramSocketSynchronousChannel.IPTOS_LOWDELAY | ADatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+                AOldDatagramSocketSynchronousChannel.IPTOS_LOWDELAY | AOldDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
         socket.setReceiveBufferSize(socketSize);
         socket.setSendBufferSize(socketSize);
         socket.setTcpNoDelay(true);
@@ -87,19 +91,19 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
 
     @Override
     public void close() throws IOException {
+        if (socketChannel != null) {
+            socketChannel.close();
+            socketChannel = null;
+        }
         if (socket != null) {
-            final SocketChannel socketChannel = socket.getChannel();
-            if (socketChannel != null) {
-                socketChannel.close();
-            }
             socket.close();
             socket = null;
         }
+        if (serverSocketChannel != null) {
+            serverSocketChannel.close();
+            serverSocketChannel = null;
+        }
         if (serverSocket != null) {
-            final ServerSocketChannel serverSocketChannel = serverSocket.getChannel();
-            if (serverSocketChannel != null) {
-                serverSocketChannel.close();
-            }
             serverSocket.close();
             serverSocket = null;
         }
