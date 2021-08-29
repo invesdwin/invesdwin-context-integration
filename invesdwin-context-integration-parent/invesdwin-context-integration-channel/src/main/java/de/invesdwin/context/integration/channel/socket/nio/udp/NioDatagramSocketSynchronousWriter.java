@@ -1,13 +1,11 @@
-package de.invesdwin.context.integration.channel.socket.old.udp;
+package de.invesdwin.context.integration.channel.socket.nio.udp;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
@@ -15,23 +13,21 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchronousChannel
+public class NioDatagramSocketSynchronousWriter extends ANioDatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     protected IByteBuffer packetBuffer;
     protected IByteBuffer messageBuffer;
-    protected DatagramPacket packet;
 
-    public OldDatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public NioDatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
     }
 
     @Override
     public void open() throws IOException {
         super.open();
-        packetBuffer = ByteBuffers.allocateExpandable(socketSize);
+        packetBuffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
-        packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0);
     }
 
     @Override
@@ -42,7 +38,6 @@ public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchr
             } catch (final Throwable t) {
                 //ignore
             }
-            packet = null;
             packetBuffer = null;
             messageBuffer = null;
         }
@@ -53,8 +48,7 @@ public class OldDatagramSocketSynchronousWriter extends AOldDatagramSocketSynchr
     public void write(final IByteBufferWriter message) throws IOException {
         final int size = message.write(messageBuffer);
         packetBuffer.putInt(SIZE_INDEX, size);
-        packet.setData(packetBuffer.byteArray(), 0, MESSAGE_INDEX + size);
-        socket.send(packet);
+        packetBuffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
     }
 
 }
