@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.socket.udp;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -9,13 +10,24 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.delegate.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
+    protected ExpandableArrayByteBuffer packetBuffer = new ExpandableArrayByteBuffer();
+    protected IByteBuffer messageBuffer = new SliceFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
+    protected DatagramPacket packet;
+
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
+    }
+
+    @Override
+    public void open() throws IOException {
+        super.open();
     }
 
     @Override
@@ -32,11 +44,9 @@ public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousC
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final IByteBuffer buffer = message.asByteBuffer();
-        final int size = buffer.capacity();
-        setSize(size);
-        packetBuffer.putBytes(MESSAGE_INDEX, buffer);
-        packet.setLength(MESSAGE_INDEX + size);
+        final int size = message.write(messageBuffer);
+        packetBuffer.putInt(SIZE_INDEX, size);
+        packet.setData(packetBuffer.byteArray(), 0, MESSAGE_INDEX + size);
         socket.send(packet);
     }
 
