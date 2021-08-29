@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.pipe.stream;
+package de.invesdwin.context.integration.channel.pipe.streaming;
 
 import java.io.EOFException;
 import java.io.File;
