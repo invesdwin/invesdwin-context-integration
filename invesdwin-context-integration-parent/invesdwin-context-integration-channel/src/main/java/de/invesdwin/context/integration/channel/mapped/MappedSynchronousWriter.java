@@ -9,7 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.slice.SliceFromDelegateByteBuffer;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.

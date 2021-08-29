@@ -32,8 +32,8 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel
         this.tailer = queue.createTailer();
         this.bytes = net.openhft.chronicle.bytes.Bytes.elasticByteBuffer();
         //chronicle bytes uses native order per default
-        this.buffer = OrderedDelegateByteBuffer.maybeWrap(ByteBuffers.DEFAULT_ORDER,
-                new ChronicleDelegateByteBuffer(bytes));
+        this.buffer = OrderedDelegateByteBuffer.maybeWrap(new ChronicleDelegateByteBuffer(bytes),
+                ByteBuffers.DEFAULT_ORDER);
     }
 
     @Override

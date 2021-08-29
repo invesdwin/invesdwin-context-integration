@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.slice.SliceFromDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
 
 @NotThreadSafe
