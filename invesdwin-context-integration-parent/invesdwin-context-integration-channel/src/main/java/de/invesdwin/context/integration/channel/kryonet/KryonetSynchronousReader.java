@@ -10,8 +10,8 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
-import de.invesdwin.util.lang.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
 public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<IByteBuffer> {

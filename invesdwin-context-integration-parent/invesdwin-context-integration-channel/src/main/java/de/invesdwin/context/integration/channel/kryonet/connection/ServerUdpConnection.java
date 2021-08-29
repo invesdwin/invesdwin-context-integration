@@ -6,7 +6,8 @@ import javax.annotation.concurrent.Immutable;
 
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import de.invesdwin.util.lang.buffer.IByteBuffer;
+
+import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @Immutable
 public class ServerUdpConnection implements IKryonetConnection {

@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.util.lang.buffer.extend.UnsafeByteBuffer;
+import de.invesdwin.util.streams.buffer.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public abstract class AMappedSynchronousChannel implements ISynchronousChannel {

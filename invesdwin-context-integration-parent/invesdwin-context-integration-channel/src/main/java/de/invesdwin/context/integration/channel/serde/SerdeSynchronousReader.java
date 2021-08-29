@@ -5,8 +5,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.lang.buffer.IByteBuffer;
 import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @Immutable
 public class SerdeSynchronousReader<M> implements ISynchronousReader<M> {

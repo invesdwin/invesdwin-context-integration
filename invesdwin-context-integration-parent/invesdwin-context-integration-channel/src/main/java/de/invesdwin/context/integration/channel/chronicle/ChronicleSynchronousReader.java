@@ -7,11 +7,11 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.lang.buffer.ByteBuffers;
-import de.invesdwin.util.lang.buffer.ClosedByteBuffer;
-import de.invesdwin.util.lang.buffer.IByteBuffer;
-import de.invesdwin.util.lang.buffer.delegate.ChronicleDelegateByteBuffer;
-import de.invesdwin.util.lang.buffer.delegate.OrderedDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
+import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.ChronicleDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.OrderedDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
 @NotThreadSafe
