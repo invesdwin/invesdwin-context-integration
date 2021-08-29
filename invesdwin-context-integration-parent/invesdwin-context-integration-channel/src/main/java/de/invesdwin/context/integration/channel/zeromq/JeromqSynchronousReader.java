@@ -69,7 +69,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
             }
             return null;
         }
-        return ByteBuffers.wrap(recv);
+        return ByteBuffers.wrapFrom(recv, topic.length);
     }
 
 }

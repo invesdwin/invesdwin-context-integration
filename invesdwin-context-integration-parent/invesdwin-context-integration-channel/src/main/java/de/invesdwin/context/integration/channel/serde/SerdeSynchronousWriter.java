@@ -8,21 +8,22 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 @NotThreadSafe
-public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M> {
+public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBufferWriter {
 
-    private final ISynchronousWriter<IByteBuffer> delegate;
+    private final ISynchronousWriter<IByteBufferWriter> delegate;
     private final ISerde<M> serde;
     private final int fixedLength;
-    private final IByteBuffer buffer;
+    private IByteBuffer buffer;
+    private M message;
 
-    public SerdeSynchronousWriter(final ISynchronousWriter<IByteBuffer> delegate, final ISerde<M> serde,
+    public SerdeSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate, final ISerde<M> serde,
             final Integer fixedLength) {
         this.delegate = delegate;
         this.serde = serde;
         this.fixedLength = ByteBuffers.newAllocateFixedLength(fixedLength);
-        this.buffer = ByteBuffers.allocate(this.fixedLength);
     }
 
     public ISerde<M> getSerde() {
@@ -33,7 +34,7 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M> {
         return fixedLength;
     }
 
-    public ISynchronousWriter<IByteBuffer> getDelegate() {
+    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
         return delegate;
     }
 
@@ -49,8 +50,23 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void write(final M message) throws IOException {
-        final int length = serde.toBuffer(buffer, message);
-        delegate.write(buffer.slice(0, length));
+        this.message = message;
+        delegate.write(this);
+        this.message = null;
+    }
+
+    @Override
+    public int write(final IByteBuffer buffer) {
+        return serde.toBuffer(buffer, message);
+    }
+
+    @Override
+    public IByteBuffer asByteBuffer() {
+        if (buffer == null) {
+            buffer = ByteBuffers.allocate(this.fixedLength);
+        }
+        final int length = write(buffer);
+        return buffer.slice(0, length);
     }
 
 }

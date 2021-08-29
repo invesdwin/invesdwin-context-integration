@@ -93,6 +93,7 @@ import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FDates;
@@ -208,11 +209,11 @@ public class ChannelPerformanceTest extends ATest {
     private void runChroniclePerformanceTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final ISynchronousWriter<IByteBuffer> responseWriter = new ChronicleSynchronousWriter(responseFile);
+            final ISynchronousWriter<IByteBufferWriter> responseWriter = new ChronicleSynchronousWriter(responseFile);
             final ISynchronousReader<IByteBuffer> requestReader = new ChronicleSynchronousReader(requestFile);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-            final ISynchronousWriter<IByteBuffer> requestWriter = new ChronicleSynchronousWriter(requestFile);
+            final ISynchronousWriter<IByteBufferWriter> requestWriter = new ChronicleSynchronousWriter(requestFile);
             final ISynchronousReader<IByteBuffer> responseReader = new ChronicleSynchronousReader(responseFile);
             read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
@@ -510,13 +511,13 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new SocketSynchronousWriter(responseAddress, true,
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(responseAddress, true,
                 MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new SocketSynchronousWriter(requestAddress, false,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(requestAddress, false,
                 MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
                 MESSAGE_SIZE);
@@ -534,13 +535,13 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new DatagramSocketSynchronousWriter(responseAddress,
-                MESSAGE_SIZE);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSocketSynchronousWriter(
+                responseAddress, MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> requestReader = new DatagramSocketSynchronousReader(requestAddress,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new DatagramSocketSynchronousWriter(requestAddress,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new DatagramSocketSynchronousWriter(requestAddress,
                 MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> responseReader = new DatagramSocketSynchronousReader(responseAddress,
                 MESSAGE_SIZE);
@@ -565,13 +566,13 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runAeronPerformanceTest(final String responseChannel, final int responseStreamId,
             final String requestChannel, final int requestStreamId) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new AeronSynchronousWriter(responseChannel,
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AeronSynchronousWriter(responseChannel,
                 responseStreamId);
         final ISynchronousReader<IByteBuffer> requestReader = new AeronSynchronousReader(requestChannel,
                 requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new AeronSynchronousWriter(requestChannel,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AeronSynchronousWriter(requestChannel,
                 requestStreamId);
         final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(responseChannel,
                 responseStreamId);
@@ -592,14 +593,14 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runKryonetPerformanceTest(final InetAddress address, final int responseTcpPort,
             final int responseUdpPort, final int requestTcpPort, final int requestUdpPort) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new KryonetSynchronousWriter(address, responseTcpPort,
-                responseUdpPort, true);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new KryonetSynchronousWriter(address,
+                responseTcpPort, responseUdpPort, true);
         final ISynchronousReader<IByteBuffer> requestReader = new KryonetSynchronousReader(address, requestTcpPort,
                 requestUdpPort, false);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new KryonetSynchronousWriter(address, requestTcpPort,
-                requestUdpPort, true);
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new KryonetSynchronousWriter(address,
+                requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBuffer> responseReader = new KryonetSynchronousReader(address, responseTcpPort,
                 responseUdpPort, false);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
@@ -651,14 +652,14 @@ public class ChannelPerformanceTest extends ATest {
 
     private void runJeromqPerformanceTest(final IJeromqSocketType socketType, final String responseChannel,
             final String requestChannel) throws InterruptedException {
-        final ISynchronousWriter<IByteBuffer> responseWriter = new JeromqSynchronousWriter(socketType, responseChannel,
-                true);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new JeromqSynchronousWriter(socketType,
+                responseChannel, true);
         final ISynchronousReader<IByteBuffer> requestReader = new JeromqSynchronousReader(socketType, requestChannel,
                 true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBuffer> requestWriter = new JeromqSynchronousWriter(socketType, requestChannel,
-                false);
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new JeromqSynchronousWriter(socketType,
+                requestChannel, false);
         final ISynchronousReader<IByteBuffer> responseReader = new JeromqSynchronousReader(socketType, responseChannel,
                 false);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
@@ -685,13 +686,13 @@ public class ChannelPerformanceTest extends ATest {
     private void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse) throws InterruptedException {
         try {
-            final ISynchronousWriter<IByteBuffer> responseWriter = maybeSynchronize(newWriter(responseFile, pipes),
-                    synchronizeResponse);
+            final ISynchronousWriter<IByteBufferWriter> responseWriter = maybeSynchronize(
+                    newWriter(responseFile, pipes), synchronizeResponse);
             final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(newReader(requestFile, pipes),
                     synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-            final ISynchronousWriter<IByteBuffer> requestWriter = maybeSynchronize(newWriter(requestFile, pipes),
+            final ISynchronousWriter<IByteBufferWriter> requestWriter = maybeSynchronize(newWriter(requestFile, pipes),
                     synchronizeRequest);
             final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(newReader(responseFile, pipes),
                     synchronizeResponse);
@@ -714,7 +715,7 @@ public class ChannelPerformanceTest extends ATest {
         }
     }
 
-    private ISynchronousWriter<IByteBuffer> newWriter(final File file, final FileChannelType pipes) {
+    private ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE) {
             return new PipeSynchronousWriter(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.MAPPED) {
@@ -728,7 +729,7 @@ public class ChannelPerformanceTest extends ATest {
         return new SerdeSynchronousReader<FDate>(reader, FDateSerde.GET);
     }
 
-    private ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBuffer> writer) {
+    private ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
         return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 

@@ -5,11 +5,11 @@ import java.io.IOException;
 
 import com.esotericsoftware.kryonet.Listener;
 
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 public interface IKryonetConnection extends Closeable {
 
-    void send(IByteBuffer message);
+    void send(IByteBufferWriter message);
 
     void addListener(Listener listener);
 

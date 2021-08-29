@@ -8,10 +8,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
-        implements ISynchronousWriter<IByteBuffer> {
+        implements ISynchronousWriter<IByteBufferWriter> {
 
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
@@ -30,10 +31,11 @@ public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousC
     }
 
     @Override
-    public void write(final IByteBuffer message) throws IOException {
-        final int size = message.capacity();
+    public void write(final IByteBufferWriter message) throws IOException {
+        final IByteBuffer buffer = message.asByteBuffer();
+        final int size = buffer.capacity();
         setSize(size);
-        packetBuffer.putBytes(MESSAGE_INDEX, message);
+        packetBuffer.putBytes(MESSAGE_INDEX, buffer);
         packet.setLength(MESSAGE_INDEX + size);
         socket.send(packet);
     }

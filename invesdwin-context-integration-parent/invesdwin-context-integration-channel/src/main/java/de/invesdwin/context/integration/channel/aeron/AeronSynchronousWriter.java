@@ -9,12 +9,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.time.date.FTimeUnit;
 import io.aeron.ConcurrentPublication;
 import io.aeron.Publication;
 
 @NotThreadSafe
-public class AeronSynchronousWriter extends AAeronSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
+public class AeronSynchronousWriter extends AAeronSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
 
     private ConcurrentPublication publication;
     private boolean connected;
@@ -50,8 +51,8 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
     }
 
     @Override
-    public void write(final IByteBuffer message) throws IOException {
-        sendRetrying(message);
+    public void write(final IByteBufferWriter message) throws IOException {
+        sendRetrying(message.asByteBuffer());
     }
 
     private void sendRetrying(final IByteBuffer message) throws IOException, EOFException, InterruptedIOException {

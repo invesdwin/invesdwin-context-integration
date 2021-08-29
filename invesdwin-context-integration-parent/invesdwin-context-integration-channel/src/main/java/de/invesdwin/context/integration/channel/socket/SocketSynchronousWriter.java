@@ -10,9 +10,11 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.OutputStreams;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 @NotThreadSafe
-public class SocketSynchronousWriter extends ASocketSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
+public class SocketSynchronousWriter extends ASocketSynchronousChannel
+        implements ISynchronousWriter<IByteBufferWriter> {
 
     private BufferedOutputStream out;
 
@@ -46,9 +48,10 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel implement
     }
 
     @Override
-    public void write(final IByteBuffer message) throws IOException {
-        OutputStreams.writeInt(out, message.capacity());
-        message.getBytes(MESSAGE_INDEX, out);
+    public void write(final IByteBufferWriter message) throws IOException {
+        final IByteBuffer buffer = message.asByteBuffer();
+        OutputStreams.writeInt(out, buffer.capacity());
+        buffer.getBytes(MESSAGE_INDEX, out);
         try {
             out.flush();
         } catch (final IOException e) {

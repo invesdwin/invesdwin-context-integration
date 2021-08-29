@@ -8,13 +8,18 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.delegate.SliceFromDelegateByteBuffer;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.
  *
  */
 @NotThreadSafe
-public class MappedSynchronousWriter extends AMappedSynchronousChannel implements ISynchronousWriter<IByteBuffer> {
+public class MappedSynchronousWriter extends AMappedSynchronousChannel
+        implements ISynchronousWriter<IByteBufferWriter> {
+
+    private IByteBuffer messageBuffer;
 
     public MappedSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
@@ -25,6 +30,15 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
         super.open();
         //maybe remove closed flag that causes IOException on reader
         setTransaction(TRANSACTION_INITIAL_VALUE);
+
+        messageBuffer = new SliceFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+    }
+
+    @Override
+    public void close() throws IOException {
+        setTransaction(TRANSACTION_CLOSED_VALUE);
+        super.close();
+        messageBuffer = null;
     }
 
     /**
@@ -36,21 +50,15 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel implement
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final IByteBuffer message) {
+    public void write(final IByteBufferWriter message) {
         final byte nextTransaction = getNextTransaction();
         //open transaction
         setTransaction(TRANSACTION_WRITING_VALUE);
 
-        buffer.putBytes(MESSAGE_INDEX, message);
+        message.write(messageBuffer);
 
         //commit
         setTransaction(nextTransaction);
-    }
-
-    @Override
-    public void close() throws IOException {
-        setTransaction(TRANSACTION_CLOSED_VALUE);
-        super.close();
     }
 
 }

@@ -7,13 +7,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.delegate.ChronicleDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
 public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel
-        implements ISynchronousWriter<IByteBuffer> {
+        implements ISynchronousWriter<IByteBufferWriter> {
 
     private ExcerptAppender appender;
 
@@ -38,13 +39,10 @@ public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel
     }
 
     @Override
-    public void write(final IByteBuffer message) throws IOException {
+    public void write(final IByteBufferWriter message) throws IOException {
         try (DocumentContext doc = appender.writingDocument()) {
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
-            final int length = message.capacity();
-            for (int i = 0; i < length; i++) {
-                bytes.writeByte(i, message.getByte(i));
-            }
+            message.write(new ChronicleDelegateByteBuffer(bytes));
         }
     }
 

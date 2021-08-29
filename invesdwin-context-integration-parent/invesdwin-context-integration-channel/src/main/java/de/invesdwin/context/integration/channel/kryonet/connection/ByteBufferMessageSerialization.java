@@ -11,6 +11,7 @@ import com.esotericsoftware.kryonet.Serialization;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 @Immutable
 public final class ByteBufferMessageSerialization implements Serialization {
@@ -30,10 +31,10 @@ public final class ByteBufferMessageSerialization implements Serialization {
     @Override
     public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
-        if (object instanceof IByteBuffer) {
-            final IByteBuffer cObject = (IByteBuffer) object;
+        if (object instanceof IByteBufferWriter) {
+            final IByteBufferWriter cObject = (IByteBufferWriter) object;
             wrapped.putBoolean(KRYO_INDEX, false);
-            wrapped.putBytes(MESSAGE_INDEX, cObject);
+            cObject.write(wrapped.sliceFrom(MESSAGE_INDEX));
         } else {
             wrapped.putBoolean(0, true);
             buffer.position(MESSAGE_INDEX);
@@ -49,7 +50,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
             buffer.position(MESSAGE_INDEX);
             return DELEGATE.read(connection, buffer);
         } else {
-            //since each message is read asynchronously we need to create a snapshot of the byte array here
+            //since each message is read asynchronously we need to create a snapshot of the byte array here (sadly)
             return ByteBuffers.wrap(wrapped.asByteArrayCopyFrom(MESSAGE_INDEX));
         }
     }
