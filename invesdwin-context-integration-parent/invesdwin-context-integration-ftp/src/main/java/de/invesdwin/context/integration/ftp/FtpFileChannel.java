@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.ftp;
 
-import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
