@@ -17,6 +17,7 @@ public class NioDatagramSocketSynchronousReader extends ANioDatagramSocketSynchr
         implements ISynchronousReader<IByteBuffer> {
 
     protected IByteBuffer buffer;
+    protected ByteBuffer messageBuffer;
 
     public NioDatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
@@ -27,12 +28,14 @@ public class NioDatagramSocketSynchronousReader extends ANioDatagramSocketSynchr
         super.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = buffer.asByteBuffer(0, socketSize);
     }
 
     @Override
     public void close() throws IOException {
         super.close();
         buffer = null;
+        messageBuffer = null;
     }
 
     @Override
@@ -42,25 +45,30 @@ public class NioDatagramSocketSynchronousReader extends ANioDatagramSocketSynchr
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        final ByteBuffer byteBuffer = buffer.asByteBuffer(0, socketSize);
+        ByteBuffers.position(messageBuffer, 0);
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
         while (true) {
-            final int read = socketChannel.read(byteBuffer);
+            final int read = socketChannel.read(messageBuffer);
             if (read < 0) {
                 throw new EOFException("closed by other side");
             }
-            if (read > 0 && byteBuffer.position() >= targetPosition) {
-                size = byteBuffer.getInt(SIZE_INDEX);
+            if (read > 0 && messageBuffer.position() >= targetPosition) {
+                size = buffer.getInt(SIZE_INDEX);
                 targetPosition += size;
                 break;
             }
         }
         //read message if not complete yet
-        final int remaining = targetPosition - byteBuffer.position();
+        final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
-            buffer.putBytesTo(byteBuffer.position(), socketChannel, remaining);
+            final int capacityBefore = buffer.capacity();
+            buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
+            if (buffer.capacity() != capacityBefore) {
+                //update reference to underlying storage
+                messageBuffer = buffer.asByteBuffer(0, socketSize);
+            }
         }
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {

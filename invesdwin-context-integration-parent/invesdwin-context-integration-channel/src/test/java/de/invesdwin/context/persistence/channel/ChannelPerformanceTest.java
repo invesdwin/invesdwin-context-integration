@@ -62,6 +62,8 @@ import de.invesdwin.context.integration.channel.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.serde.SerdeSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.nio.NioSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.nio.NioSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.socket.nio.udp.NioDatagramSocketSynchronousReader;
+import de.invesdwin.context.integration.channel.socket.nio.udp.NioDatagramSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.old.OldSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.socket.old.OldSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.socket.old.udp.OldDatagramSocketSynchronousReader;
@@ -570,6 +572,30 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new OldDatagramSocketSynchronousWriter(
                 requestAddress, MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> responseReader = new OldDatagramSocketSynchronousReader(responseAddress,
+                MESSAGE_SIZE);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testNioDatagramSocketPerformance() throws InterruptedException {
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        runNioDatagramSocketPerformanceTest(responseAddress, requestAddress);
+    }
+
+    private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NioDatagramSocketSynchronousWriter(
+                responseAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> requestReader = new NioDatagramSocketSynchronousReader(requestAddress,
+                MESSAGE_SIZE);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NioDatagramSocketSynchronousWriter(
+                requestAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> responseReader = new NioDatagramSocketSynchronousReader(responseAddress,
                 MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
