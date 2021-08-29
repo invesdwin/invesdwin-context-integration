@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.channel.zeromq.type.IJeromqSocketType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.slice.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
@@ -40,7 +40,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
         buffer = new ExpandableArrayByteBuffer();
         if (topic.length > 0) {
             buffer.putBytes(0, topic);
-            messageBuffer = new SliceFromDelegateByteBuffer(buffer, topic.length);
+            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, topic.length);
         } else {
             messageBuffer = buffer;
         }

@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.slice.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.extend.ExpandableArrayByteBuffer;
 
 @NotThreadSafe
@@ -18,7 +18,7 @@ public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousC
         implements ISynchronousWriter<IByteBufferWriter> {
 
     protected ExpandableArrayByteBuffer packetBuffer = new ExpandableArrayByteBuffer();
-    protected IByteBuffer messageBuffer = new SliceFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
+    protected IByteBuffer messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, MESSAGE_INDEX);
     protected DatagramPacket packet;
 
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {

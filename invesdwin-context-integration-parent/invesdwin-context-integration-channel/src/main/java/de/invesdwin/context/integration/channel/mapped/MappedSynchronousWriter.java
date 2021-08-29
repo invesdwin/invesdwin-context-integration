@@ -9,7 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.slice.SliceFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.
@@ -31,7 +31,7 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
         //maybe remove closed flag that causes IOException on reader
         setTransaction(TRANSACTION_INITIAL_VALUE);
 
-        messageBuffer = new SliceFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
