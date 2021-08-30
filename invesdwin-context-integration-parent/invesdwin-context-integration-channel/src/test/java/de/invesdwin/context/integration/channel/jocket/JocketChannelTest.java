@@ -20,19 +20,22 @@ public class JocketChannelTest extends AChannelTest {
 
     @Test
     public void testJocketPerformance() throws InterruptedException, IOException {
-        final JocketChannel server = new JocketChannel(6565, true, MESSAGE_SIZE);
-        final JocketChannel client = new JocketChannel(6565, false, MESSAGE_SIZE);
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new JocketSynchronousWriter(server);
-        final ISynchronousReader<IByteBuffer> requestReader = new JocketSynchronousReader(server);
+        final JocketChannel requestServer = new JocketChannel(6565, true, MESSAGE_SIZE);
+        final JocketChannel requestClient = new JocketChannel(6565, false, MESSAGE_SIZE);
+
+        final JocketChannel responseServer = new JocketChannel(6564, true, MESSAGE_SIZE);
+        final JocketChannel responseClient = new JocketChannel(6564, false, MESSAGE_SIZE);
+
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new JocketSynchronousWriter(responseServer);
+        final ISynchronousReader<IByteBuffer> requestReader = new JocketSynchronousReader(requestServer);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runJocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         TimeUnit.SECONDS.sleep(1);
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new JocketSynchronousWriter(client);
-        final ISynchronousReader<IByteBuffer> responseReader = new JocketSynchronousReader(client);
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new JocketSynchronousWriter(requestClient);
+        final ISynchronousReader<IByteBuffer> responseReader = new JocketSynchronousReader(responseClient);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
     }
-
 
 }
