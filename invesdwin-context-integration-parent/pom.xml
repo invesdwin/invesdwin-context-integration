@@ -90,7 +90,6 @@
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
-		<version.jocket>0.6.0</version.jocket>
 	</properties>
 
 	<dependencyManagement>
@@ -1090,11 +1089,6 @@
 				<groupId>net.openhft</groupId>
 				<artifactId>chronicle-network</artifactId>
 				<version>${version.chronicle-network}</version>
-			</dependency>
-			<dependency>
-				<groupId>com.github.pcdv.jocket</groupId>
-				<artifactId>jocket</artifactId>
-				<version>${version.jocket}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

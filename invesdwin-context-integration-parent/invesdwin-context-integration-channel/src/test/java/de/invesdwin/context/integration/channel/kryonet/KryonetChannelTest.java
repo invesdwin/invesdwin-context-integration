@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdontext.integration.channel.AChannelTest.WriterTask;
+import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.uri.Addresses;

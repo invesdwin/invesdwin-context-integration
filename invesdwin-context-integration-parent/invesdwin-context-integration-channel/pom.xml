@@ -56,12 +56,6 @@
 			<artifactId>chronicle-network</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.github.pcdv.jocket</groupId>
-			<artifactId>jocket</artifactId>
-			<scope>provided</scope>
-		</dependency>
-
 	</dependencies>
 
 </project>
