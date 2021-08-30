@@ -17,19 +17,19 @@ import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 
 @NotThreadSafe
-public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    public static final int SIZE_INDEX = AgronaRingBufferSynchronousWriter.SIZE_INDEX;
-    public static final int SIZE_SIZE = AgronaRingBufferSynchronousWriter.SIZE_SIZE;
+    public static final int SIZE_INDEX = RingBufferSynchronousWriter.SIZE_INDEX;
+    public static final int SIZE_SIZE = RingBufferSynchronousWriter.SIZE_SIZE;
 
-    public static final int MESSAGE_INDEX = AgronaRingBufferSynchronousWriter.MESSAGE_INDEX;
+    public static final int MESSAGE_INDEX = RingBufferSynchronousWriter.MESSAGE_INDEX;
 
     private final RingBuffer ringBuffer;
     private final boolean zeroCopy;
 
     private IReader reader;
 
-    public AgronaRingBufferSynchronousReader(final RingBuffer ringBuffer) {
+    public RingBufferSynchronousReader(final RingBuffer ringBuffer) {
         this(ringBuffer, false);
     }
 
@@ -37,7 +37,7 @@ public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IBy
      * Using zeroCopy causes reads to be unsafe on small buffer sizes, writers could replace the currently being read
      * value.
      */
-    public AgronaRingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean zeroCopy) {
+    public RingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean zeroCopy) {
         this.ringBuffer = ringBuffer;
         this.zeroCopy = zeroCopy;
     }
@@ -139,7 +139,7 @@ public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IBy
         @Override
         public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
                 final int length) {
-            final int size = buffer.getInt(index + SIZE_INDEX);
+            final int size = buffer.getInt(index + SIZE_INDEX, ByteBuffers.DEFAULT_ORDER);
             messageBuffer.putBytes(0, buffer, index + MESSAGE_INDEX, size);
             polledValue = messageBuffer.sliceTo(size);
         }

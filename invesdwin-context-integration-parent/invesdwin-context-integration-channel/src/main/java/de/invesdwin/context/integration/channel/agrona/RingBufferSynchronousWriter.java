@@ -17,7 +17,7 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class AgronaRingBufferSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -34,7 +34,7 @@ public class AgronaRingBufferSynchronousWriter implements ISynchronousWriter<IBy
     /**
      * Use fixedLength = null to disable zero copy
      */
-    public AgronaRingBufferSynchronousWriter(final RingBuffer ringBuffer, final Integer maxMessageFixedLength) {
+    public RingBufferSynchronousWriter(final RingBuffer ringBuffer, final Integer maxMessageFixedLength) {
         this.ringBuffer = ringBuffer;
         this.maxMessageFixedLength = ByteBuffers.newAllocateFixedLength(maxMessageFixedLength);
         if (this.maxMessageFixedLength > 0) {

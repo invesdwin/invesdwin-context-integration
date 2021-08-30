@@ -44,8 +44,8 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.SynchronousChannels;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousReader;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousWriter;
-import de.invesdwin.context.integration.channel.agrona.AgronaRingBufferSynchronousReader;
-import de.invesdwin.context.integration.channel.agrona.AgronaRingBufferSynchronousWriter;
+import de.invesdwin.context.integration.channel.agrona.RingBufferSynchronousReader;
+import de.invesdwin.context.integration.channel.agrona.RingBufferSynchronousWriter;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousReader;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousWriter;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousReader;
@@ -700,15 +700,15 @@ public class ChannelPerformanceTest extends ATest {
     private void runAgronaRingBufferPerformanceTest(final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel,
             final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel, final boolean zeroCopy)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AgronaRingBufferSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new RingBufferSynchronousWriter(
                 responseChannel, zeroCopy ? MESSAGE_SIZE : null);
-        final ISynchronousReader<IByteBuffer> requestReader = new AgronaRingBufferSynchronousReader(requestChannel,
+        final ISynchronousReader<IByteBuffer> requestReader = new RingBufferSynchronousReader(requestChannel,
                 zeroCopy);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AgronaRingBufferSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new RingBufferSynchronousWriter(
                 requestChannel, zeroCopy ? MESSAGE_SIZE : null);
-        final ISynchronousReader<IByteBuffer> responseReader = new AgronaRingBufferSynchronousReader(responseChannel,
+        final ISynchronousReader<IByteBuffer> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
