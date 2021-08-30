@@ -48,6 +48,7 @@ import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousReader
 import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousWriter;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousReader;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousWriter;
+import de.invesdwin.context.integration.channel.lmax.LmaxDisruptorQueue;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousReader;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousWriter;
 import de.invesdwin.context.integration.channel.pipe.PipeSynchronousReader;
@@ -503,6 +504,22 @@ public class ChannelPerformanceTest extends ATest {
         read(requestWriter, responseReader);
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    @Test
+    public void testLmaxDisruptorQueuePerformance() throws InterruptedException {
+        final Queue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
+        final Queue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
+        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
+
+    @Test
+    public void testLmaxDisruptorQueuePerformanceWithBlocking() throws InterruptedException {
+        final BlockingQueue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256,
+                true);
+        final BlockingQueue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256,
+                true);
+        runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
