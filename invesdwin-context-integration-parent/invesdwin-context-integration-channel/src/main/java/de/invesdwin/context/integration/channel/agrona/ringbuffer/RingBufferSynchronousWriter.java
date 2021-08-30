@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.agrona;
+package de.invesdwin.context.integration.channel.agrona.ringbuffer;
 
 import java.io.EOFException;
 import java.io.IOException;

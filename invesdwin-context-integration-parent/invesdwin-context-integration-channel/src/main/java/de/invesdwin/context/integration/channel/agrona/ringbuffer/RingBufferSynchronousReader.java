@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.agrona;
+package de.invesdwin.context.integration.channel.agrona.ringbuffer;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -34,8 +34,16 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
     }
 
     /**
-     * Using zeroCopy causes reads to be unsafe on small buffer sizes, writers could replace the currently being read
-     * value.
+     * WARNING: Using zeroCopy causes reads to be unsafe, writers could replace the currently being read value. If
+     * multiple writers are used or if writes should be queued, then zeroCopy should be disabled! The only scenario
+     * where it would be safe to use zeroCopy is in a request/reply scenario with two ring buffers.
+     * 
+     * Though even with safeCopy, RingBuffers do not provide any backpressure, thus too eager writers could override
+     * values that have not yet been read by the reader. In those cases it is recommended to use Aeron IPC or different
+     * channel implementation instead.
+     * 
+     * But anyway, ZeroCopy seems to be slightly slower than SafeCopy, so disabling ZeroCopy should not be a problem. It
+     * still stays ZeroAllocation, but just does another copy between buffers during reads.
      */
     public RingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean zeroCopy) {
         this.ringBuffer = ringBuffer;
@@ -113,6 +121,10 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
                 final int length) {
             if (wrappedBuffer.addressOffset() != buffer.addressOffset()
                     || wrappedBuffer.capacity() != buffer.capacity()) {
+                /*
+                 * could be omitted here, but we want to be sure, since a different implementation of RingBuffer could
+                 * be used which replaces buffer instances
+                 */
                 wrappedBuffer = ByteBuffers.wrap(buffer);
             }
             final int size = wrappedBuffer.getInt(index + SIZE_INDEX);
