@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -21,6 +22,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.agrona.concurrent.ManyToManyConcurrentArrayQueue;
 import org.agrona.concurrent.ManyToOneConcurrentArrayQueue;
 import org.agrona.concurrent.OneToOneConcurrentArrayQueue;
+import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
+import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 import org.jctools.queues.SpscArrayQueue;
 import org.jctools.queues.SpscLinkedQueue;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
@@ -40,15 +44,17 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.SynchronousChannels;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousReader;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousWriter;
+import de.invesdwin.context.integration.channel.agrona.AgronaRingBufferSynchronousReader;
+import de.invesdwin.context.integration.channel.agrona.AgronaRingBufferSynchronousWriter;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousReader;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousWriter;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousReader;
 import de.invesdwin.context.integration.channel.conversant.ConversantSynchronousWriter;
 import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousReader;
 import de.invesdwin.context.integration.channel.kryonet.KryonetSynchronousWriter;
+import de.invesdwin.context.integration.channel.lmax.LmaxDisruptorQueue;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousReader;
 import de.invesdwin.context.integration.channel.lmax.LmaxSynchronousWriter;
-import de.invesdwin.context.integration.channel.lmax.LmaxDisruptorQueue;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousReader;
 import de.invesdwin.context.integration.channel.mapped.MappedSynchronousWriter;
 import de.invesdwin.context.integration.channel.pipe.PipeSynchronousReader;
@@ -515,10 +521,8 @@ public class ChannelPerformanceTest extends ATest {
 
     @Test
     public void testLmaxDisruptorQueuePerformanceWithBlocking() throws InterruptedException {
-        final BlockingQueue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256,
-                true);
-        final BlockingQueue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256,
-                true);
+        final BlockingQueue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
+        final BlockingQueue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
@@ -666,6 +670,42 @@ public class ChannelPerformanceTest extends ATest {
                 requestStreamId);
         final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(responseChannel,
                 responseStreamId);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testAgronaExpandableRingBufferPerformance() throws InterruptedException {
+        final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+        final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, false);
+    }
+
+    @Test
+    public void testAgronaZeroCopyRingBufferPerformance() throws InterruptedException {
+        final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+        final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, true);
+    }
+
+    private void runAgronaRingBufferPerformanceTest(final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel,
+            final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel, final boolean zeroCopy)
+            throws InterruptedException {
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AgronaRingBufferSynchronousWriter(
+                responseChannel, zeroCopy ? MESSAGE_SIZE : null);
+        final ISynchronousReader<IByteBuffer> requestReader = new AgronaRingBufferSynchronousReader(requestChannel);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AgronaRingBufferSynchronousWriter(
+                requestChannel, zeroCopy ? MESSAGE_SIZE : null);
+        final ISynchronousReader<IByteBuffer> responseReader = new AgronaRingBufferSynchronousReader(responseChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
@@ -863,7 +903,7 @@ public class ChannelPerformanceTest extends ATest {
                 Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                 final FDate readMessage = responseReader.readMessage();
                 if (DEBUG) {
-                    log.info("client response in");
+                    log.info("client response in [" + readMessage + "]");
                 }
                 Assertions.checkNotNull(readMessage);
                 if (prevValue != null) {
@@ -945,7 +985,7 @@ public class ChannelPerformanceTest extends ATest {
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
                     responseWriter.write(date);
                     if (DEBUG) {
-                        log.info("server response out");
+                        log.info("server response out [" + date + "]");
                     }
                     i++;
                     if (i % FLUSH_INTERVAL == 0) {
