@@ -10,17 +10,19 @@ import com.lmax.disruptor.RingBuffer;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
-import de.invesdwin.util.concurrent.reference.ImmutableReference;
+import de.invesdwin.util.concurrent.reference.MutableReference;
 
 @NotThreadSafe
 public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
 
     private RingBuffer<IMutableReference<M>> ringBuffer;
     private EventPoller<IMutableReference<M>> eventPoller;
-    private ImmutableReference<M> polledValue;
+    private final IMutableReference<M> polledValueHolder = new MutableReference<>();
+    private IMutableReference<M> polledValue;
 
     private final EventPoller.Handler<IMutableReference<M>> pollerHandler = (event, sequence, endOfBatch) -> {
-        polledValue = ImmutableReference.of(event.get());
+        polledValueHolder.set(event.get());
+        polledValue = polledValueHolder;
         event.set(null); //free memory
         return false;
     };
@@ -56,8 +58,8 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public M readMessage() throws IOException {
-        final ImmutableReference<M> holder = getPolledMessage();
-        final M message = holder.get();
+        final IMutableReference<M> holder = getPolledMessage();
+        final M message = holder.getAndSet(null);
         if (message == null) {
             close();
             throw new EOFException("closed by other side");
@@ -65,16 +67,16 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         return message;
     }
 
-    private ImmutableReference<M> getPolledMessage() {
+    private IMutableReference<M> getPolledMessage() {
         if (polledValue != null) {
-            final ImmutableReference<M> value = polledValue;
+            final IMutableReference<M> value = polledValue;
             polledValue = null;
             return value;
         }
         try {
             final EventPoller.PollState poll = eventPoller.poll(pollerHandler);
             if (poll == EventPoller.PollState.PROCESSING) {
-                final ImmutableReference<M> value = polledValue;
+                final IMutableReference<M> value = polledValue;
                 polledValue = null;
                 return value;
             } else {
