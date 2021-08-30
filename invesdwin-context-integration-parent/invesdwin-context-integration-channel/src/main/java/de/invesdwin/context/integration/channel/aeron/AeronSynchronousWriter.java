@@ -7,7 +7,8 @@ import java.io.InterruptedIOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
-import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
+import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -19,6 +20,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
 
     private ConcurrentPublication publication;
     private boolean connected;
+    private IByteBuffer buffer;
 
     public AeronSynchronousWriter(final String channel, final int streamId) {
         super(channel, streamId);
@@ -29,6 +31,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
         super.open();
         this.publication = aeron.addPublication(channel, streamId);
         this.connected = false;
+        this.buffer = ByteBuffers.allocateDirectExpandable();
     }
 
     @Override
@@ -36,7 +39,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
         if (publication != null) {
             if (connected) {
                 try {
-                    write(EmptyByteBuffer.INSTANCE);
+                    write(ClosedByteBuffer.INSTANCE);
                 } catch (final Throwable t) {
                     //ignore
                 }
@@ -46,17 +49,19 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
                 publication = null;
                 this.connected = false;
             }
+            buffer = null;
         }
         super.close();
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        sendRetrying(message.asBuffer());
+        final int size = message.write(buffer);
+        sendRetrying(size);
     }
 
-    private void sendRetrying(final IByteBuffer message) throws IOException, EOFException, InterruptedIOException {
-        while (!sendTry(message)) {
+    private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
+        while (!sendTry(size)) {
             try {
                 FTimeUnit.MILLISECONDS.sleep(1);
             } catch (final InterruptedException e) {
@@ -69,8 +74,8 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
         connected = true;
     }
 
-    private boolean sendTry(final IByteBuffer message) throws IOException, EOFException {
-        final long result = publication.offer(message.asDirectBuffer(), 0, message.capacity());
+    private boolean sendTry(final int size) throws IOException, EOFException {
+        final long result = publication.offer(buffer.directBuffer(), 0, size);
         if (result <= 0) {
             if (result == Publication.NOT_CONNECTED) {
                 if (connected) {

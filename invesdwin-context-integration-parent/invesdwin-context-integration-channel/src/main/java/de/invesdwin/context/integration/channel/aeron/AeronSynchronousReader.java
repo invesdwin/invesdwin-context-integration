@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import io.aeron.FragmentAssembler;
 import io.aeron.Subscription;
@@ -16,12 +17,16 @@ import io.aeron.logbuffer.FragmentHandler;
 @NotThreadSafe
 public class AeronSynchronousReader extends AAeronSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private final FragmentHandler fragmentHandler = new FragmentAssembler((buffer, offset, length, header) -> {
-        polledValue = ByteBuffers.wrap(buffer, 0, length);
-    });
-
+    private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
     private IByteBuffer polledValue;
     private Subscription subscription;
+
+    private final FragmentHandler fragmentHandler = new FragmentAssembler((buffer, offset, length, header) -> {
+        if (wrappedBuffer.addressOffset() != buffer.addressOffset() || wrappedBuffer.capacity() != buffer.capacity()) {
+            wrappedBuffer = ByteBuffers.wrap(buffer);
+        }
+        polledValue = wrappedBuffer.slice(offset, length);
+    });
 
     public AeronSynchronousReader(final String channel, final int streamId) {
         super(channel, streamId);
