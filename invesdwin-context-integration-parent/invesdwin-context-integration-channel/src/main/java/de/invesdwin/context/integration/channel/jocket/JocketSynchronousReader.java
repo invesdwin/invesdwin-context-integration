@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import jocket.impl.JocketReader;
 
 @NotThreadSafe
 public class JocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
@@ -24,7 +25,7 @@ public class JocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
     @Override
     public void open() throws IOException {
         channel.open();
-        int = channel.getSocket().getInputStream();
+        reader = channel.getSocket().getReader();
         //old socket would actually slow down with direct buffer because it requires a byte[]
         buffer = ByteBuffers.allocateExpandable(channel.getEstimatedMaxMessageSize());
     }
