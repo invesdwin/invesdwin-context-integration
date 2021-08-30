@@ -58,7 +58,8 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
     public IByteBuffer readMessage() {
         lastTransaction = getTransaction();
         final int size = getSize();
-        return buffer.slice(MESSAGE_INDEX, size);
+        final IByteBuffer message = buffer.slice(MESSAGE_INDEX, size);
+        return message;
     }
 
 }

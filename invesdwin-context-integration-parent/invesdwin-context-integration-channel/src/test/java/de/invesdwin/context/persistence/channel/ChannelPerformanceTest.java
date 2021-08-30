@@ -116,7 +116,7 @@ public class ChannelPerformanceTest extends ATest {
     private static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
     private static final boolean DEBUG = false;
     private static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
-    private static final int VALUES = DEBUG ? 10 : 10_000_000;
+    private static final int VALUES = DEBUG ? 10 : 100_000_000;
     private static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     private static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
@@ -336,8 +336,8 @@ public class ChannelPerformanceTest extends ATest {
 
     @Test
     public void testAgronaManyToOneConcurrentArrayQueuePerformance() throws InterruptedException {
-        final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(2);
-        final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(256);
+        final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(256);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
@@ -345,13 +345,6 @@ public class ChannelPerformanceTest extends ATest {
     public void testAgronaManyToManyConcurrentArrayQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
         final Queue<IReference<FDate>> requestQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
-        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
-    }
-
-    @Test
-    public void testJctoolsSpscAtomicArrayQueuePerformance() throws InterruptedException {
-        final Queue<IReference<FDate>> responseQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
-        final Queue<IReference<FDate>> requestQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
@@ -366,6 +359,13 @@ public class ChannelPerformanceTest extends ATest {
     public void testJctoolsSpscLinkedQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new SpscLinkedQueue<IReference<FDate>>();
         final Queue<IReference<FDate>> requestQueue = new SpscLinkedQueue<IReference<FDate>>();
+        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
+
+    @Test
+    public void testJctoolsSpscAtomicArrayQueuePerformance() throws InterruptedException {
+        final Queue<IReference<FDate>> responseQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new SpscAtomicArrayQueue<IReference<FDate>>(2);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
