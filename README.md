@@ -116,7 +116,7 @@ The abstraction in **invesdwin-context-integration-channel** has its origin in t
 - **ASpinWait**:  the channel implementations are non-blocking by themselves (Named Pipes are normally blocking, but the implementation uses them in a non-blocking way, while Memory Mapping is per default non-blocking). This causes the problem of how one should wait on a reader without causing delays from sleeps or causing CPU load from spinning. This problem is solved by `ASpinWait`. It first spins when things are rolling and falls back to a fast sleep interval when communication has cooled down (similar to what `java.util.concurrent.SynchronousQueue` does between threads). The actual timings can be fully customized. To use this class, just override the `isConditionFulfilled()` method by calling `reader.hasNext()`.
 - **Performance**: here are some performance measurements against in-process queue implementations using one channel for requests and another separate one for responses, thus each record (of 10,000,000), each involving two messages (becoming 20,000,000), is passed between two threads (one simulating a server and the other one a client). This shows that memory mapping might even be useful as a faster alternative to queues for inter-thread-communication besides it being designed for inter-process-communication (as long as the serialization is cheap):
 
-Old Benchmarks (2016, Core i7-4790K with SSD):
+Old Benchmarks (2016, Core i7-4790K with SSD, Java 8):
 ```
 DatagramSocket (loopback)  Records:   111.01/ms  in  90078 ms    => ~60% slower than Named Pipes
 ArrayDeque (synced)        Records:   127.26/ms  in  78579 ms    => ~50% slower than Named Pipes
@@ -126,47 +126,51 @@ LinkedBlockingQueue        Records:  1988.47/ms  in   5029 ms    => ~7 times fas
 Mapped Memory              Records:  3214.40/ms  in   3111 ms    => ~11 times faster than Named Pipes
 Mapped Memory (tmpfs)      Records:  4237.29/ms  in   2360 ms    => ~15 times faster than Named Pipes
 ```
-New Benchmarks (2021, Core i9-9900k with SSD; best in class marked by `*`):
+New Benchmarks (2021, Core i9-9900k with SSD, Java 16; best in class marked by `*`):
 ```
-xNetwork   CzmqTcp                        Records:    35.24/ms    => ~% slower
-xProcess   JeromqIpc                      Records:    37.40/ms    => ~% slower
-xNetwork   JzmqTcp                        Records:    39.37/ms    => ~% slower
-xNetwork   JeromqTcp                      Records:    41.16/ms    => ~% slower
-xProcess   CzmqIpc                        Records:    45.13/ms    => ~% slower
-xProcess   JzmqIpc                        Records:    55.35/ms    => ~% slower
-xNetwork   KryonetTcp                     Records:    66.82/ms    => ~% slower
-xNetwork   KryonetUdp                     Records:    87.74/ms    => ~% slower
-xNetwork   DatagramSocket (loopback)      Records:    97.92/ms    => ~% slower and unreliable
-xNetwork   Socket (loopback)              Records:   103.58/ms    => ~% slower
-xNetwork   SocketChannel (loopback)       Records:   122.43/ms    => using this as baseline
-xThread    CzmqInproc                     Records:   132.52/ms    => ~% faster
-Network*   AeronUDP (loopback)            Records:   173.76/ms    => ~% faster
-xNetwork   DatagramChannel (loopback)     Records:   229.86/ms    => ~% faster but unreliable
-Process    ChronicleQueue                 Records:   288.45/ms    => ~ times faster
-xThread    JeromqInproc                   Records:   294.52/ms    => ~ times faster
-xProcess   NamedPipe (Streaming)          Records:   313.83/ms    => ~ times faster
-xProcess   NamedPipe (FileChannel)        Records:   459.18/ms    => ~ times faster
-Thread     LockedReference                Records:   784.74/ms    => ~ times faster
-Thread     ArrayBlockingQueue             Records:  1602.05/ms    => ~ times faster
-Thread     ArrayDeque (synced)            Records:  1803.10/ms    => ~ times faster
-Thread     LinkedBlockingQueue            Records:  1806.68/ms    => ~ times faster
-Thread     SynchronizedReference          Records:  1860.33/ms    => ~ times faster
-Thread     SynchronousQueue               Records:  2320.19/ms    => ~ times faster
-Thread     LinkedTransferQueue            Records:  2724.13/ms    => ~ times faster
-Thread     AtomicReference                Records:  2937.72/ms    => ~ times faster
-Thread     ConversantDisruptorBlocking    Records:  3273.11/ms    => ~ times faster
-Thread     JctoolsSpscLinked              Records:  3278.69/ms    => ~ times faster
-Thread     JctoolsSpscLinkedAtomic        Records:  3311.92/ms    => ~ times faster
-Thread     VolatileReference              Records:  3434.89/ms    => ~ times faster
-Process    AeronIPC                       Records:  3542.08/ms    => ~ times faster
-Thread     AgronaOneToOne                 Records:  3646.04/ms    => ~ times faster
-Thread     ConversantPushPullConcurrent   Records:  3767.33/ms    => ~ times faster
-Thread     AgronaManyToMany               Records:  3959.46/ms    => ~ times faster
-Thread     JctoolsSpscArray               Records:  4269.31/ms    => ~ times faster
-Thread     JctoolsSpscAtomicArray         Records:  4311.65/ms    => ~ times faster
-Thread*    LmaxDisruptor                  Records:  4542.15/ms    => ~ times faster
-Process    Mapped Memory                  Records:  6257.82/ms    => ~ times faster
-Process*   Mapped Memory (tmpfs)          Records:  7119.46/ms    => ~ times faster
+Network    CzmqTcp                        Records:    35.24/ms    => ~67% slower
+Process    JeromqIpc                      Records:    39.31/ms    => ~63% slower
+Network    JzmqTcp                        Records:    39.37/ms    => ~63% slower
+Network    JeromqTcp                      Records:    39.84/ms    => ~63% slower
+Process    CzmqIpc                        Records:    45.13/ms    => ~58% slower
+Process    JzmqIpc                        Records:    55.35/ms    => ~48% slower
+Network    KryonetTcp                     Records:    62.71/ms    => ~41% slower
+Network    KryonetUdp                     Records:    86.14/ms    => ~19% slower
+Network    Socket (loopback)              Records:   106.51/ms    => using this as baseline
+Network    DatagramSocket (loopback)      Records:   113.16/ms    => ~6% faster but unreliable
+Network    SocketChannel (loopback)       Records:   125.85/ms    => ~18% faster
+Thread     CzmqInproc                     Records:   132.52/ms    => ~24% faster
+Network*   AeronUDP (loopback)            Records:   176.53/ms    => ~65% faster
+Network    DatagramChannel (loopback)     Records:   242.82/ms    => ~2.3 times faster unreliable
+Process    ChronicleQueue                 Records:   275.52/ms    => ~2.6 times faster
+Process    ChronicleQueue (tmpfs)         Records:   282.06/ms    => ~2.65 times faster
+Thread     JeromqInproc                   Records:   296.34/ms    => ~2.8 times faster
+Process    NamedPipe (Streaming)          Records:   350.07/ms    => ~3.3 times faster
+Process    NamedPipe (FileChannel)        Records:   425.64/ms    => ~4 times faster
+Thread     LockedReference                Records:   782.04/ms    => ~7.3 times faster
+Thread     ArrayBlockingQueue             Records:  1535.72/ms    => ~14.4 times faster
+Thread     LinkedBlockingQueue            Records:  1716.12/ms    => ~16.1 times faster
+Thread     ArrayDeque (synced)            Records:  1754.14/ms    => ~16.4 times faster
+Thread     SynchronizedReference          Records:  1992.79/ms    => ~18.7 times faster
+Thread     SynchronousQueue               Records:  2207.46/ms    => ~20.7 times faster
+Thread     LmaxDisruptor                  Records:  2411.61/ms    => ~22.6 times faster
+Thread     LinkedTransferQueue            Records:  2812.62/ms    => ~26.4 times faster
+Thread     AtomicReference                Records:  2991.95/ms    => ~28.1 times faster
+Thread     VolatileReference              Records:  3268.72/ms    => ~30.7 times faster
+Thread     ConversantDisruptorConcurrent  Records:  3389.03/ms    => ~31.8 times faster
+Thread     ConversantDisruptorBlocking    Records:  3498.95/ms    => ~32.85 times faster
+Thread     ConversantPushPullBlocking     Records:  3517.41/ms    => ~33 times faster
+Thread     JctoolsSpscLinkedAtomic        Records:  3762.94/ms    => ~35.3 times faster
+Thread     ConversantPushPullConcurrent   Records:  3777.29/ms    => ~35.5 times faster
+Thread     JctoolsSpscLinked              Records:  3885.46/ms    => ~36.5 times faster
+Thread     JctoolsSpscArray               Records:  4145.59/ms    => ~38.9 times faster
+Thread     AgronaManyToOne                Records:  4178.33/ms    => ~39.2 times faster
+Process    AeronIPC                       Records:  4209.11/ms    => ~39.5 times faster
+Thread     AgronaManyToMany               Records:  4235.49/ms    => ~39.8 times faster
+Thread     JctoolsSpscAtomicArray         Records:  4368.72/ms    => ~41 times faster
+*Thread    AgronaOneToOne                 Records:  4377.52/ms    => ~41.1 times faster
+Process    Mapped Memory                  Records:  6378.77/ms    => ~59.9 times faster
+Process*   Mapped Memory (tmpfs)          Records:  6711.41/ms    => ~63 times faster
 ```
 - **Dynamic Client/Server**: you could utilize RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endspoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
 
