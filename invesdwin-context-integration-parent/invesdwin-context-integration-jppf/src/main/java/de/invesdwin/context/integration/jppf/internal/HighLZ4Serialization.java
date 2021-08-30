@@ -20,7 +20,7 @@ import javax.annotation.concurrent.Immutable;
 
 import org.jppf.serialization.JPPFCompositeSerialization;
 
-import de.invesdwin.context.integration.streams.LZ4Streams;
+import de.invesdwin.context.integration.streams.compressor.lz4.LZ4Streams;
 import net.jpountz.lz4.LZ4BlockOutputStream;
 
 @Immutable
