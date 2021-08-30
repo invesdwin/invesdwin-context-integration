@@ -148,6 +148,7 @@ Thread     JeromqInproc                           Records:   296.34/ms    => ~2.
 Process    NamedPipe (Streaming)                  Records:   350.07/ms    => ~3.3 times faster
 Process    NamedPipe (FileChannel)                Records:   425.64/ms    => ~4 times faster
 Thread     LockedReference                        Records:   782.04/ms    => ~7.3 times faster
+Process    Jocket                                 Records:  1204.82/ms    => ~11.3 times faster (unstable, crashes after a few million messages)
 Thread     ArrayBlockingQueue                     Records:  1535.72/ms    => ~14.4 times faster
 Thread     LinkedBlockingQueue                    Records:  1716.12/ms    => ~16.1 times faster
 Thread     ArrayDeque (synced)                    Records:  1754.14/ms    => ~16.4 times faster
