@@ -19,10 +19,13 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ManyToManyConcurrentArrayQueue;
 import org.agrona.concurrent.ManyToOneConcurrentArrayQueue;
 import org.agrona.concurrent.OneToOneConcurrentArrayQueue;
 import org.agrona.concurrent.UnsafeBuffer;
+import org.agrona.concurrent.broadcast.BroadcastBufferDescriptor;
+import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 import org.jctools.queues.SpscArrayQueue;
@@ -44,6 +47,8 @@ import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.SynchronousChannels;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousReader;
 import de.invesdwin.context.integration.channel.aeron.AeronSynchronousWriter;
+import de.invesdwin.context.integration.channel.agrona.broadcast.BroadcastSynchronousReader;
+import de.invesdwin.context.integration.channel.agrona.broadcast.BroadcastSynchronousWriter;
 import de.invesdwin.context.integration.channel.agrona.ringbuffer.RingBufferSynchronousReader;
 import de.invesdwin.context.integration.channel.agrona.ringbuffer.RingBufferSynchronousWriter;
 import de.invesdwin.context.integration.channel.chronicle.ChronicleSynchronousReader;
@@ -676,7 +681,7 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     @Test
-    public void testAgronaRingBufferPerformance() throws InterruptedException {
+    public void testAgronaOneToOneRingBufferPerformance() throws InterruptedException {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = false;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
@@ -687,12 +692,34 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     @Test
-    public void testAgronaZeroCopyRingBufferPerformance() throws InterruptedException {
+    public void testAgronaOneToOneRingBufferPerformanceWithZeroCopy() throws InterruptedException {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = true;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
                 new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
+    }
+
+    @Test
+    public void testAgronaManyToOneRingBufferPerformance() throws InterruptedException {
+        final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final boolean zeroCopy = false;
+        final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new ManyToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new ManyToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
+    }
+
+    @Test
+    public void testAgronaManyToOneRingBufferPerformanceWithZeroCopy() throws InterruptedException {
+        final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final boolean zeroCopy = true;
+        final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new ManyToOneRingBuffer(
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new ManyToOneRingBuffer(
                 new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
@@ -703,12 +730,33 @@ public class ChannelPerformanceTest extends ATest {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new RingBufferSynchronousWriter(responseChannel,
                 zeroCopy ? MESSAGE_SIZE : null);
         final ISynchronousReader<IByteBuffer> requestReader = new RingBufferSynchronousReader(requestChannel, zeroCopy);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaRingBufferPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new RingBufferSynchronousWriter(requestChannel,
                 zeroCopy ? MESSAGE_SIZE : null);
         final ISynchronousReader<IByteBuffer> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
+        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        executor.shutdown();
+        executor.awaitTermination();
+    }
+
+    @Test
+    public void testAgronaBroadcastPerformance() throws InterruptedException {
+        final int bufferSize = 4096 + BroadcastBufferDescriptor.TRAILER_LENGTH;
+        final AtomicBuffer responseChannel = new UnsafeBuffer(ByteBuffer.allocate(bufferSize));
+        final AtomicBuffer requestChannel = new UnsafeBuffer(ByteBuffer.allocate(bufferSize));
+        runAgronaBroadcastPerformanceTest(responseChannel, requestChannel);
+    }
+
+    private void runAgronaBroadcastPerformanceTest(final AtomicBuffer responseChannel,
+            final AtomicBuffer requestChannel) throws InterruptedException {
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BroadcastSynchronousWriter(responseChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new BroadcastSynchronousReader(requestChannel);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaBroadcastPerformanceTest", 1);
+        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BroadcastSynchronousWriter(requestChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new BroadcastSynchronousReader(responseChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

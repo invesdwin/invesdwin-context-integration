@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.MessageHandler;
+import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
@@ -25,7 +26,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
     public static final int MESSAGE_INDEX = RingBufferSynchronousWriter.MESSAGE_INDEX;
 
     private final RingBuffer ringBuffer;
-    private final boolean zeroCopy;
+    private final boolean unsafeRead;
 
     private IReader reader;
 
@@ -44,15 +45,17 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
      * 
      * But anyway, ZeroCopy seems to be slightly slower than SafeCopy, so disabling ZeroCopy should not be a problem. It
      * still stays ZeroAllocation, but just does another copy between buffers during reads.
+     * 
+     * ManyToOneRingBuffer does not work with zero copy reads, so the flag is ignored for that instance.
      */
-    public RingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean zeroCopy) {
+    public RingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean unsafeRead) {
         this.ringBuffer = ringBuffer;
-        this.zeroCopy = zeroCopy;
+        this.unsafeRead = !(ringBuffer instanceof ManyToOneRingBuffer) && unsafeRead;
     }
 
     @Override
     public void open() throws IOException {
-        if (zeroCopy) {
+        if (unsafeRead) {
             this.reader = new UnsafeReader();
         } else {
             this.reader = new SafeReader();
@@ -111,7 +114,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
 
     }
 
-    private final class UnsafeReader implements IReader {
+    private static final class UnsafeReader implements IReader {
         private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
 
         private IByteBuffer polledValue;
@@ -143,7 +146,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
 
     }
 
-    private final class SafeReader implements IReader {
+    private static final class SafeReader implements IReader {
         private final IByteBuffer messageBuffer = ByteBuffers.allocateExpandable();
 
         private IByteBuffer polledValue;

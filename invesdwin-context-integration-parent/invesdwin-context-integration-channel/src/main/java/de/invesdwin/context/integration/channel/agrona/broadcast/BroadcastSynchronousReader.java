@@ -6,9 +6,12 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.ExpandableArrayBuffer;
 import org.agrona.MutableDirectBuffer;
+import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.MessageHandler;
-import org.agrona.concurrent.ringbuffer.RingBuffer;
+import org.agrona.concurrent.broadcast.BroadcastReceiver;
+import org.agrona.concurrent.broadcast.CopyBroadcastReceiver;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
@@ -24,26 +27,19 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
 
     public static final int MESSAGE_INDEX = BroadcastSynchronousWriter.MESSAGE_INDEX;
 
-    private final RingBuffer ringBuffer;
-    private final boolean zeroCopy;
+    private final BroadcastReceiver broadcastReceiver;
+    private final CopyBroadcastReceiver copyBroadcastReceiver;
 
     private IReader reader;
 
-    public BroadcastSynchronousReader(final RingBuffer ringBuffer) {
-        this(ringBuffer, false);
-    }
-
-    public BroadcastSynchronousReader(final RingBuffer ringBuffer) {
-        this.ringBuffer = ringBuffer;
+    public BroadcastSynchronousReader(final AtomicBuffer buffer) {
+        this.broadcastReceiver = new BroadcastReceiver(buffer);
+        this.copyBroadcastReceiver = new CopyBroadcastReceiver(broadcastReceiver, new ExpandableArrayBuffer());
     }
 
     @Override
     public void open() throws IOException {
-        if (zeroCopy) {
-            this.reader = new UnsafeReader();
-        } else {
-            this.reader = new SafeReader();
-        }
+        this.reader = new Reader();
     }
 
     @Override
@@ -56,7 +52,7 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
         if (reader.getPolledValue() != null) {
             return true;
         }
-        ringBuffer.read(reader, 1);
+        copyBroadcastReceiver.receive(reader);
         return reader.getPolledValue() != null;
     }
 
@@ -77,7 +73,7 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
             return value;
         }
         try {
-            final int messagesRead = ringBuffer.read(reader, 1);
+            final int messagesRead = copyBroadcastReceiver.receive(reader);
             if (messagesRead == 1) {
                 final IByteBuffer value = reader.getPolledValue();
                 reader.close();
@@ -98,7 +94,10 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
 
     }
 
-    private final class UnsafeReader implements IReader {
+    /**
+     * We can use ZeroCopy here since CopyBroadcastReceiver already creates a safe copy.
+     */
+    private static final class Reader implements IReader {
         private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
 
         private IByteBuffer polledValue;
@@ -112,31 +111,6 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
             }
             final int size = wrappedBuffer.getInt(index + SIZE_INDEX);
             polledValue = wrappedBuffer.slice(index + MESSAGE_INDEX, size);
-        }
-
-        @Override
-        public IByteBuffer getPolledValue() {
-            return polledValue;
-        }
-
-        @Override
-        public void close() {
-            polledValue = null;
-        }
-
-    }
-
-    private final class SafeReader implements IReader {
-        private final IByteBuffer messageBuffer = ByteBuffers.allocateExpandable();
-
-        private IByteBuffer polledValue;
-
-        @Override
-        public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
-                final int length) {
-            final int size = buffer.getInt(index + SIZE_INDEX, ByteBuffers.DEFAULT_ORDER);
-            messageBuffer.putBytes(0, buffer, index + MESSAGE_INDEX, size);
-            polledValue = messageBuffer.sliceTo(size);
         }
 
         @Override

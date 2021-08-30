@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.agrona.broadcast;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.agrona.concurrent.ringbuffer.RingBuffer;
+import org.agrona.concurrent.AtomicBuffer;
+import org.agrona.concurrent.broadcast.BroadcastTransmitter;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
@@ -14,7 +14,6 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
 public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -25,34 +24,20 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
     private static final int MESSAGE_TYPE_ID = 1;
-    private final RingBuffer ringBuffer;
-    private final boolean zeroCopy;
-    private final int maxMessageFixedLength;
-    private final int fixedLength;
+
+    private final BroadcastTransmitter broadcastTransmitter;
     private IWriter writer;
 
     /**
      * Use fixedLength = null to disable zero copy
      */
-    public BroadcastSynchronousWriter(final RingBuffer ringBuffer, final Integer maxMessageFixedLength) {
-        this.ringBuffer = ringBuffer;
-        this.maxMessageFixedLength = ByteBuffers.newAllocateFixedLength(maxMessageFixedLength);
-        if (this.maxMessageFixedLength > 0) {
-            this.zeroCopy = true;
-            this.fixedLength = MESSAGE_INDEX + this.maxMessageFixedLength;
-        } else {
-            this.zeroCopy = false;
-            this.fixedLength = ByteBuffers.EXPANDABLE_LENGTH;
-        }
+    public BroadcastSynchronousWriter(final AtomicBuffer buffer) {
+        this.broadcastTransmitter = new BroadcastTransmitter(buffer);
     }
 
     @Override
     public void open() throws IOException {
-        if (zeroCopy) {
-            this.writer = new ZeroCopyWriter(ringBuffer, fixedLength, maxMessageFixedLength);
-        } else {
-            this.writer = new ExpandableWriter(ringBuffer);
-        }
+        this.writer = new ExpandableWriter(broadcastTransmitter);
     }
 
     @Override
@@ -73,12 +58,12 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
     }
 
     private static final class ExpandableWriter implements IWriter {
-        private final RingBuffer ringBuffer;
+        private final BroadcastTransmitter broadcastTransmitter;
         private final IByteBuffer buffer;
         private final IByteBuffer messageBuffer;
 
-        private ExpandableWriter(final RingBuffer ringBuffer) {
-            this.ringBuffer = ringBuffer;
+        private ExpandableWriter(final BroadcastTransmitter broadcastTransmitter) {
+            this.broadcastTransmitter = broadcastTransmitter;
             this.buffer = ByteBuffers.allocateExpandable();
             this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
         }
@@ -87,65 +72,13 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
         public void write(final IByteBufferWriter message) throws IOException {
             final int size = message.write(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
-            sendRetrying(MESSAGE_INDEX + size);
+            send(MESSAGE_INDEX + size);
         }
 
-        private void sendRetrying(final int size) throws InterruptedIOException {
-            while (!sendTry(size)) {
-                try {
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                    interrupt.initCause(e);
-                    throw interrupt;
-                }
-            }
+        private void send(final int size) throws InterruptedIOException {
+            broadcastTransmitter.transmit(MESSAGE_TYPE_ID, buffer.asDirectBuffer(), 0, size);
         }
 
-        private boolean sendTry(final int size) {
-            final boolean success = ringBuffer.write(MESSAGE_TYPE_ID, buffer.asDirectBuffer(), 0, size);
-            return success;
-        }
-    }
-
-    private static final class ZeroCopyWriter implements IWriter {
-        private final RingBuffer ringBuffer;
-        private final int fixedLength;
-        private final int maxMessageFixedLength;
-        private final IByteBuffer buffer;
-
-        private ZeroCopyWriter(final RingBuffer ringBuffer, final int fixedLength, final int messageFixedLength) {
-            this.ringBuffer = ringBuffer;
-            this.fixedLength = fixedLength;
-            this.maxMessageFixedLength = messageFixedLength;
-            this.buffer = ByteBuffers.wrap(ringBuffer.buffer());
-        }
-
-        @Override
-        public void write(final IByteBufferWriter message) throws IOException {
-            while (!sendTry(message)) {
-                try {
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                    interrupt.initCause(e);
-                    throw interrupt;
-                }
-            }
-        }
-
-        private boolean sendTry(final IByteBufferWriter message) throws IOException, EOFException {
-            final int claimedIndex = ringBuffer.tryClaim(MESSAGE_TYPE_ID, fixedLength);
-            if (claimedIndex <= 0) {
-                return false;
-            }
-            final int size = message.write(buffer.slice(claimedIndex + MESSAGE_INDEX, maxMessageFixedLength));
-            buffer.putInt(claimedIndex + SIZE_INDEX, size);
-            ringBuffer.commit(claimedIndex);
-            return true;
-        }
     }
 
     private interface IWriter {
