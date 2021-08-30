@@ -27,12 +27,12 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
 
     public LmaxSynchronousReader(final RingBuffer<IMutableReference<M>> ringBuffer) {
         this.ringBuffer = ringBuffer;
-        this.eventPoller = ringBuffer.newPoller();
-        ringBuffer.addGatingSequences(eventPoller.getSequence());
     }
 
     @Override
     public void open() throws IOException {
+        this.eventPoller = ringBuffer.newPoller();
+        ringBuffer.addGatingSequences(eventPoller.getSequence());
     }
 
     @Override
