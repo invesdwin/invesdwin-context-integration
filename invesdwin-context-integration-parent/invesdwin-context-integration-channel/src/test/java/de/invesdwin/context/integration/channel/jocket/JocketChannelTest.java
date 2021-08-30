@@ -34,8 +34,5 @@ public class JocketChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    private void runJocketPerformanceTest(final JocketChannel responseAddress, final JocketChannel requestAddress)
-            throws InterruptedException {
-    }
 
 }
