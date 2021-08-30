@@ -7,11 +7,9 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.ChronicleDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.delegate.OrderedDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
 @NotThreadSafe
@@ -30,10 +28,9 @@ public class ChronicleSynchronousReader extends AChronicleSynchronousChannel
     public void open() throws IOException {
         super.open();
         this.tailer = queue.createTailer();
+        //chronicle uses direct buffers per default
         this.bytes = net.openhft.chronicle.bytes.Bytes.elasticByteBuffer();
-        //chronicle bytes uses native order per default
-        this.buffer = OrderedDelegateByteBuffer.maybeWrap(new ChronicleDelegateByteBuffer(bytes),
-                ByteBuffers.DEFAULT_ORDER);
+        this.buffer = new ChronicleDelegateByteBuffer(bytes);
     }
 
     @Override
