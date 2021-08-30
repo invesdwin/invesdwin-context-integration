@@ -168,7 +168,7 @@ Thread     AgronaManyToOne                Records:  4178.33/ms    => ~39.2 times
 Process    AeronIPC                       Records:  4209.11/ms    => ~39.5 times faster
 Thread     AgronaManyToMany               Records:  4235.49/ms    => ~39.8 times faster
 Thread     JctoolsSpscAtomicArray         Records:  4368.72/ms    => ~41 times faster
-*Thread    AgronaOneToOne                 Records:  4377.52/ms    => ~41.1 times faster
+Thread*    AgronaOneToOne                 Records:  4377.52/ms    => ~41.1 times faster
 Process    Mapped Memory                  Records:  6378.77/ms    => ~59.9 times faster
 Process*   Mapped Memory (tmpfs)          Records:  6711.41/ms    => ~63 times faster
 ```
