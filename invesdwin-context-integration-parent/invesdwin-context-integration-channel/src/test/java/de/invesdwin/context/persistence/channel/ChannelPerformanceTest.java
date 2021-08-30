@@ -676,23 +676,25 @@ public class ChannelPerformanceTest extends ATest {
     }
 
     @Test
-    public void testAgronaExpandableRingBufferPerformance() throws InterruptedException {
+    public void testAgronaRingBufferPerformance() throws InterruptedException {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final boolean zeroCopy = false;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
-        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, false);
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
     @Test
     public void testAgronaZeroCopyRingBufferPerformance() throws InterruptedException {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
+        final boolean zeroCopy = true;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocateDirect(bufferSize)));
-        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, true);
+                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+        runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
     private void runAgronaRingBufferPerformanceTest(final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel,
@@ -700,12 +702,14 @@ public class ChannelPerformanceTest extends ATest {
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new AgronaRingBufferSynchronousWriter(
                 responseChannel, zeroCopy ? MESSAGE_SIZE : null);
-        final ISynchronousReader<IByteBuffer> requestReader = new AgronaRingBufferSynchronousReader(requestChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new AgronaRingBufferSynchronousReader(requestChannel,
+                zeroCopy);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new AgronaRingBufferSynchronousWriter(
                 requestChannel, zeroCopy ? MESSAGE_SIZE : null);
-        final ISynchronousReader<IByteBuffer> responseReader = new AgronaRingBufferSynchronousReader(responseChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new AgronaRingBufferSynchronousReader(responseChannel,
+                zeroCopy);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

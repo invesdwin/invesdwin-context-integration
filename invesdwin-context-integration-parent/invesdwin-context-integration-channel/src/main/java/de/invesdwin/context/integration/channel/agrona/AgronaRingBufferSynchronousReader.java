@@ -1,10 +1,12 @@
 package de.invesdwin.context.integration.channel.agrona;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.MutableDirectBuffer;
 import org.agrona.concurrent.MessageHandler;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 
@@ -23,38 +25,44 @@ public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IBy
     public static final int MESSAGE_INDEX = AgronaRingBufferSynchronousWriter.MESSAGE_INDEX;
 
     private final RingBuffer ringBuffer;
-    private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
-    private IByteBuffer polledValue;
+    private final boolean zeroCopy;
 
-    private final MessageHandler messageHandler = (msgTypeId, buffer, index, length) -> {
-        if (wrappedBuffer.addressOffset() != buffer.addressOffset() || wrappedBuffer.capacity() != buffer.capacity()) {
-            wrappedBuffer = ByteBuffers.wrap(buffer);
-        }
-        final int size = wrappedBuffer.getInt(index + SIZE_INDEX);
-        polledValue = wrappedBuffer.slice(index + MESSAGE_INDEX, size);
-    };
+    private IReader reader;
 
     public AgronaRingBufferSynchronousReader(final RingBuffer ringBuffer) {
+        this(ringBuffer, false);
+    }
+
+    /**
+     * Using zeroCopy causes reads to be unsafe on small buffer sizes, writers could replace the currently being read
+     * value.
+     */
+    public AgronaRingBufferSynchronousReader(final RingBuffer ringBuffer, final boolean zeroCopy) {
         this.ringBuffer = ringBuffer;
+        this.zeroCopy = zeroCopy;
     }
 
     @Override
     public void open() throws IOException {
+        if (zeroCopy) {
+            this.reader = new UnsafeReader();
+        } else {
+            this.reader = new SafeReader();
+        }
     }
 
     @Override
     public void close() throws IOException {
-        polledValue = null;
-        wrappedBuffer = null;
+        reader = null;
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        if (polledValue != null) {
+        if (reader.getPolledValue() != null) {
             return true;
         }
-        ringBuffer.read(messageHandler, 1);
-        return polledValue != null;
+        ringBuffer.read(reader, 1);
+        return reader.getPolledValue() != null;
     }
 
     @Override
@@ -68,16 +76,16 @@ public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IBy
     }
 
     private IByteBuffer getPolledMessage() {
-        if (polledValue != null) {
-            final IByteBuffer value = polledValue;
-            polledValue = null;
+        if (reader.getPolledValue() != null) {
+            final IByteBuffer value = reader.getPolledValue();
+            reader.close();
             return value;
         }
         try {
-            final int messagesRead = ringBuffer.read(messageHandler, 1);
+            final int messagesRead = ringBuffer.read(reader, 1);
             if (messagesRead == 1) {
-                final IByteBuffer value = polledValue;
-                polledValue = null;
+                final IByteBuffer value = reader.getPolledValue();
+                reader.close();
                 return value;
             } else {
                 return null;
@@ -85,6 +93,67 @@ public class AgronaRingBufferSynchronousReader implements ISynchronousReader<IBy
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private interface IReader extends MessageHandler, Closeable {
+        IByteBuffer getPolledValue();
+
+        @Override
+        void close();
+
+    }
+
+    private final class UnsafeReader implements IReader {
+        private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
+
+        private IByteBuffer polledValue;
+
+        @Override
+        public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
+                final int length) {
+            if (wrappedBuffer.addressOffset() != buffer.addressOffset()
+                    || wrappedBuffer.capacity() != buffer.capacity()) {
+                wrappedBuffer = ByteBuffers.wrap(buffer);
+            }
+            final int size = wrappedBuffer.getInt(index + SIZE_INDEX);
+            polledValue = wrappedBuffer.slice(index + MESSAGE_INDEX, size);
+        }
+
+        @Override
+        public IByteBuffer getPolledValue() {
+            return polledValue;
+        }
+
+        @Override
+        public void close() {
+            polledValue = null;
+        }
+
+    }
+
+    private final class SafeReader implements IReader {
+        private final IByteBuffer messageBuffer = ByteBuffers.allocateExpandable();
+
+        private IByteBuffer polledValue;
+
+        @Override
+        public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
+                final int length) {
+            final int size = buffer.getInt(index + SIZE_INDEX);
+            messageBuffer.putBytes(0, buffer, index + MESSAGE_INDEX, size);
+            polledValue = messageBuffer.sliceTo(size);
+        }
+
+        @Override
+        public IByteBuffer getPolledValue() {
+            return polledValue;
+        }
+
+        @Override
+        public void close() {
+            polledValue = null;
+        }
+
     }
 
 }
