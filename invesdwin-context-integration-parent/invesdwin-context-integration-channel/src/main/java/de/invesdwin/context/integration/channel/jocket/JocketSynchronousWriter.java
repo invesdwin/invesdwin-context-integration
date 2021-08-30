@@ -14,24 +14,24 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import jocket.impl.JocketWriter;
 
 @NotThreadSafe
-public class JocketSynchronousWriter extends AJocketSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+public class JocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
+    private final JocketChannel channel;
     private JocketWriter writer;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public JocketSynchronousWriter(final int port, final boolean server, final int estimatedMaxMessageSize) {
-        super(port, server, estimatedMaxMessageSize);
+    public JocketSynchronousWriter(final JocketChannel channel) {
+        this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        writer = socket.getWriter();
+        channel.open();
+        writer = channel.getSocket().getWriter();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        buffer = ByteBuffers.allocateExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        buffer = ByteBuffers.allocateExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, JocketChannel.MESSAGE_INDEX);
     }
 
     @Override
@@ -51,13 +51,13 @@ public class JocketSynchronousWriter extends AJocketSynchronousChannel
             buffer = null;
             messageBuffer = null;
         }
-        super.close();
+        channel.close();
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         final int size = message.write(messageBuffer);
-        buffer.putInt(SIZE_INDEX, size);
+        buffer.putInt(JocketChannel.SIZE_INDEX, size);
         writeFully(buffer.byteArray(), 0, size);
     }
 
@@ -73,6 +73,7 @@ public class JocketSynchronousWriter extends AJocketSynchronousChannel
             }
             n += count;
         }
+        writer.flush();
     }
 
 }

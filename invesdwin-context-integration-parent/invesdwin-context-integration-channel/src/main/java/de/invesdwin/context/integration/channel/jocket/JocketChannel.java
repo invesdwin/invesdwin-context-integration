@@ -12,7 +12,7 @@ import jocket.net.JocketSocket;
 import jocket.net.ServerJocket;
 
 @NotThreadSafe
-public abstract class AJocketSynchronousChannel implements ISynchronousChannel {
+public class JocketChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -26,15 +26,29 @@ public abstract class AJocketSynchronousChannel implements ISynchronousChannel {
     private final boolean server;
     private ServerJocket serverSocket;
 
-    public AJocketSynchronousChannel(final int port, final boolean server, final int estimatedMaxMessageSize) {
+    private int openCount = 0;
+
+    public JocketChannel(final int port, final boolean server, final int estimatedMaxMessageSize) {
         this.port = port;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
+    public int getSocketSize() {
+        return socketSize;
+    }
+
+    public int getEstimatedMaxMessageSize() {
+        return estimatedMaxMessageSize;
+    }
+
     @Override
     public void open() throws IOException {
+        openCount++;
+        if (openCount > 1) {
+            return;
+        }
         if (server) {
             serverSocket = new ServerJocket(port);
             socket = serverSocket.accept();
@@ -69,6 +83,10 @@ public abstract class AJocketSynchronousChannel implements ISynchronousChannel {
 
     @Override
     public void close() throws IOException {
+        openCount--;
+        if (openCount > 0) {
+            return;
+        }
         if (socket != null) {
             socket.close();
             socket = null;
@@ -79,7 +97,11 @@ public abstract class AJocketSynchronousChannel implements ISynchronousChannel {
         }
     }
 
-    protected EOFException newEofException(final IOException e) throws EOFException {
+    public JocketSocket getSocket() {
+        return socket;
+    }
+
+    public EOFException newEofException(final IOException e) throws EOFException {
         final EOFException eof = new EOFException(e.getMessage());
         eof.initCause(e);
         return eof;

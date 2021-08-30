@@ -9,24 +9,24 @@ import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
-import jocket.impl.JocketReader;
 
 @NotThreadSafe
-public class JocketSynchronousReader extends AJocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class JocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    private final JocketChannel channel;
     private JocketReader reader;
     private IByteBuffer buffer;
 
-    public JocketSynchronousReader(final int port, final boolean server, final int estimatedMaxMessageSize) {
-        super(port, server, estimatedMaxMessageSize);
+    public JocketSynchronousReader(final JocketChannel channel) {
+        this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        reader = socket.getReader();
+        channel.open();
+        int = channel.getSocket().getInputStream();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
+        buffer = ByteBuffers.allocateExpandable(channel.getEstimatedMaxMessageSize());
     }
 
     @Override
@@ -36,19 +36,19 @@ public class JocketSynchronousReader extends AJocketSynchronousChannel implement
             reader = null;
             buffer = null;
         }
-        super.close();
+        channel.close();
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        return true;
+        return reader.available() >= JocketChannel.MESSAGE_INDEX;
     }
 
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            readFully(buffer.byteArray(), 0, MESSAGE_INDEX);
-            final int size = buffer.getInt(SIZE_INDEX);
+            readFully(buffer.byteArray(), 0, JocketChannel.MESSAGE_INDEX);
+            final int size = buffer.getInt(JocketChannel.SIZE_INDEX);
             readFully(buffer.byteArray(), 0, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();
@@ -56,7 +56,7 @@ public class JocketSynchronousReader extends AJocketSynchronousChannel implement
             }
             return buffer.sliceTo(size);
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw channel.newEofException(e);
         }
     }
 
