@@ -59,7 +59,7 @@ public class SynchronousCommandSerde<M> implements ISerde<ISynchronousCommand<M>
 
     @Override
     public byte[] toBytes(final ISynchronousCommand<M> obj) {
-        return SerdeBaseMethods.toBytes(this, obj, fixedLength);
+        return SerdeBaseMethods.toBytes(this, obj);
     }
 
     @Override
