@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.agrona;
 
-import java.nio.ByteBuffer;
 import java.util.Queue;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -59,9 +58,9 @@ public class AgronaChannelTest extends AChannelTest {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = false;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
@@ -70,9 +69,9 @@ public class AgronaChannelTest extends AChannelTest {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = true;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new OneToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
@@ -81,9 +80,9 @@ public class AgronaChannelTest extends AChannelTest {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = false;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new ManyToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new ManyToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
@@ -92,9 +91,9 @@ public class AgronaChannelTest extends AChannelTest {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
         final boolean zeroCopy = true;
         final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel = new ManyToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel = new ManyToOneRingBuffer(
-                new UnsafeBuffer(ByteBuffer.allocate(bufferSize)));
+                new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
@@ -118,8 +117,8 @@ public class AgronaChannelTest extends AChannelTest {
     @Test
     public void testAgronaBroadcastPerformance() throws InterruptedException {
         final int bufferSize = 4096 + BroadcastBufferDescriptor.TRAILER_LENGTH;
-        final AtomicBuffer responseChannel = new UnsafeBuffer(ByteBuffer.allocate(bufferSize));
-        final AtomicBuffer requestChannel = new UnsafeBuffer(ByteBuffer.allocate(bufferSize));
+        final AtomicBuffer responseChannel = new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize));
+        final AtomicBuffer requestChannel = new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize));
         runAgronaBroadcastPerformanceTest(responseChannel, requestChannel);
     }
 

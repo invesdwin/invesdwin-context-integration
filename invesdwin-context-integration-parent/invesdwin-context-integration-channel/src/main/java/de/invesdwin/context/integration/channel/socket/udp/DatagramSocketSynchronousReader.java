@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.socket.udp;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -17,7 +16,7 @@ public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousC
         implements ISynchronousReader<IByteBuffer> {
 
     protected IByteBuffer buffer;
-    protected ByteBuffer messageBuffer;
+    protected java.nio.ByteBuffer messageBuffer;
 
     public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);

@@ -1,7 +1,5 @@
 package de.invesdwin.context.integration.channel.kryonet.connection;
 
-import java.nio.ByteBuffer;
-
 import javax.annotation.concurrent.Immutable;
 
 import com.esotericsoftware.kryonet.Connection;
@@ -29,7 +27,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
     }
 
     @Override
-    public void write(final Connection connection, final ByteBuffer buffer, final Object object) {
+    public void write(final Connection connection, final java.nio.ByteBuffer buffer, final Object object) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
         final int position = buffer.position();
         if (object instanceof IByteBufferWriter) {
@@ -45,7 +43,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
     }
 
     @Override
-    public Object read(final Connection connection, final ByteBuffer buffer) {
+    public Object read(final Connection connection, final java.nio.ByteBuffer buffer) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
         final int position = buffer.position();
         final boolean kryo = wrapped.getBoolean(position + KRYO_INDEX);
@@ -68,12 +66,12 @@ public final class ByteBufferMessageSerialization implements Serialization {
     }
 
     @Override
-    public void writeLength(final ByteBuffer buffer, final int length) {
+    public void writeLength(final java.nio.ByteBuffer buffer, final int length) {
         buffer.putInt(length);
     }
 
     @Override
-    public int readLength(final ByteBuffer buffer) {
+    public int readLength(final java.nio.ByteBuffer buffer) {
         return buffer.getInt();
     }
 

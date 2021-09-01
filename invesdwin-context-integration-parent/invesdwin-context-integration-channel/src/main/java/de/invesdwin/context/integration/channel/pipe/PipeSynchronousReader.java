@@ -4,7 +4,6 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -20,7 +19,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
     protected FileInputStream in;
     protected FileChannel fileChannel;
     protected IByteBuffer buffer;
-    protected ByteBuffer messageBuffer;
+    protected java.nio.ByteBuffer messageBuffer;
 
     public PipeSynchronousReader(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);

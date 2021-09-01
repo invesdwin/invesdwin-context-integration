@@ -4,7 +4,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -18,7 +17,7 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
 
     private InputStream in;
     private IByteBuffer buffer;
-    private ByteBuffer messageBuffer;
+    private java.nio.ByteBuffer messageBuffer;
 
     public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
