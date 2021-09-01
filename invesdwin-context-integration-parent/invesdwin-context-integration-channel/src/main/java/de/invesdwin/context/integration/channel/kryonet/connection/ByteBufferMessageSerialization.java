@@ -53,8 +53,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
         } else {
             //since each message is read asynchronously we need to create a snapshot of the byte array here (sadly)
             final int length = buffer.limit() - position;
-            final IByteBuffer copy = ByteBuffers
-                    .wrap(wrapped.asByteArrayCopy(position + MESSAGE_INDEX, length - MESSAGE_INDEX));
+            final IByteBuffer copy = wrapped.clone(position + MESSAGE_INDEX, length - MESSAGE_INDEX);
             ByteBuffers.position(buffer, position + length);
             return copy;
         }
