@@ -49,6 +49,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
     public boolean hasNext() throws IOException {
         try {
             //this is a lot faster than directly reading on the channel
+            //(i guess because we can not disable blocking mode)
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
             throw newEofException(e);
