@@ -25,7 +25,9 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
     @Override
     public void open() throws IOException {
         super.open();
-        socket.shutdownOutput();
+        if (socket != null) {
+            socket.shutdownOutput();
+        }
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(estimatedMaxMessageSize);
         messageBuffer = buffer.asByteBuffer(0, socketSize);

@@ -2,8 +2,6 @@ package de.invesdwin.context.integration.channel.socket.tcp;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.ConnectException;
-import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
@@ -30,7 +28,6 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     private final SocketAddress socketAddress;
     private final boolean server;
     private ServerSocketChannel serverSocketChannel;
-    private ServerSocket serverSocket;
 
     public ASocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
@@ -43,19 +40,26 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     @Override
     public void open() throws IOException {
         if (server) {
-            serverSocketChannel = ServerSocketChannel.open();
+            serverSocketChannel = newServerSocketChannel();
             serverSocketChannel.bind(socketAddress);
-            serverSocket = serverSocketChannel.socket();
             socketChannel = serverSocketChannel.accept();
-            socket = socketChannel.socket();
+            try {
+                socket = socketChannel.socket();
+            } catch (final Throwable t) {
+                //unix domain sockets throw an error here
+            }
         } else {
             for (int tries = 0;; tries++) {
-                socketChannel = SocketChannel.open();
+                socketChannel = newSocketChannel();
                 try {
                     socketChannel.connect(socketAddress);
-                    socket = socketChannel.socket();
+                    try {
+                        socket = socketChannel.socket();
+                    } catch (final Throwable t) {
+                        //unix domain sockets throw an error here
+                    }
                     break;
-                } catch (final ConnectException e) {
+                } catch (final IOException e) {
                     socketChannel.close();
                     socketChannel = null;
                     if (socket != null) {
@@ -76,11 +80,22 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
         }
         //non-blocking sockets are a bit faster than blocking ones
         socketChannel.configureBlocking(false);
-        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
-                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
-        socket.setReceiveBufferSize(socketSize);
-        socket.setSendBufferSize(socketSize);
-        socket.setTcpNoDelay(true);
+        if (socket != null) {
+            //might be unix domain socket
+            socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
+                    | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+            socket.setReceiveBufferSize(socketSize);
+            socket.setSendBufferSize(socketSize);
+            socket.setTcpNoDelay(true);
+        }
+    }
+
+    protected SocketChannel newSocketChannel() throws IOException {
+        return SocketChannel.open();
+    }
+
+    protected ServerSocketChannel newServerSocketChannel() throws IOException {
+        return ServerSocketChannel.open();
     }
 
     protected Duration getConnectRetryDelay() {
@@ -104,10 +119,6 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
         if (serverSocketChannel != null) {
             serverSocketChannel.close();
             serverSocketChannel = null;
-        }
-        if (serverSocket != null) {
-            serverSocket.close();
-            serverSocket = null;
         }
     }
 

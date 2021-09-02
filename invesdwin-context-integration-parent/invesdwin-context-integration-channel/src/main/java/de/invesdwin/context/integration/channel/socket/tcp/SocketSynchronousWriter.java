@@ -27,7 +27,9 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
     @Override
     public void open() throws IOException {
         super.open();
-        socket.shutdownInput();
+        if (socket != null) {
+            socket.shutdownInput();
+        }
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);

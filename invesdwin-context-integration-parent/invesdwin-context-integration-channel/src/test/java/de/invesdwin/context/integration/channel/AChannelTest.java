@@ -56,7 +56,8 @@ public abstract class AChannelTest extends ATest {
     public enum FileChannelType {
         PIPE_STREAMING,
         PIPE,
-        MAPPED;
+        MAPPED,
+        UNIX_SOCKET;
     }
 
     protected void runQueuePerformanceTest(final Queue<IReference<FDate>> responseQueue,
@@ -95,7 +96,7 @@ public abstract class AChannelTest extends ATest {
         executor.awaitTermination();
     }
 
-    protected File newFile(final String name, final boolean tmpfs, final FileChannelType pipes) {
+    protected File newFile(final String name, final boolean tmpfs, final FileChannelType type) {
         final File baseFolder;
         if (tmpfs) {
             baseFolder = SynchronousChannels.getTmpfsFolderOrFallback();
@@ -105,16 +106,18 @@ public abstract class AChannelTest extends ATest {
         final File file = new File(baseFolder, name);
         Files.deleteQuietly(file);
         Assertions.checkFalse(file.exists(), "%s", file);
-        if (pipes == FileChannelType.PIPE || pipes == FileChannelType.PIPE_STREAMING) {
+        if (type == FileChannelType.UNIX_SOCKET) {
+            return file;
+        } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING) {
             Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
-        } else if (pipes == FileChannelType.MAPPED) {
+        } else if (type == FileChannelType.MAPPED) {
             try {
                 Files.touch(file);
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
-            throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
+            throw UnknownArgumentException.newInstance(FileChannelType.class, type);
         }
         Assertions.checkTrue(file.exists());
         return file;
