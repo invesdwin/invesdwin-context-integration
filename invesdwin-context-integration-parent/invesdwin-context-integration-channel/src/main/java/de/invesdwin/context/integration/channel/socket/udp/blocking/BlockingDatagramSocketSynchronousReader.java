@@ -19,7 +19,8 @@ public class BlockingDatagramSocketSynchronousReader extends ABlockingDatagramSo
     protected IByteBuffer packetBuffer;
     protected DatagramPacket packet;
 
-    public BlockingDatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public BlockingDatagramSocketSynchronousReader(final SocketAddress socketAddress,
+            final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
     }
 
@@ -27,7 +28,7 @@ public class BlockingDatagramSocketSynchronousReader extends ABlockingDatagramSo
     public void open() throws IOException {
         super.open();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        final byte[] packetBytes = new byte[socketSize];
+        final byte[] packetBytes = ByteBuffers.allocateByteArray(socketSize);
         this.packetBuffer = ByteBuffers.wrap(packetBytes);
         this.packet = new DatagramPacket(packetBytes, packetBytes.length);
     }
