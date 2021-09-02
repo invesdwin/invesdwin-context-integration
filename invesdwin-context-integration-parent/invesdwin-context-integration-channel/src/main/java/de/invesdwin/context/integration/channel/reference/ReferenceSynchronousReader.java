@@ -15,8 +15,9 @@ public class ReferenceSynchronousReader<M> implements ISynchronousReader<M> {
 
     private IMutableReference<IReference<M>> reference;
 
-    public ReferenceSynchronousReader(final IMutableReference<IReference<M>> reference) {
-        this.reference = reference;
+    @SuppressWarnings("unchecked")
+    public ReferenceSynchronousReader(final IMutableReference<? extends IReference<M>> reference) {
+        this.reference = (IMutableReference<IReference<M>>) reference;
     }
 
     @Override

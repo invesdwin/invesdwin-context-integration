@@ -15,8 +15,9 @@ public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
 
     private ConcurrentQueue<IReference<M>> queue;
 
-    public ConversantSynchronousReader(final ConcurrentQueue<IReference<M>> queue) {
-        this.queue = queue;
+    @SuppressWarnings("unchecked")
+    public ConversantSynchronousReader(final ConcurrentQueue<? extends IReference<M>> queue) {
+        this.queue = (ConcurrentQueue<IReference<M>>) queue;
     }
 
     @Override

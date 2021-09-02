@@ -16,7 +16,7 @@ public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronous
 
     private IReference<M> next;
 
-    public BlockingQueueSynchronousReader(final BlockingQueue<IReference<M>> queue) {
+    public BlockingQueueSynchronousReader(final BlockingQueue<? extends IReference<M>> queue) {
         super(queue);
     }
 

@@ -16,8 +16,9 @@ public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     private IMutableReference<IReference<M>> reference;
 
-    public ReferenceSynchronousWriter(final IMutableReference<IReference<M>> reference) {
-        this.reference = reference;
+    @SuppressWarnings("unchecked")
+    public ReferenceSynchronousWriter(final IMutableReference<? extends IReference<M>> reference) {
+        this.reference = (IMutableReference<IReference<M>>) reference;
     }
 
     @Override
@@ -26,13 +27,21 @@ public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void close() throws IOException {
-        reference.set(EmptyReference.getInstance());
+        reference.set(newEmptyReference());
         reference = DisabledReference.getInstance();
+    }
+
+    protected DisabledReference<M> newEmptyReference() {
+        return EmptyReference.getInstance();
     }
 
     @Override
     public void write(final M message) throws IOException {
-        reference.set(ImmutableReference.of(message));
+        reference.set(newReference(message));
+    }
+
+    protected IReference<M> newReference(final M message) {
+        return ImmutableReference.of(message);
     }
 
 }

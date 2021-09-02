@@ -1,27 +1,22 @@
-package de.invesdwin.context.integration.channel.queue;
+package de.invesdwin.context.integration.channel.bufferingiterator;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.Queue;
-import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.reference.IReference;
 
 @NotThreadSafe
-public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
+public class BufferingIteratorSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private Queue<IReference<M>> queue;
+    private IBufferingIterator<IReference<M>> queue;
 
     @SuppressWarnings("unchecked")
-    public QueueSynchronousReader(final Queue<? extends IReference<M>> queue) {
-        Assertions.assertThat(queue)
-                .as("this implementation does not support non-blocking calls")
-                .isNotInstanceOf(SynchronousQueue.class);
-        this.queue = (Queue<IReference<M>>) queue;
+    public BufferingIteratorSynchronousReader(final IBufferingIterator<? extends IReference<M>> queue) {
+        this.queue = (IBufferingIterator<IReference<M>>) queue;
     }
 
     @Override
@@ -35,12 +30,12 @@ public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public boolean hasNext() throws IOException {
-        return queue.peek() != null;
+        return queue.getHead() != null;
     }
 
     @Override
     public M readMessage() throws IOException {
-        final IReference<M> holder = queue.remove();
+        final IReference<M> holder = queue.next();
         final M message = holder.get();
         if (message == null) {
             close();

@@ -17,11 +17,12 @@ public class QueueSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     private Queue<IReference<M>> queue;
 
-    public QueueSynchronousWriter(final Queue<IReference<M>> queue) {
+    @SuppressWarnings("unchecked")
+    public QueueSynchronousWriter(final Queue<? extends IReference<M>> queue) {
         Assertions.assertThat(queue)
                 .as("this implementation does not support non-blocking calls")
                 .isNotInstanceOf(SynchronousQueue.class);
-        this.queue = queue;
+        this.queue = (Queue<IReference<M>>) queue;
     }
 
     @Override
@@ -30,13 +31,21 @@ public class QueueSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void close() throws IOException {
-        queue.add(EmptyReference.getInstance());
+        queue.add(newEmptyReference());
         queue = null;
+    }
+
+    protected IReference<M> newEmptyReference() {
+        return EmptyReference.getInstance();
     }
 
     @Override
     public void write(final M message) throws IOException {
-        queue.add(ImmutableReference.of(message));
+        queue.add(newReference(message));
+    }
+
+    protected IReference<M> newReference(final M message) {
+        return ImmutableReference.of(message);
     }
 
 }

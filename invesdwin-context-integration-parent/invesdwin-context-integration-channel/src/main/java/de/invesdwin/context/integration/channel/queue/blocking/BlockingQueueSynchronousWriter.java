@@ -13,7 +13,7 @@ import de.invesdwin.util.concurrent.reference.ImmutableReference;
 public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronousChannel<M>
         implements ISynchronousWriter<M> {
 
-    public BlockingQueueSynchronousWriter(final BlockingQueue<IReference<M>> queue) {
+    public BlockingQueueSynchronousWriter(final BlockingQueue<? extends IReference<M>> queue) {
         super(queue);
     }
 
@@ -30,10 +30,14 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
         }
 
         try {
-            queue.put(ImmutableReference.of(message));
+            queue.put(newReference(message));
         } catch (final InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected IReference<M> newReference(final M message) {
+        return ImmutableReference.of(message);
     }
 
 }

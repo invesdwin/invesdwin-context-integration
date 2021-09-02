@@ -24,8 +24,9 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
 
     protected BlockingQueue<IReference<M>> queue;
 
-    public ABlockingQueueSynchronousChannel(final BlockingQueue<IReference<M>> queue) {
-        this.queue = queue;
+    @SuppressWarnings("unchecked")
+    public ABlockingQueueSynchronousChannel(final BlockingQueue<? extends IReference<M>> queue) {
+        this.queue = (BlockingQueue<IReference<M>>) queue;
     }
 
     @Override
@@ -42,29 +43,30 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
 
     protected void sendClosedMessage() {
         final BlockingQueue<IReference<M>> queueCopy = queue;
-        CLOSED_SYNCHRONIZER.execute(new Runnable() {
-            @Override
-            public void run() {
-                //randomize sleeps to increase chance of meeting each other
-                final RandomGenerator random = RandomGenerators.currentThreadLocalRandom();
-                try {
-                    boolean closedMessageSent = false;
-                    boolean closedMessageReceived = false;
-                    while (!closedMessageReceived || !closedMessageSent) {
-                        if (queueCopy.poll(random.nextInt(2), TimeUnit.MILLISECONDS) == EmptySynchronousCommand
-                                .getInstance()) {
-                            closedMessageReceived = true;
-                        }
-                        if (queueCopy.offer(EmptyReference.getInstance(), random.nextInt(2), TimeUnit.MILLISECONDS)) {
-                            closedMessageSent = true;
-                        }
+        CLOSED_SYNCHRONIZER.execute(() -> {
+            //randomize sleeps to increase chance of meeting each other
+            final RandomGenerator random = RandomGenerators.currentThreadLocalRandom();
+            try {
+                boolean closedMessageSent = false;
+                boolean closedMessageReceived = false;
+                while (!closedMessageReceived || !closedMessageSent) {
+                    if (queueCopy.poll(random.nextInt(2), TimeUnit.MILLISECONDS) == EmptySynchronousCommand
+                            .getInstance()) {
+                        closedMessageReceived = true;
                     }
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    if (queueCopy.offer(newEmptyReference(), random.nextInt(2), TimeUnit.MILLISECONDS)) {
+                        closedMessageSent = true;
+                    }
                 }
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         });
 
+    }
+
+    protected IReference<M> newEmptyReference() {
+        return EmptyReference.getInstance();
     }
 
 }
