@@ -15,12 +15,17 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 @NotThreadSafe
 public class AeronChannelTest extends AChannelTest {
 
+    //https://github.com/real-logic/aeron/blob/master/aeron-driver/src/main/c/README.md
     private static final AeronMediaDriverMode MODE = AeronMediaDriverMode.EMBEDDED;
 
     @Test
     public void testAeronDatagramSocketPerformance() throws InterruptedException {
+        //for some more settings to try: https://github.com/real-logic/aeron/wiki/Performance-Testing
         final String responseChannel = "aeron:udp?endpoint=localhost:7878";
         final String requestChannel = "aeron:udp?endpoint=localhost:7879";
+        //reliability can be turned off https://github.com/real-logic/aeron/issues/541
+        //        final String responseChannel = "aeron:udp?control=localhost:7878|reliable=false";
+        //        final String requestChannel = "aeron:udp?control=localhost:7879|reliable=false";
         runAeronPerformanceTest(MODE, responseChannel, 1001, requestChannel, 1002);
     }
 
