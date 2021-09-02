@@ -30,7 +30,7 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 @NotThreadSafe
 public class SocketChannelTest extends AChannelTest {
 
-    //https://nipafx.dev/java-unix-domain-sockets/
+    //https://nipafx.dev/java-unix-domain-sockets/ (requires java 16, thus commented out)
     //    @Test
     //    public void testUnixDomainSocketSocketPerformance() throws InterruptedException {
     //        final SocketAddress responseAddress = java.net.UnixDomainSocketAddress
