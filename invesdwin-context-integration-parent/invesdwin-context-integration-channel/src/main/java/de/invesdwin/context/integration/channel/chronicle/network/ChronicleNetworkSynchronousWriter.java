@@ -1,27 +1,29 @@
-package de.invesdwin.context.integration.channel.socket.tcp;
+package de.invesdwin.context.integration.channel.chronicle.network;
 
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
+import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class SocketSynchronousWriter extends ASocketSynchronousChannel
+public class ChronicleNetworkSynchronousWriter extends AChronicleNetworkSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public SocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public ChronicleNetworkSynchronousWriter(final ChronicleSocketChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        super(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
@@ -52,9 +54,24 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
         try {
             final int size = message.write(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
-            buffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
+            writeFully(socketChannel, buffer.asByteBuffer(0, MESSAGE_INDEX + size));
         } catch (final IOException e) {
             throw newEofException(e);
+        }
+    }
+
+    public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
+            throws IOException {
+        int remaining = byteBuffer.remaining();
+        while (remaining > 0) {
+            final int count = dst.write(byteBuffer);
+            if (count == -1) { // EOF
+                break;
+            }
+            remaining -= count;
+        }
+        if (remaining > 0) {
+            throw ByteBuffers.newPutBytesToEOF();
         }
     }
 

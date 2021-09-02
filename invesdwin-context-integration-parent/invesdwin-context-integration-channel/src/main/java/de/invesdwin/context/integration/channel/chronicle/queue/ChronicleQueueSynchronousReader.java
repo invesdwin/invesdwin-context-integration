@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.chronicle;
+package de.invesdwin.context.integration.channel.chronicle.queue;
 
 import java.io.EOFException;
 import java.io.File;
@@ -13,14 +13,14 @@ import de.invesdwin.util.streams.buffer.delegate.ChronicleDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
 @NotThreadSafe
-public class ChronicleSynchronousReader extends AChronicleSynchronousChannel
+public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     private ExcerptTailer tailer;
     private net.openhft.chronicle.bytes.Bytes<?> bytes;
     private IByteBuffer buffer;
 
-    public ChronicleSynchronousReader(final File file) {
+    public ChronicleQueueSynchronousReader(final File file) {
         super(file);
     }
 

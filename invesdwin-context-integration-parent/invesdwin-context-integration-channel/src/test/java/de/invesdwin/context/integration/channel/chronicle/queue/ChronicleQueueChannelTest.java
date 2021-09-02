@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.chronicle;
+package de.invesdwin.context.integration.channel.chronicle.queue;
 
 import java.io.File;
 
@@ -17,7 +17,7 @@ import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 
 @NotThreadSafe
-public class ChronicleChannelTest extends AChannelTest {
+public class ChronicleQueueChannelTest extends AChannelTest {
 
     @Test
     public void testChroniclePerformance() throws InterruptedException {
@@ -48,12 +48,14 @@ public class ChronicleChannelTest extends AChannelTest {
     private void runChroniclePerformanceTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final ISynchronousWriter<IByteBufferWriter> responseWriter = new ChronicleSynchronousWriter(responseFile);
-            final ISynchronousReader<IByteBuffer> requestReader = new ChronicleSynchronousReader(requestFile);
+            final ISynchronousWriter<IByteBufferWriter> responseWriter = new ChronicleQueueSynchronousWriter(
+                    responseFile);
+            final ISynchronousReader<IByteBuffer> requestReader = new ChronicleQueueSynchronousReader(requestFile);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-            final ISynchronousWriter<IByteBufferWriter> requestWriter = new ChronicleSynchronousWriter(requestFile);
-            final ISynchronousReader<IByteBuffer> responseReader = new ChronicleSynchronousReader(responseFile);
+            final ISynchronousWriter<IByteBufferWriter> requestWriter = new ChronicleQueueSynchronousWriter(
+                    requestFile);
+            final ISynchronousReader<IByteBuffer> responseReader = new ChronicleQueueSynchronousReader(responseFile);
             read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
             executor.awaitTermination();

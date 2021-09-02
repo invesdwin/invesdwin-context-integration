@@ -1,25 +1,30 @@
-package de.invesdwin.context.integration.channel.socket.tcp;
+package de.invesdwin.context.integration.channel.chronicle.network;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.io.InputStream;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
+import de.invesdwin.context.integration.channel.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class SocketSynchronousReader extends ASocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
 
+    private InputStream in;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
 
-    public SocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public ChronicleNetworkSynchronousReader(final ChronicleSocketChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        super(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
@@ -33,7 +38,9 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
 
     @Override
     public void close() throws IOException {
-        if (buffer != null) {
+        if (in != null) {
+            in.close();
+            in = null;
             buffer = null;
             messageBuffer = null;
         }
@@ -63,7 +70,7 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
+            readFully(socketChannel, buffer.asByteBuffer(messageBuffer.position(), remaining));
             if (buffer.capacity() != capacityBefore) {
                 messageBuffer = buffer.asByteBuffer(0, socketSize);
             }
@@ -75,6 +82,21 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
             throw new EOFException("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
+    }
+
+    public static void readFully(final ChronicleSocketChannel src, final java.nio.ByteBuffer byteBuffer)
+            throws IOException {
+        int remaining = byteBuffer.remaining();
+        while (remaining > 0) {
+            final int count = src.read(byteBuffer);
+            if (count == -1) { // EOF
+                break;
+            }
+            remaining -= count;
+        }
+        if (remaining > 0) {
+            throw ByteBuffers.newPutBytesToEOF();
+        }
     }
 
 }

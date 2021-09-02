@@ -27,6 +27,7 @@ public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousC
     @Override
     public void open() throws IOException {
         super.open();
+        socket.shutdownOutput();
         in = socket.getInputStream();
         //old socket would actually slow down with direct buffer because it requires a byte[]
         buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);

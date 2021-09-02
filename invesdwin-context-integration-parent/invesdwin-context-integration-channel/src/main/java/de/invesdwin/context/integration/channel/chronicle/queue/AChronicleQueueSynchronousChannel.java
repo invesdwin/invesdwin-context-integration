@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.chronicle;
+package de.invesdwin.context.integration.channel.chronicle.queue;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,12 +12,12 @@ import net.openhft.chronicle.queue.RollCycles;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
 
 @NotThreadSafe
-public abstract class AChronicleSynchronousChannel implements ISynchronousChannel {
+public abstract class AChronicleQueueSynchronousChannel implements ISynchronousChannel {
 
     protected ChronicleQueue queue;
     protected final File file;
 
-    public AChronicleSynchronousChannel(final File file) {
+    public AChronicleQueueSynchronousChannel(final File file) {
         this.file = file;
     }
 

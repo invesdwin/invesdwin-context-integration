@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.chronicle;
+package de.invesdwin.context.integration.channel.chronicle.queue;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,13 +14,13 @@ import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
-public class ChronicleSynchronousWriter extends AChronicleSynchronousChannel
+public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private ExcerptAppender appender;
     private ChronicleDelegateByteBuffer wrappedBuffer = ChronicleDelegateByteBuffer.EMPTY_BUFFER;
 
-    public ChronicleSynchronousWriter(final File file) {
+    public ChronicleQueueSynchronousWriter(final File file) {
         super(file);
     }
 
