@@ -147,6 +147,7 @@ Process    ChronicleQueue                         Records:   275.52/ms    => ~2.
 Process    ChronicleQueue (tmpfs)                 Records:   282.06/ms    => ~2.65 times faster
 Thread     JeromqInproc                           Records:   296.34/ms    => ~2.8 times faster
 Process    NamedPipe (Streaming)                  Records:   350.07/ms    => ~3.3 times faster
+Process    UnixDomainSocket                       Records:   375.64/ms    => ~3.5 times faster (requires Java 16 for NIO support)
 Process    NamedPipe (FileChannel)                Records:   425.64/ms    => ~4 times faster
 Thread     LockedReference                        Records:   782.04/ms    => ~7.3 times faster
 Process    Jocket                                 Records:  1204.82/ms    => ~11.3 times faster (unstable; deadlocks after 2-3 million messages; their tests show ~1792.11/ms which would be ~16.8 times faster; had to test on Java 8)
