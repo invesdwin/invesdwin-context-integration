@@ -13,36 +13,49 @@ import io.aeron.driver.ThreadingMode;
 @NotThreadSafe
 public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
 
-    private static MediaDriver mediaDriver = newDefaultMediaDriver();
+    private static MediaDriver embeddedMediaDriver;
 
+    protected final AeronMediaDriverMode mode;
     protected final String channel;
     protected final int streamId;
     protected Aeron aeron;
 
-    public AAeronSynchronousChannel(final String channel, final int streamId) {
+    public AAeronSynchronousChannel(final AeronMediaDriverMode mode, final String channel, final int streamId) {
+        this.mode = mode;
         this.channel = channel;
         this.streamId = streamId;
     }
 
-    public static synchronized MediaDriver getMediadriver() {
-        if (mediaDriver == null) {
-            mediaDriver = newDefaultMediaDriver();
+    public static synchronized MediaDriver getEmbeddedMediadriver() {
+        if (embeddedMediaDriver == null) {
+            embeddedMediaDriver = newDefaultEmbeddedMediaDriver();
         }
-        return mediaDriver;
+        return embeddedMediaDriver;
     }
 
-    public static synchronized void setMediaDriver(final MediaDriver mediaDriver) {
-        AAeronSynchronousChannel.mediaDriver = mediaDriver;
+    public static synchronized void setEmbeddedMediaDriver(final MediaDriver mediaDriver) {
+        AAeronSynchronousChannel.embeddedMediaDriver = mediaDriver;
     }
 
-    public static MediaDriver newDefaultMediaDriver() {
+    public static MediaDriver newDefaultEmbeddedMediaDriver() {
         return MediaDriver.launchEmbedded(
-                new Context().dirDeleteOnShutdown(true).dirDeleteOnStart(true).threadingMode(ThreadingMode.SHARED));
+                new Context().dirDeleteOnShutdown(true).dirDeleteOnStart(true).threadingMode(ThreadingMode.DEDICATED));
     }
 
     @Override
     public void open() throws IOException {
-        this.aeron = Aeron.connect(new Aeron.Context().aeronDirectoryName(getMediadriver().aeronDirectoryName()));
+        this.aeron = Aeron.connect(newContext());
+    }
+
+    /**
+     * Override this method to specify a different directory for native media driver (aeronmd application).
+     */
+    protected io.aeron.Aeron.Context newContext() {
+        if (mode == AeronMediaDriverMode.EMBEDDED) {
+            return new Aeron.Context().aeronDirectoryName(getEmbeddedMediadriver().aeronDirectoryName());
+        } else {
+            return new Aeron.Context();
+        }
     }
 
     @Override
