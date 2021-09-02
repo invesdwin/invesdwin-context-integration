@@ -39,13 +39,13 @@ public enum ChronicleSocketChannelType implements IChronicleSocketChannelType {
             return new VanillaSocketChannel(socketChannel);
         }
     },
-    FAST_JAVA_8 {
+    FAST {
         @Override
         public ChronicleSocketChannel newSocketChannel(final SocketChannel socketChannel) throws IOException {
             return new FastJ8SocketChannel(socketChannel);
         }
     },
-    UNSAFE_FAST_JAVA_8 {
+    UNSAFE_FAST {
         @Override
         public ChronicleSocketChannel newSocketChannel(final SocketChannel socketChannel) throws IOException {
             return new UnsafeFastJ8SocketChannel(socketChannel);
