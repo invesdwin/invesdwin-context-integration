@@ -22,7 +22,8 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
     public void testChronicleSocketPerformance() throws InterruptedException {
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
-        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.DEFAULT, responseAddress, requestAddress);
+        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.UNSAFE_FAST_JAVA_8, responseAddress,
+                requestAddress);
     }
 
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
