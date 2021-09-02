@@ -25,9 +25,9 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
     protected final int socketSize;
     protected Socket socket;
     protected SocketChannel socketChannel;
-    private final SocketAddress socketAddress;
-    private final boolean server;
-    private ServerSocketChannel serverSocketChannel;
+    protected final SocketAddress socketAddress;
+    protected final boolean server;
+    protected ServerSocketChannel serverSocketChannel;
 
     public ASocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {

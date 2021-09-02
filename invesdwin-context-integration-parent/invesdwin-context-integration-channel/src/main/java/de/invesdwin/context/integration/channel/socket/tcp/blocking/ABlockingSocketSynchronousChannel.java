@@ -24,9 +24,9 @@ public abstract class ABlockingSocketSynchronousChannel implements ISynchronousC
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected Socket socket;
-    private final SocketAddress socketAddress;
-    private final boolean server;
-    private ServerSocket serverSocket;
+    protected final SocketAddress socketAddress;
+    protected final boolean server;
+    protected ServerSocket serverSocket;
 
     public ABlockingSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {

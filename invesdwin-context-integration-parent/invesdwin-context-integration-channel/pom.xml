@@ -44,8 +44,8 @@
 		<dependency>
 			<groupId>org.zeromq</groupId>
 			<artifactId>jzmq-api</artifactId>
+			<scope>provided</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryonet</artifactId>
@@ -54,6 +54,11 @@
 		<dependency>
 			<groupId>net.openhft</groupId>
 			<artifactId>chronicle-network</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.github.jnr</groupId>
+			<artifactId>jnr-enxio</artifactId>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>

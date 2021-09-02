@@ -31,8 +31,8 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
     protected ChronicleSocketChannelType type;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    private ChronicleServerSocketChannel serverSocketChannel;
-    private ChronicleServerSocket serverSocket;
+    protected ChronicleServerSocketChannel serverSocketChannel;
+    protected ChronicleServerSocket serverSocket;
 
     public AChronicleNetworkSynchronousChannel(final ChronicleSocketChannelType type,
             final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {

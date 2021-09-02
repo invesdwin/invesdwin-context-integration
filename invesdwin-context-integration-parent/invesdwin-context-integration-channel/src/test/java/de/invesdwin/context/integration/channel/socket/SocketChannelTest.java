@@ -1,11 +1,7 @@
 package de.invesdwin.context.integration.channel.socket;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.ProtocolFamily;
 import java.net.SocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -39,64 +35,63 @@ public class SocketChannelTest extends AChannelTest {
     //                .of(newFile("request", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
     //        runUnixDomainSocketPerformanceTest(responseAddress, requestAddress, StandardProtocolFamily.UNIX);
     //    }
-
-    @SuppressWarnings("unused")
-    private void runUnixDomainSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress, final ProtocolFamily protocolFamily) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(responseAddress, true,
-                MESSAGE_SIZE) {
-            @Override
-            protected ServerSocketChannel newServerSocketChannel() throws IOException {
-                return ServerSocketChannel.open(protocolFamily);
-            }
-
-            @Override
-            protected SocketChannel newSocketChannel() throws IOException {
-                return SocketChannel.open(protocolFamily);
-            }
-        };
-        final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
-                MESSAGE_SIZE) {
-            @Override
-            protected ServerSocketChannel newServerSocketChannel() throws IOException {
-                return ServerSocketChannel.open(protocolFamily);
-            }
-
-            @Override
-            protected SocketChannel newSocketChannel() throws IOException {
-                return SocketChannel.open(protocolFamily);
-            }
-        };
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(requestAddress, false,
-                MESSAGE_SIZE) {
-            @Override
-            protected ServerSocketChannel newServerSocketChannel() throws IOException {
-                return ServerSocketChannel.open(protocolFamily);
-            }
-
-            @Override
-            protected SocketChannel newSocketChannel() throws IOException {
-                return SocketChannel.open(protocolFamily);
-            }
-        };
-        final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
-                MESSAGE_SIZE) {
-            @Override
-            protected ServerSocketChannel newServerSocketChannel() throws IOException {
-                return ServerSocketChannel.open(protocolFamily);
-            }
-
-            @Override
-            protected SocketChannel newSocketChannel() throws IOException {
-                return SocketChannel.open(protocolFamily);
-            }
-        };
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
-        executor.shutdown();
-        executor.awaitTermination();
-    }
+    //
+    //    private void runUnixDomainSocketPerformanceTest(final SocketAddress responseAddress,
+    //            final SocketAddress requestAddress, final ProtocolFamily protocolFamily) throws InterruptedException {
+    //        final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(responseAddress, true,
+    //                MESSAGE_SIZE) {
+    //            @Override
+    //            protected ServerSocketChannel newServerSocketChannel() throws IOException {
+    //                return ServerSocketChannel.open(protocolFamily);
+    //            }
+    //
+    //            @Override
+    //            protected SocketChannel newSocketChannel() throws IOException {
+    //                return SocketChannel.open(protocolFamily);
+    //            }
+    //        };
+    //        final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
+    //                MESSAGE_SIZE) {
+    //            @Override
+    //            protected ServerSocketChannel newServerSocketChannel() throws IOException {
+    //                return ServerSocketChannel.open(protocolFamily);
+    //            }
+    //
+    //            @Override
+    //            protected SocketChannel newSocketChannel() throws IOException {
+    //                return SocketChannel.open(protocolFamily);
+    //            }
+    //        };
+    //        final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
+    //        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+    //        final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(requestAddress, false,
+    //                MESSAGE_SIZE) {
+    //            @Override
+    //            protected ServerSocketChannel newServerSocketChannel() throws IOException {
+    //                return ServerSocketChannel.open(protocolFamily);
+    //            }
+    //
+    //            @Override
+    //            protected SocketChannel newSocketChannel() throws IOException {
+    //                return SocketChannel.open(protocolFamily);
+    //            }
+    //        };
+    //        final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
+    //                MESSAGE_SIZE) {
+    //            @Override
+    //            protected ServerSocketChannel newServerSocketChannel() throws IOException {
+    //                return ServerSocketChannel.open(protocolFamily);
+    //            }
+    //
+    //            @Override
+    //            protected SocketChannel newSocketChannel() throws IOException {
+    //                return SocketChannel.open(protocolFamily);
+    //            }
+    //        };
+    //        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+    //        executor.shutdown();
+    //        executor.awaitTermination();
+    //    }
 
     @Test
     public void testNioSocketPerformance() throws InterruptedException {
