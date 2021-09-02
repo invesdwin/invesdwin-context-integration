@@ -28,8 +28,8 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
         polledValue = wrappedBuffer.slice(offset, length);
     });
 
-    public AeronSynchronousReader(final String channel, final int streamId) {
-        super(channel, streamId);
+    public AeronSynchronousReader(final AeronMediaDriverMode mode, final String channel, final int streamId) {
+        super(mode, channel, streamId);
     }
 
     @Override

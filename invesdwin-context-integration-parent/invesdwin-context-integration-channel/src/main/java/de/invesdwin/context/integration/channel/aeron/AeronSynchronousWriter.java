@@ -22,8 +22,8 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
     private boolean connected;
     private IByteBuffer buffer;
 
-    public AeronSynchronousWriter(final String channel, final int streamId) {
-        super(channel, streamId);
+    public AeronSynchronousWriter(final AeronMediaDriverMode mode, final String channel, final int streamId) {
+        super(mode, channel, streamId);
     }
 
     @Override
