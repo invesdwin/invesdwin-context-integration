@@ -56,11 +56,6 @@
 			<artifactId>chronicle-network</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.github.jnr</groupId>
-			<artifactId>jnr-enxio</artifactId>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 
 </project>
