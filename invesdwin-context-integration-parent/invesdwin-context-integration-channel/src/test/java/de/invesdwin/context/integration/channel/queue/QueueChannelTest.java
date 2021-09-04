@@ -4,6 +4,8 @@ import java.util.ArrayDeque;
 import java.util.Queue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.SynchronousQueue;
@@ -21,6 +23,27 @@ import de.invesdwin.util.time.date.FDate;
 //@Ignore("manual test")
 public class QueueChannelTest extends AChannelTest {
     //CHECKSTYLE:ON
+
+    @Test
+    public void testConcurrentLinkedDequePerformance() throws InterruptedException {
+        final Queue<IReference<FDate>> responseQueue = new ConcurrentLinkedDeque<IReference<FDate>>();
+        final Queue<IReference<FDate>> requestQueue = new ConcurrentLinkedDeque<IReference<FDate>>();
+        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
+
+    @Test
+    public void testLinkedBlockingDequePerformance() throws InterruptedException {
+        final Queue<IReference<FDate>> responseQueue = new LinkedBlockingDeque<IReference<FDate>>(2);
+        final Queue<IReference<FDate>> requestQueue = new LinkedBlockingDeque<IReference<FDate>>(2);
+        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
+
+    @Test
+    public void testLinkedBlockingDequePerformanceWithBlocking() throws InterruptedException {
+        final BlockingQueue<IReference<FDate>> responseQueue = new LinkedBlockingDeque<IReference<FDate>>(2);
+        final BlockingQueue<IReference<FDate>> requestQueue = new LinkedBlockingDeque<IReference<FDate>>(2);
+        runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
 
     @Test
     public void testArrayDequePerformance() throws InterruptedException {
