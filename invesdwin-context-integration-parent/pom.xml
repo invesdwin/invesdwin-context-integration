@@ -65,7 +65,7 @@
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.1.7</version.cxf>
 		<version.hadoop>2.8.1</version.hadoop>
-		<version.jersey>2.28</version.jersey>
+		<version.jersey>2.34</version.jersey>
 		<version.xmlsec>2.1.4</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
 
@@ -997,6 +997,22 @@
 					<exclusion>
 						<groupId>log4j</groupId>
 						<artifactId>log4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.el</groupId>
+						<artifactId>javax.el-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.servlet</groupId>
+						<artifactId>servlet-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.enterprise</groupId>
+						<artifactId>cdi-api</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>

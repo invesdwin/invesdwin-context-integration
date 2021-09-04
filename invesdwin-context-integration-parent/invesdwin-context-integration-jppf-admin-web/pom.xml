@@ -41,6 +41,20 @@
 			<artifactId>invesdwin-context-webserver</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- upperbound deps -->
+		<dependency>
+			<groupId>org.danekja</groupId>
+			<artifactId>jdk-serializable-functional</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.github.openjson</groupId>
+			<artifactId>openjson</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.wicketstuff</groupId>
+			<artifactId>wicketstuff-servlet3-auth</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>
