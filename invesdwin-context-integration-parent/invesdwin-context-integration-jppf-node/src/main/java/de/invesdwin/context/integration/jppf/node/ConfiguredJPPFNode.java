@@ -10,6 +10,8 @@ import org.jppf.classloader.AbstractJPPFClassLoader;
 import org.jppf.node.NodeRunner;
 import org.jppf.server.node.JPPFNode;
 import org.jppf.utils.JPPFConfiguration;
+import org.jppf.utils.TypedProperties;
+import org.jppf.utils.configuration.ConfigurationOverridesHandler;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -42,6 +44,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
     private JPPFNode node;
     @GuardedBy("ConfiguredJPPFNode.class")
     private WebdavFileChannel heartbeatWebdavFileChannel;
+    private volatile NodeRunner runner;
 
     public synchronized JPPFNode getNode() {
         return node;
@@ -63,14 +66,23 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             startDelayed = true;
             return;
         }
+        final TypedProperties config = JPPFConfiguration.getProperties();
+        final TypedProperties defaults = new TypedProperties(config);
+        final TypedProperties overrides = new ConfigurationOverridesHandler().load(true);
+        if (overrides != null) {
+            config.putAll(overrides);
+            config.setBoolean("jppf.node.overrides.set", true);
+        }
+        config.setDefaults(defaults);
+        runner = new NodeRunner(config);
         NODE_EXECUTOR.execute(new Runnable() {
             @Override
             public void run() {
-                NodeRunner.main("noLauncher");
+                runner.start("noLauncher");
             }
         });
         while (node == null) {
-            setNode((JPPFNode) NodeRunner.getNode());
+            setNode((JPPFNode) runner.getNode());
             try {
                 FTimeUnit.SECONDS.sleep(1);
             } catch (final InterruptedException e) {
@@ -97,13 +109,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 //ignore
             }
 
-            NodeRunner.getShuttingDown().set(true);
-            node.stopNode();
-            try {
-                node.stopJmxServer();
-            } catch (final Exception e) {
-                //ignore
-            }
+            runner.shutdown();
             try {
                 NODE_EXECUTOR.awaitPendingCountZero();
             } catch (final InterruptedException e) {
@@ -118,10 +124,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 classLoaderField.set(null);
             }
             node = null;
-
-            Reflections.field("node").ofType(JPPFNode.class).in(NodeRunner.class).set(null);
-            Assertions.checkNull(NodeRunner.getNode());
-            NodeRunner.getShuttingDown().set(false);
+            runner = null;
         }
     }
 

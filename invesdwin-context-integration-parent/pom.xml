@@ -66,7 +66,7 @@
 		<version.hadoop>2.8.1</version.hadoop>
 		<version.jersey>2.28</version.jersey>
 		<version.xmlsec>2.1.4</version.xmlsec>
-		<version.jppf>6.0.2</version.jppf>
+		<version.jppf>6.2</version.jppf>
 
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
@@ -979,6 +979,12 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
+			<dependency>
+				<groupId>org.jppf</groupId>
+				<artifactId>jppf-admin-web-embedded</artifactId>
+				<version>${version.jppf}</version>
+			</dependency>
+
 			<dependency>
 				<groupId>org.jppf</groupId>
 				<artifactId>jppf-common</artifactId>

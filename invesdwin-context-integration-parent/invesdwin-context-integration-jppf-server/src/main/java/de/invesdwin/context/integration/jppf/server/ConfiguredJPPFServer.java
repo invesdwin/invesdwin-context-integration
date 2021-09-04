@@ -1,9 +1,7 @@
 package de.invesdwin.context.integration.jppf.server;
 
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Field;
 import java.net.URI;
-import java.util.concurrent.ExecutorService;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -13,14 +11,7 @@ import javax.management.ObjectName;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.jppf.management.spi.JPPFDriverMBeanProvider;
-import org.jppf.nio.StateTransitionManager;
-import org.jppf.nio.acceptor.AcceptorNioServer;
 import org.jppf.server.JPPFDriver;
-import org.jppf.server.nio.classloader.ClassCache;
-import org.jppf.server.nio.classloader.client.ClientClassNioServer;
-import org.jppf.server.nio.classloader.node.NodeClassNioServer;
-import org.jppf.server.nio.client.ClientNioServer;
-import org.jppf.server.nio.nodeserver.NodeNioServer;
 import org.jppf.server.node.JPPFNode;
 import org.jppf.utils.JPPFConfiguration;
 import org.jppf.utils.configuration.JPPFProperties;
@@ -69,29 +60,19 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         Assertions.checkNull(driver, "already started");
         LOG.info("Starting jppf server at: %s", JPPFServerProperties.getServerBindUri());
 
-        JPPFDriver.main("noLauncher");
-        setDriver(JPPFDriver.getInstance());
-        assertClassCacheEnabledMatchesConfig();
-        Assertions.checkNotNull(driver, "Startup failed!");
+        driver = new JPPFDriver(JPPFConfiguration.getProperties());
+        try {
+            driver.start();
+        } catch (final Exception e) {
+            driver = null;
+            throw new RuntimeException(e);
+        }
         driver.addDriverDiscovery(new ConfiguredPeerDriverDiscovery());
         uploadHeartbeat();
         LOG.info("%s started with UUID: %s", ConfiguredJPPFServer.class.getSimpleName(), driver.getUuid());
         if (MergedContext.isBootstrapFinished()) {
             startup();
         }
-    }
-
-    private void assertClassCacheEnabledMatchesConfig() {
-        final Field enabledField = Reflections.findField(ClassCache.class, "enabled");
-        Reflections.makeAccessible(enabledField);
-        final boolean actualServerClassCacheEnabled = (boolean) Reflections.getField(enabledField,
-                driver.getInitializer().getClassCache());
-        Assertions.assertThat(actualServerClassCacheEnabled).isEqualTo(JPPFServerProperties.SERVER_CLASS_CACHE_ENABLED);
-    }
-
-    public synchronized void setDriver(final JPPFDriver instance) {
-        Assertions.checkNull(driver, "already started");
-        driver = instance;
     }
 
     @Override
@@ -112,37 +93,11 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
 
     public synchronized void stop() {
         if (driver != null) {
-            final AcceptorNioServer acceptorServer = driver.getAcceptorServer();
-            if (acceptorServer != null) {
-                acceptorServer.shutdown();
-            }
-            final ClientClassNioServer clientClassServer = driver.getClientClassServer();
-            if (clientClassServer != null) {
-                clientClassServer.shutdown();
-            }
-            final NodeClassNioServer nodeClassServer = driver.getNodeClassServer();
-            if (nodeClassServer != null) {
-                nodeClassServer.shutdown();
-            }
-            final NodeNioServer nodeNioServer = driver.getNodeNioServer();
-            if (nodeNioServer != null) {
-                nodeNioServer.shutdown();
-            }
-            final ClientNioServer clientNioServer = driver.getClientNioServer();
-            if (clientNioServer != null) {
-                clientNioServer.shutdown();
-            }
-
             driver.shutdown();
             if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
                 node.stop();
             }
-            Reflections.field("globalExecutor")
-                    .ofType(ExecutorService.class)
-                    .in(StateTransitionManager.class)
-                    .set(null);
             unregisterMBeans(JPPFDriverMBeanProvider.class);
-
             driver = null;
         }
     }
