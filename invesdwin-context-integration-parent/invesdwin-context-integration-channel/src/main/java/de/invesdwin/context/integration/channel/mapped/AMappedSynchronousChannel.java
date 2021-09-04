@@ -86,7 +86,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     public void close() throws IOException {
         if (mem != null) {
             try {
-                mem.unmap();
+                mem.close();
                 mem = null;
             } catch (final Exception e) {
                 throw new IOException("Unable to close the file: " + file, e);
