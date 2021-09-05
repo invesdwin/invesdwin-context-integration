@@ -126,7 +126,7 @@ public abstract class ANettySynchronousChannel implements ISynchronousChannel {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (socketChannel != null) {
             socketChannel.close();
             socketChannel = null;

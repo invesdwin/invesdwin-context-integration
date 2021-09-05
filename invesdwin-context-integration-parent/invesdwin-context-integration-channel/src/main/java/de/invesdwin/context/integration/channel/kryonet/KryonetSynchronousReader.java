@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 @NotThreadSafe
 public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private IByteBuffer polledValue;
+    private volatile IByteBuffer polledValue;
 
     public KryonetSynchronousReader(final InetAddress address, final int tcpPort, final int udpPort,
             final boolean server) {

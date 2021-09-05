@@ -29,7 +29,7 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
             socket.shutdownOutput();
         }
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(estimatedMaxMessageSize);
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = buffer.asByteBuffer(0, socketSize);
     }
 
