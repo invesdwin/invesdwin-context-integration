@@ -12,10 +12,10 @@ import de.invesdwin.util.concurrent.reference.IMutableReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.math.Integers;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
@@ -64,8 +64,8 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
 
     private static final class Reader<M> extends ChannelInboundHandlerAdapter {
         private final ISerde<M> messageSerde;
-        private final IByteBuffer buffer;
-        private byte[] bytes;
+        private final ByteBuf buf;
+        private final NettyDelegateByteBuffer buffer;
         private int targetPosition = MESSAGE_INDEX;
         private int remaining = MESSAGE_INDEX;
         private int position = 0;
@@ -75,9 +75,8 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
 
         private Reader(final ISerde<M> messageSerde, final int socketSize) {
             this.messageSerde = messageSerde;
-            //netty has no way to read from direct bytebuffers less than remaining() -_-
-            buffer = ByteBuffers.allocateExpandable(socketSize);
-            bytes = buffer.byteArray();
+            this.buf = Unpooled.directBuffer(socketSize);
+            this.buffer = new NettyDelegateByteBuffer(buf);
         }
 
         @Override
@@ -93,7 +92,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
         private boolean read(final ChannelHandlerContext ctx, final ByteBuf buf) {
             final int readable = buf.readableBytes();
             final int read = Integers.min(readable, remaining);
-            buf.readBytes(bytes, position, read);
+            buf.readBytes(buf, position, read);
             remaining -= read;
             position += read;
 
@@ -109,7 +108,6 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
                 if (targetPosition > buffer.capacity()) {
                     //expand buffer to message size
                     buffer.ensureCapacity(targetPosition);
-                    bytes = buffer.byteArray();
                 }
                 return readable > read;
             }
