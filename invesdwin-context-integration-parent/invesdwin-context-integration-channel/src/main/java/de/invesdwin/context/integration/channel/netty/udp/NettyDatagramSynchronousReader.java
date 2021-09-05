@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.netty.udp;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -25,7 +25,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
     private final ISerde<M> messageSerde;
     private Reader<M> reader;
 
-    public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final SocketAddress socketAddress,
+    public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize, final ISerde<M> messageSerde) {
         super(type, socketAddress, server, estimatedMaxMessageSize);
         this.messageSerde = messageSerde;

@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.netty.udp;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -37,11 +37,11 @@ public abstract class ANettyDatagramSynchronousChannel implements ISynchronousCh
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected DatagramChannel datagramChannel;
-    protected final SocketAddress socketAddress;
+    protected final InetSocketAddress socketAddress;
     protected final boolean server;
     private Bootstrap bootstrap;
 
-    public ANettyDatagramSynchronousChannel(final INettyDatagramChannelType type, final SocketAddress socketAddress,
+    public ANettyDatagramSynchronousChannel(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
