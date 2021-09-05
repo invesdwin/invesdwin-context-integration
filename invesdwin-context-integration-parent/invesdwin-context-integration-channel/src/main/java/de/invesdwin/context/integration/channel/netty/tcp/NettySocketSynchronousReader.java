@@ -11,7 +11,6 @@ import de.invesdwin.context.integration.channel.netty.tcp.type.INettySocketChann
 import de.invesdwin.util.concurrent.reference.IMutableReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
@@ -96,14 +95,22 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
 
         private boolean read(final ChannelHandlerContext ctx, final ByteBuf buf) {
             final int readable = buf.readableBytes();
-            final int read = Integers.min(readable, remaining);
+            final int read;
+            final boolean repeat;
+            if (readable > remaining) {
+                read = remaining;
+                repeat = true;
+            } else {
+                read = readable;
+                repeat = false;
+            }
             buf.readBytes(buf, position, read);
             remaining -= read;
             position += read;
 
             if (position < targetPosition) {
                 //we are still waiting for size of message to complete
-                return readable > read;
+                return repeat;
             }
             if (size == -1) {
                 //read size and adjust target and remaining
@@ -114,7 +121,7 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
                     //expand buffer to message size
                     buffer.ensureCapacity(targetPosition);
                 }
-                return readable > read;
+                return repeat;
             }
             //message complete
             if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
@@ -129,7 +136,7 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
             remaining = MESSAGE_INDEX;
             position = 0;
             size = -1;
-            return readable > read;
+            return repeat;
         }
     }
 

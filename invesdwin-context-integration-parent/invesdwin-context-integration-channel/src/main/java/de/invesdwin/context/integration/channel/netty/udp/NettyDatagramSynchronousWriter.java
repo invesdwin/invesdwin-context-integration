@@ -11,12 +11,14 @@ import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
 @NotThreadSafe
 public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
+    private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
@@ -29,8 +31,9 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
     public void open() throws IOException {
         super.open();
         //netty uses direct buffer per default
-        buffer = new NettyDelegateByteBuffer(Unpooled.directBuffer(socketSize));
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        this.buf = Unpooled.directBuffer(socketSize);
+        this.buffer = new NettyDelegateByteBuffer(buf);
+        this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
@@ -41,6 +44,7 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
             } catch (final Throwable t) {
                 //ignore
             }
+            buf = null;
             buffer = null;
             messageBuffer = null;
         }
@@ -51,7 +55,8 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
     public void write(final IByteBufferWriter message) {
         final int size = message.write(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
-        datagramChannel.writeAndFlush(buffer.getDelegate());
+        buf.setIndex(0, MESSAGE_INDEX + size);
+        datagramChannel.writeAndFlush(buf);
     }
 
 }
