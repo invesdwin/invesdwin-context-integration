@@ -19,6 +19,10 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
+/**
+ * Since netty reads in an asynchronous handler thread and the bytebuffer can/shoult not be shared with other threads,
+ * the ISerde has to either copy the buffer or better directly convert it to the appropiate value type (for zero copy).
+ */
 @NotThreadSafe
 public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChannel implements ISynchronousReader<M> {
 
