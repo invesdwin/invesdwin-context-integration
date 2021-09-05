@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
 import de.invesdwin.context.integration.channel.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.util.concurrent.reference.IReference;
+import de.invesdwin.util.concurrent.reference.IMutableReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.math.Integers;
@@ -53,7 +53,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
 
     @Override
     public M readMessage() throws IOException {
-        final M value = reader.polledValue.get();
+        final M value = reader.polledValue.getAndSet(null);
         reader.polledValue = null;
         if (value == null) {
             close();
@@ -71,7 +71,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
         private int position = 0;
         private int size = -1;
         private final MutableReference<M> polledValueHolder = new MutableReference<>();
-        private volatile IReference<M> polledValue;
+        private volatile IMutableReference<M> polledValue;
 
         private Reader(final ISerde<M> messageSerde, final int socketSize) {
             this.messageSerde = messageSerde;
