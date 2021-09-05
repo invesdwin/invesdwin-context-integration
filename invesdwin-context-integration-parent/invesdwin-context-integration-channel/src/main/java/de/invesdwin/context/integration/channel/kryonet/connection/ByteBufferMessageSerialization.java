@@ -52,6 +52,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
             return DELEGATE.read(connection, buffer);
         } else {
             //since each message is read asynchronously we need to create a snapshot of the byte array here (sadly)
+            //we could use a serde here directly like in the netty channel, but kryonet is not worth the effort for zero-copy
             final int length = buffer.limit() - position;
             final IByteBuffer copy = wrapped.clone(position + MESSAGE_INDEX, length - MESSAGE_INDEX);
             ByteBuffers.position(buffer, position + length);
