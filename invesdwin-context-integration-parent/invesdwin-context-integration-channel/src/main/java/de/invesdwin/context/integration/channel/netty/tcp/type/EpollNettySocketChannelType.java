@@ -1,25 +1,25 @@
-package de.invesdwin.context.integration.channel.netty.type;
+package de.invesdwin.context.integration.channel.netty.tcp.type;
 
 import javax.annotation.concurrent.Immutable;
 
-import io.netty.channel.Channel;
+import de.invesdwin.context.integration.channel.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.epoll.EpollSocketChannel;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 /**
  * https://netty.io/wiki/native-transports.html#using-the-linux-native-transport
  */
 @Immutable
-public class EpollNettyChannelType implements INettyChannelType {
+public class EpollNettySocketChannelType implements INettySocketChannelType {
 
-    public static final EpollNettyChannelType INSTANCE = new EpollNettyChannelType();
+    public static final EpollNettySocketChannelType INSTANCE = new EpollNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerBossGroup() {
+    public EventLoopGroup newServerAcceptorGroup() {
         return new EpollEventLoopGroup(1);
     }
 
@@ -34,18 +34,18 @@ public class EpollNettyChannelType implements INettyChannelType {
     }
 
     @Override
-    public Class<? extends ServerChannel> getServerChannelType() {
+    public Class<? extends ServerSocketChannel> getServerChannelType() {
         return EpollServerSocketChannel.class;
     }
 
     @Override
-    public Class<? extends Channel> getClientChannelType() {
+    public Class<? extends SocketChannel> getClientChannelType() {
         return EpollSocketChannel.class;
     }
 
     @Override
     public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        NioNettyChannelType.INSTANCE.channelOptions(consumer, socketSize);
+        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize);
     }
 
     @Override

@@ -1,27 +1,27 @@
-package de.invesdwin.context.integration.channel.netty.type;
+package de.invesdwin.context.integration.channel.netty.tcp.type;
 
 import javax.annotation.concurrent.Immutable;
 
-import io.netty.channel.Channel;
+import de.invesdwin.context.integration.channel.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.handler.ssl.SslContext;
 
 @Immutable
-public class SslDelegateNettyChannelType implements INettyChannelType {
+public class SslDelegateNettySocketChannelType implements INettySocketChannelType {
 
-    private final INettyChannelType delegate;
+    private final INettySocketChannelType delegate;
     private final SslContext sslContext;
 
-    public SslDelegateNettyChannelType(final INettyChannelType delegate, final SslContext sslContext) {
+    public SslDelegateNettySocketChannelType(final INettySocketChannelType delegate, final SslContext sslContext) {
         this.delegate = delegate;
         this.sslContext = sslContext;
     }
 
     @Override
-    public EventLoopGroup newServerBossGroup() {
-        return delegate.newServerBossGroup();
+    public EventLoopGroup newServerAcceptorGroup() {
+        return delegate.newServerAcceptorGroup();
     }
 
     @Override
@@ -30,12 +30,12 @@ public class SslDelegateNettyChannelType implements INettyChannelType {
     }
 
     @Override
-    public Class<? extends ServerChannel> getServerChannelType() {
+    public Class<? extends ServerSocketChannel> getServerChannelType() {
         return delegate.getServerChannelType();
     }
 
     @Override
-    public Class<? extends Channel> getClientChannelType() {
+    public Class<? extends SocketChannel> getClientChannelType() {
         return delegate.getClientChannelType();
     }
 

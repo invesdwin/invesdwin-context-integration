@@ -10,15 +10,11 @@ import java.nio.channels.DatagramChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public abstract class ADatagramSocketSynchronousChannel implements ISynchronousChannel {
-
-    public static final int IPTOS_LOWCOST = 0x02;
-    public static final int IPTOS_RELIABILITY = 0x04;
-    public static final int IPTOS_THROUGHPUT = 0x08;
-    public static final int IPTOS_LOWDELAY = 0x10;
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -77,7 +73,8 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
         socketChannel.configureBlocking(false);
         socket.setSendBufferSize(socketSize);
         socket.setReceiveBufferSize(socketSize);
-        socket.setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT);
+        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
+                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
     }
 
     protected Duration getConnectRetryDelay() {

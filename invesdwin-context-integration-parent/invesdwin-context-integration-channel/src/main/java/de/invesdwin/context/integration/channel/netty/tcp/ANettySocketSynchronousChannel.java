@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.netty;
+package de.invesdwin.context.integration.channel.netty.tcp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -9,7 +9,7 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.netty.type.INettyChannelType;
+import de.invesdwin.context.integration.channel.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.time.duration.Duration;
@@ -23,14 +23,14 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 
 @NotThreadSafe
-public abstract class ANettySynchronousChannel implements ISynchronousChannel {
+public abstract class ANettySocketSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
 
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
-    protected final INettyChannelType type;
+    protected final INettySocketChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected SocketChannel socketChannel;
@@ -39,7 +39,7 @@ public abstract class ANettySynchronousChannel implements ISynchronousChannel {
     private ServerBootstrap serverBootstrap;
     private Bootstrap clientBootstrap;
 
-    public ANettySynchronousChannel(final INettyChannelType type, final SocketAddress socketAddress,
+    public ANettySocketSynchronousChannel(final INettySocketChannelType type, final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
@@ -51,7 +51,7 @@ public abstract class ANettySynchronousChannel implements ISynchronousChannel {
     @Override
     public void open() throws IOException {
         if (server) {
-            final EventLoopGroup parentGroup = type.newServerBossGroup();
+            final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
             final EventLoopGroup childGroup = type.newServerWorkerGroup(parentGroup);
             serverBootstrap = new ServerBootstrap();
             serverBootstrap.group(parentGroup, childGroup);

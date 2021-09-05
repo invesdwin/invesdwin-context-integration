@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.netty;
+package de.invesdwin.context.integration.channel.netty.udp;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -7,7 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.context.integration.channel.netty.type.INettyChannelType;
+import de.invesdwin.context.integration.channel.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -20,13 +20,14 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 @NotThreadSafe
-public class NettySynchronousReader<M> extends ANettySynchronousChannel implements ISynchronousReader<M> {
+public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronousChannel
+        implements ISynchronousReader<M> {
 
     private final ISerde<M> messageSerde;
     private Reader<M> reader;
 
-    public NettySynchronousReader(final INettyChannelType type, final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize, final ISerde<M> messageSerde) {
+    public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize, final ISerde<M> messageSerde) {
         super(type, socketAddress, server, estimatedMaxMessageSize);
         this.messageSerde = messageSerde;
     }
@@ -35,9 +36,8 @@ public class NettySynchronousReader<M> extends ANettySynchronousChannel implemen
     public void open() throws IOException {
         super.open();
 
-        socketChannel.shutdownOutput();
         this.reader = new Reader<M>(messageSerde, socketSize);
-        socketChannel.pipeline().addLast(reader);
+        datagramChannel.pipeline().addLast(reader);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.netty.type;
+package de.invesdwin.context.integration.channel.netty;
 
 import io.netty.channel.ChannelOption;
 

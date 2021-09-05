@@ -1,25 +1,25 @@
-package de.invesdwin.context.integration.channel.netty.type;
+package de.invesdwin.context.integration.channel.netty.tcp.type;
 
 import javax.annotation.concurrent.Immutable;
 
-import io.netty.channel.Channel;
+import de.invesdwin.context.integration.channel.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.kqueue.KQueueSocketChannel;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 /**
  * https://netty.io/wiki/native-transports.html#using-the-macosbsd-native-transport
  */
 @Immutable
-public class KQueueNettyChannelType implements INettyChannelType {
+public class KQueueNettySocketChannelType implements INettySocketChannelType {
 
-    public static final KQueueNettyChannelType INSTANCE = new KQueueNettyChannelType();
+    public static final KQueueNettySocketChannelType INSTANCE = new KQueueNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerBossGroup() {
+    public EventLoopGroup newServerAcceptorGroup() {
         return new KQueueEventLoopGroup(1);
     }
 
@@ -34,18 +34,18 @@ public class KQueueNettyChannelType implements INettyChannelType {
     }
 
     @Override
-    public Class<? extends ServerChannel> getServerChannelType() {
+    public Class<? extends ServerSocketChannel> getServerChannelType() {
         return KQueueServerSocketChannel.class;
     }
 
     @Override
-    public Class<? extends Channel> getClientChannelType() {
+    public Class<? extends SocketChannel> getClientChannelType() {
         return KQueueSocketChannel.class;
     }
 
     @Override
     public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        NioNettyChannelType.INSTANCE.channelOptions(consumer, socketSize);
+        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize);
     }
 
     @Override

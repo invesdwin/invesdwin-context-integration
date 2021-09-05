@@ -1,26 +1,26 @@
-package de.invesdwin.context.integration.channel.netty.type;
+package de.invesdwin.context.integration.channel.netty.tcp.type;
 
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.channel.netty.IChannelOptionConsumer;
 import de.invesdwin.context.integration.channel.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.date.FTimeUnit;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.ServerChannel;
 import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 
 @Immutable
-public class NioNettyChannelType implements INettyChannelType {
+public class NioNettySocketChannelType implements INettySocketChannelType {
 
-    public static final NioNettyChannelType INSTANCE = new NioNettyChannelType();
+    public static final NioNettySocketChannelType INSTANCE = new NioNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerBossGroup() {
+    public EventLoopGroup newServerAcceptorGroup() {
         return new NioEventLoopGroup(1);
     }
 
@@ -35,12 +35,12 @@ public class NioNettyChannelType implements INettyChannelType {
     }
 
     @Override
-    public Class<? extends ServerChannel> getServerChannelType() {
+    public Class<? extends ServerSocketChannel> getServerChannelType() {
         return NioServerSocketChannel.class;
     }
 
     @Override
-    public Class<? extends Channel> getClientChannelType() {
+    public Class<? extends SocketChannel> getClientChannelType() {
         return NioSocketChannel.class;
     }
 
@@ -50,6 +50,8 @@ public class NioNettyChannelType implements INettyChannelType {
         consumer.option(ChannelOption.TCP_NODELAY, true);
         consumer.option(ChannelOption.ALLOW_HALF_CLOSURE, true);
         consumer.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
+        consumer.option(ChannelOption.SO_TIMEOUT,
                 ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
         consumer.option(ChannelOption.IP_TOS, ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
                 | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
