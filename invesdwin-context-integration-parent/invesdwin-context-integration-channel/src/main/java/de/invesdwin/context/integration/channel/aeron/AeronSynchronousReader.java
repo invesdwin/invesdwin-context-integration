@@ -6,10 +6,9 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.AgronaDelegateByteBuffer;
 import io.aeron.FragmentAssembler;
 import io.aeron.Subscription;
 import io.aeron.logbuffer.FragmentHandler;
@@ -17,14 +16,13 @@ import io.aeron.logbuffer.FragmentHandler;
 @NotThreadSafe
 public class AeronSynchronousReader extends AAeronSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
-    private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
+    private final AgronaDelegateByteBuffer wrappedBuffer = new AgronaDelegateByteBuffer(
+            AgronaDelegateByteBuffer.EMPTY_BYTES);
     private IByteBuffer polledValue;
     private Subscription subscription;
 
     private final FragmentHandler fragmentHandler = new FragmentAssembler((buffer, offset, length, header) -> {
-        if (wrappedBuffer.addressOffset() != buffer.addressOffset() || wrappedBuffer.capacity() != buffer.capacity()) {
-            wrappedBuffer = ByteBuffers.wrap(buffer);
-        }
+        wrappedBuffer.setDelegate(buffer);
         polledValue = wrappedBuffer.slice(offset, length);
     });
 

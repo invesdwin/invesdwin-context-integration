@@ -68,6 +68,7 @@ public abstract class ABlockingSocketSynchronousChannel implements ISynchronousC
         socket.setReceiveBufferSize(socketSize);
         socket.setSendBufferSize(socketSize);
         socket.setTcpNoDelay(true);
+        socket.setKeepAlive(true);
     }
 
     protected Duration getConnectRetryDelay() {

@@ -87,6 +87,7 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
             socket.setReceiveBufferSize(socketSize);
             socket.setSendBufferSize(socketSize);
             socket.setTcpNoDelay(true);
+            socket.setKeepAlive(true);
         }
     }
 

@@ -18,7 +18,8 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private ExcerptAppender appender;
-    private ChronicleDelegateByteBuffer wrappedBuffer = ChronicleDelegateByteBuffer.EMPTY_BUFFER;
+    private final ChronicleDelegateByteBuffer wrappedBuffer = new ChronicleDelegateByteBuffer(
+            ChronicleDelegateByteBuffer.EMPTY_BYTES);
 
     public ChronicleQueueSynchronousWriter(final File file) {
         super(file);
@@ -44,9 +45,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     public void write(final IByteBufferWriter message) throws IOException {
         try (DocumentContext doc = appender.writingDocument()) {
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
-            if (wrappedBuffer.getDelegate() != bytes) {
-                wrappedBuffer = new ChronicleDelegateByteBuffer(bytes);
-            }
+            wrappedBuffer.setDelegate(bytes);
             final int position = Integers.checkedCast(bytes.writePosition());
             final int length = message.write(wrappedBuffer.sliceFrom(position));
             bytes.writePosition(position + length);

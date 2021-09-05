@@ -14,10 +14,9 @@ import org.agrona.concurrent.broadcast.BroadcastReceiver;
 import org.agrona.concurrent.broadcast.CopyBroadcastReceiver;
 
 import de.invesdwin.context.integration.channel.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.delegate.AgronaDelegateByteBuffer;
 
 @NotThreadSafe
 public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffer> {
@@ -98,17 +97,15 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
      * We can use ZeroCopy here since CopyBroadcastReceiver already creates a safe copy.
      */
     private static final class Reader implements IReader {
-        private IByteBuffer wrappedBuffer = EmptyByteBuffer.INSTANCE;
+        private final AgronaDelegateByteBuffer wrappedBuffer = new AgronaDelegateByteBuffer(
+                AgronaDelegateByteBuffer.EMPTY_BYTES);
 
         private IByteBuffer polledValue;
 
         @Override
         public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
                 final int length) {
-            if (wrappedBuffer.addressOffset() != buffer.addressOffset()
-                    || wrappedBuffer.capacity() != buffer.capacity()) {
-                wrappedBuffer = ByteBuffers.wrap(buffer);
-            }
+            wrappedBuffer.setDelegate(buffer);
             final int size = wrappedBuffer.getInt(index + SIZE_INDEX);
             polledValue = wrappedBuffer.slice(index + MESSAGE_INDEX, size);
         }
