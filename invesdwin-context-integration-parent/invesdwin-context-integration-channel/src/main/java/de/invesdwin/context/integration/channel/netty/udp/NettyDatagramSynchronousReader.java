@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.netty.udp;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -17,6 +18,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
 public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronousChannel
@@ -42,7 +44,10 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
     @Override
     public void close() {
         super.close();
-        reader = null;
+        if (reader != null) {
+            reader.close();
+            reader = null;
+        }
     }
 
     @Override
@@ -61,7 +66,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
         return value;
     }
 
-    private static final class Reader<M> extends ChannelInboundHandlerAdapter {
+    private static final class Reader<M> extends ChannelInboundHandlerAdapter implements Closeable {
         private final ISerde<M> messageSerde;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
@@ -76,17 +81,24 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
             this.messageSerde = messageSerde;
             //netty uses direct buffers per default
             this.buf = Unpooled.directBuffer(socketSize);
+            this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
         }
 
         @Override
+        public void close() {
+            buf.release();
+        }
+
+        @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
-            final ByteBuf buf = (ByteBuf) msg;
+            final DatagramPacket packet = (DatagramPacket) msg;
+            final ByteBuf buf = packet.content();
             //CHECKSTYLE:OFF
             while (read(ctx, buf)) {
             }
             //CHECKSTYLE:ON
-            buf.release();
+            packet.release();
         }
 
         private boolean read(final ChannelHandlerContext ctx, final ByteBuf buf) {

@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.netty.tcp;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -46,7 +47,10 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
     @Override
     public void close() {
         super.close();
-        reader = null;
+        if (reader != null) {
+            reader.close();
+            reader = null;
+        }
     }
 
     @Override
@@ -65,7 +69,7 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
         return value;
     }
 
-    private static final class Reader<M> extends ChannelInboundHandlerAdapter {
+    private static final class Reader<M> extends ChannelInboundHandlerAdapter implements Closeable {
         private final ISerde<M> messageSerde;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
@@ -80,7 +84,13 @@ public class NettySocketSynchronousReader<M> extends ANettySocketSynchronousChan
             this.messageSerde = messageSerde;
             //netty uses direct buffers per default
             this.buf = Unpooled.directBuffer(socketSize);
+            this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
+        }
+
+        @Override
+        public void close() {
+            this.buf.release();
         }
 
         @Override

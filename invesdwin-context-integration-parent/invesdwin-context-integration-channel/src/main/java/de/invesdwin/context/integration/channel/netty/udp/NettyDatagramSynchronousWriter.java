@@ -34,9 +34,11 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
         super.open();
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(socketSize);
+        buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
         this.datagramPacket = new DatagramPacket(buf, socketAddress);
+        this.datagramPacket.retain();
     }
 
     @Override
@@ -47,9 +49,11 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
             } catch (final Throwable t) {
                 //ignore
             }
+            buf.release();
             buf = null;
             buffer = null;
             messageBuffer = null;
+            datagramPacket.release();
             datagramPacket = null;
         }
         super.close();

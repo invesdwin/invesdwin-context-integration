@@ -33,8 +33,9 @@ public class NettySocketSynchronousWriter extends ANettySocketSynchronousChannel
         socketChannel.shutdownInput();
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(socketSize);
+        this.buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
@@ -45,6 +46,7 @@ public class NettySocketSynchronousWriter extends ANettySocketSynchronousChannel
             } catch (final Throwable t) {
                 //ignore
             }
+            buf.release();
             buf = null;
             buffer = null;
             messageBuffer = null;
