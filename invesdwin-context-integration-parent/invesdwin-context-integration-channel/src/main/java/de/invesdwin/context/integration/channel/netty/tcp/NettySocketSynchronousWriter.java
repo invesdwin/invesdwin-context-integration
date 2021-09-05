@@ -14,13 +14,14 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 import io.netty.buffer.Unpooled;
 
 @NotThreadSafe
-public class NettySocketSynchronousWriter extends ANettySocketSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
+public class NettySocketSynchronousWriter extends ANettySocketSynchronousChannel
+        implements ISynchronousWriter<IByteBufferWriter> {
 
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public NettySocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
+    public NettySocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
         super(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
@@ -29,7 +30,7 @@ public class NettySocketSynchronousWriter extends ANettySocketSynchronousChannel
         super.open();
         socketChannel.shutdownInput();
         //netty uses direct buffer per default
-        buffer = new NettyDelegateByteBuffer(Unpooled.buffer(socketSize));
+        buffer = new NettyDelegateByteBuffer(Unpooled.directBuffer(socketSize));
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 

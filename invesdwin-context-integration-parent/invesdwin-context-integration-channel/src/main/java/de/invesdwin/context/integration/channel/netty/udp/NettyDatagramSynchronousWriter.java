@@ -29,7 +29,7 @@ public class NettyDatagramSynchronousWriter extends ANettyDatagramSynchronousCha
     public void open() throws IOException {
         super.open();
         //netty uses direct buffer per default
-        buffer = new NettyDelegateByteBuffer(Unpooled.buffer(socketSize));
+        buffer = new NettyDelegateByteBuffer(Unpooled.directBuffer(socketSize));
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
