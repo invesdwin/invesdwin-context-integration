@@ -75,6 +75,7 @@ public class NettyDatagramSynchronousReader<M> extends ANettyDatagramSynchronous
 
         private Reader(final ISerde<M> messageSerde, final int socketSize) {
             this.messageSerde = messageSerde;
+            //netty uses direct buffers per default
             this.buf = Unpooled.directBuffer(socketSize);
             this.buffer = new NettyDelegateByteBuffer(buf);
         }
