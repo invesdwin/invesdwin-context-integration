@@ -16,12 +16,12 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocket
 public class NettySocketHandlerTest extends AChannelTest {
 
     @Test
-    public void testNettySocketChannelPerformance() throws InterruptedException {
+    public void testNettySocketHandlerPerformance() throws InterruptedException {
         final SocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
+        runNettySocketHandlerPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
-    private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type, final SocketAddress address)
+    private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type, final SocketAddress address)
             throws InterruptedException {
         final NettySocketChannel serverChannel = new NettySocketChannel(type, address, true, MESSAGE_SIZE);
         final NettySocketChannel clientChannel = new NettySocketChannel(type, address, false, MESSAGE_SIZE);

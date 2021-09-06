@@ -15,12 +15,12 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagr
 public class NettyDatagramHandlerTest extends AChannelTest {
 
     @Test
-    public void testNettySocketChannelPerformance() throws InterruptedException {
+    public void testNettyDatagramHandlerPerformance() throws InterruptedException {
         final InetSocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettySocketChannelPerformanceTest(EpollNettyDatagramChannelType.INSTANCE, address);
+        runNettyDatagramHandlerPerformanceTest(EpollNettyDatagramChannelType.INSTANCE, address);
     }
 
-    private void runNettySocketChannelPerformanceTest(final INettyDatagramChannelType type,
+    private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress address) throws InterruptedException {
         final NettyDatagramChannel serverChannel = new NettyDatagramChannel(type, address, true, MESSAGE_SIZE);
         final NettyDatagramChannel clientChannel = new NettyDatagramChannel(type, address, false, MESSAGE_SIZE);

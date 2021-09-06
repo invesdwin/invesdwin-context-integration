@@ -28,6 +28,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     @Override
     public void open() throws IOException {
         channel.open(null);
+        //        channel.getSocketChannel().deregister();
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
         this.buf.retain();
