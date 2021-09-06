@@ -9,8 +9,8 @@ import org.junit.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 
 @Immutable
 public class NettySocketHandlerTest extends AChannelTest {
@@ -18,7 +18,7 @@ public class NettySocketHandlerTest extends AChannelTest {
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
         final SocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettySocketChannelPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
+        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type, final SocketAddress address)

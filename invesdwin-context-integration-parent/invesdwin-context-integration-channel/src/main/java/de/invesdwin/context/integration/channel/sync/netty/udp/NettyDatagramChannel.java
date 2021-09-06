@@ -207,9 +207,23 @@ public class NettyDatagramChannel implements Closeable {
             final BootstrapConfig config = bootstrap.config();
             bootstrap = null;
             final EventLoopGroup group = config.group();
-            if (group != null) {
-                awaitShutdown(shutdownGracefully(group));
-            }
+            awaitShutdown(shutdownGracefully(group));
+        }
+    }
+
+    public void closeAsync() {
+        if (activeCount.decrementAndGet() > 0) {
+            return;
+        }
+        if (datagramChannel != null) {
+            datagramChannel.close();
+            datagramChannel = null;
+        }
+        if (bootstrap != null) {
+            final BootstrapConfig config = bootstrap.config();
+            bootstrap = null;
+            final EventLoopGroup group = config.group();
+            shutdownGracefully(group);
         }
     }
 
