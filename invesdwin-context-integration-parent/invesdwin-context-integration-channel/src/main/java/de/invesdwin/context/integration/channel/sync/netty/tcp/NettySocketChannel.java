@@ -25,8 +25,10 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.bootstrap.ServerBootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 
 @ThreadSafe
 public class NettySocketChannel implements Closeable {
@@ -139,8 +141,8 @@ public class NettySocketChannel implements Closeable {
      * Can be overridden to add handlers
      */
     protected void onSocketChannel(final SocketChannel socketChannel) {
-        //        final ChannelPipeline pipeline = socketChannel.pipeline();
-        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
+        final ChannelPipeline pipeline = socketChannel.pipeline();
+        pipeline.addLast(new FlushConsolidationHandler(256, true));
         //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
         triggerChannelListeners(socketChannel);
     }

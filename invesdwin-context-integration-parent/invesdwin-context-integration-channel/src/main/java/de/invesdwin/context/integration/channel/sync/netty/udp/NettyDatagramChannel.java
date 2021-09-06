@@ -22,8 +22,10 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
+import io.netty.handler.flush.FlushConsolidationHandler;
 
 /**
  * https://github.com/wenzhucjy/netty-tutorial/tree/master/netty-4/server/src/main/java/com/netty/udp
@@ -131,8 +133,8 @@ public class NettyDatagramChannel implements Closeable {
      * Can be overridden to add handlers
      */
     protected void onDatagramChannel(final DatagramChannel datagramChannel) {
-        //        final ChannelPipeline pipeline = datagramChannel.pipeline();
-        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
+        final ChannelPipeline pipeline = datagramChannel.pipeline();
+        pipeline.addLast(new FlushConsolidationHandler(256, true));
         //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
         triggerChannelListeners(datagramChannel);
     }
