@@ -1,12 +1,14 @@
 package de.invesdwin.context.integration.channel.async.netty.tcp;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
@@ -52,15 +54,28 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         handler.close();
     }
 
+    public void closeAsync() {
+        if (channel != null) {
+            channel.closeAsync();
+            channel = null;
+        }
+        if (reader != null) {
+            reader.close();
+            reader = null;
+        }
+        handler.close();
+    }
+
     @Override
     public boolean isClosed() {
         return channel == null;
     }
 
-    private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
+    private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
         private final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
+        private final IByteBuffer messageBuffer;
         private int targetPosition = NettySocketChannel.MESSAGE_INDEX;
         private int remaining = NettySocketChannel.MESSAGE_INDEX;
         private int position = 0;
@@ -72,6 +87,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             this.buf = Unpooled.directBuffer(socketSize);
             this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
+            this.messageBuffer = buffer.newSliceFrom(NettySocketChannel.MESSAGE_INDEX);
         }
 
         @Override
@@ -80,9 +96,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         }
 
         @Override
-        public void handlerAdded(final ChannelHandlerContext ctx) throws Exception {
-            final IByteBufferWriter output = handler.open();
-            writeOutput(ctx, output);
+        public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+            try {
+                final IByteBufferWriter output = handler.open();
+                writeOutput(ctx, output);
+            } catch (final IOException e) {
+                close();
+            }
         }
 
         @Override
@@ -127,12 +147,19 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 return repeat;
             }
             //message complete
-            if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.SIZE_INDEX, size)) {
-                close();
+            System.out.println("in: " + ByteBuffers.toString(buffer));
+            if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
+                NettySocketAsynchronousChannel.this.closeAsync();
             } else {
-                final IByteBuffer input = buffer.slice(position, size);
-                final IByteBufferWriter output = handler.handle(input);
-                writeOutput(ctx, output);
+                final IByteBuffer input = buffer.slice(0, size);
+                try {
+                    final IByteBufferWriter output = handler.handle(input);
+                    writeOutput(ctx, output);
+                } catch (final IOException e) {
+                    System.out.println("close");
+                    writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                    NettySocketAsynchronousChannel.this.closeAsync();
+                }
             }
             targetPosition = NettySocketChannel.MESSAGE_INDEX;
             remaining = NettySocketChannel.MESSAGE_INDEX;
@@ -143,8 +170,11 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferWriter output) {
             if (output != null) {
-                final int size = output.write(buffer);
-                buf.setIndex(0, size);
+                final int size = output.write(messageBuffer);
+                buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
+                buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
+                buf.retain();
+                System.out.println("out: " + buffer);
                 ctx.writeAndFlush(buf);
             }
         }

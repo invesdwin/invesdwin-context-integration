@@ -25,11 +25,8 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.bootstrap.ServerBootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
-import io.netty.handler.flush.FlushConsolidationHandler;
-import io.netty.handler.timeout.IdleStateHandler;
 
 @ThreadSafe
 public class NettySocketChannel implements Closeable {
@@ -142,9 +139,9 @@ public class NettySocketChannel implements Closeable {
      * Can be overridden to add handlers
      */
     protected void onSocketChannel(final SocketChannel socketChannel) {
-        final ChannelPipeline pipeline = socketChannel.pipeline();
-        pipeline.addLast(new FlushConsolidationHandler(256, true));
-        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
+        //        final ChannelPipeline pipeline = socketChannel.pipeline();
+        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
+        //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
         triggerChannelListeners(socketChannel);
     }
 
@@ -229,6 +226,30 @@ public class NettySocketChannel implements Closeable {
             clientBootstrap = null;
             final EventLoopGroup group = config.group();
             awaitShutdown(shutdownGracefully(group));
+        }
+    }
+
+    public void closeAsync() {
+        if (activeCount.decrementAndGet() > 0) {
+            return;
+        }
+        if (socketChannel != null) {
+            socketChannel.close();
+            socketChannel = null;
+        }
+        if (serverBootstrap != null) {
+            final ServerBootstrapConfig config = serverBootstrap.config();
+            serverBootstrap = null;
+            final EventLoopGroup childGroup = config.childGroup();
+            shutdownGracefully(childGroup);
+            final EventLoopGroup group = config.group();
+            shutdownGracefully(group);
+        }
+        if (clientBootstrap != null) {
+            final BootstrapConfig config = clientBootstrap.config();
+            clientBootstrap = null;
+            final EventLoopGroup group = config.group();
+            shutdownGracefully(group);
         }
     }
 

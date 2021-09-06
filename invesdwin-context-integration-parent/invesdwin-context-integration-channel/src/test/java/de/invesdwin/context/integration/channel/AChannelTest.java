@@ -3,12 +3,16 @@ package de.invesdwin.context.integration.channel;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -27,6 +31,7 @@ import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWrite
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
+import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
@@ -61,6 +66,28 @@ public abstract class AChannelTest extends ATest {
         PIPE,
         MAPPED,
         UNIX_SOCKET;
+    }
+
+    protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,
+            final IAsynchronousChannel clientChannel) throws InterruptedException {
+        try {
+            new Thread() {
+                @Override
+                public void run() {
+                    serverChannel.open();
+                }
+            }.start();
+            clientChannel.open();
+            while (!serverChannel.isClosed()) {
+                FTimeUnit.MILLISECONDS.sleep(1);
+            }
+            while (!clientChannel.isClosed()) {
+                FTimeUnit.MILLISECONDS.sleep(1);
+            }
+        } finally {
+            serverChannel.close();
+            clientChannel.close();
+        }
     }
 
     protected void runQueuePerformanceTest(final Queue<IReference<FDate>> responseQueue,
@@ -186,6 +213,11 @@ public abstract class AChannelTest extends ATest {
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
+    }
+
+    protected IAsynchronousHandler<IByteBuffer, IByteBufferWriter> newCommandHandler(
+            final IAsynchronousHandler<FDate, FDate> handler) {
+        return new SerdeAsynchronousHandler<>(handler, FDateSerde.GET, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
     protected ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBuffer> reader) {
@@ -327,6 +359,102 @@ public abstract class AChannelTest extends ATest {
                 requestReader.close();
             } catch (final Exception e) {
                 throw new RuntimeException(e);
+            }
+        }
+
+    }
+
+    public class ReaderHandler implements IAsynchronousHandler<FDate, FDate> {
+
+        private Instant readsStart;
+        private int count;
+        private FDate prevValue;
+
+        public ReaderHandler() {
+        }
+
+        @Override
+        public FDate open() throws IOException {
+            readsStart = new Instant();
+            prevValue = null;
+            count = 0;
+            return REQUEST_MESSAGE;
+        }
+
+        @Override
+        public FDate handle(final FDate readMessage) throws IOException {
+            if (DEBUG) {
+                log.info("client request out");
+            }
+            if (DEBUG) {
+                log.info("client response in [" + readMessage + "]");
+            }
+            Assertions.checkNotNull(readMessage);
+            if (prevValue != null) {
+                Assertions.checkTrue(prevValue.isBefore(readMessage));
+            }
+            prevValue = readMessage;
+            count++;
+            return REQUEST_MESSAGE;
+        }
+
+        @Override
+        public void close() {
+            Assertions.checkEquals(count, VALUES);
+            if (DEBUG) {
+                log.info("client close handler");
+            }
+            printProgress("ReadsFinished", readsStart, VALUES, VALUES);
+        }
+
+    }
+
+    public class WriterHandler implements IAsynchronousHandler<FDate, FDate> {
+
+        private Instant writesStart;
+        private int i;
+        private ICloseableIterator<FDate> values;
+
+        public WriterHandler() {
+        }
+
+        @Override
+        public FDate open() throws IOException {
+            writesStart = new Instant();
+            i = 0;
+            this.values = newValues().iterator();
+            if (DEBUG) {
+                log.info("server open handler");
+            }
+            return null;
+        }
+
+        @Override
+        public FDate handle(final FDate readMessage) throws IOException {
+            if (DEBUG) {
+                log.info("server request in");
+            }
+            Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
+            try {
+                final FDate date = values.next();
+                if (DEBUG) {
+                    log.info("server response out [" + date + "]");
+                }
+                i++;
+                if (i % FLUSH_INTERVAL == 0) {
+                    printProgress("Writes", writesStart, i, VALUES);
+                }
+                return date;
+            } catch (final NoSuchElementException e) {
+                throw new EOFException("end reached");
+            }
+        }
+
+        @Override
+        public void close() {
+            printProgress("WritesFinished", writesStart, VALUES, VALUES);
+            if (DEBUG) {
+                log.info("server close handler");
             }
         }
 
