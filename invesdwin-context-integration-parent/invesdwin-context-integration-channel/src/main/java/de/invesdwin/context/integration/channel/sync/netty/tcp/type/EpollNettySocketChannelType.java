@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
+import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
@@ -25,12 +26,12 @@ public class EpollNettySocketChannelType implements INettySocketChannelType {
 
     @Override
     public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new EpollEventLoopGroup(1);
+        return new EpollEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new EpollEventLoopGroup(1);
+        return new EpollEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
     }
 
     @Override

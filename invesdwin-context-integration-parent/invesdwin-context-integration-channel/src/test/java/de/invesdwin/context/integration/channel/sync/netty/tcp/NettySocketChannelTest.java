@@ -10,8 +10,8 @@ import org.junit.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.IOUringNettySocketChannelType;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
@@ -23,7 +23,7 @@ public class NettySocketChannelTest extends AChannelTest {
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
         final SocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettySocketChannelPerformanceTest(IOUringNettySocketChannelType.INSTANCE, address);
+        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type, final SocketAddress address)
