@@ -8,7 +8,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
@@ -147,7 +146,6 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 return repeat;
             }
             //message complete
-            System.out.println("in: " + ByteBuffers.toString(buffer));
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 NettySocketAsynchronousChannel.this.closeAsync();
             } else {
@@ -156,7 +154,6 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                     final IByteBufferWriter output = handler.handle(input);
                     writeOutput(ctx, output);
                 } catch (final IOException e) {
-                    System.out.println("close");
                     writeOutput(ctx, ClosedByteBuffer.INSTANCE);
                     NettySocketAsynchronousChannel.this.closeAsync();
                 }
@@ -174,7 +171,6 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
                 buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
                 buf.retain();
-                System.out.println("out: " + buffer);
                 ctx.writeAndFlush(buf);
             }
         }
