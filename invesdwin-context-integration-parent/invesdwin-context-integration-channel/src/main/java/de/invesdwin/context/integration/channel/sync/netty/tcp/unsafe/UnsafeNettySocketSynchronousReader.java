@@ -1,31 +1,19 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
 
-import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.agrona.concurrent.UnsafeBuffer;
-import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
-import org.agrona.concurrent.ringbuffer.RingBuffer;
-import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
-
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.agrona.ringbuffer.RingBufferSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.agrona.ringbuffer.RingBufferSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
-import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.unix.FileDescriptor;
+import io.netty.channel.unix.UnixChannel;
 
 /**
  * Since netty reads in an asynchronous handler thread and the bytebuffer can/should not be shared with other threads,
@@ -34,7 +22,10 @@ import io.netty.channel.ChannelPipeline;
 @NotThreadSafe
 public class UnsafeNettySocketSynchronousReader extends NettySocketChannel implements ISynchronousReader<IByteBuffer> {
 
-    private Reader reader;
+    private IByteBuffer buffer;
+    private java.nio.ByteBuffer messageBuffer;
+    private FileDescriptor fd;
+    private int position = 0;
 
     public UnsafeNettySocketSynchronousReader(final INettySocketChannelType type, final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
@@ -43,131 +34,85 @@ public class UnsafeNettySocketSynchronousReader extends NettySocketChannel imple
 
     @Override
     public void open() throws IOException {
-        this.reader = new Reader(getSocketSize());
         super.open(channel -> {
             channel.shutdownOutput();
-            final ChannelPipeline pipeline = channel.pipeline();
-            pipeline.addLast(reader);
         });
-        //        socketChannel.deregister();
-        FakeEventLoop.INSTANCE.register(socketChannel);
+        socketChannel.deregister();
+        final UnixChannel unixChannel = (UnixChannel) socketChannel;
+        fd = unixChannel.fd();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = buffer.asByteBuffer(0, socketSize);
     }
 
     @Override
-    public void close() {
-        super.close();
-        if (reader != null) {
-            try {
-                reader.close();
-            } catch (final IOException e) {
-                //ignore
-            }
-            reader = null;
+    public void close() throws IOException {
+        if (buffer != null) {
+            buffer = null;
+            messageBuffer = null;
+            fd = null;
         }
+        super.close();
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        return reader.reader.hasNext();
+        if (position > 0) {
+            return true;
+        }
+        final int read = fd.read(messageBuffer, 0, socketSize);
+        if (read > 0) {
+            position = read;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        final IByteBuffer value = reader.reader.readMessage();
-        if (ClosedByteBuffer.isClosed(value)) {
+        int targetPosition = MESSAGE_INDEX;
+        int size = 0;
+        //read size
+        while (position < targetPosition) {
+            final int read = fd.read(messageBuffer, 0, socketSize);
+            position += read;
+        }
+        size = buffer.getInt(SIZE_INDEX);
+        targetPosition += size;
+        //read message if not complete yet
+        final int remaining = targetPosition - position;
+        if (remaining > 0) {
+            final int capacityBefore = buffer.capacity();
+            buffer.ensureCapacity(targetPosition);
+            readFully(fd, buffer.byteBuffer(), position, remaining);
+            if (buffer.capacity() != capacityBefore) {
+                messageBuffer = buffer.asByteBuffer(0, socketSize);
+            }
+        }
+        position = 0;
+
+        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
             throw new EOFException("closed by other side");
         }
-        return value;
+        return buffer.slice(MESSAGE_INDEX, size);
     }
 
-    private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
-        private final ByteBuf buf;
-        private final NettyDelegateByteBuffer buffer;
-        private int targetPosition = NettySocketChannel.MESSAGE_INDEX;
-        private int remaining = NettySocketChannel.MESSAGE_INDEX;
-        private int position = 0;
-        private int size = -1;
-        private final RingBufferSynchronousReader reader;
-        private final RingBufferSynchronousWriter writer;
-
-        private Reader(final int socketSize) throws IOException {
-            //netty uses direct buffers per default
-            this.buf = Unpooled.directBuffer(socketSize);
-            this.buf.retain();
-            this.buffer = new NettyDelegateByteBuffer(buf);
-            final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;
-            final RingBuffer ringBuffer = new OneToOneRingBuffer(
-                    new UnsafeBuffer(java.nio.ByteBuffer.allocate(bufferSize)));
-            this.reader = new RingBufferSynchronousReader(ringBuffer, true);
-            this.writer = new RingBufferSynchronousWriter(ringBuffer, null);
-            this.reader.open();
-            this.writer.open();
+    public static void readFully(final FileDescriptor src, final java.nio.ByteBuffer byteBuffer, final int pos,
+            final int length) throws IOException {
+        int position = pos;
+        int remaining = length - pos;
+        while (remaining > 0) {
+            final int count = src.read(byteBuffer, position, remaining);
+            if (count == -1) { // EOF
+                break;
+            }
+            position += count;
+            remaining -= count;
         }
-
-        @Override
-        public void close() throws IOException {
-            this.buf.release();
-            this.reader.close();
-            this.writer.close();
-        }
-
-        @Override
-        public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
-            final ByteBuf msgBuf = (ByteBuf) msg;
-            //CHECKSTYLE:OFF
-            try {
-                while (read(ctx, msgBuf)) {
-                }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            //CHECKSTYLE:ON
-            msgBuf.release();
-        }
-
-        private boolean read(final ChannelHandlerContext ctx, final ByteBuf msgBuf) throws IOException {
-            final int readable = msgBuf.readableBytes();
-            final int read;
-            final boolean repeat;
-            if (readable > remaining) {
-                read = remaining;
-                repeat = true;
-            } else {
-                read = readable;
-                repeat = false;
-            }
-            msgBuf.readBytes(buf, position, read);
-            remaining -= read;
-            position += read;
-
-            if (position < targetPosition) {
-                //we are still waiting for size of message to complete
-                return repeat;
-            }
-            if (size == -1) {
-                //read size and adjust target and remaining
-                size = buffer.getInt(NettySocketChannel.SIZE_INDEX);
-                targetPosition = size;
-                remaining = size;
-                position = 0;
-                if (targetPosition > buffer.capacity()) {
-                    //expand buffer to message size
-                    buffer.ensureCapacity(targetPosition);
-                }
-                return repeat;
-            }
-            //message complete
-            if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.SIZE_INDEX, size)) {
-                writer.write(ClosedByteBuffer.INSTANCE);
-            } else {
-                writer.write(buffer.slice(0, size));
-            }
-            targetPosition = NettySocketChannel.MESSAGE_INDEX;
-            remaining = NettySocketChannel.MESSAGE_INDEX;
-            position = 0;
-            size = -1;
-            return repeat;
+        if (remaining > 0) {
+            throw ByteBuffers.newPutBytesToEOF();
         }
     }
 

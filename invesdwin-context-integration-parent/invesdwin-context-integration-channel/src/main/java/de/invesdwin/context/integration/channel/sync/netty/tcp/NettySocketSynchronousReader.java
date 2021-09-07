@@ -49,7 +49,11 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
     @Override
     public void close() {
         if (channel != null) {
-            channel.close();
+            try {
+                channel.close();
+            } catch (final IOException e) {
+                //ignore
+            }
             channel = null;
         }
         if (reader != null) {

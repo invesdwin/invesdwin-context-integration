@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -18,7 +17,6 @@ import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
-    private InputStream in;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
 
@@ -38,9 +36,7 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
 
     @Override
     public void close() throws IOException {
-        if (in != null) {
-            in.close();
-            in = null;
+        if (buffer != null) {
             buffer = null;
             messageBuffer = null;
         }

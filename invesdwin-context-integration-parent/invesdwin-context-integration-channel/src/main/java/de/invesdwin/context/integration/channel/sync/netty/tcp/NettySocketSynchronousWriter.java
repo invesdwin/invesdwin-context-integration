@@ -6,6 +6,8 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
+import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
@@ -13,7 +15,6 @@ import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelFuture;
 
 @NotThreadSafe
 public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -37,6 +38,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         channel.open(null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
+        FakeEventLoop.INSTANCE.register(channel.getSocketChannel());
         this.buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
@@ -46,7 +48,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void close() {
         if (buffer != null) {
             try {
-                writeFuture(ClosedByteBuffer.INSTANCE).sync();
+                writeFuture(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -56,7 +58,11 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             messageBuffer = null;
         }
         if (channel != null) {
-            channel.close();
+            try {
+                channel.close();
+            } catch (final IOException e) {
+                //ignore
+            }
             channel = null;
         }
     }
@@ -66,12 +72,13 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         writeFuture(message);
     }
 
-    private ChannelFuture writeFuture(final IByteBufferWriter message) {
+    private void writeFuture(final IByteBufferWriter message) {
         final int size = message.write(messageBuffer);
         buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
-        return channel.getSocketChannel().writeAndFlush(buf);
+        channel.getSocketChannel().unsafe().write(buf, FakeChannelPromise.INSTANCE);
+        channel.getSocketChannel().unsafe().flush();
     }
 
 }

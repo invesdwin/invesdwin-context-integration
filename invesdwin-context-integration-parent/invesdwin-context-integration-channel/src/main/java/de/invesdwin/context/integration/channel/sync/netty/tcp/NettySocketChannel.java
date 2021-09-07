@@ -190,7 +190,11 @@ public class NettySocketChannel implements Closeable {
                 }
             }
         } catch (final Throwable t) {
-            close();
+            try {
+                close();
+            } catch (final IOException e) {
+                //ignore
+            }
             throw new RuntimeException(t);
         }
     }
@@ -204,7 +208,7 @@ public class NettySocketChannel implements Closeable {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         if (activeCount.decrementAndGet() > 0) {
             return;
         }

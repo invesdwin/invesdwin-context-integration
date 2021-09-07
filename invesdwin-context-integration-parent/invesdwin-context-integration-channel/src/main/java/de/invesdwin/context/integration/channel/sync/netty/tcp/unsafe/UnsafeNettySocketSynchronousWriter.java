@@ -6,24 +6,22 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
-import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.util.streams.buffer.ByteBuffers;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.unix.FileDescriptor;
+import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
 public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    private ByteBuf buf;
-    private NettyDelegateByteBuffer buffer;
+    private FileDescriptor fd;
+    private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
     public UnsafeNettySocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress,
@@ -33,45 +31,58 @@ public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
 
     @Override
     public void open() throws IOException {
-        super.open(null);
+        super.open(channel -> {
+            channel.shutdownInput();
+        });
         socketChannel.deregister();
-        new FakeEventLoop().register(socketChannel);
-        //netty uses direct buffer per default
-        this.buf = Unpooled.directBuffer(getSocketSize());
-        this.buf.retain();
-        this.buffer = new NettyDelegateByteBuffer(buf);
-        this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
+        final UnixChannel unixChannel = (UnixChannel) socketChannel;
+        fd = unixChannel.fd();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
-    protected void onSocketChannel(final SocketChannel socketChannel) {
-        socketChannel.shutdownInput();
-    }
-
-    @Override
-    public void close() {
+    public void close() throws IOException {
         if (buffer != null) {
-            writeFuture(ClosedByteBuffer.INSTANCE);
-            buf.release();
-            buf = null;
+            try {
+                write(ClosedByteBuffer.INSTANCE);
+            } catch (final Throwable t) {
+                //ignore
+            }
             buffer = null;
             messageBuffer = null;
+            fd = null;
         }
         super.close();
     }
 
     @Override
-    public void write(final IByteBufferWriter message) {
-        writeFuture(message);
+    public void write(final IByteBufferWriter message) throws IOException {
+        try {
+            final int size = message.write(messageBuffer);
+            buffer.putInt(SIZE_INDEX, size);
+            writeFully(fd, buffer.byteBuffer(), 0, MESSAGE_INDEX + size);
+        } catch (final IOException e) {
+            throw newEofException(e);
+        }
     }
 
-    private void writeFuture(final IByteBufferWriter message) {
-        final int size = message.write(messageBuffer);
-        buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
-        buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
-        buf.retain(); //keep retain count up
-        socketChannel.unsafe().write(buf, FakeChannelPromise.INSTANCE);
-        socketChannel.unsafe().flush();
+    public static void writeFully(final FileDescriptor dst, final java.nio.ByteBuffer byteBuffer, final int pos,
+            final int length) throws IOException {
+        int position = pos;
+        int remaining = length - pos;
+        while (remaining > 0) {
+            final int count = dst.write(byteBuffer, position, remaining);
+            if (count == -1) { // EOF
+                break;
+            }
+            position += count;
+            remaining -= count;
+        }
+        if (remaining > 0) {
+            throw ByteBuffers.newPutBytesToEOF();
+        }
     }
 
 }
