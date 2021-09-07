@@ -19,12 +19,12 @@ public class KQueueNettyDatagramChannelType implements INettyDatagramChannelType
 
     @Override
     public EventLoopGroup newServerWorkerGroup() {
-        return new KQueueEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new KQueueEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new KQueueEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new KQueueEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override

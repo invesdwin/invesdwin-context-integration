@@ -14,7 +14,7 @@ public enum SelectStrategyFactories implements SelectStrategyFactory {
             return DefaultSelectStrategyFactory.INSTANCE.newSelectStrategy();
         }
     },
-    SPIN_WAIT {
+    BUSY_WAIT {
         @Override
         public SelectStrategy newSelectStrategy() {
             return (selectSupplier, hasTasks) -> SelectStrategy.BUSY_WAIT;

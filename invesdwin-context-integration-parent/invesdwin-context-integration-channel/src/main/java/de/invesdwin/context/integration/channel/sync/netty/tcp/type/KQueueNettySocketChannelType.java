@@ -26,12 +26,12 @@ public class KQueueNettySocketChannelType implements INettySocketChannelType {
 
     @Override
     public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new KQueueEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new KQueueEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new KQueueEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new KQueueEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override

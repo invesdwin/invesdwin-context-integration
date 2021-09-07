@@ -26,12 +26,12 @@ public class EpollNettySocketChannelType implements INettySocketChannelType {
 
     @Override
     public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new EpollEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new EpollEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new EpollEventLoopGroup(1, SelectStrategyFactories.SPIN_WAIT);
+        return new EpollEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
     }
 
     @Override
