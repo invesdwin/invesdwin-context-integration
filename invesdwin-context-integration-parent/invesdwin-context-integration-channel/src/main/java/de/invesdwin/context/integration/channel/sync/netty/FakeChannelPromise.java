@@ -18,7 +18,7 @@ public class FakeChannelPromise implements ChannelPromise {
 
     @Override
     public boolean trySuccess(final Void result) {
-        return false;
+        return true;
     }
 
     @Override
@@ -28,7 +28,7 @@ public class FakeChannelPromise implements ChannelPromise {
 
     @Override
     public boolean setUncancellable() {
-        return false;
+        return true;
     }
 
     @Override

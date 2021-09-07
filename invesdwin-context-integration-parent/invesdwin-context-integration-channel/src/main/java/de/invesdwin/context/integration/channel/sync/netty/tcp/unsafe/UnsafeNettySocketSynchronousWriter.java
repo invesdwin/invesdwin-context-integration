@@ -6,6 +6,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
@@ -15,7 +16,6 @@ import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.DefaultChannelPromise;
 import io.netty.channel.socket.SocketChannel;
 
 @NotThreadSafe
@@ -70,7 +70,7 @@ public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
         buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
-        socketChannel.unsafe().write(buf, new DefaultChannelPromise(socketChannel));
+        socketChannel.unsafe().write(buf, FakeChannelPromise.INSTANCE);
         socketChannel.unsafe().flush();
     }
 
