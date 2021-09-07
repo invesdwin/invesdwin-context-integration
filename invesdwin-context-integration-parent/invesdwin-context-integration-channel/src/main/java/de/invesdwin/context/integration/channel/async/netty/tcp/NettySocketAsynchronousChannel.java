@@ -54,7 +54,11 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             reader.close();
             reader = null;
         }
-        handler.close();
+        try {
+            handler.close();
+        } catch (final IOException e) {
+            //ignore
+        }
     }
 
     public void closeAsync() {
@@ -66,7 +70,11 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             reader.close();
             reader = null;
         }
-        handler.close();
+        try {
+            handler.close();
+        } catch (final IOException e) {
+            //ignore
+        }
     }
 
     @Override

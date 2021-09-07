@@ -67,7 +67,11 @@ public class CommandAsynchronousHandler<I, O>
     public void close() {
         output = null;
         outputBuffer = null;
-        delegate.close();
+        try {
+            delegate.close();
+        } catch (final IOException e) {
+            //ignore
+        }
     }
 
     @Override

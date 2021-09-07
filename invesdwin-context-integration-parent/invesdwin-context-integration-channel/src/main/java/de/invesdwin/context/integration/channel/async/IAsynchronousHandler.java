@@ -9,7 +9,4 @@ public interface IAsynchronousHandler<I, O> extends Closeable {
 
     O handle(I input) throws IOException;
 
-    @Override
-    void close();
-
 }
