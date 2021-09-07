@@ -32,10 +32,14 @@ public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
     @Override
     public void open() throws IOException {
         super.open(channel -> {
+            //make sure netty does not process any bytes
+            channel.shutdownInput();
             channel.shutdownInput();
         });
         socketChannel.deregister();
         final UnixChannel unixChannel = (UnixChannel) socketChannel;
+        socketChannel = null;
+        super.closeAsync();
         fd = unixChannel.fd();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
