@@ -10,8 +10,6 @@ import org.junit.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.nativee.NettyNativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.nativee.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.concurrent.Executors;
