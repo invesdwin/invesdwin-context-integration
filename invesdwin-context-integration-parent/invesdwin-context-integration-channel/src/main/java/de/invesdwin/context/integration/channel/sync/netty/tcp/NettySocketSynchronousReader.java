@@ -3,10 +3,12 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
@@ -25,6 +27,11 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
 
     private NettySocketChannel channel;
     private Reader reader;
+
+    public NettySocketSynchronousReader(final INettySocketChannelType type, final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
+    }
 
     public NettySocketSynchronousReader(final NettySocketChannel channel) {
         this.channel = channel;
