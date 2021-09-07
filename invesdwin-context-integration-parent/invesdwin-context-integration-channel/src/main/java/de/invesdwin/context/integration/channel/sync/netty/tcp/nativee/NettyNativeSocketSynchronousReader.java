@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp.unix;
+package de.invesdwin.context.integration.channel.sync.netty.tcp.nativee;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -15,10 +15,6 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
-/**
- * Since netty reads in an asynchronous handler thread and the bytebuffer can/should not be shared with other threads,
- * the ISerde has to either copy the buffer or better directly convert it to the appropiate value type (for zero copy).
- */
 @NotThreadSafe
 public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
