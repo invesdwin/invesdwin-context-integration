@@ -8,6 +8,9 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 
+/**
+ * Turn two synchronous channels into a handler.
+ */
 @NotThreadSafe
 public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandler<I, O> {
 
