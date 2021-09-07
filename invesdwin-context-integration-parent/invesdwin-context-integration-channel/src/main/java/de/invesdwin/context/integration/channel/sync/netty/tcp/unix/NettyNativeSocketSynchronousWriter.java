@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
+package de.invesdwin.context.integration.channel.sync.netty.tcp.unix;
 
 import java.io.IOException;
 import java.net.SocketAddress;
@@ -17,33 +17,36 @@ import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
+    private final NettySocketChannel channel;
     private FileDescriptor fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public UnsafeNettySocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress,
+    public NettyNativeSocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        super(type, socketAddress, server, estimatedMaxMessageSize);
+        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
+    }
+
+    public NettyNativeSocketSynchronousWriter(final NettySocketChannel channel) {
+        this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        super.open(channel -> {
+        channel.open(ch -> {
             //make sure netty does not process any bytes
-            channel.shutdownInput();
-            channel.shutdownInput();
+            ch.shutdownInput();
+            ch.shutdownInput();
         });
-        socketChannel.deregister();
-        final UnixChannel unixChannel = (UnixChannel) socketChannel;
-        socketChannel = null;
-        super.closeAsync();
+        channel.getSocketChannel().deregister();
+        final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+        channel.closeBootstrapAsync();
         fd = unixChannel.fd();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
     }
 
     @Override
@@ -58,17 +61,17 @@ public class UnsafeNettySocketSynchronousWriter extends NettySocketChannel
             messageBuffer = null;
             fd = null;
         }
-        super.close();
+        channel.close();
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.write(messageBuffer);
-            buffer.putInt(SIZE_INDEX, size);
-            writeFully(fd, buffer.byteBuffer(), 0, MESSAGE_INDEX + size);
+            buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
+            writeFully(fd, buffer.byteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw NettySocketChannel.newEofException(e);
         }
     }
 

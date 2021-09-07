@@ -212,10 +212,7 @@ public class NettySocketChannel implements Closeable {
         if (activeCount.decrementAndGet() > 0) {
             return;
         }
-        if (socketChannel != null) {
-            socketChannel.close();
-            socketChannel = null;
-        }
+        closeSocketChannel();
         if (serverBootstrap != null) {
             final ServerBootstrapConfig config = serverBootstrap.config();
             serverBootstrap = null;
@@ -238,10 +235,18 @@ public class NettySocketChannel implements Closeable {
         if (activeCount.decrementAndGet() > 0) {
             return;
         }
+        closeSocketChannel();
+        closeBootstrapAsync();
+    }
+
+    public void closeSocketChannel() {
         if (socketChannel != null) {
             socketChannel.close();
             socketChannel = null;
         }
+    }
+
+    public void closeBootstrapAsync() {
         if (serverBootstrap != null) {
             final ServerBootstrapConfig config = serverBootstrap.config();
             serverBootstrap = null;
@@ -276,7 +281,7 @@ public class NettySocketChannel implements Closeable {
         }
     }
 
-    protected EOFException newEofException(final IOException e) throws EOFException {
+    public static EOFException newEofException(final IOException e) throws EOFException {
         final EOFException eof = new EOFException(e.getMessage());
         eof.initCause(e);
         return eof;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
+package de.invesdwin.context.integration.channel.sync.netty.tcp.unix;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
 
 @NotThreadSafe
-public class UnsafeNettySocketChannelTest extends AChannelTest {
+public class NettyNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
@@ -29,15 +29,15 @@ public class UnsafeNettySocketChannelTest extends AChannelTest {
 
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final SocketAddress responseAddress, final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new UnsafeNettySocketSynchronousWriter(type,
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettyNativeSocketSynchronousWriter(type,
                 responseAddress, true, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new UnsafeNettySocketSynchronousReader(type,
+        final ISynchronousReader<IByteBuffer> requestReader = new NettyNativeSocketSynchronousReader(type,
                 requestAddress, false, MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new UnsafeNettySocketSynchronousWriter(type,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettyNativeSocketSynchronousWriter(type,
                 requestAddress, true, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new UnsafeNettySocketSynchronousReader(type,
+        final ISynchronousReader<IByteBuffer> responseReader = new NettyNativeSocketSynchronousReader(type,
                 responseAddress, false, MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
