@@ -85,10 +85,10 @@ public class UnsafeNettySocketSynchronousReader extends NettySocketChannel imple
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
             buffer.ensureCapacity(targetPosition);
-            readFully(fd, buffer.byteBuffer(), position, remaining);
             if (buffer.capacity() != capacityBefore) {
                 messageBuffer = buffer.asByteBuffer(0, socketSize);
             }
+            readFully(fd, messageBuffer, position, remaining);
         }
         position = 0;
 
