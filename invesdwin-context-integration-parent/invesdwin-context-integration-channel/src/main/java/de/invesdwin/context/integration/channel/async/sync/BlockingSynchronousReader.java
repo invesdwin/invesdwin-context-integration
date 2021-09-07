@@ -42,6 +42,7 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public boolean hasNext() throws IOException {
+        //always true since we just block internally
         return true;
     }
 
