@@ -16,6 +16,8 @@ import io.netty.util.concurrent.Future;
 @NotThreadSafe
 public class FakeEventLoop extends AbstractScheduledEventExecutor implements EventLoop {
 
+    public static final FakeEventLoop INSTANCE = new FakeEventLoop();
+
     @Override
     public EventLoopGroup parent() {
         return (EventLoopGroup) super.parent();

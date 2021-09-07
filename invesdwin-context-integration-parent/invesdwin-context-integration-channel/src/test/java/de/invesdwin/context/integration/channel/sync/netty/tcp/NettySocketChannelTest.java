@@ -22,23 +22,20 @@ public class NettySocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
-        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, responseAddress, requestAddress);
+        final SocketAddress address = new InetSocketAddress("localhost", 7878);
+        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
-    private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,
-            final SocketAddress responseAddress, final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettySocketSynchronousWriter(
-                new NettySocketChannel(type, responseAddress, true, MESSAGE_SIZE));
-        final ISynchronousReader<IByteBuffer> requestReader = new NettySocketSynchronousReader(
-                new NettySocketChannel(type, requestAddress, false, MESSAGE_SIZE));
+    private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type, final SocketAddress address)
+            throws InterruptedException {
+        final NettySocketChannel serverChannel = new NettySocketChannel(type, address, true, MESSAGE_SIZE);
+        final NettySocketChannel clientChannel = new NettySocketChannel(type, address, false, MESSAGE_SIZE);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettySocketSynchronousWriter(serverChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new NettySocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettySocketSynchronousWriter(
-                new NettySocketChannel(type, requestAddress, true, MESSAGE_SIZE));
-        final ISynchronousReader<IByteBuffer> responseReader = new NettySocketSynchronousReader(
-                new NettySocketChannel(type, responseAddress, false, MESSAGE_SIZE));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettySocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new NettySocketSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
