@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.webdav;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -26,6 +25,7 @@ import com.github.sardine.impl.SardineException;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
@@ -36,6 +36,7 @@ import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.ADelegateOutputStream;
 import de.invesdwin.util.time.date.FDate;
+import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 
 @ThreadSafe
 public class WebdavFileChannel implements IFileChannel<DavResource> {
@@ -111,7 +112,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
-                upload(new ByteArrayInputStream(getEmptyFileContent()));
+                upload(new FastByteArrayInputStream(getEmptyFileContent()));
                 Assertions.checkTrue(exists());
                 break;
             }
@@ -300,7 +301,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     @Override
     public synchronized void upload(final byte[] bytes) {
-        upload(new ByteArrayInputStream(bytes));
+        upload(new FastByteArrayInputStream(bytes));
     }
 
     @Override
@@ -310,6 +311,8 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             finalizer.webdavClient.put(getFileUrl(), input);
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            Closeables.close(input);
         }
     }
 

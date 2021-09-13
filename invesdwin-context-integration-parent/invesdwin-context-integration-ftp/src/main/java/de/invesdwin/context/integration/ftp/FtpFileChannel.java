@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.ftp;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -23,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.Strings;
@@ -40,6 +40,7 @@ import it.sauronsoftware.ftp4j.FTPCodes;
 import it.sauronsoftware.ftp4j.FTPException;
 import it.sauronsoftware.ftp4j.FTPFile;
 import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
+import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 
 @ThreadSafe
 public class FtpFileChannel implements IFileChannel<FTPFile> {
@@ -107,7 +108,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
-                upload(new ByteArrayInputStream(getEmptyFileContent()));
+                upload(new FastByteArrayInputStream(getEmptyFileContent()));
                 Assertions.checkTrue(exists());
                 break;
             }
@@ -319,7 +320,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public synchronized void upload(final byte[] bytes) {
-        upload(new ByteArrayInputStream(bytes));
+        upload(new FastByteArrayInputStream(bytes));
     }
 
     @Override
@@ -329,6 +330,8 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             finalizer.ftpClient.upload(getFilename(), input, 0, 0, null);
         } catch (final Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            Closeables.close(input);
         }
     }
 

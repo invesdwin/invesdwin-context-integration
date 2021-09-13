@@ -1,9 +1,5 @@
 package de.invesdwin.context.integration.jppf.internal;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.EOFException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,6 +11,8 @@ import org.jppf.comm.interceptor.AbstractNetworkConnectionInterceptor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
+import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.streams.OutputStreams;
 
 /**
  * This network connection inteceptor checks the user name token to be correct for accepting a jppf client. This method
@@ -100,26 +98,12 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
     }
 
     private void write(final String message, final OutputStream destination) throws Exception {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try (DataOutputStream cos = new DataOutputStream(baos)) {
-            cos.writeUTF(message);
-        }
-        final DataOutputStream dos = new DataOutputStream(destination);
-        final byte[] bytes = baos.toByteArray();
-        dos.writeInt(bytes.length);
-        dos.write(bytes);
-        dos.flush();
+        OutputStreams.writeUTF(destination, message);
+        destination.flush();
     }
 
     private String read(final InputStream source) throws Exception {
-        final DataInputStream dis = new DataInputStream(source);
-        final int len = dis.readInt();
-        final byte[] bytes = new byte[len];
-        dis.read(bytes);
-        try (DataInputStream cis = new DataInputStream(new ByteArrayInputStream(bytes))) {
-            final String message = cis.readUTF();
-            return message;
-        }
+        return InputStreams.readUTF(source);
     }
 
 }
