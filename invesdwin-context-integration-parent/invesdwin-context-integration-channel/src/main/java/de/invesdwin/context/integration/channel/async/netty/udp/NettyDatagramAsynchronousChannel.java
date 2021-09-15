@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.async.netty.udp;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -35,8 +36,10 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public void open() {
-        this.reader = new Reader(handler, channel.getSocketSize());
-        channel.open(channel -> {
+        this.reader = new Reader(handler, channel.getSocketAddress(), channel.getSocketSize());
+        channel.open(bootstrap -> {
+            bootstrap.handler(reader);
+        }, channel -> {
             final ChannelPipeline pipeline = channel.pipeline();
             pipeline.addLast(reader);
         });
@@ -82,6 +85,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
         private final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler;
+        private final InetSocketAddress recipient;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
         private final IByteBuffer messageBuffer;
@@ -90,8 +94,10 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         private int position = 0;
         private int size = -1;
 
-        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler, final int socketSize) {
+        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler,
+                final InetSocketAddress recipient, final int socketSize) {
             this.handler = handler;
+            this.recipient = recipient;
             //netty uses direct buffers per default
             this.buf = Unpooled.directBuffer(socketSize);
             this.buf.retain();
@@ -108,7 +114,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
             try {
                 final IByteBufferWriter output = handler.open();
-                writeOutput(ctx, output);
+                writeOutput(ctx, recipient, output);
             } catch (final IOException e) {
                 close();
             }
@@ -118,13 +124,13 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
             final DatagramPacket msgBuf = (DatagramPacket) msg;
             //CHECKSTYLE:OFF
-            while (read(ctx, msgBuf.content())) {
+            while (read(ctx, msgBuf.sender(), msgBuf.content())) {
             }
             //CHECKSTYLE:ON
             msgBuf.release();
         }
 
-        private boolean read(final ChannelHandlerContext ctx, final ByteBuf msgBuf) {
+        private boolean read(final ChannelHandlerContext ctx, final InetSocketAddress sender, final ByteBuf msgBuf) {
             final int readable = msgBuf.readableBytes();
             final int read;
             final boolean repeat;
@@ -162,9 +168,9 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
                     final IByteBufferWriter output = handler.handle(input);
-                    writeOutput(ctx, output);
+                    writeOutput(ctx, sender, output);
                 } catch (final IOException e) {
-                    writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                    writeOutput(ctx, sender, ClosedByteBuffer.INSTANCE);
                     NettyDatagramAsynchronousChannel.this.closeAsync();
                 }
             }
@@ -175,13 +181,14 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             return repeat;
         }
 
-        private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferWriter output) {
+        private void writeOutput(final ChannelHandlerContext ctx, final InetSocketAddress sender,
+                final IByteBufferWriter output) {
             if (output != null) {
                 final int size = output.write(messageBuffer);
                 buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
                 buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
                 buf.retain();
-                ctx.writeAndFlush(buf);
+                ctx.writeAndFlush(new DatagramPacket(buf, sender));
             }
         }
     }

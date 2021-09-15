@@ -13,8 +13,7 @@ import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
@@ -24,7 +23,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
-    private DatagramPacket datagramPacket;
+    //    private DatagramPacket datagramPacket;
 
     public NettyDatagramSynchronousWriter(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
@@ -38,12 +37,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     @Override
     public void open() throws IOException {
         channel.open(bootstrap -> {
-            bootstrap.handler(new ChannelInitializer<Channel>() {
-                @Override
-                protected void initChannel(final Channel ch) throws Exception {
-                    //noop
-                }
-            });
+            bootstrap.handler(new ChannelInboundHandlerAdapter());
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
@@ -52,8 +46,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramChannel.MESSAGE_INDEX);
-        this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
-        this.datagramPacket.retain();
+        //        this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
+        //        this.datagramPacket.retain();
     }
 
     @Override
@@ -68,8 +62,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             buf = null;
             buffer = null;
             messageBuffer = null;
-            datagramPacket.release();
-            datagramPacket = null;
+            //            datagramPacket.release();
+            //            datagramPacket = null;
         }
         if (channel != null) {
             channel.close();
@@ -87,7 +81,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         buffer.putInt(NettyDatagramChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettyDatagramChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
-        channel.getDatagramChannel().writeAndFlush(datagramPacket);
+        //        datagramPacket.retain();
+        channel.getDatagramChannel().writeAndFlush(new DatagramPacket(buf, channel.getSocketAddress()));
         //        channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
         //        channel.getDatagramChannel().unsafe().flush();
     }

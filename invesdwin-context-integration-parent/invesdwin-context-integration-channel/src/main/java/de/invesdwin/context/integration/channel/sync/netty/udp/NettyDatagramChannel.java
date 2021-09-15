@@ -3,10 +3,12 @@ package de.invesdwin.context.integration.channel.sync.netty.udp;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -15,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagr
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 
@@ -71,29 +74,71 @@ public class NettyDatagramChannel implements Closeable {
             return;
         }
         if (server) {
-            bootstrap = new Bootstrap();
-            bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
-            //            type.channelOptions(bootstrap::option, socketSize);
-            bootstrapListener.accept(bootstrap);
-            try {
-                datagramChannel = (DatagramChannel) bootstrap.bind(socketAddress).sync().channel();
-                //                type.initChannel(datagramChannel, server);
-                //                onDatagramChannel(datagramChannel);
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
+            awaitSocketChannel(() -> {
+                bootstrap = new Bootstrap();
+                bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
+                type.channelOptions(bootstrap::option, socketSize);
+                bootstrapListener.accept(bootstrap);
+                try {
+                    return bootstrap.bind(socketAddress);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
         } else {
-            bootstrap = new Bootstrap();
-            bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
-            //            type.channelOptions(bootstrap::option, socketSize);
-            bootstrapListener.accept(bootstrap);
-            try {
-                //                type.initChannel(datagramChannel, server);
-                datagramChannel = (DatagramChannel) bootstrap.connect(socketAddress).sync().channel();
-                //                onDatagramChannel(datagramChannel);
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
+            awaitSocketChannel(() -> {
+                bootstrap = new Bootstrap();
+                bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
+                type.channelOptions(bootstrap::option, socketSize);
+                bootstrapListener.accept(bootstrap);
+                try {
+                    return bootstrap.connect(socketAddress);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        }
+    }
+
+    private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
+        try {
+            //init bootstrap
+            for (int tries = 0;; tries++) {
+                try {
+                    final ChannelFuture sync = channelFactory.get().sync();
+                    datagramChannel = (DatagramChannel) sync.channel();
+                    type.initChannel(datagramChannel, server);
+                    onDatagramChannel(datagramChannel);
+                    sync.get();
+                    break;
+                } catch (final Throwable t) {
+                    close();
+                    if (tries < getMaxConnectRetries()) {
+                        try {
+                            getConnectRetryDelay().sleep();
+                        } catch (final InterruptedException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    } else {
+                        throw t;
+                    }
+                }
             }
+            //wait for channel
+            for (int tries = 0; datagramChannel == null; tries++) {
+                if (tries < getMaxConnectRetries()) {
+                    try {
+                        getConnectRetryDelay().sleep();
+                    } catch (final InterruptedException e1) {
+                        throw new RuntimeException(e1);
+                    }
+                } else {
+                    throw new ConnectException("Connection timeout");
+                }
+            }
+        } catch (final Throwable t) {
+            close();
+            throw new RuntimeException(t);
         }
     }
 
