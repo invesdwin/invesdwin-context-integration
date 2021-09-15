@@ -3,10 +3,12 @@ package de.invesdwin.context.integration.channel.sync.netty.udp;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
@@ -22,6 +24,11 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     private NettyDatagramChannel channel;
     private Reader reader;
+
+    public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        this(new NettyDatagramChannel(type, socketAddress, server, estimatedMaxMessageSize));
+    }
 
     public NettyDatagramSynchronousReader(final NettyDatagramChannel channel) {
         this.channel = channel;

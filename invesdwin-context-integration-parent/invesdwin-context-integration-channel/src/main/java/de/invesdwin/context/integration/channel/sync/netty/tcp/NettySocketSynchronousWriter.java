@@ -38,6 +38,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         channel.open(null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
+        channel.getSocketChannel().deregister();
         FakeEventLoop.INSTANCE.register(channel.getSocketChannel());
         this.buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);

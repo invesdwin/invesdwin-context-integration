@@ -18,6 +18,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
+import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
 public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
@@ -115,9 +116,9 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
-            final ByteBuf msgBuf = (ByteBuf) msg;
+            final DatagramPacket msgBuf = (DatagramPacket) msg;
             //CHECKSTYLE:OFF
-            while (read(ctx, msgBuf)) {
+            while (read(ctx, msgBuf.content())) {
             }
             //CHECKSTYLE:ON
             msgBuf.release();
