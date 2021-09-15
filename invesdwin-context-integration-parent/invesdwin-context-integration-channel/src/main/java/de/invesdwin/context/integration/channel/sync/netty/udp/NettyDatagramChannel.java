@@ -3,29 +3,20 @@ package de.invesdwin.context.integration.channel.sync.netty.udp;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
-import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelInitializer;
-import io.netty.channel.ChannelPipeline;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
-import io.netty.handler.flush.FlushConsolidationHandler;
 
 /**
  * https://github.com/wenzhucjy/netty-tutorial/tree/master/netty-4/server/src/main/java/com/netty/udp
@@ -49,7 +40,6 @@ public class NettyDatagramChannel implements Closeable {
     protected final boolean server;
     private Bootstrap bootstrap;
 
-    private final IBufferingIterator<Consumer<DatagramChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public NettyDatagramChannel(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
@@ -73,59 +63,37 @@ public class NettyDatagramChannel implements Closeable {
         return socketAddress;
     }
 
-    public void open(final Consumer<DatagramChannel> channelListener) {
+    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
                 channelListener.accept(datagramChannel);
             }
             return;
         }
-        if (channelListener != null) {
-            channelListeners.add(channelListener);
-        }
         if (server) {
-            awaitSocketChannel(() -> {
-                final EventLoopGroup group = type.newServerWorkerGroup();
-                bootstrap = new Bootstrap();
-                bootstrap.group(group);
-                bootstrap.channel(type.getServerChannelType());
-                type.channelOptions(bootstrap::option, socketSize);
-                bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
-                    @Override
-                    public void initChannel(final DatagramChannel ch) throws Exception {
-                        if (datagramChannel == null) {
-                            type.initChannel(ch, true);
-                            datagramChannel = ch;
-                            onDatagramChannel(ch);
-                        } else {
-                            //only allow one client
-                            ch.close();
-                        }
-                    }
-                });
-                return bootstrap.bind(socketAddress);
-            });
+            bootstrap = new Bootstrap();
+            bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
+            //            type.channelOptions(bootstrap::option, socketSize);
+            bootstrapListener.accept(bootstrap);
+            try {
+                datagramChannel = (DatagramChannel) bootstrap.bind(socketAddress).sync().channel();
+                //                type.initChannel(datagramChannel, server);
+                //                onDatagramChannel(datagramChannel);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
         } else {
-            awaitSocketChannel(() -> {
-                bootstrap = new Bootstrap();
-                bootstrap.group(type.newClientWorkerGroup());
-                bootstrap.channel(type.getClientChannelType());
-                type.channelOptions(bootstrap::option, socketSize);
-                bootstrap.handler(new ChannelInitializer<DatagramChannel>() {
-                    @Override
-                    public void initChannel(final DatagramChannel ch) throws Exception {
-                        if (datagramChannel == null) {
-                            type.initChannel(ch, false);
-                            datagramChannel = ch;
-                            onDatagramChannel(ch);
-                        } else {
-                            //only allow one client
-                            ch.close();
-                        }
-                    }
-                });
-                return bootstrap.connect(socketAddress);
-            });
+            bootstrap = new Bootstrap();
+            bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
+            //            type.channelOptions(bootstrap::option, socketSize);
+            bootstrapListener.accept(bootstrap);
+            try {
+                //                type.initChannel(datagramChannel, server);
+                datagramChannel = (DatagramChannel) bootstrap.connect(socketAddress).sync().channel();
+                //                onDatagramChannel(datagramChannel);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -133,59 +101,9 @@ public class NettyDatagramChannel implements Closeable {
      * Can be overridden to add handlers
      */
     protected void onDatagramChannel(final DatagramChannel datagramChannel) {
-        final ChannelPipeline pipeline = datagramChannel.pipeline();
-        pipeline.addLast(new FlushConsolidationHandler(256, true));
+        //        final ChannelPipeline pipeline = datagramChannel.pipeline();
+        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
         //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
-        triggerChannelListeners(datagramChannel);
-    }
-
-    private void triggerChannelListeners(final DatagramChannel channel) {
-        try {
-            while (true) {
-                final Consumer<DatagramChannel> next = channelListeners.next();
-                next.accept(channel);
-            }
-        } catch (final NoSuchElementException e) {
-            //end reached
-        }
-    }
-
-    private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
-        try {
-            //init bootstrap
-            for (int tries = 0;; tries++) {
-                try {
-                    channelFactory.get().sync().get();
-                    break;
-                } catch (final Throwable t) {
-                    close();
-                    if (tries < getMaxConnectRetries()) {
-                        try {
-                            getConnectRetryDelay().sleep();
-                        } catch (final InterruptedException e1) {
-                            throw new RuntimeException(e1);
-                        }
-                    } else {
-                        throw t;
-                    }
-                }
-            }
-            //wait for channel
-            for (int tries = 0; datagramChannel == null; tries++) {
-                if (tries < getMaxConnectRetries()) {
-                    try {
-                        getConnectRetryDelay().sleep();
-                    } catch (final InterruptedException e1) {
-                        throw new RuntimeException(e1);
-                    }
-                } else {
-                    throw new ConnectException("Connection timeout");
-                }
-            }
-        } catch (final Throwable t) {
-            close();
-            throw new RuntimeException(t);
-        }
     }
 
     protected Duration getConnectRetryDelay() {

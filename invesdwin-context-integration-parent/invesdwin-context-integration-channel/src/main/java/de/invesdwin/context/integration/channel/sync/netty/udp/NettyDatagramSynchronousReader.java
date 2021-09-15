@@ -37,7 +37,9 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
     @Override
     public void open() throws IOException {
         this.reader = new Reader(channel.getSocketSize());
-        channel.open(channel -> {
+        channel.open(bootstrap -> {
+            bootstrap.handler(reader);
+        }, channel -> {
             final ChannelPipeline pipeline = channel.pipeline();
             pipeline.addLast(reader);
         });

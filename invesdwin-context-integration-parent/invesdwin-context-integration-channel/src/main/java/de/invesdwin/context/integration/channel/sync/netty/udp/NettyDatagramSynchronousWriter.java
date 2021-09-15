@@ -6,8 +6,6 @@ import java.net.InetSocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
-import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
@@ -15,6 +13,8 @@ import de.invesdwin.util.streams.buffer.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
@@ -37,11 +37,18 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public void open() throws IOException {
-        channel.open(null);
+        channel.open(bootstrap -> {
+            bootstrap.handler(new ChannelInitializer<Channel>() {
+                @Override
+                protected void initChannel(final Channel ch) throws Exception {
+                    //noop
+                }
+            });
+        }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        channel.getDatagramChannel().deregister();
-        FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
+        //        channel.getDatagramChannel().deregister();
+        //        FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
         buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramChannel.MESSAGE_INDEX);
@@ -80,8 +87,9 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         buffer.putInt(NettyDatagramChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettyDatagramChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
-        channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
-        channel.getDatagramChannel().unsafe().flush();
+        channel.getDatagramChannel().writeAndFlush(datagramPacket);
+        //        channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
+        //        channel.getDatagramChannel().unsafe().flush();
     }
 
 }
