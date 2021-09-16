@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
+import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.IByteBufferWriter;
@@ -42,8 +44,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        //        channel.getDatagramChannel().deregister();
-        //        FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
+        channel.getDatagramChannel().deregister();
+        FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
         buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramChannel.MESSAGE_INDEX);
@@ -83,11 +85,9 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         buf.setIndex(0, NettyDatagramChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
         datagramPacket.retain();
-        channel.getDatagramChannel().writeAndFlush(datagramPacket);
-        //        channel.getDatagramChannel()
-        //                .unsafe()
-        //                .write(datagramPacket, new DefaultChannelPromise(channel.getDatagramChannel()));
-        //        channel.getDatagramChannel().unsafe().flush();
+        //        channel.getDatagramChannel().writeAndFlush(datagramPacket);
+        channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
+        channel.getDatagramChannel().unsafe().flush();
     }
 
 }
