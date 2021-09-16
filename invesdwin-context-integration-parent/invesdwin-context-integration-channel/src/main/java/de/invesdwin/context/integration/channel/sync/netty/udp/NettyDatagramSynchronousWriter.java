@@ -53,6 +53,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             };
         } else {
             channel.getDatagramChannel().deregister();
+            channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
             writer = () -> {
                 channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);

@@ -195,7 +195,7 @@ public class NettyDatagramChannel implements Closeable {
         closeBootstrapAsync();
     }
 
-    private void closeBootstrapAsync() {
+    public void closeBootstrapAsync() {
         if (bootstrap != null) {
             final BootstrapConfig config = bootstrap.config();
             bootstrap = null;
