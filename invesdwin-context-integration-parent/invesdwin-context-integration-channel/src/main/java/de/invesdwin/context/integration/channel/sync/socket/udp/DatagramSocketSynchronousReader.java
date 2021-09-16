@@ -15,11 +15,12 @@ import de.invesdwin.util.streams.buffer.IByteBuffer;
 public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
+    public static final boolean SERVER = true;
     protected IByteBuffer buffer;
     protected java.nio.ByteBuffer messageBuffer;
 
     public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, true, estimatedMaxMessageSize);
+        super(socketAddress, SERVER, estimatedMaxMessageSize);
     }
 
     @Override

@@ -22,12 +22,13 @@ import io.netty.channel.socket.DatagramPacket;
 @NotThreadSafe
 public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    public static final boolean SERVER = true;
     private NettyDatagramChannel channel;
     private Reader reader;
 
     public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettyDatagramChannel(type, socketAddress, server, estimatedMaxMessageSize));
+            final int estimatedMaxMessageSize) {
+        this(new NettyDatagramChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
     public NettyDatagramSynchronousReader(final NettyDatagramChannel channel) {

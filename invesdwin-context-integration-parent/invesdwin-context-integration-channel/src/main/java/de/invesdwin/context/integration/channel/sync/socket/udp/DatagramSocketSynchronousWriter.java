@@ -16,11 +16,12 @@ import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuf
 public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
+    public static final boolean SERVER = false;
     protected IByteBuffer buffer;
     protected IByteBuffer messageBuffer;
 
     public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, false, estimatedMaxMessageSize);
+        super(socketAddress, SERVER, estimatedMaxMessageSize);
     }
 
     @Override
