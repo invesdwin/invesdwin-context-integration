@@ -57,6 +57,10 @@ public class NettySocketChannel implements Closeable {
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
+    public INettySocketChannelType getType() {
+        return type;
+    }
+
     public void addSocketChannelListeners(final Consumer<SocketChannel> listener) {
         channelListeners.add(listener);
     }

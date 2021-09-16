@@ -17,6 +17,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.socket.nio.NioDatagramChannel;
 
 @NotThreadSafe
 public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -27,6 +28,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private DatagramPacket datagramPacket;
+    private Runnable writer;
 
     public NettyDatagramSynchronousWriter(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
@@ -44,8 +46,19 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        channel.getDatagramChannel().deregister();
-        FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
+        final boolean nioWorkaround = channel.getDatagramChannel() instanceof NioDatagramChannel;
+        if (nioWorkaround) {
+            writer = () -> {
+                channel.getDatagramChannel().writeAndFlush(datagramPacket);
+            };
+        } else {
+            channel.getDatagramChannel().deregister();
+            FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
+            writer = () -> {
+                channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
+                channel.getDatagramChannel().unsafe().flush();
+            };
+        }
         buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramChannel.MESSAGE_INDEX);
@@ -85,9 +98,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         buf.setIndex(0, NettyDatagramChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up
         datagramPacket.retain();
-        //        channel.getDatagramChannel().writeAndFlush(datagramPacket);
-        channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
-        channel.getDatagramChannel().unsafe().flush();
+        writer.run();
     }
 
 }

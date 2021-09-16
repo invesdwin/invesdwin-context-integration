@@ -54,6 +54,10 @@ public class NettyDatagramChannel implements Closeable {
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
+    public INettyDatagramChannelType getType() {
+        return type;
+    }
+
     public DatagramChannel getDatagramChannel() {
         return datagramChannel;
     }
@@ -168,6 +172,10 @@ public class NettyDatagramChannel implements Closeable {
             datagramChannel.close();
             datagramChannel = null;
         }
+        closeBootstrap();
+    }
+
+    private void closeBootstrap() {
         if (bootstrap != null) {
             final BootstrapConfig config = bootstrap.config();
             bootstrap = null;
@@ -184,6 +192,10 @@ public class NettyDatagramChannel implements Closeable {
             datagramChannel.close();
             datagramChannel = null;
         }
+        closeBootstrapAsync();
+    }
+
+    private void closeBootstrapAsync() {
         if (bootstrap != null) {
             final BootstrapConfig config = bootstrap.config();
             bootstrap = null;
