@@ -26,6 +26,8 @@ import org.apache.ftpserver.usermanager.impl.WritePermission;
 import org.apache.ftpserver.usermanager.impl.WriteRequest;
 import org.apache.ftpserver.util.BaseProperties;
 
+import de.invesdwin.util.lang.Strings;
+
 /**
  * <table>
  * <tr>
@@ -226,7 +228,7 @@ public class InMemoryUserManager extends AbstractUserManager {
         }
 
         Collections.sort(ulst);
-        return ulst.toArray(new String[0]);
+        return ulst.toArray(Strings.EMPTY_ARRAY);
     }
 
     /**
