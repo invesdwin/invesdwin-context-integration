@@ -32,8 +32,8 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>net.openhft</groupId>
-			<artifactId>chronicle-queue</artifactId>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-persistence-chronicle</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
