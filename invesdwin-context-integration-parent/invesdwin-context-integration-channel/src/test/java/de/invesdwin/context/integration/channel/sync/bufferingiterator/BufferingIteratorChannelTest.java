@@ -4,6 +4,7 @@ import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -21,7 +22,7 @@ import de.invesdwin.util.time.date.FDate;
 
 // CHECKSTYLE:OFF
 @NotThreadSafe
-//@Ignore("manual test")
+@Ignore("manual test")
 public class BufferingIteratorChannelTest extends AChannelTest {
     //CHECKSTYLE:ON
 

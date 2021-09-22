@@ -9,6 +9,8 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.Ignore;
+
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
@@ -51,7 +53,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-//@Ignore("manual test")
+@Ignore("manual test")
 public abstract class AChannelTest extends ATest {
 
     public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;

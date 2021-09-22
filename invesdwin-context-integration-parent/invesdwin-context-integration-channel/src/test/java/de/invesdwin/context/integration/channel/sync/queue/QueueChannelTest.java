@@ -12,6 +12,7 @@ import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -20,7 +21,7 @@ import de.invesdwin.util.time.date.FDate;
 
 // CHECKSTYLE:OFF
 @NotThreadSafe
-//@Ignore("manual test")
+@Ignore("manual test")
 public class QueueChannelTest extends AChannelTest {
     //CHECKSTYLE:ON
 
