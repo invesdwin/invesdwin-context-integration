@@ -9,9 +9,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
@@ -46,7 +46,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
         fd = unixChannel.fd();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = buffer.asByteBuffer(0, channel.getSocketSize());
+        messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
     }
 
     @Override
@@ -90,7 +90,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
             final int capacityBefore = buffer.capacity();
             buffer.ensureCapacity(targetPosition);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asByteBuffer(0, channel.getSocketSize());
+                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
             }
             readFully(fd, messageBuffer, position, remaining);
         }

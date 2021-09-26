@@ -10,9 +10,9 @@ import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.jeromq.type.IJeromqSocketType;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import zmq.ZError;
 
 @NotThreadSafe

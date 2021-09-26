@@ -8,11 +8,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
@@ -69,7 +69,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
         try {
             final int size = message.write(messageBuffer);
             buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.byteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size);
+            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw NettySocketChannel.newEofException(e);
         }

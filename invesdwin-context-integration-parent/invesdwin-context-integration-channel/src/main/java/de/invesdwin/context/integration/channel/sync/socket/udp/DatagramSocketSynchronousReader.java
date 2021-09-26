@@ -7,9 +7,9 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
 public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousChannel
@@ -28,7 +28,7 @@ public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousC
         super.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = buffer.asByteBuffer(0, socketSize);
+        messageBuffer = buffer.asNioByteBuffer(0, socketSize);
     }
 
     @Override
@@ -63,7 +63,7 @@ public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousC
             final int capacityBefore = buffer.capacity();
             buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asByteBuffer(0, socketSize);
+                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
             }
         }
 

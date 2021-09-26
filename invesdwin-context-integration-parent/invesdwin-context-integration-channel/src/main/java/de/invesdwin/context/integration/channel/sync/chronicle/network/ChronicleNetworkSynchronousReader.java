@@ -8,9 +8,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -31,7 +31,7 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         socket.shutdownOutput();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = buffer.asByteBuffer(0, socketSize);
+        messageBuffer = buffer.asNioByteBuffer(0, socketSize);
     }
 
     @Override
@@ -66,9 +66,9 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
-            readFully(socketChannel, buffer.asByteBuffer(messageBuffer.position(), remaining));
+            readFully(socketChannel, buffer.asNioByteBuffer(messageBuffer.position(), remaining));
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asByteBuffer(0, socketSize);
+                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
             }
         }
 

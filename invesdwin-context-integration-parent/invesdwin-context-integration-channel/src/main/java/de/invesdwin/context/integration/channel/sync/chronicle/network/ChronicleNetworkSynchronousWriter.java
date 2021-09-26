@@ -7,11 +7,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBufferWriter;
-import de.invesdwin.util.streams.buffer.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -54,7 +54,7 @@ public class ChronicleNetworkSynchronousWriter extends AChronicleNetworkSynchron
         try {
             final int size = message.write(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
-            writeFully(socketChannel, buffer.asByteBuffer(0, MESSAGE_INDEX + size));
+            writeFully(socketChannel, buffer.asNioByteBuffer(0, MESSAGE_INDEX + size));
         } catch (final IOException e) {
             throw newEofException(e);
         }

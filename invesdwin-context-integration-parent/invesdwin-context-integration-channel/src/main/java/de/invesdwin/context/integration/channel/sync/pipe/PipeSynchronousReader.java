@@ -9,9 +9,9 @@ import java.nio.channels.FileChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
 public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
@@ -31,7 +31,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         fileChannel = in.getChannel();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(fileSize);
-        messageBuffer = buffer.asByteBuffer(0, fileSize);
+        messageBuffer = buffer.asNioByteBuffer(0, fileSize);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             buffer.putBytesTo(messageBuffer.position(), fileChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
                 //update reference to underlying storage
-                messageBuffer = buffer.asByteBuffer(0, fileSize);
+                messageBuffer = buffer.asNioByteBuffer(0, fileSize);
             }
         }
 

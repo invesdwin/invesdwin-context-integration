@@ -9,9 +9,9 @@ import de.invesdwin.context.integration.channel.sync.command.ISynchronousCommand
 import de.invesdwin.context.integration.channel.sync.command.MutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.streams.buffer.ByteBuffers;
-import de.invesdwin.util.streams.buffer.IByteBuffer;
-import de.invesdwin.util.streams.buffer.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 @NotThreadSafe
 public class CommandAsynchronousHandler<I, O>
