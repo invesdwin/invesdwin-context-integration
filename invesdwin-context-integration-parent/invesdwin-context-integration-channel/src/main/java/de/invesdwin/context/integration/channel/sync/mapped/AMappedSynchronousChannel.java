@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.MemoryMappedFile;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
@@ -44,7 +45,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
         final int fileSize = maxMessageSize + MESSAGE_INDEX;
         try {
             this.mem = new MemoryMappedFile(file.getAbsolutePath(), fileSize, false);
-            this.buffer = new UnsafeByteBuffer(mem.getAddress(), mem.getLength());
+            this.buffer = new UnsafeByteBuffer(mem.getAddress(), Integers.checkedCast(mem.getLength()));
         } catch (final Exception e) {
             throw new IOException("Unable to open file: " + file, e);
         }
