@@ -35,8 +35,8 @@ public class MemoryMappedFile implements Closeable {
      * @throws Exception
      *             in case there was an error creating the memory mapped file
      */
-    public MemoryMappedFile(final String loc, final int len) throws IOException {
-        this.finalizer = new MemoryMappedFileFinalizer(loc, len);
+    public MemoryMappedFile(final String path, final int length, final boolean readOnly) throws IOException {
+        this.finalizer = new MemoryMappedFileFinalizer(path, length, readOnly);
         this.finalizer.register(this);
     }
 
@@ -44,8 +44,8 @@ public class MemoryMappedFile implements Closeable {
         return finalizer.address;
     }
 
-    public int getSize() {
-        return finalizer.size;
+    public int getLength() {
+        return finalizer.length;
     }
 
     public boolean isClosed() {
@@ -58,20 +58,25 @@ public class MemoryMappedFile implements Closeable {
     }
 
     private static final class MemoryMappedFileFinalizer extends AFinalizer {
-        private final String loc;
+        private final String path;
         private final long address;
-        private final int size;
+        private final int length;
         private boolean cleaned;
 
-        private MemoryMappedFileFinalizer(final String loc, final int len) throws IOException {
-            this.loc = loc;
-            this.size = roundTo4096(len);
-            this.address = mapAndSetOffset();
+        private MemoryMappedFileFinalizer(final String path, final int length, final boolean readOnly)
+                throws IOException {
+            this.path = path;
+            this.length = roundTo4096(length);
+            if (readOnly) {
+                this.address = mapAndSetOffsetReadOnly();
+            } else {
+                this.address = mapAndSetOffsetReadWrite();
+            }
         }
 
         @Override
         protected void clean() {
-            IoUtil.unmap(null, address, this.size);
+            IoUtil.unmap(null, address, this.length);
             cleaned = true;
         }
 
@@ -89,11 +94,21 @@ public class MemoryMappedFile implements Closeable {
             return (i + 0xfff) & ~0xfff;
         }
 
-        private long mapAndSetOffset() throws IOException {
-            final RandomAccessFile backingFile = new RandomAccessFile(this.loc, "rw");
-            backingFile.setLength(this.size);
+        private long mapAndSetOffsetReadOnly() throws IOException {
+            final RandomAccessFile backingFile = new RandomAccessFile(this.path, "r");
+            backingFile.setLength(this.length);
             final FileChannel ch = backingFile.getChannel();
-            final long address = IoUtil.map(ch, MapMode.READ_WRITE, 0L, this.size);
+            final long address = IoUtil.map(ch, MapMode.READ_ONLY, 0L, length);
+            ch.close();
+            backingFile.close();
+            return address;
+        }
+
+        private long mapAndSetOffsetReadWrite() throws IOException {
+            final RandomAccessFile backingFile = new RandomAccessFile(this.path, "rw");
+            backingFile.setLength(this.length);
+            final FileChannel ch = backingFile.getChannel();
+            final long address = IoUtil.map(ch, MapMode.READ_WRITE, 0L, length);
             ch.close();
             backingFile.close();
             return address;
