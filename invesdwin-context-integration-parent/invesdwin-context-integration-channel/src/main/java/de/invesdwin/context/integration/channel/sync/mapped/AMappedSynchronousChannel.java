@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.streams.buffer.MemoryMappedFile;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
