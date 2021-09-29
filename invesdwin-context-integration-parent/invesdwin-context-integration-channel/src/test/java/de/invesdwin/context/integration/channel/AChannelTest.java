@@ -247,7 +247,7 @@ public abstract class AChannelTest extends ATest {
             readsStart = new Instant();
             final ASpinWait spinWait = new ASpinWait() {
                 @Override
-                protected boolean isConditionFulfilled() throws Exception {
+                public boolean isConditionFulfilled() throws Exception {
                     return responseReader.hasNext();
                 }
             };
@@ -318,7 +318,7 @@ public abstract class AChannelTest extends ATest {
         public void run() {
             final ASpinWait spinWait = new ASpinWait() {
                 @Override
-                protected boolean isConditionFulfilled() throws Exception {
+                public boolean isConditionFulfilled() throws Exception {
                     return requestReader.hasNext();
                 }
             };

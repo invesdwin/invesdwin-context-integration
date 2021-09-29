@@ -24,7 +24,7 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
     protected ASpinWait newSpinWait(final ISynchronousReader<M> delegate) {
         return new ASpinWait() {
             @Override
-            protected boolean isConditionFulfilled() throws Exception {
+            public boolean isConditionFulfilled() throws Exception {
                 return delegate.hasNext();
             }
         };
