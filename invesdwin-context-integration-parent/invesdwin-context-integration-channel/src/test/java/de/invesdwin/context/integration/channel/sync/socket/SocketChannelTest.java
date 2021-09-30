@@ -126,8 +126,8 @@ public class SocketChannelTest extends AChannelTest {
 
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSynchronousWriter(
-                responseAddress, MESSAGE_SIZE);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSynchronousWriter(responseAddress,
+                MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> requestReader = new DatagramSynchronousReader(requestAddress,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
@@ -176,14 +176,14 @@ public class SocketChannelTest extends AChannelTest {
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingDatagramSynchronousWriter(
                 responseAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSynchronousReader(
-                requestAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSynchronousReader(requestAddress,
+                MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingDatagramSynchronousWriter(
                 requestAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSynchronousReader(
-                responseAddress, MESSAGE_SIZE);
+        final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSynchronousReader(responseAddress,
+                MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
