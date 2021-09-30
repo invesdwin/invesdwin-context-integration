@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.async.netty.tcp;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -17,12 +16,12 @@ public class NettySocketHandlerTest extends AChannelTest {
 
     @Test
     public void testNettySocketHandlerPerformance() throws InterruptedException {
-        final SocketAddress address = new InetSocketAddress("localhost", 7878);
+        final InetSocketAddress address = new InetSocketAddress("localhost", 7878);
         runNettySocketHandlerPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
-    private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type, final SocketAddress address)
-            throws InterruptedException {
+    private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type,
+            final InetSocketAddress address) throws InterruptedException {
         final NettySocketChannel serverChannel = new NettySocketChannel(type, address, true, MESSAGE_SIZE);
         final NettySocketChannel clientChannel = new NettySocketChannel(type, address, false, MESSAGE_SIZE);
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
