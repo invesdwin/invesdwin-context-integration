@@ -16,11 +16,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
-    protected IByteBuffer packetBuffer;
-    protected DatagramPacket packet;
+    private IByteBuffer packetBuffer;
+    private DatagramPacket packet;
 
-    public BlockingDatagramSynchronousReader(final SocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
+    public BlockingDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
     }
 

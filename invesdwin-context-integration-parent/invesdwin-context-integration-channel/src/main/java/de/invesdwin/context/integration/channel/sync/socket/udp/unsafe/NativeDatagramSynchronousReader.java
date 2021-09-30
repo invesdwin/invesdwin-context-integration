@@ -1,24 +1,31 @@
-package de.invesdwin.context.integration.channel.sync.socket.udp;
+package de.invesdwin.context.integration.channel.sync.socket.udp.unsafe;
 
 import java.io.EOFException;
+import java.io.FileDescriptor;
 import java.io.IOException;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.udp.ADatagramSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class DatagramSynchronousReader extends ADatagramSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
+    private FileDescriptor fd;
+    private int position;
 
-    public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public NativeDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, SERVER, estimatedMaxMessageSize);
     }
 
@@ -28,6 +35,7 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+        fd = Jvm.getValue(socket.getChannel(), "fd");
     }
 
     @Override
@@ -35,15 +43,21 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         super.close();
         buffer = null;
         messageBuffer = null;
+        fd = null;
+        position = 0;
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        if (messageBuffer.position() > 0) {
+        if (position > 0) {
             return true;
         }
-        final SocketAddress client = socketChannel.receive(messageBuffer);
-        return client != null;
+        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, socketSize);
+        if (read < 0) {
+            throw new EOFException("socket closed");
+        }
+        position += read;
+        return read > 0;
     }
 
     @Override
@@ -51,22 +65,28 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
-        while (messageBuffer.position() < targetPosition) {
-            socketChannel.receive(messageBuffer);
+        while (position < targetPosition) {
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+                    targetPosition - position);
+            if (read < 0) {
+                throw new EOFException("socket closed");
+            }
+            position += read;
         }
         size = buffer.getInt(SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
-        final int remaining = targetPosition - messageBuffer.position();
+        final int remaining = targetPosition - position;
         if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
-            if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+            buffer.ensureCapacity(targetPosition);
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
+            if (read < 0) {
+                throw new EOFException("socket closed");
             }
+            position += read;
         }
 
-        ByteBuffers.position(messageBuffer, 0);
+        position = 0;
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
             throw new EOFException("closed by other side");

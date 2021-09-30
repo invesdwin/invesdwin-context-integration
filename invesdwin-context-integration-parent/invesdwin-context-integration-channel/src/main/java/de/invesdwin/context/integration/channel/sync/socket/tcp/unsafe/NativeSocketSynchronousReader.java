@@ -38,6 +38,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         fd = Jvm.getValue(socket.getChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        position = 0;
     }
 
     @Override

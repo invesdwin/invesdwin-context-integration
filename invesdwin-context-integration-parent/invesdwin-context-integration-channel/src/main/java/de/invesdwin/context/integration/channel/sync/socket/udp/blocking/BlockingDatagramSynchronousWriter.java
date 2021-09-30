@@ -18,9 +18,9 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 public class BlockingDatagramSynchronousWriter extends ABlockingDatagramSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
-    protected IByteBuffer packetBuffer;
-    protected IByteBuffer messageBuffer;
-    protected DatagramPacket packet;
+    private IByteBuffer packetBuffer;
+    private IByteBuffer messageBuffer;
+    private DatagramPacket packet;
 
     public BlockingDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
