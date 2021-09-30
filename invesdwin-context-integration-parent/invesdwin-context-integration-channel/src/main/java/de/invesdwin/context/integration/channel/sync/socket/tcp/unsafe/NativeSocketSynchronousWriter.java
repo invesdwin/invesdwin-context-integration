@@ -49,6 +49,7 @@ public class NativeSocketSynchronousWriter extends ASocketSynchronousChannel
             } catch (final Throwable t) {
                 //ignore
             }
+            fd = null;
             buffer = null;
             messageBuffer = null;
         }

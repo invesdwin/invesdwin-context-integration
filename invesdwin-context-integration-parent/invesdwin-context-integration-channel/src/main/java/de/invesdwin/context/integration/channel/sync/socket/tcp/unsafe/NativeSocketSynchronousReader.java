@@ -44,6 +44,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
     public void close() throws IOException {
         if (buffer != null) {
             buffer = null;
+            fd = null;
         }
         super.close();
     }
@@ -79,7 +80,11 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         final int remaining = targetPosition - position;
         if (remaining > 0) {
             buffer.ensureCapacity(targetPosition);
-            read0(fd, buffer.addressOffset(), position, remaining);
+            final int read = read0(fd, buffer.addressOffset(), position, remaining);
+            if (read < 0) {
+                throw new EOFException("socket closed");
+            }
+            position += read;
         }
 
         position = 0;

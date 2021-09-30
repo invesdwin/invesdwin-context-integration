@@ -24,6 +24,8 @@ import de.invesdwin.context.integration.channel.sync.pipe.PipeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.PipeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.queue.QueueSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.queue.QueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueueSynchronousReader;
@@ -65,6 +67,7 @@ public abstract class AChannelTest extends ATest {
 
     public enum FileChannelType {
         PIPE_STREAMING,
+        PIPE_NATIVE,
         PIPE,
         MAPPED,
         UNIX_SOCKET;
@@ -140,7 +143,8 @@ public abstract class AChannelTest extends ATest {
         Assertions.checkFalse(file.exists(), "%s", file);
         if (type == FileChannelType.UNIX_SOCKET) {
             return file;
-        } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING) {
+        } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING
+                || type == FileChannelType.PIPE_NATIVE) {
             Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
         } else if (type == FileChannelType.MAPPED) {
             try {
@@ -194,7 +198,9 @@ public abstract class AChannelTest extends ATest {
     }
 
     protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE_STREAMING) {
+        if (pipes == FileChannelType.PIPE_NATIVE) {
+            return new NativePipeSynchronousReader(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.PIPE_STREAMING) {
             return new StreamingPipeSynchronousReader(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.PIPE) {
             return new PipeSynchronousReader(file, MESSAGE_SIZE);
@@ -206,7 +212,9 @@ public abstract class AChannelTest extends ATest {
     }
 
     protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE_STREAMING) {
+        if (pipes == FileChannelType.PIPE_NATIVE) {
+            return new NativePipeSynchronousWriter(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.PIPE_STREAMING) {
             return new StreamingPipeSynchronousWriter(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.PIPE) {
             return new PipeSynchronousWriter(file, MESSAGE_SIZE);

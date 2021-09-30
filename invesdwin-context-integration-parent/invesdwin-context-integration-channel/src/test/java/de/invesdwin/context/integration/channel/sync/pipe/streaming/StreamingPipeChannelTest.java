@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.pipe;
+package de.invesdwin.context.integration.channel.sync.pipe.streaming;
 
 import java.io.File;
 
@@ -9,21 +9,21 @@ import org.junit.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 
 @NotThreadSafe
-public class PipeChannelTest extends AChannelTest {
+public class StreamingPipeChannelTest extends AChannelTest {
 
     @Test
-    public void testNamedPipePerformance() throws InterruptedException {
+    public void testNamedPipeStreamingPerformance() throws InterruptedException {
         final boolean tmpfs = false;
-        final FileChannelType pipes = FileChannelType.PIPE;
+        final FileChannelType pipes = FileChannelType.PIPE_STREAMING;
         final File requestFile = newFile("testNamedPipePerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testNamedPipePerformance_response.pipe", tmpfs, pipes);
         runPerformanceTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Test
-    public void testNamedPipePerformanceWithTmpfs() throws InterruptedException {
+    public void testNamedPipeStreamingPerformanceWithTmpfs() throws InterruptedException {
         final boolean tmpfs = true;
-        final FileChannelType pipes = FileChannelType.PIPE;
+        final FileChannelType pipes = FileChannelType.PIPE_STREAMING;
         final File requestFile = newFile("testNamedPipePerformanceWithTmpfs_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testNamedPipePerformanceWithTmpfs_response.pipe", tmpfs, pipes);
         runPerformanceTest(pipes, requestFile, responseFile, null, null);

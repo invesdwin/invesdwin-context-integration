@@ -1,7 +1,8 @@
-package de.invesdwin.context.integration.channel.sync.pipe;
+package de.invesdwin.context.integration.channel.sync.pipe.unsafe;
 
 import java.io.EOFException;
 import java.io.File;
+import java.io.FileDescriptor;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
@@ -9,19 +10,22 @@ import java.nio.channels.FileChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class NativePipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private FileInputStream in;
     private FileChannel fileChannel;
     private IByteBuffer buffer;
-    private java.nio.ByteBuffer messageBuffer;
+    private FileDescriptor fd;
 
-    public PipeSynchronousReader(final File file, final int maxMessageSize) {
+    public NativePipeSynchronousReader(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 
@@ -29,9 +33,9 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
     public void open() throws IOException {
         in = new FileInputStream(file);
         fileChannel = in.getChannel();
+        fd = Jvm.getValue(fileChannel, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(fileSize);
-        messageBuffer = buffer.asNioByteBuffer(0, fileSize);
     }
 
     @Override
@@ -41,7 +45,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             in = null;
             fileChannel = null;
             buffer = null;
-            messageBuffer = null;
+            fd = null;
         }
     }
 
@@ -58,30 +62,32 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        ByteBuffers.position(messageBuffer, 0);
+        int position = 0;
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
         while (true) {
-            final int read = fileChannel.read(messageBuffer);
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+                    targetPosition - position);
             if (read < 0) {
                 throw new EOFException("closed by other side");
             }
-            if (read > 0 && messageBuffer.position() >= targetPosition) {
+            position += read;
+            if (read > 0 && position >= targetPosition) {
                 size = buffer.getInt(SIZE_INDEX);
                 targetPosition += size;
                 break;
             }
         }
         //read message if not complete yet
-        final int remaining = targetPosition - messageBuffer.position();
+        final int remaining = targetPosition - position;
         if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(messageBuffer.position(), fileChannel, remaining);
-            if (buffer.capacity() != capacityBefore) {
-                //update reference to underlying storage
-                messageBuffer = buffer.asNioByteBuffer(0, fileSize);
+            buffer.ensureCapacity(targetPosition);
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
+            if (read < 0) {
+                throw new EOFException("socket closed");
             }
+            position += read;
         }
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
