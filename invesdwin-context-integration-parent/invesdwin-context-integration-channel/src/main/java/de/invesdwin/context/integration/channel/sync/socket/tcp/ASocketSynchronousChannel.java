@@ -79,7 +79,7 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
             }
         }
         //non-blocking sockets are a bit faster than blocking ones
-        //        socketChannel.configureBlocking(false);
+        socketChannel.configureBlocking(false);
         if (socket != null) {
             //might be unix domain socket
             socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
