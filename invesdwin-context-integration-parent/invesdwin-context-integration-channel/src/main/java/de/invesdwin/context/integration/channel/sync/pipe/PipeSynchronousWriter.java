@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
+import java.nio.channels.WritableByteChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -60,6 +61,23 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
         final int size = message.write(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
         buffer.getBytesTo(0, fileChannel, MESSAGE_INDEX + size);
+    }
+
+    public static void writeFully(final WritableByteChannel dst, final java.nio.ByteBuffer byteBuffer)
+            throws IOException {
+        int remaining = byteBuffer.remaining();
+        final int positionBefore = byteBuffer.position();
+        while (remaining > 0) {
+            final int count = dst.write(byteBuffer);
+            if (count == -1) { // EOF
+                break;
+            }
+            remaining -= count;
+        }
+        ByteBuffers.position(byteBuffer, positionBefore);
+        if (remaining > 0) {
+            throw ByteBuffers.newPutBytesToEOF();
+        }
     }
 
 }
