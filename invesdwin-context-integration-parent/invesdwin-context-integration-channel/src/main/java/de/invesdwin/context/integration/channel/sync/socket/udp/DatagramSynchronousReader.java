@@ -12,14 +12,14 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class DatagramSocketSynchronousReader extends ADatagramSocketSynchronousChannel
+public class DatagramSynchronousReader extends ADatagramSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
     protected IByteBuffer buffer;
     protected java.nio.ByteBuffer messageBuffer;
 
-    public DatagramSocketSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, SERVER, estimatedMaxMessageSize);
     }
 

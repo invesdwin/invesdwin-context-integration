@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -24,7 +24,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
     private NettySocketChannel channel;
     private Reader reader;
 
-    public NettySocketSynchronousReader(final INettySocketChannelType type, final SocketAddress socketAddress,
+    public NettySocketSynchronousReader(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
     }

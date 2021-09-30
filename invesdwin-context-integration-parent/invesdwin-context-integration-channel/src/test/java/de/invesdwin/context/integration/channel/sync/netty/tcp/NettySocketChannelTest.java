@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -22,13 +21,14 @@ public class NettySocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
         runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, responseAddress, requestAddress);
     }
 
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,
-            final SocketAddress responseAddress, final SocketAddress requestAddress) throws InterruptedException {
+            final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
+            throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettySocketSynchronousWriter(type,
                 responseAddress, true, MESSAGE_SIZE);
         final ISynchronousReader<IByteBuffer> requestReader = new NettySocketSynchronousReader(type, requestAddress,

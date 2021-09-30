@@ -10,7 +10,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -63,8 +63,8 @@ public abstract class ABlockingSocketSynchronousChannel implements ISynchronousC
                 }
             }
         }
-        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
-                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+        socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         socket.setReceiveBufferSize(socketSize);
         socket.setSendBufferSize(socketSize);
         socket.setTcpNoDelay(true);

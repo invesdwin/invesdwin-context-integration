@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.io.IOException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -24,7 +24,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public NettySocketSynchronousWriter(final INettySocketChannelType type, final SocketAddress socketAddress,
+    public NettySocketSynchronousWriter(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
     }

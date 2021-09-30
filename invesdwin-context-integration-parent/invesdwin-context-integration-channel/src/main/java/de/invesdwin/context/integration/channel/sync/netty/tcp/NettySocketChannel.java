@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +40,7 @@ public class NettySocketChannel implements Closeable {
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected SocketChannel socketChannel;
-    protected final SocketAddress socketAddress;
+    protected final InetSocketAddress socketAddress;
     protected final boolean server;
     private ServerBootstrap serverBootstrap;
     private Bootstrap clientBootstrap;
@@ -48,7 +48,7 @@ public class NettySocketChannel implements Closeable {
     private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public NettySocketChannel(final INettySocketChannelType type, final SocketAddress socketAddress,
+    public NettySocketChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
@@ -73,7 +73,7 @@ public class NettySocketChannel implements Closeable {
         return socketSize;
     }
 
-    public SocketAddress getSocketAddress() {
+    public InetSocketAddress getSocketAddress() {
         return socketAddress;
     }
 

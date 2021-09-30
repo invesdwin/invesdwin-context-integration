@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp.nativee;
+package de.invesdwin.context.integration.channel.sync.netty.udp.nativee;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -8,42 +8,43 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import io.netty.channel.unix.FileDescriptor;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.unix.Socket;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    private final NettySocketChannel channel;
+    public static final boolean SERVER = true;
+    private final NettyDatagramChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
-    private FileDescriptor fd;
+    private Socket fd;
     private int position = 0;
 
-    public NettyNativeSocketSynchronousReader(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
+    public NettyNativeDatagramSynchronousReader(final INettyDatagramChannelType type,
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
+        this(new NettyDatagramChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public NettyNativeSocketSynchronousReader(final NettySocketChannel channel) {
+    public NettyNativeDatagramSynchronousReader(final NettyDatagramChannel channel) {
         this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        channel.open(ch -> {
-            //make sure netty does not process any bytes
-            ch.shutdownOutput();
-            ch.shutdownInput();
-        });
-        channel.getSocketChannel().deregister();
-        final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+        channel.open(bootstrap -> {
+            bootstrap.handler(new ChannelInboundHandlerAdapter());
+        }, null);
+        channel.getDatagramChannel().deregister();
+        final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
         channel.closeBootstrapAsync();
-        fd = unixChannel.fd();
+        fd = (Socket) unixChannel.fd();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
@@ -103,7 +104,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
         return buffer.slice(NettySocketChannel.MESSAGE_INDEX, size);
     }
 
-    public static void readFully(final FileDescriptor src, final java.nio.ByteBuffer byteBuffer, final int pos,
+    public static void readFully(final Socket src, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
         int position = pos;
         int remaining = length - pos;

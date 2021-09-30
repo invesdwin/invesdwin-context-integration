@@ -14,10 +14,10 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronou
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -126,15 +126,15 @@ public class SocketChannelTest extends AChannelTest {
 
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSynchronousWriter(
                 responseAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new DatagramSocketSynchronousReader(requestAddress,
+        final ISynchronousReader<IByteBuffer> requestReader = new DatagramSynchronousReader(requestAddress,
                 MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new DatagramSocketSynchronousWriter(requestAddress,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new DatagramSynchronousWriter(requestAddress,
                 MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new DatagramSocketSynchronousReader(responseAddress,
+        final ISynchronousReader<IByteBuffer> responseReader = new DatagramSynchronousReader(responseAddress,
                 MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
@@ -174,15 +174,15 @@ public class SocketChannelTest extends AChannelTest {
 
     private void runBlockingDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingDatagramSocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingDatagramSynchronousWriter(
                 responseAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSocketSynchronousReader(
+        final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSynchronousReader(
                 requestAddress, MESSAGE_SIZE);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingDatagramSocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingDatagramSynchronousWriter(
                 requestAddress, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSocketSynchronousReader(
+        final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSynchronousReader(
                 responseAddress, MESSAGE_SIZE);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

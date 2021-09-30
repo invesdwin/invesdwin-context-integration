@@ -13,14 +13,14 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class DatagramSocketSynchronousWriter extends ADatagramSocketSynchronousChannel
+public class DatagramSynchronousWriter extends ADatagramSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
     protected IByteBuffer buffer;
     protected IByteBuffer messageBuffer;
 
-    public DatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public DatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, SERVER, estimatedMaxMessageSize);
     }
 

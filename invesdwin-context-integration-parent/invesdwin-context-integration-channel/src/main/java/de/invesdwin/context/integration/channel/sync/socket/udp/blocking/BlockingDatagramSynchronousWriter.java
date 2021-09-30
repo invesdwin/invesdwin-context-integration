@@ -15,14 +15,14 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class BlockingDatagramSocketSynchronousWriter extends ABlockingDatagramSocketSynchronousChannel
+public class BlockingDatagramSynchronousWriter extends ABlockingDatagramSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     protected IByteBuffer packetBuffer;
     protected IByteBuffer messageBuffer;
     protected DatagramPacket packet;
 
-    public BlockingDatagramSocketSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public BlockingDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         super(socketAddress, false, estimatedMaxMessageSize);
     }
 

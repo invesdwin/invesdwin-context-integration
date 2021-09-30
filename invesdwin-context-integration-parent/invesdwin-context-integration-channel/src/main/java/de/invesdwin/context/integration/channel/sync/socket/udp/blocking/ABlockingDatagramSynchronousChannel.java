@@ -1,20 +1,23 @@
-package de.invesdwin.context.integration.channel.sync.socket.udp;
+package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
-import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public abstract class ADatagramSocketSynchronousChannel implements ISynchronousChannel {
+public abstract class ABlockingDatagramSynchronousChannel implements ISynchronousChannel {
+
+    public static final int IPTOS_LOWCOST = 0x02;
+    public static final int IPTOS_RELIABILITY = 0x04;
+    public static final int IPTOS_THROUGHPUT = 0x08;
+    public static final int IPTOS_LOWDELAY = 0x10;
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -25,10 +28,9 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     protected final boolean server;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected DatagramChannel socketChannel;
     protected DatagramSocket socket;
 
-    public ADatagramSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public ABlockingDatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -40,23 +42,16 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
     @Override
     public void open() throws IOException {
         if (server) {
-            socketChannel = DatagramChannel.open();
-            socketChannel.bind(socketAddress);
-            socket = socketChannel.socket();
+            socket = new DatagramSocket(socketAddress);
         } else {
             for (int tries = 0;; tries++) {
                 try {
-                    socketChannel = DatagramChannel.open();
-                    socketChannel.connect(socketAddress);
-                    socket = socketChannel.socket();
+                    socket = new DatagramSocket();
+                    socket.connect(socketAddress);
                     break;
                 } catch (final ConnectException e) {
-                    socketChannel.close();
-                    socketChannel = null;
-                    if (socket != null) {
-                        socket.close();
-                        socket = null;
-                    }
+                    socket.close();
+                    socket = null;
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -69,12 +64,9 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
                 }
             }
         }
-        //non-blocking datagrams are a lot faster than blocking ones
-        socketChannel.configureBlocking(false);
         socket.setSendBufferSize(socketSize);
         socket.setReceiveBufferSize(socketSize);
-        socket.setTrafficClass(ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
-                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+        socket.setTrafficClass(IPTOS_LOWDELAY | IPTOS_THROUGHPUT);
     }
 
     protected Duration getConnectRetryDelay() {
@@ -87,10 +79,6 @@ public abstract class ADatagramSocketSynchronousChannel implements ISynchronousC
 
     @Override
     public void close() throws IOException {
-        if (socketChannel != null) {
-            socketChannel.close();
-            socketChannel = null;
-        }
         if (socket != null) {
             socket.close();
             socket = null;

@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -37,8 +37,8 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
 
     @Override
     public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        consumer.option(ChannelOption.IP_TOS, ABlockingDatagramSocketSynchronousChannel.IPTOS_LOWDELAY
-                | ABlockingDatagramSocketSynchronousChannel.IPTOS_THROUGHPUT);
+        consumer.option(ChannelOption.IP_TOS, ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
         consumer.option(ChannelOption.SO_RCVBUF, socketSize);
     }

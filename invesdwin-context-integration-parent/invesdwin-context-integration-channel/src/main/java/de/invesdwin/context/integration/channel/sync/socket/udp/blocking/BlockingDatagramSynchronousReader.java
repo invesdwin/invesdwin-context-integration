@@ -13,13 +13,13 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class BlockingDatagramSocketSynchronousReader extends ABlockingDatagramSocketSynchronousChannel
+public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
 
     protected IByteBuffer packetBuffer;
     protected DatagramPacket packet;
 
-    public BlockingDatagramSocketSynchronousReader(final SocketAddress socketAddress,
+    public BlockingDatagramSynchronousReader(final SocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
         super(socketAddress, true, estimatedMaxMessageSize);
     }
