@@ -46,8 +46,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        final boolean nioWorkaround = channel.getDatagramChannel() instanceof NioDatagramChannel;
-        if (nioWorkaround) {
+        final boolean safeWriter = channel.getDatagramChannel() instanceof NioDatagramChannel;
+        if (safeWriter) {
             writer = () -> {
                 channel.getDatagramChannel().writeAndFlush(datagramPacket);
             };
@@ -81,6 +81,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             messageBuffer = null;
             datagramPacket.release();
             datagramPacket = null;
+            writer = null;
         }
         if (channel != null) {
             channel.close();
