@@ -88,6 +88,7 @@
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
 		<version.aeron>1.35.0</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
+		<version.jnanomsg>0.4.5</version.jnanomsg>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
@@ -1112,6 +1113,11 @@
 				<groupId>org.zeromq</groupId>
 				<artifactId>jzmq-api</artifactId>
 				<version>${version.jzmq-api}</version>
+			</dependency>
+			<dependency>
+				<groupId>cs</groupId>
+				<artifactId>jnanomsg</artifactId>
+				<version>${version.jnanomsg}</version>
 			</dependency>
 
 			<dependency>

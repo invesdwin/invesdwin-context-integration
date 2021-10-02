@@ -47,6 +47,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>cs</groupId>
+			<artifactId>jnanomsg</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryonet</artifactId>
 			<scope>provided</scope>
