@@ -35,7 +35,7 @@ public class NativeSocketSynchronousWriter extends ASocketSynchronousChannel
         if (socket != null) {
             socket.shutdownInput();
         }
-        fd = Jvm.getValue(socket.getChannel(), "fd");
+        fd = Jvm.getValue(socketChannel, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);

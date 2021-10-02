@@ -35,7 +35,7 @@ public class NativeDatagramSynchronousWriter extends ADatagramSynchronousChannel
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
-        fd = Jvm.getValue(socket.getChannel(), "fd");
+        fd = Jvm.getValue(socketChannel, "fd");
     }
 
     @Override

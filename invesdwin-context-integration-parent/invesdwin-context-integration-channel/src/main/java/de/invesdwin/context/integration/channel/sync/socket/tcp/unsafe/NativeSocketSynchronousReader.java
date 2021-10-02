@@ -35,7 +35,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         if (socket != null) {
             socket.shutdownOutput();
         }
-        fd = Jvm.getValue(socket.getChannel(), "fd");
+        fd = Jvm.getValue(socketChannel, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         position = 0;
