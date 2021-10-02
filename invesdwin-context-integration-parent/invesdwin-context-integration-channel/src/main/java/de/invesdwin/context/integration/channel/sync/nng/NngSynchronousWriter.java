@@ -20,9 +20,8 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
 
-    public NngSynchronousWriter(final INngSocketType socketType, final String addr, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketType, addr, server, estimatedMaxMessageSize);
+    public NngSynchronousWriter(final INngSocketType socketType, final String addr, final boolean server) {
+        super(socketType, addr, server);
     }
 
     @Override
@@ -57,7 +56,6 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.write(messageBuffer);
-            buffer.putInt(sizeIndex, size);
             socket.sendMessage(buffer.asNioByteBuffer(0, messageIndex + size));
         } catch (final NngException e) {
             throw new IOException(e);

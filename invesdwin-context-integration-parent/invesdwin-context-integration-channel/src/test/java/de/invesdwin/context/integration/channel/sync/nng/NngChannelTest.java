@@ -75,15 +75,15 @@ public class NngChannelTest extends AChannelTest {
     private void runNngPerformanceTest(final INngSocketType socketType, final String responseChannel,
             final String requestChannel) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NngSynchronousWriter(socketType,
-                responseChannel, true, MESSAGE_SIZE);
-        final ISynchronousReader<IByteBuffer> requestReader = new NngSynchronousReader(socketType, requestChannel, true,
-                MESSAGE_SIZE);
+                responseChannel, true);
+        final ISynchronousReader<IByteBuffer> requestReader = new NngSynchronousReader(socketType, requestChannel,
+                true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNngPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NngSynchronousWriter(socketType, requestChannel,
-                false, MESSAGE_SIZE);
+                false);
         final ISynchronousReader<IByteBuffer> responseReader = new NngSynchronousReader(socketType, responseChannel,
-                false, MESSAGE_SIZE);
+                false);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

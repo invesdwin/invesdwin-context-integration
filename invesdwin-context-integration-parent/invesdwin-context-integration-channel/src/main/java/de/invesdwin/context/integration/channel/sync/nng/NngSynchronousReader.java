@@ -23,9 +23,8 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
     private Message messageToBeFreed;
     private java.nio.ByteBuffer body;
 
-    public NngSynchronousReader(final INngSocketType socketType, final String addr, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketType, addr, server, estimatedMaxMessageSize);
+    public NngSynchronousReader(final INngSocketType socketType, final String addr, final boolean server) {
+        super(socketType, addr, server);
     }
 
     @Override

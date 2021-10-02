@@ -17,30 +17,18 @@ import io.sisu.nng.pubsub.Sub0Socket;
 @NotThreadSafe
 public abstract class ANngSynchronousChannel implements ISynchronousChannel {
 
-    private static final int SIZE_INDEX = 0;
-    private static final int SIZE_SIZE = Integer.BYTES;
-
-    private static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
-
-    protected final int estimatedMaxMessageSize;
-    protected final int socketSize;
-
     protected Socket socket;
 
     protected final INngSocketType socketType;
     protected final String addr;
     protected final boolean server;
     protected byte[] topic = Bytes.EMPTY_ARRAY;
-    protected int sizeIndex = -1;
     protected int messageIndex = -1;
 
-    public ANngSynchronousChannel(final INngSocketType socketType, final String addr, final boolean server,
-            final int estimatedMaxMessageSize) {
+    public ANngSynchronousChannel(final INngSocketType socketType, final String addr, final boolean server) {
         this.socketType = socketType;
         this.addr = addr;
         this.server = server;
-        this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     @Override
@@ -72,8 +60,7 @@ public abstract class ANngSynchronousChannel implements ISynchronousChannel {
 
     private void updateIndexes() {
         final int topicSize = topic.length;
-        sizeIndex = topicSize + SIZE_INDEX;
-        messageIndex = MESSAGE_INDEX + topicSize;
+        messageIndex = topicSize + topicSize;
     }
 
     /**
