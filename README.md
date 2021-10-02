@@ -131,7 +131,7 @@ New Benchmarks (2021, Core i9-9900k with SSD, Java 16; best in class marked by `
 Network    NettyDatagramOio (loopback)            Records:     1.00/s     => ~99.99% slower (threading model unsuitable)
 Network    NettySocketOio (loopback)              Records:     1.01/s     => ~99.99% slower (threading model unsuitable)
 Network    NngTcp                                 Records:    13.33/ms    => ~87% slower
-Thread     NngInproc                              Records:    28.93/ms    => ~73 faster
+Thread     NngInproc                              Records:    28.93/ms    => ~73% slower
 Network    NettySocketIOUring (loopback)          Records:    29.97/ms    => ~72% slower
 Network    JnanomsgTcp                            Records:    32.94/ms    => ~69% slower
 Network    CzmqTcp                                Records:    35.24/ms    => ~67% slower
