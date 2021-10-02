@@ -4,7 +4,6 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.epoll.EpollChannelOption;
 import io.netty.channel.oio.OioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.oio.OioDatagramChannel;
@@ -41,8 +40,6 @@ public class OioNettyDatagramChannelType implements INettyDatagramChannelType {
     @Override
     public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
         NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize);
-        //http://vger.kernel.org/netconf2019_files/udp_gro.pdf
-        consumer.option(EpollChannelOption.UDP_GRO, true);
     }
 
     @Override

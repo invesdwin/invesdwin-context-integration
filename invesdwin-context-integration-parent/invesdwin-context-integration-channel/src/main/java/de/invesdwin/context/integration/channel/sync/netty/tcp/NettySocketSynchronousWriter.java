@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.socket.oio.OioSocketChannel;
+import io.netty.channel.socket.SocketChannel;
 import io.netty.incubator.channel.uring.IOUringSocketChannel;
 
 @NotThreadSafe
@@ -43,8 +43,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         channel.open(null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        final boolean safeWriter = channel.socketChannel instanceof IOUringSocketChannel
-                || channel.socketChannel instanceof OioSocketChannel;
+        final boolean safeWriter = isSafeWriter(channel.getSocketChannel());
         if (safeWriter) {
             writer = (message) -> {
                 channel.getSocketChannel().writeAndFlush(buf);
@@ -61,6 +60,12 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         this.buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
+    }
+
+    @SuppressWarnings("deprecation")
+    protected boolean isSafeWriter(final SocketChannel socketChannel) {
+        return socketChannel instanceof IOUringSocketChannel
+                || socketChannel instanceof io.netty.channel.socket.oio.OioSocketChannel;
     }
 
     @Override

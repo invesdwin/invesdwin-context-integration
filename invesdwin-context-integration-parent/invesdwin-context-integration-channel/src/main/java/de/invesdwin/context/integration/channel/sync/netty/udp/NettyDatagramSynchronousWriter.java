@@ -16,8 +16,10 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.incubator.channel.uring.IOUringDatagramChannel;
 
 @NotThreadSafe
 public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -46,7 +48,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        final boolean safeWriter = channel.getDatagramChannel() instanceof NioDatagramChannel;
+        final boolean safeWriter = isSafeWriter(channel.getDatagramChannel());
         if (safeWriter) {
             writer = () -> {
                 channel.getDatagramChannel().writeAndFlush(datagramPacket);
@@ -65,6 +67,12 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramChannel.MESSAGE_INDEX);
         this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
         this.datagramPacket.retain();
+    }
+
+    @SuppressWarnings("deprecation")
+    protected boolean isSafeWriter(final DatagramChannel datagramChannel) {
+        return datagramChannel instanceof io.netty.channel.socket.oio.OioDatagramChannel
+                || datagramChannel instanceof NioDatagramChannel || datagramChannel instanceof IOUringDatagramChannel;
     }
 
     @Override
