@@ -23,11 +23,6 @@ public enum JnanomsgSocketType implements IJnanomsgSocketType {
         public AbstractSocket newReaderSocket() {
             return new PairSocket();
         }
-
-        @Override
-        public boolean isPublishSubscribeTopic() {
-            return false;
-        }
     },
     PUBSUB {
         @Override
@@ -38,11 +33,6 @@ public enum JnanomsgSocketType implements IJnanomsgSocketType {
         @Override
         public AbstractSocket newReaderSocket() {
             return new SubSocket();
-        }
-
-        @Override
-        public boolean isPublishSubscribeTopic() {
-            return true;
         }
     },
     PUSHPULL {
@@ -55,11 +45,6 @@ public enum JnanomsgSocketType implements IJnanomsgSocketType {
         public AbstractSocket newReaderSocket() {
             return new PullSocket();
         }
-
-        @Override
-        public boolean isPublishSubscribeTopic() {
-            return false;
-        }
     },
     REQREP {
         @Override
@@ -71,11 +56,6 @@ public enum JnanomsgSocketType implements IJnanomsgSocketType {
         public AbstractSocket newReaderSocket() {
             return new RepSocket();
         }
-
-        @Override
-        public boolean isPublishSubscribeTopic() {
-            return false;
-        }
-    },;
+    };
 
 }

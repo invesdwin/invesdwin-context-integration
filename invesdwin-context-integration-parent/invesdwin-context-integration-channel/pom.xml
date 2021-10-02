@@ -52,6 +52,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>io.sisu</groupId>
+			<artifactId>nng-java</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.esotericsoftware</groupId>
 			<artifactId>kryonet</artifactId>
 			<scope>provided</scope>

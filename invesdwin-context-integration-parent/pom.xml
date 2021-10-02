@@ -89,6 +89,7 @@
 		<version.aeron>1.35.0</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
 		<version.jnanomsg>0.4.5</version.jnanomsg>
+		<version.nng-java>1.4.0-inv</version.nng-java>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
@@ -1118,6 +1119,11 @@
 				<groupId>cs</groupId>
 				<artifactId>jnanomsg</artifactId>
 				<version>${version.jnanomsg}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.sisu</groupId>
+				<artifactId>nng-java</artifactId>
+				<version>${version.nng-java}</version>
 			</dependency>
 
 			<dependency>

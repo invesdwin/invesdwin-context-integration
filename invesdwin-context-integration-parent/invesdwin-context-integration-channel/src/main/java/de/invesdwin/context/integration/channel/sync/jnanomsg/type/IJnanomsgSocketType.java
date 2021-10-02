@@ -8,6 +8,4 @@ public interface IJnanomsgSocketType {
 
     AbstractSocket newReaderSocket();
 
-    boolean isPublishSubscribeTopic();
-
 }
