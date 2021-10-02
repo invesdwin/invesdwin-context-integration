@@ -21,7 +21,6 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
 
     public static final boolean SERVER = true;
     private IByteBuffer buffer;
-    private java.nio.ByteBuffer messageBuffer;
     private FileDescriptor fd;
     private int position;
 
@@ -34,7 +33,6 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
         super.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = buffer.asNioByteBuffer(0, socketSize);
         fd = Jvm.getValue(socket.getChannel(), "fd");
     }
 
@@ -42,7 +40,6 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
     public void close() throws IOException {
         super.close();
         buffer = null;
-        messageBuffer = null;
         fd = null;
         position = 0;
     }
