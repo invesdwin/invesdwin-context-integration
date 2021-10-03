@@ -111,9 +111,9 @@ The abstraction in **invesdwin-context-integration-channel** has its origin in t
 	- **Memory Mapping**: the classes `MappedSynchronousReader` and `MappedSynchronousWriter` provide channel implementations that are based on memory mapped files (inspired by [Chronicle-Queue](https://github.com/OpenHFT/Chronicle-Queue) and [MappedBus](https://github.com/caplogic/Mappedbus) while making it even simpler for maximum speed). This implementation has the benefit of being supported on all operating systems. It has less risk of accidentally blocking when things go really wrong because it is non-blocking by nature. And this implementation is slightly faster than Named Pipes for the workloads we have tested, but your mileage might vary and you should test it yourself. Anyway you should still keep communication to a minimum, thus making chunks large enough during iteration to reduce synchronization overhead between the processes, for this a bit of fine tuning on your communication layer might be required.
 		- for determining where to place the memory mapped files: `SynchronousChannels.getTmpfsFolderOrFallback()` gives the `/dev/shm` folder when available or the temp directory as a fallback for e.g. Windows. Using [tmpfs](https://en.wikipedia.org/wiki/Tmpfs) could improve the throughput a bit, since the OS will then not even try to flush the memory mapped file to disk.
 		- this implementation supports only one writer and theoretically supports multiple readers for a publish/subscribe or multicast scenario of pushing data to clients (e.g. a price feed). But it does not synchronize the reads and the writer might overwrite data while one of the readers still reads it. You would have to implement some sort of synchronization between the processes to prevent this. Another problem might be the synchronous nature of there always being only one message in the channel, clients might miss a few messages if they are not fast enough. A better solution for use-cases like this would be to use [MappedBus](https://github.com/caplogic/Mappedbus) or [Chronicle-Queue](https://github.com/OpenHFT/Chronicle-Queue) directly. Those solutions provide more than unidirectional peer to peer channels and can synchronize multiple readers and writers. For comparison, this implementation does not want to pay the overhead price of synchronization and aims to provide the fastest unidirectional peer to peer channel possible.
-	- **Socket**: the classes `SocketSynchronousReader` and `SocketSynchronousWriter` provide implementations for TCP/IP socket communication for when you actually have to go across computers on a network. If you want to use UDP/IP you can use the classes `DatagramSocketSynchronousReader` and `DatagramSocketSynchronousWriter`, but beware that packets can get lost when using UDP, so you need to implement retry behaviours on your client/server. It is not recommended to use these implementations for IPC on localhost, since they are quite slow in comparison to other implementations.
-	- **Queue**: the classes `QueueSynchronousReader` and `QueueSynchronousWriter` provide implementations for non-blocking `java.util.Queue` usage for inter-thread-communication inside the JVM, e.g. for using `LinkedBlockingQueue`. The classes `BlockingQueueSynchronousReader` and `BlockingQueueSynchronousWriter` provide an alternative for blocking `java.util.concurrent.BlockingQueue` implementations like `SynchronousQueue` which do not support non-blocking usage. Be aware that not all queue implementations are thread safe, so you might want to synchronize the channels via `SynchronousChannels.synchronize(...)`. Since it might be unfortunate to use the serialization with ISynchronousQueue inside the JVM on queues, this should only be considered as a fallback solution for restricted environments where no faster alternative implementation is supported (e.g. java applets with tight security constraints). Using queues directly with your objects should yield better performance though, if you can live with pass-by-reference or work around that yourself.
-- **ASpinWait**:  the channel implementations are non-blocking by themselves (Named Pipes are normally blocking, but the implementation uses them in a non-blocking way, while Memory Mapping is per default non-blocking). This causes the problem of how one should wait on a reader without causing delays from sleeps or causing CPU load from spinning. This problem is solved by `ASpinWait`. It first spins when things are rolling and falls back to a fast sleep interval when communication has cooled down (similar to what `java.util.concurrent.SynchronousQueue` does between threads). The actual timings can be fully customized. To use this class, just override the `isConditionFulfilled()` method by calling `reader.hasNext()`.
+	- **Native Socket**: the classes `NativeSocketSynchronousReader` and `NativeSocketSynchronousWriter` provide implementations for TCP/IP socket communication for when you actually have to go across computers on a network. If you want to use UDP/IP you can use the classes `NativeDatagramSynchronousReader` and `NativeDatagramSynchronousWriter`, but beware that packets can get lost when using UDP, so you need to implement retry behaviours on your client/server. It is not recommended to use these implementations for IPC on localhost, since they are quite slow in comparison to other implementations. There are also Netty variants of these channels so you can use Epoll, KQueue and IOUring if you want. The goal of these implementations is to use as little Java code as possible for lowering latency with zero garbage and zero copy. They are suitable to be accelerated using special network cards that support kernel bypass with [OpenOnload](https://github.com/Xilinx-CNS/onload). This might lead to an additional 60%-80% latency reduction. [Aeron](https://github.com/real-logic/aeron) could also be used with the native MediaDriver together with kernel bypass for reliable low latency UDP transport. The Java process talks to the MediaDriver via shared memory, which removes JNI overhead (at the cost of thread context switching). Another (not yet tested) alternative could be to use a native Netty implementation with the [Quic](https://github.com/netty/netty-incubator-codec-quic) transport which also provides reliable UDP. [nettty-tcnative-boringssl](https://netty.io/wiki/forked-tomcat-native.html) could also be used for a low latency secure native TCP channel (not yet tested). Though for server loads it might be better to use the standard asynchronous handler threading model of Netty via `NettySocketAsynchronousChannel` or `NettyDatagramAsynchronousChannel` using an `IAsynchronousHandler`. This should scale to thousands of connections with high throughput. The SynchronousChannels are better suitable for high performance peer-to-peer connections on the other hand.
+	- **Queue**: the classes `QueueSynchronousReader` and `QueueSynchronousWriter` provide implementations for non-blocking `java.util.Queue` usage for inter-thread-communication inside the JVM, e.g. for using Agrona `ConcurrentArrayQueue`. Though the various Disruptor implementations (LMAX, Conversant) should be tested as well for high concurrency loads. The classes `BlockingQueueSynchronousReader` and `BlockingQueueSynchronousWriter` provide an alternative for blocking `java.util.concurrent.BlockingQueue` implementations like `SynchronousQueue` which do not support non-blocking usage. Be aware that not all queue implementations are thread safe, so you might want to synchronize the channels via `SynchronousChannels.synchronize(...)`.
+- **ASpinWait**:  the channel implementations are non-blocking by themselves (Named Pipes are normally blocking, but the implementation uses them in a non-blocking way, while Memory Mapping is per default non-blocking). This causes the problem of how one should wait on a reader without causing delays from sleeps or causing CPU load from spinning. This problem is solved by `ASpinWait`. It first spins when things are rolling and falls back to a fast sleep interval when communication has cooled down (similar to what `java.util.concurrent.SynchronousQueue` does between threads). The actual timings can be fully customized. To keep CPU usage to a minimum, spins can be disabled entirely in favour of waits/sleeps. To use this class, just override the `isConditionFulfilled()` method by calling `reader.hasNext()`.
 - **Performance**: here are some performance measurements against in-process queue implementations using one channel for requests and another separate one for responses, thus each record (of 10,000,000), each involving two messages (becoming 20,000,000), is passed between two threads (one simulating a server and the other one a client). This shows that memory mapping might even be useful as a faster alternative to queues for inter-thread-communication besides it being designed for inter-process-communication (as long as the serialization is cheap):
 
 Old Benchmarks (2016, Core i7-4790K with SSD, Java 8):
@@ -128,24 +128,45 @@ Mapped Memory (tmpfs)      Records:  4237.29/ms  in   2360 ms    => ~15 times as
 ```
 New Benchmarks (2021, Core i9-9900k with SSD, Java 16; best in class marked by `*`):
 ```
+Network    NettyDatagramOio (loopback)            Records:     1.00/s     => ~99.99% slower (threading model unsuitable)
+Network    NettySocketOio (loopback)              Records:     1.01/s     => ~99.99% slower (threading model unsuitable)
+Network    NngTcp                                 Records:    13.33/ms    => ~87% slower
+Thread     NngInproc                              Records:    28.93/ms    => ~73% slower
+Network    NettySocketIOUring (loopback)          Records:    29.97/ms    => ~72% slower
 Network    JnanomsgTcp                            Records:    32.94/ms    => ~69% slower
 Network    CzmqTcp                                Records:    35.24/ms    => ~67% slower
 Process    JeromqIpc                              Records:    39.31/ms    => ~63% slower
 Network    JzmqTcp                                Records:    39.37/ms    => ~63% slower
 Network    JeromqTcp                              Records:    39.84/ms    => ~63% slower
+Network    NettyDatagramIOUring (loopback)        Records:    40.56/ms    => ~62% slower
 Process    CzmqIpc                                Records:    45.13/ms    => ~58% slower
+Network    NettyDatagramNio (loopback)            Records:    46.04/ms    => ~57% slower
 Process    JnanomsgIpc                            Records:    47.68/ms    => ~55% slower
 Process    JzmqIpc                                Records:    55.35/ms    => ~48% slower
+Network    AsyncNettySocketOio (loopback)         Records:    56.68/ms    => ~47% faster (using async handlers for servers)
+Network    AsyncNettySocketIOUring (loopback)     Records:    61.21/ms    => ~42% faster (using async handlers for servers)
+Network    NettySocketNio (loopback)              Records:    61.57/ms    => ~42% slower
 Network    KryonetTcp                             Records:    62.71/ms    => ~41% slower
+Network    AsyncNettyDatagramIOUring (loopback)   Records:    64.13/ms    => ~40% slower (unreliable; using async handlers for servers)
+Network    AsyncNettySocketNio (loopback)         Records:    72.57/ms    => ~32% faster (using async handlers for servers)
+Network    AsyncNettyDatagramOio (loopback)       Records:    76.74/ms    => ~28% slower (unreliable; using async handlers for servers)
+Network    AsyncNettyDatagramNio (loopback)       Records:    80.97/ms    => ~24% slower (unreliable; using async handlers for servers)
 Network    KryonetUdp                             Records:    86.14/ms    => ~19% slower
+Network    NettySocketEpoll (loopback)            Records:    99.24/ms    => ~7% slower
 Network    BlockingSocket (loopback)              Records:   106.51/ms    => using this as baseline
 Thread     JnanomsgInproc                         Records:   111.31/ms    => ~4% faster
 Network    BlockingDatagramSocket (loopback)      Records:   113.16/ms    => ~6% faster (unreliable)
+Network    NativeNettySocketIOUring (loopback)    Records:   129.90/ms    => ~22% faster
 Network    SocketChannel (loopback)               Records:   131.08/ms    => ~23% faster
+Network    NativeNettySocketEpoll (loopback)      Records:   131.52/ms    => ~23.5% faster
 Thread     CzmqInproc                             Records:   132.52/ms    => ~24% faster
 Network    ChronicleNetwork (loopback)            Records:   133.49/ms    => ~25% faster (using UnsafeFastJ8SocketChannel)
 Network    NativeSocketChannel (loopback)         Records:   134.07/ms    => ~26% faster
+Network    AsyncNettySocketEpoll (loopback)       Records:   136.53/ms    => ~28% faster (using async handlers for servers)
+Network    NettyDatagramEpoll (loopback)          Records:   142.09/ms    => ~33% faster (unreliable)
+Network    AsyncNettyDatagramEpoll (loopback)     Records:   144.79/ms    => ~36% faster (unreliable; using async handlers for servers)
 Network*   AeronUDP (loopback)                    Records:   176.53/ms    => ~65% faster
+Network    NativeNettyDatagramEpoll (loopback)    Records:   236.14/ms    => ~2.2 times as fast (unreliable)
 Network    DatagramChannel (loopback)             Records:   248.51/ms    => ~2.3 times as fast (unreliable)
 Network    NativeDatagramChannel (loopback)       Records:   254.21/ms    => ~2.4 times as fast (unreliable)
 Process    ChronicleQueue                         Records:   294.38/ms    => ~2.76 times as fast
@@ -156,39 +177,40 @@ Process    NamedPipe (Native)                     Records:   371.31/ms    => ~3.
 Process    UnixDomainSocket                       Records:   375.64/ms    => ~3.52 times as fast (requires Java 16 for NIO support)
 Process    NativeUnixDomainSocket                 Records:   380.43/ms    => ~3.57 times as fast (requires Java 16 for NIO support)
 Process    NamedPipe (FileChannel)                Records:   425.64/ms    => ~4 times as fast
-Thread     LockedReference                        Records:   782.04/ms    => ~7.3 times as fast
+Thread     LockedReference                        Records:   912.16/ms    => ~8.6 times as fast
 Process    Jocket                                 Records:  1204.82/ms    => ~11.3 times as fast (unstable; deadlocks after 2-3 million messages; their tests show ~1792.11/ms which would be ~16.8 times faster; had to test on Java 8)
 Thread     LinkedBlockingDeque                    Records:  1520.45/ms    => ~14.3 times as fast
 Thread     ArrayBlockingQueue                     Records:  1535.72/ms    => ~14.4 times as fast 
 Thread     LinkedBlockingQueue                    Records:  1716.12/ms    => ~16.1 times as fast
 Thread     ArrayDeque (synced)                    Records:  1754.14/ms    => ~16.4 times as fast
-Thread     SynchronizedReference                  Records:  1992.79/ms    => ~18.7 times as fast
 Thread     SynchronousQueue                       Records:  2207.46/ms    => ~20.7 times as fast
-Thread     LmaxDisruptorQueue                     Records:  2646.55/ms    => ~24.8 times as fast
+Thread     SynchronizedReference                  Records:  2240.90/ms    => ~21 times as fast
+Thread     LmaxDisruptorQueue                     Records:  2710.39/ms    => ~25.4 times as fast
 Thread     LinkedTransferQueue                    Records:  2812.62/ms    => ~26.4 times as fast
 Thread     ConcurrentLinkedDeque                  Records:  2844.95/ms    => ~26.7 times as fast
-Thread     AtomicReference                        Records:  2991.95/ms    => ~28.1 times as fast
-Thread     VolatileReference                      Records:  3268.72/ms    => ~30.7 times as fast
+Thread     LmaxDisruptor                          Records:  3250.13/ms    => ~30.5 times as fast
 Thread     ConversantDisruptorConcurrent          Records:  3389.03/ms    => ~31.8 times as fast
-Thread     AgronaManyToOneRingBuffer              Records:  3412.39/ms    => ~32 times as fast
 Thread     ConversantDisruptorBlocking            Records:  3498.95/ms    => ~32.85 times as fast
-Thread     ConversantPushPullBlocking             Records:  3517.41/ms    => ~33 times as fast
+Thread     AgronaManyToOneRingBuffer              Records:  3510.74/ms    => ~32.96 times as fast
+Thread     ConversantPushPullBlocking             Records:  3628.18/ms    => ~34 times as fast
 Thread     JctoolsSpscLinkedAtomic                Records:  3762.94/ms    => ~35.3 times as fast
 Thread     ConversantPushPullConcurrent           Records:  3777.29/ms    => ~35.5 times as fast
 Thread     JctoolsSpscLinked                      Records:  3885.46/ms    => ~36.5 times as fast
-Thread     NettyMpscQueue                         Records:  3924.65/ms    => ~36.8 times as fast
+Thread     AtomicReference                        Records:  3964.79/ms    => ~37.2 times as fast
 Thread     NettySpscQueue                         Records:  3995.21/ms    => ~37.5 times as fast
-Thread     NettyFixedMpscQueue                    Records:  4083.30/ms    => ~38.3 times as fast
-Thread     JctoolsSpscArray                       Records:  4145.59/ms    => ~38.9 times as fast
+Thread     NettyMpscQueue                         Records:  4086.30/ms    => ~38.4 times as fast
+Thread     NettyFixedMpscQueue                    Records:  4141.13/ms    => ~38.88 times as fast
 Thread     AgronaManyToOneQueue                   Records:  4178.33/ms    => ~39.2 times as fast
 Process    AeronIPC                               Records:  4209.11/ms    => ~39.5 times as fast
 Thread     AgronaBroadcast                        Records:  4220.66/ms    => ~39.6 times as fast
 Thread     AgronaManyToManyQueue                  Records:  4235.49/ms    => ~39.8 times as fast
+Thread     JctoolsSpscArray                       Records:  4337.64/ms    => ~40.7 times as fast
 Thread     JctoolsSpscAtomicArray                 Records:  4368.72/ms    => ~41 times as fast
-Thread*    AgronaOneToOneQueue                    Records:  4377.52/ms    => ~41.1 times as fast (works with plain objects)
-Thread     AgronaOneToOneRingBuffer (ZeroCopy)    Records:  4507.35/ms    => ~42.3 times as fast
+Thread*    AgronaOneToOneQueue                    Records:  4466.68/ms    => ~42 times as fast (works with plain objects)
+Thread     VolatileReference                      Records:  4733.50/ms    => ~44.4 times as fast
 Thread     AgronaOneToOneRingBuffer (SafeCopy)    Records:  4831.85/ms    => ~45.3 times as fast
-Process    Mapped Memory                          Records:  6378.77/ms    => ~59.9 times as fast
+Thread     AgronaOneToOneRingBuffer (ZeroCopy)    Records:  4893.33/ms    => ~45.9 times as fast
+Process    Mapped Memory                          Records:  6521.46/ms    => ~61.2 times as fast
 Process*   Mapped Memory (tmpfs)                  Records:  6711.41/ms    => ~63 times as fast
 ```
 - **Dynamic Client/Server**: you could utilize RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endspoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
