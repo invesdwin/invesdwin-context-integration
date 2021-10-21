@@ -1,0 +1,53 @@
+package de.invesdwin.context.integration.channel;
+
+import javax.annotation.concurrent.Immutable;
+
+import org.junit.runner.RunWith;
+import org.junit.runners.Suite;
+import org.junit.runners.Suite.SuiteClasses;
+
+import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketHandlerTest;
+import de.invesdwin.context.integration.channel.async.netty.udp.NettyDatagramHandlerTest;
+import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
+import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
+import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
+import de.invesdwin.context.integration.channel.sync.chronicle.network.ChronicleNetworkChannelTest;
+import de.invesdwin.context.integration.channel.sync.chronicle.queue.ChronicleQueueChannelTest;
+import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
+import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
+import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
+import de.invesdwin.context.integration.channel.sync.lmax.LmaxChannelTest;
+import de.invesdwin.context.integration.channel.sync.mapped.MappedChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.NettyQueueChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativeDatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.pipe.PipeChannelTest;
+import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeChannelTest;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeChannelTest;
+import de.invesdwin.context.integration.channel.sync.queue.QueueChannelTest;
+import de.invesdwin.context.integration.channel.sync.reference.ReferenceChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramChannelTest;
+
+// CHECKSTYLE:OFF
+@RunWith(Suite.class)
+@SuiteClasses({ NettySocketHandlerTest.class, NettyDatagramHandlerTest.class, AeronChannelTest.class,
+        AgronaChannelTest.class, BufferingIteratorChannelTest.class, ChronicleNetworkChannelTest.class,
+        ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
+        KryonetChannelTest.class, LmaxChannelTest.class, MappedChannelTest.class, NettySocketChannelTest.class,
+        NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
+        NettyQueueChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class,
+        QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
+        NativeSocketChannelTest.class, DatagramChannelTest.class, BlockingDatagramChannelTest.class,
+        NativeDatagramChannelTest.class })
+@Immutable
+public class ChannelTestSuite {
+    //CHECKSTYLE:ON
+
+}

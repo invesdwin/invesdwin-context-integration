@@ -10,6 +10,21 @@
 	<artifactId>invesdwin-context-integration-channel</artifactId>
 	<packaging>jar</packaging>
 
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<include>de/invesdwin/context/integration/channel/ChannelTestSuite.java</include>
+					</excludes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
