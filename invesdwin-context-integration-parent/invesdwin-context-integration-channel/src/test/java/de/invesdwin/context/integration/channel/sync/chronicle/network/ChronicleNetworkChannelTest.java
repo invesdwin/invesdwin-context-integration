@@ -20,8 +20,8 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
 
     @Test
     public void testChronicleSocketPerformance() throws InterruptedException {
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", 17878);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", 17879);
         runChronicleSocketPerformanceTest(ChronicleSocketChannelType.VANILLA, responseAddress, requestAddress);
     }
 

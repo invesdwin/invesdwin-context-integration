@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.lmax;
 
 import java.util.Queue;
-import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -28,13 +27,6 @@ public class LmaxChannelTest extends AChannelTest {
         final Queue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
         final Queue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
-    }
-
-    @Test
-    public void testLmaxDisruptorQueuePerformanceWithBlocking() throws InterruptedException {
-        final BlockingQueue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
-        final BlockingQueue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
-        runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
     @Test

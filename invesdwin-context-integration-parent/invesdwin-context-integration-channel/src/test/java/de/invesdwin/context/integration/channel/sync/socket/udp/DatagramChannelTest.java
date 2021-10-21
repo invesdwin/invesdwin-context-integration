@@ -20,8 +20,8 @@ public class DatagramChannelTest extends AChannelTest {
 
     @Test
     public void testNioDatagramSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 27878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 27879);
         runNioDatagramSocketPerformanceTest(responseAddress, requestAddress);
     }
 

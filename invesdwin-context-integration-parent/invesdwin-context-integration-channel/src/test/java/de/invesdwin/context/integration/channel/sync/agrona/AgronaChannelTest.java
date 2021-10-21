@@ -13,6 +13,7 @@ import org.agrona.concurrent.broadcast.BroadcastBufferDescriptor;
 import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.OneToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -86,6 +87,7 @@ public class AgronaChannelTest extends AChannelTest {
         runAgronaRingBufferPerformanceTest(responseChannel, requestChannel, zeroCopy);
     }
 
+    @Ignore
     @Test
     public void testAgronaManyToOneRingBufferPerformanceWithZeroCopy() throws InterruptedException {
         final int bufferSize = 4096 + RingBufferDescriptor.TRAILER_LENGTH;

@@ -19,8 +19,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 public class BlockingDatagramChannelTest extends AChannelTest {
     @Test
     public void testBlockingDatagramSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 37878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 37879);
         runBlockingDatagramSocketPerformanceTest(responseAddress, requestAddress);
     }
 

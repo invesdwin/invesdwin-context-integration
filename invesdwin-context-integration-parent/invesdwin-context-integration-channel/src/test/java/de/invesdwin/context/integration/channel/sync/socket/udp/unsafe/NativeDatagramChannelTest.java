@@ -19,8 +19,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 public class NativeDatagramChannelTest extends AChannelTest {
     @Test
     public void testNativeDatagramSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 7878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 7879);
+        final SocketAddress responseAddress = new InetSocketAddress("localhost", 34878);
+        final SocketAddress requestAddress = new InetSocketAddress("localhost", 34879);
         runNativeDatagramSocketPerformanceTest(responseAddress, requestAddress);
     }
 

@@ -6,12 +6,9 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 import org.junit.runners.Suite.SuiteClasses;
 
-import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketHandlerTest;
-import de.invesdwin.context.integration.channel.async.netty.udp.NettyDatagramHandlerTest;
 import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
-import de.invesdwin.context.integration.channel.sync.chronicle.network.ChronicleNetworkChannelTest;
 import de.invesdwin.context.integration.channel.sync.chronicle.queue.ChronicleQueueChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
@@ -33,19 +30,16 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.Blockin
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramChannelTest;
 
 // CHECKSTYLE:OFF
 @RunWith(Suite.class)
-@SuiteClasses({ NettySocketHandlerTest.class, NettyDatagramHandlerTest.class, AeronChannelTest.class,
-        AgronaChannelTest.class, BufferingIteratorChannelTest.class, ChronicleNetworkChannelTest.class,
+@SuiteClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
         ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
         KryonetChannelTest.class, LmaxChannelTest.class, MappedChannelTest.class, NettySocketChannelTest.class,
         NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
         NettyQueueChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class,
         QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
-        NativeSocketChannelTest.class, DatagramChannelTest.class, BlockingDatagramChannelTest.class,
-        NativeDatagramChannelTest.class })
+        NativeSocketChannelTest.class, DatagramChannelTest.class, BlockingDatagramChannelTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON
