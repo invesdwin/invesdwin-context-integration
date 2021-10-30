@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import de.invesdwin.context.beans.hook.IStartupHook;
-import de.invesdwin.context.integration.Marshallers;
+import de.invesdwin.context.integration.marshaller.Marshallers;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.IRestRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;

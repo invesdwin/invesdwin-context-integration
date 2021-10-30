@@ -9,7 +9,7 @@ import org.springframework.ws.transport.WebServiceConnection;
 import org.springframework.ws.transport.context.TransportContext;
 import org.springframework.ws.transport.context.TransportContextHolder;
 
-import de.invesdwin.context.integration.IMergedJaxbContextPath;
+import de.invesdwin.context.integration.marshaller.IMergedJaxbContextPath;
 import de.invesdwin.util.lang.Strings;
 
 @ThreadSafe

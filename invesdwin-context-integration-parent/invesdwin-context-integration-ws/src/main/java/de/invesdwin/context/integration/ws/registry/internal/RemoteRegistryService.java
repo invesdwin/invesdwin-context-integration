@@ -11,7 +11,7 @@ import org.springframework.util.Base64Utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import de.invesdwin.context.integration.Marshallers;
+import de.invesdwin.context.integration.marshaller.Marshallers;
 import de.invesdwin.context.integration.retry.RetryLaterException;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
