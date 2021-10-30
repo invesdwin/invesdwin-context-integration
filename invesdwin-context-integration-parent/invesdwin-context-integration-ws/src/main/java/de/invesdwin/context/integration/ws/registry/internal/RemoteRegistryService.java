@@ -11,7 +11,7 @@ import org.springframework.util.Base64Utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import de.invesdwin.context.integration.marshaller.Marshallers;
+import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
 import de.invesdwin.context.integration.retry.RetryLaterException;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
@@ -36,7 +36,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
         final String accessUriEncoded = Base64Utils.encodeToString(accessUri.toString().getBytes());
         final String response = connect(REGISTER_SERVICE_BINDING.replace(SERVICE_NAME_PARAM, serviceNameEncoded)
                 .replace(ACCESS_URI_PARAM, accessUriEncoded)).downloadThrowing();
-        final ServiceBinding result = Marshallers.fromJson(response, REF_SERVICE_BINDING);
+        final ServiceBinding result = MarshallerJsonJackson.fromJson(response, REF_SERVICE_BINDING);
         return result;
     }
 
@@ -47,7 +47,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
         final String accessUriEncoded = Base64Utils.encodeToString(accessUri.toString().getBytes());
         final String response = connect(UNREGISTER_SERVICE_BINDING.replace(SERVICE_NAME_PARAM, serviceNameEncoded)
                 .replace(ACCESS_URI_PARAM, accessUriEncoded)).downloadThrowing();
-        final ServiceBinding result = Marshallers.fromJson(response, REF_SERVICE_BINDING);
+        final ServiceBinding result = MarshallerJsonJackson.fromJson(response, REF_SERVICE_BINDING);
         return result;
     }
 
@@ -56,7 +56,8 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
         final String serviceNameEncoded = URIs.encode(Strings.asStringEmptyText(serviceName));
         final IURIsConnect connect = connect(QUERY_SERVICE_BINDINGS.replace(SERVICE_NAME_PARAM, serviceNameEncoded));
         final String response = connect.downloadThrowing();
-        final Collection<ServiceBinding> result = Marshallers.fromJson(response, REF_SERVICE_BINDING_COLLECTION);
+        final Collection<ServiceBinding> result = MarshallerJsonJackson.fromJson(response,
+                REF_SERVICE_BINDING_COLLECTION);
         return result;
     }
 
