@@ -6,7 +6,7 @@ import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import de.invesdwin.context.integration.marshaller.Marshallers;
+import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
 
 @Provider
 @Immutable
@@ -14,6 +14,6 @@ public class JacksonObjectMapperProvider implements ContextResolver<ObjectMapper
 
     @Override
     public ObjectMapper getContext(final Class<?> type) {
-        return Marshallers.getInstance().getJsonMapper(false);
+        return MarshallerJsonJackson.getInstance().getJsonMapper(false);
     }
 }

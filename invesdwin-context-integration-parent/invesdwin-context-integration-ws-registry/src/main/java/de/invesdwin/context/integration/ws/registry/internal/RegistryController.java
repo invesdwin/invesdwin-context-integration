@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import de.invesdwin.context.beans.hook.IStartupHook;
-import de.invesdwin.context.integration.marshaller.Marshallers;
+import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.IRestRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
@@ -48,7 +48,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
             @PathVariable(SERVICE_NAME) final String serviceName) throws IOException {
         final String serviceNameDecoded = URIs.decode(serviceName);
         final Collection<ServiceBinding> instances = registry.queryServiceBindings(serviceNameDecoded);
-        response.getOutputStream().print(Marshallers.toJson(instances));
+        response.getOutputStream().print(MarshallerJsonJackson.toJson(instances));
     }
 
     @RequestMapping(REGISTER_SERVICE_BINDING)
@@ -58,7 +58,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
         final String serviceNameDecoded = URIs.decode(serviceName);
         final URI accessUriDecoded = URIs.asUri(new String(Base64Utils.decode(accessUri.getBytes())));
         final ServiceBinding instance = registry.registerServiceBinding(serviceNameDecoded, accessUriDecoded);
-        response.getOutputStream().print(Marshallers.toJson(instance));
+        response.getOutputStream().print(MarshallerJsonJackson.toJson(instance));
     }
 
     @RequestMapping(UNREGISTER_SERVICE_BINDING)
@@ -68,7 +68,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
         final String serviceNameDecoded = URIs.decode(serviceName);
         final URI accessUriDecoded = URIs.asUri(new String(Base64Utils.decode(accessUri.getBytes())));
         final ServiceBinding instance = registry.unregisterServiceBinding(serviceNameDecoded, accessUriDecoded);
-        response.getOutputStream().print(Marshallers.toJson(instance));
+        response.getOutputStream().print(MarshallerJsonJackson.toJson(instance));
     }
 
     @RequestMapping(INFO)
