@@ -161,7 +161,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
 
     protected IURIsConnect maybeWithBasicAuth(final IURIsConnect connect) {
         if (String.valueOf(connect.getUri()).contains("/spring-web/")) {
-            connect.withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
+            connect.addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
         }
         return connect;
     }

@@ -65,7 +65,7 @@ public class RegistryServerTest extends APersistenceTest {
     public void testStartServer() throws Exception {
         final String infoUri = IntegrationWsProperties.getRegistryServerUri() + "/registry/info";
         final String info = URIs.connect(infoUri)
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(info).startsWith("There are 0 Services");
         publicationTest.testPublication();
@@ -91,7 +91,7 @@ public class RegistryServerTest extends APersistenceTest {
         final String restQueryResult = URIs
                 .connect(IntegrationProperties.WEBSERVER_BIND_URI
                         + "/spring-web/registry/queryServiceBindings+testService")
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(restQueryResult).contains(accessURI.toString());
 
@@ -100,7 +100,7 @@ public class RegistryServerTest extends APersistenceTest {
         Assertions.assertThat(refreshed.getUpdated()).isAfter(first.getUpdated());
 
         final String restInfoResult = URIs.connect(infoUri)
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(restInfoResult)
                 .as("Unexpected: " + restInfoResult)
@@ -111,7 +111,7 @@ public class RegistryServerTest extends APersistenceTest {
         first.setUpdated(new FDate(0));
         serviceBindingDao.save(first);
         final String restInfoResultAgain = URIs.connect(infoUri)
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .download();
         Assertions.assertThat(restInfoResultAgain)
                 .as("Unexpected: " + restInfoResultAgain)
@@ -120,7 +120,7 @@ public class RegistryServerTest extends APersistenceTest {
         Assertions.assertThat(restInfoResultAgain).contains("1970-01-01T00:00:00.000");
 
         Assertions.assertThat(URIs.connect(infoUri)
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
                 .isDownloadPossible()).isTrue();
 
         //should be deleted

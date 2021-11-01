@@ -76,7 +76,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
 
     private IURIsConnect connect(final String request) {
         return URIs.connect(getBaseUri() + "/" + request)
-                .withBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
+                .addBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
     }
 
     private String getBaseUri() {
