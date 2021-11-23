@@ -179,7 +179,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferWriter output) {
             if (output != null) {
-                final int size = output.write(messageBuffer);
+                final int size = output.writeBuffer(messageBuffer);
                 buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
                 buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
                 buf.retain();

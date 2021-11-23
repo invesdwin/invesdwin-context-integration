@@ -98,7 +98,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     private void writeFuture(final IByteBufferWriter message) {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up

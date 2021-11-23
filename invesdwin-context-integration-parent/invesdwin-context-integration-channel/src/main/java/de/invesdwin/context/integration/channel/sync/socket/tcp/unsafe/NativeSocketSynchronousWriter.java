@@ -59,7 +59,7 @@ public class NativeSocketSynchronousWriter extends ASocketSynchronousChannel
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
-            final int size = message.write(messageBuffer);
+            final int size = message.writeBuffer(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
             writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
         } catch (final IOException e) {

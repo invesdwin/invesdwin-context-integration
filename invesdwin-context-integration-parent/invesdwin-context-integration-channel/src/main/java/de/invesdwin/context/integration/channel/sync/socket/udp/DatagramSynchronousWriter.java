@@ -48,7 +48,7 @@ public class DatagramSynchronousWriter extends ADatagramSynchronousChannel
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
         buffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
     }

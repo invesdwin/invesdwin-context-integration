@@ -61,7 +61,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         sendRetrying(size + messageIndex);
     }
 

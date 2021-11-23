@@ -55,7 +55,7 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
-            final int size = message.write(messageBuffer);
+            final int size = message.writeBuffer(messageBuffer);
             socket.sendMessage(buffer.asNioByteBuffer(0, messageIndex + size));
         } catch (final NngException e) {
             throw new IOException(e);

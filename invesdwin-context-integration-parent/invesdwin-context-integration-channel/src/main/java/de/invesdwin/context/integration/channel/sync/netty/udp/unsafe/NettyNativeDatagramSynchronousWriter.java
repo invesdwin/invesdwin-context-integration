@@ -68,7 +68,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
-            final int size = message.write(messageBuffer);
+            final int size = message.writeBuffer(messageBuffer);
             buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
             writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size,
                     channel.getSocketAddress(), false);

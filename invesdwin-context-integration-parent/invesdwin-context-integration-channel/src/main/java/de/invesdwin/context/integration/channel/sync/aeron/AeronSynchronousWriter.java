@@ -56,7 +56,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(buffer);
+        final int size = message.writeBuffer(buffer);
         sendRetrying(size);
     }
 

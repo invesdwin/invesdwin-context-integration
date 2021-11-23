@@ -20,9 +20,10 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     private IByteBuffer buffer;
     private ISynchronousCommand<M> message;
 
-    public CommandSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate, final ISerde<M> messageSerde,
-            final Integer maxMessageLength) {
-        this.delegate = delegate;
+    @SuppressWarnings("unchecked")
+    public CommandSynchronousWriter(final ISynchronousWriter<? extends IByteBufferWriter> delegate,
+            final ISerde<M> messageSerde, final Integer maxMessageLength) {
+        this.delegate = (ISynchronousWriter<IByteBufferWriter>) delegate;
         this.messageSerde = messageSerde;
         this.maxMessageLength = maxMessageLength;
         this.fixedLength = SynchronousCommandSerde.newFixedLength(maxMessageLength);
@@ -63,7 +64,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     }
 
     @Override
-    public int write(final IByteBuffer buffer) {
+    public int writeBuffer(final IByteBuffer buffer) {
         buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, message.getType());
         buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, message.getSequence());
         final int messageLength = messageSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
@@ -77,7 +78,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
         if (buffer == null) {
             buffer = ByteBuffers.allocate(this.fixedLength);
         }
-        final int length = write(buffer);
+        final int length = writeBuffer(buffer);
         return buffer.slice(0, length);
     }
 

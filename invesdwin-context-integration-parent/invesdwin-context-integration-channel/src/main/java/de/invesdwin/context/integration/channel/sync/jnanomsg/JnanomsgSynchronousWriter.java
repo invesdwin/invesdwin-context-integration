@@ -61,12 +61,12 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         sendRetrying(size + messageIndex);
     }
 
     private void writeNoRetry(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         sendTry(size + messageIndex);
     }
 

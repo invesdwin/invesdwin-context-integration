@@ -103,7 +103,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     private void writeFuture(final IByteBufferWriter message) {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         buffer.putInt(NettyDatagramChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettyDatagramChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up

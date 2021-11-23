@@ -52,7 +52,7 @@ public class BlockingDatagramSynchronousWriter extends ABlockingDatagramSynchron
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         packetBuffer.putInt(SIZE_INDEX, size);
         packet.setData(packetBuffer.byteArray(), 0, MESSAGE_INDEX + size);
         socket.send(packet);

@@ -55,7 +55,7 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
         //open transaction
         setTransaction(TRANSACTION_WRITING_VALUE);
 
-        final int size = message.write(messageBuffer);
+        final int size = message.writeBuffer(messageBuffer);
         setSize(size);
 
         //commit

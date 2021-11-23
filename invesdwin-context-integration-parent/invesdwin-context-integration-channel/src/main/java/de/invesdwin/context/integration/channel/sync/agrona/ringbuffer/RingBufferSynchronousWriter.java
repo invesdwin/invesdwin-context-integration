@@ -85,7 +85,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
 
         @Override
         public void write(final IByteBufferWriter message) throws IOException {
-            final int size = message.write(messageBuffer);
+            final int size = message.writeBuffer(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
             sendRetrying(MESSAGE_INDEX + size);
         }
@@ -141,7 +141,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
             if (claimedIndex <= 0) {
                 return false;
             }
-            final int size = message.write(buffer.slice(claimedIndex + MESSAGE_INDEX, maxMessageFixedLength));
+            final int size = message.writeBuffer(buffer.slice(claimedIndex + MESSAGE_INDEX, maxMessageFixedLength));
             buffer.putInt(claimedIndex + SIZE_INDEX, size);
             ringBuffer.commit(claimedIndex);
             return true;

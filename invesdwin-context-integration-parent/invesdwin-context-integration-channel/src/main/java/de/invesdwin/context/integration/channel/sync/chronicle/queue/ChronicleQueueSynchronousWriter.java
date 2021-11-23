@@ -47,7 +47,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
             wrappedBuffer.setDelegate(bytes);
             final int position = Integers.checkedCast(bytes.writePosition());
-            final int length = message.write(wrappedBuffer.sliceFrom(position));
+            final int length = message.writeBuffer(wrappedBuffer.sliceFrom(position));
             bytes.writePosition(position + length);
         }
     }

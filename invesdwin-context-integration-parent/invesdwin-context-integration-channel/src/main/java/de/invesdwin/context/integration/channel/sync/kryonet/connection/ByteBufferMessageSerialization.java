@@ -33,7 +33,7 @@ public final class ByteBufferMessageSerialization implements Serialization {
         if (object instanceof IByteBufferWriter) {
             final IByteBufferWriter cObject = (IByteBufferWriter) object;
             wrapped.putBoolean(position + KRYO_INDEX, false);
-            final int length = cObject.write(wrapped.sliceFrom(position + MESSAGE_INDEX));
+            final int length = cObject.writeBuffer(wrapped.sliceFrom(position + MESSAGE_INDEX));
             ByteBuffers.position(buffer, position + length + MESSAGE_INDEX);
         } else {
             wrapped.putBoolean(position + KRYO_INDEX, true);
