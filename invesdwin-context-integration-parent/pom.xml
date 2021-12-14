@@ -24,7 +24,6 @@
 		<module>invesdwin-context-integration-amqp</module>
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
-		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-jppf</module>
 		<module>invesdwin-context-integration-jppf-admin</module>
 		<module>invesdwin-context-integration-jppf-admin-web</module>
@@ -57,14 +56,13 @@
 
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
-		<version.spring-amqp>2.2.5.RELEASE</version.spring-amqp>
-		<version.spring-data-hadoop>2.5.0.RELEASE</version.spring-data-hadoop>
-		<version.activemq>5.15.0</version.activemq>
+		<version.spring-amqp>2.4.0</version.spring-amqp>
+		<version.activemq>5.16.3</version.activemq>
+		<version.org.linkedin.util-core>1.9.0</version.org.linkedin.util-core>
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
 		<version.javax.mail>1.6.2</version.javax.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
-		<version.cxf>3.1.7</version.cxf>
-		<version.hadoop>2.8.1</version.hadoop>
+		<version.cxf>3.4.5</version.cxf>
 		<version.jersey>2.34</version.jersey>
 		<version.xmlsec>2.2.3</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
@@ -81,7 +79,7 @@
 		<version.reactive-streams>1.0.3</version.reactive-streams>
 
 		<version.javax.xml.soap-api>1.4.0</version.javax.xml.soap-api>
-		<version.saaj-impl>1.5.1</version.saaj-impl>
+		<version.saaj-impl>1.5.3</version.saaj-impl>
 
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.jctools>3.3.0</version.jctools>
@@ -138,17 +136,6 @@
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch-admin</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
@@ -295,66 +282,6 @@
 				<version>${version.spring-integration}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-data-hadoop</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.springframework</groupId>
-						<artifactId>spring-jdbc</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-data-hadoop-batch</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-yarn-integration</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>spring-jdbc</artifactId>
-						<groupId>org.springframework</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-yarn-batch</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>spring-jdbc</artifactId>
-						<groupId>org.springframework</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-yarn</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>spring-jdbc</artifactId>
-						<groupId>org.springframework</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.data</groupId>
-				<artifactId>spring-data-hadoop-store</artifactId>
-				<version>${version.spring-data-hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>kite-data-core</artifactId>
-						<groupId>org.kitesdk</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>org.apache.santuario</groupId>
 				<artifactId>xmlsec</artifactId>
 				<version>${version.xmlsec}</version>
@@ -362,6 +289,10 @@
 					<exclusion>
 						<groupId>jakarta.activation</groupId>
 						<artifactId>jakarta.activation-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.glassfish.jaxb</groupId>
+						<artifactId>jaxb-runtime</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -436,7 +367,16 @@
 						<groupId>org.apache.geronimo.specs</groupId>
 						<artifactId>geronimo-jms_1.1_spec</artifactId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.linkedin</groupId>
+						<artifactId>org.linkedin.zookeeper-impl</artifactId>
+					</exclusion>
 				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.linkedin</groupId>
+				<artifactId>org.linkedin.util-core</artifactId>
+				<version>${version.org.linkedin.util-core}</version>
 			</dependency>
 			<dependency>
 				<groupId>javax.jms</groupId>
@@ -472,6 +412,14 @@
 						<artifactId>persistence-api</artifactId>
 						<groupId>javax.persistence</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>jakarta.activation</groupId>
+						<artifactId>jakarta.activation-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>com.thoughtworks.xstream</groupId>
+						<artifactId>xstream</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -487,6 +435,10 @@
 						<artifactId>persistence-api</artifactId>
 						<groupId>javax.persistence</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>jakarta.activation</groupId>
+						<artifactId>jakarta.activation-api</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -495,424 +447,15 @@
 				<version>${version.cxf}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-common</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>xmlenc</artifactId>
-						<groupId>xmlenc</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-httpclient</artifactId>
-						<groupId>commons-httpclient</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-net</artifactId>
-						<groupId>commons-net</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>servlet-api</artifactId>
-						<groupId>javax.servlet</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jetty</artifactId>
-						<groupId>org.mortbay.jetty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jetty-util</artifactId>
-						<groupId>org.mortbay.jetty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-core</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-json</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-server</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jasper-compiler</artifactId>
-						<groupId>tomcat</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jasper-runtime</artifactId>
-						<groupId>tomcat</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jsp-api</artifactId>
-						<groupId>javax.servlet.jsp</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-el</artifactId>
-						<groupId>commons-el</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jets3t</artifactId>
-						<groupId>net.java.dev.jets3t</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>kfs</artifactId>
-						<groupId>net.sf.kosmosfs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jsch</artifactId>
-						<groupId>com.jcraft</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>zookeeper</artifactId>
-						<groupId>org.apache.zookeeper</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-core-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-mapper-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<groupId>jdk.tools</groupId>
-						<artifactId>jdk.tools</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-yarn-common</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice</artifactId>
-						<groupId>com.google.inject</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-test-framework-grizzly2</artifactId>
-						<groupId>com.sun.jersey.jersey-test-framework</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-server</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-json</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-guice</artifactId>
-						<groupId>com.sun.jersey.contribs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>servlet-api</artifactId>
-						<groupId>javax.servlet</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-mapper-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-core-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-jaxrs</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-xc</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<groupId>javax.xml.bind</groupId>
-						<artifactId>jaxb-api</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-mapreduce-client-core</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-mapreduce-client-common</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>hadoop-yarn-server-common</artifactId>
-						<groupId>org.apache.hadoop</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-mapreduce-client-shuffle</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>hadoop-yarn-server-nodemanager</artifactId>
-						<groupId>org.apache.hadoop</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>zookeeper</artifactId>
-						<groupId>org.apache.zookeeper</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>hadoop-yarn-server-common</artifactId>
-						<groupId>org.apache.hadoop</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>leveldbjni-all</artifactId>
-						<groupId>org.fusesource.leveldbjni</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-auth</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>apacheds-kerberos-codec</artifactId>
-						<groupId>org.apache.directory.server</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>zookeeper</artifactId>
-						<groupId>org.apache.zookeeper</groupId>
-					</exclusion>
-					<exclusion>
-						<groupId>net.jcip</groupId>
-						<artifactId>jcip-annotations</artifactId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-hdfs</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>xercesImpl</artifactId>
-						<groupId>xerces</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jetty</artifactId>
-						<groupId>org.mortbay.jetty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jetty-util</artifactId>
-						<groupId>org.mortbay.jetty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-core</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-server</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-daemon</artifactId>
-						<groupId>commons-daemon</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jsp-api</artifactId>
-						<groupId>javax.servlet.jsp</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>servlet-api</artifactId>
-						<groupId>javax.servlet</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jasper-runtime</artifactId>
-						<groupId>tomcat</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>xmlenc</artifactId>
-						<groupId>xmlenc</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-core-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jackson-mapper-asl</artifactId>
-						<groupId>org.codehaus.jackson</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>leveldbjni-all</artifactId>
-						<groupId>org.fusesource.leveldbjni</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty-all</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.hadoop</groupId>
-				<artifactId>hadoop-yarn-client</artifactId>
-				<version>${version.hadoop}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>slf4j-log4j12</artifactId>
-						<groupId>org.slf4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice-servlet</artifactId>
-						<groupId>com.google.inject.extensions</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>netty</artifactId>
-						<groupId>io.netty</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>guice</artifactId>
-						<groupId>com.google.inject</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-test-framework-grizzly2</artifactId>
-						<groupId>com.sun.jersey.jersey-test-framework</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-server</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-json</artifactId>
-						<groupId>com.sun.jersey</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jersey-guice</artifactId>
-						<groupId>com.sun.jersey.contribs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>log4j</artifactId>
-						<groupId>log4j</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>org.glassfish.jersey.ext</groupId>
 				<artifactId>jersey-spring4</artifactId>
 				<version>${version.jersey}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>jakarta.activation</groupId>
+						<artifactId>jakarta.activation-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.media</groupId>
@@ -1015,6 +558,10 @@
 					<exclusion>
 						<groupId>javax.enterprise</groupId>
 						<artifactId>cdi-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.hamcrest</groupId>
+						<artifactId>hamcrest</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
