@@ -63,7 +63,7 @@
 		<version.javax.mail>1.6.2</version.javax.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
 		<version.cxf>3.4.5</version.cxf>
-		<version.jersey>2.34</version.jersey>
+		<version.jersey>2.35</version.jersey>
 		<version.xmlsec>2.2.3</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
 
@@ -448,7 +448,7 @@
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.ext</groupId>
-				<artifactId>jersey-spring4</artifactId>
+				<artifactId>jersey-spring5</artifactId>
 				<version>${version.jersey}</version>
 				<exclusions>
 					<exclusion>
@@ -465,6 +465,11 @@
 			<dependency>
 				<groupId>org.glassfish.jersey.media</groupId>
 				<artifactId>jersey-media-json-jackson</artifactId>
+				<version>${version.jersey}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.media</groupId>
+				<artifactId>jersey-media-jaxb</artifactId>
 				<version>${version.jersey}</version>
 			</dependency>
 
