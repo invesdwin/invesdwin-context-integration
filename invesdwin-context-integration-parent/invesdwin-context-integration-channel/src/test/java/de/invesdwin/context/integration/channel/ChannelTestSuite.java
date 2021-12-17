@@ -28,7 +28,6 @@ import de.invesdwin.context.integration.channel.sync.reference.ReferenceChannelT
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramChannelTest;
 
 // CHECKSTYLE:OFF
@@ -39,7 +38,7 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.Blockin
         NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
         NettyQueueChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class,
         QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
-        NativeSocketChannelTest.class, DatagramChannelTest.class, BlockingDatagramChannelTest.class })
+        NativeSocketChannelTest.class, BlockingDatagramChannelTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON
