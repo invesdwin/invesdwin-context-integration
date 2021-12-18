@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.sync.conversant;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.conversantmedia.util.concurrent.ConcurrentQueue;
 import com.conversantmedia.util.concurrent.DisruptorBlockingQueue;

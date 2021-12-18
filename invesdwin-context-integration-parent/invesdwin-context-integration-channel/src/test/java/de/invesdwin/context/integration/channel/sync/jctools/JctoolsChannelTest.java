@@ -8,7 +8,7 @@ import org.jctools.queues.SpscArrayQueue;
 import org.jctools.queues.SpscLinkedQueue;
 import org.jctools.queues.atomic.SpscAtomicArrayQueue;
 import org.jctools.queues.atomic.SpscLinkedAtomicQueue;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.util.concurrent.reference.IReference;

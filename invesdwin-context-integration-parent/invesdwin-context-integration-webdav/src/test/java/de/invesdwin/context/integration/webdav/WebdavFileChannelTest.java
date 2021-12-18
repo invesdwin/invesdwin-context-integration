@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.RandomUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;

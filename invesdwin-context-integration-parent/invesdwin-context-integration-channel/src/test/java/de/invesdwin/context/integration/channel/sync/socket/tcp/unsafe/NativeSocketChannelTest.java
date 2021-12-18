@@ -5,7 +5,7 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;

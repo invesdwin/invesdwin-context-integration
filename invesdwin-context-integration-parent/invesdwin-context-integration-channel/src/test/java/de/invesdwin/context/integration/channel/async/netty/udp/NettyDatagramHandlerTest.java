@@ -4,7 +4,7 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;

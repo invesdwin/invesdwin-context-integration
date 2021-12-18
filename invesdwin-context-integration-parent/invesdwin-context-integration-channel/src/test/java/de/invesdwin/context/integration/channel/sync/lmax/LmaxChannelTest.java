@@ -4,7 +4,7 @@ import java.util.Queue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import com.lmax.disruptor.RingBuffer;
 

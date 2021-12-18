@@ -12,9 +12,10 @@ import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.time.date.FDate;
 
@@ -101,11 +102,13 @@ public class QueueChannelTest extends AChannelTest {
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
-    @Test(expected = AssertionError.class)
+    @Test
     public void testSynchronousQueuePerformance() throws InterruptedException {
-        final Queue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(false);
-        final Queue<IReference<FDate>> requestQueue = new SynchronousQueue<IReference<FDate>>(false);
-        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+        Assertions.assertThrows(AssertionError.class, () -> {
+            final Queue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(false);
+            final Queue<IReference<FDate>> requestQueue = new SynchronousQueue<IReference<FDate>>(false);
+            runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+        });
     }
 
     @Test

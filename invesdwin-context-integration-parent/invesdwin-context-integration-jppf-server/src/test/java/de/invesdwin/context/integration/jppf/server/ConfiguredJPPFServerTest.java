@@ -5,7 +5,7 @@ import javax.inject.Inject;
 
 import org.jppf.server.node.local.JPPFLocalNode;
 import org.jppf.server.node.remote.JPPFRemoteNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.jppf.client.ConfiguredJPPFClient;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;

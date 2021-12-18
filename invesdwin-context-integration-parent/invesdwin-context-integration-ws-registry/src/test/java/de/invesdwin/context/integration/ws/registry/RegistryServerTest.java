@@ -6,7 +6,7 @@ import java.net.URI;
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;

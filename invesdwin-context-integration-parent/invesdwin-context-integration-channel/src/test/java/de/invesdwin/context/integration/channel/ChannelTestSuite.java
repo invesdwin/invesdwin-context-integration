@@ -2,9 +2,8 @@ package de.invesdwin.context.integration.channel;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-import org.junit.runners.Suite.SuiteClasses;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
@@ -31,8 +30,8 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramChannelTest;
 
 // CHECKSTYLE:OFF
-@RunWith(Suite.class)
-@SuiteClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
+@Suite
+@SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
         ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
         KryonetChannelTest.class, LmaxChannelTest.class, MappedChannelTest.class, NettySocketChannelTest.class,
         NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,

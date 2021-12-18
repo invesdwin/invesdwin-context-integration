@@ -10,7 +10,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.jppf.client.monitoring.topology.TopologyDriver;
 import org.jppf.client.monitoring.topology.TopologyNode;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.test.ATest;
