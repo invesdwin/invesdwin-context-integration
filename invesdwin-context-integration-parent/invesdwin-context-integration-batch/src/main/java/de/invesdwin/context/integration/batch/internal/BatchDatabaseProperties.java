@@ -18,7 +18,8 @@ import de.invesdwin.util.error.UnknownArgumentException;
 @Immutable
 public final class BatchDatabaseProperties {
 
-    private BatchDatabaseProperties() {}
+    private BatchDatabaseProperties() {
+    }
 
     public static PersistenceUnitContext getPersistenceUnitContext() {
         return PersistenceProperties.getPersistenceUnitContext(PersistenceProperties.DEFAULT_PERSISTENCE_UNIT_NAME);
@@ -77,13 +78,19 @@ public final class BatchDatabaseProperties {
         case H2:
             return "h2";
         case HSQLDB:
-            return "hsqldb";
+            return "hsql";
         case MYSQL:
             return "mysql";
         case POSTGRESQL:
             return "postgresql";
         case ORACLE:
-            return "oracle10g";
+            return "oracle";
+        case MSSQLSERVER:
+            return "sqlserver";
+        case DERBY:
+            return "derby";
+        case SYBASE:
+            return "sybase";
         default:
             throw UnknownArgumentException.newInstance(ConnectionDialect.class, connectionDialect);
         }
