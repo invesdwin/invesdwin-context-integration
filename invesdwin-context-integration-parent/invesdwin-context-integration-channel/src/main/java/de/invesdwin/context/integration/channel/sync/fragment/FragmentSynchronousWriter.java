@@ -13,7 +13,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 @NotThreadSafe
-public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer>, IByteBufferWriter {
+public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
 
     public static final int FRAGMENTCOUNT_INDEX = 0;
     public static final int FRAGMENTCOUNT_SIZE = Byte.BYTES;
@@ -62,14 +62,15 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
-    public void write(final IByteBuffer message) throws IOException {
-        final double fragmentCountDouble = Doubles.divide(message.capacity(), maxPayloadLength);
+    public void write(final IByteBufferWriter message) throws IOException {
+        this.message = message.asBuffer();
+        final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
         final double fragmentCountDoubleRounded = Math.ceil(fragmentCountDouble);
         if (fragmentCountDouble > Byte.MAX_VALUE) {
             throw new IllegalStateException("fragmentCount [" + fragmentCountDoubleRounded + "] should not exceed ["
                     + Byte.MAX_VALUE + "]. Please increase the maxMessageLength [" + maxMessageLength
                     + "] so that less fragments can be used for efficient delivery of messageLength ["
-                    + message.capacity() + "]");
+                    + this.message.capacity() + "]");
         }
         if (fragmentCountDoubleRounded <= 0D) {
             throw new IllegalStateException(
@@ -79,7 +80,6 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
         fragmentCount = Bytes.checkedCast(fragmentCountDoubleRounded);
         currentPosition = 0;
 
-        this.message = message;
         for (currentFragment = 1; currentFragment <= fragmentCount; currentFragment++) {
             delegate.write(this);
         }
