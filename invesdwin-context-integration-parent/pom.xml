@@ -371,6 +371,10 @@
 						<groupId>org.linkedin</groupId>
 						<artifactId>org.linkedin.zookeeper-impl</artifactId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.springframework</groupId>
+						<artifactId>spring-context</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
