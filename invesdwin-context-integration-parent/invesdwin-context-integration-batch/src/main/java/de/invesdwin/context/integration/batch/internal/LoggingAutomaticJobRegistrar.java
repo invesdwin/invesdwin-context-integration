@@ -13,7 +13,7 @@ import org.springframework.core.io.Resource;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.lang.Resources;
+import de.invesdwin.util.streams.resource.Resources;
 
 @NotThreadSafe
 public class LoggingAutomaticJobRegistrar extends AutomaticJobRegistrar {
