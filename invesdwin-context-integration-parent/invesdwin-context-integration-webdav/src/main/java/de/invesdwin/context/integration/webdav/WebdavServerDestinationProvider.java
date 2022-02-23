@@ -21,7 +21,7 @@ public class WebdavServerDestinationProvider extends RegistryDestinationProvider
 
     @Override
     protected IURIsConnect maybeWithBasicAuth(final IURIsConnect connect) {
-        return connect.addBasicAuth(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
+        return connect.putBasicAuth(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
     }
 
 }
