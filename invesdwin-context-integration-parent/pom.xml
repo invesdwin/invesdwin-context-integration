@@ -22,6 +22,7 @@
 
 	<modules>
 		<module>invesdwin-context-integration-amqp</module>
+		<module>invesdwin-context-integration-axon</module>
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
 		<module>invesdwin-context-integration-jppf</module>
@@ -91,6 +92,7 @@
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
+		<version.axon>4.5.11</version.axon>
 	</properties>
 
 	<dependencyManagement>
@@ -115,10 +117,22 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
+			<dependency>
+        <groupId>org.axonframework</groupId>
+        <artifactId>axon-bom</artifactId>
+        <version>${version.axon}</version>
+        <type>pom</type>
+			  <scope>import</scope>
+      </dependency>
 
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-amqp</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-axon</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
