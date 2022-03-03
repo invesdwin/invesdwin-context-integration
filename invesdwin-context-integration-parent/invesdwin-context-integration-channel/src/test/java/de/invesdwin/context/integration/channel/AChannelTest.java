@@ -20,6 +20,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mapped.MappedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mapped.MappedSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.mapped.blocking.BlockingMappedSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.mapped.blocking.BlockingMappedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.PipeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.PipeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeSynchronousReader;
@@ -61,7 +63,7 @@ public abstract class AChannelTest extends ATest {
     public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
     public static final boolean DEBUG = false;
     public static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
-    public static final int VALUES = DEBUG ? 10 : 1_000;
+    public static final int VALUES = DEBUG ? 10 : 10_000_000;
     public static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
 
@@ -70,6 +72,7 @@ public abstract class AChannelTest extends ATest {
         PIPE_NATIVE,
         PIPE,
         MAPPED,
+        BLOCKING_MAPPED,
         UNIX_SOCKET;
     }
 
@@ -146,7 +149,7 @@ public abstract class AChannelTest extends ATest {
         } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING
                 || type == FileChannelType.PIPE_NATIVE) {
             Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
-        } else if (type == FileChannelType.MAPPED) {
+        } else if (type == FileChannelType.MAPPED || type == FileChannelType.BLOCKING_MAPPED) {
             try {
                 Files.touch(file);
             } catch (final IOException e) {
@@ -206,6 +209,8 @@ public abstract class AChannelTest extends ATest {
             return new PipeSynchronousReader(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousReader(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
+            return new BlockingMappedSynchronousReader(file, MESSAGE_SIZE);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
@@ -220,6 +225,8 @@ public abstract class AChannelTest extends ATest {
             return new PipeSynchronousWriter(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousWriter(file, MESSAGE_SIZE);
+        } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
+            return new BlockingMappedSynchronousWriter(file, MESSAGE_SIZE);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
