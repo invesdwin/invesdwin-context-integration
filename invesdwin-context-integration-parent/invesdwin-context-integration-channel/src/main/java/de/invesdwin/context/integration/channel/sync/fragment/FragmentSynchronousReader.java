@@ -41,7 +41,7 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
         final byte fragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
         if (fragmentCount == 1) {
             //zero copy forward
-            return buffer;
+            return buffer.sliceFrom(FragmentSynchronousWriter.PAYLOAD_INDEX);
         } else {
             int position = 0;
             for (byte i = 1; i < fragmentCount; i++) {
