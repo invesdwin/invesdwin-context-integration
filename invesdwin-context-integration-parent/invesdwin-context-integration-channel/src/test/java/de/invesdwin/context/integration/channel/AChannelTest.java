@@ -267,6 +267,7 @@ public abstract class AChannelTest extends ATest {
                 }
                 Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                 final FDate readMessage = responseReader.readMessage();
+                responseReader.readFinished();
                 if (DEBUG) {
                     log.info("client response in [" + readMessage + "]");
                 }
@@ -348,6 +349,7 @@ public abstract class AChannelTest extends ATest {
                         log.info("server request in");
                     }
                     final FDate readMessage = requestReader.readMessage();
+                    requestReader.readFinished();
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
                     responseWriter.write(date);
                     if (DEBUG) {

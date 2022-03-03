@@ -31,7 +31,9 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
         outputReader.open();
         inputWriter.open();
         if (outputReader.hasNext()) {
-            return outputReader.readMessage();
+            final O message = outputReader.readMessage();
+            outputReader.readFinished();
+            return message;
         } else {
             return null;
         }
@@ -41,7 +43,9 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     public O handle(final I input) throws IOException {
         inputWriter.write(input);
         if (outputReader.hasNext()) {
-            return outputReader.readMessage();
+            final O message = outputReader.readMessage();
+            outputReader.readFinished();
+            return message;
         } else {
             return null;
         }
