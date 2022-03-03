@@ -80,6 +80,11 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     public static void readFully(final ChronicleSocketChannel src, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
         int remaining = byteBuffer.remaining();

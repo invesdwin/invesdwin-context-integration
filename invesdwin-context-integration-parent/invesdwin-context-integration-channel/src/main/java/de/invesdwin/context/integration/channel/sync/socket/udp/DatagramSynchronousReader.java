@@ -74,4 +74,9 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

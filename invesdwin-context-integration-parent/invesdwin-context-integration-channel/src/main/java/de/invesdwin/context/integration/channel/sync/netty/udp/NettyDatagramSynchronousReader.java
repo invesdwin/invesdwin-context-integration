@@ -74,6 +74,11 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         return value;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;

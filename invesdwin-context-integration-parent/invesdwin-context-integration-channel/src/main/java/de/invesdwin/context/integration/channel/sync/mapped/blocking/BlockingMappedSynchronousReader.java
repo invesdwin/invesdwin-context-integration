@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.mapped;
+package de.invesdwin.context.integration.channel.sync.mapped.blocking;
 
 import java.io.EOFException;
 import java.io.File;
@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.mapped.AMappedSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 /**
@@ -21,10 +22,11 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
  *
  */
 @NotThreadSafe
-public class MappedSynchronousReader extends AMappedSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
     private int lastTransaction;
 
-    public MappedSynchronousReader(final File file, final int maxMessageSize) {
+    public BlockingMappedSynchronousReader(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
     }
 
@@ -64,7 +66,7 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
 
     @Override
     public void readFinished() {
-        //noop
+        setReadFinished(READFINISHED_TRUE);
     }
 
 }

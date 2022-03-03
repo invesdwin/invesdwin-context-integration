@@ -54,4 +54,9 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
         return command;
     }
 
+    @Override
+    public void readFinished() {
+        delegate.readFinished();
+    }
+
 }

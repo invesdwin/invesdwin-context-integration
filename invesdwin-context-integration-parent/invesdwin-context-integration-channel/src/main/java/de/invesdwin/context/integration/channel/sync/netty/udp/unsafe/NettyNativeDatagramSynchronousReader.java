@@ -105,6 +105,11 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         return buffer.slice(NettySocketChannel.MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     public static void readFully(final FileDescriptor src, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
         int position = pos;

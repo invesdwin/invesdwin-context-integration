@@ -49,4 +49,9 @@ public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

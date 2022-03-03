@@ -8,4 +8,6 @@ public interface ISynchronousReader<M> extends ISynchronousChannel {
 
     M readMessage() throws IOException;
 
+    void readFinished();
+
 }

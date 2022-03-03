@@ -47,6 +47,7 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
             for (byte i = 1; i < fragmentCount; i++) {
                 if (i > 1) {
                     buffer = delegate.readMessage();
+                    delegate.readFinished();
                 }
                 final byte currentFragment = buffer.getByte(FragmentSynchronousWriter.FRAGMENT_INDEX);
                 if (currentFragment != i) {
@@ -65,4 +66,8 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
         }
     }
 
+    @Override
+    public void readFinished() {
+        delegate.readFinished();
+    }
 }

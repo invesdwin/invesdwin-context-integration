@@ -40,4 +40,9 @@ public class SerdeSynchronousReader<M> implements ISynchronousReader<M> {
         return serde.fromBuffer(message, message.capacity());
     }
 
+    @Override
+    public void readFinished() {
+        delegate.readFinished();
+    }
+
 }

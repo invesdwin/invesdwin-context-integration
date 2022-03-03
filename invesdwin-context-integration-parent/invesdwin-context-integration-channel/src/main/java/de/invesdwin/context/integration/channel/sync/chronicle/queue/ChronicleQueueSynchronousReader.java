@@ -60,4 +60,9 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
         return buffer.slice(0, length);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

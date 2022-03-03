@@ -91,4 +91,9 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

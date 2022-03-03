@@ -29,6 +29,11 @@ public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
+    public void readFinished() {
+        //noop
+    }
+
+    @Override
     public boolean hasNext() throws IOException {
         throw new EOFException();
     }

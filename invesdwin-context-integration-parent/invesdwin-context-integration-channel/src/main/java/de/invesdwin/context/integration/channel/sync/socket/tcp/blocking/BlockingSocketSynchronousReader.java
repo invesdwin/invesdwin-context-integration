@@ -68,4 +68,9 @@ public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousC
         }
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

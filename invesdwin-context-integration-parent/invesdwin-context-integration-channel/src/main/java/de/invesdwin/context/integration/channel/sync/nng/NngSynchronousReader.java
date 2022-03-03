@@ -62,6 +62,11 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     private IByteBuffer getPolledMessage() {
         if (polledValue != null) {
             final IByteBuffer value = polledValue;

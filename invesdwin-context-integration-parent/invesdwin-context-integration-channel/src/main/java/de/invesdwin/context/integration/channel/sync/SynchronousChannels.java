@@ -50,6 +50,11 @@ public final class SynchronousChannels {
             public synchronized boolean hasNext() throws IOException {
                 return delegate.hasNext();
             }
+
+            @Override
+            public synchronized void readFinished() {
+                delegate.readFinished();
+            }
         };
     }
 
@@ -102,6 +107,13 @@ public final class SynchronousChannels {
             public boolean hasNext() throws IOException {
                 synchronized (lock) {
                     return delegate.hasNext();
+                }
+            }
+
+            @Override
+            public void readFinished() {
+                synchronized (lock) {
+                    delegate.readFinished();
                 }
             }
         };

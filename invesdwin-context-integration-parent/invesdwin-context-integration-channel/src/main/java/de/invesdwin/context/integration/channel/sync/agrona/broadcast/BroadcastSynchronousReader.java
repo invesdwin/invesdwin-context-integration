@@ -65,6 +65,11 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     private IByteBuffer getPolledMessage() {
         if (reader.getPolledValue() != null) {
             final IByteBuffer value = reader.getPolledValue();

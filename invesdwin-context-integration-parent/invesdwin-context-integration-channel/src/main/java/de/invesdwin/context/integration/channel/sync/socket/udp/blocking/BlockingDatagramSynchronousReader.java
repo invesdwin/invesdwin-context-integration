@@ -56,4 +56,9 @@ public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchron
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

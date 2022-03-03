@@ -79,4 +79,9 @@ public class SocketSynchronousReader extends ASocketSynchronousChannel implement
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

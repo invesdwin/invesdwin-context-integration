@@ -67,6 +67,11 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     private IMutableReference<M> getPolledMessage() {
         if (polledValue != null) {
             final IMutableReference<M> value = polledValue;

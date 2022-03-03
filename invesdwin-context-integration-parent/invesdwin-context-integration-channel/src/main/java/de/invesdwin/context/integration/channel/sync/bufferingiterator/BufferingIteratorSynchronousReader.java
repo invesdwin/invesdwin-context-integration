@@ -44,4 +44,9 @@ public class BufferingIteratorSynchronousReader<M> implements ISynchronousReader
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

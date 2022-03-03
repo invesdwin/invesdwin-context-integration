@@ -45,4 +45,9 @@ public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

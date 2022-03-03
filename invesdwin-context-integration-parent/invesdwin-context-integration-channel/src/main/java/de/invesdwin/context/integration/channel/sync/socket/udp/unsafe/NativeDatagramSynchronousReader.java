@@ -91,4 +91,9 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

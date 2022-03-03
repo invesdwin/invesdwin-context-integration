@@ -42,4 +42,9 @@ public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronous
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

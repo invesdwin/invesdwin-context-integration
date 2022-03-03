@@ -86,6 +86,11 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
         return message;
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     private IByteBuffer getPolledMessage() {
         if (reader.getPolledValue() != null) {
             final IByteBuffer value = reader.getPolledValue();

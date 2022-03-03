@@ -13,7 +13,8 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousChannel
+        implements ISynchronousReader<IByteBuffer> {
 
     private FileInputStream in;
     private IByteBuffer buffer;
@@ -60,6 +61,11 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
         } catch (final IOException e) {
             throw newEofException(e);
         }
+    }
+
+    @Override
+    public void readFinished() {
+        //noop
     }
 
 }

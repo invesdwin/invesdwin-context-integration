@@ -57,4 +57,9 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
         return delegate.readMessage();
     }
 
+    @Override
+    public void readFinished() {
+        delegate.readFinished();
+    }
+
 }

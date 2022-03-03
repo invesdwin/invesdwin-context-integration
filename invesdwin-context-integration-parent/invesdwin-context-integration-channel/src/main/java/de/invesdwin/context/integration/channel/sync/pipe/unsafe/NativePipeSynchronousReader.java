@@ -97,4 +97,9 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
 }

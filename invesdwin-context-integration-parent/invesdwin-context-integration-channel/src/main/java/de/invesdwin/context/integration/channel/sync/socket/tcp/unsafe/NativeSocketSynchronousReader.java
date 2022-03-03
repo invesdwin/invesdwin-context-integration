@@ -96,6 +96,11 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         return buffer.slice(MESSAGE_INDEX, size);
     }
 
+    @Override
+    public void readFinished() {
+        //noop
+    }
+
     public static int read0(final FileDescriptor src, final long address, final int position, final int length)
             throws IOException {
         final int res = OS.read0(src, address + position, length);

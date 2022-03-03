@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.mapped;
+package de.invesdwin.context.integration.channel.sync.mapped.blocking;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +11,7 @@ import de.invesdwin.util.streams.buffer.MemoryMappedFile;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
-public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
+public abstract class ABlockingMappedSynchronousChannel implements ISynchronousChannel {
 
     public static final byte TRANSACTION_INITIAL_VALUE = 0;
     public static final byte TRANSACTION_WRITING_VALUE = -1;
@@ -38,7 +38,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     protected final File file;
     private final int maxMessageSize;
 
-    public AMappedSynchronousChannel(final File file, final int maxMessageSize) {
+    public ABlockingMappedSynchronousChannel(final File file, final int maxMessageSize) {
         this.file = file;
         if (maxMessageSize <= 0) {
             throw new IllegalArgumentException("fileSize needs to be positive");
@@ -80,10 +80,6 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
 
     protected byte getReadFinished() {
         return buffer.getByteVolatile(READFINISHED_INDEX);
-    }
-
-    protected boolean isReadFinished() {
-        return getReadFinished() == READFINISHED_TRUE;
     }
 
     protected void setReadFinished(final byte val) {
