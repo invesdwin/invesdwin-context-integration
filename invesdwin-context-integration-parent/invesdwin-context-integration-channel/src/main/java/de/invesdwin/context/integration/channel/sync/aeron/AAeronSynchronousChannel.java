@@ -13,6 +13,8 @@ import io.aeron.driver.ThreadingMode;
 @NotThreadSafe
 public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
 
+    public static final String AERON_IPC_CHANNEL = "aeron:ipc";
+
     private static MediaDriver embeddedMediaDriver;
 
     protected final AeronMediaDriverMode mode;
@@ -38,8 +40,14 @@ public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
     }
 
     public static MediaDriver newDefaultEmbeddedMediaDriver() {
-        return MediaDriver.launchEmbedded(
-                new Context().dirDeleteOnShutdown(true).dirDeleteOnStart(true).threadingMode(ThreadingMode.DEDICATED));
+        return newEmbeddedMediaDriver(AAeronSynchronousChannel.class.getSimpleName() + "_" + "_default");
+    }
+
+    public static MediaDriver newEmbeddedMediaDriver(final String name) {
+        return MediaDriver.launchEmbedded(new Context().aeronDirectoryName(name)
+                .dirDeleteOnShutdown(true)
+                .dirDeleteOnStart(true)
+                .threadingMode(ThreadingMode.DEDICATED));
     }
 
     @Override
