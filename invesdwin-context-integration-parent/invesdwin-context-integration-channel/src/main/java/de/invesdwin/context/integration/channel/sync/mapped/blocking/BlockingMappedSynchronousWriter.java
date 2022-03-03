@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.mapped.blocking;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,6 +13,7 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 
 /**
  * There should only be one writer per file, or else the threads might destroy each others data.
@@ -22,10 +24,12 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private final ASpinWait readFinishedWait = newSpinWait();
+    private final Duration timeout;
     private IByteBuffer messageBuffer;
 
-    public BlockingMappedSynchronousWriter(final File file, final int maxMessageSize) {
+    public BlockingMappedSynchronousWriter(final File file, final int maxMessageSize, final Duration timeout) {
         super(file, maxMessageSize);
+        this.timeout = timeout;
     }
 
     protected ASpinWait newSpinWait() {
@@ -66,7 +70,9 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
     @Override
     public void write(final IByteBufferWriter message) {
         try {
-            readFinishedWait.awaitFulfill(System.nanoTime());
+            if (!readFinishedWait.awaitFulfill(System.nanoTime(), timeout)) {
+                throw new TimeoutException("Write message timeout exceeded: " + timeout);
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

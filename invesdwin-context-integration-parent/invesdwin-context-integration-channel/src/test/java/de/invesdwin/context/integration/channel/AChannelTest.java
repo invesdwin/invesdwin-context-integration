@@ -226,7 +226,7 @@ public abstract class AChannelTest extends ATest {
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousWriter(file, MESSAGE_SIZE);
         } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
-            return new BlockingMappedSynchronousWriter(file, MESSAGE_SIZE);
+            return new BlockingMappedSynchronousWriter(file, MESSAGE_SIZE, Duration.ONE_MINUTE);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }

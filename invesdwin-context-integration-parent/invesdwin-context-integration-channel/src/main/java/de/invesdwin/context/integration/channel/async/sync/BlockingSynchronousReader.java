@@ -1,21 +1,25 @@
 package de.invesdwin.context.integration.channel.async.sync;
 
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
 
     private final ISynchronousReader<M> delegate;
     private final ASpinWait spinWait;
+    private final Duration timeout;
 
-    public BlockingSynchronousReader(final ISynchronousReader<M> delegate) {
+    public BlockingSynchronousReader(final ISynchronousReader<M> delegate, final Duration timeout) {
         this.delegate = delegate;
         this.spinWait = newSpinWait(delegate);
+        this.timeout = timeout;
     }
 
     /**
@@ -50,7 +54,9 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
     public M readMessage() throws IOException {
         try {
             //maybe block here
-            spinWait.awaitFulfill(System.nanoTime());
+            if (!spinWait.awaitFulfill(System.nanoTime(), timeout)) {
+                throw new TimeoutException("Read message timeout exceeded: " + timeout);
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
