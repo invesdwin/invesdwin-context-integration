@@ -78,13 +78,13 @@ public final class BatchDatabaseProperties {
         case H2:
             return "h2";
         case HSQLDB:
-            return "hsql";
+            return "hsqldb";
         case MYSQL:
             return "mysql";
         case POSTGRESQL:
             return "postgresql";
         case ORACLE:
-            return "oracle";
+            return "oracle10g";
         case MSSQLSERVER:
             return "sqlserver";
         case DERBY:
