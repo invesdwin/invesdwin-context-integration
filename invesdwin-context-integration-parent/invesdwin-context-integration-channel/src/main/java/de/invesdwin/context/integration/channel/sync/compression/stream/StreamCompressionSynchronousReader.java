@@ -18,6 +18,8 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
 @NotThreadSafe
 public class StreamCompressionSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    public static final ICompressionFactory DEFAULT_COMPRESSION_FACTORY = StreamCompressionSynchronousWriter.DEFAULT_COMPRESSION_FACTORY;
+
     private final ISynchronousReader<IByteBuffer> delegate;
     private final ICompressionFactory compressionFactory;
     private IByteBuffer decompressedBuffer;
@@ -25,7 +27,7 @@ public class StreamCompressionSynchronousReader implements ISynchronousReader<IB
     private InputStream decompressingStreamOut;
 
     public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate) {
-        this(delegate, StreamCompressionSynchronousWriter.DEFAULT_COMPRESSION_FACTORY);
+        this(delegate, DEFAULT_COMPRESSION_FACTORY);
     }
 
     public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,

@@ -16,12 +16,14 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 @NotThreadSafe
 public class CompressionSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    public static final ICompressionFactory DEFAULT_COMPRESSION_FACTORY = CompressionSynchronousWriter.DEFAULT_COMPRESSION_FACTORY;
+
     private final ISynchronousReader<IByteBuffer> delegate;
     private final ICompressionFactory compressionFactory;
     private IByteBuffer decompressedBuffer;
 
     public CompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate) {
-        this(delegate, CompressionSynchronousWriter.DEFAULT_COMPRESSION_FACTORY);
+        this(delegate, DEFAULT_COMPRESSION_FACTORY);
     }
 
     public CompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
