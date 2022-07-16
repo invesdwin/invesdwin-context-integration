@@ -49,7 +49,10 @@ public class StreamCompressionSynchronousReader implements ISynchronousReader<IB
         delegate.close();
         decompressedBuffer = null;
         decompressingStreamIn = null;
-        decompressingStreamOut = null;
+        if (decompressingStreamOut != null) {
+            decompressingStreamOut.close();
+            decompressingStreamOut = null;
+        }
     }
 
     @Override

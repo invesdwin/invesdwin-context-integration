@@ -57,7 +57,10 @@ public class StreamCompressionSynchronousWriter implements ISynchronousWriter<IB
         delegate.close();
         buffer = null;
         compressingStreamOut = null;
-        compressingStreamIn = null;
+        if (compressingStreamIn != null) {
+            compressingStreamIn.close();
+            compressingStreamIn = null;
+        }
     }
 
     @Override
