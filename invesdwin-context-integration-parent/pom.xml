@@ -93,6 +93,7 @@
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.21ea90</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
+		<version.jnr-enxio>0.32.13</version.jnr-enxio>
 	</properties>
 
 	<dependencyManagement>
@@ -118,12 +119,12 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon-bom</artifactId>
-        <version>${version.axon}</version>
-        <type>pom</type>
-			  <scope>import</scope>
-      </dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-bom</artifactId>
+				<version>${version.axon}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 
 			<dependency>
 				<groupId>de.invesdwin</groupId>
@@ -705,6 +706,11 @@
 				<groupId>net.openhft</groupId>
 				<artifactId>chronicle-network</artifactId>
 				<version>${version.chronicle-network}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.jnr</groupId>
+				<artifactId>jnr-enxio</artifactId>
+				<version>${version.jnr-enxio}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
