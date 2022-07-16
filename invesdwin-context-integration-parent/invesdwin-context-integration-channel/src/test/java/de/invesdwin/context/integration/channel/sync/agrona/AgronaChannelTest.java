@@ -103,12 +103,12 @@ public class AgronaChannelTest extends AChannelTest {
             final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel, final boolean zeroCopy)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new RingBufferSynchronousWriter(responseChannel,
-                zeroCopy ? MESSAGE_SIZE : null);
+                zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBuffer> requestReader = new RingBufferSynchronousReader(requestChannel, zeroCopy);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaRingBufferPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new RingBufferSynchronousWriter(requestChannel,
-                zeroCopy ? MESSAGE_SIZE : null);
+                zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBuffer> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));

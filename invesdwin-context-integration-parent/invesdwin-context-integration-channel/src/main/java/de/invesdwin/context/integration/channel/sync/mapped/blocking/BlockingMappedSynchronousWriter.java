@@ -54,7 +54,7 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
     @Override
     public void close() throws IOException {
         setTransaction(TRANSACTION_CLOSED_VALUE);
-        setReadFinished(READFINISHED_TRUE);
+        setReadFinished(READFINISHED_CLOSED);
         super.close();
         messageBuffer = null;
     }
@@ -68,11 +68,13 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final IByteBufferWriter message) {
+    public void write(final IByteBufferWriter message) throws IOException {
         try {
             if (!readFinishedWait.awaitFulfill(System.nanoTime(), timeout)) {
                 throw new TimeoutException("Write message timeout exceeded: " + timeout);
             }
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

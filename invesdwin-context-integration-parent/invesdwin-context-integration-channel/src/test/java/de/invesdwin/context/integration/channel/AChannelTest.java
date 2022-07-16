@@ -62,7 +62,7 @@ public abstract class AChannelTest extends ATest {
 
     public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
     public static final boolean DEBUG = false;
-    public static final int MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
+    public static final int MAX_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int VALUES = DEBUG ? 10 : 1_000;
     public static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
@@ -202,31 +202,35 @@ public abstract class AChannelTest extends ATest {
 
     protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
-            return new NativePipeSynchronousReader(file, MESSAGE_SIZE);
+            return new NativePipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
-            return new StreamingPipeSynchronousReader(file, MESSAGE_SIZE);
+            return new StreamingPipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE) {
-            return new PipeSynchronousReader(file, MESSAGE_SIZE);
+            return new PipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.MAPPED) {
-            return new MappedSynchronousReader(file, MESSAGE_SIZE);
+            return new MappedSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
-            return new BlockingMappedSynchronousReader(file, MESSAGE_SIZE);
+            return new BlockingMappedSynchronousReader(file, getMaxMessageSize(), Duration.ONE_MINUTE);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
     }
 
+    protected int getMaxMessageSize() {
+        return MAX_MESSAGE_SIZE;
+    }
+
     protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
-            return new NativePipeSynchronousWriter(file, MESSAGE_SIZE);
+            return new NativePipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
-            return new StreamingPipeSynchronousWriter(file, MESSAGE_SIZE);
+            return new StreamingPipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE) {
-            return new PipeSynchronousWriter(file, MESSAGE_SIZE);
+            return new PipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.MAPPED) {
-            return new MappedSynchronousWriter(file, MESSAGE_SIZE);
+            return new MappedSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
-            return new BlockingMappedSynchronousWriter(file, MESSAGE_SIZE, Duration.ONE_MINUTE);
+            return new BlockingMappedSynchronousWriter(file, getMaxMessageSize(), Duration.ONE_MINUTE);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }

@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.mapped;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 
@@ -25,6 +26,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
 
     public static final byte READFINISHED_FALSE = 0;
     public static final byte READFINISHED_TRUE = 1;
+    public static final byte READFINISHED_CLOSED = -1;
 
     public static final int SIZE_INDEX = READFINISHED_INDEX + READFINISHED_SIZE;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -82,8 +84,12 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
         return buffer.getByteVolatile(READFINISHED_INDEX);
     }
 
-    protected boolean isReadFinished() {
-        return getReadFinished() == READFINISHED_TRUE;
+    protected boolean isReadFinished() throws Exception {
+        final byte readFinished = getReadFinished();
+        if (readFinished == READFINISHED_CLOSED) {
+            throw new EOFException("Channel was closed by the other endpoint");
+        }
+        return readFinished == READFINISHED_TRUE;
     }
 
     protected void setReadFinished(final byte val) {

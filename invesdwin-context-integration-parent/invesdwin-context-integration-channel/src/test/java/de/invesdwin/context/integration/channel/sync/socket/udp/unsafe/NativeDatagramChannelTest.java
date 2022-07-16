@@ -27,15 +27,15 @@ public class NativeDatagramChannelTest extends AChannelTest {
     private void runNativeDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NativeDatagramSynchronousWriter(
-                responseAddress, MESSAGE_SIZE);
+                responseAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new NativeDatagramSynchronousReader(requestAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NativeDatagramSynchronousWriter(requestAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new NativeDatagramSynchronousReader(responseAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

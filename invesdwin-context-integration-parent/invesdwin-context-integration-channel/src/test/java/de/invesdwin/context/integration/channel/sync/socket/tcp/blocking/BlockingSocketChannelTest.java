@@ -28,15 +28,15 @@ public class BlockingSocketChannelTest extends AChannelTest {
     private void runBlockingSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingSocketSynchronousWriter(
-                responseAddress, true, MESSAGE_SIZE);
+                responseAddress, true, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(requestAddress, true,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingSocketSynchronousWriter(requestAddress,
-                false, MESSAGE_SIZE);
+                false, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(responseAddress,
-                false, MESSAGE_SIZE);
+                false, getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

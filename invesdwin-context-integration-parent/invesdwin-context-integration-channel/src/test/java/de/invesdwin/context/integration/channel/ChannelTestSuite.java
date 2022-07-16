@@ -9,11 +9,13 @@ import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
 import de.invesdwin.context.integration.channel.sync.chronicle.queue.ChronicleQueueChannelTest;
+import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
+import de.invesdwin.context.integration.channel.sync.compression.stream.StreamCompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
+import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
 import de.invesdwin.context.integration.channel.sync.lmax.LmaxChannelTest;
-import de.invesdwin.context.integration.channel.sync.mapped.MappedChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.NettyQueueChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
@@ -32,11 +34,12 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 @Suite
 @SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
         ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
-        KryonetChannelTest.class, LmaxChannelTest.class, MappedChannelTest.class, NettySocketChannelTest.class,
+        KryonetChannelTest.class, LmaxChannelTest.class, CompressionChannelTest.class, NettySocketChannelTest.class,
         NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
         NettyQueueChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class,
         QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
-        NativeSocketChannelTest.class })
+        NativeSocketChannelTest.class, FragmentChannelTest.class, CompressionChannelTest.class,
+        StreamCompressionChannelTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

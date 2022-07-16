@@ -30,15 +30,15 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettyNativeSocketSynchronousWriter(type,
-                responseAddress, true, MESSAGE_SIZE);
+                responseAddress, true, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new NettyNativeSocketSynchronousReader(type,
-                requestAddress, false, MESSAGE_SIZE);
+                requestAddress, false, getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettyNativeSocketSynchronousWriter(type,
-                requestAddress, true, MESSAGE_SIZE);
+                requestAddress, true, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new NettyNativeSocketSynchronousReader(type,
-                responseAddress, false, MESSAGE_SIZE);
+                responseAddress, false, getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

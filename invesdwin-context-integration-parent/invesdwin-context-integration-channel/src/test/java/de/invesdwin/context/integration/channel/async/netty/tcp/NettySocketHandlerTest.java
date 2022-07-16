@@ -22,8 +22,8 @@ public class NettySocketHandlerTest extends AChannelTest {
 
     private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettySocketChannel serverChannel = new NettySocketChannel(type, address, true, MESSAGE_SIZE);
-        final NettySocketChannel clientChannel = new NettySocketChannel(type, address, false, MESSAGE_SIZE);
+        final NettySocketChannel serverChannel = new NettySocketChannel(type, address, true, getMaxMessageSize());
+        final NettySocketChannel clientChannel = new NettySocketChannel(type, address, false, getMaxMessageSize());
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
                 newCommandHandler(new WriterHandler()));
         final NettySocketAsynchronousChannel clientHandler = new NettySocketAsynchronousChannel(clientChannel,

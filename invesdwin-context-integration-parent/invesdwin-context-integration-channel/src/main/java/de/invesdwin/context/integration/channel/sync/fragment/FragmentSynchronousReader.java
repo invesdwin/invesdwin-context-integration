@@ -44,10 +44,10 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
             return buffer.sliceFrom(FragmentSynchronousWriter.PAYLOAD_INDEX);
         } else {
             int position = 0;
-            for (byte i = 1; i < fragmentCount; i++) {
+            for (byte i = 1; i <= fragmentCount; i++) {
                 if (i > 1) {
-                    buffer = delegate.readMessage();
                     delegate.readFinished();
+                    buffer = delegate.readMessage();
                 }
                 final byte currentFragment = buffer.getByte(FragmentSynchronousWriter.FRAGMENT_INDEX);
                 if (currentFragment != i) {

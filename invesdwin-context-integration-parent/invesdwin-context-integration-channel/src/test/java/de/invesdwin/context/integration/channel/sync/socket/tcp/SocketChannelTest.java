@@ -28,15 +28,15 @@ public class SocketChannelTest extends AChannelTest {
     private void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(responseAddress, true,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(requestAddress, true,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(requestAddress, false,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(responseAddress, false,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

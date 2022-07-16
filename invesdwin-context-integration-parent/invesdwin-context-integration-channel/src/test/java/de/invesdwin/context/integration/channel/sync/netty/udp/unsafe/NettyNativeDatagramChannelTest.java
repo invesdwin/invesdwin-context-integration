@@ -31,16 +31,16 @@ public class NettyNativeDatagramChannelTest extends AChannelTest {
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettyNativeDatagramSynchronousWriter(type,
-                responseAddress, MESSAGE_SIZE);
+                responseAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new NettyNativeDatagramSynchronousReader(type,
-                requestAddress, MESSAGE_SIZE);
+                requestAddress, getMaxMessageSize());
         final WrappedExecutorService executor = Executors
                 .newFixedThreadPool("runNettyNativeDatagramChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettyNativeDatagramSynchronousWriter(type,
-                requestAddress, MESSAGE_SIZE);
+                requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new NettyNativeDatagramSynchronousReader(type,
-                responseAddress, MESSAGE_SIZE);
+                responseAddress, getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

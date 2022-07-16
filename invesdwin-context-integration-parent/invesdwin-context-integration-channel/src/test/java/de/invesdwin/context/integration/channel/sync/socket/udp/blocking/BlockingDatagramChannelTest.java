@@ -27,15 +27,15 @@ public class BlockingDatagramChannelTest extends AChannelTest {
     private void runBlockingDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingDatagramSynchronousWriter(
-                responseAddress, MESSAGE_SIZE);
+                responseAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new BlockingDatagramSynchronousReader(requestAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingDatagramSynchronousWriter(
-                requestAddress, MESSAGE_SIZE);
+                requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new BlockingDatagramSynchronousReader(responseAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

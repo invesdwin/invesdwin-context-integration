@@ -3,12 +3,15 @@ package de.invesdwin.context.integration.channel.sync.mapped.blocking;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mapped.AMappedSynchronousChannel;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 
 /**
  * There can be multiple readers per file, but it is better to only have one.
@@ -25,9 +28,21 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
         implements ISynchronousReader<IByteBuffer> {
     private int lastTransaction;
+    private final ASpinWait readFinishedWait = newSpinWait();
+    private final Duration timeout;
 
-    public BlockingMappedSynchronousReader(final File file, final int maxMessageSize) {
+    public BlockingMappedSynchronousReader(final File file, final int maxMessageSize, final Duration timeout) {
         super(file, maxMessageSize);
+        this.timeout = timeout;
+    }
+
+    protected ASpinWait newSpinWait() {
+        return new ASpinWait() {
+            @Override
+            public boolean isConditionFulfilled() throws Exception {
+                return hasNext();
+            }
+        };
     }
 
     @Override
@@ -38,6 +53,12 @@ public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
          * written first message before the reader is initialized
          */
         lastTransaction = TRANSACTION_INITIAL_VALUE;
+    }
+
+    @Override
+    public void close() throws IOException {
+        setReadFinished(READFINISHED_CLOSED);
+        super.close();
     }
 
     @Override
@@ -58,6 +79,14 @@ public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
 
     @Override
     public IByteBuffer readMessage() {
+        try {
+            if (!readFinishedWait.awaitFulfill(System.nanoTime(), timeout)) {
+                throw new TimeoutException("Read message timeout exceeded: " + timeout);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+
         lastTransaction = getTransaction();
         final int size = getSize();
         final IByteBuffer message = buffer.slice(MESSAGE_INDEX, size);

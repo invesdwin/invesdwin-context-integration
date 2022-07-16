@@ -28,15 +28,15 @@ public class NativeSocketChannelTest extends AChannelTest {
     private void runNativeSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NativeSocketSynchronousWriter(responseAddress,
-                true, MESSAGE_SIZE);
+                true, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new NativeSocketSynchronousReader(requestAddress, true,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNativeSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NativeSocketSynchronousWriter(requestAddress,
-                false, MESSAGE_SIZE);
+                false, getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new NativeSocketSynchronousReader(responseAddress, false,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

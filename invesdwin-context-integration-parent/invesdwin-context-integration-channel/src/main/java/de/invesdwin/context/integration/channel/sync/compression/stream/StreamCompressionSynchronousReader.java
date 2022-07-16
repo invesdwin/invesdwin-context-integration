@@ -13,7 +13,7 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
 
 /**
  * Decompress multiple messages as if they come from a continuous stream. Better compression ratio but it is stateful to
- * the connection.
+ * the connection. Also the compressed fragment header is larger than in an individual compression.
  */
 @NotThreadSafe
 public class StreamCompressionSynchronousReader implements ISynchronousReader<IByteBuffer> {
@@ -63,8 +63,10 @@ public class StreamCompressionSynchronousReader implements ISynchronousReader<IB
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer compressedBuffer = delegate.readMessage();
-        decompressingStreamIn.wrap(compressedBuffer);
-        decompressedBuffer.putBytes(0, decompressingStreamOut);
+        final int length = compressedBuffer.getInt(StreamCompressionSynchronousWriter.DECOMPRESSEDLENGTH_INDEX);
+        final IByteBuffer payloadBuffer = compressedBuffer.sliceFrom(StreamCompressionSynchronousWriter.PAYLOAD_INDEX);
+        decompressingStreamIn.wrap(payloadBuffer);
+        decompressedBuffer.putBytesTo(0, decompressingStreamOut, length);
         return decompressedBuffer;
     }
 

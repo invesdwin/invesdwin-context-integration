@@ -22,8 +22,8 @@ public class NettyDatagramHandlerTest extends AChannelTest {
 
     private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettyDatagramChannel serverChannel = new NettyDatagramChannel(type, address, true, MESSAGE_SIZE);
-        final NettyDatagramChannel clientChannel = new NettyDatagramChannel(type, address, false, MESSAGE_SIZE);
+        final NettyDatagramChannel serverChannel = new NettyDatagramChannel(type, address, true, getMaxMessageSize());
+        final NettyDatagramChannel clientChannel = new NettyDatagramChannel(type, address, false, getMaxMessageSize());
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
                 newCommandHandler(new WriterHandler()));
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,

@@ -40,6 +40,10 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
         this.delegate = delegate;
         this.maxMessageLength = maxMessageLength;
         this.maxPayloadLength = maxMessageLength - PAYLOAD_INDEX;
+        if (maxPayloadLength <= 0) {
+            throw new IllegalArgumentException("insufficient maxPayloadLength[" + maxPayloadLength
+                    + "] from maxMessageLength[" + maxMessageLength + "] - headerLength[" + PAYLOAD_INDEX + "] ");
+        }
     }
 
     public int getMaxMessageLength() {

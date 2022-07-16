@@ -28,15 +28,15 @@ public class DatagramChannelTest extends AChannelTest {
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new DatagramSynchronousWriter(responseAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> requestReader = new DatagramSynchronousReader(requestAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new DatagramSynchronousWriter(requestAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         final ISynchronousReader<IByteBuffer> responseReader = new DatagramSynchronousReader(responseAddress,
-                MESSAGE_SIZE);
+                getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
