@@ -5,8 +5,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.streams.compressor.ICompressionFactory;
-import de.invesdwin.context.integration.streams.compressor.lz4.FastLZ4CompressionFactory;
+import de.invesdwin.context.integration.streams.compression.ICompressionFactory;
+import de.invesdwin.context.integration.streams.compression.lz4.FastLZ4CompressionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;

@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.compression.CompressionSynchronousWriter;
-import de.invesdwin.context.integration.streams.compressor.ICompressionFactory;
+import de.invesdwin.context.integration.streams.compression.ICompressionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.DisabledByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;

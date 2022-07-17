@@ -118,12 +118,12 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-        <groupId>org.axonframework</groupId>
-        <artifactId>axon-bom</artifactId>
-        <version>${version.axon}</version>
-        <type>pom</type>
-			  <scope>import</scope>
-      </dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-bom</artifactId>
+				<version>${version.axon}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 
 			<dependency>
 				<groupId>de.invesdwin</groupId>

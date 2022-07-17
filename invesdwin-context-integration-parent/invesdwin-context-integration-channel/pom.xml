@@ -113,6 +113,10 @@
 			<artifactId>netty-tcnative-boringssl-static</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-crypto</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>
