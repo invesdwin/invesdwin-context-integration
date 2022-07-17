@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.streams.encryption.aes.AesAlgorithm;
-import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactory;
+import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactoryCountedIV;
 import de.invesdwin.context.integration.streams.encryption.aes.AesKeyLength;
 import de.invesdwin.context.integration.streams.encryption.random.CryptoRandomGenerator;
 import de.invesdwin.context.integration.streams.encryption.random.CryptoRandomGenerators;
@@ -21,13 +21,13 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 @NotThreadSafe
 public class EncryptionChannelTest extends AChannelTest {
 
-    public static final AesEncryptionFactory CRYPTO_FACTORY;
+    public static final AesEncryptionFactoryCountedIV CRYPTO_FACTORY;
 
     static {
         try (CryptoRandomGenerator random = CryptoRandomGenerators.newSecureRandom()) {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
             random.nextBytes(key);
-            CRYPTO_FACTORY = new AesEncryptionFactory(AesAlgorithm.DEFAULT, key);
+            CRYPTO_FACTORY = new AesEncryptionFactoryCountedIV(AesAlgorithm.DEFAULT, key);
         }
     }
 

@@ -12,6 +12,8 @@ import de.invesdwin.context.integration.channel.sync.chronicle.queue.ChronicleQu
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.compression.stream.StreamCompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
+import de.invesdwin.context.integration.channel.sync.encryption.EncryptionChannelTest;
+import de.invesdwin.context.integration.channel.sync.encryption.stream.StreamEncryptionChannelTest;
 import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
@@ -39,7 +41,7 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
         NettyQueueChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class,
         QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
         NativeSocketChannelTest.class, FragmentChannelTest.class, CompressionChannelTest.class,
-        StreamCompressionChannelTest.class })
+        StreamCompressionChannelTest.class, EncryptionChannelTest.class, StreamEncryptionChannelTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON
