@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.streams.encryption.aes.AesAlgorithm;
-import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactoryCountedIV;
+import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
+import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactory;
 import de.invesdwin.context.integration.streams.encryption.aes.AesKeyLength;
 import de.invesdwin.context.integration.streams.encryption.random.CryptoRandomGenerator;
 import de.invesdwin.context.integration.streams.encryption.random.CryptoRandomGenerators;
@@ -21,13 +21,13 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 @NotThreadSafe
 public class EncryptionChannelTest extends AChannelTest {
 
-    public static final AesEncryptionFactoryCountedIV CRYPTO_FACTORY;
+    public static final IEncryptionFactory CRYPTO_FACTORY;
 
     static {
         try (CryptoRandomGenerator random = CryptoRandomGenerators.newSecureRandom()) {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
             random.nextBytes(key);
-            CRYPTO_FACTORY = new AesEncryptionFactoryCountedIV(AesAlgorithm.DEFAULT, key);
+            CRYPTO_FACTORY = new AesEncryptionFactory(key);
         }
     }
 
@@ -52,8 +52,7 @@ public class EncryptionChannelTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        final int size = super.getMaxMessageSize() + CRYPTO_FACTORY.getAlgorithm().getIvBytes();
-        return size;
+        return 24;
     }
 
 }
