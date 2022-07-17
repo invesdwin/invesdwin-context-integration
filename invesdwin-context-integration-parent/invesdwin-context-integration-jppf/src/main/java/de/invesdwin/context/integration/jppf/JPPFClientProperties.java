@@ -47,7 +47,7 @@ public final class JPPFClientProperties {
             }
         }
         //CHECKSTYLE:OFF
-        for (final Object property : System.getProperties().keySet()) {
+        for (final Object property : SystemProperties.SYSTEM_PROPERTIES.keySet()) {
             //CHECKSTYLE:ON
             final String key = property.toString();
             if (key.startsWith("jppf.") && !visitedProperties.contains(key)) {
