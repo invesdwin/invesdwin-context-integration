@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
 import de.invesdwin.context.integration.streams.encryption.crypto.CipherEncryptionFactory;
 import de.invesdwin.context.integration.streams.encryption.crypto.aes.AesKeyLength;
 import de.invesdwin.context.integration.streams.random.CryptoRandomGenerator;
-import de.invesdwin.context.integration.streams.random.CryptoRandomGenerators;
+import de.invesdwin.context.integration.streams.random.CryptoRandomGeneratorObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -25,11 +25,14 @@ public class EncryptionChannelTest extends AChannelTest {
     public static final IEncryptionFactory CRYPTO_FACTORY;
 
     static {
-        try (CryptoRandomGenerator random = CryptoRandomGenerators.newCryptoRandom()) {
+        final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
+        try {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
             final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider
                     .fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(), key);
             CRYPTO_FACTORY = new CipherEncryptionFactory(derivedKeyProvider);
+        } finally {
+            CryptoRandomGeneratorObjectPool.INSTANCE.returnObject(random);
         }
     }
 
