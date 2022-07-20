@@ -9,10 +9,10 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.streams.derivation.provider.DerivedKeyProvider;
 import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
-import de.invesdwin.context.integration.streams.encryption.aes.AesAlgorithm;
-import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactory;
-import de.invesdwin.context.integration.streams.encryption.aes.AesKeyLength;
+import de.invesdwin.context.integration.streams.encryption.crypto.CipherEncryptionFactory;
+import de.invesdwin.context.integration.streams.encryption.crypto.aes.AesKeyLength;
 import de.invesdwin.context.integration.streams.random.CryptoRandomGenerator;
 import de.invesdwin.context.integration.streams.random.CryptoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -27,10 +27,9 @@ public class EncryptionChannelTest extends AChannelTest {
     static {
         try (CryptoRandomGenerator random = CryptoRandomGenerators.newSecureRandom()) {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
-            random.nextBytes(key);
-            final byte[] iv = new byte[AesAlgorithm.DEFAULT.getIvBytes()];
-            random.nextBytes(iv);
-            CRYPTO_FACTORY = new AesEncryptionFactory(key, iv);
+            final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider
+                    .fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(), key);
+            CRYPTO_FACTORY = new CipherEncryptionFactory(derivedKeyProvider);
         }
     }
 
