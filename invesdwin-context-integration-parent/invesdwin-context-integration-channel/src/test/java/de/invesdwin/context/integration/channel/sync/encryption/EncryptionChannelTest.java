@@ -25,7 +25,7 @@ public class EncryptionChannelTest extends AChannelTest {
     public static final IEncryptionFactory CRYPTO_FACTORY;
 
     static {
-        try (CryptoRandomGenerator random = CryptoRandomGenerators.newSecureRandom()) {
+        try (CryptoRandomGenerator random = CryptoRandomGenerators.newCryptoRandom()) {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
             final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider
                     .fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(), key);
