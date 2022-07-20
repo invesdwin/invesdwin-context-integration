@@ -10,6 +10,7 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
+import de.invesdwin.context.integration.streams.encryption.aes.AesAlgorithm;
 import de.invesdwin.context.integration.streams.encryption.aes.AesEncryptionFactory;
 import de.invesdwin.context.integration.streams.encryption.aes.AesKeyLength;
 import de.invesdwin.context.integration.streams.random.CryptoRandomGenerator;
@@ -27,7 +28,9 @@ public class EncryptionChannelTest extends AChannelTest {
         try (CryptoRandomGenerator random = CryptoRandomGenerators.newSecureRandom()) {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
             random.nextBytes(key);
-            CRYPTO_FACTORY = new AesEncryptionFactory(key);
+            final byte[] iv = new byte[AesAlgorithm.DEFAULT.getIvBytes()];
+            random.nextBytes(iv);
+            CRYPTO_FACTORY = new AesEncryptionFactory(key, iv);
         }
     }
 
