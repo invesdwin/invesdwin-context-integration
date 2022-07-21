@@ -20,7 +20,7 @@ import javax.annotation.concurrent.Immutable;
 
 import org.jppf.serialization.JPPFCompositeSerialization;
 
-import de.invesdwin.context.integration.streams.compression.lz4.LZ4Streams;
+import de.invesdwin.context.integration.compression.lz4.LZ4Streams;
 
 @Immutable
 public class HighLZ4Serialization extends JPPFCompositeSerialization {

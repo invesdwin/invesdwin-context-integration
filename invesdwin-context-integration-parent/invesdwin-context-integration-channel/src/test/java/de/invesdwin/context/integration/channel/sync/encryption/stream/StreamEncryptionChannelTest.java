@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.encryption.EncryptionChannelTest;
-import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 

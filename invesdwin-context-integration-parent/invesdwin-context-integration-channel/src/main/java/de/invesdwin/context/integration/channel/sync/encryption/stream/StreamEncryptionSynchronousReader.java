@@ -6,7 +6,7 @@ import java.io.InputStream;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.streams.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;

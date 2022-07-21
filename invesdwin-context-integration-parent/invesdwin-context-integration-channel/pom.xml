@@ -30,6 +30,46 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-security-crypto</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.openhft</groupId>
+			<artifactId>chronicle-core</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.aeron</groupId>
+			<artifactId>aeron-driver</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-handler</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport-native-epoll</artifactId>
+			<classifier>linux-x86_64</classifier>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-transport-native-kqueue</artifactId>
+			<classifier>osx-x86_64</classifier>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.netty.incubator</groupId>
+			<artifactId>netty-incubator-transport-native-io_uring</artifactId>
+			<classifier>linux-x86_64</classifier>
+		</dependency>
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-tcnative-boringssl-static</artifactId>
+			<scope>provided</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>com.lmax</groupId>
@@ -49,11 +89,6 @@
 		<dependency>
 			<groupId>net.openhft</groupId>
 			<artifactId>chronicle-queue</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.aeron</groupId>
-			<artifactId>aeron-driver</artifactId>
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
@@ -80,42 +115,6 @@
 			<groupId>net.openhft</groupId>
 			<artifactId>chronicle-network</artifactId>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-handler</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>net.openhft</groupId>
-			<artifactId>chronicle-core</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-transport-native-epoll</artifactId>
-			<classifier>linux-x86_64</classifier>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-transport-native-kqueue</artifactId>
-			<classifier>osx-x86_64</classifier>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>io.netty.incubator</groupId>
-			<artifactId>netty-incubator-transport-native-io_uring</artifactId>
-			<classifier>linux-x86_64</classifier>
-		</dependency>
-		<dependency>
-			<groupId>io.netty</groupId>
-			<artifactId>netty-tcnative-boringssl-static</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-crypto</artifactId>
 		</dependency>
 	</dependencies>
 
