@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.crypto.encryption.authentication.stream;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -35,7 +36,8 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
     private IByteBuffer decryptedBuffer;
 
     private ExpandableByteBufferOutputStream encryptingStreamOut;
-    private LayeredMacOutputStream encryptingStreamIn;
+    private LayeredMacOutputStream signatureStreamIn;
+    private OutputStream encryptingStreamIn;
 
     public StreamAuthenticatedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
             final IEncryptionFactory encryptionFactory, final IAuthenticationFactory authenticationFactory) {
@@ -52,8 +54,8 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
     public void open() throws IOException {
         delegate.open();
         encryptingStreamOut = new ExpandableByteBufferOutputStream();
-        encryptingStreamIn = authenticationFactory
-                .newSignatureOutputStream(encryptionFactory.newEncryptor(encryptingStreamOut));
+        signatureStreamIn = authenticationFactory.newSignatureOutputStream(encryptingStreamOut);
+        encryptingStreamIn = encryptionFactory.newEncryptor(signatureStreamIn);
     }
 
     @Override
@@ -65,6 +67,7 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
             encryptingStreamOut = null;
         }
         if (encryptingStreamIn != null) {
+            signatureStreamIn = null;
             encryptingStreamIn.close();
             encryptingStreamIn = null;
         }
@@ -82,7 +85,7 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
 
     @Override
     public int writeBuffer(final IByteBuffer buffer) {
-        encryptingStreamIn.init(); //in case of exceptions, it is lazy
+        signatureStreamIn.init(); //in case of exceptions, it is lazy
         encryptingStreamOut.wrap(buffer.sliceFrom(PAYLOAD_INDEX));
         try {
             decryptedBuffer.getBytes(0, encryptingStreamIn);
@@ -92,7 +95,7 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
         }
         final int encryptedLength = encryptingStreamOut.position();
         buffer.putInt(DECRYPTEDLENGTH_INDEX, decryptedBuffer.capacity());
-        final byte[] signature = encryptingStreamIn.doFinal();
+        final byte[] signature = signatureStreamIn.doFinal();
         final int signatureIndex = PAYLOAD_INDEX + encryptedLength;
         buffer.putBytes(signatureIndex, signature);
         return signatureIndex + signature.length;

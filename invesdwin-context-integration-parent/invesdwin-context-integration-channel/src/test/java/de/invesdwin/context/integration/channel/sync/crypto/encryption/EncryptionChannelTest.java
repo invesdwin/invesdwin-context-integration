@@ -22,15 +22,20 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 @NotThreadSafe
 public class EncryptionChannelTest extends AChannelTest {
 
-    public static final IEncryptionFactory CRYPTO_FACTORY;
+    public static final DerivedKeyProvider DERIVED_KEY_PROVIDER;
+    public static final IEncryptionFactory ENCRYPTION_FACTORY;
 
     static {
         final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
         try {
             final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
-            final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider
-                    .fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(), key);
-            CRYPTO_FACTORY = new CipherEncryptionFactory(derivedKeyProvider);
+            //keep the key constant between tests to ease debugging
+            if (!DEBUG) {
+                random.nextBytes(key);
+            }
+            DERIVED_KEY_PROVIDER = DerivedKeyProvider.fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(),
+                    key);
+            ENCRYPTION_FACTORY = new CipherEncryptionFactory(DERIVED_KEY_PROVIDER);
         } finally {
             CryptoRandomGeneratorObjectPool.INSTANCE.returnObject(random);
         }
@@ -47,12 +52,12 @@ public class EncryptionChannelTest extends AChannelTest {
 
     @Override
     protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
-        return new EncryptionSynchronousReader(super.newReader(file, pipes), CRYPTO_FACTORY);
+        return new EncryptionSynchronousReader(super.newReader(file, pipes), ENCRYPTION_FACTORY);
     }
 
     @Override
     protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
-        return new EncryptionSynchronousWriter(super.newWriter(file, pipes), CRYPTO_FACTORY);
+        return new EncryptionSynchronousWriter(super.newWriter(file, pipes), ENCRYPTION_FACTORY);
     }
 
     @Override

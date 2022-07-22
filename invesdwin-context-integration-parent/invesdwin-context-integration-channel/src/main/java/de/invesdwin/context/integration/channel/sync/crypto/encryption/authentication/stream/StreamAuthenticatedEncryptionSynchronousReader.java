@@ -64,17 +64,19 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer encryptedBuffer = delegate.readMessage();
-        final int payloadLength = encryptedBuffer
+        final int decryptedLength = encryptedBuffer
                 .getInt(StreamAuthenticatedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
         /*
          * need to use remaining because we did not store the encrypted length, only the decrypted length, the capacity
          * tells how much data is available and we need to subtract the signature from the end
          */
         final int signatureIndex = encryptedBuffer.remaining(mac.getMacLength());
+        final int payloadIndex = StreamAuthenticatedEncryptionSynchronousWriter.PAYLOAD_INDEX;
+        final int payloadLength = signatureIndex - payloadIndex;
+        //slices are mutable, so we need an updated slice later for the payloadBuffer
+        final byte[] calculatedSignature = authenticationFactory
+                .newSignature(encryptedBuffer.slice(payloadIndex, payloadLength), mac);
         final IByteBuffer signatureBuffer = encryptedBuffer.sliceFrom(signatureIndex);
-        final IByteBuffer payloadBuffer = encryptedBuffer
-                .slice(StreamAuthenticatedEncryptionSynchronousWriter.PAYLOAD_INDEX, signatureIndex);
-        final byte[] calculatedSignature = authenticationFactory.newSignature(payloadBuffer, mac);
         if (!ByteBuffers.constantTimeEquals(signatureBuffer, calculatedSignature)) {
             /*
              * first verify, THEN decrypt the data so that manipulated data is not exposed to the cipher algorithm:
@@ -82,8 +84,10 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
              */
             throw new IllegalArgumentException("Signature mismatch");
         }
+        //restore mutable slice state
+        final IByteBuffer payloadBuffer = encryptedBuffer.slice(payloadIndex, payloadLength);
         decryptingStreamIn.wrap(payloadBuffer);
-        decryptedBuffer.putBytesTo(0, decryptingStreamOut, payloadLength);
+        decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
 
         return decryptedBuffer;
     }
