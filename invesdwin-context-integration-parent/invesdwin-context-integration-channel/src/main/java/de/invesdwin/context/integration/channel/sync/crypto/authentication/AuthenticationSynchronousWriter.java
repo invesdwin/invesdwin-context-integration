@@ -1,31 +1,32 @@
-package de.invesdwin.context.integration.channel.sync.encryption;
+package de.invesdwin.context.integration.channel.sync.crypto.authentication;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
+import de.invesdwin.context.security.crypto.authentication.mac.pool.IMac;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 /**
- * Encrypts each message separately. Stateless regarding the connection.
+ * Signs each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class AuthenticationSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
 
     private final ISynchronousWriter<IByteBufferWriter> delegate;
-    private final IEncryptionFactory encryptionFactory;
+    private final IAuthenticationFactory authenticationFactory;
     private IByteBuffer buffer;
+    private IByteBuffer unsignedBuffer;
+    private IMac mac;
 
-    private IByteBuffer decryptedBuffer;
-
-    public EncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
-            final IEncryptionFactory encryptionFactory) {
+    public AuthenticationSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+            final IAuthenticationFactory authenticationFactory) {
         this.delegate = delegate;
-        this.encryptionFactory = encryptionFactory;
+        this.authenticationFactory = authenticationFactory;
     }
 
     public ISynchronousWriter<IByteBufferWriter> getDelegate() {
@@ -35,27 +36,30 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
     @Override
     public void open() throws IOException {
         delegate.open();
+        mac = authenticationFactory.getAlgorithm().newMac();
     }
 
     @Override
     public void close() throws IOException {
         delegate.close();
         buffer = null;
+        mac = null;
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
-        this.decryptedBuffer = message.asBuffer();
+        this.unsignedBuffer = message.asBuffer();
         try {
             delegate.write(this);
         } finally {
-            this.decryptedBuffer = null;
+            this.unsignedBuffer = null;
         }
     }
 
     @Override
     public int writeBuffer(final IByteBuffer buffer) {
-        return encryptionFactory.encrypt(decryptedBuffer, buffer);
+        //Sadly we need to copy here. E.g. StreamAuthenticatedEncryptionSynchronousWriter spares a copy by doing this together
+        return authenticationFactory.copyAndSign(unsignedBuffer, buffer, mac);
     }
 
     @Override

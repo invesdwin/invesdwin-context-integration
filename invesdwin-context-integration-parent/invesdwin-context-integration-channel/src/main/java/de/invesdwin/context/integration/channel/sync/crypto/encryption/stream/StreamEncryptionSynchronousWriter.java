@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.encryption.stream;
+package de.invesdwin.context.integration.channel.sync.crypto.encryption.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,8 +14,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.stream.ExpandableByteBufferOutputStream;
 
 /**
- * Encrypts multiple messages as if they are from a continuous stream. Better encryption ratio but it is stateful to the
- * connection. Also the compressed fragment header is larger than in an individual encryption.
+ * Encrypts multiple messages as if they are from a continuous stream. It is stateful to the connection and more
+ * efficient due to object reuse.
  */
 @NotThreadSafe
 public class StreamEncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {

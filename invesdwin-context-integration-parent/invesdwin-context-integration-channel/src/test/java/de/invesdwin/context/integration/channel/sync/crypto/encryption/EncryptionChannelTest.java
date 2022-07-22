@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.encryption;
+package de.invesdwin.context.integration.channel.sync.crypto.encryption;
 
 import java.io.File;
 

@@ -12,8 +12,8 @@ import de.invesdwin.context.integration.channel.sync.chronicle.queue.ChronicleQu
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.compression.stream.StreamCompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
-import de.invesdwin.context.integration.channel.sync.encryption.EncryptionChannelTest;
-import de.invesdwin.context.integration.channel.sync.encryption.stream.StreamEncryptionChannelTest;
+import de.invesdwin.context.integration.channel.sync.crypto.encryption.EncryptionChannelTest;
+import de.invesdwin.context.integration.channel.sync.crypto.encryption.stream.StreamEncryptionChannelTest;
 import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
