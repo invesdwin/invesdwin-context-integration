@@ -1,9 +1,11 @@
 package de.invesdwin.context.integration.channel.sync.aeron;
 
+import java.io.File;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import io.aeron.Aeron;
 import io.aeron.driver.MediaDriver;
@@ -40,7 +42,8 @@ public abstract class AAeronSynchronousChannel implements ISynchronousChannel {
     }
 
     public static MediaDriver newDefaultEmbeddedMediaDriver() {
-        return newEmbeddedMediaDriver(AAeronSynchronousChannel.class.getSimpleName() + "_" + "_default");
+        return newEmbeddedMediaDriver(new File(ContextProperties.TEMP_DIRECTORY,
+                AAeronSynchronousChannel.class.getSimpleName() + "_" + "_default").getAbsolutePath());
     }
 
     public static MediaDriver newEmbeddedMediaDriver(final String name) {
