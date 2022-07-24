@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.pool.IMac;
+import de.invesdwin.context.security.crypto.authentication.mac.IMac;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -53,7 +53,10 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
             decryptingStreamOut.close();
             decryptingStreamOut = null;
         }
-        mac = null;
+        if (mac != null) {
+            mac.close();
+            mac = null;
+        }
     }
 
     @Override

@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.pool.IMac;
+import de.invesdwin.context.security.crypto.authentication.mac.IMac;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -43,7 +43,10 @@ public class AuthenticationSynchronousWriter implements ISynchronousWriter<IByte
     public void close() throws IOException {
         delegate.close();
         buffer = null;
-        mac = null;
+        if (mac != null) {
+            mac.close();
+            mac = null;
+        }
     }
 
     @Override

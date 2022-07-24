@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.pool.IMac;
+import de.invesdwin.context.security.crypto.authentication.mac.IMac;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 /**
@@ -34,7 +34,10 @@ public class AuthenticationSynchronousReader implements ISynchronousReader<IByte
     @Override
     public void close() throws IOException {
         delegate.close();
-        mac = null;
+        if (mac != null) {
+            mac.close();
+            mac = null;
+        }
     }
 
     @Override

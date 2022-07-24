@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.context.security.crypto.encryption.cipher.CipherEncryptionFactory;
-import de.invesdwin.context.security.crypto.encryption.cipher.aes.AesKeyLength;
+import de.invesdwin.context.security.crypto.encryption.cipher.algorithm.AesKeyLength;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGeneratorObjectPool;
