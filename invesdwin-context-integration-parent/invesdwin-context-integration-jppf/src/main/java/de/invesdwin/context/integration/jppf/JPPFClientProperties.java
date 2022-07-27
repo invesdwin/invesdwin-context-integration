@@ -11,6 +11,7 @@ import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
 
 @Immutable
@@ -30,7 +31,8 @@ public final class JPPFClientProperties {
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_PORT.getName());
         maybeValidatePort(systemProperties, JPPFProperties.MANAGEMENT_SSL_PORT.getName());
         USERNAMETOKEN_PASSWORD = systemProperties.getStringWithSecurityWarning(
-                JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD", "invesdwin");
+                JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD",
+                IProperties.INVESDWIN_DEFAULT_PASSWORD);
 
         final TypedProperties props = JPPFConfiguration.getProperties();
         if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {

@@ -5,6 +5,7 @@ import java.io.File;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -21,9 +22,10 @@ public final class FtpClientProperties {
     static {
         final SystemProperties systemProperties = new SystemProperties(FtpClientProperties.class);
         USERNAME = systemProperties.getString("USERNAME");
-        PASSWORD = systemProperties.getStringWithSecurityWarning("PASSWORD", "invesdwin");
+        PASSWORD = systemProperties.getStringWithSecurityWarning("PASSWORD", IProperties.INVESDWIN_DEFAULT_PASSWORD);
     }
 
-    private FtpClientProperties() {}
+    private FtpClientProperties() {
+    }
 
 }
