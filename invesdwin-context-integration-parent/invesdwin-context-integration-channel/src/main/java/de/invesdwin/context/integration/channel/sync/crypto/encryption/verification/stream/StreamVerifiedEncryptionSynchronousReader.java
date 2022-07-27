@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.encryption.authentication.stream;
+package de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.stream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -6,9 +6,9 @@ import java.io.InputStream;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.IMac;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
@@ -18,21 +18,21 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
  * efficient due to object reuse.
  */
 @NotThreadSafe
-public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     private final ISynchronousReader<IByteBuffer> delegate;
     private final IEncryptionFactory encryptionFactory;
-    private final IAuthenticationFactory authenticationFactory;
+    private final IVerificationFactory verificationFactory;
     private IByteBuffer decryptedBuffer;
     private ByteBufferInputStream decryptingStreamIn;
     private InputStream decryptingStreamOut;
-    private IMac mac;
+    private IHash hash;
 
-    public StreamAuthenticatedEncryptionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
-            final IEncryptionFactory encryptionFactory, final IAuthenticationFactory authenticationFactory) {
+    public StreamVerifiedEncryptionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
+            final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
-        this.authenticationFactory = authenticationFactory;
+        this.verificationFactory = verificationFactory;
     }
 
     @Override
@@ -41,7 +41,7 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
         decryptedBuffer = ByteBuffers.allocateExpandable();
         decryptingStreamIn = new ByteBufferInputStream();
         decryptingStreamOut = encryptionFactory.newDecryptor(decryptingStreamIn);
-        mac = authenticationFactory.getAlgorithm().newMac();
+        hash = verificationFactory.getAlgorithm().newHash();
     }
 
     @Override
@@ -53,9 +53,9 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
             decryptingStreamOut.close();
             decryptingStreamOut = null;
         }
-        if (mac != null) {
-            mac.close();
-            mac = null;
+        if (hash != null) {
+            hash.close();
+            hash = null;
         }
     }
 
@@ -68,8 +68,8 @@ public class StreamAuthenticatedEncryptionSynchronousReader implements ISynchron
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer encryptedBuffer = delegate.readMessage();
         final int decryptedLength = encryptedBuffer
-                .getInt(StreamAuthenticatedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
-        final IByteBuffer payloadBuffer = mac.verifyAndSlice(encryptedBuffer);
+                .getInt(StreamVerifiedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
+        final IByteBuffer payloadBuffer = hash.verifyAndSlice(encryptedBuffer);
         decryptingStreamIn.wrap(payloadBuffer);
         decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
 

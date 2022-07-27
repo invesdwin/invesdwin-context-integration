@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.encryption.authentication.stream;
+package de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.stream;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -6,9 +6,9 @@ import java.io.OutputStream;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.stream.LayeredMacOutputStream;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.stream.LayeredHashOutputStream;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.DisabledByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -20,7 +20,7 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ExpandableByteBufferOutputS
  * efficient due to object reuse.
  */
 @NotThreadSafe
-public class StreamAuthenticatedEncryptionSynchronousWriter
+public class StreamVerifiedEncryptionSynchronousWriter
         implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
 
     public static final int DECRYPTEDLENGTH_INDEX = 0;
@@ -30,20 +30,20 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
 
     private final ISynchronousWriter<IByteBufferWriter> delegate;
     private final IEncryptionFactory encryptionFactory;
-    private final IAuthenticationFactory authenticationFactory;
+    private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
 
     private IByteBuffer decryptedBuffer;
 
     private ExpandableByteBufferOutputStream encryptingStreamOut;
-    private LayeredMacOutputStream signatureStreamIn;
+    private LayeredHashOutputStream signatureStreamIn;
     private OutputStream encryptingStreamIn;
 
-    public StreamAuthenticatedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
-            final IEncryptionFactory encryptionFactory, final IAuthenticationFactory authenticationFactory) {
+    public StreamVerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+            final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
-        this.authenticationFactory = authenticationFactory;
+        this.verificationFactory = verificationFactory;
     }
 
     public ISynchronousWriter<IByteBufferWriter> getDelegate() {
@@ -54,7 +54,7 @@ public class StreamAuthenticatedEncryptionSynchronousWriter
     public void open() throws IOException {
         delegate.open();
         encryptingStreamOut = new ExpandableByteBufferOutputStream();
-        signatureStreamIn = authenticationFactory.newSignatureOutputStream(encryptingStreamOut);
+        signatureStreamIn = verificationFactory.newHashOutputStream(encryptingStreamOut);
         encryptingStreamIn = encryptionFactory.newEncryptor(signatureStreamIn);
     }
 

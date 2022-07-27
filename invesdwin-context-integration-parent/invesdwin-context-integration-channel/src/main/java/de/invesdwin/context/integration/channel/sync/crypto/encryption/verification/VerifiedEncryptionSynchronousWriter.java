@@ -1,13 +1,13 @@
-package de.invesdwin.context.integration.channel.sync.crypto.encryption.authentication;
+package de.invesdwin.context.integration.channel.sync.crypto.encryption.verification;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.IMac;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -16,21 +16,20 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
  * Encrypts each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class AuthenticatedEncryptionSynchronousWriter
-        implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
 
     private final ISynchronousWriter<IByteBufferWriter> delegate;
     private final IEncryptionFactory encryptionFactory;
-    private final IAuthenticationFactory authenticationFactory;
+    private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
     private IByteBuffer decryptedBuffer;
-    private IMac mac;
+    private IHash hash;
 
-    public AuthenticatedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
-            final IEncryptionFactory encryptionFactory, final IAuthenticationFactory authenticationFactory) {
+    public VerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+            final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
-        this.authenticationFactory = authenticationFactory;
+        this.verificationFactory = verificationFactory;
     }
 
     public ISynchronousWriter<IByteBufferWriter> getDelegate() {
@@ -40,16 +39,16 @@ public class AuthenticatedEncryptionSynchronousWriter
     @Override
     public void open() throws IOException {
         delegate.open();
-        mac = authenticationFactory.getAlgorithm().newMac();
+        hash = verificationFactory.getAlgorithm().newHash();
     }
 
     @Override
     public void close() throws IOException {
         delegate.close();
         buffer = null;
-        if (mac != null) {
-            mac.close();
-            mac = null;
+        if (hash != null) {
+            hash.close();
+            hash = null;
         }
     }
 
@@ -66,7 +65,7 @@ public class AuthenticatedEncryptionSynchronousWriter
     @Override
     public int writeBuffer(final IByteBuffer buffer) {
         final int signatureIndex = encryptionFactory.encrypt(decryptedBuffer, buffer);
-        final int signatureLength = authenticationFactory.putSignature(buffer, signatureIndex, mac);
+        final int signatureLength = verificationFactory.putHash(buffer, signatureIndex, hash);
         return signatureIndex + signatureLength;
     }
 

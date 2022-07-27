@@ -10,8 +10,8 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
-import de.invesdwin.context.security.crypto.encryption.cipher.CipherEncryptionFactory;
-import de.invesdwin.context.security.crypto.encryption.cipher.algorithm.AesKeyLength;
+import de.invesdwin.context.security.crypto.encryption.cipher.SymmetricEncryptionFactory;
+import de.invesdwin.context.security.crypto.encryption.cipher.algorithm.aes.AesKeyLength;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGeneratorObjectPool;
@@ -28,14 +28,14 @@ public class EncryptionChannelTest extends AChannelTest {
     static {
         final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
         try {
-            final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength._256.getBytes());
+            final byte[] key = ByteBuffers.allocateByteArray(AesKeyLength.DEFAULT.getBytes());
             //keep the key constant between tests to ease debugging
             if (!DEBUG) {
                 random.nextBytes(key);
             }
             DERIVED_KEY_PROVIDER = DerivedKeyProvider.fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(),
                     key);
-            ENCRYPTION_FACTORY = new CipherEncryptionFactory(DERIVED_KEY_PROVIDER);
+            ENCRYPTION_FACTORY = new SymmetricEncryptionFactory(DERIVED_KEY_PROVIDER);
         } finally {
             CryptoRandomGeneratorObjectPool.INSTANCE.returnObject(random);
         }

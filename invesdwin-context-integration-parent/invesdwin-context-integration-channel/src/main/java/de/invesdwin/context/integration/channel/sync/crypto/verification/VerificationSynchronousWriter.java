@@ -1,12 +1,12 @@
-package de.invesdwin.context.integration.channel.sync.crypto.authentication;
+package de.invesdwin.context.integration.channel.sync.crypto.verification;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.IMac;
+import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -15,18 +15,18 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
  * Signs each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class AuthenticationSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
 
     private final ISynchronousWriter<IByteBufferWriter> delegate;
-    private final IAuthenticationFactory authenticationFactory;
+    private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
     private IByteBuffer unsignedBuffer;
-    private IMac mac;
+    private IHash hash;
 
-    public AuthenticationSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
-            final IAuthenticationFactory authenticationFactory) {
+    public VerificationSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+            final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
-        this.authenticationFactory = authenticationFactory;
+        this.verificationFactory = verificationFactory;
     }
 
     public ISynchronousWriter<IByteBufferWriter> getDelegate() {
@@ -36,16 +36,16 @@ public class AuthenticationSynchronousWriter implements ISynchronousWriter<IByte
     @Override
     public void open() throws IOException {
         delegate.open();
-        mac = authenticationFactory.getAlgorithm().newMac();
+        hash = verificationFactory.getAlgorithm().newHash();
     }
 
     @Override
     public void close() throws IOException {
         delegate.close();
         buffer = null;
-        if (mac != null) {
-            mac.close();
-            mac = null;
+        if (hash != null) {
+            hash.close();
+            hash = null;
         }
     }
 
@@ -61,8 +61,8 @@ public class AuthenticationSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public int writeBuffer(final IByteBuffer buffer) {
-        //Sadly we need to copy here. E.g. StreamAuthenticatedEncryptionSynchronousWriter spares a copy by doing this together
-        return authenticationFactory.copyAndSign(unsignedBuffer, buffer, mac);
+        //Sadly we need to copy here. E.g. StreamVerificationEncryptionSynchronousWriter spares a copy by doing this together
+        return verificationFactory.copyAndHash(unsignedBuffer, buffer, hash);
     }
 
     @Override

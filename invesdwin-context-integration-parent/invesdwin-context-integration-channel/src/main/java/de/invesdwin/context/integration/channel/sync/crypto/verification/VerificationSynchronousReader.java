@@ -1,42 +1,42 @@
-package de.invesdwin.context.integration.channel.sync.crypto.authentication;
+package de.invesdwin.context.integration.channel.sync.crypto.verification;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.security.crypto.authentication.IAuthenticationFactory;
-import de.invesdwin.context.security.crypto.authentication.mac.IMac;
+import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 /**
  * Verifies each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class AuthenticationSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class VerificationSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     private final ISynchronousReader<IByteBuffer> delegate;
-    private final IAuthenticationFactory authenticationFactory;
-    private IMac mac;
+    private final IVerificationFactory verificationFactory;
+    private IHash hash;
 
-    public AuthenticationSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
-            final IAuthenticationFactory authenticationFactory) {
+    public VerificationSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
+            final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
-        this.authenticationFactory = authenticationFactory;
+        this.verificationFactory = verificationFactory;
     }
 
     @Override
     public void open() throws IOException {
         delegate.open();
-        this.mac = authenticationFactory.getAlgorithm().newMac();
+        this.hash = verificationFactory.getAlgorithm().newHash();
     }
 
     @Override
     public void close() throws IOException {
         delegate.close();
-        if (mac != null) {
-            mac.close();
-            mac = null;
+        if (hash != null) {
+            hash.close();
+            hash = null;
         }
     }
 
@@ -49,7 +49,7 @@ public class AuthenticationSynchronousReader implements ISynchronousReader<IByte
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer signedBuffer = delegate.readMessage();
         //no copy needed here
-        return authenticationFactory.verifyAndSlice(signedBuffer, mac);
+        return verificationFactory.verifyAndSlice(signedBuffer, hash);
     }
 
     @Override
