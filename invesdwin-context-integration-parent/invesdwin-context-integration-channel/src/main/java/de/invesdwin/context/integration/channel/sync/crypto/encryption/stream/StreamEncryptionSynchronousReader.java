@@ -35,7 +35,7 @@ public class StreamEncryptionSynchronousReader implements ISynchronousReader<IBy
         delegate.open();
         decryptedBuffer = ByteBuffers.allocateExpandable();
         decryptingStreamIn = new ByteBufferInputStream();
-        decryptingStreamOut = encryptionFactory.newDecryptor(decryptingStreamIn);
+        decryptingStreamOut = encryptionFactory.newStreamingDecryptor(decryptingStreamIn);
     }
 
     @Override

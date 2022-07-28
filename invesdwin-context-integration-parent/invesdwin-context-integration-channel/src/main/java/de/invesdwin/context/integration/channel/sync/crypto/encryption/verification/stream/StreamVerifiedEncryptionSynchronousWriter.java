@@ -55,7 +55,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
         delegate.open();
         encryptingStreamOut = new ExpandableByteBufferOutputStream();
         signatureStreamIn = verificationFactory.newHashOutputStream(encryptingStreamOut);
-        encryptingStreamIn = encryptionFactory.newEncryptor(signatureStreamIn);
+        encryptingStreamIn = encryptionFactory.newStreamingEncryptor(signatureStreamIn);
     }
 
     @Override

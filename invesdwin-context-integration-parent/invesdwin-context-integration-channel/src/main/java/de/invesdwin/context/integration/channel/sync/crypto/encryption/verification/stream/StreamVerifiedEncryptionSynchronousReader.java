@@ -40,7 +40,7 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
         delegate.open();
         decryptedBuffer = ByteBuffers.allocateExpandable();
         decryptingStreamIn = new ByteBufferInputStream();
-        decryptingStreamOut = encryptionFactory.newDecryptor(decryptingStreamIn);
+        decryptingStreamOut = encryptionFactory.newStreamingDecryptor(decryptingStreamIn);
         hash = verificationFactory.getAlgorithm().newHash();
     }
 

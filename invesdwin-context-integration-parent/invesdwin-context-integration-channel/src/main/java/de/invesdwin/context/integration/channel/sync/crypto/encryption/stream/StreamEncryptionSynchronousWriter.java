@@ -48,7 +48,7 @@ public class StreamEncryptionSynchronousWriter implements ISynchronousWriter<IBy
     public void open() throws IOException {
         delegate.open();
         encryptingStreamOut = new ExpandableByteBufferOutputStream();
-        encryptingStreamIn = encryptionFactory.newEncryptor(encryptingStreamOut);
+        encryptingStreamIn = encryptionFactory.newStreamingEncryptor(encryptingStreamOut);
     }
 
     @Override
