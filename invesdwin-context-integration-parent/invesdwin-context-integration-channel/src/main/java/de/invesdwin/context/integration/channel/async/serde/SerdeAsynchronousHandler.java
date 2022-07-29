@@ -72,7 +72,8 @@ public class SerdeAsynchronousHandler<I, O>
     @Override
     public IByteBuffer asBuffer() {
         if (outputBuffer == null) {
-            outputBuffer = ByteBuffers.allocate(this.outputFixedLength);
+            //needs to be expandable so that FragmentSynchronousWriter can work properly
+            outputBuffer = ByteBuffers.allocateExpandable(this.outputFixedLength);
         }
         final int length = writeBuffer(outputBuffer);
         return outputBuffer.slice(0, length);

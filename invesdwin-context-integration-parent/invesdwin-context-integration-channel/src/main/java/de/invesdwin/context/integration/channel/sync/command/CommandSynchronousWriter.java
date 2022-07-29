@@ -79,7 +79,8 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     @Override
     public IByteBuffer asBuffer() {
         if (buffer == null) {
-            buffer = ByteBuffers.allocate(this.fixedLength);
+            //needs to be expandable so that FragmentSynchronousWriter can work properly
+            buffer = ByteBuffers.allocateExpandable(fixedLength);
         }
         final int length = writeBuffer(buffer);
         return buffer.slice(0, length);
