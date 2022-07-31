@@ -69,7 +69,8 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
         final IByteBuffer encryptedBuffer = delegate.readMessage();
         final int decryptedLength = encryptedBuffer
                 .getInt(StreamVerifiedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
-        final IByteBuffer payloadBuffer = hash.verifyAndSlice(encryptedBuffer);
+        final IByteBuffer payloadBuffer = verificationFactory.verifyAndSlice(
+                encryptedBuffer.sliceFrom(StreamVerifiedEncryptionSynchronousWriter.PAYLOAD_INDEX), hash);
         decryptingStreamIn.wrap(payloadBuffer);
         decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
 
