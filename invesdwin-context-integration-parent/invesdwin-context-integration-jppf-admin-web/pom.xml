@@ -35,6 +35,10 @@
 			<groupId>org.jppf</groupId>
 			<artifactId>jppf-admin-web-embedded</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>jakarta.websocket</groupId>
+			<artifactId>jakarta.websocket-api</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>de.invesdwin</groupId>
