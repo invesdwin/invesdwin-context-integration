@@ -95,7 +95,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
         }
         final int encryptedLength = encryptingStreamOut.position();
         buffer.putInt(DECRYPTEDLENGTH_INDEX, decryptedBuffer.capacity());
-        final byte[] signature = signatureStreamIn.doFinal();
+        final byte[] signature = signatureStreamIn.getHash().doFinal();
         final int signatureIndex = PAYLOAD_INDEX + encryptedLength;
         buffer.putBytes(signatureIndex, signature);
         return signatureIndex + signature.length;
