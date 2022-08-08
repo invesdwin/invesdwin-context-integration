@@ -6,15 +6,14 @@ import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.commons.math3.random.RandomGenerator;
-
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.command.EmptySynchronousCommand;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.reference.EmptyReference;
 import de.invesdwin.util.concurrent.reference.IReference;
-import de.invesdwin.util.math.random.RandomGenerators;
+import de.invesdwin.util.math.random.IRandomGenerator;
+import de.invesdwin.util.math.random.PseudoRandomGenerators;
 
 @NotThreadSafe
 public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronousChannel {
@@ -45,7 +44,7 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
         final BlockingQueue<IReference<M>> queueCopy = queue;
         CLOSED_SYNCHRONIZER.execute(() -> {
             //randomize sleeps to increase chance of meeting each other
-            final RandomGenerator random = RandomGenerators.currentThreadLocalRandom();
+            final IRandomGenerator random = PseudoRandomGenerators.getThreadLocalPseudoRandom();
             try {
                 boolean closedMessageSent = false;
                 boolean closedMessageReceived = false;

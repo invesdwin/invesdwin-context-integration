@@ -9,8 +9,6 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
@@ -22,6 +20,8 @@ import org.apache.commons.io.IOUtils;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
@@ -105,7 +105,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     public synchronized void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
-            final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
+            final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
                 upload(new FastByteArrayInputStream(getEmptyFileContent()));

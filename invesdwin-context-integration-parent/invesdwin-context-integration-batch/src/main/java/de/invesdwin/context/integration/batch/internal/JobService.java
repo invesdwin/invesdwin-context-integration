@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.batch.internal;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +28,7 @@ import org.springframework.batch.core.step.StepLocator;
 import de.invesdwin.context.integration.batch.IJobService;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
@@ -104,13 +104,12 @@ public class JobService implements IJobService {
         return jobRegistry.getJobNames().contains(jobName);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public List<Long> getJobExecutions(final String jobName) {
         try {
             final List<Long> jobInstances = jobOperator.getJobInstances(jobName, 0, 1);
             if (jobInstances.size() == 0) {
-                return Collections.EMPTY_LIST;
+                return Collections.emptyList();
             }
             Assertions.assertThat(jobInstances.size()).isEqualTo(1);
             final List<Long> executions = jobOperator.getExecutions(jobInstances.get(0));

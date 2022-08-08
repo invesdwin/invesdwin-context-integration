@@ -109,7 +109,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
-            final String filename = filenamePrefix + UUIDs.newPseudorandomUUID() + filenameSuffix;
+            final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
             setFilename(filename);
             if (!exists()) {
                 upload(new FastByteArrayInputStream(getEmptyFileContent()));

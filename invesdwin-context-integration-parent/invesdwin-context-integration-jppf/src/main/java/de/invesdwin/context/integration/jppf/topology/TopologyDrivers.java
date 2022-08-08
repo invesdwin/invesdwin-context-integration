@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.jppf.topology;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -19,6 +18,7 @@ import org.jppf.management.forwarding.JPPFNodeForwardingMBean;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.uri.URIs;
 
 @Immutable
@@ -26,7 +26,8 @@ public final class TopologyDrivers {
 
     public static final String NODE_FORWARDING_HOST_PREFIX = "forwarding:";
 
-    private TopologyDrivers() {}
+    private TopologyDrivers() {
+    }
 
     public static List<TopologyNode> discoverHiddenNodes(final TopologyDriver driver) {
         final JMXDriverConnectionWrapper driverJmx = connect(driver);

@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.batch.internal;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -17,6 +16,7 @@ import org.springframework.core.io.Resource;
 import de.invesdwin.context.beans.init.PreMergedContext;
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @NotThreadSafe

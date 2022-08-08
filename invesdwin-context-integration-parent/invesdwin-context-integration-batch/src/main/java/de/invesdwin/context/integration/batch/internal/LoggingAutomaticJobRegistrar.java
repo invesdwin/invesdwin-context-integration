@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.batch.internal;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -13,6 +12,7 @@ import org.springframework.core.io.Resource;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.streams.resource.Resources;
 
 @NotThreadSafe

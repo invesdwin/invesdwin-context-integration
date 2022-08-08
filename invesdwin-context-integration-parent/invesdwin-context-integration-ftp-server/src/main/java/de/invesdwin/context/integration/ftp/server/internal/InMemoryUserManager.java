@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.ftp.server.internal;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
@@ -26,6 +25,7 @@ import org.apache.ftpserver.usermanager.impl.WritePermission;
 import org.apache.ftpserver.usermanager.impl.WriteRequest;
 import org.apache.ftpserver.util.BaseProperties;
 
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Strings;
 
 /**

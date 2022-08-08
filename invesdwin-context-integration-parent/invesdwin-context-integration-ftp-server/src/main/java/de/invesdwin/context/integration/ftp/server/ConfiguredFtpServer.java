@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.ftp.server;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -19,6 +18,7 @@ import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.context.integration.ftp.server.internal.InMemoryUserManager;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
 
 @ThreadSafe

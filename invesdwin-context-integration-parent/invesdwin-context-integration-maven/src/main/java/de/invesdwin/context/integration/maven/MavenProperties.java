@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.maven;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import javax.annotation.concurrent.Immutable;
@@ -13,6 +12,7 @@ import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepositorie
 import org.jboss.shrinkwrap.resolver.api.maven.repository.MavenRemoteRepository;
 
 import de.invesdwin.context.system.properties.SystemProperties;
+import de.invesdwin.util.collections.Collections;
 
 @Immutable
 public final class MavenProperties {
@@ -43,7 +43,8 @@ public final class MavenProperties {
 
     }
 
-    private MavenProperties() {}
+    private MavenProperties() {
+    }
 
     public static ConfigurableMavenResolverSystem newResolver() {
         final ConfigurableMavenResolverSystem resolver = Maven.configureResolver();

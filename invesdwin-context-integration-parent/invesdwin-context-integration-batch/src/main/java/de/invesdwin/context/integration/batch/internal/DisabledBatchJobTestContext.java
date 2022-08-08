@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.batch.internal;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -8,6 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import javax.inject.Named;
 
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
+import de.invesdwin.util.collections.Arrays;
 
 /**
  * To prevent tests from failing when another project references invesdwin-context-integration-batch without having the

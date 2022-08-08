@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.jppf.client;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -32,6 +31,7 @@ import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Strings;
