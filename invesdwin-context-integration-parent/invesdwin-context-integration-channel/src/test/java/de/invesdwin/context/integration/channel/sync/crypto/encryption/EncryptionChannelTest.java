@@ -28,7 +28,8 @@ public class EncryptionChannelTest extends AChannelTest {
     static {
         final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
         try {
-            final byte[] key = ByteBuffers.allocateByteArray(ISymmetricCipherAlgorithm.DEFAULT.getDefaultKeySize());
+            final byte[] key = ByteBuffers
+                    .allocateByteArray(ISymmetricCipherAlgorithm.DEFAULT.getDefaultKeySizeBits() / Byte.SIZE);
             //keep the key constant between tests to ease debugging
             if (!DEBUG) {
                 random.nextBytes(key);
