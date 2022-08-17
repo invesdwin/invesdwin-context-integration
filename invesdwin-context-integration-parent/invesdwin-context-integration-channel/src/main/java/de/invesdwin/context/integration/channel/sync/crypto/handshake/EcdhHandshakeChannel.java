@@ -128,7 +128,8 @@ public class EcdhHandshakeChannel implements ISynchronousReader<IByteBuffer>, IS
     }
 
     protected ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newHandshakeChannelFactory() {
-        return new EncryptedHandshakeChannelFactory(getKeyAgreementAlgorithm());
+        //this prevents unauthorized clients from connecting that do not know the pre shared pepper and password
+        return new EncryptedHandshakeChannelFactory("handshake");
     }
 
     protected ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newEncryptedChannelFactory(
