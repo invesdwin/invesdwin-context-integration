@@ -80,9 +80,9 @@ public class EcdhHandshakeChannel implements ISynchronousReader<IByteBuffer>, IS
             try {
                 final KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance(getKeyAlgorithm());
                 keyPairGenerator.initialize(keySize.getBits());
-                final KeyPair ephemeralKeyPair = keyPairGenerator.generateKeyPair();
+                final KeyPair ourEphemeralKeyPair = keyPairGenerator.generateKeyPair();
 
-                final byte[] ourPublicKey = ephemeralKeyPair.getPublic().getEncoded();
+                final byte[] ourPublicKey = ourEphemeralKeyPair.getPublic().getEncoded();
                 final IByteBuffer ourPublicKeyMessage = ByteBuffers.wrap(ourPublicKey);
                 handshakeWriter.write(ourPublicKeyMessage);
 
@@ -95,15 +95,15 @@ public class EcdhHandshakeChannel implements ISynchronousReader<IByteBuffer>, IS
                     throw new RuntimeException(e);
                 }
                 final IByteBuffer otherPublicKeyMessage = handshakeReader.readMessage();
-                final PublicKey otherPublicKey = AsymmetricCipherKey.wrapPublicKey(getKeyAlgorithm(),
+                final PublicKey otherEphemeralPublicKey = AsymmetricCipherKey.wrapPublicKey(getKeyAlgorithm(),
                         otherPublicKeyMessage.asByteArray());
                 handshakeReader.readFinished();
                 otherPublicKeyMessage.clear();
 
                 // Perform key agreement
                 final KeyAgreement ka = KeyAgreement.getInstance(getKeyAgreementAlgorithm());
-                ka.init(ephemeralKeyPair.getPrivate());
-                ka.doPhase(otherPublicKey, true);
+                ka.init(ourEphemeralKeyPair.getPrivate());
+                ka.doPhase(otherEphemeralPublicKey, true);
 
                 // Read shared secret
                 final byte[] sharedSecret = ka.generateSecret();
