@@ -20,6 +20,10 @@ public class EncryptedHandshakeChannelFactory implements ISynchronousChannelFact
     private final IEncryptionFactory encryptionFactory;
 
     public EncryptedHandshakeChannelFactory(final String password) {
+        /*
+         * maybe we should use a simple password based encryption here instead of RSA, since both parties derive the
+         * same public/private key anyhow
+         */
         this(new AsymmetricEncryptionFactory(
                 DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER, password)));
     }
