@@ -127,11 +127,20 @@ public class EcdhHandshakeChannel implements ISynchronousReader<IByteBuffer>, IS
         }
     }
 
+    /**
+     * Asymmetric encryption here prevents unauthorized clients from connecting that do not know the pre shared pepper
+     * and password. We use the static key pair to authenticate the handshake, then use ephemeral-ephemeral ecdh to
+     * create a session key for forward security. See "7.7. Payload security properties" in
+     * http://www.noiseprotocol.org/noise.html for more alternatives.
+     */
     protected ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newHandshakeChannelFactory() {
-        //this prevents unauthorized clients from connecting that do not know the pre shared pepper and password
         return new EncryptedHandshakeChannelFactory("handshake");
     }
 
+    /**
+     * We use something like AES128+HMAC_SHA256 here so that messages can not be tampered with. One could also use
+     * ED25519 signatures instead of HMAC_SHA256 hashes for non-repudiation.
+     */
     protected ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newEncryptedChannelFactory(
             final IDerivedKeyProvider derivedKeyProvider) {
         return new StreamVerifiedEncryptionChannelFactory(new SymmetricEncryptionFactory(derivedKeyProvider),
