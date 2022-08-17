@@ -22,7 +22,10 @@ public class EncryptedHandshakeChannelFactory implements ISynchronousChannelFact
     public EncryptedHandshakeChannelFactory(final String password) {
         /*
          * maybe we should use a simple password based encryption here instead of RSA, since both parties derive the
-         * same public/private key anyhow
+         * same public/private key anyhow. Or alternatively use two key pairs and put our private key and the other
+         * public key into the asymmetric encryption factory so that no party knows the private key of the other party
+         * during the handshake. Though the public keys need to be exchanged first in some way (maybe do this in a
+         * two-step exchange before the ephemeral exchange).
          */
         this(new AsymmetricEncryptionFactory(
                 DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER, password)));
