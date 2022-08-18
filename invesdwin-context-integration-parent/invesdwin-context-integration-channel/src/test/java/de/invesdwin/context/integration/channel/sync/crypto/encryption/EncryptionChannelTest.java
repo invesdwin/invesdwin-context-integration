@@ -14,7 +14,7 @@ import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.ISymmetr
 import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
-import de.invesdwin.context.security.crypto.random.CryptoRandomGeneratorObjectPool;
+import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -26,20 +26,16 @@ public class EncryptionChannelTest extends AChannelTest {
     public static final IEncryptionFactory ENCRYPTION_FACTORY;
 
     static {
-        final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
-        try {
-            final byte[] key = ByteBuffers
-                    .allocateByteArray(ISymmetricCipherAlgorithm.getDefault().getDefaultKeySizeBits() / Byte.SIZE);
-            //keep the key constant between tests to ease debugging
-            if (!DEBUG) {
-                random.nextBytes(key);
-            }
-            DERIVED_KEY_PROVIDER = DerivedKeyProvider.fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(),
-                    key);
-            ENCRYPTION_FACTORY = new SymmetricEncryptionFactory(DERIVED_KEY_PROVIDER);
-        } finally {
-            CryptoRandomGeneratorObjectPool.INSTANCE.returnObject(random);
+        final CryptoRandomGenerator random = CryptoRandomGenerators.getThreadLocalCryptoRandom();
+        final byte[] key = ByteBuffers
+                .allocateByteArray(ISymmetricCipherAlgorithm.getDefault().getDefaultKeySizeBits() / Byte.SIZE);
+        //keep the key constant between tests to ease debugging
+        if (!DEBUG) {
+            random.nextBytes(key);
         }
+        DERIVED_KEY_PROVIDER = DerivedKeyProvider.fromRandom(EncryptionChannelTest.class.getSimpleName().getBytes(),
+                key);
+        ENCRYPTION_FACTORY = new SymmetricEncryptionFactory(DERIVED_KEY_PROVIDER);
     }
 
     @Test

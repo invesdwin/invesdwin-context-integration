@@ -19,7 +19,7 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.derivation.IDerivationFactory;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
-import de.invesdwin.context.security.crypto.random.CryptoRandomGeneratorObjectPool;
+import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
@@ -114,12 +114,8 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     protected SignatureKey getOurSignatureKey() {
         final ISignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm();
         final byte[] ourRandomKey = ByteBuffers.allocateByteArray(IDerivationFactory.getDefault().getExtractLength());
-        final CryptoRandomGenerator random = CryptoRandomGeneratorObjectPool.INSTANCE.borrowObject();
-        try {
-            random.nextBytes(ourRandomKey);
-        } finally {
-            CryptoRandomGeneratorObjectPool.INSTANCE.returnObject(random);
-        }
+        final CryptoRandomGenerator random = CryptoRandomGenerators.getThreadLocalCryptoRandom();
+        random.nextBytes(ourRandomKey);
 
         final DerivedKeyProvider ourDerivedKeyProvider = DerivedKeyProvider.fromRandom(CryptoProperties.DEFAULT_PEPPER,
                 ourRandomKey);
