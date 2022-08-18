@@ -57,11 +57,11 @@ public class StreamEncryptionSynchronousReader implements ISynchronousReader<IBy
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer encryptedBuffer = delegate.readMessage();
-        final int length = encryptedBuffer.getInt(StreamEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
+        final int decryptedLength = encryptedBuffer.getInt(StreamEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
         final IByteBuffer payloadBuffer = encryptedBuffer.sliceFrom(StreamEncryptionSynchronousWriter.PAYLOAD_INDEX);
         decryptingStreamIn.wrap(payloadBuffer);
-        decryptedBuffer.putBytesTo(0, decryptingStreamOut, length);
-        return decryptedBuffer;
+        decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
+        return decryptedBuffer.sliceTo(decryptedLength);
     }
 
     @Override

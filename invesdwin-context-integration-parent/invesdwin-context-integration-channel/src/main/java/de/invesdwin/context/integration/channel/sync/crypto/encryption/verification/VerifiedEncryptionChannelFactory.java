@@ -5,8 +5,12 @@ import javax.annotation.concurrent.Immutable;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
+import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
+import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
+import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
@@ -30,6 +34,13 @@ public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFact
     @Override
     public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
         return new VerifiedEncryptionSynchronousWriter(writer, encryptionFactory, verificationFactory);
+    }
+
+    public static VerifiedEncryptionChannelFactory fromPassword(final String password) {
+        final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
+                password);
+        return new VerifiedEncryptionChannelFactory(new SymmetricEncryptionFactory(derivedKeyProvider),
+                new HashVerificationFactory(derivedKeyProvider));
     }
 
 }

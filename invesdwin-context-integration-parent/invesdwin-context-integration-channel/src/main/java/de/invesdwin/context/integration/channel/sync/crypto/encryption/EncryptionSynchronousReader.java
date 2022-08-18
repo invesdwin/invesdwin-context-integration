@@ -45,8 +45,8 @@ public class EncryptionSynchronousReader implements ISynchronousReader<IByteBuff
     @Override
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer encryptedBuffer = delegate.readMessage();
-        encryptionFactory.decrypt(encryptedBuffer, decryptedBuffer);
-        return decryptedBuffer;
+        final int decryptedSize = encryptionFactory.decrypt(encryptedBuffer, decryptedBuffer);
+        return decryptedBuffer.sliceTo(decryptedSize);
     }
 
     @Override

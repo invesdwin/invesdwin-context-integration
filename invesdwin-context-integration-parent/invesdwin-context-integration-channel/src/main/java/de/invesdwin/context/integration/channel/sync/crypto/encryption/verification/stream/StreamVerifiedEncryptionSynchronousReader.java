@@ -74,7 +74,7 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
         decryptingStreamIn.wrap(payloadBuffer);
         decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
 
-        return decryptedBuffer;
+        return decryptedBuffer.sliceTo(decryptedLength);
     }
 
     @Override

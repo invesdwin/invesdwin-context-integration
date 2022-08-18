@@ -16,6 +16,8 @@ import de.invesdwin.context.integration.channel.sync.crypto.encryption.Encryptio
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.stream.StreamEncryptionChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.stream.StreamVerifiedEncryptionChannelTest;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.dh.DhHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.ecdh.EcdhHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.verification.VerificationChannelTest;
 import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
@@ -45,7 +47,8 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
         QueueChannelTest.class, ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
         NativeSocketChannelTest.class, FragmentChannelTest.class, CompressionChannelTest.class,
         StreamCompressionChannelTest.class, EncryptionChannelTest.class, StreamEncryptionChannelTest.class,
-        VerificationChannelTest.class, VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class })
+        VerificationChannelTest.class, VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class,
+        DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

@@ -56,8 +56,8 @@ public class VerifiedEncryptionSynchronousReader implements ISynchronousReader<I
     public IByteBuffer readMessage() throws IOException {
         final IByteBuffer message = delegate.readMessage();
         final IByteBuffer encryptedBuffer = verificationFactory.verifyAndSlice(message, hash);
-        encryptionFactory.decrypt(encryptedBuffer, decryptedBuffer);
-        return decryptedBuffer;
+        final int decryptedSize = encryptionFactory.decrypt(encryptedBuffer, decryptedBuffer);
+        return decryptedBuffer.sliceTo(decryptedSize);
     }
 
     @Override
