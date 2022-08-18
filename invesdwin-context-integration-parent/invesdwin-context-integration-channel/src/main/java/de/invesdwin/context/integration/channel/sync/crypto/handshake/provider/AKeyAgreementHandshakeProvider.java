@@ -85,6 +85,9 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
         }
     }
 
+    /**
+     * https://neilmadden.blog/2016/05/20/ephemeral-elliptic-curve-diffie-hellman-key-agreement-in-java/
+     */
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferWriter> ignoreOpenCloseWriter,
             final ISynchronousWriter<IByteBufferWriter> handshakeWriter,
