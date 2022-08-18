@@ -39,6 +39,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
  * 
  * https://security.stackexchange.com/questions/14731/what-is-ecdhe-rsa (though we use something like Ed25519 instead of
  * RSA per default)
+ * 
+ * https://crypto.stackexchange.com/questions/90384/method-to-mitigate-mitm-attack-for-dh-key-exchange (should also work
+ * with static/preShared keys or certificates if such are provided here)
  */
 @Immutable
 public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeProvider {
