@@ -12,7 +12,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class HandshakeWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     private final HandshakeChannel parent;
 
@@ -22,7 +22,7 @@ public class HandshakeWriter implements ISynchronousWriter<IByteBufferWriter> {
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
-    public HandshakeWriter(final HandshakeChannel parent) {
+    public HandshakeSynchronousWriter(final HandshakeChannel parent) {
         this.parent = parent;
     }
 

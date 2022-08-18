@@ -11,8 +11,8 @@ public class HandshakeChannel {
 
     private final IHandshakeProvider parent;
 
-    private final HandshakeReader reader = new HandshakeReader(this);
-    private final HandshakeWriter writer = new HandshakeWriter(this);
+    private final HandshakeSynchronousReader reader = new HandshakeSynchronousReader(this);
+    private final HandshakeSynchronousWriter writer = new HandshakeSynchronousWriter(this);
 
     public HandshakeChannel(final IHandshakeProvider parent) {
         this.parent = parent;
@@ -22,11 +22,11 @@ public class HandshakeChannel {
         return parent;
     }
 
-    public HandshakeReader getReader() {
+    public HandshakeSynchronousReader getReader() {
         return reader;
     }
 
-    public HandshakeWriter getWriter() {
+    public HandshakeSynchronousWriter getWriter() {
         return writer;
     }
 

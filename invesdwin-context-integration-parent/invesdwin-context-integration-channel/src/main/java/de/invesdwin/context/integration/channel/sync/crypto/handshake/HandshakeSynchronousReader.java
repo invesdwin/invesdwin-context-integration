@@ -9,7 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class HandshakeReader implements ISynchronousReader<IByteBuffer> {
+public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     private final HandshakeChannel parent;
 
@@ -19,7 +19,7 @@ public class HandshakeReader implements ISynchronousReader<IByteBuffer> {
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
-    public HandshakeReader(final HandshakeChannel parent) {
+    public HandshakeSynchronousReader(final HandshakeChannel parent) {
         this.parent = parent;
     }
 

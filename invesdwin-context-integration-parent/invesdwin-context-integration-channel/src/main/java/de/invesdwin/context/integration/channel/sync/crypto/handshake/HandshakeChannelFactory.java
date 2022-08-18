@@ -40,7 +40,7 @@ public class HandshakeChannelFactory implements ISynchronousChannelFactory<IByte
         if (handshakeChannel == null) {
             handshakeChannel = new HandshakeChannel(handshakeProvider);
         }
-        final HandshakeReader handshakeReader = handshakeChannel.getReader();
+        final HandshakeSynchronousReader handshakeReader = handshakeChannel.getReader();
         handshakeReader.setUnderlyingReader(reader);
         if (handshakeChannel.getReader().getUnderlyingReader() != null
                 && handshakeChannel.getWriter().getUnderlyingWriter() != null) {
@@ -55,7 +55,7 @@ public class HandshakeChannelFactory implements ISynchronousChannelFactory<IByte
         if (handshakeChannel == null) {
             handshakeChannel = new HandshakeChannel(handshakeProvider);
         }
-        final HandshakeWriter handshakeWriter = handshakeChannel.getWriter();
+        final HandshakeSynchronousWriter handshakeWriter = handshakeChannel.getWriter();
         handshakeWriter.setUnderlyingWriter(writer);
         if (handshakeChannel.getReader().getUnderlyingReader() != null
                 && handshakeChannel.getWriter().getUnderlyingWriter() != null) {
