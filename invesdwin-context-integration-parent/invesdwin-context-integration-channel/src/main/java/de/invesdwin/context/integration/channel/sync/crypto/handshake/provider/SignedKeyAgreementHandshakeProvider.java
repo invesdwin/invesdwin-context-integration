@@ -142,8 +142,8 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
      * impersonations/hijacking of other connections.
      */
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newHandshakeChannelFactory() {
-        return unsignedProvider.newHandshakeChannelFactory();
+    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newAuthenticatedHandshakeChannelFactory() {
+        return unsignedProvider.newAuthenticatedHandshakeChannelFactory();
     }
 
     @Override

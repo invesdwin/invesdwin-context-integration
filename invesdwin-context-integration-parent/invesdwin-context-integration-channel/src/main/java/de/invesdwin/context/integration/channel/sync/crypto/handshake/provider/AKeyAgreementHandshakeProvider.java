@@ -76,7 +76,7 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
             final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
                     .valueOf(channel.getReader().getUnderlyingReader());
 
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> handshakeChannelFactory = newHandshakeChannelFactory();
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
             final ISynchronousWriter<IByteBufferWriter> handshakeWriter = handshakeChannelFactory
                     .newWriter(ignoreOpenCloseWriter);
             final ISynchronousReader<IByteBuffer> handshakeReader = handshakeChannelFactory
@@ -151,7 +151,7 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
      * To achieve forward security and non-repudiation even if the pre shared pepper and password are compromised, use
      * SignedKeyAgreementHandshake instead.
      */
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newAuthenticatedHandshakeChannelFactory() {
         return VerifiedEncryptionChannelFactory.fromPassword("handshake-" + getKeyAgreementAlgorithm());
     }
 
