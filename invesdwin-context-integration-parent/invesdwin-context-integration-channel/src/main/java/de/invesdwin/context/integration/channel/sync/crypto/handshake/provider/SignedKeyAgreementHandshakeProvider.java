@@ -36,6 +36,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
  * during the key exchange using ephemeral keys.
  * 
  * Static/PreShared public/private keys can also be used, but this will be insecure once a private key is compromised.
+ * 
+ * https://security.stackexchange.com/questions/14731/what-is-ecdhe-rsa (though we use something like Ed25519 instead of
+ * RSA per default)
  */
 @Immutable
 public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeProvider {

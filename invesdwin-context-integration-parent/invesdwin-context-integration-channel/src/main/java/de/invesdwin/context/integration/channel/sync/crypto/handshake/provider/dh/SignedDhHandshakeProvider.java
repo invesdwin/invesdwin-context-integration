@@ -16,11 +16,11 @@ import de.invesdwin.util.time.duration.Duration;
  * WARNING: Prefer the SignedEcdhHandshakeProvider where possible.
  */
 @Immutable
-public class SignedDheHandshakeProvider implements IHandshakeProvider {
+public class SignedDhHandshakeProvider implements IHandshakeProvider {
 
     private final IHandshakeProvider delegate;
 
-    public SignedDheHandshakeProvider(final Duration handshakeTimeout) {
+    public SignedDhHandshakeProvider(final Duration handshakeTimeout) {
         this.delegate = newDelegate(handshakeTimeout);
     }
 
