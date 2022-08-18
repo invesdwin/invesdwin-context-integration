@@ -7,6 +7,12 @@ import de.invesdwin.context.security.crypto.verification.signature.algorithm.Ecd
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaKeySize;
 import de.invesdwin.util.time.duration.Duration;
 
+/**
+ * In its default configuration, this is actually an authenticated (with pre shared password+pepper based encryption)
+ * ephemeral elliptic curve diffie hellman handshake (authenticated ECDHE).
+ * 
+ * WARNING: Prefer the SignedEcdhHandshakeProvider where possible.
+ */
 @NotThreadSafe
 public class EcdhHandshakeProvider extends AKeyAgreementHandshakeProvider {
 

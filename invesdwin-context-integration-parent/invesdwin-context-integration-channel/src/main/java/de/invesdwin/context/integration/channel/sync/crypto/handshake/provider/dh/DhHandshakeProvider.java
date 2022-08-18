@@ -6,6 +6,12 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.A
 import de.invesdwin.context.security.crypto.encryption.cipher.asymmetric.algorithm.RsaKeySize;
 import de.invesdwin.util.time.duration.Duration;
 
+/**
+ * In its default configuration, this is actually an authenticated (with pre shared password+pepper based encryption)
+ * ephemeral diffie hellman handshake (authenticated EDH/DHE).
+ * 
+ * WARNING: Prefer the SignedEcdhHandshakeProvider where possible.
+ */
 @NotThreadSafe
 public class DhHandshakeProvider extends AKeyAgreementHandshakeProvider {
 
