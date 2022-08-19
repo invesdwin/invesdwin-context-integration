@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.DisabledHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
@@ -35,20 +33,12 @@ public class BidiNettySocketChannelTest extends AChannelTest {
         final NettySocketChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
         final NettySocketChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
 
-        //just synchronize open/close of readers and writers since they happen in different threads
-        final HandshakeChannelFactory handshake = new HandshakeChannelFactory(
-                new DisabledHandshakeProvider(MAX_WAIT_DURATION));
-
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = handshake
-                .newWriter(newNettySocketSynchronousWriter(serverChannel));
-        final ISynchronousReader<IByteBuffer> requestReader = handshake
-                .newReader(newNettySocketSynchronousReader(serverChannel));
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = newNettySocketSynchronousWriter(serverChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = newNettySocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = handshake
-                .newWriter(newNettySocketSynchronousWriter(clientChannel));
-        final ISynchronousReader<IByteBuffer> responseReader = handshake
-                .newReader(newNettySocketSynchronousReader(clientChannel));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = newNettySocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = newNettySocketSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
