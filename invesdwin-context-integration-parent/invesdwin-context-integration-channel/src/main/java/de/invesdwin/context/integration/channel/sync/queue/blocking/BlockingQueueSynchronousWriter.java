@@ -9,6 +9,10 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.concurrent.reference.ImmutableReference;
 
+/**
+ * WARNING: can cause cpu spikes
+ */
+@Deprecated
 @NotThreadSafe
 public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronousChannel<M>
         implements ISynchronousWriter<M> {

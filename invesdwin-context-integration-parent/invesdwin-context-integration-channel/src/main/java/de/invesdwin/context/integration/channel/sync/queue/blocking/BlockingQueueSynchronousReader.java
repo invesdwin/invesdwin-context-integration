@@ -9,6 +9,10 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 
+/**
+ * WARNING: can cause cpu spikes
+ */
+@Deprecated
 @NotThreadSafe
 public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronousChannel<M>
         implements ISynchronousReader<M> {

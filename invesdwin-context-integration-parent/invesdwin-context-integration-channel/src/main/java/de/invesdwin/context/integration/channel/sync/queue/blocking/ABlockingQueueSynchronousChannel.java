@@ -15,6 +15,10 @@ import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.math.random.IRandomGenerator;
 import de.invesdwin.util.math.random.PseudoRandomGenerators;
 
+/**
+ * WARNING: can cause cpu spikes
+ */
+@Deprecated
 @NotThreadSafe
 public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronousChannel {
 
@@ -29,8 +33,7 @@ public abstract class ABlockingQueueSynchronousChannel<M> implements ISynchronou
     }
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public void close() throws IOException {

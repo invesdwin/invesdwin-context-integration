@@ -39,6 +39,7 @@ public class QueueChannelTest extends AChannelTest {
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testLinkedBlockingDequePerformanceWithBlocking() throws InterruptedException {
         final BlockingQueue<IReference<FDate>> responseQueue = new LinkedBlockingDeque<IReference<FDate>>(2);
@@ -61,6 +62,7 @@ public class QueueChannelTest extends AChannelTest {
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled
     @Test
     public void testLinkedBlockingQueuePerformanceWithBlocking() throws InterruptedException {
         final BlockingQueue<IReference<FDate>> responseQueue = new LinkedBlockingQueue<IReference<FDate>>(1);
@@ -68,7 +70,6 @@ public class QueueChannelTest extends AChannelTest {
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
-    @Disabled("causes cpu spikes")
     @Test
     public void testArrayBlockingQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(2);
@@ -99,6 +100,7 @@ public class QueueChannelTest extends AChannelTest {
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testLinkedTransferQueuePerformanceWithBlocking() throws InterruptedException {
         final BlockingQueue<IReference<FDate>> responseQueue = new LinkedTransferQueue<IReference<FDate>>();
@@ -115,6 +117,7 @@ public class QueueChannelTest extends AChannelTest {
         });
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testSynchronousQueuePerformanceWithBlocking() throws InterruptedException {
         final SynchronousQueue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(false);
@@ -122,6 +125,7 @@ public class QueueChannelTest extends AChannelTest {
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testSynchronousQueuePerformanceWithBlockingFair() throws InterruptedException {
         final SynchronousQueue<IReference<FDate>> responseQueue = new SynchronousQueue<IReference<FDate>>(true);
