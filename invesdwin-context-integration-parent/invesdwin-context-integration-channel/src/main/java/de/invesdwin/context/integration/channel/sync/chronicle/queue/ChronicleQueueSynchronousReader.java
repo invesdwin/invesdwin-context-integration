@@ -54,7 +54,7 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
         final int length = (int) bytes.writePosition();
         if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         bytes.writePosition(0);
         return buffer.slice(0, length);

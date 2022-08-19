@@ -51,7 +51,7 @@ public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchron
         final IByteBuffer message = packetBuffer.slice(MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

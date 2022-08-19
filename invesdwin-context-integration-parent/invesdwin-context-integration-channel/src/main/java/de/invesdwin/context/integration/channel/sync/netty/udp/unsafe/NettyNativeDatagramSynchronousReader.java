@@ -82,12 +82,12 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
                 position = read;
                 return true;
             } else if (read < 0) {
-                throw new FastEOFException("closed by other side");
+                throw FastEOFException.getInstance("closed by other side");
             } else {
                 return false;
             }
         } catch (final ClosedChannelException e) {
-            throw NettySocketChannel.newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
@@ -96,9 +96,13 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         int targetPosition = NettySocketChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
-        while (position < targetPosition) {
-            final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
-            position += read;
+        try {
+            while (position < targetPosition) {
+                final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
+                position += read;
+            }
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         }
         size = buffer.getInt(NettySocketChannel.SIZE_INDEX);
         targetPosition += size;
@@ -116,7 +120,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
         if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.MESSAGE_INDEX, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return buffer.slice(NettySocketChannel.MESSAGE_INDEX, size);
     }

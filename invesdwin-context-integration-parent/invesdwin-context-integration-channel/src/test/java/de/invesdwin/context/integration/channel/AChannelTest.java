@@ -478,7 +478,7 @@ public abstract class AChannelTest extends ATest {
                 }
                 return date;
             } catch (final NoSuchElementException e) {
-                throw new FastEOFException("end reached");
+                throw FastEOFException.getInstance(e);
             }
         }
 

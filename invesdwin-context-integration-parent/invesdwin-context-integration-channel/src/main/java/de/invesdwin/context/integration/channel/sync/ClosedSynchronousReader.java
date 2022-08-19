@@ -34,6 +34,6 @@ public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public boolean hasNext() throws IOException {
-        throw FastEOFException.getInstance();
+        throw FastEOFException.getInstance("always closed");
     }
 }

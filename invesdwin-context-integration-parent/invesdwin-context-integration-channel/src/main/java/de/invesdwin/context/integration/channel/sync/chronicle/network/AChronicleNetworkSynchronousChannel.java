@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -10,7 +9,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocketChannel;
@@ -105,12 +103,6 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
             serverSocket.close();
             serverSocket = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

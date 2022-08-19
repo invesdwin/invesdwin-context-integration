@@ -39,7 +39,7 @@ public class ConversantSynchronousReader<M> implements ISynchronousReader<M> {
         final M message = reference.get();
         if (message == null) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

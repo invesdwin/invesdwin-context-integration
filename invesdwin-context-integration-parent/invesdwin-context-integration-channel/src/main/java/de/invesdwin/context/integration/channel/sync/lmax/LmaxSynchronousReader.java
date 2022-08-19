@@ -62,7 +62,7 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         final M message = holder.getAndSet(null);
         if (message == null) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

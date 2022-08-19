@@ -37,7 +37,7 @@ public class BlockingQueueSynchronousReader<M> extends ABlockingQueueSynchronous
         final M message = holder.get();
         if (message == null) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

@@ -81,7 +81,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

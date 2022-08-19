@@ -61,7 +61,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         reader.polledValue = null;
         if (ClosedByteBuffer.isClosed(value)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return value;
     }

@@ -94,7 +94,7 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
             }
             final String msg = Nanomsg.getError();
             close();
-            throw new FastEOFException("closed by other side: [" + errno + "]=" + msg);
+            throw FastEOFException.getInstance("closed by other side: [" + errno + "]=" + msg);
         } else {
             return true;
         }

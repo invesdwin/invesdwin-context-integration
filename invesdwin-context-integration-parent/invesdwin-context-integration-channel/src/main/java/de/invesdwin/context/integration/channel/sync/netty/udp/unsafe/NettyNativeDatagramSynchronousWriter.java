@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.unsafe;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -10,6 +11,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySock
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -82,25 +84,29 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size,
                     channel.getSocketAddress(), false);
         } catch (final IOException e) {
-            throw NettySocketChannel.newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
     public static void writeFully(final Socket dst, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length, final InetSocketAddress recipient, final boolean fastOpen) throws IOException {
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = dst.sendTo(byteBuffer, position, remaining, recipient.getAddress(), recipient.getPort(),
-                    fastOpen);
-            if (count == -1) { // EOF
-                break;
+        try {
+            int position = pos;
+            int remaining = length - pos;
+            while (remaining > 0) {
+                final int count = dst.sendTo(byteBuffer, position, remaining, recipient.getAddress(),
+                        recipient.getPort(), fastOpen);
+                if (count == -1) { // EOF
+                    break;
+                }
+                position += count;
+                remaining -= count;
             }
-            position += count;
-            remaining -= count;
-        }
-        if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
+            if (remaining > 0) {
+                throw ByteBuffers.newPutBytesToEOF();
+            }
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         }
     }
 

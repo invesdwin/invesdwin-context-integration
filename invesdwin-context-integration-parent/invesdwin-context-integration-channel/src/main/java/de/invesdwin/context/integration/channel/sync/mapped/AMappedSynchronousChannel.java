@@ -87,7 +87,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     protected boolean isReadFinished() throws Exception {
         final byte readFinished = getReadFinished();
         if (readFinished == READFINISHED_CLOSED) {
-            throw new FastEOFException("Channel was closed by the other endpoint");
+            throw FastEOFException.getInstance("Channel was closed by the other endpoint");
         }
         return readFinished == READFINISHED_TRUE;
     }

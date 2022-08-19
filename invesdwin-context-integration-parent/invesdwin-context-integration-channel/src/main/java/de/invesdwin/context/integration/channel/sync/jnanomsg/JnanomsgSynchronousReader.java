@@ -66,7 +66,7 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }
@@ -99,7 +99,7 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
             }
             final String msg = Nanomsg.getError();
             close();
-            throw new FastEOFException("closed by other side: [" + errno + "]=" + msg);
+            throw FastEOFException.getInstance("closed by other side: [" + errno + "]=" + msg);
         } else {
             final com.sun.jna.Pointer toBeFreedPointer = ptrBuff.getValue();
             final long address = com.sun.jna.Pointer.nativeValue(toBeFreedPointer);

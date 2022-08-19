@@ -1,8 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.channel;
 
 import java.io.Closeable;
-import java.io.EOFException;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.NoSuchElementException;
@@ -18,7 +16,6 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocket
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -324,12 +321,6 @@ public class NettySocketChannel implements Closeable {
         } catch (final Throwable t) {
             //ignore
         }
-    }
-
-    public static EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

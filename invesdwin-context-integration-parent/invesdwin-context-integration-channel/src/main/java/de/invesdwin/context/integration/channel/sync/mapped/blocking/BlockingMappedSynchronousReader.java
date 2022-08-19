@@ -71,7 +71,7 @@ public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
         }
         final int curTransaction = getTransaction();
         if (curTransaction == TRANSACTION_CLOSED_VALUE) {
-            throw new FastEOFException("Channel was closed by the other endpoint");
+            throw FastEOFException.getInstance("Channel was closed by the other endpoint");
         }
         return curTransaction != lastTransaction && curTransaction != TRANSACTION_WRITING_VALUE
                 && curTransaction != TRANSACTION_INITIAL_VALUE;

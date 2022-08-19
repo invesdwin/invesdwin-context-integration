@@ -6,6 +6,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -56,7 +57,7 @@ public class SocketSynchronousWriter extends ASocketSynchronousChannel
             buffer.putInt(SIZE_INDEX, size);
             buffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 

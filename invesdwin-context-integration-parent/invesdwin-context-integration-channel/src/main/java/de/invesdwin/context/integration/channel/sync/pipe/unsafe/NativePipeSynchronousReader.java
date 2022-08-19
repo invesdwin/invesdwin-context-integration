@@ -56,7 +56,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
             //(i guess because we can not disable blocking mode)
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
@@ -70,7 +70,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
                     targetPosition - position);
             if (read < 0) {
-                throw new FastEOFException("closed by other side");
+                throw FastEOFException.getInstance("closed by other side");
             }
             position += read;
             if (read > 0 && position >= targetPosition) {
@@ -85,14 +85,14 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
             buffer.ensureCapacity(targetPosition);
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
             if (read < 0) {
-                throw new FastEOFException("socket closed");
+                throw FastEOFException.getInstance("socket closed");
             }
             position += read;
         }
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

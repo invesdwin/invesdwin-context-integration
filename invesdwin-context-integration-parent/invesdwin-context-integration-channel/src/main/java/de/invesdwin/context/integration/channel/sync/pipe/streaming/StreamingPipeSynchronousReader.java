@@ -43,7 +43,7 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
         try {
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
@@ -55,11 +55,11 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
             buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();
-                throw new FastEOFException("closed by other side");
+                throw FastEOFException.getInstance("closed by other side");
             }
             return buffer.sliceTo(size);
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 

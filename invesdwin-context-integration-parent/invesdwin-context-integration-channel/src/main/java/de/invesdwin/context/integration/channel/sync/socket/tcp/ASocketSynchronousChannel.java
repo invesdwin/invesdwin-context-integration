@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.socket.tcp;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -11,7 +10,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -122,12 +120,6 @@ public abstract class ASocketSynchronousChannel implements ISynchronousChannel {
             serverSocketChannel.close();
             serverSocketChannel = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

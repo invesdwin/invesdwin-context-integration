@@ -57,7 +57,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         }
         final int read = read0(fd, buffer.addressOffset(), position, socketSize);
         if (read < 0) {
-            throw new FastEOFException("socket closed");
+            throw FastEOFException.getInstance("socket closed");
         }
         position += read;
         return read > 0;
@@ -71,7 +71,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         while (position < targetPosition) {
             final int read = read0(fd, buffer.addressOffset(), position, targetPosition - position);
             if (read < 0) {
-                throw new FastEOFException("socket closed");
+                throw FastEOFException.getInstance("socket closed");
             }
             position += read;
         }
@@ -83,7 +83,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
             buffer.ensureCapacity(targetPosition);
             final int read = read0(fd, buffer.addressOffset(), position, remaining);
             if (read < 0) {
-                throw new FastEOFException("socket closed");
+                throw FastEOFException.getInstance("socket closed");
             }
             position += read;
         }
@@ -91,7 +91,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
         position = 0;
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

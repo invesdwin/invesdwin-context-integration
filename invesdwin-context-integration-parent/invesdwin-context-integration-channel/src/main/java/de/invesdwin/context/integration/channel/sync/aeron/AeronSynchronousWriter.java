@@ -82,16 +82,16 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
                 if (connected) {
                     connected = false;
                     close();
-                    throw new FastEOFException("closed by other side: NOT_CONNECTED=" + result);
+                    throw FastEOFException.getInstance("closed by other side: NOT_CONNECTED=" + result);
                 } else {
                     return false;
                 }
             } else if (result == Publication.CLOSED) {
                 close();
-                throw new FastEOFException("closed by other side: CLOSED=" + result);
+                throw FastEOFException.getInstance("closed by other side: CLOSED=" + result);
             } else if (result == Publication.MAX_POSITION_EXCEEDED) {
                 close();
-                throw new FastEOFException("closed by other side: MAX_POSITION_EXCEEDED=" + result);
+                throw FastEOFException.getInstance("closed by other side: MAX_POSITION_EXCEEDED=" + result);
             } else if (result == Publication.BACK_PRESSURED || result == Publication.ADMIN_ACTION) {
                 return false;
             }

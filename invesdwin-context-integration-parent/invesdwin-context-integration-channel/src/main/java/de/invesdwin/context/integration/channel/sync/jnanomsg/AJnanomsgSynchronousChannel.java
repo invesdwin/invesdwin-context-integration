@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.jnanomsg;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -8,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSocketType;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.duration.Duration;
 import nanomsg.AbstractSocket;
@@ -84,12 +82,6 @@ public abstract class AJnanomsgSynchronousChannel implements ISynchronousChannel
             socket.close();
             socket = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

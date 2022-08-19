@@ -87,7 +87,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
                 return false;
             }
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return true;
     }

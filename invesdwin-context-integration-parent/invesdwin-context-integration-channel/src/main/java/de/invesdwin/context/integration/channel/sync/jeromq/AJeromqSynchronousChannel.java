@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.jeromq;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -13,7 +12,6 @@ import org.zeromq.jzmq.sockets.SocketBuilder;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -97,12 +95,6 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
             socket.close();
             socket = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

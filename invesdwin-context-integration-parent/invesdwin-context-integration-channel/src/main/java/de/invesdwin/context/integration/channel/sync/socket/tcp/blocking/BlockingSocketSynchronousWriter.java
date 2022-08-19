@@ -7,6 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -64,7 +65,7 @@ public class BlockingSocketSynchronousWriter extends ABlockingSocketSynchronousC
             buffer.getBytesTo(0, out, MESSAGE_INDEX + size);
             out.flush();
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 

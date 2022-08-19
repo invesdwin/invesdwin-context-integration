@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.DatagramSocket;
@@ -9,7 +8,6 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -84,12 +82,6 @@ public abstract class ABlockingDatagramSynchronousChannel implements ISynchronou
             socket.close();
             socket = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new FastEOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

@@ -42,7 +42,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }
@@ -70,7 +70,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         if (recv == null) {
             if (socket.getZMQSocket().errno() != ZError.EAGAIN) {
                 close();
-                throw new FastEOFException("closed by other side");
+                throw FastEOFException.getInstance("closed by other side");
             }
             return null;
         }

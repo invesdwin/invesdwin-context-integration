@@ -52,7 +52,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             //(i guess because we can not disable blocking mode)
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
-            throw newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
@@ -65,7 +65,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         while (true) {
             final int read = fileChannel.read(messageBuffer);
             if (read < 0) {
-                throw new FastEOFException("closed by other side");
+                throw FastEOFException.getInstance("closed by other side");
             }
             if (read > 0 && messageBuffer.position() >= targetPosition) {
                 size = buffer.getInt(SIZE_INDEX);
@@ -86,7 +86,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

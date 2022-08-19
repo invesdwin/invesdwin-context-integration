@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -78,7 +79,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
             writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
-            throw NettySocketChannel.newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 
@@ -99,7 +100,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
                 throw ByteBuffers.newPutBytesToEOF();
             }
         } catch (final ClosedChannelException e) {
-            throw NettySocketChannel.newEofException(e);
+            throw FastEOFException.getInstance(e);
         }
     }
 

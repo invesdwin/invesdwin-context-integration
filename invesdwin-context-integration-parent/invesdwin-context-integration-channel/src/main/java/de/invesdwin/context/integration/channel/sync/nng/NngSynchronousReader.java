@@ -57,7 +57,7 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return message;
     }

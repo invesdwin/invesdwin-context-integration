@@ -75,7 +75,7 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         ByteBuffers.position(messageBuffer, 0);
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new FastEOFException("closed by other side");
+            throw FastEOFException.getInstance("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }
