@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
@@ -15,7 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.unix.Socket;
+import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
@@ -25,7 +26,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     private final NettyDatagramChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
-    private Socket fd;
+    private FileDescriptor fd;
     private int position = 0;
 
     public NettyNativeDatagramSynchronousReader(final INettyDatagramChannelType type,
@@ -45,18 +46,18 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     public void open() throws IOException {
         if (channel.isWriterRegistered()) {
             throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
+        } else {
+            channel.open(bootstrap -> {
+                bootstrap.handler(new ChannelInboundHandlerAdapter());
+            }, null);
+            channel.getDatagramChannel().deregister();
+            final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
+            channel.closeBootstrapAsync();
+            fd = unixChannel.fd();
+            //use direct buffer to prevent another copy from byte[] to native
+            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
         }
-        channel.open(bootstrap -> {
-            bootstrap.handler(new ChannelInboundHandlerAdapter());
-        }, ch -> {
-            ch.deregister();
-        });
-        final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
-        channel.closeBootstrapAsync();
-        fd = (Socket) unixChannel.fd();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
     }
 
     @Override
@@ -104,7 +105,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             if (buffer.capacity() != capacityBefore) {
                 messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
             }
-            readFully(fd, messageBuffer, position, remaining);
+            NettyNativeSocketSynchronousReader.readFully(fd, messageBuffer, position, remaining);
         }
         position = 0;
 
@@ -118,23 +119,6 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     @Override
     public void readFinished() {
         //noop
-    }
-
-    public static void readFully(final Socket src, final java.nio.ByteBuffer byteBuffer, final int pos,
-            final int length) throws IOException {
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = src.read(byteBuffer, position, remaining);
-            if (count == -1) { // EOF
-                break;
-            }
-            position += count;
-            remaining -= count;
-        }
-        if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
-        }
     }
 
 }

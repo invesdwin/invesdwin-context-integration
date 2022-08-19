@@ -45,18 +45,18 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     public void open() throws IOException {
         if (channel.isReaderRegistered()) {
             throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
+        } else {
+            channel.open(bootstrap -> {
+                bootstrap.handler(new ChannelInboundHandlerAdapter());
+            }, null);
+            channel.getDatagramChannel().deregister();
+            final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
+            channel.closeBootstrapAsync();
+            fd = (Socket) unixChannel.fd();
+            //use direct buffer to prevent another copy from byte[] to native
+            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
         }
-        channel.open(bootstrap -> {
-            bootstrap.handler(new ChannelInboundHandlerAdapter());
-        }, ch -> {
-            ch.deregister();
-        });
-        final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
-        channel.closeBootstrapAsync();
-        fd = (Socket) unixChannel.fd();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
     }
 
     @Override

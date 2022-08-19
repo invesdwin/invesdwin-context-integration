@@ -38,15 +38,15 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             channel.open(ch -> {
                 //make sure netty does not process any bytes
                 ch.shutdownInput();
-                ch.deregister();
             });
+            channel.getSocketChannel().deregister();
+            final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+            channel.closeBootstrapAsync();
+            fd = unixChannel.fd();
+            //use direct buffer to prevent another copy from byte[] to native
+            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
         }
-        final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-        fd = unixChannel.fd();
-        channel.closeBootstrapAsync();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
     }
 
     public static UnsupportedOperationException newNativeBidiNotSupportedException() {

@@ -42,11 +42,11 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
             channel.open(ch -> {
                 //make sure netty does not process any bytes
                 ch.shutdownOutput();
-                ch.deregister();
             });
+            channel.getSocketChannel().deregister();
             final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-            fd = unixChannel.fd();
             channel.closeBootstrapAsync();
+            fd = unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
             buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
             messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
@@ -67,9 +67,6 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
     public boolean hasNext() throws IOException {
         if (position > 0) {
             return true;
-        }
-        if (fd == null) {
-            return false;
         }
         final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
         if (read > 0) {
