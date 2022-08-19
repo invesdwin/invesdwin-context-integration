@@ -1,11 +1,17 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.type;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
+import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 public interface INettySocketChannelType {
+
+    /**
+     * BUSY_WAIT can exhaust the CPU
+     */
+    SelectStrategyFactories DEFAULT_SELECT_STRATEGY = SelectStrategyFactories.DEFAULT;
 
     EventLoopGroup newServerAcceptorGroup();
 

@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
-import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.epoll.EpollDatagramChannel;
 import io.netty.channel.epoll.EpollEventLoopGroup;
@@ -19,12 +19,12 @@ public class EpollNettyDatagramChannelType implements INettyDatagramChannelType 
 
     @Override
     public EventLoopGroup newServerWorkerGroup() {
-        return new EpollEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
+        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new EpollEventLoopGroup(1, SelectStrategyFactories.BUSY_WAIT);
+        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override

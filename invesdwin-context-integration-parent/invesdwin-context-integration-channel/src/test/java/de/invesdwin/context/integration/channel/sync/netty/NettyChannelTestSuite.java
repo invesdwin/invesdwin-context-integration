@@ -17,8 +17,8 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativ
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ BidiNettySocketChannelTest.class, NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class,
-        TlsNettySocketChannelTest.class, TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class,
+@SelectClasses({ TlsNettySocketHandlerTest.class, BidiNettySocketChannelTest.class, TlsNettySocketChannelTest.class,
+        NettySocketHandlerTest.class, TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class,
         NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class,
         NettySocketChannelTest.class })
 @Immutable
