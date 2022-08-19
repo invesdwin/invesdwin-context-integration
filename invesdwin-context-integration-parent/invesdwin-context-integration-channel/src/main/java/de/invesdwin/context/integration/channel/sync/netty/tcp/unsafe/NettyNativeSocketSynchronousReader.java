@@ -2,13 +2,11 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -24,26 +22,25 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
     private FileDescriptor fd;
     private int position = 0;
 
-    public NettyNativeSocketSynchronousReader(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
-    }
-
     public NettyNativeSocketSynchronousReader(final NettySocketChannel channel) {
         this.channel = channel;
+        this.channel.setReaderRegistered();
     }
 
     @Override
     public void open() throws IOException {
+        if (channel.isWriterRegistered()) {
+            throw NettyNativeSocketSynchronousWriter.newNativeDuplexNotSupportedException();
+        }
         channel.open(ch -> {
             //make sure netty does not process any bytes
             ch.shutdownOutput();
             ch.shutdownInput();
         });
-        channel.getSocketChannel().deregister();
         final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-        channel.closeBootstrapAsync();
         fd = unixChannel.fd();
+        channel.getSocketChannel().deregister();
+        channel.closeBootstrapAsync();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());

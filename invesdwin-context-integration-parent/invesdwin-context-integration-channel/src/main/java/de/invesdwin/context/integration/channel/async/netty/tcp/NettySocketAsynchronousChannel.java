@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -27,6 +27,9 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
     public NettySocketAsynchronousChannel(final NettySocketChannel channel,
             final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler) {
+        channel.setReaderRegistered();
+        channel.setWriterRegistered();
+        channel.setKeepBootstrapRunningAfterOpen();
         this.channel = channel;
         this.handler = handler;
     }

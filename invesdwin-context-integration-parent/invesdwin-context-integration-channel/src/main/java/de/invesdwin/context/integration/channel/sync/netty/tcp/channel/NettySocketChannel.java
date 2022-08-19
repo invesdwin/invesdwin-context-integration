@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp;
+package de.invesdwin.context.integration.channel.sync.netty.tcp.channel;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -45,6 +45,10 @@ public class NettySocketChannel implements Closeable {
     private ServerBootstrap serverBootstrap;
     private Bootstrap clientBootstrap;
 
+    private boolean readerRegistered;
+    private boolean writerRegistered;
+    private boolean keepBootstrapRunningAfterOpen;
+
     private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
@@ -57,12 +61,42 @@ public class NettySocketChannel implements Closeable {
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
-    public INettySocketChannelType getType() {
-        return type;
+    public boolean isServer() {
+        return server;
     }
 
-    public void addSocketChannelListeners(final Consumer<SocketChannel> listener) {
-        channelListeners.add(listener);
+    public boolean isReaderRegistered() {
+        return readerRegistered;
+    }
+
+    public void setReaderRegistered() {
+        if (readerRegistered) {
+            throw new IllegalStateException("reader already registered");
+        }
+        this.readerRegistered = true;
+    }
+
+    public boolean isWriterRegistered() {
+        return writerRegistered;
+    }
+
+    public void setWriterRegistered() {
+        if (writerRegistered) {
+            throw new IllegalStateException("writer already registered");
+        }
+        this.writerRegistered = true;
+    }
+
+    public void setKeepBootstrapRunningAfterOpen() {
+        this.keepBootstrapRunningAfterOpen = true;
+    }
+
+    public boolean isKeepBootstrapRunningAfterOpen() {
+        return keepBootstrapRunningAfterOpen;
+    }
+
+    public INettySocketChannelType getType() {
+        return type;
     }
 
     public SocketChannel getSocketChannel() {
@@ -77,7 +111,7 @@ public class NettySocketChannel implements Closeable {
         return socketAddress;
     }
 
-    public void open(final Consumer<SocketChannel> channelListener) {
+    public synchronized void open(final Consumer<SocketChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
                 channelListener.accept(socketChannel);

@@ -39,6 +39,10 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     public NettyDatagramSynchronousWriter(final NettyDatagramChannel channel) {
         this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram writer has to be the client");
+        }
+        this.channel.setWriterRegistered();
     }
 
     @Override
@@ -48,7 +52,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        final boolean safeWriter = isSafeWriter(channel.getDatagramChannel());
+        final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = () -> {
                 channel.getDatagramChannel().writeAndFlush(datagramPacket);
@@ -70,9 +74,11 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     @SuppressWarnings("deprecation")
-    protected boolean isSafeWriter(final DatagramChannel datagramChannel) {
+    protected boolean isSafeWriter(final NettyDatagramChannel channel) {
+        final DatagramChannel datagramChannel = channel.getDatagramChannel();
         return datagramChannel instanceof io.netty.channel.socket.oio.OioDatagramChannel
-                || datagramChannel instanceof NioDatagramChannel || datagramChannel instanceof IOUringDatagramChannel;
+                || datagramChannel instanceof NioDatagramChannel || datagramChannel instanceof IOUringDatagramChannel
+                || channel.isKeepBootstrapRunningAfterOpen();
     }
 
     @Override

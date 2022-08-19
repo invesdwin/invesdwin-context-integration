@@ -63,7 +63,7 @@ import de.invesdwin.util.time.duration.Duration;
 public abstract class AChannelTest extends ATest {
 
     public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
     public static final int MAX_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int VALUES = DEBUG ? 10 : 1_000;
     public static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
@@ -304,7 +304,7 @@ public abstract class AChannelTest extends ATest {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        Assertions.checkEquals(count, VALUES);
+        Assertions.checkEquals(VALUES, count);
         try {
             if (DEBUG) {
                 log.info("client close response reader");
@@ -403,8 +403,7 @@ public abstract class AChannelTest extends ATest {
         private int count;
         private FDate prevValue;
 
-        public ReaderHandler() {
-        }
+        public ReaderHandler() {}
 
         @Override
         public FDate open() throws IOException {
@@ -448,8 +447,7 @@ public abstract class AChannelTest extends ATest {
         private int i;
         private ICloseableIterator<FDate> values;
 
-        public WriterHandler() {
-        }
+        public WriterHandler() {}
 
         @Override
         public FDate open() throws IOException {

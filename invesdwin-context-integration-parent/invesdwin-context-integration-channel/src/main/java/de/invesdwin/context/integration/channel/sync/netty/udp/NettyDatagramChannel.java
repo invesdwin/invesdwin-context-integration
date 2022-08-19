@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
@@ -43,6 +43,10 @@ public class NettyDatagramChannel implements Closeable {
     protected final boolean server;
     private Bootstrap bootstrap;
 
+    private boolean readerRegistered;
+    private boolean writerRegistered;
+    private boolean keepBootstrapRunningAfterOpen;
+
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public NettyDatagramChannel(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
@@ -52,6 +56,40 @@ public class NettyDatagramChannel implements Closeable {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+    }
+
+    public boolean isServer() {
+        return server;
+    }
+
+    public boolean isReaderRegistered() {
+        return readerRegistered;
+    }
+
+    public void setReaderRegistered() {
+        if (readerRegistered) {
+            throw new IllegalStateException("reader already registered");
+        }
+        this.readerRegistered = true;
+    }
+
+    public boolean isWriterRegistered() {
+        return writerRegistered;
+    }
+
+    public void setWriterRegistered() {
+        if (writerRegistered) {
+            throw new IllegalStateException("writer already registered");
+        }
+        this.writerRegistered = true;
+    }
+
+    public void setKeepBootstrapRunningAfterOpen() {
+        this.keepBootstrapRunningAfterOpen = true;
+    }
+
+    public boolean isKeepBootstrapRunningAfterOpen() {
+        return keepBootstrapRunningAfterOpen;
     }
 
     public INettyDatagramChannelType getType() {
@@ -70,7 +108,8 @@ public class NettyDatagramChannel implements Closeable {
         return socketAddress;
     }
 
-    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener) {
+    public synchronized void open(final Consumer<Bootstrap> bootstrapListener,
+            final Consumer<DatagramChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
                 channelListener.accept(datagramChannel);

@@ -70,19 +70,17 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
     @Override
     public void handshake(final HandshakeChannel channel) throws IOException {
-        synchronized (channel) {
-            final IgnoreOpenCloseSynchronousWriter<IByteBufferWriter> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
-                    .valueOf(channel.getWriter().getUnderlyingWriter());
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
-                    .valueOf(channel.getReader().getUnderlyingReader());
+        final IgnoreOpenCloseSynchronousWriter<IByteBufferWriter> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
+                .valueOf(channel.getWriter().getUnderlyingWriter());
+        final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
+                .valueOf(channel.getReader().getUnderlyingReader());
 
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
-            final ISynchronousWriter<IByteBufferWriter> handshakeWriter = handshakeChannelFactory
-                    .newWriter(ignoreOpenCloseWriter);
-            final ISynchronousReader<IByteBuffer> handshakeReader = handshakeChannelFactory
-                    .newReader(ignoreOpenCloseReader);
-            performHandshake(channel, ignoreOpenCloseWriter, handshakeWriter, ignoreOpenCloseReader, handshakeReader);
-        }
+        final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
+        final ISynchronousWriter<IByteBufferWriter> handshakeWriter = handshakeChannelFactory
+                .newWriter(ignoreOpenCloseWriter);
+        final ISynchronousReader<IByteBuffer> handshakeReader = handshakeChannelFactory
+                .newReader(ignoreOpenCloseReader);
+        performHandshake(channel, ignoreOpenCloseWriter, handshakeWriter, ignoreOpenCloseReader, handshakeReader);
     }
 
     /**
@@ -131,10 +129,10 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
                 final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> encryptedChannelFactory = newEncryptedChannelFactory(
                         derivedKeyProvider);
-                channel.getWriter().setEncryptedWriter(encryptedChannelFactory.newWriter(ignoreOpenCloseWriter));
-                channel.getWriter().getEncryptedWriter().open();
                 channel.getReader().setEncryptedReader(encryptedChannelFactory.newReader(ignoreOpenCloseReader));
                 channel.getReader().getEncryptedReader().open();
+                channel.getWriter().setEncryptedWriter(encryptedChannelFactory.newWriter(ignoreOpenCloseWriter));
+                channel.getWriter().getEncryptedWriter().open();
             } catch (final NoSuchAlgorithmException | IOException | InvalidKeyException e) {
                 throw new RuntimeException(e);
             } finally {

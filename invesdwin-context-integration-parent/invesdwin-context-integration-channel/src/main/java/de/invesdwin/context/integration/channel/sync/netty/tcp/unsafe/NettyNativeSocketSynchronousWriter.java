@@ -1,13 +1,11 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -24,29 +22,34 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public NettyNativeSocketSynchronousWriter(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
-    }
-
     public NettyNativeSocketSynchronousWriter(final NettySocketChannel channel) {
         this.channel = channel;
+        this.channel.setWriterRegistered();
     }
 
     @Override
     public void open() throws IOException {
+        if (channel.isReaderRegistered()) {
+            throw newNativeDuplexNotSupportedException();
+        }
         channel.open(ch -> {
             //make sure netty does not process any bytes
             ch.shutdownInput();
             ch.shutdownInput();
         });
-        channel.getSocketChannel().deregister();
         final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-        channel.closeBootstrapAsync();
         fd = unixChannel.fd();
+        channel.getSocketChannel().deregister();
+        channel.closeBootstrapAsync();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
+    }
+
+    public static UnsupportedOperationException newNativeDuplexNotSupportedException() {
+        //io.netty.channel.unix.Errors$NativeIoException: write(..) failed: Datenübergabe unterbrochen (broken pipe)
+        return new UnsupportedOperationException(
+                "Native duplex mode for reader/writer on same channel not supported. Please use separate channels for native reader/writer. FileDescriptor reads/writer will cause broken pipes otherwise.");
     }
 
     @Override

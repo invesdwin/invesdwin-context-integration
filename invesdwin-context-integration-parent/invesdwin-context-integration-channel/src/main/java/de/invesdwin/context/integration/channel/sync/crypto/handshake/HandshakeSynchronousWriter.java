@@ -58,7 +58,6 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
     @Override
     public void open() throws IOException {
         synchronized (parent) {
-            underlyingWriter.open();
             readyForHandshake = true;
             //perform handshake on second open
             parent.open();

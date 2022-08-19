@@ -32,6 +32,8 @@ public class HandshakeChannel {
 
     public synchronized void open() throws IOException {
         if (reader.isReadyForHandshake() && writer.isReadyForHandshake()) {
+            reader.getUnderlyingReader().open();
+            writer.getUnderlyingWriter().open();
             parent.handshake(this);
             reader.setReadyForHandshake(false);
             writer.setReadyForHandshake(false);

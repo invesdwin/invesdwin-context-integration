@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.util.function.Consumer;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -9,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
@@ -28,22 +27,17 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     private SlicedFromDelegateByteBuffer messageBuffer;
     private Consumer<IByteBufferWriter> writer;
 
-    public NettySocketSynchronousWriter(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize));
-    }
-
     public NettySocketSynchronousWriter(final NettySocketChannel channel) {
         this.channel = channel;
+        this.channel.setWriterRegistered();
     }
 
-    @SuppressWarnings("deprecation")
     @Override
     public void open() throws IOException {
         channel.open(null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        final boolean safeWriter = isSafeWriter(channel.getSocketChannel());
+        final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = (message) -> {
                 channel.getSocketChannel().writeAndFlush(buf);
@@ -63,9 +57,11 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @SuppressWarnings("deprecation")
-    protected boolean isSafeWriter(final SocketChannel socketChannel) {
+    protected boolean isSafeWriter(final NettySocketChannel channel) {
+        final SocketChannel socketChannel = channel.getSocketChannel();
         return socketChannel instanceof IOUringSocketChannel
-                || socketChannel instanceof io.netty.channel.socket.oio.OioSocketChannel;
+                || socketChannel instanceof io.netty.channel.socket.oio.OioSocketChannel
+                || channel.isKeepBootstrapRunningAfterOpen();
     }
 
     @Override

@@ -7,7 +7,8 @@ import java.net.InetSocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -35,10 +36,17 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     public NettyNativeDatagramSynchronousReader(final NettyDatagramChannel channel) {
         this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram reader has to be the server");
+        }
+        this.channel.setReaderRegistered();
     }
 
     @Override
     public void open() throws IOException {
+        if (channel.isWriterRegistered()) {
+            throw NettyNativeSocketSynchronousWriter.newNativeDuplexNotSupportedException();
+        }
         channel.open(bootstrap -> {
             bootstrap.handler(new ChannelInboundHandlerAdapter());
         }, null);

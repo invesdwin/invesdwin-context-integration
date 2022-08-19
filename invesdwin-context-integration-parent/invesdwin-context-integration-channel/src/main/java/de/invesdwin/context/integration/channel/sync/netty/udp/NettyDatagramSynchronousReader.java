@@ -33,6 +33,11 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     public NettyDatagramSynchronousReader(final NettyDatagramChannel channel) {
         this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram reader has to be the server");
+        }
+        this.channel.setReaderRegistered();
+        this.channel.setKeepBootstrapRunningAfterOpen();
     }
 
     @Override

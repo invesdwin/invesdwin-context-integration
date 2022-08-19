@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp;
+package de.invesdwin.context.integration.channel.sync.netty.tcp.channel;
 
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
@@ -19,6 +19,7 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenerator;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
 import de.invesdwin.util.time.range.TimeRange;
 import io.netty.channel.ChannelPipeline;
@@ -55,7 +56,8 @@ public class TlsNettySocketChannel extends NettySocketChannel {
      * something more secure.
      */
     protected SSLEngine newSSLEngine(final SocketChannel socketChannel) {
-        final ISignatureAlgorithm signatureAlgorithm = ISignatureAlgorithm.getDefault();
+        //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
+        final ISignatureAlgorithm signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
                 "netty-ssl-engine-password".getBytes());
         final SignatureKey signatureKey = derivedKeyProvider.newDerivedKey(signatureAlgorithm,

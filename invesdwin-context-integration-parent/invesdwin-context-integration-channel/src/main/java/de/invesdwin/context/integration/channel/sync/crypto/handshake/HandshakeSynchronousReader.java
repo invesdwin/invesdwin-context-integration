@@ -58,7 +58,6 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
     @Override
     public void open() throws IOException {
         synchronized (parent) {
-            underlyingReader.open();
             readyForHandshake = true;
             //perform handshake on second open
             parent.open();
