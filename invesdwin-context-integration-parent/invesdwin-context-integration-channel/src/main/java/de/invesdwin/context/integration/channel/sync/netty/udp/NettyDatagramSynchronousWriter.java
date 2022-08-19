@@ -47,18 +47,22 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public void open() throws IOException {
-        channel.open(bootstrap -> {
-            bootstrap.handler(new ChannelInboundHandlerAdapter());
-        }, null);
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
+            channel.open(bootstrap -> {
+                bootstrap.handler(new ChannelInboundHandlerAdapter());
+            }, null);
             writer = () -> {
                 channel.getDatagramChannel().writeAndFlush(datagramPacket);
             };
         } else {
-            channel.getDatagramChannel().deregister();
+            channel.open(bootstrap -> {
+                bootstrap.handler(new ChannelInboundHandlerAdapter());
+            }, ch -> {
+                ch.deregister();
+            });
             channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
             writer = () -> {

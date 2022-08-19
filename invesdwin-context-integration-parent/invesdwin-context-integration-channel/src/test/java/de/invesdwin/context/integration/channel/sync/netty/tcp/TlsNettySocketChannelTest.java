@@ -7,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.TlsNettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import io.netty.handler.ssl.SslProvider;
 
 @NotThreadSafe
 public class TlsNettySocketChannelTest extends NettySocketChannelTest {
@@ -22,10 +21,10 @@ public class TlsNettySocketChannelTest extends NettySocketChannelTest {
                 return socketAddress.getHostName();
             }
 
-            @Override
-            protected SslProvider getSslProvider() {
-                return SslProvider.OPENSSL;
-            }
+            //            @Override
+            //            protected SslProvider getSslProvider() {
+            //                return SslProvider.OPENSSL;
+            //            }
         };
     }
 

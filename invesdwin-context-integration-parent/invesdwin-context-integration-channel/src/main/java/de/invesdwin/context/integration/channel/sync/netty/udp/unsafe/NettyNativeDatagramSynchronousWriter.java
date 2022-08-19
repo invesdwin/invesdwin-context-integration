@@ -49,7 +49,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
         channel.open(bootstrap -> {
             bootstrap.handler(new ChannelInboundHandlerAdapter());
         }, ch -> {
-            channel.getDatagramChannel().deregister();
+            ch.deregister();
         });
         final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
         channel.closeBootstrapAsync();
