@@ -10,7 +10,7 @@ public interface IChronicleSocketChannelType {
 
     ChronicleSocketChannel newSocketChannel(SocketChannel socketChannel) throws IOException;
 
-    ChronicleServerSocketChannel newServerSocketChannel();
+    ChronicleServerSocketChannel newServerSocketChannel(String hostPort);
 
     ChronicleSocketChannel acceptSocketChannel(ChronicleServerSocketChannel serverSocketChannel) throws IOException;
 

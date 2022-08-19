@@ -65,8 +65,8 @@ public enum ChronicleSocketChannelType implements IChronicleSocketChannelType {
     }
 
     @Override
-    public ChronicleServerSocketChannel newServerSocketChannel() {
-        return ChronicleServerSocketFactory.open();
+    public ChronicleServerSocketChannel newServerSocketChannel(final String hostPort) {
+        return ChronicleServerSocketFactory.open(hostPort);
     }
 
     @Override

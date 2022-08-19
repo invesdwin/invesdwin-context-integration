@@ -46,7 +46,7 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
     @Override
     public void open() throws IOException {
         if (server) {
-            serverSocketChannel = type.newServerSocketChannel();
+            serverSocketChannel = type.newServerSocketChannel(socketAddress.toString());
             serverSocketChannel.bind(socketAddress);
             serverSocket = serverSocketChannel.socket();
             socketChannel = type.acceptSocketChannel(serverSocketChannel);
