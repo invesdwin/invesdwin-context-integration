@@ -21,6 +21,8 @@ import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenera
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.RsaSignatureAlgorithm;
+import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.time.range.TimeRange;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -35,6 +37,8 @@ public class TlsNettySocketChannel extends NettySocketChannel {
     public TlsNettySocketChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         super(type, socketAddress, server, estimatedMaxMessageSize);
+        //unsafe write not supported, this would circumvent the ssl handler
+        setKeepBootstrapRunningAfterOpen();
     }
 
     @Override
@@ -57,15 +61,26 @@ public class TlsNettySocketChannel extends NettySocketChannel {
      */
     protected SSLEngine newSSLEngine(final SocketChannel socketChannel) {
         //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
-        final ISignatureAlgorithm signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
+        final SslProvider sslProvider = getSslProvider();
+        final ISignatureAlgorithm signatureAlgorithm;
+        switch (sslProvider) {
+        case JDK:
+            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
+            break;
+        case OPENSSL:
+        case OPENSSL_REFCNT:
+            signatureAlgorithm = RsaSignatureAlgorithm.DEFAULT;
+            break;
+        default:
+            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
+        }
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
-                "netty-ssl-engine-password".getBytes());
+                ("netty-ssl-engine-password").getBytes());
         final SignatureKey signatureKey = derivedKeyProvider.newDerivedKey(signatureAlgorithm,
                 "netty-ssl-engine-key".getBytes(), signatureAlgorithm.getDefaultKeySizeBits());
         final KeyPair keyPair = new KeyPair(signatureKey.getVerifyKey(), signatureKey.getSignKey());
 
         try {
-            final SslProvider sslProvider = getSslProvider();
             final TimeRange validity = SelfSignedCertGenerator.newBrowserValidity();
             final String hostname = getHostname();
             final X509Certificate serverCertificate = SelfSignedCertGenerator.generate(keyPair,

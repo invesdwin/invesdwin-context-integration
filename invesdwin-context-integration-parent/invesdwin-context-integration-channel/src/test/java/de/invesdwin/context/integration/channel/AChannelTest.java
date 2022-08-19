@@ -300,7 +300,6 @@ public abstract class AChannelTest extends ATest {
                 waitingSinceNanos = System.nanoTime();
             }
         } catch (final EOFException e) {
-            e.printStackTrace();
             //writer closed
         } catch (final Exception e) {
             throw new RuntimeException(e);

@@ -96,6 +96,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         private int remaining = NettySocketChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
+        private boolean closed = false;
 
         private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler,
                 final InetSocketAddress recipient, final int socketSize) {
@@ -110,7 +111,11 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void close() {
-            this.buf.release();
+            if (!closed) {
+                closed = true;
+                this.buf.release();
+                closeAsync();
+            }
         }
 
         @Override

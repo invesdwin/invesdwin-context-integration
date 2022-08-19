@@ -92,6 +92,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         private int position = 0;
         private int size = -1;
         private volatile IByteBuffer polledValue;
+        private boolean closed = false;
 
         private Reader(final int socketSize) {
             //netty uses direct buffers per default
@@ -102,7 +103,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
         @Override
         public void close() {
-            buf.release();
+            if (!closed) {
+                closed = true;
+                buf.release();
+            }
             polledValue = ClosedByteBuffer.INSTANCE;
         }
 
