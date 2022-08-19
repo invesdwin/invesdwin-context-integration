@@ -1,9 +1,10 @@
 package de.invesdwin.context.integration.channel.sync;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.Immutable;
+
+import de.invesdwin.util.error.FastEOFException;
 
 @Immutable
 public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
@@ -16,12 +17,10 @@ public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public void close() throws IOException {
-    }
+    public void close() throws IOException {}
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public M readMessage() {
@@ -35,6 +34,6 @@ public class ClosedSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public boolean hasNext() throws IOException {
-        throw new EOFException();
+        throw FastEOFException.getInstance();
     }
 }

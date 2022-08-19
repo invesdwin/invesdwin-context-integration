@@ -10,6 +10,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocketChannel;
@@ -107,7 +108,7 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
     }
 
     protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }

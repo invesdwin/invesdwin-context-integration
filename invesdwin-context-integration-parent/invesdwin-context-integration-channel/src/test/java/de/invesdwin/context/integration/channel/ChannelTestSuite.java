@@ -35,15 +35,15 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
-        ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
-        KryonetChannelTest.class, LmaxChannelTest.class, CompressionChannelTest.class, PipeChannelTest.class,
-        StreamingPipeChannelTest.class, NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class,
-        SocketChannelTest.class, BlockingSocketChannelTest.class, NativeSocketChannelTest.class,
-        FragmentChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
-        EncryptionChannelTest.class, StreamEncryptionChannelTest.class, VerificationChannelTest.class,
-        VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class,
-        EcdhHandshakeProviderTest.class, NettyChannelTestSuite.class })
+@SelectClasses({ NettyChannelTestSuite.class, AeronChannelTest.class, AgronaChannelTest.class,
+        BufferingIteratorChannelTest.class, ChronicleQueueChannelTest.class, ConversantChannelTest.class,
+        JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class, CompressionChannelTest.class,
+        PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class, QueueChannelTest.class,
+        ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
+        NativeSocketChannelTest.class, FragmentChannelTest.class, CompressionChannelTest.class,
+        StreamCompressionChannelTest.class, EncryptionChannelTest.class, StreamEncryptionChannelTest.class,
+        VerificationChannelTest.class, VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class,
+        DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

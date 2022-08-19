@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.chronicle.queue;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ChronicleDelegateByteBuffer;
@@ -54,7 +54,7 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
         final int length = (int) bytes.writePosition();
         if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         bytes.writePosition(0);
         return buffer.slice(0, length);

@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.pipe.unsafe;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.FileInputStream;
@@ -12,6 +11,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -70,7 +70,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
                     targetPosition - position);
             if (read < 0) {
-                throw new EOFException("closed by other side");
+                throw new FastEOFException("closed by other side");
             }
             position += read;
             if (read > 0 && position >= targetPosition) {
@@ -85,14 +85,14 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
             buffer.ensureCapacity(targetPosition);
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
             if (read < 0) {
-                throw new EOFException("socket closed");
+                throw new FastEOFException("socket closed");
             }
             position += read;
         }
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

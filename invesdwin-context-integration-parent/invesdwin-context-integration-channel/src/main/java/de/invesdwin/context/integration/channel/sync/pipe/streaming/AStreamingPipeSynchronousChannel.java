@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.error.FastEOFException;
 
 @NotThreadSafe
 public abstract class AStreamingPipeSynchronousChannel implements ISynchronousChannel {
@@ -27,7 +28,7 @@ public abstract class AStreamingPipeSynchronousChannel implements ISynchronousCh
     }
 
     protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }

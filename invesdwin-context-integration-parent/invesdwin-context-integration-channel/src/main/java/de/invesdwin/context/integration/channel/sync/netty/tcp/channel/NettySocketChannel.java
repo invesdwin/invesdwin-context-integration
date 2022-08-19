@@ -18,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocket
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.future.Futures;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -39,15 +40,15 @@ public class NettySocketChannel implements Closeable {
     protected final INettySocketChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected SocketChannel socketChannel;
+    protected volatile SocketChannel socketChannel;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    private ServerBootstrap serverBootstrap;
-    private Bootstrap clientBootstrap;
+    private volatile ServerBootstrap serverBootstrap;
+    private volatile Bootstrap clientBootstrap;
 
-    private boolean readerRegistered;
-    private boolean writerRegistered;
-    private boolean keepBootstrapRunningAfterOpen;
+    private volatile boolean readerRegistered;
+    private volatile boolean writerRegistered;
+    private volatile boolean keepBootstrapRunningAfterOpen;
 
     private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
@@ -206,7 +207,9 @@ public class NettySocketChannel implements Closeable {
                     channelFactory.get().sync().get();
                     break;
                 } catch (final Throwable t) {
-                    close();
+                    if (activeCount.get() > 0) {
+                        close();
+                    }
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -219,7 +222,7 @@ public class NettySocketChannel implements Closeable {
                 }
             }
             //wait for channel
-            for (int tries = 0; socketChannel == null; tries++) {
+            for (int tries = 0; socketChannel == null && activeCount.get() > 0; tries++) {
                 if (tries < getMaxConnectRetries()) {
                     try {
                         getConnectRetryDelay().sleep();
@@ -231,12 +234,10 @@ public class NettySocketChannel implements Closeable {
                 }
             }
         } catch (final Throwable t) {
-            try {
+            if (activeCount.get() > 0) {
                 close();
-            } catch (final IOException e) {
-                //ignore
+                throw new RuntimeException(t);
             }
-            throw new RuntimeException(t);
         }
     }
 
@@ -249,7 +250,10 @@ public class NettySocketChannel implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
+        if (activeCount.get() == 0) {
+            return;
+        }
         if (activeCount.decrementAndGet() > 0) {
             return;
         }
@@ -323,7 +327,7 @@ public class NettySocketChannel implements Closeable {
     }
 
     public static EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }

@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.jnanomsg;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSocketType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
@@ -66,7 +66,7 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }
@@ -99,7 +99,7 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
             }
             final String msg = Nanomsg.getError();
             close();
-            throw new EOFException("closed by other side: [" + errno + "]=" + msg);
+            throw new FastEOFException("closed by other side: [" + errno + "]=" + msg);
         } else {
             final com.sun.jna.Pointer toBeFreedPointer = ptrBuff.getValue();
             final long address = com.sun.jna.Pointer.nativeValue(toBeFreedPointer);

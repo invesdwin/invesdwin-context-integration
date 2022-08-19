@@ -11,6 +11,7 @@ import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.jeromq.type.IJeromqSocketType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -86,7 +87,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
                 return false;
             }
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return true;
     }

@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.mapped;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 /**
@@ -48,7 +48,7 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
         }
         final int curTransaction = getTransaction();
         if (curTransaction == TRANSACTION_CLOSED_VALUE) {
-            throw new EOFException("Channel was closed by the other endpoint");
+            throw new FastEOFException("Channel was closed by the other endpoint");
         }
         return curTransaction != lastTransaction && curTransaction != TRANSACTION_WRITING_VALUE
                 && curTransaction != TRANSACTION_INITIAL_VALUE;

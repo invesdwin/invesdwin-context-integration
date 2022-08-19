@@ -44,6 +44,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.reference.IReference;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.ProcessedEventsRateString;
@@ -477,7 +478,7 @@ public abstract class AChannelTest extends ATest {
                 }
                 return date;
             } catch (final NoSuchElementException e) {
-                throw new EOFException("end reached");
+                throw new FastEOFException("end reached");
             }
         }
 

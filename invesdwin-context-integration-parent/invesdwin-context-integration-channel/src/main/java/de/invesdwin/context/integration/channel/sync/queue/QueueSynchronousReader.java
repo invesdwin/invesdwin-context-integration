@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.queue;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.Queue;
 import java.util.concurrent.SynchronousQueue;
@@ -10,6 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.reference.IReference;
+import de.invesdwin.util.error.FastEOFException;
 
 @NotThreadSafe
 public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
@@ -25,8 +25,7 @@ public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public void close() throws IOException {
@@ -44,7 +43,7 @@ public class QueueSynchronousReader<M> implements ISynchronousReader<M> {
         final M message = holder.get();
         if (message == null) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

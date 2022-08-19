@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.pipe;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -9,6 +8,7 @@ import java.nio.channels.FileChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -65,7 +65,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         while (true) {
             final int read = fileChannel.read(messageBuffer);
             if (read < 0) {
-                throw new EOFException("closed by other side");
+                throw new FastEOFException("closed by other side");
             }
             if (read > 0 && messageBuffer.position() >= targetPosition) {
                 size = buffer.getInt(SIZE_INDEX);
@@ -86,7 +86,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

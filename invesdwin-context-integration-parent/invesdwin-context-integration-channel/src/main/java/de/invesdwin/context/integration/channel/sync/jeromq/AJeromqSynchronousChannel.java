@@ -13,6 +13,7 @@ import org.zeromq.jzmq.sockets.SocketBuilder;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -99,7 +100,7 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
     }
 
     protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }

@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -83,18 +84,22 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
 
     public static void writeFully(final FileDescriptor dst, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = dst.write(byteBuffer, position, remaining);
-            if (count == -1) { // EOF
-                break;
+        try {
+            int position = pos;
+            int remaining = length - pos;
+            while (remaining > 0) {
+                final int count = dst.write(byteBuffer, position, remaining);
+                if (count == -1) { // EOF
+                    break;
+                }
+                position += count;
+                remaining -= count;
             }
-            position += count;
-            remaining -= count;
-        }
-        if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
+            if (remaining > 0) {
+                throw ByteBuffers.newPutBytesToEOF();
+            }
+        } catch (final ClosedChannelException e) {
+            throw NettySocketChannel.newEofException(e);
         }
     }
 

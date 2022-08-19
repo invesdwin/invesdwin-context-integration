@@ -83,11 +83,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             writer = null;
         }
         if (channel != null) {
-            try {
-                channel.close();
-            } catch (final IOException e) {
-                //ignore
-            }
+            channel.close();
             channel = null;
         }
     }

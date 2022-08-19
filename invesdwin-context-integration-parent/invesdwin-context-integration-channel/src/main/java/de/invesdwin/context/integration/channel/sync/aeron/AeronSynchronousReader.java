@@ -1,11 +1,11 @@
 package de.invesdwin.context.integration.channel.sync.aeron;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.AgronaDelegateByteBuffer;
@@ -59,7 +59,7 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.nng;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.nng.type.INngSocketType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -57,7 +57,7 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

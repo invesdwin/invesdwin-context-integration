@@ -7,6 +7,7 @@ import java.io.InterruptedIOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -81,16 +82,16 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
                 if (connected) {
                     connected = false;
                     close();
-                    throw new EOFException("closed by other side: NOT_CONNECTED=" + result);
+                    throw new FastEOFException("closed by other side: NOT_CONNECTED=" + result);
                 } else {
                     return false;
                 }
             } else if (result == Publication.CLOSED) {
                 close();
-                throw new EOFException("closed by other side: CLOSED=" + result);
+                throw new FastEOFException("closed by other side: CLOSED=" + result);
             } else if (result == Publication.MAX_POSITION_EXCEEDED) {
                 close();
-                throw new EOFException("closed by other side: MAX_POSITION_EXCEEDED=" + result);
+                throw new FastEOFException("closed by other side: MAX_POSITION_EXCEEDED=" + result);
             } else if (result == Publication.BACK_PRESSURED || result == Publication.ADMIN_ACTION) {
                 return false;
             }

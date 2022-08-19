@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.kryonet;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetAddress;
 
@@ -10,6 +9,7 @@ import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -46,7 +46,7 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

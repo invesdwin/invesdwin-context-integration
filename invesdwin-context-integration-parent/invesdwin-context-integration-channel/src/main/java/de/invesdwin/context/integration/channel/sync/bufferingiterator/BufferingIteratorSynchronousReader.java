@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.bufferingiterator;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -8,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.reference.IReference;
+import de.invesdwin.util.error.FastEOFException;
 
 @NotThreadSafe
 public class BufferingIteratorSynchronousReader<M> implements ISynchronousReader<M> {
@@ -20,8 +20,7 @@ public class BufferingIteratorSynchronousReader<M> implements ISynchronousReader
     }
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public void close() throws IOException {
@@ -39,7 +38,7 @@ public class BufferingIteratorSynchronousReader<M> implements ISynchronousReader
         final M message = holder.get();
         if (message == null) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

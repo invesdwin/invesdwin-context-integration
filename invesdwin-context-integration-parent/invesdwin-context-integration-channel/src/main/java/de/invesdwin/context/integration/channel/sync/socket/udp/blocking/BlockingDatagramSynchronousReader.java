@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.SocketAddress;
@@ -8,6 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -51,7 +51,7 @@ public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchron
         final IByteBuffer message = packetBuffer.slice(MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

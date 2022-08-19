@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
@@ -9,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
@@ -74,7 +74,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         reader.polledValue = null;
         if (ClosedByteBuffer.isClosed(value)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return value;
     }

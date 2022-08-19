@@ -1,8 +1,8 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp.unsafe;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativ
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -75,14 +76,18 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         if (position > 0) {
             return true;
         }
-        final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
-        if (read > 0) {
-            position = read;
-            return true;
-        } else if (read < 0) {
-            throw new EOFException("closed by other side");
-        } else {
-            return false;
+        try {
+            final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
+            if (read > 0) {
+                position = read;
+                return true;
+            } else if (read < 0) {
+                throw new FastEOFException("closed by other side");
+            } else {
+                return false;
+            }
+        } catch (final ClosedChannelException e) {
+            throw NettySocketChannel.newEofException(e);
         }
     }
 
@@ -111,7 +116,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
         if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.MESSAGE_INDEX, size)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return buffer.slice(NettySocketChannel.MESSAGE_INDEX, size);
     }

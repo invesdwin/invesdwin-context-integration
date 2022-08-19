@@ -1,13 +1,13 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
@@ -41,11 +41,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
     @Override
     public void close() {
         if (channel != null) {
-            try {
-                channel.close();
-            } catch (final IOException e) {
-                //ignore
-            }
+            channel.close();
             channel = null;
         }
         if (reader != null) {
@@ -65,7 +61,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         reader.polledValue = null;
         if (ClosedByteBuffer.isClosed(value)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return value;
     }

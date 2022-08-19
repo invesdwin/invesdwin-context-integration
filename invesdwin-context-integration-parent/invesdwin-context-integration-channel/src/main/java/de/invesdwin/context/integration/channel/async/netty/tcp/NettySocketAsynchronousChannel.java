@@ -46,11 +46,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
     @Override
     public void close() {
         if (channel != null) {
-            try {
-                channel.close();
-            } catch (final IOException e) {
-                //ignore
-            }
+            channel.close();
             channel = null;
         }
         if (reader != null) {

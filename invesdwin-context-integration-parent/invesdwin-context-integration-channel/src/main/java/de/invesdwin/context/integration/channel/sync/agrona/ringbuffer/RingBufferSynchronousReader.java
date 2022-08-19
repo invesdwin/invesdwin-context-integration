@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.agrona.ringbuffer;
 
 import java.io.Closeable;
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -12,6 +11,7 @@ import org.agrona.concurrent.ringbuffer.ManyToOneRingBuffer;
 import org.agrona.concurrent.ringbuffer.RingBuffer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -81,7 +81,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

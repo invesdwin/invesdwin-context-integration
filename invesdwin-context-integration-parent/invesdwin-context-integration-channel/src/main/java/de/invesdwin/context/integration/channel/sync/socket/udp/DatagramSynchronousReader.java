@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.socket.udp;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -69,7 +69,7 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         ByteBuffers.position(messageBuffer, 0);
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return buffer.slice(MESSAGE_INDEX, size);
     }

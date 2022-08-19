@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.pipe.streaming;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,6 +7,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -55,7 +55,7 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
             buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();
-                throw new EOFException("closed by other side");
+                throw new FastEOFException("closed by other side");
             }
             return buffer.sliceTo(size);
         } catch (final IOException e) {

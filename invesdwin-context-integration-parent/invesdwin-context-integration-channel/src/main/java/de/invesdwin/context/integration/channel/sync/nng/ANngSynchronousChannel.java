@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.nng;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -88,12 +87,6 @@ public abstract class ANngSynchronousChannel implements ISynchronousChannel {
             }
             socket = null;
         }
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

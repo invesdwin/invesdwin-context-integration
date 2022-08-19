@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.lmax;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -11,6 +10,7 @@ import com.lmax.disruptor.RingBuffer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
+import de.invesdwin.util.error.FastEOFException;
 
 @NotThreadSafe
 public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
@@ -62,7 +62,7 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         final M message = holder.getAndSet(null);
         if (message == null) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }

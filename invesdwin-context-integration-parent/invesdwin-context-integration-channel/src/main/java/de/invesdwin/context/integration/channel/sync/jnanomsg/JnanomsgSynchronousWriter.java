@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSocketType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -93,7 +94,7 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
             }
             final String msg = Nanomsg.getError();
             close();
-            throw new EOFException("closed by other side: [" + errno + "]=" + msg);
+            throw new FastEOFException("closed by other side: [" + errno + "]=" + msg);
         } else {
             return true;
         }

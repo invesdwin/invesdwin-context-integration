@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.jeromq;
 
-import java.io.EOFException;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -10,6 +9,7 @@ import org.zeromq.api.SocketType;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.jeromq.type.IJeromqSocketType;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -42,7 +42,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
-            throw new EOFException("closed by other side");
+            throw new FastEOFException("closed by other side");
         }
         return message;
     }
@@ -70,7 +70,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         if (recv == null) {
             if (socket.getZMQSocket().errno() != ZError.EAGAIN) {
                 close();
-                throw new EOFException("closed by other side");
+                throw new FastEOFException("closed by other side");
             }
             return null;
         }

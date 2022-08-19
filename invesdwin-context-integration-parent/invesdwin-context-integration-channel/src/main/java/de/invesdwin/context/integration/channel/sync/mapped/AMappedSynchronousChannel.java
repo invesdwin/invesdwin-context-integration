@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.mapped;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.MemoryMappedFile;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
@@ -87,7 +87,7 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     protected boolean isReadFinished() throws Exception {
         final byte readFinished = getReadFinished();
         if (readFinished == READFINISHED_CLOSED) {
-            throw new EOFException("Channel was closed by the other endpoint");
+            throw new FastEOFException("Channel was closed by the other endpoint");
         }
         return readFinished == READFINISHED_TRUE;
     }

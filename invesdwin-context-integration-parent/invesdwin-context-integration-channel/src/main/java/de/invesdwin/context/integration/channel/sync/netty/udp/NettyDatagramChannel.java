@@ -1,8 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.Closeable;
-import java.io.EOFException;
-import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
@@ -38,14 +36,14 @@ public class NettyDatagramChannel implements Closeable {
     protected final INettyDatagramChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected DatagramChannel datagramChannel;
+    protected volatile DatagramChannel datagramChannel;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    private Bootstrap bootstrap;
+    private volatile Bootstrap bootstrap;
 
-    private boolean readerRegistered;
-    private boolean writerRegistered;
-    private boolean keepBootstrapRunningAfterOpen;
+    private volatile boolean readerRegistered;
+    private volatile boolean writerRegistered;
+    private volatile boolean keepBootstrapRunningAfterOpen;
 
     private final AtomicInteger activeCount = new AtomicInteger();
 
@@ -155,7 +153,9 @@ public class NettyDatagramChannel implements Closeable {
                     sync.get();
                     break;
                 } catch (final Throwable t) {
-                    close();
+                    if (activeCount.get() > 0) {
+                        close();
+                    }
                     if (tries < getMaxConnectRetries()) {
                         try {
                             getConnectRetryDelay().sleep();
@@ -168,7 +168,7 @@ public class NettyDatagramChannel implements Closeable {
                 }
             }
             //wait for channel
-            for (int tries = 0; datagramChannel == null; tries++) {
+            for (int tries = 0; datagramChannel == null && activeCount.get() > 0; tries++) {
                 if (tries < getMaxConnectRetries()) {
                     try {
                         getConnectRetryDelay().sleep();
@@ -180,8 +180,10 @@ public class NettyDatagramChannel implements Closeable {
                 }
             }
         } catch (final Throwable t) {
-            close();
-            throw new RuntimeException(t);
+            if (activeCount.get() > 0) {
+                close();
+                throw new RuntimeException(t);
+            }
         }
     }
 
@@ -204,6 +206,9 @@ public class NettyDatagramChannel implements Closeable {
 
     @Override
     public void close() {
+        if (activeCount.get() == 0) {
+            return;
+        }
         if (activeCount.decrementAndGet() > 0) {
             return;
         }
@@ -249,12 +254,6 @@ public class NettyDatagramChannel implements Closeable {
 
     private static void awaitShutdown(final Future<?> future) {
         NettySocketChannel.awaitShutdown(future);
-    }
-
-    protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
-        eof.initCause(e);
-        return eof;
     }
 
 }

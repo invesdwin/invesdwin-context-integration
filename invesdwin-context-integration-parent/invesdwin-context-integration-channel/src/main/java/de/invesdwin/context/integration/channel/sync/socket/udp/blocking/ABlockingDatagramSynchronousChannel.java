@@ -9,6 +9,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -86,7 +87,7 @@ public abstract class ABlockingDatagramSynchronousChannel implements ISynchronou
     }
 
     protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }

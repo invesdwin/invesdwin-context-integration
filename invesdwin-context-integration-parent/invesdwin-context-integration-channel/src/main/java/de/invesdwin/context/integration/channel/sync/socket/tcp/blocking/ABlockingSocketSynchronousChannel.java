@@ -11,6 +11,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -92,7 +93,7 @@ public abstract class ABlockingSocketSynchronousChannel implements ISynchronousC
     }
 
     protected EOFException newEofException(final IOException e) throws EOFException {
-        final EOFException eof = new EOFException(e.getMessage());
+        final EOFException eof = new FastEOFException(e.getMessage());
         eof.initCause(e);
         return eof;
     }
