@@ -45,7 +45,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     @Override
     public void open() throws IOException {
         if (channel.isWriterRegistered()) {
-            throw NettyNativeSocketSynchronousWriter.newNativeDuplexNotSupportedException();
+            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
         }
         channel.open(bootstrap -> {
             bootstrap.handler(new ChannelInboundHandlerAdapter());

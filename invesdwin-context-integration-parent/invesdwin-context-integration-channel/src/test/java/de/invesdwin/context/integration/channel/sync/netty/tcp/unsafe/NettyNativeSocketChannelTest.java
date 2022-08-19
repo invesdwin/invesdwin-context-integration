@@ -23,9 +23,9 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
-        final int responsePort = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", responsePort);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", responsePort + 1);
+        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
         runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, responseAddress, requestAddress);
     }
 

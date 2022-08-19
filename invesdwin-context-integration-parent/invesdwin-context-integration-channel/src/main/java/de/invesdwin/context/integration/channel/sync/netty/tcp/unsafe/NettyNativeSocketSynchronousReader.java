@@ -30,7 +30,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
     @Override
     public void open() throws IOException {
         if (channel.isWriterRegistered()) {
-            throw NettyNativeSocketSynchronousWriter.newNativeDuplexNotSupportedException();
+            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
         }
         channel.open(ch -> {
             //make sure netty does not process any bytes

@@ -30,7 +30,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     @Override
     public void open() throws IOException {
         if (channel.isReaderRegistered()) {
-            throw newNativeDuplexNotSupportedException();
+            throw newNativeBidiNotSupportedException();
         }
         channel.open(ch -> {
             //make sure netty does not process any bytes
@@ -46,10 +46,10 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
     }
 
-    public static UnsupportedOperationException newNativeDuplexNotSupportedException() {
+    public static UnsupportedOperationException newNativeBidiNotSupportedException() {
         //io.netty.channel.unix.Errors$NativeIoException: write(..) failed: Datenübergabe unterbrochen (broken pipe)
         return new UnsupportedOperationException(
-                "Native duplex mode for reader/writer on same channel not supported. Please use separate channels for native reader/writer. FileDescriptor reads/writer will cause broken pipes otherwise.");
+                "Native bidirectional mode for reader/writer on same channel not supported. Please use separate channels for native reader/writer. FileDescriptor reads/writer will cause broken pipes otherwise.");
     }
 
     @Override
