@@ -31,15 +31,18 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     public void open() throws IOException {
         if (channel.isReaderRegistered()) {
             throw newNativeBidiNotSupportedException();
+            //            channel.open(ch -> {
+            //                ch.deregister();
+            //            });
+        } else {
+            channel.open(ch -> {
+                //make sure netty does not process any bytes
+                ch.shutdownInput();
+                ch.deregister();
+            });
         }
-        channel.open(ch -> {
-            //make sure netty does not process any bytes
-            ch.shutdownInput();
-            ch.shutdownInput();
-        });
         final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
         fd = unixChannel.fd();
-        channel.getSocketChannel().deregister();
         channel.closeBootstrapAsync();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());

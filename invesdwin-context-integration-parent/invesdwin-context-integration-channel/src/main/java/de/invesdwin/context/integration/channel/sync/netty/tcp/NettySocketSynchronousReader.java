@@ -94,6 +94,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         @Override
         public void close() {
             this.buf.release();
+            polledValue = ClosedByteBuffer.INSTANCE;
         }
 
         @Override

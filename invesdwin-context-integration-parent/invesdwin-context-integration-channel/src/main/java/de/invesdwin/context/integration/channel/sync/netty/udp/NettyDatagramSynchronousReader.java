@@ -103,6 +103,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         @Override
         public void close() {
             buf.release();
+            polledValue = ClosedByteBuffer.INSTANCE;
         }
 
         @Override

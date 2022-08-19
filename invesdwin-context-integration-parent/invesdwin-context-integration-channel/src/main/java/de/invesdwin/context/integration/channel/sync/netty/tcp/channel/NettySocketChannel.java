@@ -111,6 +111,12 @@ public class NettySocketChannel implements Closeable {
         return socketAddress;
     }
 
+    public synchronized void addChannelListener(final Consumer<SocketChannel> channelListener) {
+        if (channelListener != null) {
+            channelListeners.add(channelListener);
+        }
+    }
+
     public synchronized void open(final Consumer<SocketChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
@@ -118,9 +124,7 @@ public class NettySocketChannel implements Closeable {
             }
             return;
         }
-        if (channelListener != null) {
-            channelListeners.add(channelListener);
-        }
+        addChannelListener(channelListener);
         if (server) {
             awaitSocketChannel(() -> {
                 final EventLoopGroup parentGroup = type.newServerAcceptorGroup();

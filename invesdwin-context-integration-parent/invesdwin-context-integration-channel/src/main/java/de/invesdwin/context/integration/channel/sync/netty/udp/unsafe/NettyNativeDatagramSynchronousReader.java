@@ -15,7 +15,6 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.Socket;
 import io.netty.channel.unix.UnixChannel;
 
@@ -49,8 +48,9 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         }
         channel.open(bootstrap -> {
             bootstrap.handler(new ChannelInboundHandlerAdapter());
-        }, null);
-        channel.getDatagramChannel().deregister();
+        }, ch -> {
+            ch.deregister();
+        });
         final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
         channel.closeBootstrapAsync();
         fd = (Socket) unixChannel.fd();
@@ -78,6 +78,8 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         if (read > 0) {
             position = read;
             return true;
+        } else if (read < 0) {
+            throw new EOFException("closed by other side");
         } else {
             return false;
         }
@@ -118,7 +120,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         //noop
     }
 
-    public static void readFully(final FileDescriptor src, final java.nio.ByteBuffer byteBuffer, final int pos,
+    public static void readFully(final Socket src, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
         int position = pos;
         int remaining = length - pos;

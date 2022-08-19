@@ -31,19 +31,26 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
     public void open() throws IOException {
         if (channel.isWriterRegistered()) {
             throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
+            //            channel.open(ch -> {
+            //                final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+            //                fd = unixChannel.fd();
+            //                //use direct buffer to prevent another copy from byte[] to native
+            //                buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            //                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+            //            });
+        } else {
+            channel.open(ch -> {
+                //make sure netty does not process any bytes
+                ch.shutdownOutput();
+                ch.deregister();
+            });
+            final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+            fd = unixChannel.fd();
+            channel.closeBootstrapAsync();
+            //use direct buffer to prevent another copy from byte[] to native
+            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
         }
-        channel.open(ch -> {
-            //make sure netty does not process any bytes
-            ch.shutdownOutput();
-            ch.shutdownInput();
-        });
-        final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-        fd = unixChannel.fd();
-        channel.getSocketChannel().deregister();
-        channel.closeBootstrapAsync();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
     }
 
     @Override
@@ -61,10 +68,15 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
         if (position > 0) {
             return true;
         }
+        if (fd == null) {
+            return false;
+        }
         final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
         if (read > 0) {
             position = read;
             return true;
+        } else if (read < 0) {
+            throw new EOFException("closed by other side");
         } else {
             return false;
         }
