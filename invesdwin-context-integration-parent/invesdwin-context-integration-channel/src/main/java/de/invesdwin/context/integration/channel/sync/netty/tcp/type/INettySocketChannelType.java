@@ -8,7 +8,7 @@ import io.netty.channel.socket.SocketChannel;
 
 public interface INettySocketChannelType {
 
-    SelectStrategyFactories DEFAULT_SELECT_STRATEGY = SelectStrategyFactories.DEFAULT;
+    SelectStrategyFactories DEFAULT_SELECT_STRATEGY = SelectStrategyFactories.BUSY_WAIT;
 
     EventLoopGroup newServerAcceptorGroup();
 
