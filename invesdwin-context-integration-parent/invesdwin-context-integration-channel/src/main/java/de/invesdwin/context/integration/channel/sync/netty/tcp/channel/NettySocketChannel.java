@@ -138,8 +138,8 @@ public class NettySocketChannel implements Closeable {
                     public void initChannel(final SocketChannel ch) throws Exception {
                         if (socketChannel == null) {
                             type.initChannel(ch, true);
-                            socketChannel = ch;
                             onSocketChannel(ch);
+                            socketChannel = ch;
                             if (parentGroup != childGroup) {
                                 //only allow one client
                                 parentGroup.shutdownGracefully();
@@ -163,8 +163,8 @@ public class NettySocketChannel implements Closeable {
                     public void initChannel(final SocketChannel ch) throws Exception {
                         if (socketChannel == null) {
                             type.initChannel(ch, false);
-                            socketChannel = ch;
                             onSocketChannel(ch);
+                            socketChannel = ch;
                         } else {
                             //only allow one client
                             ch.close();

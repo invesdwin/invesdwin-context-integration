@@ -149,9 +149,9 @@ public class NettyDatagramChannel implements Closeable {
             for (int tries = 0;; tries++) {
                 try {
                     final ChannelFuture sync = channelFactory.get().sync();
-                    datagramChannel = (DatagramChannel) sync.channel();
                     type.initChannel(datagramChannel, server);
                     onDatagramChannel(datagramChannel);
+                    datagramChannel = (DatagramChannel) sync.channel();
                     sync.get();
                     break;
                 } catch (final Throwable t) {
