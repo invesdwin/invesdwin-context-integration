@@ -21,8 +21,6 @@ import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenera
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
-import de.invesdwin.context.security.crypto.verification.signature.algorithm.RsaSignatureAlgorithm;
-import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.time.range.TimeRange;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.SocketChannel;
@@ -62,18 +60,19 @@ public class TlsNettySocketChannel extends NettySocketChannel {
     protected SSLEngine newSSLEngine(final SocketChannel socketChannel) {
         //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
         final SslProvider sslProvider = getSslProvider();
-        final ISignatureAlgorithm signatureAlgorithm;
-        switch (sslProvider) {
-        case JDK:
-            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
-            break;
-        case OPENSSL:
-        case OPENSSL_REFCNT:
-            signatureAlgorithm = RsaSignatureAlgorithm.DEFAULT;
-            break;
-        default:
-            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
-        }
+        final ISignatureAlgorithm signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
+        //netty-tcnative-boringssl-static does not support EcDSA
+        //        switch (sslProvider) {
+        //        case JDK:
+        //            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
+        //            break;
+        //        case OPENSSL:
+        //        case OPENSSL_REFCNT:
+        //            signatureAlgorithm = RsaSignatureAlgorithm.DEFAULT;
+        //            break;
+        //        default:
+        //            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
+        //        }
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
                 ("netty-ssl-engine-password").getBytes());
         final SignatureKey signatureKey = derivedKeyProvider.newDerivedKey(signatureAlgorithm,

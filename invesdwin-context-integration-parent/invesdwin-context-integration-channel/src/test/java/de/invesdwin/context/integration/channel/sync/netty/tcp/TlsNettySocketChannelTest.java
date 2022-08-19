@@ -8,6 +8,9 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySock
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.TlsNettySocketChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 
+/**
+ * This test fails on netty-tcnative-boringssl-static. It says a message was unencrypted.
+ */
 @NotThreadSafe
 public class TlsNettySocketChannelTest extends NettySocketChannelTest {
 

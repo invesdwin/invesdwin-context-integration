@@ -15,6 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.incubator.channel.uring.IOUringSocketChannel;
 
@@ -38,7 +39,9 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
-            channel.open(null);
+            channel.open(channel -> {
+                channel.pipeline().addLast(new ChannelInboundHandlerAdapter());
+            });
             writer = (message) -> {
                 channel.getSocketChannel().writeAndFlush(buf);
             };
