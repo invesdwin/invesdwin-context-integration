@@ -17,10 +17,10 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativ
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ NettySocketChannelTest.class, BidiNettySocketChannelTest.class, TlsNettySocketChannelTest.class,
-        TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class,
-        NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class, NettySocketHandlerTest.class,
-        TlsNettySocketHandlerTest.class })
+@SelectClasses({ BidiNettySocketChannelTest.class, NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class,
+        TlsNettySocketChannelTest.class, TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class,
+        NettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class,
+        NettySocketChannelTest.class })
 @Immutable
 public class NettyChannelTestSuite {
     //CHECKSTYLE:ON
