@@ -37,16 +37,19 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
-            channel.open(channel -> {
-                channel.pipeline().addLast(new ChannelInboundHandlerAdapter());
-            });
+            if (channel.isReaderRegistered()) {
+                channel.open(null);
+            } else {
+                channel.open(channel -> {
+                    channel.pipeline().addLast(new ChannelInboundHandlerAdapter());
+                });
+            }
             writer = (message) -> {
                 channel.getSocketChannel().writeAndFlush(buf);
             };
         } else {
-            channel.open(ch -> {
-                ch.deregister();
-            });
+            channel.open(null);
+            channel.getSocketChannel().deregister();
             channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getSocketChannel());
             writer = (message) -> {

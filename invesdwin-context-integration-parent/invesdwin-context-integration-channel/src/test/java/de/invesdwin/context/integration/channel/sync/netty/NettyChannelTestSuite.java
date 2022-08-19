@@ -7,6 +7,8 @@ import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketHandlerTest;
 import de.invesdwin.context.integration.channel.async.netty.tcp.TlsNettySocketHandlerTest;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.BidiNettySocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsBidiNettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsNettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
@@ -15,11 +17,7 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativ
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ TlsNettySocketChannelTest.class, /*
-                                                   * flaky in testsuite, there might still be some race condition during
-                                                   * open:
-                                                   * NettySocketChannelTest.class,BidiNettySocketChannelTest.class,
-                                                   */
+@SelectClasses({ TlsNettySocketChannelTest.class, NettySocketChannelTest.class, BidiNettySocketChannelTest.class,
         TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class,
         NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class, NettySocketHandlerTest.class,
         TlsNettySocketHandlerTest.class })
