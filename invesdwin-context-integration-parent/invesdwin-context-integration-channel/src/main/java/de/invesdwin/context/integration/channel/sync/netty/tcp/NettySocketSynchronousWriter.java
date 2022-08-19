@@ -99,6 +99,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     private void writeFuture(final IByteBufferWriter message) {
+        buf.setIndex(0, 0); //reset indexes
         final int size = message.writeBuffer(messageBuffer);
         buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);

@@ -422,8 +422,8 @@ public abstract class AChannelTest extends ATest {
                 log.info("client response in [" + readMessage + "]");
             }
             Assertions.checkNotNull(readMessage);
-            if (prevValue != null) {
-                Assertions.checkTrue(prevValue.isBefore(readMessage));
+            if (prevValue != null && !prevValue.isBefore(readMessage)) {
+                Assertions.assertThat(prevValue).isBefore(readMessage);
             }
             prevValue = readMessage;
             count++;
