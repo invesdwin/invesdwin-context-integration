@@ -12,8 +12,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.DisabledHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -27,7 +27,7 @@ public class BidiNettySocketChannelTest extends AChannelTest {
     public void testBidiNettySocketChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runBidiNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
+        runBidiNettySocketChannelPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
     }
 
     private void runBidiNettySocketChannelPerformanceTest(final INettySocketChannelType type,

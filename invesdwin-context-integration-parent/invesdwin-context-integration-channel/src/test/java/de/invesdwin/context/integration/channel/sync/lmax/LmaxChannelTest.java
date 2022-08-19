@@ -4,6 +4,7 @@ import java.util.Queue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.lmax.disruptor.RingBuffer;
@@ -29,6 +30,7 @@ public class LmaxChannelTest extends AChannelTest {
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("flakey test")
     @Test
     public void testLmaxDisruptorPerformance() throws InterruptedException {
         final RingBuffer<IMutableReference<FDate>> responseQueue = RingBuffer

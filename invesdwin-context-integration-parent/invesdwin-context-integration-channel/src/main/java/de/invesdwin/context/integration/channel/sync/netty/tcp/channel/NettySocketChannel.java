@@ -115,14 +115,16 @@ public class NettySocketChannel implements Closeable {
         }
     }
 
-    public synchronized void open(final Consumer<SocketChannel> channelListener) {
-        if (activeCount.incrementAndGet() > 1) {
-            if (channelListener != null) {
-                channelListener.accept(socketChannel);
+    public void open(final Consumer<SocketChannel> channelListener) {
+        synchronized (this) {
+            if (activeCount.incrementAndGet() > 1) {
+                if (channelListener != null) {
+                    channelListener.accept(socketChannel);
+                }
+                return;
             }
-            return;
+            addChannelListener(channelListener);
         }
-        addChannelListener(channelListener);
         if (server) {
             awaitSocketChannel(() -> {
                 final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
@@ -199,22 +201,24 @@ public class NettySocketChannel implements Closeable {
     private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
         try {
             //init bootstrap
-            for (int tries = 0;; tries++) {
+            for (int tries = 0; activeCount.get() > 0; tries++) {
                 try {
                     channelFactory.get().sync().get();
                     break;
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
-                        close();
-                    }
-                    if (tries < getMaxConnectRetries()) {
-                        try {
-                            getConnectRetryDelay().sleep();
-                        } catch (final InterruptedException e1) {
-                            throw new RuntimeException(e1);
+                        internalClose();
+                        if (tries < getMaxConnectRetries()) {
+                            try {
+                                getConnectRetryDelay().sleep();
+                            } catch (final InterruptedException e1) {
+                                throw new RuntimeException(e1);
+                            }
+                        } else {
+                            throw t;
                         }
                     } else {
-                        throw t;
+                        return;
                     }
                 }
             }
@@ -232,7 +236,7 @@ public class NettySocketChannel implements Closeable {
             }
         } catch (final Throwable t) {
             if (activeCount.get() > 0) {
-                close();
+                internalClose();
                 throw new RuntimeException(t);
             }
         }
@@ -248,12 +252,15 @@ public class NettySocketChannel implements Closeable {
 
     @Override
     public void close() {
-        if (activeCount.get() == 0) {
-            return;
+        synchronized (this) {
+            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
+                return;
+            }
         }
-        if (activeCount.decrementAndGet() > 0) {
-            return;
-        }
+        internalClose();
+    }
+
+    private void internalClose() {
         closeSocketChannel();
         if (serverBootstrap != null) {
             final ServerBootstrapConfig config = serverBootstrap.config();

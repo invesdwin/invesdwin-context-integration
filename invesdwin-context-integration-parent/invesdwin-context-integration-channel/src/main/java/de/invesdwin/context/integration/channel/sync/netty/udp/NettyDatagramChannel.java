@@ -106,13 +106,14 @@ public class NettyDatagramChannel implements Closeable {
         return socketAddress;
     }
 
-    public synchronized void open(final Consumer<Bootstrap> bootstrapListener,
-            final Consumer<DatagramChannel> channelListener) {
-        if (activeCount.incrementAndGet() > 1) {
-            if (channelListener != null) {
-                channelListener.accept(datagramChannel);
+    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener) {
+        synchronized (this) {
+            if (activeCount.incrementAndGet() > 1) {
+                if (channelListener != null) {
+                    channelListener.accept(datagramChannel);
+                }
+                return;
             }
-            return;
         }
         if (server) {
             awaitSocketChannel(() -> {
@@ -144,7 +145,7 @@ public class NettyDatagramChannel implements Closeable {
     private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
         try {
             //init bootstrap
-            for (int tries = 0;; tries++) {
+            for (int tries = 0; activeCount.get() > 0; tries++) {
                 try {
                     final ChannelFuture sync = channelFactory.get().sync();
                     type.initChannel(datagramChannel, server);
@@ -154,16 +155,18 @@ public class NettyDatagramChannel implements Closeable {
                     break;
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
-                        close();
-                    }
-                    if (tries < getMaxConnectRetries()) {
-                        try {
-                            getConnectRetryDelay().sleep();
-                        } catch (final InterruptedException e1) {
-                            throw new RuntimeException(e1);
+                        internalClose();
+                        if (tries < getMaxConnectRetries()) {
+                            try {
+                                getConnectRetryDelay().sleep();
+                            } catch (final InterruptedException e1) {
+                                throw new RuntimeException(e1);
+                            }
+                        } else {
+                            throw t;
                         }
                     } else {
-                        throw t;
+                        return;
                     }
                 }
             }
@@ -181,7 +184,7 @@ public class NettyDatagramChannel implements Closeable {
             }
         } catch (final Throwable t) {
             if (activeCount.get() > 0) {
-                close();
+                internalClose();
                 throw new RuntimeException(t);
             }
         }
@@ -206,12 +209,15 @@ public class NettyDatagramChannel implements Closeable {
 
     @Override
     public void close() {
-        if (activeCount.get() == 0) {
-            return;
+        synchronized (this) {
+            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
+                return;
+            }
         }
-        if (activeCount.decrementAndGet() > 0) {
-            return;
-        }
+        internalClose();
+    }
+
+    private void internalClose() {
         if (datagramChannel != null) {
             datagramChannel.close();
             datagramChannel = null;

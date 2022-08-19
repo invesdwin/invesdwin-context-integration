@@ -12,6 +12,7 @@ import java.util.concurrent.SynchronousQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -67,6 +68,7 @@ public class QueueChannelTest extends AChannelTest {
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testArrayBlockingQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(2);
@@ -74,6 +76,7 @@ public class QueueChannelTest extends AChannelTest {
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testArrayBlockingQueuePerformanceWithBlocking() throws InterruptedException {
         final BlockingQueue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(1, false);
@@ -81,6 +84,7 @@ public class QueueChannelTest extends AChannelTest {
         runBlockingQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 
+    @Disabled("causes cpu spikes")
     @Test
     public void testArrayBlockingQueuePerformanceWithBlockingFair() throws InterruptedException {
         final BlockingQueue<IReference<FDate>> responseQueue = new ArrayBlockingQueue<IReference<FDate>>(1, true);
