@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.socket.tcp.blocking;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -13,24 +12,26 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class BlockingSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    private BlockingSocketSynchronousChannel channel;
     private InputStream in;
     private IByteBuffer buffer;
 
-    public BlockingSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public BlockingSocketSynchronousReader(final BlockingSocketSynchronousChannel channel) {
+        this.channel = channel;
+        this.channel.setReaderRegistered();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        socket.shutdownOutput();
-        in = socket.getInputStream();
+        channel.open();
+        if (!channel.isWriterRegistered()) {
+            channel.getSocket().shutdownOutput();
+        }
+        in = channel.getSocket().getInputStream();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
+        buffer = ByteBuffers.allocateExpandable(channel.getSocketSize());
     }
 
     @Override
@@ -40,13 +41,16 @@ public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousC
             in = null;
             buffer = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
     public boolean hasNext() throws IOException {
         try {
-            return in.available() >= MESSAGE_INDEX;
+            return in.available() >= BlockingSocketSynchronousChannel.MESSAGE_INDEX;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
@@ -55,8 +59,8 @@ public class BlockingSocketSynchronousReader extends ABlockingSocketSynchronousC
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            buffer.putBytesTo(0, in, MESSAGE_INDEX);
-            final int size = buffer.getInt(SIZE_INDEX);
+            buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);
+            final int size = buffer.getInt(BlockingSocketSynchronousChannel.SIZE_INDEX);
             buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();

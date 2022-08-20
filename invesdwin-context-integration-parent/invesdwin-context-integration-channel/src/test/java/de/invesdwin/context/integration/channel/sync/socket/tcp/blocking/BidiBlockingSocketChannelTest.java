@@ -17,28 +17,27 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 @NotThreadSafe
-public class BlockingSocketChannelTest extends AChannelTest {
+public class BidiBlockingSocketChannelTest extends AChannelTest {
 
     @Test
     public void testBlockingSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runBlockingSocketPerformanceTest(responseAddress, requestAddress);
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runBlockingSocketPerformanceTest(address);
     }
 
-    protected void runBlockingSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingSocketSynchronousWriter(
-                newBlockingSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(
-                newBlockingSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+    protected void runBlockingSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final BlockingSocketSynchronousChannel serverChannel = newBlockingSocketSynchronousChannel(address, true,
+                getMaxMessageSize());
+        final BlockingSocketSynchronousChannel clientChannel = newBlockingSocketSynchronousChannel(address, false,
+                getMaxMessageSize());
+
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BlockingSocketSynchronousWriter(serverChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingSocketSynchronousWriter(
-                newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(
-                newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BlockingSocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
