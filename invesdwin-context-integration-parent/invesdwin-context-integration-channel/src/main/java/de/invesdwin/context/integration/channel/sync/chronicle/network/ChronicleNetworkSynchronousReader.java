@@ -1,12 +1,10 @@
 package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -14,21 +12,27 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    private ChronicleNetworkSynchronousChannel channel;
+    private final int socketSize;
+    private ChronicleSocketChannel socketChannel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
 
-    public ChronicleNetworkSynchronousReader(final ChronicleSocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        super(type, socketAddress, server, estimatedMaxMessageSize);
+    public ChronicleNetworkSynchronousReader(final ChronicleNetworkSynchronousChannel channel) {
+        this.channel = channel;
+        this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        socket.shutdownOutput();
+        channel.open();
+        if (!channel.isWriterRegistered()) {
+            channel.getSocket().shutdownOutput();
+        }
+        socketChannel = channel.getSocketChannel();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = buffer.asNioByteBuffer(0, socketSize);
@@ -39,8 +43,12 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         if (buffer != null) {
             buffer = null;
             messageBuffer = null;
+            socketChannel = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
@@ -54,13 +62,13 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        int targetPosition = MESSAGE_INDEX;
+        int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         while (messageBuffer.position() < targetPosition) {
             socketChannel.read(messageBuffer);
         }
-        size = buffer.getInt(SIZE_INDEX);
+        size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
@@ -73,11 +81,11 @@ public class ChronicleNetworkSynchronousReader extends AChronicleNetworkSynchron
         }
 
         ByteBuffers.position(messageBuffer, 0);
-        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
+        if (ClosedByteBuffer.isClosed(buffer, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(MESSAGE_INDEX, size);
+        return buffer.slice(ChronicleNetworkSynchronousChannel.MESSAGE_INDEX, size);
     }
 
     @Override

@@ -1,8 +1,8 @@
-package de.invesdwin.context.integration.channel.sync.socket.tcp;
+package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.Socket;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -13,25 +13,29 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
+import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
+import net.openhft.chronicle.network.tcp.ChronicleServerSocketChannel;
+import net.openhft.chronicle.network.tcp.ChronicleSocket;
+import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class SocketSynchronousChannel implements ISynchronousChannel {
+public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
 
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
+    protected final ChronicleSocketChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected volatile boolean socketChannelOpening;
-    protected final SocketAddress socketAddress;
+    protected final InetSocketAddress socketAddress;
     protected final boolean server;
     private final SocketSynchronousChannelFinalizer finalizer;
 
@@ -40,8 +44,9 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public SocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
+    public ChronicleNetworkSynchronousChannel(final ChronicleSocketChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        this.type = type;
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
@@ -62,15 +67,15 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         return socketSize;
     }
 
-    public Socket getSocket() {
+    public ChronicleSocket getSocket() {
         return finalizer.socket;
     }
 
-    public SocketChannel getSocketChannel() {
+    public ChronicleSocketChannel getSocketChannel() {
         return finalizer.socketChannel;
     }
 
-    public ServerSocketChannel getServerSocketChannel() {
+    public ChronicleServerSocketChannel getServerSocketChannel() {
         return finalizer.serverSocketChannel;
     }
 
@@ -105,34 +110,24 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         socketChannelOpening = true;
         try {
             if (server) {
-                finalizer.serverSocketChannel = newServerSocketChannel();
+                finalizer.serverSocketChannel = type.newServerSocketChannel(socketAddress.toString());
                 finalizer.serverSocketChannel.bind(socketAddress);
-                finalizer.socketChannel = finalizer.serverSocketChannel.accept();
-                try {
-                    finalizer.socket = finalizer.socketChannel.socket();
-                } catch (final Throwable t) {
-                    //unix domain sockets throw an error here
-                }
+                finalizer.serverSocket = finalizer.serverSocketChannel.socket();
+                finalizer.socketChannel = type.acceptSocketChannel(finalizer.serverSocketChannel);
+                finalizer.socket = finalizer.socketChannel.socket();
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
-                    finalizer.socketChannel = newSocketChannel();
+                    finalizer.socketChannel = type.newSocketChannel(SocketChannel.open());
                     try {
                         finalizer.socketChannel.connect(socketAddress);
-                        try {
-                            finalizer.socket = finalizer.socketChannel.socket();
-                        } catch (final Throwable t) {
-                            //unix domain sockets throw an error here
-                        }
+                        finalizer.socket = finalizer.socketChannel.socket();
                         break;
-                    } catch (final IOException e) {
+                    } catch (final ConnectException e) {
                         finalizer.socketChannel.close();
                         finalizer.socketChannel = null;
-                        if (finalizer.socket != null) {
-                            finalizer.socket.close();
-                            finalizer.socket = null;
-                        }
+                        finalizer.socket = null;
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
@@ -147,15 +142,9 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             }
             //non-blocking sockets are a bit faster than blocking ones
             finalizer.socketChannel.configureBlocking(false);
-            if (finalizer.socket != null) {
-                //might be unix domain socket
-                finalizer.socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                        | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-                finalizer.socket.setReceiveBufferSize(socketSize);
-                finalizer.socket.setSendBufferSize(socketSize);
-                finalizer.socket.setTcpNoDelay(true);
-                finalizer.socket.setKeepAlive(true);
-            }
+            finalizer.socket.setReceiveBufferSize(socketSize);
+            finalizer.socket.setSendBufferSize(socketSize);
+            finalizer.socket.setTcpNoDelay(true);
         } finally {
             socketChannelOpening = false;
         }
@@ -216,9 +205,11 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
-        private volatile Socket socket;
-        private volatile SocketChannel socketChannel;
-        private volatile ServerSocketChannel serverSocketChannel;
+        private volatile ChronicleSocket socket;
+        private volatile ChronicleSocketChannel socketChannel;
+        private volatile ChronicleSocketChannelType type;
+        private volatile ChronicleServerSocketChannel serverSocketChannel;
+        private volatile ChronicleServerSocket serverSocket;
 
         protected SocketSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -231,26 +222,24 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            final SocketChannel socketChannelCopy = socketChannel;
-            if (socketChannelCopy != null) {
+            if (socketChannel != null) {
+                socketChannel.close();
                 socketChannel = null;
-                Closeables.closeQuietly(socketChannelCopy);
             }
-            final Socket socketCopy = socket;
-            if (socketCopy != null) {
-                socket = null;
-                Closeables.closeQuietly(socketCopy);
-            }
-            final ServerSocketChannel serverSocketChannelCopy = serverSocketChannel;
-            if (serverSocketChannelCopy != null) {
+            socket = null;
+            if (serverSocketChannel != null) {
+                serverSocketChannel.close();
                 serverSocketChannel = null;
-                Closeables.closeQuietly(serverSocketChannelCopy);
+            }
+            if (serverSocket != null) {
+                serverSocket.close();
+                serverSocket = null;
             }
         }
 
         @Override
         protected void onRun() {
-            String warning = "Finalizing unclosed " + SocketSynchronousChannel.class.getSimpleName();
+            String warning = "Finalizing unclosed " + ChronicleNetworkSynchronousChannel.class.getSimpleName();
             if (Throwables.isDebugStackTraceEnabled()) {
                 final Exception stackTrace = initStackTrace;
                 if (stackTrace != null) {

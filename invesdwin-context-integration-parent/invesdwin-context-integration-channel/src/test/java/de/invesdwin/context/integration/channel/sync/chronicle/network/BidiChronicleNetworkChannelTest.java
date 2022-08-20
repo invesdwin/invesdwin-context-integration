@@ -17,29 +17,30 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 @NotThreadSafe
-public class ChronicleNetworkChannelTest extends AChannelTest {
+public class BidiChronicleNetworkChannelTest extends AChannelTest {
 
     @Test
     public void testChronicleSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.VANILLA, responseAddress, requestAddress);
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.VANILLA, address);
     }
 
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
-            final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
-            throws InterruptedException {
+            final InetSocketAddress address) throws InterruptedException {
+        final ChronicleNetworkSynchronousChannel serverChannel = newChronicleNetworkSynchronousChannel(type, address,
+                true, getMaxMessageSize());
+        final ChronicleNetworkSynchronousChannel clientChannel = newChronicleNetworkSynchronousChannel(type, address,
+                false, getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new ChronicleNetworkSynchronousWriter(
-                newChronicleNetworkSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> requestReader = new ChronicleNetworkSynchronousReader(
-                newChronicleNetworkSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
+                serverChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new ChronicleNetworkSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runChronicleSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new ChronicleNetworkSynchronousWriter(
-                newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> responseReader = new ChronicleNetworkSynchronousReader(
-                newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
+                clientChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new ChronicleNetworkSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

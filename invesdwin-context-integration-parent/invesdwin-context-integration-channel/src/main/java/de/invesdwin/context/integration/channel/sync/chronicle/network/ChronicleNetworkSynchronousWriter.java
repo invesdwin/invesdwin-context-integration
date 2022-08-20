@@ -1,12 +1,10 @@
 package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -16,24 +14,28 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class ChronicleNetworkSynchronousWriter extends AChronicleNetworkSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
+    private ChronicleNetworkSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private ChronicleSocketChannel socketChannel;
 
-    public ChronicleNetworkSynchronousWriter(final ChronicleSocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        super(type, socketAddress, server, estimatedMaxMessageSize);
+    public ChronicleNetworkSynchronousWriter(final ChronicleNetworkSynchronousChannel channel) {
+        this.channel = channel;
+        this.channel.setWriterRegistered();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        socket.shutdownInput();
+        channel.open();
+        if (!channel.isReaderRegistered()) {
+            channel.getSocket().shutdownInput();
+        }
+        socketChannel = channel.getSocketChannel();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX);
     }
 
     @Override
@@ -46,16 +48,21 @@ public class ChronicleNetworkSynchronousWriter extends AChronicleNetworkSynchron
             }
             buffer = null;
             messageBuffer = null;
+            socketChannel = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.writeBuffer(messageBuffer);
-            buffer.putInt(SIZE_INDEX, size);
-            writeFully(socketChannel, buffer.asNioByteBuffer(0, MESSAGE_INDEX + size));
+            buffer.putInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX, size);
+            writeFully(socketChannel,
+                    buffer.asNioByteBuffer(0, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX + size));
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
