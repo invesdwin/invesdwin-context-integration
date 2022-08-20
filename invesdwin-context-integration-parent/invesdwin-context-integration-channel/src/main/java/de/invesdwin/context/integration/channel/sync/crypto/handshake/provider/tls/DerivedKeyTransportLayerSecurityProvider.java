@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
@@ -70,6 +69,9 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         return server;
     }
 
+    /**
+     * see io.netty.handler.ssl.JdkSslContext.configureAndWrapEngine(SSLEngine, ByteBufAllocator)
+     */
     @Override
     public void configureServerSocket(final SSLServerSocket socket) {
         final JdkSslContext context = (JdkSslContext) newNettyContext(SslProvider.JDK);
@@ -96,6 +98,9 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         }
     }
 
+    /**
+     * see io.netty.handler.ssl.JdkSslContext.configureAndWrapEngine(SSLEngine, ByteBufAllocator)
+     */
     @Override
     public void configureSocket(final SSLSocket socket) {
         final JdkSslContext context = (JdkSslContext) newNettyContext(SslProvider.JDK);
@@ -124,11 +129,11 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public void onSocketConnected(final SSLSocket socket) {
-        try {
-            socket.startHandshake();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        //        try {
+        //            socket.startHandshake();
+        //        } catch (final IOException e) {
+        //            throw new RuntimeException(e);
+        //        }
     }
 
     @Override
@@ -188,8 +193,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public boolean isStartTlsEnabled() {
-        return true;
-        //        return CryptoProperties.DEFAULT_START_TLS_ENABLED;
+        return CryptoProperties.DEFAULT_START_TLS_ENABLED;
     }
 
     protected byte[] getDerivedKeyPepper() {
