@@ -6,10 +6,14 @@ import java.io.IOException;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Disabled;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
@@ -36,7 +40,6 @@ import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueu
 import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
-import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
@@ -83,16 +86,8 @@ public abstract class AChannelTest extends ATest {
     protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,
             final IAsynchronousChannel clientChannel) throws InterruptedException {
         try {
-            new Thread() {
-                @Override
-                public void run() {
-                    try {
-                        serverChannel.open();
-                    } catch (final Throwable t) {
-                        Err.process(t);
-                    }
-                }
-            }.start();
+            final WrappedExecutorService executor = Executors.newFixedThreadPool("runHandlerPerformanceTest", 1);
+            final ListenableFuture<?> openFuture = executor.submit(() -> serverChannel.open());
             clientChannel.open();
             while (!clientChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
@@ -100,6 +95,9 @@ public abstract class AChannelTest extends ATest {
             while (!serverChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
             }
+            openFuture.get(MAX_WAIT_DURATION.longValue(), MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
+        } catch (ExecutionException | TimeoutException e) {
+            throw new RuntimeException(e);
         } finally {
             serverChannel.close();
             clientChannel.close();
