@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 @NotThreadSafe
 public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
-    private final SocketSynchronousChannel channel;
+    private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private SocketChannel socketChannel;
@@ -51,7 +51,10 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferWr
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 

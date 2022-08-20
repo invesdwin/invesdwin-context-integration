@@ -24,7 +24,8 @@ import io.netty.channel.unix.UnixChannel;
 public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
-    private final NettyDatagramSynchronousChannel channel;
+    private final int socketSize;
+    private NettyDatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private FileDescriptor fd;
@@ -41,6 +42,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             throw new IllegalStateException("datagram reader has to be the server");
         }
         this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
@@ -56,8 +58,8 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             channel.closeBootstrapAsync();
             fd = unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
-            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-            messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+            buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+            messageBuffer = buffer.asNioByteBuffer(0, socketSize);
         }
     }
 
@@ -67,7 +69,10 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             buffer = null;
             messageBuffer = null;
             fd = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 
@@ -77,7 +82,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             return true;
         }
         try {
-            final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
+            final int read = fd.read(messageBuffer, 0, socketSize);
             if (read > 0) {
                 position = read;
                 return true;
@@ -98,7 +103,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         //read size
         try {
             while (position < targetPosition) {
-                final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
+                final int read = fd.read(messageBuffer, 0, socketSize);
                 position += read;
             }
         } catch (final ClosedChannelException e) {
@@ -112,7 +117,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             final int capacityBefore = buffer.capacity();
             buffer.ensureCapacity(targetPosition);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
             }
             NettyNativeSocketSynchronousReader.readFully(fd, messageBuffer, position, remaining);
         }

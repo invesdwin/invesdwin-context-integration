@@ -14,7 +14,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 @NotThreadSafe
 public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    private final SocketSynchronousChannel channel;
+    private SocketSynchronousChannel channel;
+    private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private SocketChannel socketChannel;
@@ -22,6 +23,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
     public SocketSynchronousReader(final SocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
@@ -34,8 +36,8 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
             }
         }
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = buffer.asNioByteBuffer(0, socketSize);
         socketChannel = channel.getSocketChannel();
     }
 
@@ -45,7 +47,10 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 
@@ -74,7 +79,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
             final int capacityBefore = buffer.capacity();
             buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
             }
         }
 

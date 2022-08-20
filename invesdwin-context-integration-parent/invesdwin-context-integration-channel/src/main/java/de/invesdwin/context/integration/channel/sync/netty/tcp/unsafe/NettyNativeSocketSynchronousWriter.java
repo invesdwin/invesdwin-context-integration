@@ -19,7 +19,7 @@ import io.netty.channel.unix.UnixChannel;
 @NotThreadSafe
 public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
-    private final NettySocketSynchronousChannel channel;
+    private NettySocketSynchronousChannel channel;
     private FileDescriptor fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -69,7 +69,10 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             messageBuffer = null;
             fd = null;
         }
-        channel.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override

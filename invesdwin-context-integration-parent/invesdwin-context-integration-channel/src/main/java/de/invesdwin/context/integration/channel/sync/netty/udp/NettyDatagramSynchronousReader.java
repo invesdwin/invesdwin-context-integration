@@ -23,7 +23,7 @@ import io.netty.channel.socket.DatagramPacket;
 public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
-    private final NettyDatagramSynchronousChannel channel;
+    private NettyDatagramSynchronousChannel channel;
     private Reader reader;
 
     public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
@@ -56,7 +56,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         if (reader != null) {
             reader.close();
             reader = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 

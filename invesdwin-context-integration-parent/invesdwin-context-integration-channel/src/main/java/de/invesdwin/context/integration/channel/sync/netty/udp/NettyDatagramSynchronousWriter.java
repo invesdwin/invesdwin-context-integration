@@ -22,7 +22,7 @@ import io.netty.channel.socket.DatagramPacket;
 public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
-    private final NettyDatagramSynchronousChannel channel;
+    private NettyDatagramSynchronousChannel channel;
     private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -94,7 +94,10 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             datagramPacket.release();
             datagramPacket = null;
             writer = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 

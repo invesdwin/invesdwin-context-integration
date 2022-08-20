@@ -17,7 +17,7 @@ import io.netty.channel.unix.UnixChannel;
 @NotThreadSafe
 public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    private final NettySocketSynchronousChannel channel;
+    private NettySocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private FileDescriptor fd;
@@ -61,7 +61,10 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
             messageBuffer = null;
             fd = null;
         }
-        channel.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override

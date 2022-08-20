@@ -25,7 +25,8 @@ import io.netty.channel.unix.UnixChannel;
 public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
-    private final NettyDatagramSynchronousChannel channel;
+    private final int socketSize;
+    private NettyDatagramSynchronousChannel channel;
     private Socket fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -41,6 +42,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             throw new IllegalStateException("datagram writer has to be the client");
         }
         this.channel.setWriterRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
@@ -56,7 +58,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             channel.closeBootstrapAsync();
             fd = (Socket) unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
-            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+            buffer = ByteBuffers.allocateDirectExpandable(socketSize);
             messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
         }
     }
@@ -72,7 +74,10 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             buffer = null;
             messageBuffer = null;
             fd = null;
+        }
+        if (channel != null) {
             channel.close();
+            channel = null;
         }
     }
 
