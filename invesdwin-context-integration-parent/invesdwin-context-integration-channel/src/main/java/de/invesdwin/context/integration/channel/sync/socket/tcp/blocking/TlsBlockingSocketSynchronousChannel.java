@@ -33,8 +33,15 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
     }
 
     @Override
-    public SSLServerSocket getServerSocket() {
-        return (SSLServerSocket) super.getServerSocket();
+    public boolean isReaderRegistered() {
+        //never shut down input or output
+        return true;
+    }
+
+    @Override
+    public boolean isWriterRegistered() {
+        //never shut down input or output
+        return true;
     }
 
     @Override
@@ -49,8 +56,11 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                 finalizer.serverSocket = new ServerSocket();
                 finalizer.serverSocket.bind(socketAddress);
                 finalizer.socket = finalizer.serverSocket.accept();
-                finalizer.socket = socketFactory.createSocket(finalizer.socket, getSocketAddress().getHostName(),
-                        getSocketAddress().getPort(), true);
+                final SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(finalizer.socket,
+                        getSocketAddress().getHostName(), getSocketAddress().getPort(), true);
+                tlsProvider.configureSocket(sslSocket);
+                tlsProvider.onSocketConnected(sslSocket);
+                finalizer.socket = sslSocket;
                 //use getSocket().startHandshake(); after sending some unencrypted messages (though beware of MITM stripTls attacks)
             } else {
                 final Duration connectTimeout = getConnectTimeout();
@@ -59,8 +69,11 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                     try {
                         finalizer.socket = new Socket();
                         finalizer.socket.connect(socketAddress);
-                        finalizer.socket = socketFactory.createSocket(finalizer.socket,
+                        final SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket(finalizer.socket,
                                 getSocketAddress().getHostName(), getSocketAddress().getPort(), true);
+                        tlsProvider.configureSocket(sslSocket);
+                        tlsProvider.onSocketConnected(sslSocket);
+                        finalizer.socket = sslSocket;
                         //use getSocket().startHandshake(); after sending some unencrypted messages (though beware of MITM stripTls attacks)
                         break;
                     } catch (final ConnectException e) {
@@ -82,17 +95,24 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
             //we directly handshake to establish an encrypted connection
             if (server) {
                 final SSLServerSocketFactory serverSocketFactory = context.getServerSocketFactory();
-                finalizer.serverSocket = serverSocketFactory.createServerSocket();
+                final SSLServerSocket sslServerSocket = (SSLServerSocket) serverSocketFactory.createServerSocket();
+                tlsProvider.configureServerSocket(sslServerSocket);
+                finalizer.serverSocket = sslServerSocket;
                 finalizer.serverSocket.bind(socketAddress);
-                finalizer.socket = finalizer.serverSocket.accept();
+                final SSLSocket sslSocket = (SSLSocket) finalizer.serverSocket.accept();
+                finalizer.socket = sslSocket;
+                tlsProvider.onSocketConnected(sslSocket);
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 final SSLSocketFactory socketFactory = context.getSocketFactory();
                 while (true) {
                     try {
-                        finalizer.socket = socketFactory.createSocket();
+                        final SSLSocket sslSocket = (SSLSocket) socketFactory.createSocket();
+                        tlsProvider.configureSocket(sslSocket);
+                        finalizer.socket = sslSocket;
                         finalizer.socket.connect(socketAddress);
+                        tlsProvider.onSocketConnected(sslSocket);
                         break;
                     } catch (final ConnectException e) {
                         finalizer.socket.close();

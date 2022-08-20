@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
 
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
@@ -70,7 +71,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
     }
 
     @Override
-    public void configureSeverSocket(final SSLServerSocket socket) {
+    public void configureServerSocket(final SSLServerSocket socket) {
         final JdkSslContext context = (JdkSslContext) newNettyContext(SslProvider.JDK);
 
         final String[] cipherSuites = FIELD_CIPHERSUITES.get(context);
@@ -88,6 +89,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 socket.setNeedClientAuth(true);
                 break;
             case NONE:
+                break;
             default:
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
@@ -113,9 +115,19 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 socket.setNeedClientAuth(true);
                 break;
             case NONE:
+                break;
             default:
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
+        }
+    }
+
+    @Override
+    public void onSocketConnected(final SSLSocket socket) {
+        try {
+            socket.startHandshake();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -176,7 +188,8 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public boolean isStartTlsEnabled() {
-        return CryptoProperties.DEFAULT_START_TLS_ENABLED;
+        return true;
+        //        return CryptoProperties.DEFAULT_START_TLS_ENABLED;
     }
 
     protected byte[] getDerivedKeyPepper() {
@@ -209,7 +222,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
     }
 
     protected ClientAuth getClientAuth() {
-        return ClientAuth.REQUIRE;
+        return ClientAuth.NONE;
     }
 
     protected String getHostname() {

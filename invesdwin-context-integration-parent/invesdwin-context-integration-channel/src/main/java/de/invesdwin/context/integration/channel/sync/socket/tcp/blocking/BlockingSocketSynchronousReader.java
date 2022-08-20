@@ -50,7 +50,8 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
     @Override
     public boolean hasNext() throws IOException {
         try {
-            return in.available() >= BlockingSocketSynchronousChannel.MESSAGE_INDEX;
+            final int available = in.available();
+            return available >= BlockingSocketSynchronousChannel.MESSAGE_INDEX;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }

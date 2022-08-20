@@ -7,9 +7,11 @@ import javax.net.ssl.SSLSocket;
 
 public interface ITransportLayerSecurityProvider {
 
+    void configureServerSocket(SSLServerSocket socket);
+
     void configureSocket(SSLSocket socket);
 
-    void configureSeverSocket(SSLServerSocket socket);
+    void onSocketConnected(SSLSocket socket);
 
     SSLContext newContext();
 
