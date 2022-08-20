@@ -208,10 +208,6 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            internalClose();
-        }
-
-        private void internalClose() {
             final Socket socketCopy = socket;
             if (socketCopy != null) {
                 socket = null;
