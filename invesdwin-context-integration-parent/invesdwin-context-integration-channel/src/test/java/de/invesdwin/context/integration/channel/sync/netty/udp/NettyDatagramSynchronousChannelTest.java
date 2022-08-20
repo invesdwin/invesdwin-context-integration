@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.EpollNettyDatagramChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.NioNettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -25,7 +25,7 @@ public class NettyDatagramSynchronousChannelTest extends AChannelTest {
         final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNettyDatagramChannelPerformanceTest(NioNettyDatagramChannelType.INSTANCE, responseAddress, requestAddress);
+        runNettyDatagramChannelPerformanceTest(EpollNettyDatagramChannelType.INSTANCE, responseAddress, requestAddress);
     }
 
     private void runNettyDatagramChannelPerformanceTest(final INettyDatagramChannelType type,

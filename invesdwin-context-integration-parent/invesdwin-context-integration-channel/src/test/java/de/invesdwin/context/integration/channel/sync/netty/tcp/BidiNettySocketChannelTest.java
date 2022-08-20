@@ -10,8 +10,8 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -25,13 +25,15 @@ public class BidiNettySocketChannelTest extends AChannelTest {
     public void testBidiNettySocketChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runBidiNettySocketChannelPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
+        runBidiNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
     }
 
     private void runBidiNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettySocketSynchronousChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
-        final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
+        final NettySocketSynchronousChannel serverChannel = newNettySocketChannel(type, address, true,
+                getMaxMessageSize());
+        final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
+                getMaxMessageSize());
 
         final ISynchronousWriter<IByteBufferWriter> responseWriter = newNettySocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBuffer> requestReader = newNettySocketSynchronousReader(serverChannel);
@@ -44,7 +46,8 @@ public class BidiNettySocketChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBuffer> newNettySocketSynchronousReader(final NettySocketSynchronousChannel serverChannel) {
+    protected ISynchronousReader<IByteBuffer> newNettySocketSynchronousReader(
+            final NettySocketSynchronousChannel serverChannel) {
         return new NettySocketSynchronousReader(serverChannel);
     }
 
