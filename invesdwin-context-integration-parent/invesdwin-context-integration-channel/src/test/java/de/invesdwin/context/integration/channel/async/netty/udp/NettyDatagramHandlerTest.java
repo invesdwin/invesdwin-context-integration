@@ -8,16 +8,18 @@ import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.EpollNettyDatagramChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.NioNettyDatagramChannelType;
+import de.invesdwin.context.integration.network.NetworkUtil;
 
 @Immutable
 public class NettyDatagramHandlerTest extends AChannelTest {
 
     @Test
     public void testNettyDatagramHandlerPerformance() throws InterruptedException {
-        final InetSocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettyDatagramHandlerPerformanceTest(NioNettyDatagramChannelType.INSTANCE, address);
+        final int port = NetworkUtil.findAvailableUdpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runNettyDatagramHandlerPerformanceTest(EpollNettyDatagramChannelType.INSTANCE, address);
     }
 
     private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,

@@ -33,14 +33,14 @@ import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSui
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ SocketChannelTestSuite.class, NettyChannelTestSuite.class, AeronChannelTest.class,
-        AgronaChannelTest.class, BufferingIteratorChannelTest.class, ChronicleQueueChannelTest.class,
-        ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
-        CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
-        NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
-        CompressionChannelTest.class, StreamCompressionChannelTest.class, EncryptionChannelTest.class,
-        StreamEncryptionChannelTest.class, VerificationChannelTest.class, VerifiedEncryptionChannelTest.class,
-        StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class })
+@SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
+        ChronicleQueueChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
+        KryonetChannelTest.class, LmaxChannelTest.class, CompressionChannelTest.class, PipeChannelTest.class,
+        StreamingPipeChannelTest.class, NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class,
+        FragmentChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
+        EncryptionChannelTest.class, StreamEncryptionChannelTest.class, VerificationChannelTest.class,
+        VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class,
+        EcdhHandshakeProviderTest.class, SocketChannelTestSuite.class, NettyChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

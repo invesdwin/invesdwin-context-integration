@@ -78,7 +78,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public boolean isClosed() {
-        return channel == null;
+        return channel == null || channel.getSocketChannel() == null;
     }
 
     private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {

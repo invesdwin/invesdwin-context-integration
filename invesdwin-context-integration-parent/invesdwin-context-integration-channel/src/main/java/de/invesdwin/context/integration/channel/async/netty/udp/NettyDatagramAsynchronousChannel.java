@@ -83,7 +83,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public boolean isClosed() {
-        return channel == null;
+        return channel == null || channel.getDatagramChannel() == null;
     }
 
     private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {

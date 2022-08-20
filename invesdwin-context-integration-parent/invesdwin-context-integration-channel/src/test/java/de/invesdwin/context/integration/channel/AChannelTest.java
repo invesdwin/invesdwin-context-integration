@@ -89,10 +89,10 @@ public abstract class AChannelTest extends ATest {
                 }
             }.start();
             clientChannel.open();
-            while (!serverChannel.isClosed()) {
+            while (!clientChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
             }
-            while (!clientChannel.isClosed()) {
+            while (!serverChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
             }
         } finally {
@@ -119,6 +119,10 @@ public abstract class AChannelTest extends ATest {
         executor.awaitTermination();
     }
 
+    /**
+     * WARNING: causes cpu spikes
+     */
+    @Deprecated
     protected void runBlockingQueuePerformanceTest(final BlockingQueue<IReference<FDate>> responseQueue,
             final BlockingQueue<IReference<FDate>> requestQueue, final Object synchronizeRequest,
             final Object synchronizeResponse) throws InterruptedException {
