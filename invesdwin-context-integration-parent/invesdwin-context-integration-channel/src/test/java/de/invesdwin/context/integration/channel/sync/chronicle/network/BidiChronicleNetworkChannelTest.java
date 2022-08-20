@@ -23,7 +23,7 @@ public class BidiChronicleNetworkChannelTest extends AChannelTest {
     public void testChronicleSocketPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.VANILLA, address);
+        runChronicleSocketPerformanceTest(ChronicleSocketChannelType.UNSAFE_FAST, address);
     }
 
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
