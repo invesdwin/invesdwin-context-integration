@@ -156,6 +156,7 @@ Network    NativeNettySocketIOUring (loopback)    Records:   129.90/ms    => ~22
 Network    SocketChannel (loopback)               Records:   131.08/ms    => ~23% faster
 Network    NativeNettySocketEpoll (loopback)      Records:   131.52/ms    => ~23.5% faster
 Thread     CzmqInproc                             Records:   132.52/ms    => ~24% faster
+Network    BidiBlockingSocket (loopback)          Records:   138.33/ms    => ~30% faster
 Network    ChronicleNetwork (loopback)            Records:   133.49/ms    => ~25% faster (using UnsafeFastJ8SocketChannel)
 Network    NativeSocketChannel (loopback)         Records:   134.07/ms    => ~26% faster (faster than NativeNetty because no JNI?)
 Network    AsyncNettySocketEpoll (loopback)       Records:   136.53/ms    => ~28% faster (using async handlers for servers)
