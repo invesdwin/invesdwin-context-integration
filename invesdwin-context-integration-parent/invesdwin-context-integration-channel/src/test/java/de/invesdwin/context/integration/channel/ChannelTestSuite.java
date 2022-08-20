@@ -29,21 +29,18 @@ import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPip
 import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeChannelTest;
 import de.invesdwin.context.integration.channel.sync.queue.QueueChannelTest;
 import de.invesdwin.context.integration.channel.sync.reference.ReferenceChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSuite;
 
 // CHECKSTYLE:OFF
 @Suite
-@SelectClasses({ NettyChannelTestSuite.class, AeronChannelTest.class, AgronaChannelTest.class,
-        BufferingIteratorChannelTest.class, ChronicleQueueChannelTest.class, ConversantChannelTest.class,
-        JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class, CompressionChannelTest.class,
-        PipeChannelTest.class, StreamingPipeChannelTest.class, NativePipeChannelTest.class, QueueChannelTest.class,
-        ReferenceChannelTest.class, SocketChannelTest.class, BlockingSocketChannelTest.class,
-        NativeSocketChannelTest.class, FragmentChannelTest.class, CompressionChannelTest.class,
-        StreamCompressionChannelTest.class, EncryptionChannelTest.class, StreamEncryptionChannelTest.class,
-        VerificationChannelTest.class, VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class,
-        DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class })
+@SelectClasses({ SocketChannelTestSuite.class, NettyChannelTestSuite.class, AeronChannelTest.class,
+        AgronaChannelTest.class, BufferingIteratorChannelTest.class, ChronicleQueueChannelTest.class,
+        ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
+        CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
+        NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
+        CompressionChannelTest.class, StreamCompressionChannelTest.class, EncryptionChannelTest.class,
+        StreamEncryptionChannelTest.class, VerificationChannelTest.class, VerifiedEncryptionChannelTest.class,
+        StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

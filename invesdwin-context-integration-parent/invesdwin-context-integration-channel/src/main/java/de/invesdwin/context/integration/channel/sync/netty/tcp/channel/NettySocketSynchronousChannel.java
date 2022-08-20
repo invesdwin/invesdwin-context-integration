@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
@@ -27,7 +28,7 @@ import io.netty.channel.EventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 
 @ThreadSafe
-public class NettySocketChannel implements Closeable {
+public class NettySocketSynchronousChannel implements Closeable {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -38,6 +39,7 @@ public class NettySocketChannel implements Closeable {
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
     protected volatile SocketChannel socketChannel;
+    protected volatile boolean socketChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
     private volatile ServerBootstrap serverBootstrap;
@@ -50,7 +52,7 @@ public class NettySocketChannel implements Closeable {
     private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public NettySocketChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
+    public NettySocketSynchronousChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
@@ -116,15 +118,11 @@ public class NettySocketChannel implements Closeable {
     }
 
     public void open(final Consumer<SocketChannel> channelListener) {
-        synchronized (this) {
-            if (activeCount.incrementAndGet() > 1) {
-                if (channelListener != null) {
-                    channelListener.accept(socketChannel);
-                }
-                return;
-            }
-            addChannelListener(channelListener);
+        if (!shouldOpen(channelListener)) {
+            awaitSocketChannel();
+            return;
         }
+        addChannelListener(channelListener);
         if (server) {
             awaitSocketChannel(() -> {
                 final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
@@ -177,6 +175,17 @@ public class NettySocketChannel implements Closeable {
         }
     }
 
+    private synchronized boolean shouldOpen(final Consumer<SocketChannel> channelListener) {
+        if (activeCount.incrementAndGet() > 1) {
+            if (channelListener != null) {
+                channelListener.accept(socketChannel);
+            }
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     /**
      * Can be overridden to add handlers
      */
@@ -199,18 +208,21 @@ public class NettySocketChannel implements Closeable {
     }
 
     private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
+        socketChannelOpening = true;
         try {
             //init bootstrap
-            for (int tries = 0; activeCount.get() > 0; tries++) {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
+            while (activeCount.get() > 0) {
                 try {
                     channelFactory.get().sync().get();
                     break;
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
                         internalClose();
-                        if (tries < getMaxConnectRetries()) {
+                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
-                                getConnectRetryDelay().sleep();
+                                getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
                                 throw new RuntimeException(e1);
                             }
@@ -222,32 +234,43 @@ public class NettySocketChannel implements Closeable {
                     }
                 }
             }
+        } catch (final Throwable t) {
+            closeAsync();
+            throw new RuntimeException(t);
+        } finally {
+            socketChannelOpening = false;
+        }
+        awaitSocketChannel();
+    }
+
+    private void awaitSocketChannel() {
+        try {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
             //wait for channel
-            for (int tries = 0; socketChannel == null && activeCount.get() > 0; tries++) {
-                if (tries < getMaxConnectRetries()) {
-                    try {
-                        getConnectRetryDelay().sleep();
-                    } catch (final InterruptedException e1) {
-                        throw new RuntimeException(e1);
-                    }
+            while ((socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
+                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                    getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");
                 }
             }
         } catch (final Throwable t) {
-            if (activeCount.get() > 0) {
-                internalClose();
-                throw new RuntimeException(t);
-            }
+            closeAsync();
+            throw new RuntimeException(t);
         }
     }
 
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
+    protected Duration getMaxConnectRetryDelay() {
+        return SynchronousChannels.DEFAULT_MAX_RECONNECT_DELAY;
     }
 
-    protected int getMaxConnectRetries() {
-        return 10;
+    protected Duration getConnectTimeout() {
+        return SynchronousChannels.DEFAULT_CONNECT_TIMEOUT;
+    }
+
+    protected Duration getWaitInterval() {
+        return SynchronousChannels.DEFAULT_WAIT_INTERVAL;
     }
 
     @Override
@@ -262,9 +285,10 @@ public class NettySocketChannel implements Closeable {
 
     private void internalClose() {
         closeSocketChannel();
-        if (serverBootstrap != null) {
-            final ServerBootstrapConfig config = serverBootstrap.config();
+        final ServerBootstrap serverBootstrapCopy = serverBootstrap;
+        if (serverBootstrapCopy != null) {
             serverBootstrap = null;
+            final ServerBootstrapConfig config = serverBootstrapCopy.config();
             final EventLoopGroup childGroup = config.childGroup();
             final Future<?> childGroupShutdown = shutdownGracefully(childGroup);
             final EventLoopGroup group = config.group();
@@ -272,26 +296,30 @@ public class NettySocketChannel implements Closeable {
             awaitShutdown(childGroupShutdown);
             awaitShutdown(groupShutdown);
         }
-        if (clientBootstrap != null) {
-            final BootstrapConfig config = clientBootstrap.config();
+        final Bootstrap clientBootstrapCopy = clientBootstrap;
+        if (clientBootstrapCopy != null) {
             clientBootstrap = null;
+            final BootstrapConfig config = clientBootstrapCopy.config();
             final EventLoopGroup group = config.group();
             awaitShutdown(shutdownGracefully(group));
         }
     }
 
     public void closeAsync() {
-        if (activeCount.decrementAndGet() > 0) {
-            return;
+        synchronized (this) {
+            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
+                return;
+            }
         }
         closeSocketChannel();
         closeBootstrapAsync();
     }
 
     public void closeSocketChannel() {
-        if (socketChannel != null) {
-            socketChannel.close();
+        final SocketChannel socketChannelCopy = socketChannel;
+        if (socketChannelCopy != null) {
             socketChannel = null;
+            socketChannelCopy.close();
         }
     }
 

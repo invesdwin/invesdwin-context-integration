@@ -15,9 +15,14 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.instrument.DynamicInstrumentationProperties;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.time.duration.Duration;
 
 @Immutable
 public final class SynchronousChannels {
+
+    public static final Duration DEFAULT_MAX_RECONNECT_DELAY = Duration.ONE_HUNDRED_MILLISECONDS;
+    public static final Duration DEFAULT_CONNECT_TIMEOUT = ContextProperties.DEFAULT_NETWORK_TIMEOUT;
+    public static final Duration DEFAULT_WAIT_INTERVAL = Duration.ONE_MILLISECOND;
 
     private static final File TMPFS_FOLDER = new File("/dev/shm");
     @GuardedBy("SynchronousChannels.class")
@@ -25,8 +30,7 @@ public final class SynchronousChannels {
     @GuardedBy("SynchronousChannels.class")
     private static Boolean namedPipeSupportedCached;
 
-    private SynchronousChannels() {
-    }
+    private SynchronousChannels() {}
 
     public static <T> ISynchronousReader<T> synchronize(final ISynchronousReader<T> delegate) {
         return new ISynchronousReader<T>() {

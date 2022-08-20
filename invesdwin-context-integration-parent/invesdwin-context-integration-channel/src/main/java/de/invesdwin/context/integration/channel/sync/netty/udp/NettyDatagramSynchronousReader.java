@@ -23,15 +23,15 @@ import io.netty.channel.socket.DatagramPacket;
 public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
-    private NettyDatagramChannel channel;
+    private final NettyDatagramSynchronousChannel channel;
     private Reader reader;
 
     public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
-        this(new NettyDatagramChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
+        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public NettyDatagramSynchronousReader(final NettyDatagramChannel channel) {
+    public NettyDatagramSynchronousReader(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
         if (channel.isServer() != SERVER) {
             throw new IllegalStateException("datagram reader has to be the server");
@@ -53,13 +53,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     @Override
     public void close() {
-        if (channel != null) {
-            channel.close();
-            channel = null;
-        }
         if (reader != null) {
             reader.close();
             reader = null;
+            channel.close();
         }
     }
 
@@ -87,8 +84,8 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
     private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
-        private int targetPosition = NettyDatagramChannel.MESSAGE_INDEX;
-        private int remaining = NettyDatagramChannel.MESSAGE_INDEX;
+        private int targetPosition = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
+        private int remaining = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private volatile IByteBuffer polledValue;
@@ -141,7 +138,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
             }
             if (size == -1) {
                 //read size and adjust target and remaining
-                size = buffer.getInt(NettyDatagramChannel.SIZE_INDEX);
+                size = buffer.getInt(NettyDatagramSynchronousChannel.SIZE_INDEX);
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -152,13 +149,13 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
                 return repeat;
             }
             //message complete
-            if (ClosedByteBuffer.isClosed(buffer, NettyDatagramChannel.SIZE_INDEX, size)) {
+            if (ClosedByteBuffer.isClosed(buffer, NettyDatagramSynchronousChannel.SIZE_INDEX, size)) {
                 polledValue = ClosedByteBuffer.INSTANCE;
             } else {
                 polledValue = buffer.slice(0, size);
             }
-            targetPosition = NettyDatagramChannel.MESSAGE_INDEX;
-            remaining = NettyDatagramChannel.MESSAGE_INDEX;
+            targetPosition = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
+            remaining = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
             return repeat;

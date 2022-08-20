@@ -7,7 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -24,8 +24,8 @@ public class NettySocketHandlerTest extends AChannelTest {
 
     private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettySocketChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
-        final NettySocketChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
+        final NettySocketSynchronousChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
+        final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
                 newCommandHandler(new WriterHandler()));
         final NettySocketAsynchronousChannel clientHandler = new NettySocketAsynchronousChannel(clientChannel,
@@ -33,9 +33,9 @@ public class NettySocketHandlerTest extends AChannelTest {
         runHandlerPerformanceTest(serverHandler, clientHandler);
     }
 
-    protected NettySocketChannel newNettySocketChannel(final INettySocketChannelType type,
+    protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,
             final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize);
+        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

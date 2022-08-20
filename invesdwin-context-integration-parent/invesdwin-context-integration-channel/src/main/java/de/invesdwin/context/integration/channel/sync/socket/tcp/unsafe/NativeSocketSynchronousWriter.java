@@ -7,7 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.ASocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -18,7 +18,7 @@ import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 
 @NotThreadSafe
-public class NativeSocketSynchronousWriter extends ASocketSynchronousChannel
+public class NativeSocketSynchronousWriter extends SocketSynchronousChannel
         implements ISynchronousWriter<IByteBufferWriter> {
 
     private IByteBuffer buffer;
@@ -43,7 +43,7 @@ public class NativeSocketSynchronousWriter extends ASocketSynchronousChannel
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (buffer != null) {
             try {
                 write(ClosedByteBuffer.INSTANCE);

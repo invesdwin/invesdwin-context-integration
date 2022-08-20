@@ -7,7 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.NioNettyDatagramChannelType;
 
@@ -22,8 +22,8 @@ public class NettyDatagramHandlerTest extends AChannelTest {
 
     private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettyDatagramChannel serverChannel = new NettyDatagramChannel(type, address, true, getMaxMessageSize());
-        final NettyDatagramChannel clientChannel = new NettyDatagramChannel(type, address, false, getMaxMessageSize());
+        final NettyDatagramSynchronousChannel serverChannel = new NettyDatagramSynchronousChannel(type, address, true, getMaxMessageSize());
+        final NettyDatagramSynchronousChannel clientChannel = new NettyDatagramSynchronousChannel(type, address, false, getMaxMessageSize());
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
                 newCommandHandler(new WriterHandler()));
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,

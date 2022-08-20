@@ -8,7 +8,6 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.nng.type.INngSocketType;
 import de.invesdwin.util.math.Bytes;
-import de.invesdwin.util.time.duration.Duration;
 import io.sisu.nng.NngException;
 import io.sisu.nng.Socket;
 import io.sisu.nng.pubsub.Sub0Socket;
@@ -67,14 +66,6 @@ public abstract class ANngSynchronousChannel implements ISynchronousChannel {
      */
     protected String getPublishSubscribeTopic() {
         return "";
-    }
-
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
-    }
-
-    protected int getMaxConnectRetries() {
-        return 10;
     }
 
     @Override

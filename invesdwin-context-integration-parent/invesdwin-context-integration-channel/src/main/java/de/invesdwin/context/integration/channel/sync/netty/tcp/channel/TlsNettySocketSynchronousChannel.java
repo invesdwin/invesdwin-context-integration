@@ -30,9 +30,9 @@ import io.netty.handler.ssl.SslHandler;
 import io.netty.handler.ssl.SslProvider;
 
 @Immutable
-public class TlsNettySocketChannel extends NettySocketChannel {
+public class TlsNettySocketSynchronousChannel extends NettySocketSynchronousChannel {
 
-    public TlsNettySocketChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
+    public TlsNettySocketSynchronousChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         super(type, socketAddress, server, estimatedMaxMessageSize);
         //unsafe write not supported, this would circumvent the ssl handler

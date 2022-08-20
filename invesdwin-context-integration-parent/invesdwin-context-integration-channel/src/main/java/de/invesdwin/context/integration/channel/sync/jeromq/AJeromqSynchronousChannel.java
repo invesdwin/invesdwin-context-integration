@@ -13,7 +13,6 @@ import org.zeromq.jzmq.sockets.SocketBuilder;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.util.math.Bytes;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
@@ -79,14 +78,6 @@ public abstract class AJeromqSynchronousChannel implements ISynchronousChannel {
      */
     protected String getPublishSubscribeTopic() {
         return "";
-    }
-
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
-    }
-
-    protected int getMaxConnectRetries() {
-        return 10;
     }
 
     @Override

@@ -7,7 +7,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.ASocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -17,8 +17,7 @@ import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
-public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class NativeSocketSynchronousReader extends SocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
 
     private IByteBuffer buffer;
     private FileDescriptor fd;
@@ -42,7 +41,7 @@ public class NativeSocketSynchronousReader extends ASocketSynchronousChannel
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         if (buffer != null) {
             buffer = null;
             fd = null;

@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -30,8 +30,8 @@ public class BidiNettySocketChannelTest extends AChannelTest {
 
     private void runBidiNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
-        final NettySocketChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
-        final NettySocketChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
+        final NettySocketSynchronousChannel serverChannel = newNettySocketChannel(type, address, true, getMaxMessageSize());
+        final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false, getMaxMessageSize());
 
         final ISynchronousWriter<IByteBufferWriter> responseWriter = newNettySocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBuffer> requestReader = newNettySocketSynchronousReader(serverChannel);
@@ -44,18 +44,18 @@ public class BidiNettySocketChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBuffer> newNettySocketSynchronousReader(final NettySocketChannel serverChannel) {
+    protected ISynchronousReader<IByteBuffer> newNettySocketSynchronousReader(final NettySocketSynchronousChannel serverChannel) {
         return new NettySocketSynchronousReader(serverChannel);
     }
 
     protected ISynchronousWriter<IByteBufferWriter> newNettySocketSynchronousWriter(
-            final NettySocketChannel serverChannel) {
+            final NettySocketSynchronousChannel serverChannel) {
         return new NettySocketSynchronousWriter(serverChannel);
     }
 
-    protected NettySocketChannel newNettySocketChannel(final INettySocketChannelType type,
+    protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,
             final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettySocketChannel(type, socketAddress, server, estimatedMaxMessageSize);
+        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

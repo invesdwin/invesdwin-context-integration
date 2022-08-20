@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -21,11 +21,11 @@ import io.netty.channel.ChannelPipeline;
 @NotThreadSafe
 public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
-    private NettySocketChannel channel;
+    private NettySocketSynchronousChannel channel;
     private final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler;
     private Reader reader;
 
-    public NettySocketAsynchronousChannel(final NettySocketChannel channel,
+    public NettySocketAsynchronousChannel(final NettySocketSynchronousChannel channel,
             final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler) {
         channel.setReaderRegistered();
         channel.setWriterRegistered();
@@ -86,8 +86,8 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
         private final IByteBuffer messageBuffer;
-        private int targetPosition = NettySocketChannel.MESSAGE_INDEX;
-        private int remaining = NettySocketChannel.MESSAGE_INDEX;
+        private int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
+        private int remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
@@ -98,7 +98,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             this.buf = Unpooled.directBuffer(socketSize);
             this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
-            this.messageBuffer = buffer.newSliceFrom(NettySocketChannel.MESSAGE_INDEX);
+            this.messageBuffer = buffer.newSliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
         }
 
         @Override
@@ -151,7 +151,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             }
             if (size == -1) {
                 //read size and adjust target and remaining
-                size = buffer.getInt(NettySocketChannel.SIZE_INDEX);
+                size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -174,8 +174,8 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                     NettySocketAsynchronousChannel.this.closeAsync();
                 }
             }
-            targetPosition = NettySocketChannel.MESSAGE_INDEX;
-            remaining = NettySocketChannel.MESSAGE_INDEX;
+            targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
+            remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
             return repeat;
@@ -185,8 +185,8 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             if (output != null) {
                 buf.setIndex(0, 0); //reset indexes
                 final int size = output.writeBuffer(messageBuffer);
-                buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
-                buf.setIndex(0, NettySocketChannel.MESSAGE_INDEX + size);
+                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+                buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
                 buf.retain();
                 ctx.writeAndFlush(buf);
             }

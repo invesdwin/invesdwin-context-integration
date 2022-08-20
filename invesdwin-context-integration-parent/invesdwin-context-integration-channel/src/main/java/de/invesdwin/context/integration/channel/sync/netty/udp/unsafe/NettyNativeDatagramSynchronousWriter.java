@@ -7,9 +7,9 @@ import java.nio.channels.ClosedChannelException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -25,17 +25,17 @@ import io.netty.channel.unix.UnixChannel;
 public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
-    private final NettyDatagramChannel channel;
+    private final NettyDatagramSynchronousChannel channel;
     private Socket fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
     public NettyNativeDatagramSynchronousWriter(final INettyDatagramChannelType type,
             final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new NettyDatagramChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
+        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public NettyNativeDatagramSynchronousWriter(final NettyDatagramChannel channel) {
+    public NettyNativeDatagramSynchronousWriter(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
         if (channel.isServer() != SERVER) {
             throw new IllegalStateException("datagram writer has to be the client");
@@ -57,7 +57,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             fd = (Socket) unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
             buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
+            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
         }
     }
 
@@ -72,16 +72,16 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             buffer = null;
             messageBuffer = null;
             fd = null;
+            channel.close();
         }
-        channel.close();
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.writeBuffer(messageBuffer);
-            buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size,
+            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketSynchronousChannel.MESSAGE_INDEX + size,
                     channel.getSocketAddress(), false);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);

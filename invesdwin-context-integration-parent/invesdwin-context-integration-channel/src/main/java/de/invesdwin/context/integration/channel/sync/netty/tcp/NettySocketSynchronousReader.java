@@ -6,7 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -20,10 +20,10 @@ import io.netty.channel.ChannelPipeline;
 @NotThreadSafe
 public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    private NettySocketChannel channel;
+    private NettySocketSynchronousChannel channel;
     private Reader reader;
 
-    public NettySocketSynchronousReader(final NettySocketChannel channel) {
+    public NettySocketSynchronousReader(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
         this.channel.setKeepBootstrapRunningAfterOpen();
@@ -74,8 +74,8 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
     private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
-        private int targetPosition = NettySocketChannel.MESSAGE_INDEX;
-        private int remaining = NettySocketChannel.MESSAGE_INDEX;
+        private int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
+        private int remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private volatile IByteBuffer polledValue;
@@ -128,7 +128,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
             }
             if (size == -1) {
                 //read size and adjust target and remaining
-                size = buffer.getInt(NettySocketChannel.SIZE_INDEX);
+                size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -139,13 +139,13 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
                 return repeat;
             }
             //message complete
-            if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.SIZE_INDEX, size)) {
+            if (ClosedByteBuffer.isClosed(buffer, NettySocketSynchronousChannel.SIZE_INDEX, size)) {
                 polledValue = ClosedByteBuffer.INSTANCE;
             } else {
                 polledValue = buffer.slice(0, size);
             }
-            targetPosition = NettySocketChannel.MESSAGE_INDEX;
-            remaining = NettySocketChannel.MESSAGE_INDEX;
+            targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
+            remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
             return repeat;

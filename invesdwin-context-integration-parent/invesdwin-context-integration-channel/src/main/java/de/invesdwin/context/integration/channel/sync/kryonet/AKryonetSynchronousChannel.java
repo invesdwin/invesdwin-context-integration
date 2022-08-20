@@ -11,6 +11,7 @@ import com.esotericsoftware.kryonet.Server;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.ByteBufferMessageSerialization;
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.ClientTcpConnection;
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.ClientUdpConnection;
@@ -62,14 +63,16 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
         } else {
             final Client client = new Client(8192, 2048, ByteBufferMessageSerialization.INSTANCE);
             client.start();
-            for (int tries = 0;; tries++) {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
+            while (true) {
                 try {
                     client.connect(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS, address, tcpPort, udpPort);
                     break;
                 } catch (final IOException e) {
-                    if (tries < getMaxConnectRetries()) {
+                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                         try {
-                            getConnectRetryDelay().sleep();
+                            getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {
                             throw new RuntimeException(e1);
                         }
@@ -86,12 +89,12 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
         }
     }
 
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
+    protected Duration getMaxConnectRetryDelay() {
+        return SynchronousChannels.DEFAULT_MAX_RECONNECT_DELAY;
     }
 
-    protected int getMaxConnectRetries() {
-        return 10;
+    protected Duration getConnectTimeout() {
+        return SynchronousChannels.DEFAULT_CONNECT_TIMEOUT;
     }
 
     @Override

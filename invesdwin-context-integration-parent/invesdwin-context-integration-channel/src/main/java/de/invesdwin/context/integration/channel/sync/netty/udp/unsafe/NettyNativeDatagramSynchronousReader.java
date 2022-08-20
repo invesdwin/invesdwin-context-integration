@@ -7,10 +7,10 @@ import java.nio.channels.ClosedChannelException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -24,7 +24,7 @@ import io.netty.channel.unix.UnixChannel;
 public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
-    private final NettyDatagramChannel channel;
+    private final NettyDatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private FileDescriptor fd;
@@ -32,10 +32,10 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     public NettyNativeDatagramSynchronousReader(final INettyDatagramChannelType type,
             final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new NettyDatagramChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
+        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public NettyNativeDatagramSynchronousReader(final NettyDatagramChannel channel) {
+    public NettyNativeDatagramSynchronousReader(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
         if (channel.isServer() != SERVER) {
             throw new IllegalStateException("datagram reader has to be the server");
@@ -67,8 +67,8 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             buffer = null;
             messageBuffer = null;
             fd = null;
+            channel.close();
         }
-        channel.close();
     }
 
     @Override
@@ -93,7 +93,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        int targetPosition = NettySocketChannel.MESSAGE_INDEX;
+        int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         try {
@@ -104,7 +104,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);
         }
-        size = buffer.getInt(NettySocketChannel.SIZE_INDEX);
+        size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;
@@ -118,11 +118,11 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         }
         position = 0;
 
-        if (ClosedByteBuffer.isClosed(buffer, NettySocketChannel.MESSAGE_INDEX, size)) {
+        if (ClosedByteBuffer.isClosed(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(NettySocketChannel.MESSAGE_INDEX, size);
+        return buffer.slice(NettySocketSynchronousChannel.MESSAGE_INDEX, size);
     }
 
     @Override

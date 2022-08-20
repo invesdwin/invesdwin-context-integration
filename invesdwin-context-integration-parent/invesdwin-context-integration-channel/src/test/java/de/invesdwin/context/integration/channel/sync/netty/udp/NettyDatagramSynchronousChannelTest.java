@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
 @NotThreadSafe
-public class NettyDatagramChannelTest extends AChannelTest {
+public class NettyDatagramSynchronousChannelTest extends AChannelTest {
 
     @Test
     public void testNettyDatagramChannelPerformance() throws InterruptedException {

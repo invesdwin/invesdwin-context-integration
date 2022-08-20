@@ -12,13 +12,13 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChanne
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsBidiNettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsNettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativeDatagramChannelTest;
 
 // CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ TlsNettySocketChannelTest.class, NettySocketChannelTest.class, BidiNettySocketChannelTest.class,
-        TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class,
+        TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramSynchronousChannelTest.class,
         NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class, NettySocketHandlerTest.class,
         TlsNettySocketHandlerTest.class })
 @Immutable

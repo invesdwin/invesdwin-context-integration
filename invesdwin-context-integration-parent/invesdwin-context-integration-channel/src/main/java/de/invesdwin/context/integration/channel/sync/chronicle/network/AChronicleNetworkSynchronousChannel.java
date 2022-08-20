@@ -8,6 +8,7 @@ import java.nio.channels.SocketChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
@@ -51,7 +52,9 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
             socketChannel = type.acceptSocketChannel(serverSocketChannel);
             socket = socketChannel.socket();
         } else {
-            for (int tries = 0;; tries++) {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
+            while (true) {
                 socketChannel = type.newSocketChannel(SocketChannel.open());
                 try {
                     socketChannel.connect(socketAddress);
@@ -61,9 +64,9 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
                     socketChannel.close();
                     socketChannel = null;
                     socket = null;
-                    if (tries < getMaxConnectRetries()) {
+                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                         try {
-                            getConnectRetryDelay().sleep();
+                            getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {
                             throw new RuntimeException(e1);
                         }
@@ -80,12 +83,12 @@ public abstract class AChronicleNetworkSynchronousChannel implements ISynchronou
         socket.setTcpNoDelay(true);
     }
 
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
+    protected Duration getMaxConnectRetryDelay() {
+        return SynchronousChannels.DEFAULT_MAX_RECONNECT_DELAY;
     }
 
-    protected int getMaxConnectRetries() {
-        return 10;
+    protected Duration getConnectTimeout() {
+        return SynchronousChannels.DEFAULT_CONNECT_TIMEOUT;
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.nio.channels.DatagramChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -43,7 +44,9 @@ public abstract class ADatagramSynchronousChannel implements ISynchronousChannel
             socketChannel.bind(socketAddress);
             socket = socketChannel.socket();
         } else {
-            for (int tries = 0;; tries++) {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
+            while (true) {
                 try {
                     socketChannel = DatagramChannel.open();
                     socketChannel.connect(socketAddress);
@@ -56,9 +59,9 @@ public abstract class ADatagramSynchronousChannel implements ISynchronousChannel
                         socket.close();
                         socket = null;
                     }
-                    if (tries < getMaxConnectRetries()) {
+                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                         try {
-                            getConnectRetryDelay().sleep();
+                            getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {
                             throw new RuntimeException(e1);
                         }
@@ -76,12 +79,12 @@ public abstract class ADatagramSynchronousChannel implements ISynchronousChannel
                 | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
     }
 
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
+    protected Duration getMaxConnectRetryDelay() {
+        return SynchronousChannels.DEFAULT_MAX_RECONNECT_DELAY;
     }
 
-    protected int getMaxConnectRetries() {
-        return 10;
+    protected Duration getConnectTimeout() {
+        return SynchronousChannels.DEFAULT_CONNECT_TIMEOUT;
     }
 
     @Override

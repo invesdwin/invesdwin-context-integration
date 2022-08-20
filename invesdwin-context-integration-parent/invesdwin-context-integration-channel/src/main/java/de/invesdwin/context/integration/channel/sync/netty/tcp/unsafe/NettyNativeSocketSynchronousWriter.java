@@ -6,7 +6,7 @@ import java.nio.channels.ClosedChannelException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -19,12 +19,12 @@ import io.netty.channel.unix.UnixChannel;
 @NotThreadSafe
 public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
-    private final NettySocketChannel channel;
+    private final NettySocketSynchronousChannel channel;
     private FileDescriptor fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public NettyNativeSocketSynchronousWriter(final NettySocketChannel channel) {
+    public NettyNativeSocketSynchronousWriter(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setWriterRegistered();
     }
@@ -47,7 +47,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             fd = unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
             buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketChannel.MESSAGE_INDEX);
+            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
         }
     }
 
@@ -76,8 +76,8 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.writeBuffer(messageBuffer);
-            buffer.putInt(NettySocketChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketChannel.MESSAGE_INDEX + size);
+            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }

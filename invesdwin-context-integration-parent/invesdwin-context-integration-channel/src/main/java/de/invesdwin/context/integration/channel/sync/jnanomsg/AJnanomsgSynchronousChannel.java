@@ -8,7 +8,6 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSocketType;
 import de.invesdwin.util.math.Bytes;
-import de.invesdwin.util.time.duration.Duration;
 import nanomsg.AbstractSocket;
 import nanomsg.Nanomsg;
 import nanomsg.Nanomsg.SocketFlag;
@@ -66,14 +65,6 @@ public abstract class AJnanomsgSynchronousChannel implements ISynchronousChannel
      */
     protected String getPublishSubscribeTopic() {
         return "";
-    }
-
-    protected Duration getConnectRetryDelay() {
-        return Duration.ONE_SECOND;
-    }
-
-    protected int getMaxConnectRetries() {
-        return 10;
     }
 
     @Override

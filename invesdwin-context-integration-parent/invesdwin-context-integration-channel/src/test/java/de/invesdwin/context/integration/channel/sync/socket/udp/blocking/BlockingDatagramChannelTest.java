@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -19,8 +20,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 public class BlockingDatagramChannelTest extends AChannelTest {
     @Test
     public void testBlockingDatagramSocketPerformance() throws InterruptedException {
-        final SocketAddress responseAddress = new InetSocketAddress("localhost", 37878);
-        final SocketAddress requestAddress = new InetSocketAddress("localhost", 37879);
+        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
         runBlockingDatagramSocketPerformanceTest(responseAddress, requestAddress);
     }
 
