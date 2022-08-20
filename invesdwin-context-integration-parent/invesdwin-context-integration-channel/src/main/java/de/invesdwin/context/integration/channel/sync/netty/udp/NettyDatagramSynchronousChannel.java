@@ -14,6 +14,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -38,11 +41,10 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     protected final INettyDatagramChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected volatile DatagramChannel datagramChannel;
     protected volatile boolean datagramChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    private volatile Bootstrap bootstrap;
+    protected final NettyDatagramSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -58,6 +60,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.finalizer = new NettyDatagramSynchronousChannelFinalizer();
+        finalizer.register(this);
     }
 
     public boolean isServer() {
@@ -99,7 +103,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     }
 
     public DatagramChannel getDatagramChannel() {
-        return datagramChannel;
+        return finalizer.datagramChannel;
     }
 
     public int getSocketSize() {
@@ -116,24 +120,24 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
         if (server) {
             awaitDatagramChannel(() -> {
-                bootstrap = new Bootstrap();
-                bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
-                type.channelOptions(bootstrap::option, socketSize);
-                bootstrapListener.accept(bootstrap);
+                finalizer.bootstrap = new Bootstrap();
+                finalizer.bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
+                type.channelOptions(finalizer.bootstrap::option, socketSize);
+                bootstrapListener.accept(finalizer.bootstrap);
                 try {
-                    return bootstrap.bind(socketAddress);
+                    return finalizer.bootstrap.bind(socketAddress);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
             });
         } else {
             awaitDatagramChannel(() -> {
-                bootstrap = new Bootstrap();
-                bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
-                type.channelOptions(bootstrap::option, socketSize);
-                bootstrapListener.accept(bootstrap);
+                finalizer.bootstrap = new Bootstrap();
+                finalizer.bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
+                type.channelOptions(finalizer.bootstrap::option, socketSize);
+                bootstrapListener.accept(finalizer.bootstrap);
                 try {
-                    return bootstrap.connect(socketAddress);
+                    return finalizer.bootstrap.connect(socketAddress);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -144,7 +148,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     private synchronized boolean shouldOpen(final Consumer<DatagramChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
-                channelListener.accept(datagramChannel);
+                channelListener.accept(finalizer.datagramChannel);
             }
             return false;
         } else {
@@ -161,9 +165,9 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             while (activeCount.get() > 0) {
                 try {
                     final ChannelFuture sync = channelFactory.get().sync();
-                    type.initChannel(datagramChannel, server);
-                    onDatagramChannel(datagramChannel);
-                    datagramChannel = (DatagramChannel) sync.channel();
+                    type.initChannel(finalizer.datagramChannel, server);
+                    onDatagramChannel(finalizer.datagramChannel);
+                    finalizer.datagramChannel = (DatagramChannel) sync.channel();
                     sync.get();
                     break;
                 } catch (final Throwable t) {
@@ -196,7 +200,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         try {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((datagramChannel == null || datagramChannelOpening) && activeCount.get() > 0) {
+            while ((finalizer.datagramChannel == null || datagramChannelOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -238,21 +242,14 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             }
         }
         internalClose();
+        finalizer.close();
     }
 
     private void internalClose() {
-        final DatagramChannel datagramChannelCopy = datagramChannel;
-        if (datagramChannelCopy != null) {
-            datagramChannel = null;
-            datagramChannelCopy.close();
-        }
-        closeBootstrap();
-    }
-
-    private void closeBootstrap() {
-        final Bootstrap bootstrapCopy = bootstrap;
+        finalizer.closeDatagramChannel();
+        final Bootstrap bootstrapCopy = finalizer.bootstrap;
         if (bootstrapCopy != null) {
-            bootstrap = null;
+            finalizer.bootstrap = null;
             final BootstrapConfig config = bootstrapCopy.config();
             final EventLoopGroup group = config.group();
             awaitShutdown(shutdownGracefully(group));
@@ -265,22 +262,11 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                 activeCount.decrementAndGet();
             }
         }
-        final DatagramChannel datagramChannelCopy = datagramChannel;
-        if (datagramChannelCopy != null) {
-            datagramChannel = null;
-            datagramChannelCopy.close();
-        }
-        closeBootstrapAsync();
+        finalizer.close();
     }
 
     public void closeBootstrapAsync() {
-        final Bootstrap bootstrapCopy = bootstrap;
-        if (bootstrapCopy != null) {
-            bootstrap = null;
-            final BootstrapConfig config = bootstrapCopy.config();
-            final EventLoopGroup group = config.group();
-            shutdownGracefully(group);
-        }
+        finalizer.closeBootstrapAsync();
     }
 
     private static Future<?> shutdownGracefully(final EventLoopGroup group) {
@@ -289,6 +275,69 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     private static void awaitShutdown(final Future<?> future) {
         NettySocketSynchronousChannel.awaitShutdown(future);
+    }
+
+    private static final class NettyDatagramSynchronousChannelFinalizer extends AFinalizer {
+
+        private final Exception initStackTrace;
+        private volatile DatagramChannel datagramChannel;
+        private volatile Bootstrap bootstrap;
+
+        protected NettyDatagramSynchronousChannelFinalizer() {
+            if (Throwables.isDebugStackTraceEnabled()) {
+                initStackTrace = new Exception();
+                initStackTrace.fillInStackTrace();
+            } else {
+                initStackTrace = null;
+            }
+        }
+
+        @Override
+        protected void clean() {
+            closeDatagramChannel();
+            closeBootstrapAsync();
+        }
+
+        @Override
+        protected void onRun() {
+            String warning = "Finalizing unclosed " + NettyDatagramSynchronousChannel.class.getSimpleName();
+            if (Throwables.isDebugStackTraceEnabled()) {
+                final Exception stackTrace = initStackTrace;
+                if (stackTrace != null) {
+                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
+                }
+            }
+            new Log(this).warn(warning);
+        }
+
+        @Override
+        protected boolean isCleaned() {
+            return datagramChannel == null;
+        }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
+        }
+
+        private void closeDatagramChannel() {
+            final DatagramChannel datagramChannelCopy = datagramChannel;
+            if (datagramChannelCopy != null) {
+                datagramChannel = null;
+                datagramChannelCopy.close();
+            }
+        }
+
+        public void closeBootstrapAsync() {
+            final Bootstrap bootstrapCopy = bootstrap;
+            if (bootstrapCopy != null) {
+                bootstrap = null;
+                final BootstrapConfig config = bootstrapCopy.config();
+                final EventLoopGroup group = config.group();
+                shutdownGracefully(group);
+            }
+        }
+
     }
 
 }

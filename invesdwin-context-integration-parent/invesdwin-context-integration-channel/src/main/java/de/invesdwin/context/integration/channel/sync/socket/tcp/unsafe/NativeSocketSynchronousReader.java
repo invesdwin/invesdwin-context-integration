@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -17,24 +16,26 @@ import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
-public class NativeSocketSynchronousReader extends SocketSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    private SocketSynchronousChannel channel;
+    private final int socketSize;
     private IByteBuffer buffer;
     private FileDescriptor fd;
     private int position = 0;
 
-    public NativeSocketSynchronousReader(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public NativeSocketSynchronousReader(final SocketSynchronousChannel channel) {
+        this.channel = channel;
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        if (socket != null) {
-            socket.shutdownOutput();
+        channel.open();
+        if (channel.getSocket() != null) {
+            channel.getSocket().shutdownOutput();
         }
-        fd = Jvm.getValue(socketChannel, "fd");
+        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         position = 0;
@@ -46,7 +47,10 @@ public class NativeSocketSynchronousReader extends SocketSynchronousChannel impl
             buffer = null;
             fd = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
@@ -64,7 +68,7 @@ public class NativeSocketSynchronousReader extends SocketSynchronousChannel impl
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        int targetPosition = MESSAGE_INDEX;
+        int targetPosition = SocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         while (position < targetPosition) {
@@ -74,7 +78,7 @@ public class NativeSocketSynchronousReader extends SocketSynchronousChannel impl
             }
             position += read;
         }
-        size = buffer.getInt(SIZE_INDEX);
+        size = buffer.getInt(SocketSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;
@@ -88,11 +92,11 @@ public class NativeSocketSynchronousReader extends SocketSynchronousChannel impl
         }
 
         position = 0;
-        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
+        if (ClosedByteBuffer.isClosed(buffer, SocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(MESSAGE_INDEX, size);
+        return buffer.slice(SocketSynchronousChannel.MESSAGE_INDEX, size);
     }
 
     @Override

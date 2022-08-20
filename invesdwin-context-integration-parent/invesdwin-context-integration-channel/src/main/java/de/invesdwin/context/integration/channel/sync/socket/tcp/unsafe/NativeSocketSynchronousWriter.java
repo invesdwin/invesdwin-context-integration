@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -18,28 +17,27 @@ import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 
 @NotThreadSafe
-public class NativeSocketSynchronousWriter extends SocketSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
+    private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
 
-    public NativeSocketSynchronousWriter(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+    public NativeSocketSynchronousWriter(final SocketSynchronousChannel channel) {
+        this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        if (socket != null) {
-            socket.shutdownInput();
+        channel.open();
+        if (channel.getSocket() != null) {
+            channel.getSocket().shutdownInput();
         }
-        fd = Jvm.getValue(socketChannel, "fd");
+        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);
     }
 
     @Override
@@ -54,15 +52,18 @@ public class NativeSocketSynchronousWriter extends SocketSynchronousChannel
             buffer = null;
             messageBuffer = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         try {
             final int size = message.writeBuffer(messageBuffer);
-            buffer.putInt(SIZE_INDEX, size);
-            writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
+            buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
+            writeFully(fd, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }

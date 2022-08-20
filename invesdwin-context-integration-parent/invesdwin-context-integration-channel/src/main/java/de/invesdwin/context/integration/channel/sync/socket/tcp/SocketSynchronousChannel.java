@@ -14,7 +14,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -27,12 +30,10 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
 
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected volatile Socket socket;
-    protected volatile SocketChannel socketChannel;
     protected volatile boolean socketChannelOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
-    protected volatile ServerSocketChannel serverSocketChannel;
+    private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -45,6 +46,8 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.finalizer = new SocketSynchronousChannelFinalizer();
+        finalizer.register(this);
     }
 
     public SocketAddress getSocketAddress() {
@@ -60,15 +63,15 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     }
 
     public Socket getSocket() {
-        return socket;
+        return finalizer.socket;
     }
 
     public SocketChannel getSocketChannel() {
-        return socketChannel;
+        return finalizer.socketChannel;
     }
 
     public ServerSocketChannel getServerSocketChannel() {
-        return serverSocketChannel;
+        return finalizer.serverSocketChannel;
     }
 
     public boolean isReaderRegistered() {
@@ -102,11 +105,11 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         socketChannelOpening = true;
         try {
             if (server) {
-                serverSocketChannel = newServerSocketChannel();
-                serverSocketChannel.bind(socketAddress);
-                socketChannel = serverSocketChannel.accept();
+                finalizer.serverSocketChannel = newServerSocketChannel();
+                finalizer.serverSocketChannel.bind(socketAddress);
+                finalizer.socketChannel = finalizer.serverSocketChannel.accept();
                 try {
-                    socket = socketChannel.socket();
+                    finalizer.socket = finalizer.socketChannel.socket();
                 } catch (final Throwable t) {
                     //unix domain sockets throw an error here
                 }
@@ -114,21 +117,21 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
-                    socketChannel = newSocketChannel();
+                    finalizer.socketChannel = newSocketChannel();
                     try {
-                        socketChannel.connect(socketAddress);
+                        finalizer.socketChannel.connect(socketAddress);
                         try {
-                            socket = socketChannel.socket();
+                            finalizer.socket = finalizer.socketChannel.socket();
                         } catch (final Throwable t) {
                             //unix domain sockets throw an error here
                         }
                         break;
                     } catch (final IOException e) {
-                        socketChannel.close();
-                        socketChannel = null;
-                        if (socket != null) {
-                            socket.close();
-                            socket = null;
+                        finalizer.socketChannel.close();
+                        finalizer.socketChannel = null;
+                        if (finalizer.socket != null) {
+                            finalizer.socket.close();
+                            finalizer.socket = null;
                         }
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
@@ -143,15 +146,15 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                 }
             }
             //non-blocking sockets are a bit faster than blocking ones
-            socketChannel.configureBlocking(false);
-            if (socket != null) {
+            finalizer.socketChannel.configureBlocking(false);
+            if (finalizer.socket != null) {
                 //might be unix domain socket
-                socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                finalizer.socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                         | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-                socket.setReceiveBufferSize(socketSize);
-                socket.setSendBufferSize(socketSize);
-                socket.setTcpNoDelay(true);
-                socket.setKeepAlive(true);
+                finalizer.socket.setReceiveBufferSize(socketSize);
+                finalizer.socket.setSendBufferSize(socketSize);
+                finalizer.socket.setTcpNoDelay(true);
+                finalizer.socket.setKeepAlive(true);
             }
         } finally {
             socketChannelOpening = false;
@@ -163,7 +166,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
+            while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -207,25 +210,70 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                 activeCount.decrementAndGet();
             }
         }
-        internalClose();
+        finalizer.close();
     }
 
-    private void internalClose() {
-        final SocketChannel socketChannelCopy = socketChannel;
-        if (socketChannelCopy != null) {
-            socketChannel = null;
-            Closeables.closeQuietly(socketChannelCopy);
+    private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+
+        private final Exception initStackTrace;
+        private volatile Socket socket;
+        private volatile SocketChannel socketChannel;
+        private volatile ServerSocketChannel serverSocketChannel;
+
+        protected SocketSynchronousChannelFinalizer() {
+            if (Throwables.isDebugStackTraceEnabled()) {
+                initStackTrace = new Exception();
+                initStackTrace.fillInStackTrace();
+            } else {
+                initStackTrace = null;
+            }
         }
-        final Socket socketCopy = socket;
-        if (socketCopy != null) {
-            socket = null;
-            Closeables.closeQuietly(socketCopy);
+
+        @Override
+        protected void clean() {
+            internalClose();
         }
-        final ServerSocketChannel serverSocketChannelCopy = serverSocketChannel;
-        if (serverSocketChannelCopy != null) {
-            serverSocketChannel = null;
-            Closeables.closeQuietly(serverSocketChannelCopy);
+
+        private void internalClose() {
+            final SocketChannel socketChannelCopy = socketChannel;
+            if (socketChannelCopy != null) {
+                socketChannel = null;
+                Closeables.closeQuietly(socketChannelCopy);
+            }
+            final Socket socketCopy = socket;
+            if (socketCopy != null) {
+                socket = null;
+                Closeables.closeQuietly(socketCopy);
+            }
+            final ServerSocketChannel serverSocketChannelCopy = serverSocketChannel;
+            if (serverSocketChannelCopy != null) {
+                serverSocketChannel = null;
+                Closeables.closeQuietly(serverSocketChannelCopy);
+            }
         }
+
+        @Override
+        protected void onRun() {
+            String warning = "Finalizing unclosed " + SocketSynchronousChannel.class.getSimpleName();
+            if (Throwables.isDebugStackTraceEnabled()) {
+                final Exception stackTrace = initStackTrace;
+                if (stackTrace != null) {
+                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
+                }
+            }
+            new Log(this).warn(warning);
+        }
+
+        @Override
+        protected boolean isCleaned() {
+            return socketChannel == null;
+        }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
+        }
+
     }
 
 }

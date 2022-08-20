@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -29,16 +30,16 @@ public class NativeSocketChannelTest extends AChannelTest {
 
     private void runNativeSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NativeSocketSynchronousWriter(responseAddress,
-                true, getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> requestReader = new NativeSocketSynchronousReader(requestAddress, true,
-                getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NativeSocketSynchronousWriter(
+                new SocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+        final ISynchronousReader<IByteBuffer> requestReader = new NativeSocketSynchronousReader(
+                new SocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNativeSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NativeSocketSynchronousWriter(requestAddress,
-                false, getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> responseReader = new NativeSocketSynchronousReader(responseAddress, false,
-                getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NativeSocketSynchronousWriter(
+                new SocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBuffer> responseReader = new NativeSocketSynchronousReader(
+                new SocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

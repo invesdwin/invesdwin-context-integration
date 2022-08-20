@@ -14,9 +14,12 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.future.Futures;
+import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -38,12 +41,10 @@ public class NettySocketSynchronousChannel implements Closeable {
     protected final INettySocketChannelType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected volatile SocketChannel socketChannel;
-    protected volatile boolean socketChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    private volatile ServerBootstrap serverBootstrap;
-    private volatile Bootstrap clientBootstrap;
+    private volatile boolean socketChannelOpening;
+    private final NettySocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -59,6 +60,8 @@ public class NettySocketSynchronousChannel implements Closeable {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.finalizer = new NettySocketSynchronousChannelFinalizer();
+        finalizer.register(this);
     }
 
     public boolean isServer() {
@@ -100,7 +103,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     }
 
     public SocketChannel getSocketChannel() {
-        return socketChannel;
+        return finalizer.socketChannel;
     }
 
     public int getSocketSize() {
@@ -127,17 +130,17 @@ public class NettySocketSynchronousChannel implements Closeable {
             awaitSocketChannel(() -> {
                 final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
                 final EventLoopGroup childGroup = type.newServerWorkerGroup(parentGroup);
-                serverBootstrap = new ServerBootstrap();
-                serverBootstrap.group(parentGroup, childGroup);
-                serverBootstrap.channel(type.getServerChannelType());
-                type.channelOptions(serverBootstrap::childOption, socketSize);
-                serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
+                finalizer.serverBootstrap = new ServerBootstrap();
+                finalizer.serverBootstrap.group(parentGroup, childGroup);
+                finalizer.serverBootstrap.channel(type.getServerChannelType());
+                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize);
+                finalizer.serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {
-                        if (socketChannel == null) {
+                        if (finalizer.socketChannel == null) {
                             type.initChannel(ch, true);
                             onSocketChannel(ch);
-                            socketChannel = ch;
+                            finalizer.socketChannel = ch;
                             if (parentGroup != childGroup) {
                                 //only allow one client
                                 parentGroup.shutdownGracefully();
@@ -148,21 +151,21 @@ public class NettySocketSynchronousChannel implements Closeable {
                         }
                     }
                 });
-                return serverBootstrap.bind(socketAddress);
+                return finalizer.serverBootstrap.bind(socketAddress);
             });
         } else {
             awaitSocketChannel(() -> {
-                clientBootstrap = new Bootstrap();
-                clientBootstrap.group(type.newClientWorkerGroup());
-                clientBootstrap.channel(type.getClientChannelType());
-                type.channelOptions(clientBootstrap::option, socketSize);
-                clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
+                finalizer.clientBootstrap = new Bootstrap();
+                finalizer.clientBootstrap.group(type.newClientWorkerGroup());
+                finalizer.clientBootstrap.channel(type.getClientChannelType());
+                type.channelOptions(finalizer.clientBootstrap::option, socketSize);
+                finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {
-                        if (socketChannel == null) {
+                        if (finalizer.socketChannel == null) {
                             type.initChannel(ch, false);
                             onSocketChannel(ch);
-                            socketChannel = ch;
+                            finalizer.socketChannel = ch;
                         } else {
                             //only allow one client
                             ch.close();
@@ -170,7 +173,7 @@ public class NettySocketSynchronousChannel implements Closeable {
                     }
 
                 });
-                return clientBootstrap.connect(socketAddress);
+                return finalizer.clientBootstrap.connect(socketAddress);
             });
         }
     }
@@ -178,7 +181,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     private synchronized boolean shouldOpen(final Consumer<SocketChannel> channelListener) {
         if (activeCount.incrementAndGet() > 1) {
             if (channelListener != null) {
-                channelListener.accept(socketChannel);
+                channelListener.accept(finalizer.socketChannel);
             }
             return false;
         } else {
@@ -248,7 +251,7 @@ public class NettySocketSynchronousChannel implements Closeable {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
             //wait for channel
-            while ((socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
+            while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -281,13 +284,14 @@ public class NettySocketSynchronousChannel implements Closeable {
             }
         }
         internalClose();
+        finalizer.close();
     }
 
     private void internalClose() {
-        closeSocketChannel();
-        final ServerBootstrap serverBootstrapCopy = serverBootstrap;
+        finalizer.closeSocketChannel();
+        final ServerBootstrap serverBootstrapCopy = finalizer.serverBootstrap;
         if (serverBootstrapCopy != null) {
-            serverBootstrap = null;
+            finalizer.serverBootstrap = null;
             final ServerBootstrapConfig config = serverBootstrapCopy.config();
             final EventLoopGroup childGroup = config.childGroup();
             final Future<?> childGroupShutdown = shutdownGracefully(childGroup);
@@ -296,9 +300,9 @@ public class NettySocketSynchronousChannel implements Closeable {
             awaitShutdown(childGroupShutdown);
             awaitShutdown(groupShutdown);
         }
-        final Bootstrap clientBootstrapCopy = clientBootstrap;
+        final Bootstrap clientBootstrapCopy = finalizer.clientBootstrap;
         if (clientBootstrapCopy != null) {
-            clientBootstrap = null;
+            finalizer.clientBootstrap = null;
             final BootstrapConfig config = clientBootstrapCopy.config();
             final EventLoopGroup group = config.group();
             awaitShutdown(shutdownGracefully(group));
@@ -311,33 +315,11 @@ public class NettySocketSynchronousChannel implements Closeable {
                 activeCount.decrementAndGet();
             }
         }
-        closeSocketChannel();
-        closeBootstrapAsync();
-    }
-
-    public void closeSocketChannel() {
-        final SocketChannel socketChannelCopy = socketChannel;
-        if (socketChannelCopy != null) {
-            socketChannel = null;
-            socketChannelCopy.close();
-        }
+        finalizer.close();
     }
 
     public void closeBootstrapAsync() {
-        if (serverBootstrap != null) {
-            final ServerBootstrapConfig config = serverBootstrap.config();
-            serverBootstrap = null;
-            final EventLoopGroup childGroup = config.childGroup();
-            shutdownGracefully(childGroup);
-            final EventLoopGroup group = config.group();
-            shutdownGracefully(group);
-        }
-        if (clientBootstrap != null) {
-            final BootstrapConfig config = clientBootstrap.config();
-            clientBootstrap = null;
-            final EventLoopGroup group = config.group();
-            shutdownGracefully(group);
-        }
+        finalizer.closeBootstrapAsync();
     }
 
     public static Future<?> shutdownGracefully(final EventLoopGroup group) {
@@ -356,6 +338,77 @@ public class NettySocketSynchronousChannel implements Closeable {
         } catch (final Throwable t) {
             //ignore
         }
+    }
+
+    private static final class NettySocketSynchronousChannelFinalizer extends AFinalizer {
+
+        private final Exception initStackTrace;
+        private volatile SocketChannel socketChannel;
+        private volatile ServerBootstrap serverBootstrap;
+        private volatile Bootstrap clientBootstrap;
+
+        protected NettySocketSynchronousChannelFinalizer() {
+            if (Throwables.isDebugStackTraceEnabled()) {
+                initStackTrace = new Exception();
+                initStackTrace.fillInStackTrace();
+            } else {
+                initStackTrace = null;
+            }
+        }
+
+        @Override
+        protected void clean() {
+            closeSocketChannel();
+            closeBootstrapAsync();
+        }
+
+        @Override
+        protected void onRun() {
+            String warning = "Finalizing unclosed " + NettySocketSynchronousChannel.class.getSimpleName();
+            if (Throwables.isDebugStackTraceEnabled()) {
+                final Exception stackTrace = initStackTrace;
+                if (stackTrace != null) {
+                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
+                }
+            }
+            new Log(this).warn(warning);
+        }
+
+        @Override
+        protected boolean isCleaned() {
+            return socketChannel == null;
+        }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
+        }
+
+        public void closeSocketChannel() {
+            final SocketChannel socketChannelCopy = socketChannel;
+            if (socketChannelCopy != null) {
+                socketChannel = null;
+                socketChannelCopy.close();
+            }
+        }
+
+        public void closeBootstrapAsync() {
+            if (serverBootstrap != null) {
+                final ServerBootstrapConfig config = serverBootstrap.config();
+                serverBootstrap = null;
+                final EventLoopGroup childGroup = config.childGroup();
+                shutdownGracefully(childGroup);
+                final EventLoopGroup group = config.group();
+                shutdownGracefully(group);
+            }
+            if (clientBootstrap != null) {
+                final BootstrapConfig config = clientBootstrap.config();
+                clientBootstrap = null;
+                final EventLoopGroup group = config.group();
+                shutdownGracefully(group);
+            }
+        }
+
     }
 
 }
