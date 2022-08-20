@@ -26,7 +26,7 @@ public class BidiSocketChannelTest extends AChannelTest {
         runNioSocketPerformanceTest(address);
     }
 
-    private void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
+    protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
         final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
         final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
 
@@ -41,7 +41,7 @@ public class BidiSocketChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    private SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
+    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }

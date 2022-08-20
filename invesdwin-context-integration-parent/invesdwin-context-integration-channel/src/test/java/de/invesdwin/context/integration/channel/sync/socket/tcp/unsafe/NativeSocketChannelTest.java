@@ -28,21 +28,26 @@ public class NativeSocketChannelTest extends AChannelTest {
         runNativeSocketPerformanceTest(responseAddress, requestAddress);
     }
 
-    private void runNativeSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
-            throws InterruptedException {
+    protected void runNativeSocketPerformanceTest(final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new NativeSocketSynchronousWriter(
-                new SocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> requestReader = new NativeSocketSynchronousReader(
-                new SocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNativeSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new NativeSocketSynchronousWriter(
-                new SocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> responseReader = new NativeSocketSynchronousReader(
-                new SocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

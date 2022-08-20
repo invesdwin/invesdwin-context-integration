@@ -27,7 +27,7 @@ public class SocketChannelTest extends AChannelTest {
         runNioSocketPerformanceTest(responseAddress, requestAddress);
     }
 
-    private void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
+    protected void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(
                 newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
@@ -44,7 +44,7 @@ public class SocketChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    private SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
+    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
