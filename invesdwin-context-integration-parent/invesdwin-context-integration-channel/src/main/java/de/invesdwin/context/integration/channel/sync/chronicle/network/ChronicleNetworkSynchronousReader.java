@@ -95,6 +95,7 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
 
     public static void readFully(final ChronicleSocketChannel src, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
+        final int positionBefore = byteBuffer.position();
         int remaining = byteBuffer.remaining();
         while (remaining > 0) {
             final int count = src.read(byteBuffer);
@@ -103,6 +104,7 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
             }
             remaining -= count;
         }
+        ByteBuffers.position(byteBuffer, positionBefore);
         if (remaining > 0) {
             throw ByteBuffers.newPutBytesToEOF();
         }

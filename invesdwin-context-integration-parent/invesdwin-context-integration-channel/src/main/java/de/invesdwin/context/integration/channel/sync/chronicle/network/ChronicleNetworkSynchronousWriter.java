@@ -71,6 +71,7 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
     public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
         int remaining = byteBuffer.remaining();
+        final int positionBefore = byteBuffer.position();
         while (remaining > 0) {
             final int count = dst.write(byteBuffer);
             if (count == -1) { // EOF
@@ -78,6 +79,7 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
             }
             remaining -= count;
         }
+        ByteBuffers.position(byteBuffer, positionBefore);
         if (remaining > 0) {
             throw ByteBuffers.newPutBytesToEOF();
         }
