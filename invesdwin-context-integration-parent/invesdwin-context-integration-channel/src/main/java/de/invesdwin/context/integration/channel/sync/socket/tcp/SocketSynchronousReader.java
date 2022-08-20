@@ -43,11 +43,9 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBuffer> 
 
     @Override
     public void close() throws IOException {
-        if (buffer != null) {
-            buffer = null;
-            messageBuffer = null;
-            socketChannel = null;
-        }
+        buffer = null;
+        messageBuffer = null;
+        socketChannel = null;
         if (channel != null) {
             channel.close();
             channel = null;

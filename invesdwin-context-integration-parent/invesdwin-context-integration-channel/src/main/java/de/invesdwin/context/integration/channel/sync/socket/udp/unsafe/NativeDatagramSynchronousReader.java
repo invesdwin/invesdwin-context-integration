@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.udp.ADatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -16,32 +16,45 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class NativeDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
+    private DatagramSynchronousChannel channel;
+    private final int socketSize;
     private IByteBuffer buffer;
     private FileDescriptor fd;
     private int position;
 
     public NativeDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, SERVER, estimatedMaxMessageSize);
+        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+    }
+
+    public NativeDatagramSynchronousReader(final DatagramSynchronousChannel channel) {
+        this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram reader has to be the server");
+        }
+        this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
+        channel.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        fd = Jvm.getValue(socketChannel, "fd");
+        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
     }
 
     @Override
     public void close() throws IOException {
-        super.close();
         buffer = null;
         fd = null;
         position = 0;
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
@@ -59,7 +72,7 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        int targetPosition = MESSAGE_INDEX;
+        int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         while (position < targetPosition) {
@@ -70,7 +83,7 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
             }
             position += read;
         }
-        size = buffer.getInt(SIZE_INDEX);
+        size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;
@@ -84,11 +97,11 @@ public class NativeDatagramSynchronousReader extends ADatagramSynchronousChannel
         }
 
         position = 0;
-        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
+        if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(MESSAGE_INDEX, size);
+        return buffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
     }
 
     @Override

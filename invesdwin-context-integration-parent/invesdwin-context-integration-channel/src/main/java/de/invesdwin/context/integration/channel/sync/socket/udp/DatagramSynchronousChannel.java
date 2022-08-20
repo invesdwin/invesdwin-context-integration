@@ -1,10 +1,10 @@
-package de.invesdwin.context.integration.channel.sync.socket.tcp.blocking;
+package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.ServerSocket;
-import java.net.Socket;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -22,7 +22,7 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
+public class DatagramSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -31,7 +31,7 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
 
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected volatile boolean socketOpening;
+    protected volatile boolean socketChannelOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
     private final SocketSynchronousChannelFinalizer finalizer;
@@ -41,7 +41,7 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public BlockingSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public DatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -63,12 +63,12 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
         return socketSize;
     }
 
-    public Socket getSocket() {
+    public DatagramSocket getSocket() {
         return finalizer.socket;
     }
 
-    public ServerSocket getServerSocket() {
-        return finalizer.serverSocket;
+    public DatagramChannel getSocketChannel() {
+        return finalizer.socketChannel;
     }
 
     public boolean isReaderRegistered() {
@@ -96,26 +96,31 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
     @Override
     public void open() throws IOException {
         if (!shouldOpen()) {
-            awaitSocket();
+            awaitSocketChannel();
             return;
         }
-        socketOpening = true;
+        socketChannelOpening = true;
         try {
             if (server) {
-                finalizer.serverSocket = new ServerSocket();
-                finalizer.serverSocket.bind(socketAddress);
-                finalizer.socket = finalizer.serverSocket.accept();
+                finalizer.socketChannel = DatagramChannel.open();
+                finalizer.socketChannel.bind(socketAddress);
+                finalizer.socket = finalizer.socketChannel.socket();
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
                     try {
-                        finalizer.socket = new Socket();
-                        finalizer.socket.connect(socketAddress);
+                        finalizer.socketChannel = DatagramChannel.open();
+                        finalizer.socketChannel.connect(socketAddress);
+                        finalizer.socket = finalizer.socketChannel.socket();
                         break;
                     } catch (final ConnectException e) {
-                        finalizer.socket.close();
-                        finalizer.socket = null;
+                        finalizer.socketChannel.close();
+                        finalizer.socketChannel = null;
+                        if (finalizer.socket != null) {
+                            finalizer.socket.close();
+                            finalizer.socket = null;
+                        }
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
@@ -128,23 +133,23 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
+            //non-blocking datagrams are a lot faster than blocking ones
+            finalizer.socketChannel.configureBlocking(false);
+            finalizer.socket.setSendBufferSize(socketSize);
+            finalizer.socket.setReceiveBufferSize(socketSize);
             finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                     | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-            finalizer.socket.setReceiveBufferSize(socketSize);
-            finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setTcpNoDelay(true);
-            finalizer.socket.setKeepAlive(true);
         } finally {
-            socketOpening = false;
+            socketChannelOpening = false;
         }
     }
 
-    private void awaitSocket() {
+    private void awaitSocketChannel() {
         try {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((finalizer.socket == null || socketOpening) && activeCount.get() > 0) {
+            while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -194,8 +199,8 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
     private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
-        private volatile Socket socket;
-        private volatile ServerSocket serverSocket;
+        private volatile DatagramChannel socketChannel;
+        private volatile DatagramSocket socket;
 
         protected SocketSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -208,21 +213,19 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            final Socket socketCopy = socket;
-            if (socketCopy != null) {
-                socket = null;
-                Closeables.closeQuietly(socketCopy);
+            if (socketChannel != null) {
+                Closeables.closeQuietly(socketChannel);
+                socketChannel = null;
             }
-            final ServerSocket serverSocketCopy = serverSocket;
-            if (serverSocketCopy != null) {
-                serverSocket = null;
-                Closeables.closeQuietly(serverSocketCopy);
+            if (socket != null) {
+                socket.close();
+                socket = null;
             }
         }
 
         @Override
         protected void onRun() {
-            String warning = "Finalizing unclosed " + BlockingSocketSynchronousChannel.class.getSimpleName();
+            String warning = "Finalizing unclosed " + DatagramSynchronousChannel.class.getSimpleName();
             if (Throwables.isDebugStackTraceEnabled()) {
                 final Exception stackTrace = initStackTrace;
                 if (stackTrace != null) {
@@ -234,7 +237,7 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected boolean isCleaned() {
-            return socket == null;
+            return socketChannel == null;
         }
 
         @Override

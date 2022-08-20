@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,29 +13,46 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class DatagramSynchronousReader extends ADatagramSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
+    private DatagramSynchronousChannel channel;
+    private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
+    private DatagramChannel socketChannel;
 
     public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, SERVER, estimatedMaxMessageSize);
+        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+    }
+
+    public DatagramSynchronousReader(final DatagramSynchronousChannel channel) {
+        this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram reader has to be the server");
+        }
+        this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
+        channel.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+        socketChannel = channel.getSocketChannel();
     }
 
     @Override
     public void close() throws IOException {
-        super.close();
         buffer = null;
         messageBuffer = null;
+        socketChannel = null;
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
@@ -48,13 +66,13 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        int targetPosition = MESSAGE_INDEX;
+        int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         while (messageBuffer.position() < targetPosition) {
             socketChannel.receive(messageBuffer);
         }
-        size = buffer.getInt(SIZE_INDEX);
+        size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
@@ -67,11 +85,11 @@ public class DatagramSynchronousReader extends ADatagramSynchronousChannel imple
         }
 
         ByteBuffers.position(messageBuffer, 0);
-        if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {
+        if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(MESSAGE_INDEX, size);
+        return buffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
     }
 
     @Override

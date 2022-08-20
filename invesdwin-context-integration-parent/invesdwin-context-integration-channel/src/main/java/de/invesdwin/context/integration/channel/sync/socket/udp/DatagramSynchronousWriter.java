@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -13,28 +14,38 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class DatagramSynchronousWriter extends ADatagramSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
+    private DatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
+    private DatagramChannel socketChannel;
 
     public DatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, SERVER, estimatedMaxMessageSize);
+        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+    }
+
+    public DatagramSynchronousWriter(final DatagramSynchronousChannel channel) {
+        this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram writer has to be the client");
+        }
+        this.channel.setWriterRegistered();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
+        channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
+        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DatagramSynchronousChannel.MESSAGE_INDEX);
+        socketChannel = channel.getSocketChannel();
     }
 
     @Override
     public void close() throws IOException {
-        if (socket != null) {
+        if (buffer != null) {
             try {
                 write(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
@@ -42,15 +53,19 @@ public class DatagramSynchronousWriter extends ADatagramSynchronousChannel
             }
             buffer = null;
             messageBuffer = null;
+            socketChannel = null;
         }
-        super.close();
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
     public void write(final IByteBufferWriter message) throws IOException {
         final int size = message.writeBuffer(messageBuffer);
-        buffer.putInt(SIZE_INDEX, size);
-        buffer.getBytesTo(0, socketChannel, MESSAGE_INDEX + size);
+        buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
+        buffer.getBytesTo(0, socketChannel, DatagramSynchronousChannel.MESSAGE_INDEX + size);
     }
 
 }

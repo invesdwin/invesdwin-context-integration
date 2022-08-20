@@ -2,41 +2,58 @@ package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+public class BlockingDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
+    public static final boolean SERVER = true;
+    private DatagramSynchronousChannel channel;
     private IByteBuffer packetBuffer;
     private DatagramPacket packet;
+    private DatagramSocket socket;
 
     public BlockingDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        super(socketAddress, true, estimatedMaxMessageSize);
+        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+    }
+
+    public BlockingDatagramSynchronousReader(final DatagramSynchronousChannel channel) {
+        this.channel = channel;
+        if (channel.isServer() != SERVER) {
+            throw new IllegalStateException("datagram reader has to be the server");
+        }
+        this.channel.setReaderRegistered();
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
+        channel.open();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        final byte[] packetBytes = ByteBuffers.allocateByteArray(socketSize);
+        final byte[] packetBytes = ByteBuffers.allocateByteArray(channel.getSocketSize());
         this.packetBuffer = ByteBuffers.wrap(packetBytes);
         this.packet = new DatagramPacket(packetBytes, packetBytes.length);
+        this.socket = channel.getSocket();
     }
 
     @Override
     public void close() throws IOException {
-        super.close();
         packet = null;
         packetBuffer = null;
+        socket = null;
+        if (channel != null) {
+            channel.close();
+            channel = null;
+        }
     }
 
     @Override
@@ -47,8 +64,8 @@ public class BlockingDatagramSynchronousReader extends ABlockingDatagramSynchron
 
     @Override
     public IByteBuffer readMessage() throws IOException {
-        final int size = packetBuffer.getInt(SIZE_INDEX);
-        final IByteBuffer message = packetBuffer.slice(MESSAGE_INDEX, size);
+        final int size = packetBuffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
+        final IByteBuffer message = packetBuffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");

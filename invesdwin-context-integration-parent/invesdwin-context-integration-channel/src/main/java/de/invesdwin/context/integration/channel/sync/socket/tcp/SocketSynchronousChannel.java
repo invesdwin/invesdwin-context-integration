@@ -13,7 +13,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
@@ -149,8 +149,8 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             finalizer.socketChannel.configureBlocking(false);
             if (finalizer.socket != null) {
                 //might be unix domain socket
-                finalizer.socket.setTrafficClass(ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                        | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+                finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                        | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
                 finalizer.socket.setReceiveBufferSize(socketSize);
                 finalizer.socket.setSendBufferSize(socketSize);
                 finalizer.socket.setTcpNoDelay(true);

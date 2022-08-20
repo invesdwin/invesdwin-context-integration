@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.ABlockingDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -51,8 +51,8 @@ public class NioNettySocketChannelType implements INettySocketChannelType {
         //                ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
         //        consumer.option(ChannelOption.SO_TIMEOUT,
         //                ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
-        consumer.option(ChannelOption.IP_TOS, ABlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                | ABlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+        consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
         consumer.option(ChannelOption.SO_RCVBUF, socketSize);
     }
