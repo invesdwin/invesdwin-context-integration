@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.channel.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -35,25 +34,15 @@ public class BidiNettySocketChannelTest extends AChannelTest {
         final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
                 getMaxMessageSize());
 
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = newNettySocketSynchronousWriter(serverChannel);
-        final ISynchronousReader<IByteBuffer> requestReader = newNettySocketSynchronousReader(serverChannel);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NettySocketSynchronousWriter(serverChannel);
+        final ISynchronousReader<IByteBuffer> requestReader = new NettySocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = newNettySocketSynchronousWriter(clientChannel);
-        final ISynchronousReader<IByteBuffer> responseReader = newNettySocketSynchronousReader(clientChannel);
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NettySocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBuffer> responseReader = new NettySocketSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
-    }
-
-    protected ISynchronousReader<IByteBuffer> newNettySocketSynchronousReader(
-            final NettySocketSynchronousChannel serverChannel) {
-        return new NettySocketSynchronousReader(serverChannel);
-    }
-
-    protected ISynchronousWriter<IByteBufferWriter> newNettySocketSynchronousWriter(
-            final NettySocketSynchronousChannel serverChannel) {
-        return new NettySocketSynchronousWriter(serverChannel);
     }
 
     protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,

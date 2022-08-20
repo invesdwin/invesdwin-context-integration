@@ -30,18 +30,23 @@ public class SocketChannelTest extends AChannelTest {
     private void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(
-                new SocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(
-                new SocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(
-                new SocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(
-                new SocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    private SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

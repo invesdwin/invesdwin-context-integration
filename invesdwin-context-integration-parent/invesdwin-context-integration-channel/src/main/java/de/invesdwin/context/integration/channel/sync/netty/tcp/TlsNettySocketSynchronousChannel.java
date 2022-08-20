@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp.channel;
+package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
