@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 @NotThreadSafe
 public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
-    private BlockingSocketSynchronousChannel channel;
+    protected BlockingSocketSynchronousChannel channel;
     private OutputStream out;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;

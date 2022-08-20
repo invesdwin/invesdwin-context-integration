@@ -34,7 +34,7 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
-    private final SocketSynchronousChannelFinalizer finalizer;
+    protected final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -101,42 +101,46 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
         }
         socketOpening = true;
         try {
-            if (server) {
-                finalizer.serverSocket = new ServerSocket();
-                finalizer.serverSocket.bind(socketAddress);
-                finalizer.socket = finalizer.serverSocket.accept();
-            } else {
-                final Duration connectTimeout = getConnectTimeout();
-                final long startNanos = System.nanoTime();
-                while (true) {
-                    try {
-                        finalizer.socket = new Socket();
-                        finalizer.socket.connect(socketAddress);
-                        break;
-                    } catch (final ConnectException e) {
-                        finalizer.socket.close();
-                        finalizer.socket = null;
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
-                            try {
-                                getMaxConnectRetryDelay().sleepRandom();
-                            } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
-                            }
-                        } else {
-                            throw e;
-                        }
-                    }
-                }
-            }
-            finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-            finalizer.socket.setReceiveBufferSize(socketSize);
-            finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setTcpNoDelay(true);
-            finalizer.socket.setKeepAlive(true);
+            internalOpen();
         } finally {
             socketOpening = false;
         }
+    }
+
+    protected void internalOpen() throws IOException {
+        if (server) {
+            finalizer.serverSocket = new ServerSocket();
+            finalizer.serverSocket.bind(socketAddress);
+            finalizer.socket = finalizer.serverSocket.accept();
+        } else {
+            final Duration connectTimeout = getConnectTimeout();
+            final long startNanos = System.nanoTime();
+            while (true) {
+                try {
+                    finalizer.socket = new Socket();
+                    finalizer.socket.connect(socketAddress);
+                    break;
+                } catch (final ConnectException e) {
+                    finalizer.socket.close();
+                    finalizer.socket = null;
+                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        try {
+                            getMaxConnectRetryDelay().sleepRandom();
+                        } catch (final InterruptedException e1) {
+                            throw new RuntimeException(e1);
+                        }
+                    } else {
+                        throw e;
+                    }
+                }
+            }
+        }
+        finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+        finalizer.socket.setReceiveBufferSize(socketSize);
+        finalizer.socket.setSendBufferSize(socketSize);
+        finalizer.socket.setTcpNoDelay(true);
+        finalizer.socket.setKeepAlive(true);
     }
 
     private void awaitSocket() {
@@ -191,11 +195,11 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
         finalizer.close();
     }
 
-    private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class SocketSynchronousChannelFinalizer extends AFinalizer {
 
+        protected volatile Socket socket;
+        protected volatile ServerSocket serverSocket;
         private final Exception initStackTrace;
-        private volatile Socket socket;
-        private volatile ServerSocket serverSocket;
 
         protected SocketSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {

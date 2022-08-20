@@ -14,7 +14,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 @NotThreadSafe
 public class BlockingSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
-    private BlockingSocketSynchronousChannel channel;
+    protected BlockingSocketSynchronousChannel channel;
     private InputStream in;
     private IByteBuffer buffer;
 

@@ -18,8 +18,12 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDat
 // CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ SocketChannelTest.class, BidiSocketChannelTest.class, BlockingSocketChannelTest.class,
-        BidiBlockingSocketChannelTest.class, NativeSocketChannelTest.class, BidiNativeSocketChannelTest.class,
-        DatagramChannelTest.class, BlockingDatagramChannelTest.class, NativeDatagramChannelTest.class })
+        BidiBlockingSocketChannelTest.class, /*
+                                              * TlsBlockingSocketChannelTest.class,
+                                              * TlsBidiBlockingSocketChannelTest.class,
+                                              */
+        NativeSocketChannelTest.class, BidiNativeSocketChannelTest.class, DatagramChannelTest.class,
+        BlockingDatagramChannelTest.class, NativeDatagramChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
     //CHECKSTYLE:ON

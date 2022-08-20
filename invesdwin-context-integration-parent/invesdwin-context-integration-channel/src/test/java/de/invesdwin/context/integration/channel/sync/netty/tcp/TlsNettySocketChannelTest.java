@@ -4,7 +4,10 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.DerivedKeyTransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import io.netty.buffer.ByteBufAllocator;
 
 /**
  * This test fails on netty-tcnative-boringssl-static. It says a message was unencrypted.
@@ -18,14 +21,24 @@ public class TlsNettySocketChannelTest extends NettySocketChannelTest {
         return new TlsNettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize) {
 
             @Override
-            protected String getHostname() {
-                return socketAddress.getHostName();
-            }
+            protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider(final ByteBufAllocator alloc) {
+                return new DerivedKeyTransportLayerSecurityProvider(socketAddress, server) {
+                    @Override
+                    protected ByteBufAllocator getByteBufAllocator() {
+                        return alloc;
+                    }
 
-            //            @Override
-            //            protected SslProvider getSslProvider() {
-            //                return SslProvider.OPENSSL;
-            //            }
+                    @Override
+                    protected String getHostname() {
+                        return socketAddress.getHostName();
+                    }
+
+                    //            @Override
+                    //            protected SslProvider getSslProvider() {
+                    //                return SslProvider.OPENSSL;
+                    //            }
+                };
+            }
         };
     }
 
