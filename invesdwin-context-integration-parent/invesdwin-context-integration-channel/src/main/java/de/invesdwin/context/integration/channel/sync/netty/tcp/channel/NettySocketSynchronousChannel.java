@@ -276,8 +276,8 @@ public class NettySocketSynchronousChannel implements Closeable {
     @Override
     public void close() {
         synchronized (this) {
-            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
-                return;
+            if (activeCount.get() > 0) {
+                activeCount.decrementAndGet();
             }
         }
         internalClose();
@@ -307,8 +307,8 @@ public class NettySocketSynchronousChannel implements Closeable {
 
     public void closeAsync() {
         synchronized (this) {
-            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
-                return;
+            if (activeCount.get() > 0) {
+                activeCount.decrementAndGet();
             }
         }
         closeSocketChannel();

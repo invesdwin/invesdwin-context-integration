@@ -233,8 +233,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     @Override
     public void close() {
         synchronized (this) {
-            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
-                return;
+            if (activeCount.get() > 0) {
+                activeCount.decrementAndGet();
             }
         }
         internalClose();
@@ -261,8 +261,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     public void closeAsync() {
         synchronized (this) {
-            if (activeCount.get() > 0 && activeCount.decrementAndGet() > 0) {
-                return;
+            if (activeCount.get() > 0) {
+                activeCount.decrementAndGet();
             }
         }
         final DatagramChannel datagramChannelCopy = datagramChannel;

@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.EpollNettyDatagramChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.NioNettyDatagramChannelType;
 
 @Immutable
 public class NettyDatagramHandlerTest extends AChannelTest {
@@ -17,7 +17,7 @@ public class NettyDatagramHandlerTest extends AChannelTest {
     @Test
     public void testNettyDatagramHandlerPerformance() throws InterruptedException {
         final InetSocketAddress address = new InetSocketAddress("localhost", 7878);
-        runNettyDatagramHandlerPerformanceTest(EpollNettyDatagramChannelType.INSTANCE, address);
+        runNettyDatagramHandlerPerformanceTest(NioNettyDatagramChannelType.INSTANCE, address);
     }
 
     private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,
