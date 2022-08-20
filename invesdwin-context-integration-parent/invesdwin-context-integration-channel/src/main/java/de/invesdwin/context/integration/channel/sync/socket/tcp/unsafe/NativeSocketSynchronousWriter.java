@@ -26,13 +26,16 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
 
     public NativeSocketSynchronousWriter(final SocketSynchronousChannel channel) {
         this.channel = channel;
+        this.channel.setWriterRegistered();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
-        if (channel.getSocket() != null) {
-            channel.getSocket().shutdownInput();
+        if (!channel.isReaderRegistered()) {
+            if (channel.getSocket() != null) {
+                channel.getSocket().shutdownInput();
+            }
         }
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native

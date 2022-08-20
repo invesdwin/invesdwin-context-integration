@@ -26,14 +26,17 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
 
     public NativeSocketSynchronousReader(final SocketSynchronousChannel channel) {
         this.channel = channel;
+        this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
-        if (channel.getSocket() != null) {
-            channel.getSocket().shutdownOutput();
+        if (!channel.isWriterRegistered()) {
+            if (channel.getSocket() != null) {
+                channel.getSocket().shutdownOutput();
+            }
         }
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
