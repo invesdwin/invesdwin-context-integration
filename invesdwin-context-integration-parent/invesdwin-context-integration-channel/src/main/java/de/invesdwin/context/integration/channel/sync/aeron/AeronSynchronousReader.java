@@ -26,8 +26,8 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
         polledValue = wrappedBuffer.slice(offset, length);
     });
 
-    public AeronSynchronousReader(final AeronMediaDriverMode mode, final String channel, final int streamId) {
-        super(mode, channel, streamId);
+    public AeronSynchronousReader(final AeronInstance instance, final String channel, final int streamId) {
+        super(instance, channel, streamId);
     }
 
     @Override

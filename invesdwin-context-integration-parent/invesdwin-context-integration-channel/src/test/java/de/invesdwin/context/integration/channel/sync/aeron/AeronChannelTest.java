@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -20,38 +22,41 @@ public class AeronChannelTest extends AChannelTest {
 
     @Test
     public void testAeronDatagramSocketPerformance() throws InterruptedException {
+        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         //for some more settings to try: https://github.com/real-logic/aeron/wiki/Performance-Testing
-        final String responseChannel = "aeron:udp?endpoint=localhost:7878";
-        final String requestChannel = "aeron:udp?endpoint=localhost:7879";
+        final String responseChannel = "aeron:udp?endpoint=localhost:" + ports[0];
+        final String requestChannel = "aeron:udp?endpoint=localhost:" + ports[1];
         //reliability can be turned off https://github.com/real-logic/aeron/issues/541
-        //        final String responseChannel = "aeron:udp?control=localhost:7878|reliable=false";
-        //        final String requestChannel = "aeron:udp?control=localhost:7879|reliable=false";
+        //        final String responseChannel = "aeron:udp?control=localhost:"+ ports[0]+"|reliable=false";
+        //        final String requestChannel = "aeron:udp?control=localhost:"+ ports[1]+"|reliable=false";
         runAeronPerformanceTest(MODE, responseChannel, 1001, requestChannel, 1002);
     }
 
     @Test
     public void testAeronIpcPerformance() throws InterruptedException {
-        final String responseChannel = "aeron:ipc";
-        final String requestChannel = "aeron:ipc";
+        final String responseChannel = AeronInstance.AERON_IPC_CHANNEL;
+        final String requestChannel = AeronInstance.AERON_IPC_CHANNEL;
         runAeronPerformanceTest(MODE, responseChannel, 1001, requestChannel, 1002);
     }
 
     private void runAeronPerformanceTest(final AeronMediaDriverMode mode, final String responseChannel,
             final int responseStreamId, final String requestChannel, final int requestStreamId)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AeronSynchronousWriter(mode, responseChannel,
-                responseStreamId);
-        final ISynchronousReader<IByteBuffer> requestReader = new AeronSynchronousReader(mode, requestChannel,
+        final AeronInstance instance = new AeronInstance(mode);
+        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AeronSynchronousWriter(instance,
+                responseChannel, responseStreamId);
+        final ISynchronousReader<IByteBuffer> requestReader = new AeronSynchronousReader(instance, requestChannel,
                 requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AeronSynchronousWriter(mode, requestChannel,
+        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AeronSynchronousWriter(instance, requestChannel,
                 requestStreamId);
-        final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(mode, responseChannel,
+        final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(instance, responseChannel,
                 responseStreamId);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
+        Assertions.checkTrue(instance.isClosed());
     }
 
 }
