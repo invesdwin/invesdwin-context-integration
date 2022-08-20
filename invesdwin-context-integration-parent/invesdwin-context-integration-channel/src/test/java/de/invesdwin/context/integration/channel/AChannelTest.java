@@ -36,6 +36,7 @@ import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueu
 import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
@@ -85,7 +86,11 @@ public abstract class AChannelTest extends ATest {
             new Thread() {
                 @Override
                 public void run() {
-                    serverChannel.open();
+                    try {
+                        serverChannel.open();
+                    } catch (final Throwable t) {
+                        Err.process(t);
+                    }
                 }
             }.start();
             clientChannel.open();
