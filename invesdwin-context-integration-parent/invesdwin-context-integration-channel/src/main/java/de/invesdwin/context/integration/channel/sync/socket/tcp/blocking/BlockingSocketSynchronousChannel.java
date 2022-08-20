@@ -93,6 +93,10 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
         this.writerRegistered = true;
     }
 
+    public boolean isInputStreamAvailableSupported() {
+        return true;
+    }
+
     @Override
     public void open() throws IOException {
         if (!shouldOpen()) {

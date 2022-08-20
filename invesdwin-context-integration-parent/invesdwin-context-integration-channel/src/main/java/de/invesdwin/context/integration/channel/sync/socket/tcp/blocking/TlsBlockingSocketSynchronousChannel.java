@@ -44,6 +44,15 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
         return true;
     }
 
+    /**
+     * available() does not work for SSLSocket:
+     * https://stackoverflow.com/questions/26320624/how-to-tell-if-java-sslsocket-has-data-available
+     */
+    @Override
+    public boolean isInputStreamAvailableSupported() {
+        return false;
+    }
+
     @Override
     protected void internalOpen() throws IOException {
         final ITransportLayerSecurityProvider tlsProvider = newTransportLayerSecurityProvider();

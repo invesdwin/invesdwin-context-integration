@@ -17,6 +17,7 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
     protected BlockingSocketSynchronousChannel channel;
     private InputStream in;
     private IByteBuffer buffer;
+    private final int position = 0;
 
     public BlockingSocketSynchronousReader(final BlockingSocketSynchronousChannel channel) {
         this.channel = channel;
@@ -49,18 +50,24 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
 
     @Override
     public boolean hasNext() throws IOException {
-        try {
-            final int available = in.available();
-            return available >= BlockingSocketSynchronousChannel.MESSAGE_INDEX;
-        } catch (final IOException e) {
-            throw FastEOFException.getInstance(e);
+        if (channel.isInputStreamAvailableSupported()) {
+            try {
+                return in.available() >= BlockingSocketSynchronousChannel.MESSAGE_INDEX;
+            } catch (final IOException e) {
+                throw FastEOFException.getInstance(e);
+            }
+        } else {
+            buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);
+            return true;
         }
     }
 
     @Override
     public IByteBuffer readMessage() throws IOException {
         try {
-            buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);
+            if (channel.isInputStreamAvailableSupported()) {
+                buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);
+            }
             final int size = buffer.getInt(BlockingSocketSynchronousChannel.SIZE_INDEX);
             buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
