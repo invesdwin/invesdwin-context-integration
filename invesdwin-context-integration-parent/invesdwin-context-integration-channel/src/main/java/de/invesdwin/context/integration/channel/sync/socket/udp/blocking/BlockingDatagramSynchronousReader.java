@@ -18,16 +18,16 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 public class BlockingDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
 
     public static final boolean SERVER = true;
-    private DatagramSynchronousChannel channel;
+    private BlockingDatagramSynchronousChannel channel;
     private IByteBuffer packetBuffer;
     private DatagramPacket packet;
     private DatagramSocket socket;
 
     public BlockingDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+        this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public BlockingDatagramSynchronousReader(final DatagramSynchronousChannel channel) {
+    public BlockingDatagramSynchronousReader(final BlockingDatagramSynchronousChannel channel) {
         this.channel = channel;
         if (channel.isServer() != SERVER) {
             throw new IllegalStateException("datagram reader has to be the server");

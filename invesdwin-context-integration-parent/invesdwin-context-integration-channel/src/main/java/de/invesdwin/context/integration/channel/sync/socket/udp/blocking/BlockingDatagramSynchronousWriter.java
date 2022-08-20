@@ -20,17 +20,17 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
 
     public static final boolean SERVER = false;
-    private DatagramSynchronousChannel channel;
+    private BlockingDatagramSynchronousChannel channel;
     private IByteBuffer packetBuffer;
     private IByteBuffer messageBuffer;
     private DatagramPacket packet;
     private DatagramSocket socket;
 
     public BlockingDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
+        this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
     }
 
-    public BlockingDatagramSynchronousWriter(final DatagramSynchronousChannel channel) {
+    public BlockingDatagramSynchronousWriter(final BlockingDatagramSynchronousChannel channel) {
         this.channel = channel;
         if (channel.isServer() != SERVER) {
             throw new IllegalStateException("datagram writer has to be the client");
