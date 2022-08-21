@@ -63,8 +63,10 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
                 .valueOf(underlyingWriter);
         final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(underlyingReader);
-        final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(engine, ignoreOpenCloseReader);
-        final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(engine, ignoreOpenCloseWriter);
+        final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout, engine,
+                ignoreOpenCloseReader, ignoreOpenCloseWriter);
+        final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(tlsChannel);
+        final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(tlsChannel);
         channel.getReader().setEncryptedReader(encryptedReader);
         channel.getWriter().setEncryptedWriter(encryptedWriter);
         encryptedReader.open();
