@@ -14,6 +14,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
@@ -36,9 +37,9 @@ public class TlsHandshaker {
     private final UnsafeByteBuffer byteBufferWrapper;
 
     public TlsHandshaker() {
-        this.applicationData = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
+        this.applicationData = EmptyByteBuffer.EMPTY_DIRECT_BYTE_BUFFER;
         this.networkData = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
-        this.peerApplicationData = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
+        this.peerApplicationData = EmptyByteBuffer.EMPTY_DIRECT_BYTE_BUFFER;
         this.peerNetworkData = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
         this.byteBufferWrapper = new UnsafeByteBuffer();
     }
