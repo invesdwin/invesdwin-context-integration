@@ -145,7 +145,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public SSLEngine newEngine() {
-        final SslContext nettyContext = newNettyContext(getSslProvider());
+        final SslContext nettyContext = newNettyContext(getEngineSslProvider());
         if (server) {
             return nettyContext.newEngine(getByteBufAllocator());
         } else {
@@ -161,6 +161,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         final ISignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm();
         final ClientAuth clientAuth = getClientAuth();
         final boolean startTls = isStartTlsEnabled();
+        final boolean mTls = clientAuth != ClientAuth.NONE;
 
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(getDerivedKeyPepper(),
                 getDerivedKeyPassword());
@@ -173,14 +174,18 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
             final X509Certificate serverCertificate = SelfSignedCertGenerator.generate(keyPair,
                     signatureAlgorithm.getAlgorithm(), hostname, validity);
             if (server) {
-                return SslContextBuilder.forServer(keyPair.getPrivate(), serverCertificate)
-                        .sslProvider(provider)
-                        .clientAuth(clientAuth)
-                        .startTls(startTls)
-                        .build();
+                final SslContextBuilder forServer = SslContextBuilder.forServer(keyPair.getPrivate(),
+                        serverCertificate);
+                if (mTls) {
+                    forServer.trustManager(serverCertificate);
+                }
+                return forServer.sslProvider(provider).clientAuth(clientAuth).startTls(startTls).build();
             } else {
-                return SslContextBuilder.forClient()
-                        .trustManager(serverCertificate)
+                final SslContextBuilder forClient = SslContextBuilder.forClient();
+                if (mTls) {
+                    forClient.keyManager(keyPair.getPrivate(), serverCertificate);
+                }
+                return forClient.trustManager(serverCertificate)
                         .sslProvider(provider)
                         .clientAuth(clientAuth)
                         .startTls(startTls)
@@ -226,7 +231,8 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
     }
 
     protected ClientAuth getClientAuth() {
-        return ClientAuth.NONE;
+        //we use mTls per default
+        return ClientAuth.REQUIRE;
     }
 
     protected String getHostname() {
@@ -237,7 +243,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         }
     }
 
-    protected SslProvider getSslProvider() {
+    protected SslProvider getEngineSslProvider() {
         if (server) {
             return SslContext.defaultServerProvider();
         } else {
