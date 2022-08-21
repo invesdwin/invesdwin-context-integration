@@ -8,8 +8,8 @@ import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 
 @Immutable
@@ -19,8 +19,7 @@ public class NettySocketHandlerTest extends AChannelTest {
     public void testNettySocketHandlerPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        //epoll makes this test flaky and it the EpollEventLoop spins in wait state without a connection being established
-        runNettySocketHandlerPerformanceTest(EpollNettySocketChannelType.INSTANCE, address);
+        runNettySocketHandlerPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
     }
 
     private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type,
