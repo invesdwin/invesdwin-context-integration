@@ -23,6 +23,7 @@ import de.invesdwin.context.security.crypto.key.certificate.KeyStores;
 import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenerator;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.time.range.TimeRange;
@@ -36,6 +37,18 @@ import de.invesdwin.util.time.range.TimeRange;
 @Immutable
 public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayerSecurityProvider {
 
+    /**
+     * JDK does not support EdDSA currently for TLS
+     * 
+     * Netty does not support EdDSA: https://github.com/netty/netty/issues/10916
+     */
+    public static final EcdsaAlgorithm DEFAULT_SIGNATURE_ALGORITHM = EcdsaAlgorithm.DEFAULT;
+    /**
+     * We use mTls per default
+     */
+    public static final ClientAuth DEFAULT_CLIENT_AUTH = ClientAuth.NEED;
+    public static final String DEFAULT_DERIVED_KEY_PASSWORD = "ssl-engine-password";
+    public static final String DEFAULT_DERIVED_KEY_INFO = "ssl-engine-key";
     private final InetSocketAddress socketAddress;
     private final boolean server;
 
@@ -188,21 +201,19 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
     }
 
     protected byte[] getDerivedKeyPassword() {
-        return "ssl-engine-password".getBytes();
+        return DEFAULT_DERIVED_KEY_PASSWORD.getBytes();
     }
 
     protected byte[] getDerivedKeyInfo() {
-        return "ssl-engine-key".getBytes();
+        return DEFAULT_DERIVED_KEY_INFO.getBytes();
     }
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {
-        //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
-        return ISignatureAlgorithm.getDefault();
+        return DEFAULT_SIGNATURE_ALGORITHM;
     }
 
     protected ClientAuth getClientAuth() {
-        //we use mTls per default
-        return ClientAuth.NEED;
+        return DEFAULT_CLIENT_AUTH;
     }
 
     protected String getHostname() {

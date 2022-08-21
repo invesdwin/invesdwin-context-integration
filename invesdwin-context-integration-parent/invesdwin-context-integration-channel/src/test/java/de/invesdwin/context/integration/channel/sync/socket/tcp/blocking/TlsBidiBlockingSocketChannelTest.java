@@ -4,7 +4,7 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.NettyDerivedKeyTransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.ITransportLayerSecurityProvider;
 
 @NotThreadSafe
@@ -16,7 +16,7 @@ public class TlsBidiBlockingSocketChannelTest extends BidiBlockingSocketChannelT
         return new TlsBlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize) {
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-                return new NettyDerivedKeyTransportLayerSecurityProvider(getSocketAddress(), server) {
+                return new DerivedKeyTransportLayerSecurityProvider(getSocketAddress(), server) {
                     @Override
                     protected String getHostname() {
                         return getSocketAddress().getHostName();

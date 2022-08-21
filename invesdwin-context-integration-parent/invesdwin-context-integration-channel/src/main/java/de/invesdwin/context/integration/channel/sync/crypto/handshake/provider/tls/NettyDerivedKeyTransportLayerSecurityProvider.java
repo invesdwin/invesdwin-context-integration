@@ -22,7 +22,6 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenerator;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
-import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.reflection.field.UnsafeField;
@@ -219,17 +218,16 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
     }
 
     protected byte[] getDerivedKeyPassword() {
-        return "ssl-engine-password".getBytes();
+        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_DERIVED_KEY_PASSWORD.getBytes();
     }
 
     protected byte[] getDerivedKeyInfo() {
-        return "ssl-engine-key".getBytes();
+        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_DERIVED_KEY_INFO.getBytes();
     }
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {
-        //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
-        return EcdsaAlgorithm.DEFAULT;
-        //netty-tcnative-boringssl-static does not support EcDSA
+        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_SIGNATURE_ALGORITHM;
+        //netty-tcnative-boringssl-static does not support EcDSA, but OpenSSL version does, so not using below workaround
         //        switch (sslProvider) {
         //        case JDK:
         //            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
@@ -244,8 +242,7 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
     }
 
     protected ClientAuth getClientAuth() {
-        //we use mTls per default
-        return ClientAuth.NEED;
+        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_CLIENT_AUTH;
     }
 
     protected String getHostname() {
