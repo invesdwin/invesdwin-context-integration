@@ -16,10 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
-import io.netty.channel.socket.nio.NioDatagramChannel;
-import io.netty.incubator.channel.uring.IOUringDatagramChannel;
 
 @NotThreadSafe
 public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -73,12 +70,13 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         this.datagramPacket.retain();
     }
 
-    @SuppressWarnings("deprecation")
     protected boolean isSafeWriter(final NettyDatagramSynchronousChannel channel) {
-        final DatagramChannel datagramChannel = channel.getDatagramChannel();
-        return datagramChannel instanceof io.netty.channel.socket.oio.OioDatagramChannel
-                || datagramChannel instanceof NioDatagramChannel || datagramChannel instanceof IOUringDatagramChannel
-                || channel.isKeepBootstrapRunningAfterOpen();
+        //        final DatagramChannel datagramChannel = channel.getDatagramChannel();
+        //        return datagramChannel instanceof io.netty.channel.socket.oio.OioDatagramChannel
+        //                || datagramChannel instanceof NioDatagramChannel || datagramChannel instanceof IOUringDatagramChannel
+        //                || channel.isKeepBootstrapRunningAfterOpen();
+        //unsafe interface will be removed in netty5, also unsafe makes tests flaky
+        return true;
     }
 
     @Override

@@ -15,8 +15,6 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.socket.SocketChannel;
-import io.netty.incubator.channel.uring.IOUringSocketChannel;
 
 @NotThreadSafe
 public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
@@ -63,12 +61,13 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
     }
 
-    @SuppressWarnings("deprecation")
     protected boolean isSafeWriter(final NettySocketSynchronousChannel channel) {
-        final SocketChannel socketChannel = channel.getSocketChannel();
-        return socketChannel instanceof IOUringSocketChannel
-                || socketChannel instanceof io.netty.channel.socket.oio.OioSocketChannel
-                || channel.isKeepBootstrapRunningAfterOpen();
+        //        final SocketChannel socketChannel = channel.getSocketChannel();
+        //        return socketChannel instanceof IOUringSocketChannel
+        //                || socketChannel instanceof io.netty.channel.socket.oio.OioSocketChannel
+        //                || channel.isKeepBootstrapRunningAfterOpen();
+        //unsafe interface will be removed in netty5, also unsafe makes tests flaky
+        return true;
     }
 
     @Override

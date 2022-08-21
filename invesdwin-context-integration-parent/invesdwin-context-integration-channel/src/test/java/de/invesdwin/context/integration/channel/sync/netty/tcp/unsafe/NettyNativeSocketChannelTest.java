@@ -10,11 +10,11 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.EpollNettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 
@@ -23,10 +23,14 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
+        if (OperatingSystem.isWindows()) {
+            //not supported on windows
+            return;
+        }
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNettySocketChannelPerformanceTest(EpollNettySocketChannelType.INSTANCE, responseAddress, requestAddress);
+        runNettySocketChannelPerformanceTest(INettySocketChannelType.getDefault(), responseAddress, requestAddress);
     }
 
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,

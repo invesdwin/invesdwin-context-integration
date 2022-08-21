@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 
 @Immutable
@@ -19,7 +18,7 @@ public class NettySocketHandlerTest extends AChannelTest {
     public void testNettySocketHandlerPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runNettySocketHandlerPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
+        runNettySocketHandlerPerformanceTest(INettySocketChannelType.getDefault(), address);
     }
 
     private void runNettySocketHandlerPerformanceTest(final INettySocketChannelType type,
