@@ -38,6 +38,15 @@ import de.invesdwin.util.time.range.TimeRange;
 public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayerSecurityProvider {
 
     /**
+     * Requires a reliable underlying channel (e.g. TCP)
+     */
+    public static final String TLS = "TLS";
+    /**
+     * For unreliable underlying channels (e.g. UDP)
+     */
+    public static final String DTLS = "DTLS";
+
+    /**
      * JDK does not support EdDSA currently for TLS
      * 
      * Netty does not support EdDSA: https://github.com/netty/netty/issues/10916
@@ -160,8 +169,14 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         }
     }
 
+    /**
+     * Could also use DTLS (for unreliable underlying channels) here instead of TLS (which requires a reliable
+     * underlying channel) or use a different provider.
+     * 
+     * https://stackoverflow.com/questions/15331294/difference-between-dtls-and-tls
+     */
     protected SSLContext newContextFromProvider() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance("TLS");
+        return SSLContext.getInstance(TLS);
     }
 
     @Override

@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
+import java.security.Provider;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
@@ -160,6 +161,7 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
         final io.netty.handler.ssl.ClientAuth nettyClientAuth = getNettyClientAuth();
         final boolean startTls = isStartTlsEnabled();
         final boolean mTls = nettyClientAuth != io.netty.handler.ssl.ClientAuth.NONE;
+        final Provider sslContextProvider = getSslContextProvider();
 
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(getDerivedKeyPepper(),
                 getDerivedKeyPassword());
@@ -177,11 +179,17 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
                 if (mTls) {
                     forServer.trustManager(serverCertificate);
                 }
+                if (sslContextProvider != null) {
+                    forServer.sslContextProvider(sslContextProvider);
+                }
                 return forServer.sslProvider(provider).clientAuth(nettyClientAuth).startTls(startTls).build();
             } else {
                 final SslContextBuilder forClient = SslContextBuilder.forClient();
                 if (mTls) {
                     forClient.keyManager(keyPair.getPrivate(), serverCertificate);
+                }
+                if (sslContextProvider != null) {
+                    forClient.sslContextProvider(sslContextProvider);
                 }
                 return forClient.trustManager(serverCertificate)
                         .sslProvider(provider)
@@ -192,6 +200,11 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
         } catch (OperatorCreationException | CertificateException | CertIOException | SSLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected Provider getSslContextProvider() {
+        //keep the default per default
+        return null;
     }
 
     protected final io.netty.handler.ssl.ClientAuth getNettyClientAuth() {
