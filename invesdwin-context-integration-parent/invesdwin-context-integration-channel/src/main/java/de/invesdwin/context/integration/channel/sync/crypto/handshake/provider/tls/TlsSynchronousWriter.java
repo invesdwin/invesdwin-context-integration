@@ -26,7 +26,7 @@ public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferWrite
     private java.nio.ByteBuffer encrypted;
     private IByteBuffer encryptedBuffer;
     // eliminates array creation on each call to SSLEngine.wrap()
-    private final java.nio.ByteBuffer[] unencryptedArray = new java.nio.ByteBuffer[0];
+    private final java.nio.ByteBuffer[] unencryptedArray = new java.nio.ByteBuffer[1];
 
     public TlsSynchronousWriter(final SSLEngine engine, final ISynchronousWriter<IByteBufferWriter> underlyingWriter) {
         this.engine = engine;

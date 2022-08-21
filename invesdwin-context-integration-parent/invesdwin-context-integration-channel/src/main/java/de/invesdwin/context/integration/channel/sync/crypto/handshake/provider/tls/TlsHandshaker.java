@@ -6,11 +6,13 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -19,6 +21,8 @@ import de.invesdwin.util.time.duration.Duration;
 
 /**
  * Adapted from: net.openhft.chronicle.network.ssl.Handshaker
+ * 
+ * Debug with : -Djavax.net.debug=all
  */
 @NotThreadSafe
 public class TlsHandshaker {
@@ -49,15 +53,14 @@ public class TlsHandshaker {
         LOG.debug("%s:%s beginning handshake", address, side);
         engine.beginHandshake();
 
-        SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
+        HandshakeStatus status = engine.getHandshakeStatus();
         SSLEngineResult result;
 
         long underflowCount = 0;
         boolean reportedInitialStatus = false;
-        SSLEngineResult.HandshakeStatus lastStatus = status;
+        HandshakeStatus lastStatus = status;
 
-        while (status != SSLEngineResult.HandshakeStatus.FINISHED
-                && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+        while (status != HandshakeStatus.FINISHED && status != HandshakeStatus.NOT_HANDSHAKING) {
             if (!reportedInitialStatus) {
                 LOG.debug("%s:%s initial status %s", address, side, status);
                 reportedInitialStatus = true;
@@ -132,7 +135,7 @@ public class TlsHandshaker {
                 }
                 break;
             default:
-                //ignore
+                throw UnknownArgumentException.newInstance(HandshakeStatus.class, status);
             }
 
             status = engine.getHandshakeStatus();
