@@ -1,31 +1,37 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
 
+import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
-import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 
 import javax.annotation.concurrent.Immutable;
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+
+import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.operator.OperatorCreationException;
 
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
-import de.invesdwin.context.security.crypto.key.certificate.KeyStores;
 import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenerator;
-import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.lang.reflection.field.UnsafeField;
 import de.invesdwin.util.time.range.TimeRange;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.handler.ssl.JdkSslContext;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslContextBuilder;
+import io.netty.handler.ssl.SslProvider;
 
 /**
  * WARNING: With this implementation the confidentiality relies solely on the CryptoProperties.DEFAULT_PEPPER. It would
@@ -34,12 +40,26 @@ import de.invesdwin.util.time.range.TimeRange;
  * secure.
  */
 @Immutable
-public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayerSecurityProvider {
+public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransportLayerSecurityProvider {
+
+    private static final UnsafeField<String[]> FIELD_PROTOCOLS;
+    private static final UnsafeField<String[]> FIELD_CIPHERSUITES;
+
+    static {
+        try {
+            final Field protocolsField = JdkSslContext.class.getDeclaredField("protocols");
+            FIELD_PROTOCOLS = new UnsafeField<>(protocolsField);
+            final Field cipherSuitesField = JdkSslContext.class.getDeclaredField("cipherSuites");
+            FIELD_CIPHERSUITES = new UnsafeField<>(cipherSuitesField);
+        } catch (NoSuchFieldException | SecurityException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private final InetSocketAddress socketAddress;
     private final boolean server;
 
-    public DerivedKeyTransportLayerSecurityProvider(final InetSocketAddress socketAddress, final boolean server) {
+    public NettyDerivedKeyTransportLayerSecurityProvider(final InetSocketAddress socketAddress, final boolean server) {
         this.socketAddress = socketAddress;
         this.server = server;
     }
@@ -53,6 +73,13 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      */
     @Override
     public void configureServerSocket(final SSLServerSocket socket) {
+        final JdkSslContext context = (JdkSslContext) newNettyContext(SslProvider.JDK);
+
+        final String[] cipherSuites = FIELD_CIPHERSUITES.get(context);
+        final String[] protocols = FIELD_PROTOCOLS.get(context);
+
+        socket.setEnabledCipherSuites(cipherSuites);
+        socket.setEnabledProtocols(protocols);
         socket.setUseClientMode(!isServer());
         if (isServer()) {
             switch (getClientAuth()) {
@@ -75,6 +102,13 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      */
     @Override
     public void configureSocket(final SSLSocket socket) {
+        final JdkSslContext context = (JdkSslContext) newNettyContext(SslProvider.JDK);
+
+        final String[] cipherSuites = FIELD_CIPHERSUITES.get(context);
+        final String[] protocols = FIELD_PROTOCOLS.get(context);
+
+        socket.setEnabledCipherSuites(cipherSuites);
+        socket.setEnabledProtocols(protocols);
         socket.setUseClientMode(!isServer());
         if (isServer()) {
             switch (getClientAuth()) {
@@ -103,9 +137,30 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public SSLContext newContext() {
+        final JdkSslContext nettyContext = (JdkSslContext) newNettyContext(SslProvider.JDK);
+        final SSLContext context = nettyContext.context();
+        return context;
+    }
+
+    @Override
+    public SSLEngine newEngine() {
+        final SslContext nettyContext = newNettyContext(getEngineSslProvider());
+        if (server) {
+            return nettyContext.newEngine(getByteBufAllocator());
+        } else {
+            return nettyContext.newEngine(getByteBufAllocator(), socketAddress.getHostName(), socketAddress.getPort());
+        }
+    }
+
+    protected ByteBufAllocator getByteBufAllocator() {
+        return ByteBufAllocator.DEFAULT;
+    }
+
+    protected SslContext newNettyContext(final SslProvider provider) {
         final ISignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm();
-        final ClientAuth clientAuth = getClientAuth();
-        final boolean mTls = clientAuth != ClientAuth.NONE;
+        final io.netty.handler.ssl.ClientAuth nettyClientAuth = getNettyClientAuth();
+        final boolean startTls = isStartTlsEnabled();
+        final boolean mTls = nettyClientAuth != io.netty.handler.ssl.ClientAuth.NONE;
 
         final IDerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(getDerivedKeyPepper(),
                 getDerivedKeyPassword());
@@ -117,65 +172,41 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
             final String hostname = getHostname();
             final X509Certificate serverCertificate = SelfSignedCertGenerator.generate(keyPair,
                     signatureAlgorithm.getAlgorithm(), hostname, validity);
-            final SSLContext context = newContextFromProvider();
-            final KeyManager[] keyManagers;
-            final TrustManager[] trustManagers;
             if (server) {
-                final KeyManagerFactory kmf = KeyStores.buildKeyManagerFactory(keyPair.getPrivate(), serverCertificate);
-                keyManagers = kmf.getKeyManagers();
+                final SslContextBuilder forServer = SslContextBuilder.forServer(keyPair.getPrivate(),
+                        serverCertificate);
                 if (mTls) {
-                    final TrustManagerFactory tmf = KeyStores.buildTrustManagerFactory(serverCertificate);
-                    trustManagers = tmf.getTrustManagers();
-                } else {
-                    trustManagers = null;
+                    forServer.trustManager(serverCertificate);
                 }
+                return forServer.sslProvider(provider).clientAuth(nettyClientAuth).startTls(startTls).build();
             } else {
-                final TrustManagerFactory tmf = KeyStores.buildTrustManagerFactory(serverCertificate);
-                trustManagers = tmf.getTrustManagers();
+                final SslContextBuilder forClient = SslContextBuilder.forClient();
                 if (mTls) {
-                    final KeyManagerFactory kmf = KeyStores.buildKeyManagerFactory(keyPair.getPrivate(),
-                            serverCertificate);
-                    keyManagers = kmf.getKeyManagers();
-                } else {
-                    keyManagers = null;
+                    forClient.keyManager(keyPair.getPrivate(), serverCertificate);
                 }
+                return forClient.trustManager(serverCertificate)
+                        .sslProvider(provider)
+                        .clientAuth(nettyClientAuth)
+                        .startTls(startTls)
+                        .build();
             }
-            context.init(keyManagers, trustManagers, CryptoRandomGenerators.newCryptoRandom());
-            return context;
-        } catch (final Exception e) {
+        } catch (OperatorCreationException | CertificateException | CertIOException | SSLException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected SSLContext newContextFromProvider() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance("TLS");
-    }
-
-    @Override
-    public SSLEngine newEngine() {
-        final SSLContext context = newContext();
-        final SSLEngine engine;
-        if (server) {
-            engine = context.createSSLEngine();
-        } else {
-            engine = context.createSSLEngine(socketAddress.getHostName(), socketAddress.getPort());
+    protected final io.netty.handler.ssl.ClientAuth getNettyClientAuth() {
+        final ClientAuth clientAuth = getClientAuth();
+        switch (clientAuth) {
+        case NEED:
+            return io.netty.handler.ssl.ClientAuth.REQUIRE;
+        case WANT:
+            return io.netty.handler.ssl.ClientAuth.OPTIONAL;
+        case NONE:
+            return io.netty.handler.ssl.ClientAuth.NONE;
+        default:
+            throw UnknownArgumentException.newInstance(ClientAuth.class, clientAuth);
         }
-        engine.setUseClientMode(!isServer());
-        if (isServer()) {
-            switch (getClientAuth()) {
-            case NEED:
-                engine.setNeedClientAuth(true);
-                break;
-            case WANT:
-                engine.setWantClientAuth(true);
-                break;
-            case NONE:
-                break;
-            default:
-                throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
-            }
-        }
-        return engine;
     }
 
     @Override
@@ -197,7 +228,19 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {
         //netty does not support EdDSA: https://github.com/netty/netty/issues/10916
-        return ISignatureAlgorithm.getDefault();
+        return EcdsaAlgorithm.DEFAULT;
+        //netty-tcnative-boringssl-static does not support EcDSA
+        //        switch (sslProvider) {
+        //        case JDK:
+        //            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
+        //            break;
+        //        case OPENSSL:
+        //        case OPENSSL_REFCNT:
+        //            signatureAlgorithm = RsaSignatureAlgorithm.DEFAULT;
+        //            break;
+        //        default:
+        //            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
+        //        }
     }
 
     protected ClientAuth getClientAuth() {
@@ -210,6 +253,14 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
             return IntegrationProperties.HOSTNAME;
         } else {
             return socketAddress.getHostName();
+        }
+    }
+
+    protected SslProvider getEngineSslProvider() {
+        if (server) {
+            return SslContext.defaultServerProvider();
+        } else {
+            return SslContext.defaultClientProvider();
         }
     }
 

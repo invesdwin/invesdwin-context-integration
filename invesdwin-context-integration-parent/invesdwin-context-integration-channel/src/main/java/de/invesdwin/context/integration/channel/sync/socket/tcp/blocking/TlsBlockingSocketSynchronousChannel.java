@@ -14,7 +14,7 @@ import javax.net.ssl.SSLServerSocketFactory;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.DerivedKeyTransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.NettyDerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.time.duration.Duration;
@@ -153,7 +153,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
     }
 
     protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-        return new DerivedKeyTransportLayerSecurityProvider(getSocketAddress(), server);
+        return new NettyDerivedKeyTransportLayerSecurityProvider(getSocketAddress(), server);
     }
 
 }
