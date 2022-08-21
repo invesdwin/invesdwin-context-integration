@@ -7,10 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -39,11 +41,14 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
     public void handshake(final HandshakeChannel channel) throws IOException {
         final ITransportLayerSecurityProvider tlsProvider = newTransportLayerSecurityProvider();
         final SSLEngine engine = tlsProvider.newEngine();
+        final ISynchronousReader<IByteBuffer> underlyingReader = channel.getReader().getUnderlyingReader();
+        final ISynchronousWriter<IByteBufferWriter> underlyingWriter = channel.getWriter().getUnderlyingWriter();
+        final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
 
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
-            handshaker.handshake(handshakeTimeout, socketAddress, engine, newSpinWait(channel.getReader()),
-                    channel.getReader(), channel.getWriter());
+            handshaker.performHandshake(handshakeTimeout, socketAddress, engine, readerSpinWait, underlyingReader,
+                    underlyingWriter);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {

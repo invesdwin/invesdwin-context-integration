@@ -40,7 +40,7 @@ public class TlsHandshaker {
     }
 
     //CHECKSTYLE:OFF
-    public void handshake(final Duration handshakeTimeout, final SocketAddress address, final SSLEngine engine,
+    public void performHandshake(final Duration handshakeTimeout, final SocketAddress address, final SSLEngine engine,
             final ASpinWait readerSpinWait, final ISynchronousReader<IByteBuffer> reader,
             final ISynchronousWriter<IByteBufferWriter> writer) throws Exception {
         //CHECKSTYLE:ON
@@ -71,6 +71,7 @@ public class TlsHandshaker {
                     throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
                 }
                 final IByteBuffer message = reader.readMessage();
+                //this additional copy here could be removed, but for the handshake it should not matter much
                 message.getBytes(0, peerNetworkData);
                 reader.readFinished();
                 if (message.capacity() == 0 && (peerNetworkData.remaining() == 0
