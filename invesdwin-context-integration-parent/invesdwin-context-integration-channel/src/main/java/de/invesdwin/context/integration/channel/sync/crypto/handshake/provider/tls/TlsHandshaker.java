@@ -45,7 +45,8 @@ public class TlsHandshaker {
             final ISynchronousWriter<IByteBufferWriter> writer) throws Exception {
         //CHECKSTYLE:ON
 
-        LOG.debug("%s is client: %s", address, engine.getUseClientMode());
+        final String side = engine.getUseClientMode() ? "client" : "server";
+        LOG.debug("%s:%s beginning handshake", address, side);
         engine.beginHandshake();
 
         SSLEngineResult.HandshakeStatus status = engine.getHandshakeStatus();
@@ -58,11 +59,11 @@ public class TlsHandshaker {
         while (status != SSLEngineResult.HandshakeStatus.FINISHED
                 && status != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             if (!reportedInitialStatus) {
-                LOG.debug("%s initial status %s", address, status);
+                LOG.debug("%s:%s initial status %s", address, side, status);
                 reportedInitialStatus = true;
             }
             if (status != lastStatus) {
-                LOG.debug("%s status change to %s", address, status);
+                LOG.debug("%s:%s status change to %s", address, side, status);
                 lastStatus = status;
             }
             switch (status) {
@@ -82,7 +83,7 @@ public class TlsHandshaker {
                 }
                 peerNetworkData.flip();
                 final int dataReceived = peerNetworkData.remaining();
-                LOG.debug("%s Received %s from handshake peer", address, dataReceived);
+                LOG.debug("%s:%s Received %s from handshake peer", address, side, dataReceived);
                 result = engine.unwrap(peerNetworkData, peerApplicationData);
                 peerNetworkData.compact();
                 switch (result.getStatus()) {
@@ -113,7 +114,7 @@ public class TlsHandshaker {
                         writer.write(byteBufferWrapper);
                         ByteBuffers.position(networkData, position + remaining);
                     }
-                    LOG.debug("%s Wrote %s to handshake peer", address, remaining);
+                    LOG.debug("%s:%s Wrote %s to handshake peer", address, side, remaining);
                     break;
                 default:
                     throw new UnsupportedOperationException(result.getStatus().toString());

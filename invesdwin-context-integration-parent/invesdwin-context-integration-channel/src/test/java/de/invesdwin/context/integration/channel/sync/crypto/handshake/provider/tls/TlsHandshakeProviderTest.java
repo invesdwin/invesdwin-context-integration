@@ -16,11 +16,11 @@ import de.invesdwin.util.time.duration.Duration;
 public class TlsHandshakeProviderTest extends AChannelTest {
 
     @Test
-    public void testEcdhHandshakePerformance() throws InterruptedException {
+    public void testTlsHandshakePerformance() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testEcdhHandshakePerformance_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testEcdhHandshakePerformance_response.pipe", tmpfs, pipes);
+        final File requestFile = newFile("testTlsHandshakePerformance_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testTlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
