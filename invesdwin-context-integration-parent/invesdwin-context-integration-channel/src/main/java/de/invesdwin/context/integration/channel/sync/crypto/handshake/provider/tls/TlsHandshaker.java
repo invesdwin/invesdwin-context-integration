@@ -73,11 +73,11 @@ public class TlsHandshaker {
                 }
                 final IByteBuffer message = reader.readMessage();
                 //this additional copy here could be removed, but for the handshake it should not matter much
-                message.getBytes(0, peerNetworkData);
+                message.getBytesTo(0, peerNetworkData, message.capacity());
+                ByteBuffers.position(peerNetworkData, message.capacity());
                 reader.readFinished();
                 if (message.capacity() == 0 && (peerNetworkData.remaining() == 0
                         || peerNetworkData.remaining() == peerNetworkData.capacity())) {
-
                     underflowCount++;
                     continue;
                 }

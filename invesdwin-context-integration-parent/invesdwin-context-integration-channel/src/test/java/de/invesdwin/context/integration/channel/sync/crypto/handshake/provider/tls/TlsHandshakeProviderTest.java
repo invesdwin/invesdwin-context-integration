@@ -36,7 +36,7 @@ public class TlsHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 464;
+        return 901;
     }
 
 }
