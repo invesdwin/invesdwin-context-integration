@@ -129,10 +129,14 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
                 final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> encryptedChannelFactory = newEncryptedChannelFactory(
                         derivedKeyProvider);
-                channel.getReader().setEncryptedReader(encryptedChannelFactory.newReader(ignoreOpenCloseReader));
-                channel.getReader().getEncryptedReader().open();
-                channel.getWriter().setEncryptedWriter(encryptedChannelFactory.newWriter(ignoreOpenCloseWriter));
-                channel.getWriter().getEncryptedWriter().open();
+                final ISynchronousReader<IByteBuffer> encryptedReader = encryptedChannelFactory
+                        .newReader(ignoreOpenCloseReader);
+                final ISynchronousWriter<IByteBufferWriter> encryptedWriter = encryptedChannelFactory
+                        .newWriter(ignoreOpenCloseWriter);
+                channel.getReader().setEncryptedReader(encryptedReader);
+                channel.getWriter().setEncryptedWriter(encryptedWriter);
+                encryptedReader.open();
+                encryptedWriter.open();
             } catch (final NoSuchAlgorithmException | IOException | InvalidKeyException e) {
                 throw new RuntimeException(e);
             } finally {

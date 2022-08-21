@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.NettyDerivedKeyTransportLayerSecurityProvider;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.ITransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.NettyDerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import io.netty.buffer.ByteBufAllocator;
 

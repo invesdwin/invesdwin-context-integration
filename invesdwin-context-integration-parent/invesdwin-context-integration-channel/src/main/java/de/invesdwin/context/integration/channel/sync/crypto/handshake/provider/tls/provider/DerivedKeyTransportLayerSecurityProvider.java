@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
+package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider;
 
 import java.net.InetSocketAddress;
 import java.security.KeyPair;

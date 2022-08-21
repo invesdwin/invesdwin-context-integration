@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
+package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
