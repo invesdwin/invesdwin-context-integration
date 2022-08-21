@@ -57,18 +57,10 @@ public class TlsHandshaker {
         SSLEngineResult result;
 
         long underflowCount = 0;
-        boolean reportedInitialStatus = false;
         HandshakeStatus lastStatus = status;
+        LOG.debug("%s:%s initial status %s", address, side, status);
 
         while (status != HandshakeStatus.FINISHED && status != HandshakeStatus.NOT_HANDSHAKING) {
-            if (!reportedInitialStatus) {
-                LOG.debug("%s:%s initial status %s", address, side, status);
-                reportedInitialStatus = true;
-            }
-            if (status != lastStatus) {
-                LOG.debug("%s:%s status change to %s", address, side, status);
-                lastStatus = status;
-            }
             switch (status) {
             case NEED_UNWRAP:
                 if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
@@ -139,6 +131,10 @@ public class TlsHandshaker {
             }
 
             status = engine.getHandshakeStatus();
+            if (status != lastStatus) {
+                LOG.debug("%s:%s status change to %s", address, side, status);
+                lastStatus = status;
+            }
         }
     }
 
