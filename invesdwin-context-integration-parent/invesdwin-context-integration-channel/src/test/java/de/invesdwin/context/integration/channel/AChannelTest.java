@@ -197,17 +197,24 @@ public abstract class AChannelTest extends ATest {
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
             final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapper) throws InterruptedException {
+        runPerformanceTest(pipes, requestFile, responseFile, synchronizeRequest, synchronizeResponse, wrapper, wrapper);
+    }
+
+    protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
+            final Object synchronizeRequest, final Object synchronizeResponse,
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperServer,
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperClient) throws InterruptedException {
         try {
             final ISynchronousWriter<IByteBufferWriter> responseWriter = maybeSynchronize(
-                    wrapper.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
+                    wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
             final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(
-                    wrapper.newReader(newReader(requestFile, pipes)), synchronizeRequest);
+                    wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBufferWriter> requestWriter = maybeSynchronize(
-                    wrapper.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
+                    wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
             final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(
-                    wrapper.newReader(newReader(responseFile, pipes)), synchronizeResponse);
+                    wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
             read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
             executor.awaitTermination();
