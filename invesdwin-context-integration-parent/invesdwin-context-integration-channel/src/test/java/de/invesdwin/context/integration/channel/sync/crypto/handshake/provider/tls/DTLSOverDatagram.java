@@ -31,6 +31,9 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 
 /**
  * An example to show the way to use SSLEngine in datagram connections.
+ * 
+ * Original from:
+ * https://github.com/AdoptOpenJDK/openjdk-jdk11/blob/master/test/jdk/javax/net/ssl/DTLS/DTLSOverDatagram.java
  */
 @NotThreadSafe
 //CHECKSTYLE:OFF
@@ -65,7 +68,6 @@ public class DTLSOverDatagram {
 
         // write server application data
         deliverAppData(engine, socket, serverApp, clientSocketAddr);
-        System.out.println("done");
     }
 
     /*
@@ -112,7 +114,7 @@ public class DTLSOverDatagram {
         while (!endLoops && (serverException == null) && (clientException == null)) {
 
             if (--loops < 0) {
-                throw new RuntimeException("Too much loops to produce handshake packets");
+                throw new RuntimeException("Too many loops to produce handshake packets");
             }
 
             SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
@@ -255,7 +257,7 @@ public class DTLSOverDatagram {
         int loops = MAX_APP_READ_LOOPS;
         while ((serverException == null) && (clientException == null)) {
             if (--loops < 0) {
-                throw new RuntimeException("Too much loops to receive application data");
+                throw new RuntimeException("Too many loops to receive application data");
             }
 
             final byte[] buf = new byte[BUFFER_SIZE];

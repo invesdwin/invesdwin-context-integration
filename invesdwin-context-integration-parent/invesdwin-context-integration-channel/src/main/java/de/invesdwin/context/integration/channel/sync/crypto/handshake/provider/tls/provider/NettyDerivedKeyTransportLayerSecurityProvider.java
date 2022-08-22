@@ -18,6 +18,9 @@ import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.OperatorCreationException;
 
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ClientAuth;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
@@ -62,6 +65,14 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
     public NettyDerivedKeyTransportLayerSecurityProvider(final InetSocketAddress socketAddress, final boolean server) {
         this.socketAddress = socketAddress;
         this.server = server;
+    }
+
+    /**
+     * Only TLS supported by netty
+     */
+    @Override
+    public final ITlsProtocol getProtocol() {
+        return TlsProtocol.TLS;
     }
 
     public boolean isServer() {

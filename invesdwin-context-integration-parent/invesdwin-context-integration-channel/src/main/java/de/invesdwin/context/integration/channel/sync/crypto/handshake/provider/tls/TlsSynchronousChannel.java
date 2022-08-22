@@ -15,6 +15,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
@@ -46,6 +47,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private java.nio.ByteBuffer inboundApplicationData;
     private java.nio.ByteBuffer[] outboundApplicationDataArray;
     private java.nio.ByteBuffer[] inboundApplicationDataArray;
+    private final String side;
+    private final boolean server;
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final SSLEngine engine,
             final ISynchronousReader<IByteBuffer> underlyingReader,
@@ -54,7 +57,13 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         this.engine = engine;
         this.underlyingReader = underlyingReader;
         this.underlyingWriter = underlyingWriter;
+        this.side = engine.getUseClientMode() ? "Client" : "Server";
+        this.server = true;
+    }
 
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(side).toString();
     }
 
     public java.nio.ByteBuffer getInboundApplicationData() {
@@ -89,46 +98,36 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         underlyingWriter.open();
 
         outboundApplicationData = outboundApplicationDataBuffer.asNioByteBuffer();
-        outboundEncodedDataBuffer = ByteBuffers.allocateDirectExpandable(engine.getSession().getPacketBufferSize());
+        outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
         outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
-        inboundEncodedDataBuffer = ByteBuffers.allocateDirectExpandable(engine.getSession().getPacketBufferSize());
+        inboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
         inboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         // eliminates array creation on each call to SSLEngine.wrap()
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationData };
         inboundApplicationDataArray = new java.nio.ByteBuffer[] { inboundApplicationData };
+
     }
 
     public boolean action() throws IOException {
         boolean busy = false;
 
-        //drain unencrypted output
-        if (outboundApplicationData.position() != 0) {
-            outboundApplicationData.flip();
-            encode();
-            final boolean hasRemaining = outboundApplicationData.hasRemaining();
-            busy = hasRemaining;
-            if (hasRemaining) {
-                outboundApplicationData.compact();
-            } else {
-                outboundApplicationData.clear();
-            }
-        }
-        //send encrypted output
-        if (outboundEncodedData.position() != 0) {
-            outboundEncodedData.flip();
-            final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
-                    outboundEncodedData.remaining());
-            underlyingWriter.write(encodedMessage);
-            outboundEncodedData.clear();
-        }
+        busy |= receiveAppData();
+        busy |= deliverAppData();
+
+        return busy;
+    }
+
+    private boolean receiveAppData() throws IOException {
+        boolean busy = false;
 
         //read encrypted data
         if (underlyingReader.hasNext()) {
             final IByteBuffer encodedMessage = underlyingReader.readMessage();
 
             final int positionBefore = inboundEncodedData.position();
-            inboundEncodedDataBuffer.getBytes(positionBefore, encodedMessage);
+            inboundEncodedDataBuffer.putBytes(positionBefore, encodedMessage);
+            underlyingReader.readFinished();
             final int length = encodedMessage.capacity();
             ByteBuffers.position(inboundEncodedData, positionBefore + length);
             busy |= length != 0;
@@ -146,27 +145,47 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                 inboundEncodedData.clear();
             }
         }
-
         return busy;
     }
 
-    private void encode() throws IOException {
-        final Status status = engine.wrap(outboundApplicationDataArray, outboundEncodedData).getStatus();
-        switch (status) {
-        case BUFFER_UNDERFLOW:
-            throw new IllegalStateException(
-                    "buffer underflow despite outboundApplicationData.position=" + outboundApplicationData.position());
-        case BUFFER_OVERFLOW:
-            ByteBuffers.expand(outboundEncodedDataBuffer);
-            outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
-            return;
-        case OK:
-            return;
-        case CLOSED:
-            throw FastEOFException.getInstance("Socket closed");
-        default:
-            throw UnknownArgumentException.newInstance(Status.class, status);
+    private boolean deliverAppData() throws IOException {
+        boolean busy = false;
+        //drain unencrypted output
+        if (outboundApplicationData.position() != 0) {
+            outboundApplicationData.flip();
+            final Status status = engine.wrap(outboundApplicationDataArray, outboundEncodedData).getStatus();
+            switch (status) {
+            case BUFFER_UNDERFLOW:
+                throw new IllegalStateException("buffer underflow despite outboundApplicationData.position="
+                        + outboundApplicationData.position());
+            case BUFFER_OVERFLOW:
+                ByteBuffers.expand(outboundEncodedDataBuffer);
+                outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
+                break;
+            case OK:
+                break;
+            case CLOSED:
+                throw FastEOFException.getInstance("Socket closed");
+            default:
+                throw UnknownArgumentException.newInstance(Status.class, status);
+            }
+            final boolean hasRemaining = outboundApplicationData.hasRemaining();
+            busy |= hasRemaining;
+            if (hasRemaining) {
+                outboundApplicationData.compact();
+            } else {
+                outboundApplicationData.clear();
+            }
         }
+        //send encrypted output
+        if (outboundEncodedData.position() != 0) {
+            outboundEncodedData.flip();
+            final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
+                    outboundEncodedData.remaining());
+            underlyingWriter.write(encodedMessage);
+            outboundEncodedData.clear();
+        }
+        return busy;
     }
 
     @Override

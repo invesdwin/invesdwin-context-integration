@@ -51,8 +51,8 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
 
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
-            handshaker.performHandshake(handshakeTimeout, socketAddress, engine, readerSpinWait, underlyingReader,
-                    underlyingWriter);
+            handshaker.performHandshake(handshakeTimeout, socketAddress, tlsProvider.getProtocol(), engine,
+                    readerSpinWait, underlyingReader, underlyingWriter);
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {

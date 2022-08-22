@@ -203,7 +203,8 @@ public abstract class AChannelTest extends ATest {
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
             final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperServer,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperClient) throws InterruptedException {
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperClient)
+            throws InterruptedException {
         try {
             final ISynchronousWriter<IByteBufferWriter> responseWriter = maybeSynchronize(
                     wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);

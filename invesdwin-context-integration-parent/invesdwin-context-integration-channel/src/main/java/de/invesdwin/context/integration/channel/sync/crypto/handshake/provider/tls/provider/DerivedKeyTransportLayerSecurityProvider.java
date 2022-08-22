@@ -16,6 +16,9 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ClientAuth;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
@@ -36,15 +39,6 @@ import de.invesdwin.util.time.range.TimeRange;
  */
 @Immutable
 public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayerSecurityProvider {
-
-    /**
-     * Requires a reliable underlying channel (e.g. TCP)
-     */
-    public static final String TLS = "TLS";
-    /**
-     * For unreliable underlying channels (e.g. UDP)
-     */
-    public static final String DTLS = "DTLS";
 
     /**
      * JDK does not support EdDSA currently for TLS
@@ -175,8 +169,13 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      * 
      * https://stackoverflow.com/questions/15331294/difference-between-dtls-and-tls
      */
+    @Override
+    public ITlsProtocol getProtocol() {
+        return TlsProtocol.DEFAULT;
+    }
+
     protected SSLContext newContextFromProvider() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance(TLS);
+        return SSLContext.getInstance(getProtocol().name());
     }
 
     @Override
@@ -203,6 +202,10 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
         }
+
+        //        final SSLParameters params = engine.getSSLParameters();
+        //        params.setMaximumPacketSize(BlockingDatagramSynchronousChannel.MAX_UNFRAGMENTED_PACKET_SIZE);
+        //        engine.setSSLParameters(params);
         return engine;
     }
 

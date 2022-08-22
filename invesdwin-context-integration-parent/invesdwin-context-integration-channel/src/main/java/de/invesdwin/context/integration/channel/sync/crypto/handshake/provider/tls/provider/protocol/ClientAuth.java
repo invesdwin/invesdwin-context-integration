@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider;
+package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol;
 
 import javax.annotation.concurrent.Immutable;
 
