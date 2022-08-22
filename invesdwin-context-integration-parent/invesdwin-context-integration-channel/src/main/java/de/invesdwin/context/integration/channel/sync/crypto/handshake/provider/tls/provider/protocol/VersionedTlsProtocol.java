@@ -56,10 +56,7 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
     TLS_v1_3("TLSv1.3", false),
     /**
      * DTLS v1.0
-     *
-     * @deprecated DTLSv1.0 is no longer secure. Consider using {@link #DTLS_v1_3}
      */
-    @Deprecated
     DTLS_v1_0("DTLSv1.0", true),
     /**
      * DTLS v1.3
