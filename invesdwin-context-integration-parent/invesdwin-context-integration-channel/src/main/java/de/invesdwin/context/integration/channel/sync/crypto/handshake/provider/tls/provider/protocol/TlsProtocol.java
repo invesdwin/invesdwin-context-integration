@@ -5,6 +5,16 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public enum TlsProtocol implements ITlsProtocol {
     /**
+     * TLS builds on top of and replaces this old specification
+     */
+    @Deprecated
+    SSL {
+        @Override
+        public boolean isHandshakeTimeoutRecoveryEnabled() {
+            return false;
+        }
+    },
+    /**
      * Requires a reliable underlying channel (e.g. TCP)
      */
     TLS {
