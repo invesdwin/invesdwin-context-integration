@@ -25,6 +25,8 @@ public enum TlsProtocol implements ITlsProtocol {
     },
     /**
      * For unreliable underlying channels (e.g. UDP)
+     * 
+     * Supports order protection/non-replayability during handshake.
      */
     DTLS {
         @Override
