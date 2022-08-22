@@ -73,7 +73,7 @@ public class TlsHandshaker {
             if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
                     || hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
 
-                LOG.debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.name(), hs);
+                LOG.debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getName(), hs);
 
                 final boolean readFinishedRequired;
                 final java.nio.ByteBuffer iNet;

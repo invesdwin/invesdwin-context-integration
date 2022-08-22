@@ -35,4 +35,13 @@ public enum TlsProtocol implements ITlsProtocol {
 
     public static final TlsProtocol DEFAULT = TLS;
 
+    @Override
+    public String getName() {
+        return name();
+    }
+
+    public static void main(final String[] args) {
+
+    }
+
 }

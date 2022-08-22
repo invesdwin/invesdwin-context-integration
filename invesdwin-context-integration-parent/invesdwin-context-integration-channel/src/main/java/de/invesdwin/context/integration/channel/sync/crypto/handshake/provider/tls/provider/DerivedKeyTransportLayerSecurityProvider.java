@@ -163,19 +163,16 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         }
     }
 
-    /**
-     * Could also use DTLS (for unreliable underlying channels) here instead of TLS (which requires a reliable
-     * underlying channel) or use a different provider.
-     * 
-     * https://stackoverflow.com/questions/15331294/difference-between-dtls-and-tls
-     */
     @Override
     public ITlsProtocol getProtocol() {
         return TlsProtocol.DEFAULT;
     }
 
+    /**
+     * Override this to use a different provider.
+     */
     protected SSLContext newContextFromProvider() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance(getProtocol().name());
+        return SSLContext.getInstance(getProtocol().getName());
     }
 
     @Override

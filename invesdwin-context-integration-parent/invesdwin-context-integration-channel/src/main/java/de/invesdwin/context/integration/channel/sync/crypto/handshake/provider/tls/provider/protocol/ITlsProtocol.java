@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.
 
 public interface ITlsProtocol {
 
-    String name();
+    String getName();
 
     boolean isHandshakeTimeoutRecoveryEnabled();
 
