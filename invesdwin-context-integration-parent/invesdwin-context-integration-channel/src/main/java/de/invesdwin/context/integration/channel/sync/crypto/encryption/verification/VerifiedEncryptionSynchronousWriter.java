@@ -63,9 +63,9 @@ public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<I
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        final int signatureIndex = encryptionFactory.encrypt(decryptedBuffer, buffer);
-        final int signatureLength = verificationFactory.putHash(buffer, signatureIndex, hash);
+    public int writeBuffer(final IByteBuffer dst) {
+        final int signatureIndex = encryptionFactory.encrypt(decryptedBuffer, dst);
+        final int signatureLength = verificationFactory.putHash(dst, signatureIndex, hash);
         return signatureIndex + signatureLength;
     }
 

@@ -56,8 +56,8 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        return serde.toBuffer(buffer, message);
+    public int writeBuffer(final IByteBuffer dst) {
+        return serde.toBuffer(dst, message);
     }
 
     @Override

@@ -62,8 +62,8 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        return compressionFactory.compress(decompressedBuffer, buffer);
+    public int writeBuffer(final IByteBuffer dst) {
+        return compressionFactory.compress(decompressedBuffer, dst);
     }
 
     @Override

@@ -83,8 +83,8 @@ public class StreamCompressionSynchronousWriter implements ISynchronousWriter<IB
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        compressingStreamOut.wrap(buffer.sliceFrom(PAYLOAD_INDEX));
+    public int writeBuffer(final IByteBuffer dst) {
+        compressingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
         try {
             decompressedBuffer.getBytes(0, compressingStreamIn);
             compressingStreamIn.flush();
@@ -92,7 +92,7 @@ public class StreamCompressionSynchronousWriter implements ISynchronousWriter<IB
             throw new RuntimeException(e);
         }
         final int compressedLength = compressingStreamOut.position();
-        buffer.putInt(DECOMPRESSEDLENGTH_INDEX, decompressedBuffer.capacity());
+        dst.putInt(DECOMPRESSEDLENGTH_INDEX, decompressedBuffer.capacity());
         return PAYLOAD_INDEX + compressedLength;
     }
 

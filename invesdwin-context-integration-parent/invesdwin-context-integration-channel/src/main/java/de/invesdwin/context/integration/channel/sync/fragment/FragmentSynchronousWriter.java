@@ -94,15 +94,15 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        buffer.putByte(FRAGMENTCOUNT_INDEX, fragmentCount);
-        buffer.putByte(FRAGMENT_INDEX, currentFragment);
+    public int writeBuffer(final IByteBuffer dst) {
+        dst.putByte(FRAGMENTCOUNT_INDEX, fragmentCount);
+        dst.putByte(FRAGMENT_INDEX, currentFragment);
         final int payloadLength = Integers.min(maxPayloadLength, message.remaining(currentPosition));
         if (payloadLength == 0) {
             throw new IllegalStateException("payloadLength should be positive: " + payloadLength);
         }
-        buffer.putInt(PAYLOADLENGTH_INDEX, payloadLength);
-        buffer.putBytes(PAYLOAD_INDEX, message.slice(currentPosition, payloadLength));
+        dst.putInt(PAYLOADLENGTH_INDEX, payloadLength);
+        dst.putBytes(PAYLOAD_INDEX, message.slice(currentPosition, payloadLength));
         currentPosition += payloadLength;
         final int length = PAYLOAD_INDEX + payloadLength;
         return length;

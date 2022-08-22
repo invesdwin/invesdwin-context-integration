@@ -21,6 +21,12 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
 
+    /**
+     * https://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-size-on-the-internet
+     */
+    public static final int MAX_FRAGMENTED_PACKET_SIZE = 65507;
+    public static final int MAX_UNFRAGMENTED_PACKET_SIZE = 508;
+
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
     public static final int IPTOS_THROUGHPUT = 0x08;

@@ -54,8 +54,8 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        return encryptionFactory.encrypt(decryptedBuffer, buffer);
+    public int writeBuffer(final IByteBuffer dst) {
+        return encryptionFactory.encrypt(decryptedBuffer, dst);
     }
 
     @Override

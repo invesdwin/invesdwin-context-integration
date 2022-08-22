@@ -105,7 +105,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         //drain unencrypted output
         if (outboundApplicationData.position() != 0) {
             outboundApplicationData.flip();
-            encodeLoop();
+            encode();
             final boolean hasRemaining = outboundApplicationData.hasRemaining();
             busy = hasRemaining;
             if (hasRemaining) {
@@ -150,25 +150,22 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         return busy;
     }
 
-    private void encodeLoop() throws IOException {
-        while (true) {
-            final Status status = engine.wrap(outboundApplicationDataArray, outboundEncodedData).getStatus();
-            switch (status) {
-            case BUFFER_UNDERFLOW:
-                throw new IllegalStateException("buffer underflow despite outboundApplicationData.position="
-                        + outboundApplicationData.position());
-            case BUFFER_OVERFLOW:
-                ByteBuffers.expand(outboundEncodedDataBuffer);
-                outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
-                //drain more data
-                continue;
-            case OK:
-                return;
-            case CLOSED:
-                throw FastEOFException.getInstance("Socket closed");
-            default:
-                throw UnknownArgumentException.newInstance(Status.class, status);
-            }
+    private void encode() throws IOException {
+        final Status status = engine.wrap(outboundApplicationDataArray, outboundEncodedData).getStatus();
+        switch (status) {
+        case BUFFER_UNDERFLOW:
+            throw new IllegalStateException(
+                    "buffer underflow despite outboundApplicationData.position=" + outboundApplicationData.position());
+        case BUFFER_OVERFLOW:
+            ByteBuffers.expand(outboundEncodedDataBuffer);
+            outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
+            return;
+        case OK:
+            return;
+        case CLOSED:
+            throw FastEOFException.getInstance("Socket closed");
+        default:
+            throw UnknownArgumentException.newInstance(Status.class, status);
         }
     }
 

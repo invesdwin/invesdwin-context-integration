@@ -75,10 +75,10 @@ public class CommandAsynchronousHandler<I, O>
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
-        buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());
-        final int messageLength = outputSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
+    public int writeBuffer(final IByteBuffer dst) {
+        dst.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
+        dst.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());
+        final int messageLength = outputSerde.toBuffer(dst.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
                 output.getMessage());
         final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageLength;
         return length;

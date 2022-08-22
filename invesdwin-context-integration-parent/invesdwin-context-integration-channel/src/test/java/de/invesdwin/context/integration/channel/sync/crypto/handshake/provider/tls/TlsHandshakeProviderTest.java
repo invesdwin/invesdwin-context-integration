@@ -22,7 +22,7 @@ public class TlsHandshakeProviderTest extends AChannelTest {
     public void testTlsHandshakePerformance() throws InterruptedException {
         Throwables.setDebugStackTraceEnabled(true);
         final boolean tmpfs = true;
-        final FileChannelType pipes = FileChannelType.MAPPED;
+        final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
         final File requestFile = newFile("testTlsHandshakePerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testTlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);

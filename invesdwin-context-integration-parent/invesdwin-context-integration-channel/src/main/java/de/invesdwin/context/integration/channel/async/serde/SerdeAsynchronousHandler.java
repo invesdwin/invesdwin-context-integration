@@ -63,8 +63,8 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
-        final int size = outputSerde.toBuffer(buffer, output);
+    public int writeBuffer(final IByteBuffer dst) {
+        final int size = outputSerde.toBuffer(dst, output);
         output = null;
         return size;
     }

@@ -60,9 +60,9 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer buffer) {
+    public int writeBuffer(final IByteBuffer dst) {
         //Sadly we need to copy here. E.g. StreamVerificationEncryptionSynchronousWriter spares a copy by doing this together
-        return verificationFactory.copyAndHash(unsignedBuffer, buffer, hash);
+        return verificationFactory.copyAndHash(unsignedBuffer, dst, hash);
     }
 
     @Override
