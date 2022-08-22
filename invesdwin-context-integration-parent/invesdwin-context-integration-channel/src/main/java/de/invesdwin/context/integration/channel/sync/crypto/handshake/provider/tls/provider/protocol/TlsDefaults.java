@@ -21,7 +21,7 @@ public class TlsDefaults extends AValueObject {
     private final String[] enabledProtocols;
     private final String[] supportedCiphers;
     private final String[] enabledCiphers;
-    private final Provider defaultProvider;
+    private final Provider provider;
 
     public TlsDefaults(final ITlsProtocol protocol) {
         final SSLContext context;
@@ -32,7 +32,7 @@ public class TlsDefaults extends AValueObject {
             throw new Error("failed to initialize the default SSL context", e);
         }
 
-        defaultProvider = context.getProvider();
+        provider = context.getProvider();
 
         final SSLEngine engine = context.createSSLEngine();
         supportedProtocols = engine.getSupportedProtocols();
@@ -65,8 +65,8 @@ public class TlsDefaults extends AValueObject {
         return supportedCiphers;
     }
 
-    public Provider getDefaultProvider() {
-        return defaultProvider;
+    public Provider getProvider() {
+        return provider;
     }
 
 }
