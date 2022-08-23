@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.HandshakeValidation;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
@@ -44,6 +45,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
     private final boolean server;
     private final String side;
+    private final HandshakeValidation handshakeValidation;
 
     private java.nio.ByteBuffer outboundApplicationDataSize;
     private java.nio.ByteBuffer outboundApplicationData;
@@ -58,7 +60,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     public TlsSynchronousChannel(final Duration handshakeTimeout, final InetSocketAddress socketAddress,
             final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
             final ISynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousWriter<IByteBufferProvider> underlyingWriter) {
+            final ISynchronousWriter<IByteBufferProvider> underlyingWriter,
+            final HandshakeValidation handshakeValidation) {
         this.handshakeTimeout = handshakeTimeout;
         this.socketAdddress = socketAddress;
         this.protocol = protocol;
@@ -68,6 +71,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         this.underlyingWriter = underlyingWriter;
         this.server = !engine.getUseClientMode();
         this.side = server ? "Server" : "Client";
+        this.handshakeValidation = handshakeValidation;
     }
 
     @Override
@@ -114,7 +118,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationDataSize, null };
         inboundApplicationDataArray = new java.nio.ByteBuffer[] { inboundApplicationData };
 
-        performHandshake(isValidateHandshake());
+        performHandshake();
     }
 
     public boolean action() throws IOException {
@@ -126,7 +130,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
              * be called properly. Also for DTLS the handshaker handles the packet loss of the rehandshake. The
              * application only handles packet loss for application data. So another reason to use the handshaker here.
              */
-            if (!performHandshake(false)) {
+            if (!performHandshake()) {
                 return false;
             }
         }
@@ -143,11 +147,11 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         return false;
     }
 
-    private boolean performHandshake(final boolean validateHandshake) {
+    private boolean performHandshake() {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
             handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
-                    underlyingReader, underlyingWriter, validateHandshake);
+                    underlyingReader, underlyingWriter, handshakeValidation);
             handshaker.performHandshake();
             return true;
         } catch (final EOFException e) {
@@ -157,10 +161,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         } finally {
             TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
         }
-    }
-
-    protected boolean isValidateHandshake() {
-        return false;
     }
 
     private boolean receiveAppData() throws IOException {

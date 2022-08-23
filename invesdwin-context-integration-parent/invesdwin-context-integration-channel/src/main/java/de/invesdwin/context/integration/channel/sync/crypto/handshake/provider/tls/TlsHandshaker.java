@@ -15,6 +15,7 @@ import org.apache.commons.io.HexDump;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.HandshakeValidation;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
@@ -45,11 +46,6 @@ public class TlsHandshaker {
     private static final int MAX_PRODUCT_HANDSHAKE_PACKETS_LOOPS = MAX_HANDSHAKE_LOOPS / 2;
     private static final int MAX_APP_READ_LOOPS = 60;
 
-    private static final java.nio.ByteBuffer VALIDATE_SERVER_APP = java.nio.ByteBuffer
-            .wrap("Hi Client, I'm Server".getBytes());
-    private static final java.nio.ByteBuffer VALIDATE_CLIENT_APP = java.nio.ByteBuffer
-            .wrap("Hi Server, I'm Client".getBytes());
-
     private final java.nio.ByteBuffer handshakeBuffer;
 
     private boolean server;
@@ -63,7 +59,7 @@ public class TlsHandshaker {
     private ISynchronousReader<IByteBuffer> reader;
     private ISynchronousWriter<IByteBufferProvider> writer;
 
-    private boolean validateHandshake;
+    private HandshakeValidation handshakeValidation;
 
     public TlsHandshaker() {
         this.handshakeBuffer = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
@@ -72,7 +68,7 @@ public class TlsHandshaker {
     public void init(final Duration handshakeTimeout, final SocketAddress address, final boolean server,
             final String side, final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
             final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferProvider> writer,
-            final boolean validateHandshake) {
+            final HandshakeValidation handshakeValidation) {
         this.server = server;
         this.side = side;
 
@@ -84,7 +80,7 @@ public class TlsHandshaker {
         this.reader = reader;
         this.writer = writer;
 
-        this.validateHandshake = validateHandshake;
+        this.handshakeValidation = handshakeValidation;
     }
 
     public void reset() {
@@ -99,7 +95,7 @@ public class TlsHandshaker {
         this.reader = null;
         this.writer = null;
 
-        validateHandshake = false;
+        handshakeValidation = null;
 
         this.handshakeBuffer.clear();
     }
@@ -275,17 +271,17 @@ public class TlsHandshaker {
             throw new IOException("Unexpected handshake status " + hs);
         }
 
-        if (validateHandshake) {
+        if (handshakeValidation != null) {
             if (server) {
                 // read client application data
-                receiveAppData(VALIDATE_CLIENT_APP);
+                receiveAppData(handshakeValidation.getClientPayload());
                 // write server application data
-                deliverAppData(VALIDATE_SERVER_APP);
+                deliverAppData(handshakeValidation.getServerPayload());
             } else {
                 // write client application data
-                deliverAppData(VALIDATE_CLIENT_APP);
+                deliverAppData(handshakeValidation.getClientPayload());
                 // read server application data
-                receiveAppData(VALIDATE_SERVER_APP);
+                receiveAppData(handshakeValidation.getServerPayload());
             }
 
             if (LOG.isDebugEnabled()) {

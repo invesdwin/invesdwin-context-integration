@@ -44,8 +44,8 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
         final boolean tmpfs = true;
         //we need to block here because multiple messages are written in succession
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
-        final File requestFile = newFile("testDtlsHandshakePerformance_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testDtlsHandshakePerformance_response.pipe", tmpfs, pipes);
+        final File requestFile = newFile("testSizedTlsHandshakePerformance_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testSizedTlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
         final TlsProtocol protocol = TlsProtocol.TLS;
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(

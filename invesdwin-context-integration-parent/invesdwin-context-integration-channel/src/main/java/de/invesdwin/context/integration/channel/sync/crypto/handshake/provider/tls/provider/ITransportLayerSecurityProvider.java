@@ -23,4 +23,11 @@ public interface ITransportLayerSecurityProvider {
 
     boolean isStartTlsEnabled();
 
+    /**
+     * A hint to the handshaker to send some payloads bidirectional to check if the communication works properly after
+     * the handshake. For debugging purposes. Though could also be used to validate if a re-handshaking got attacked by
+     * a Man-in-the-Middle that got access to the client certificate.
+     */
+    HandshakeValidation getHandshakeValidation();
+
 }

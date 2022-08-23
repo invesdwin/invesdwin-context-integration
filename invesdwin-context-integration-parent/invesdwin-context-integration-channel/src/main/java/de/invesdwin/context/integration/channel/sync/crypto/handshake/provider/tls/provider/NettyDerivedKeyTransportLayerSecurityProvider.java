@@ -75,6 +75,12 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
         return TlsProtocol.TLS;
     }
 
+    @Override
+    public HandshakeValidation getHandshakeValidation() {
+        //make validation unique for each host
+        return HandshakeValidation.DEFAULT.withDerivedPassword(getHostname());
+    }
+
     public boolean isServer() {
         return server;
     }

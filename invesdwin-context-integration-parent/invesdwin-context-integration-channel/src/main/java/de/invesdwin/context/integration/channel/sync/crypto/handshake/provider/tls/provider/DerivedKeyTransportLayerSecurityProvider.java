@@ -178,6 +178,11 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         return TlsProtocol.DEFAULT;
     }
 
+    @Override
+    public HandshakeValidation getHandshakeValidation() {
+        return HandshakeValidation.DEFAULT.withDerivedPassword(getHostname());
+    }
+
     /**
      * Override this to use a different provider.
      */
