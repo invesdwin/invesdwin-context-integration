@@ -130,6 +130,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                 return false;
             }
         }
+        /*
+         * we return directly because a channel will always be used by a single thread and he either writes or reads,
+         * never both at the same time
+         */
         if (receiveAppData()) {
             return true;
         }
