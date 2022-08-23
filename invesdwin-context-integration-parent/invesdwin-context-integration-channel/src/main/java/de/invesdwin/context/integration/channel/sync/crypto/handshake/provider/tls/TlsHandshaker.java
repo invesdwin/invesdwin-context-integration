@@ -43,7 +43,7 @@ public class TlsHandshaker {
 
     private static final int HANDSHAKE_BUFFER_CAPACITY = 32768;
     private static final int MAX_HANDSHAKE_LOOPS = 200;
-    private static final int MAX_PRODUCT_HANDSHAKE_PACKETS_LOOPS = MAX_HANDSHAKE_LOOPS / 2;
+    private static final int MAX_PRODUCE_HANDSHAKE_PACKETS_LOOPS = 100;
     private static final int MAX_APP_READ_LOOPS = 60;
 
     private final java.nio.ByteBuffer handshakeBuffer;
@@ -199,7 +199,7 @@ public class TlsHandshaker {
                     }
 
                     // the client maximum fragment size config does not work?
-                    throw new IOException("Buffer overflow: " + "incorrect client maximum fragment size");
+                    throw new IOException("Buffer overflow: incorrect client maximum fragment size");
                 } else if (rs == Status.BUFFER_UNDERFLOW) {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: BUFFER_UNDERFLOW, handshake status is %s", address, side, hs);
@@ -208,7 +208,7 @@ public class TlsHandshaker {
                     // bad packet, or the client maximum fragment size
                     // config does not work?
                     if (hs != HandshakeStatus.NOT_HANDSHAKING) {
-                        throw new IOException("Buffer underflow: " + "incorrect client maximum fragment size");
+                        throw new IOException("Buffer underflow: incorrect client maximum fragment size");
                     } // otherwise, ignore this packet
                 } else if (rs == Status.CLOSED) {
                     throw FastEOFException.getInstance("SSL engine closed, handshake status is " + hs);
@@ -308,7 +308,7 @@ public class TlsHandshaker {
 
         int packets = 0;
         boolean endLoops = false;
-        int loops = MAX_PRODUCT_HANDSHAKE_PACKETS_LOOPS;
+        int loops = MAX_PRODUCE_HANDSHAKE_PACKETS_LOOPS;
         while (!endLoops) {
 
             if (--loops < 0) {
@@ -337,7 +337,7 @@ public class TlsHandshaker {
             }
             if (rs == Status.BUFFER_OVERFLOW) {
                 // the client maximum fragment size config does not work?
-                throw new IOException("Buffer overflow: " + "incorrect server maximum fragment size");
+                throw new IOException("Buffer overflow: incorrect server maximum fragment size");
             } else if (rs == Status.BUFFER_UNDERFLOW) {
                 if (LOG.isDebugEnabled()) {
                     debug("%s: %s: Produce handshake packets: BUFFER_UNDERFLOW occured", address, side);
@@ -346,7 +346,7 @@ public class TlsHandshaker {
                 // bad packet, or the client maximum fragment size
                 // config does not work?
                 if (hs != HandshakeStatus.NOT_HANDSHAKING) {
-                    throw new IOException("Buffer underflow: " + "incorrect server maximum fragment size");
+                    throw new IOException("Buffer underflow: incorrect server maximum fragment size");
                 } // otherwise, ignore this packet
             } else if (rs == Status.CLOSED) {
                 throw FastEOFException.getInstance("SSLEngine has closed");
@@ -381,7 +381,7 @@ public class TlsHandshaker {
                     endInnerLoop = true;
                 } else if (nhs == HandshakeStatus.FINISHED) {
                     throw new IOException(
-                            "Unexpected status, SSLEngine.getHandshakeStatus() " + "shouldn't return FINISHED");
+                            "Unexpected status, SSLEngine.getHandshakeStatus() shouldn't return FINISHED");
                 } else {
                     throw new IOException("Can't reach here, handshake status is " + nhs);
                 }
@@ -426,7 +426,7 @@ public class TlsHandshaker {
         final Status rs = r.getStatus();
         if (rs == Status.BUFFER_OVERFLOW) {
             // the client maximum fragment size config does not work?
-            throw new IOException("Buffer overflow: " + "incorrect server maximum fragment size");
+            throw new IOException("Buffer overflow: incorrect server maximum fragment size");
         } else if (rs == Status.BUFFER_UNDERFLOW) {
             // unlikely
             throw new IOException("Buffer underflow during wraping");
