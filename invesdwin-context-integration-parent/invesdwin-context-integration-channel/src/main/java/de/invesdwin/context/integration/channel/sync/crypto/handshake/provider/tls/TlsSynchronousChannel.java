@@ -40,7 +40,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private java.nio.ByteBuffer outboundApplicationData;
     private IByteBuffer outboundEncodedDataBuffer;
     private java.nio.ByteBuffer outboundEncodedData;
-    private IByteBuffer inboundEncodedDataBuffer;
     private java.nio.ByteBuffer inboundEncodedData;
     private IByteBuffer inboundApplicationDataBuffer;
     private java.nio.ByteBuffer inboundApplicationData;
@@ -100,8 +99,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
         outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
-        inboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
-        inboundEncodedData = inboundEncodedDataBuffer.asNioByteBuffer();
         // eliminates array creation on each call to SSLEngine.wrap()
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationData };
         inboundApplicationDataArray = new java.nio.ByteBuffer[] { inboundApplicationData };
@@ -121,27 +118,37 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         boolean busy = false;
 
         //read encrypted data
-        if (underlyingReader.hasNext()) {
+        if (inboundEncodedData == null && underlyingReader.hasNext()) {
             final IByteBuffer encodedMessage = underlyingReader.readMessage();
-
-            final int positionBefore = inboundEncodedData.position();
-            inboundEncodedDataBuffer.putBytes(positionBefore, encodedMessage);
-            underlyingReader.readFinished();
-            final int length = encodedMessage.capacity();
-            ByteBuffers.position(inboundEncodedData, positionBefore + length);
-            busy |= length != 0;
+            inboundEncodedData = encodedMessage.asNioByteBuffer();
         }
 
         //decrypt data and make it available to the reader
-        if (inboundEncodedData.position() != 0) {
-            inboundEncodedData.flip();
-            engine.unwrap(inboundEncodedData, inboundApplicationDataArray);
+        if (inboundEncodedData != null) {
+            final Status status = engine.unwrap(inboundEncodedData, inboundApplicationDataArray).getStatus();
+            switch (status) {
+            case BUFFER_UNDERFLOW:
+                throw new IllegalStateException("underflow should not happen here");
+            case BUFFER_OVERFLOW:
+                final int positionBefore = inboundApplicationData.position();
+                ByteBuffers.expand(inboundApplicationDataBuffer);
+                inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
+                ByteBuffers.position(inboundApplicationData, positionBefore);
+                inboundApplicationDataArray[0] = inboundApplicationData;
+                break;
+            case OK:
+                break;
+            case CLOSED:
+                throw FastEOFException.getInstance("closed");
+            default:
+                throw UnknownArgumentException.newInstance(Status.class, status);
+            }
             final boolean hasRemaining = inboundEncodedData.hasRemaining();
             busy |= hasRemaining;
-            if (hasRemaining) {
-                inboundEncodedData.compact();
-            } else {
+            if (!hasRemaining) {
                 inboundEncodedData.clear();
+                inboundEncodedData = null;
+                underlyingReader.readFinished();
             }
         }
         return busy;
@@ -158,8 +165,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                 throw new IllegalStateException("buffer underflow despite outboundApplicationData.position="
                         + outboundApplicationData.position());
             case BUFFER_OVERFLOW:
-                ByteBuffers.expand(outboundEncodedDataBuffer);
-                outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
+                //just send over the data chunk
                 break;
             case OK:
                 break;
@@ -171,7 +177,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             final boolean hasRemaining = outboundApplicationData.hasRemaining();
             busy |= hasRemaining;
             if (hasRemaining) {
-                outboundApplicationData.compact();
+                if (outboundApplicationData.position() != 0) {
+                    outboundApplicationData.compact();
+                    outboundApplicationData.flip();
+                }
             } else {
                 outboundApplicationData.clear();
             }
@@ -227,7 +236,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         outboundEncodedDataBuffer = null;
         outboundApplicationData = null;
         outboundEncodedData = null;
-        inboundEncodedDataBuffer = null;
         inboundApplicationData = null;
         inboundEncodedData = null;
         outboundApplicationDataArray = null;
