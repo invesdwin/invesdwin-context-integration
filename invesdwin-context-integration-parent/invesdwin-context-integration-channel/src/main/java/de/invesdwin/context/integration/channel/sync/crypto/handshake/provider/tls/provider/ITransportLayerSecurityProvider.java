@@ -27,6 +27,11 @@ public interface ITransportLayerSecurityProvider {
      * A hint to the handshaker to send some payloads bidirectional to check if the communication works properly after
      * the handshake. For debugging purposes. Though could also be used to validate if a re-handshaking got attacked by
      * a Man-in-the-Middle that got access to the client certificate.
+     * 
+     * Though this will not help when certificates or certificate validation on both sides is disabled. In that case
+     * this only prevents other applications from entering, but does not prevent a Man-in-the-Middle-Attack from
+     * impersonating both sides by interchanging their respective certificates.
+     * (https://stackoverflow.com/questions/50033054/can-a-man-in-the-middle-attack-on-an-https-read-all-the-communication)
      */
     HandshakeValidation getHandshakeValidation();
 

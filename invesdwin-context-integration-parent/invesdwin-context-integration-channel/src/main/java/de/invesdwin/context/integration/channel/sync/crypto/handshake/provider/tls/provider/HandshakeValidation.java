@@ -31,7 +31,9 @@ public class HandshakeValidation extends AValueObject {
     /**
      * Adds the application pepper and password to the handshake validator so that no outside application without
      * knowledge of the pepper and password can create a validated handshake with our application. For instance useful
-     * when client auth is disabled and we want a different way to authenticate clients.
+     * when client auth is disabled and we want a different way to authenticate clients without requiring their
+     * certificates. This will not help against Man-in-the-Middle-Attacks when the client trusts any server certificate.
+     * So beware of always validating one side at minimum.
      */
     //CHECKSTYLE:OFF
     public HandshakeValidation withDerivedPassword(final String password) {
