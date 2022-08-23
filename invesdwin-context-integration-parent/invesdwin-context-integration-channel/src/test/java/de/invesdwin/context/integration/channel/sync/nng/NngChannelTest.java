@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.sync.nng.type.NngSocketType;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Requires: apt install libnanomsg5
@@ -74,13 +74,13 @@ public class NngChannelTest extends AChannelTest {
 
     private void runNngPerformanceTest(final INngSocketType socketType, final String responseChannel,
             final String requestChannel) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new NngSynchronousWriter(socketType,
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NngSynchronousWriter(socketType,
                 responseChannel, true);
         final ISynchronousReader<IByteBuffer> requestReader = new NngSynchronousReader(socketType, requestChannel,
                 true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNngPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new NngSynchronousWriter(socketType, requestChannel,
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NngSynchronousWriter(socketType, requestChannel,
                 false);
         final ISynchronousReader<IByteBuffer> responseReader = new NngSynchronousReader(socketType, responseChannel,
                 false);

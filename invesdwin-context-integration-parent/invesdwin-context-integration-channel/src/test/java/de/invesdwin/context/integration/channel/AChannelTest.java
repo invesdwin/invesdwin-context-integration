@@ -56,7 +56,7 @@ import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FDates;
@@ -196,23 +196,23 @@ public abstract class AChannelTest extends ATest {
 
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapper) throws InterruptedException {
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapper) throws InterruptedException {
         runPerformanceTest(pipes, requestFile, responseFile, synchronizeRequest, synchronizeResponse, wrapper, wrapper);
     }
 
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperServer,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> wrapperClient)
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapperServer,
+            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapperClient)
             throws InterruptedException {
         try {
-            final ISynchronousWriter<IByteBufferWriter> responseWriter = maybeSynchronize(
+            final ISynchronousWriter<IByteBufferProvider> responseWriter = maybeSynchronize(
                     wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
             final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(
                     wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-            final ISynchronousWriter<IByteBufferWriter> requestWriter = maybeSynchronize(
+            final ISynchronousWriter<IByteBufferProvider> requestWriter = maybeSynchronize(
                     wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
             final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(
                     wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
@@ -245,7 +245,7 @@ public abstract class AChannelTest extends ATest {
         return MAX_MESSAGE_SIZE;
     }
 
-    protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
+    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
             return new NativePipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
@@ -261,7 +261,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected IAsynchronousHandler<IByteBuffer, IByteBufferWriter> newCommandHandler(
+    protected IAsynchronousHandler<IByteBuffer, IByteBufferProvider> newCommandHandler(
             final IAsynchronousHandler<FDate, FDate> handler) {
         return new SerdeAsynchronousHandler<>(handler, FDateSerde.GET, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
@@ -270,7 +270,7 @@ public abstract class AChannelTest extends ATest {
         return new SerdeSynchronousReader<FDate>(reader, FDateSerde.GET);
     }
 
-    protected ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    protected ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 

@@ -9,7 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
@@ -17,13 +17,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 @NotThreadSafe
-public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private NettySocketSynchronousChannel channel;
     private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
-    private Consumer<IByteBufferWriter> writer;
+    private Consumer<IByteBufferProvider> writer;
 
     public NettySocketSynchronousWriter(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
@@ -91,13 +91,13 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public void write(final IByteBufferWriter message) {
+    public void write(final IByteBufferProvider message) {
         writeFuture(message);
     }
 
-    private void writeFuture(final IByteBufferWriter message) {
+    private void writeFuture(final IByteBufferProvider message) {
         buf.setIndex(0, 0); //reset indexes
-        final int size = message.writeBuffer(messageBuffer);
+        final int size = message.getBuffer(messageBuffer);
         buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up

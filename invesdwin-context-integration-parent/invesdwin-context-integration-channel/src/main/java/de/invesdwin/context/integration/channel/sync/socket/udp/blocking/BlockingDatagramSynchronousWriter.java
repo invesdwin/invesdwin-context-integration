@@ -13,11 +13,11 @@ import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     public static final boolean SERVER = false;
     private BlockingDatagramSynchronousChannel channel;
@@ -67,8 +67,8 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         packetBuffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
         packet.setData(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size);
         socket.send(packet);

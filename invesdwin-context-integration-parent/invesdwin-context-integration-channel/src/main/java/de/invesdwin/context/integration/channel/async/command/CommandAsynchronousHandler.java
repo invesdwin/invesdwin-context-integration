@@ -11,11 +11,11 @@ import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandS
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class CommandAsynchronousHandler<I, O>
-        implements IAsynchronousHandler<IByteBuffer, IByteBufferWriter>, IByteBufferWriter {
+        implements IAsynchronousHandler<IByteBuffer, IByteBufferProvider>, IByteBufferProvider {
 
     private final IAsynchronousHandler<ISynchronousCommand<I>, ISynchronousCommand<O>> delegate;
     private final ISerde<I> inputSerde;
@@ -36,7 +36,7 @@ public class CommandAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferWriter open() throws IOException {
+    public IByteBufferProvider open() throws IOException {
         output = delegate.open();
         if (output != null) {
             return this;
@@ -46,7 +46,7 @@ public class CommandAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferWriter handle(final IByteBuffer inputBuffer) throws IOException {
+    public IByteBufferProvider handle(final IByteBuffer inputBuffer) throws IOException {
         final int type = inputBuffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = inputBuffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);
         final int messageLength = inputBuffer.capacity() - SynchronousCommandSerde.MESSAGE_INDEX;
@@ -75,7 +75,7 @@ public class CommandAsynchronousHandler<I, O>
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         dst.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
         dst.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());
         final int messageLength = outputSerde.toBuffer(dst.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
@@ -90,7 +90,7 @@ public class CommandAsynchronousHandler<I, O>
             //needs to be expandable so that FragmentSynchronousWriter can work properly
             outputBuffer = ByteBuffers.allocateExpandable(this.outputFixedLength);
         }
-        final int length = writeBuffer(outputBuffer);
+        final int length = getBuffer(outputBuffer);
         return outputBuffer.slice(0, length);
     }
 

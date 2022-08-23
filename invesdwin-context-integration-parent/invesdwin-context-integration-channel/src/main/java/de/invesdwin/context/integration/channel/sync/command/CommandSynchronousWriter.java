@@ -8,12 +8,12 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchronousCommand<M>>, IByteBufferWriter {
+public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchronousCommand<M>>, IByteBufferProvider {
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
     private final Integer maxMessageLength;
     private final int fixedLength;
@@ -21,9 +21,9 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     private ISynchronousCommand<M> message;
 
     @SuppressWarnings("unchecked")
-    public CommandSynchronousWriter(final ISynchronousWriter<? extends IByteBufferWriter> delegate,
+    public CommandSynchronousWriter(final ISynchronousWriter<? extends IByteBufferProvider> delegate,
             final ISerde<M> messageSerde, final Integer maxMessageLength) {
-        this.delegate = (ISynchronousWriter<IByteBufferWriter>) delegate;
+        this.delegate = (ISynchronousWriter<IByteBufferProvider>) delegate;
         this.messageSerde = messageSerde;
         this.maxMessageLength = maxMessageLength;
         this.fixedLength = SynchronousCommandSerde.newFixedLength(maxMessageLength);
@@ -41,7 +41,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
         return fixedLength;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -67,7 +67,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         dst.putInt(SynchronousCommandSerde.TYPE_INDEX, message.getType());
         dst.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, message.getSequence());
         final int messageLength = messageSerde.toBuffer(dst.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
@@ -82,7 +82,7 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
             //needs to be expandable so that FragmentSynchronousWriter can work properly
             buffer = ByteBuffers.allocateExpandable(fixedLength);
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

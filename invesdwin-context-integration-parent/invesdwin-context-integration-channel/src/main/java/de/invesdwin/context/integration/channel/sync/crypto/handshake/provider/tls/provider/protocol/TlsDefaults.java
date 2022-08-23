@@ -46,7 +46,7 @@ public class TlsDefaults extends AValueObject {
      * Can use a different provider here.
      */
     protected SSLContext newContext(final ITlsProtocol protocol) throws NoSuchAlgorithmException {
-        return SSLContext.getInstance(protocol.getName());
+        return SSLContext.getInstance(protocol.getFamily());
     }
 
     public String[] getSupportedProtocols() {

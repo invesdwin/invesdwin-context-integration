@@ -27,7 +27,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
@@ -102,12 +102,12 @@ public class AgronaChannelTest extends AChannelTest {
     private void runAgronaRingBufferPerformanceTest(final org.agrona.concurrent.ringbuffer.RingBuffer responseChannel,
             final org.agrona.concurrent.ringbuffer.RingBuffer requestChannel, final boolean zeroCopy)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new RingBufferSynchronousWriter(responseChannel,
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new RingBufferSynchronousWriter(responseChannel,
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBuffer> requestReader = new RingBufferSynchronousReader(requestChannel, zeroCopy);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaRingBufferPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new RingBufferSynchronousWriter(requestChannel,
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new RingBufferSynchronousWriter(requestChannel,
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBuffer> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
@@ -126,11 +126,11 @@ public class AgronaChannelTest extends AChannelTest {
 
     private void runAgronaBroadcastPerformanceTest(final AtomicBuffer responseChannel,
             final AtomicBuffer requestChannel) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new BroadcastSynchronousWriter(responseChannel);
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new BroadcastSynchronousWriter(responseChannel);
         final ISynchronousReader<IByteBuffer> requestReader = new BroadcastSynchronousReader(requestChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaBroadcastPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new BroadcastSynchronousWriter(requestChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new BroadcastSynchronousWriter(requestChannel);
         final ISynchronousReader<IByteBuffer> responseReader = new BroadcastSynchronousReader(responseChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

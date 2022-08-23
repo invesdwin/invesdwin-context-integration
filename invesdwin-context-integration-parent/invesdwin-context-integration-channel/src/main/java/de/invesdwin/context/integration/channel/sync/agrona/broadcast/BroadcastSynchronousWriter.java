@@ -12,11 +12,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -53,7 +53,7 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         writer.write(message);
     }
 
@@ -69,8 +69,8 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
         }
 
         @Override
-        public void write(final IByteBufferWriter message) throws IOException {
-            final int size = message.writeBuffer(messageBuffer);
+        public void write(final IByteBufferProvider message) throws IOException {
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
             send(MESSAGE_INDEX + size);
         }
@@ -82,7 +82,7 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
     }
 
     private interface IWriter {
-        void write(IByteBufferWriter message) throws IOException;
+        void write(IByteBufferProvider message) throws IOException;
     }
 
 }

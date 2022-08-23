@@ -8,27 +8,27 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Encrypts each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final IEncryptionFactory encryptionFactory;
     private IByteBuffer buffer;
 
     private IByteBuffer decryptedBuffer;
 
-    public EncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+    public EncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
             final IEncryptionFactory encryptionFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -44,7 +44,7 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.decryptedBuffer = message.asBuffer();
         try {
             delegate.write(this);
@@ -54,7 +54,7 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         return encryptionFactory.encrypt(decryptedBuffer, dst);
     }
 
@@ -63,7 +63,7 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

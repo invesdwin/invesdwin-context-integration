@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -46,7 +46,7 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
         final ITransportLayerSecurityProvider tlsProvider = newTransportLayerSecurityProvider();
         final SSLEngine engine = tlsProvider.newEngine();
         final ISynchronousReader<IByteBuffer> underlyingReader = channel.getReader().getUnderlyingReader();
-        final ISynchronousWriter<IByteBufferWriter> underlyingWriter = channel.getWriter().getUnderlyingWriter();
+        final ISynchronousWriter<IByteBufferProvider> underlyingWriter = channel.getWriter().getUnderlyingWriter();
         final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
 
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
@@ -59,7 +59,7 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
             TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
         }
 
-        final IgnoreOpenCloseSynchronousWriter<IByteBufferWriter> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
+        final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
                 .valueOf(underlyingWriter);
         final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(underlyingReader);

@@ -11,7 +11,7 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
      * @deprecated SSLv2Hello is no longer secure. Consider using {@link #TLS_v1_2} or {@link #TLS_v1_3}
      */
     @Deprecated
-    SSL_v2_HELLO("SSLv2Hello", false),
+    SSL_v2_HELLO(TlsProtocol.SSL, "SSLv2Hello"),
 
     /**
      * SSL v2
@@ -19,7 +19,7 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
      * @deprecated SSLv2 is no longer secure. Consider using {@link #TLS_v1_2} or {@link #TLS_v1_3}
      */
     @Deprecated
-    SSL_v2("SSLv2", false),
+    SSL_v2(TlsProtocol.SSL, "SSLv2"),
 
     /**
      * SSLv3
@@ -27,7 +27,7 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
      * @deprecated SSLv3 is no longer secure. Consider using {@link #TLS_v1_2} or {@link #TLS_v1_3}
      */
     @Deprecated
-    SSL_v3("SSLv3", false),
+    SSL_v3(TlsProtocol.SSL, "SSLv3"),
 
     /**
      * TLS v1
@@ -35,7 +35,7 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
      * @deprecated TLSv1 is no longer secure. Consider using {@link #TLS_v1_2} or {@link #TLS_v1_3}
      */
     @Deprecated
-    TLS_v1("TLSv1", false),
+    TLS_v1(TlsProtocol.TLS, "TLSv1"),
 
     /**
      * TLS v1.1
@@ -43,37 +43,42 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
      * @deprecated TLSv1.1 is no longer secure. Consider using {@link #TLS_v1_2} or {@link #TLS_v1_3}
      */
     @Deprecated
-    TLS_v1_1("TLSv1.1", false),
+    TLS_v1_1(TlsProtocol.TLS, "TLSv1.1"),
 
     /**
      * TLS v1.2
      */
-    TLS_v1_2("TLSv1.2", false),
+    TLS_v1_2(TlsProtocol.TLS, "TLSv1.2"),
 
     /**
      * TLS v1.3
      */
-    TLS_v1_3("TLSv1.3", false),
+    TLS_v1_3(TlsProtocol.TLS, "TLSv1.3"),
     /**
      * DTLS v1.0
      */
-    DTLS_v1_0("DTLSv1.0", true),
+    DTLS_v1_0(TlsProtocol.DTLS, "DTLSv1.0"),
     /**
      * DTLS v1.3
      */
-    DTLS_v1_3("DTLSv1.3", true);
+    DTLS_v1_3(TlsProtocol.DTLS, "DTLSv1.3");
 
+    private ITlsProtocol family;
     private String name;
-    private boolean recovery;
 
-    VersionedTlsProtocol(final String name, final boolean recovery) {
+    VersionedTlsProtocol(final ITlsProtocol family, final String name) {
+        this.family = family;
         this.name = name;
-        this.recovery = recovery;
     }
 
     @Override
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String getFamily() {
+        return family.getFamily();
     }
 
     @Override
@@ -83,7 +88,12 @@ public enum VersionedTlsProtocol implements ITlsProtocol {
 
     @Override
     public boolean isHandshakeTimeoutRecoveryEnabled() {
-        return recovery;
+        return family.isHandshakeTimeoutRecoveryEnabled();
+    }
+
+    @Override
+    public boolean isVersioned() {
+        return true;
     }
 
 }

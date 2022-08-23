@@ -13,7 +13,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.uri.Addresses;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class KryonetChannelTest extends AChannelTest {
@@ -30,13 +30,13 @@ public class KryonetChannelTest extends AChannelTest {
 
     private void runKryonetPerformanceTest(final InetAddress address, final int responseTcpPort,
             final int responseUdpPort, final int requestTcpPort, final int requestUdpPort) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new KryonetSynchronousWriter(address,
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new KryonetSynchronousWriter(address,
                 responseTcpPort, responseUdpPort, true);
         final ISynchronousReader<IByteBuffer> requestReader = new KryonetSynchronousReader(address, requestTcpPort,
                 requestUdpPort, false);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new KryonetSynchronousWriter(address,
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new KryonetSynchronousWriter(address,
                 requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBuffer> responseReader = new KryonetSynchronousReader(address, responseTcpPort,
                 responseUdpPort, false);

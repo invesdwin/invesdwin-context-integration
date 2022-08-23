@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.channel.sync.jeromq.type.IJeromqSocketTy
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.extend.ArrayExpandableByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -22,7 +22,7 @@ import zmq.ZError;
 
 @NotThreadSafe
 public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private ArrayExpandableByteBuffer buffer;
     private IByteBuffer messageBuffer;
@@ -61,8 +61,8 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         sendRetrying(size + messageIndex);
     }
 

@@ -11,13 +11,13 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private NettySocketSynchronousChannel channel;
     private FileDescriptor fd;
@@ -76,9 +76,9 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
-            final int size = message.writeBuffer(messageBuffer);
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
             writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {

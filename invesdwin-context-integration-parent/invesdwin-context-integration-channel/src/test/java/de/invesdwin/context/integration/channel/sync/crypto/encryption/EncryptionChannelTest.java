@@ -17,7 +17,7 @@ import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class EncryptionChannelTest extends AChannelTest {
@@ -53,7 +53,7 @@ public class EncryptionChannelTest extends AChannelTest {
     }
 
     @Override
-    protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
+    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         return new EncryptionSynchronousWriter(super.newWriter(file, pipes), ENCRYPTION_FACTORY);
     }
 

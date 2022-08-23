@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
@@ -19,7 +19,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
-public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     public static final boolean SERVER = false;
     private NettyDatagramSynchronousChannel channel;
@@ -102,13 +102,13 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     @Override
-    public void write(final IByteBufferWriter message) {
+    public void write(final IByteBufferProvider message) {
         writeFuture(message);
     }
 
-    private void writeFuture(final IByteBufferWriter message) {
+    private void writeFuture(final IByteBufferProvider message) {
         buf.setIndex(0, 0); //reset indexes
-        final int size = message.writeBuffer(messageBuffer);
+        final int size = message.getBuffer(messageBuffer);
         buffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
         buf.retain(); //keep retain count up

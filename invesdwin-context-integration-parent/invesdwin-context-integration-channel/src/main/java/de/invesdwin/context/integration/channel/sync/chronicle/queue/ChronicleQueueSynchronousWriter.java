@@ -8,14 +8,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ChronicleDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
 public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private ExcerptAppender appender;
     private final ChronicleDelegateByteBuffer wrappedBuffer = new ChronicleDelegateByteBuffer(
@@ -42,12 +42,12 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try (DocumentContext doc = appender.writingDocument()) {
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
             wrappedBuffer.setDelegate(bytes);
             final int position = Integers.checkedCast(bytes.writePosition());
-            final int length = message.writeBuffer(wrappedBuffer.sliceFrom(position));
+            final int length = message.getBuffer(wrappedBuffer.sliceFrom(position));
             bytes.writePosition(position + length);
         }
     }

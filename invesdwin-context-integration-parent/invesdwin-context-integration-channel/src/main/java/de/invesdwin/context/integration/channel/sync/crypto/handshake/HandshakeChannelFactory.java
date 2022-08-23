@@ -7,7 +7,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Usage is:
@@ -26,7 +26,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
  * can be used to disable the handshake.
  */
 @NotThreadSafe
-public class HandshakeChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> {
+public class HandshakeChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
 
     private final IHandshakeProvider handshakeProvider;
     private HandshakeChannel handshakeChannel;
@@ -51,7 +51,7 @@ public class HandshakeChannelFactory implements ISynchronousChannelFactory<IByte
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         if (handshakeChannel == null) {
             handshakeChannel = new HandshakeChannel(handshakeProvider);
         }

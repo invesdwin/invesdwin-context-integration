@@ -11,13 +11,14 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 import io.aeron.ConcurrentPublication;
 import io.aeron.Publication;
 
 @NotThreadSafe
-public class AeronSynchronousWriter extends AAeronSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
+public class AeronSynchronousWriter extends AAeronSynchronousChannel
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private ConcurrentPublication publication;
     private boolean connected;
@@ -56,8 +57,8 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel implements 
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(buffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(buffer);
         sendRetrying(size);
     }
 

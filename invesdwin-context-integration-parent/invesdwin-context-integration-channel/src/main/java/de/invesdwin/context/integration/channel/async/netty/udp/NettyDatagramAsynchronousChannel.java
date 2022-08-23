@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchr
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -25,11 +25,11 @@ import io.netty.channel.socket.DatagramPacket;
 public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     private NettyDatagramSynchronousChannel channel;
-    private final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler;
+    private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
     private Reader reader;
 
     public NettyDatagramAsynchronousChannel(final NettyDatagramSynchronousChannel channel,
-            final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler) {
+            final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler) {
         channel.setReaderRegistered();
         channel.setWriterRegistered();
         channel.setKeepBootstrapRunningAfterOpen();
@@ -87,7 +87,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
     }
 
     private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
-        private final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler;
+        private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
         private final InetSocketAddress recipient;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
@@ -98,7 +98,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         private int size = -1;
         private boolean closed = false;
 
-        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferWriter> handler,
+        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler,
                 final InetSocketAddress recipient, final int socketSize) {
             this.handler = handler;
             this.recipient = recipient;
@@ -121,7 +121,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
             try {
-                final IByteBufferWriter output = handler.open();
+                final IByteBufferProvider output = handler.open();
                 writeOutput(ctx, recipient, output);
             } catch (final IOException e) {
                 close();
@@ -175,7 +175,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
-                    final IByteBufferWriter output = handler.handle(input);
+                    final IByteBufferProvider output = handler.handle(input);
                     writeOutput(ctx, sender, output);
                 } catch (final IOException e) {
                     writeOutput(ctx, sender, ClosedByteBuffer.INSTANCE);
@@ -190,10 +190,10 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         }
 
         private void writeOutput(final ChannelHandlerContext ctx, final InetSocketAddress sender,
-                final IByteBufferWriter output) {
+                final IByteBufferProvider output) {
             if (output != null) {
                 buf.setIndex(0, 0); //reset indexes
-                final int size = output.writeBuffer(messageBuffer);
+                final int size = output.getBuffer(messageBuffer);
                 buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
                 buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
                 buf.retain();

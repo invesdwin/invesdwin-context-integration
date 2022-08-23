@@ -12,7 +12,7 @@ import de.invesdwin.context.security.crypto.verification.hash.stream.LayeredHash
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.DisabledByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.stream.ExpandableByteBufferOutputStream;
 
 /**
@@ -21,14 +21,14 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ExpandableByteBufferOutputS
  */
 @NotThreadSafe
 public class StreamVerifiedEncryptionSynchronousWriter
-        implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+        implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
     public static final int DECRYPTEDLENGTH_INDEX = 0;
     public static final int DECRYPTEDLENGTH_SIZE = Integer.BYTES;
 
     public static final int PAYLOAD_INDEX = DECRYPTEDLENGTH_INDEX + DECRYPTEDLENGTH_SIZE;
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
@@ -39,14 +39,14 @@ public class StreamVerifiedEncryptionSynchronousWriter
     private LayeredHashOutputStream signatureStreamIn;
     private OutputStream encryptingStreamIn;
 
-    public StreamVerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+    public StreamVerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
             final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
         this.verificationFactory = verificationFactory;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -74,7 +74,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.decryptedBuffer = message.asBuffer();
         try {
             delegate.write(this);
@@ -84,7 +84,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         signatureStreamIn.init(); //in case of exceptions, it is lazy
         encryptingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
         try {
@@ -106,7 +106,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

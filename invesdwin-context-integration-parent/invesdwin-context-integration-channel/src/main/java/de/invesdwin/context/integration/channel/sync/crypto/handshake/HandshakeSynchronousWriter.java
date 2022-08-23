@@ -8,17 +8,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private final HandshakeChannel parent;
 
-    private ISynchronousWriter<IByteBufferWriter> underlyingWriter;
+    private ISynchronousWriter<IByteBufferProvider> underlyingWriter;
     @GuardedBy("this during handshake")
-    private ISynchronousWriter<IByteBufferWriter> encryptedWriter;
+    private ISynchronousWriter<IByteBufferProvider> encryptedWriter;
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
@@ -26,20 +26,20 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
         this.parent = parent;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getUnderlyingWriter() {
+    public ISynchronousWriter<IByteBufferProvider> getUnderlyingWriter() {
         return underlyingWriter;
     }
 
-    public void setUnderlyingWriter(final ISynchronousWriter<IByteBufferWriter> underlyingWriter) {
+    public void setUnderlyingWriter(final ISynchronousWriter<IByteBufferProvider> underlyingWriter) {
         assert this.underlyingWriter == null : "Please always retrieve a reader/writer pair for the handshake to initialize properly. The writer was requested twice in a row which is unsupported.";
         this.underlyingWriter = underlyingWriter;
     }
 
-    public synchronized ISynchronousWriter<IByteBufferWriter> getEncryptedWriter() {
+    public synchronized ISynchronousWriter<IByteBufferProvider> getEncryptedWriter() {
         return encryptedWriter;
     }
 
-    public synchronized void setEncryptedWriter(final ISynchronousWriter<IByteBufferWriter> encryptedWriter) {
+    public synchronized void setEncryptedWriter(final ISynchronousWriter<IByteBufferProvider> encryptedWriter) {
         this.encryptedWriter = encryptedWriter;
     }
 
@@ -89,7 +89,7 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         if (encryptedWriter == null) {
             //wait for handshake
             try {

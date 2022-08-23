@@ -8,11 +8,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class StreamVerifiedEncryptionChannelFactory
-        implements ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> {
+        implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
@@ -29,7 +29,7 @@ public class StreamVerifiedEncryptionChannelFactory
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new StreamVerifiedEncryptionSynchronousWriter(writer, encryptionFactory, verificationFactory);
     }
 

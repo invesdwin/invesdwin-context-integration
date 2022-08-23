@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.sync.jeromq.type.JeromqSocketTyp
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class JeromqChannelTest extends AChannelTest {
@@ -68,13 +68,13 @@ public class JeromqChannelTest extends AChannelTest {
 
     private void runJeromqPerformanceTest(final IJeromqSocketType socketType, final String responseChannel,
             final String requestChannel) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new JeromqSynchronousWriter(socketType,
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new JeromqSynchronousWriter(socketType,
                 responseChannel, true);
         final ISynchronousReader<IByteBuffer> requestReader = new JeromqSynchronousReader(socketType, requestChannel,
                 true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new JeromqSynchronousWriter(socketType,
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new JeromqSynchronousWriter(socketType,
                 requestChannel, false);
         final ISynchronousReader<IByteBuffer> responseReader = new JeromqSynchronousReader(socketType, responseChannel,
                 false);

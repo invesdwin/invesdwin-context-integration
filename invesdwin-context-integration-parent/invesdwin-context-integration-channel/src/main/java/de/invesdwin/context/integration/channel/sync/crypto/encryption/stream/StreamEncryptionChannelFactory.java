@@ -7,10 +7,10 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class StreamEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> {
+public class StreamEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
 
@@ -24,7 +24,7 @@ public class StreamEncryptionChannelFactory implements ISynchronousChannelFactor
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new StreamEncryptionSynchronousWriter(writer, encryptionFactory);
     }
 

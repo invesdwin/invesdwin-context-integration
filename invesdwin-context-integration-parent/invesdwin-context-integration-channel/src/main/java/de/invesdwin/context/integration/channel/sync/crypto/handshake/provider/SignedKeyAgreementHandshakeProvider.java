@@ -27,7 +27,7 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * This implementation achieves forward security and non-repudiation even if the pre shared pepper and password are
@@ -55,13 +55,13 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
 
     @Override
     protected void performHandshake(final HandshakeChannel channel,
-            final IgnoreOpenCloseSynchronousWriter<IByteBufferWriter> ignoreOpenCloseWriter,
-            final ISynchronousWriter<IByteBufferWriter> unsignedHandshakeWriter,
+            final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter,
+            final ISynchronousWriter<IByteBufferProvider> unsignedHandshakeWriter,
             final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader,
             final ISynchronousReader<IByteBuffer> unsignedHandshakeReader) throws IOException {
         final SignatureKey ourSignatureKey = getOurSignatureKey();
 
-        final ISynchronousWriter<IByteBufferWriter> signedHandshakeWriter;
+        final ISynchronousWriter<IByteBufferProvider> signedHandshakeWriter;
         final ISynchronousReader<IByteBuffer> signedHandshakeReader;
         unsignedHandshakeWriter.open();
         try {
@@ -130,7 +130,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
         return ISignatureAlgorithm.getDefault();
     }
 
-    protected ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newSignedHandshakeChannelFactory(
+    protected ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newSignedHandshakeChannelFactory(
             final SignatureKey signatureKey) {
         final DerivedKeyProvider symmetricDerivedKeyProvider = DerivedKeyProvider
                 .fromPassword(CryptoProperties.DEFAULT_PEPPER, "handshake-" + getKeyAgreementAlgorithm());
@@ -144,7 +144,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
      * impersonations/hijacking of other connections.
      */
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newAuthenticatedHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return unsignedProvider.newAuthenticatedHandshakeChannelFactory();
     }
 
@@ -169,7 +169,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     }
 
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> newEncryptedChannelFactory(
+    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newEncryptedChannelFactory(
             final IDerivedKeyProvider derivedKeyProvider) {
         return unsignedProvider.newEncryptedChannelFactory(derivedKeyProvider);
     }

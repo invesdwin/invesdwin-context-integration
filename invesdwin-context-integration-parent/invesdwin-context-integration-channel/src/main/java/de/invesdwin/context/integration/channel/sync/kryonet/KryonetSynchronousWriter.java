@@ -7,11 +7,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     public KryonetSynchronousWriter(final InetAddress address, final int tcpPort, final int udpPort,
             final boolean server) {
@@ -31,7 +31,7 @@ public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         connection.send(message);
     }
 

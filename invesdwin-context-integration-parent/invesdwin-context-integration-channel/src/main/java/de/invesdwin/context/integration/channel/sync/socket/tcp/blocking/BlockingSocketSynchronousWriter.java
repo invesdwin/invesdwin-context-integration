@@ -10,11 +10,11 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
-public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     protected BlockingSocketSynchronousChannel channel;
     private OutputStream out;
@@ -62,9 +62,9 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
-            final int size = message.writeBuffer(messageBuffer);
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(BlockingSocketSynchronousChannel.SIZE_INDEX, size);
             buffer.getBytesTo(0, out, BlockingSocketSynchronousChannel.MESSAGE_INDEX + size);
             out.flush();

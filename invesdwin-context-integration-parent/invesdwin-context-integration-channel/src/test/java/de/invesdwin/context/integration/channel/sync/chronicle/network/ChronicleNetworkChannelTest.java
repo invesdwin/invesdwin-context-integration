@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class ChronicleNetworkChannelTest extends AChannelTest {
@@ -30,13 +30,13 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new ChronicleNetworkSynchronousWriter(
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleNetworkSynchronousWriter(
                 newChronicleNetworkSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> requestReader = new ChronicleNetworkSynchronousReader(
                 newChronicleNetworkSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runChronicleSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new ChronicleNetworkSynchronousWriter(
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleNetworkSynchronousWriter(
                 newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBuffer> responseReader = new ChronicleNetworkSynchronousReader(
                 newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));

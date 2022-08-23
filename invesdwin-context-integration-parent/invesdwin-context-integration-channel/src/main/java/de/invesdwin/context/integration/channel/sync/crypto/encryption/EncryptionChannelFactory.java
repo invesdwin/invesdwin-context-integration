@@ -10,10 +10,10 @@ import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> {
+public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
 
@@ -27,7 +27,7 @@ public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByt
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new EncryptionSynchronousWriter(writer, encryptionFactory);
     }
 

@@ -8,11 +8,11 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class SerdeAsynchronousHandler<I, O>
-        implements IAsynchronousHandler<IByteBuffer, IByteBufferWriter>, IByteBufferWriter {
+        implements IAsynchronousHandler<IByteBuffer, IByteBufferProvider>, IByteBufferProvider {
 
     private final IAsynchronousHandler<I, O> delegate;
     private final ISerde<I> inputSerde;
@@ -31,7 +31,7 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferWriter open() throws IOException {
+    public IByteBufferProvider open() throws IOException {
         output = delegate.open();
         if (output != null) {
             return this;
@@ -41,7 +41,7 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferWriter handle(final IByteBuffer inputBuffer) throws IOException {
+    public IByteBufferProvider handle(final IByteBuffer inputBuffer) throws IOException {
         final I input = inputSerde.fromBuffer(inputBuffer, inputBuffer.capacity());
         output = delegate.handle(input);
         if (output != null) {
@@ -63,7 +63,7 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         final int size = outputSerde.toBuffer(dst, output);
         output = null;
         return size;
@@ -75,7 +75,7 @@ public class SerdeAsynchronousHandler<I, O>
             //needs to be expandable so that FragmentSynchronousWriter can work properly
             outputBuffer = ByteBuffers.allocateExpandable(this.outputFixedLength);
         }
-        final int length = writeBuffer(outputBuffer);
+        final int length = getBuffer(outputBuffer);
         return outputBuffer.slice(0, length);
     }
 

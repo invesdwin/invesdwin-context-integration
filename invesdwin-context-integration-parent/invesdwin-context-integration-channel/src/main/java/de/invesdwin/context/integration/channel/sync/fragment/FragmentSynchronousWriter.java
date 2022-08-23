@@ -10,10 +10,10 @@ import de.invesdwin.util.math.Doubles;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
     public static final int FRAGMENTCOUNT_INDEX = 0;
     public static final int FRAGMENTCOUNT_SIZE = Byte.BYTES;
@@ -26,7 +26,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     public static final int PAYLOAD_INDEX = PAYLOADLENGTH_INDEX + PAYLOADLENGTH_SIZE;
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final int maxMessageLength;
     private final int maxPayloadLength;
     private IByteBuffer buffer;
@@ -36,7 +36,8 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private byte currentFragment;
     private int currentPosition;
 
-    public FragmentSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate, final int maxMessageLength) {
+    public FragmentSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
+            final int maxMessageLength) {
         this.delegate = delegate;
         this.maxMessageLength = maxMessageLength;
         this.maxPayloadLength = maxMessageLength - PAYLOAD_INDEX;
@@ -50,7 +51,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
         return maxMessageLength;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -66,7 +67,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.message = message.asBuffer();
         try {
             final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
@@ -94,7 +95,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         dst.putByte(FRAGMENTCOUNT_INDEX, fragmentCount);
         dst.putByte(FRAGMENT_INDEX, currentFragment);
         final int payloadLength = Integers.min(maxPayloadLength, message.remaining(currentPosition));
@@ -113,7 +114,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
         if (buffer == null) {
             buffer = ByteBuffers.allocate(this.maxMessageLength);
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

@@ -5,7 +5,7 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public enum TlsProtocol implements ITlsProtocol {
     /**
-     * TLS builds on top of and replaces this old specification
+     * TLS builds on top of and replaces this old specification. On newer JVMs this is treated as an alias for TLS.
      */
     @Deprecated
     SSL {
@@ -42,8 +42,14 @@ public enum TlsProtocol implements ITlsProtocol {
         return name();
     }
 
-    public static void main(final String[] args) {
+    @Override
+    public String getFamily() {
+        return name();
+    }
 
+    @Override
+    public boolean isVersioned() {
+        return false;
     }
 
 }

@@ -12,12 +12,12 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchron
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     public static final boolean SERVER = false;
     private DatagramSynchronousChannel channel;
@@ -65,8 +65,8 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0,
                 DatagramSynchronousChannel.MESSAGE_INDEX + size);

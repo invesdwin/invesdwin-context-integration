@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mapped.AMappedSynchronousChannel;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -21,7 +21,7 @@ import de.invesdwin.util.time.duration.Duration;
  */
 @NotThreadSafe
 public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private final ASpinWait readFinishedWait = newSpinWait();
     private final Duration timeout;
@@ -68,7 +68,7 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
             if (!readFinishedWait.awaitFulfill(System.nanoTime(), timeout)) {
                 throw new TimeoutException("Write message timeout exceeded: " + timeout);
@@ -84,7 +84,7 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
         setTransaction(TRANSACTION_WRITING_VALUE);
         setReadFinished(READFINISHED_FALSE);
 
-        final int size = message.writeBuffer(messageBuffer);
+        final int size = message.getBuffer(messageBuffer);
         setSize(size);
 
         //commit

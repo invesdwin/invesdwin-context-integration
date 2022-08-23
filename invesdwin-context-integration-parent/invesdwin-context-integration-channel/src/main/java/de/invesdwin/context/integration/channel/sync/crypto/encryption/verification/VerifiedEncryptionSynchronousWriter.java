@@ -10,29 +10,30 @@ import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Encrypts each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class VerifiedEncryptionSynchronousWriter
+        implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
     private IByteBuffer decryptedBuffer;
     private IHash hash;
 
-    public VerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+    public VerifiedEncryptionSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
             final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
         this.verificationFactory = verificationFactory;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -53,7 +54,7 @@ public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<I
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.decryptedBuffer = message.asBuffer();
         try {
             delegate.write(this);
@@ -63,7 +64,7 @@ public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<I
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         final int signatureIndex = encryptionFactory.encrypt(decryptedBuffer, dst);
         final int signatureLength = verificationFactory.putHash(dst, signatureIndex, hash);
         return signatureIndex + signatureLength;
@@ -74,7 +75,7 @@ public class VerifiedEncryptionSynchronousWriter implements ISynchronousWriter<I
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

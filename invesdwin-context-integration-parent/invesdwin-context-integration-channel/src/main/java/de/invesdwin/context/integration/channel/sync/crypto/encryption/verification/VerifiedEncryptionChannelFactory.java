@@ -12,10 +12,10 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferWriter> {
+public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
@@ -32,7 +32,7 @@ public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFact
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferWriter> newWriter(final ISynchronousWriter<IByteBufferWriter> writer) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new VerifiedEncryptionSynchronousWriter(writer, encryptionFactory, verificationFactory);
     }
 

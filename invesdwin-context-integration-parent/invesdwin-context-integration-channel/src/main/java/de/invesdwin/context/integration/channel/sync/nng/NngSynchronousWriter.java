@@ -9,13 +9,13 @@ import de.invesdwin.context.integration.channel.sync.nng.type.INngSocketType;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.sisu.nng.NngException;
 import io.sisu.nng.Socket;
 
 @NotThreadSafe
-public class NngSynchronousWriter extends ANngSynchronousChannel implements ISynchronousWriter<IByteBufferWriter> {
+public class NngSynchronousWriter extends ANngSynchronousChannel implements ISynchronousWriter<IByteBufferProvider> {
 
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
@@ -53,9 +53,9 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
-            final int size = message.writeBuffer(messageBuffer);
+            final int size = message.getBuffer(messageBuffer);
             socket.sendMessage(buffer.asNioByteBuffer(0, messageIndex + size));
         } catch (final NngException e) {
             throw new IOException(e);

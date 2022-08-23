@@ -8,13 +8,13 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Adapted from: net.openhft.chronicle.network.ssl.SslEngineStateMachine
  */
 @NotThreadSafe
-public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private final TlsSynchronousChannel channel;
 
@@ -36,7 +36,7 @@ public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferWrite
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         final java.nio.ByteBuffer dst = channel.getOutboundApplicationData();
         if (dst.position() > 0) {
             while (channel.action()) {

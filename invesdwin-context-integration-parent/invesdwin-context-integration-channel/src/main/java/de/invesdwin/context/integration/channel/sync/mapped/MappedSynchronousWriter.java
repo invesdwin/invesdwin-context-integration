@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 /**
@@ -17,7 +17,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
  */
 @NotThreadSafe
 public class MappedSynchronousWriter extends AMappedSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private IByteBuffer messageBuffer;
 
@@ -50,12 +50,12 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final IByteBufferWriter message) {
+    public void write(final IByteBufferProvider message) {
         final byte nextTransaction = getNextTransaction();
         //open transaction
         setTransaction(TRANSACTION_WRITING_VALUE);
 
-        final int size = message.writeBuffer(messageBuffer);
+        final int size = message.getBuffer(messageBuffer);
         setSize(size);
 
         //commit

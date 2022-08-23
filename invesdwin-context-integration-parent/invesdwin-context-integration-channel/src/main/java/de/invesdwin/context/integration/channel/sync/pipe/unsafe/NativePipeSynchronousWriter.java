@@ -14,13 +14,13 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
 public class NativePipeSynchronousWriter extends APipeSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private FileOutputStream out;
     private FileChannel fileChannel;
@@ -64,8 +64,8 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
     }

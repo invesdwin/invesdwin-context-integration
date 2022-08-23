@@ -11,13 +11,13 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 
 @NotThreadSafe
-public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
@@ -62,9 +62,9 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
-            final int size = message.writeBuffer(messageBuffer);
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
             writeFully(fd, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {

@@ -4,6 +4,10 @@ public interface ITlsProtocol {
 
     String getName();
 
+    String getFamily();
+
     boolean isHandshakeTimeoutRecoveryEnabled();
+
+    boolean isVersioned();
 
 }

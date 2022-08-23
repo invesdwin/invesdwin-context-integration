@@ -7,7 +7,7 @@ import javax.annotation.concurrent.Immutable;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
 
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class ServerUdpConnection implements IKryonetConnection {
@@ -24,7 +24,7 @@ public class ServerUdpConnection implements IKryonetConnection {
     }
 
     @Override
-    public void send(final IByteBufferWriter message) {
+    public void send(final IByteBufferProvider message) {
         server.sendToAllUDP(message);
     }
 

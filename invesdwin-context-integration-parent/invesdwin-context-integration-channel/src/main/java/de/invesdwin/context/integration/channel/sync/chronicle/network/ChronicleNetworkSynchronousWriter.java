@@ -9,12 +9,12 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private ChronicleNetworkSynchronousChannel channel;
     private IByteBuffer buffer;
@@ -57,9 +57,9 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         try {
-            final int size = message.writeBuffer(messageBuffer);
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX, size);
             writeFully(socketChannel,
                     buffer.asNioByteBuffer(0, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX + size));

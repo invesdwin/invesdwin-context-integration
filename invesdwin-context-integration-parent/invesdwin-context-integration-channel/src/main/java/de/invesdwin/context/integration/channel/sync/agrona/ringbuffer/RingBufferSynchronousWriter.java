@@ -12,12 +12,12 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBufferWriter> {
+public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -68,7 +68,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         writer.write(message);
     }
 
@@ -84,8 +84,8 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
 
         @Override
-        public void write(final IByteBufferWriter message) throws IOException {
-            final int size = message.writeBuffer(messageBuffer);
+        public void write(final IByteBufferProvider message) throws IOException {
+            final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
             sendRetrying(MESSAGE_INDEX + size);
         }
@@ -123,7 +123,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
 
         @Override
-        public void write(final IByteBufferWriter message) throws IOException {
+        public void write(final IByteBufferProvider message) throws IOException {
             while (!sendTry(message)) {
                 try {
                     FTimeUnit.MILLISECONDS.sleep(1);
@@ -136,12 +136,12 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
             }
         }
 
-        private boolean sendTry(final IByteBufferWriter message) throws IOException, EOFException {
+        private boolean sendTry(final IByteBufferProvider message) throws IOException, EOFException {
             final int claimedIndex = ringBuffer.tryClaim(MESSAGE_TYPE_ID, fixedLength);
             if (claimedIndex <= 0) {
                 return false;
             }
-            final int size = message.writeBuffer(buffer.slice(claimedIndex + MESSAGE_INDEX, maxMessageFixedLength));
+            final int size = message.getBuffer(buffer.slice(claimedIndex + MESSAGE_INDEX, maxMessageFixedLength));
             buffer.putInt(claimedIndex + SIZE_INDEX, size);
             ringBuffer.commit(claimedIndex);
             return true;
@@ -149,7 +149,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     private interface IWriter {
-        void write(IByteBufferWriter message) throws IOException;
+        void write(IByteBufferProvider message) throws IOException;
     }
 
 }

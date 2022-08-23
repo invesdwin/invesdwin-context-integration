@@ -18,7 +18,7 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferOutputStream;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -53,7 +53,7 @@ public class TlsHandshaker {
     //CHECKSTYLE:OFF
     public void performHandshake(final Duration handshakeTimeout, final SocketAddress address,
             final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferWriter> writer)
+            final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferProvider> writer)
             throws Exception {
         //CHECKSTYLE:ON
         final boolean client = engine.getUseClientMode();
@@ -73,7 +73,8 @@ public class TlsHandshaker {
             if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
                     || hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
 
-                LOG.debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getName(), hs);
+                LOG.debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getFamily(),
+                        hs);
 
                 final boolean readFinishedRequired;
                 final java.nio.ByteBuffer iNet;
@@ -211,7 +212,7 @@ public class TlsHandshaker {
 
     // retransmission if timeout
     private boolean onReceiveTimeout(final SocketAddress address, final String side, final SSLEngine engine,
-            final ISynchronousWriter<IByteBufferWriter> writer) throws Exception {
+            final ISynchronousWriter<IByteBufferProvider> writer) throws Exception {
         final SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
         if (hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
             return false;
@@ -224,7 +225,7 @@ public class TlsHandshaker {
     // produce handshake packets
     //CHECKSTYLE:OFF
     private boolean produceHandshakePackets(final SocketAddress address, final String side, final String action,
-            final SSLEngine engine, final ISynchronousWriter<IByteBufferWriter> writer) throws Exception {
+            final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer) throws Exception {
         //CHECKSTYLE:ON
 
         int packets = 0;
@@ -323,7 +324,7 @@ public class TlsHandshaker {
     }
 
     // deliver application data
-    private void deliverAppData(final SSLEngine engine, final ISynchronousWriter<IByteBufferWriter> writer,
+    private void deliverAppData(final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer,
             final java.nio.ByteBuffer appData) throws Exception {
         // Note: have not considered the packet loses
         produceApplicationPackets(engine, writer, appData);
@@ -331,7 +332,7 @@ public class TlsHandshaker {
     }
 
     // produce application packets
-    void produceApplicationPackets(final SSLEngine engine, final ISynchronousWriter<IByteBufferWriter> writer,
+    void produceApplicationPackets(final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer,
             final java.nio.ByteBuffer appData) throws Exception {
 
         handshakeBuffer.clear();

@@ -9,7 +9,7 @@ import com.esotericsoftware.kryonet.Serialization;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public final class ByteBufferMessageSerialization implements Serialization {
@@ -23,17 +23,16 @@ public final class ByteBufferMessageSerialization implements Serialization {
 
     private static final KryoSerialization DELEGATE = new KryoSerialization();
 
-    private ByteBufferMessageSerialization() {
-    }
+    private ByteBufferMessageSerialization() {}
 
     @Override
     public void write(final Connection connection, final java.nio.ByteBuffer buffer, final Object object) {
         final IByteBuffer wrapped = ByteBuffers.wrap(buffer);
         final int position = buffer.position();
-        if (object instanceof IByteBufferWriter) {
-            final IByteBufferWriter cObject = (IByteBufferWriter) object;
+        if (object instanceof IByteBufferProvider) {
+            final IByteBufferProvider cObject = (IByteBufferProvider) object;
             wrapped.putBoolean(position + KRYO_INDEX, false);
-            final int length = cObject.writeBuffer(wrapped.sliceFrom(position + MESSAGE_INDEX));
+            final int length = cObject.getBuffer(wrapped.sliceFrom(position + MESSAGE_INDEX));
             ByteBuffers.position(buffer, position + length + MESSAGE_INDEX);
         } else {
             wrapped.putBoolean(position + KRYO_INDEX, true);

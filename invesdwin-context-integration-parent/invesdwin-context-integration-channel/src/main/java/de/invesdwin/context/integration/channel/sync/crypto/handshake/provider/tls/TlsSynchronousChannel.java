@@ -18,7 +18,7 @@ import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -35,7 +35,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private final Duration handshakeTimeout;
     private final SSLEngine engine;
     private final ISynchronousReader<IByteBuffer> underlyingReader;
-    private final ISynchronousWriter<IByteBufferWriter> underlyingWriter;
+    private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
 
     private IByteBuffer outboundApplicationDataBuffer;
     private java.nio.ByteBuffer outboundApplicationData;
@@ -52,7 +52,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final SSLEngine engine,
             final ISynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousWriter<IByteBufferWriter> underlyingWriter) {
+            final ISynchronousWriter<IByteBufferProvider> underlyingWriter) {
         this.handshakeTimeout = handshakeTimeout;
         this.engine = engine;
         this.underlyingReader = underlyingReader;

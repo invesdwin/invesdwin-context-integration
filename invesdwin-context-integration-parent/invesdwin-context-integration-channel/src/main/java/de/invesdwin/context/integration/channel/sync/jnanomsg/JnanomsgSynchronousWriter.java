@@ -12,7 +12,7 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import nanomsg.AbstractSocket;
@@ -21,7 +21,7 @@ import nanomsg.NativeLibrary;
 
 @NotThreadSafe
 public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
-        implements ISynchronousWriter<IByteBufferWriter> {
+        implements ISynchronousWriter<IByteBufferProvider> {
 
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
@@ -61,13 +61,13 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         sendRetrying(size + messageIndex);
     }
 
-    private void writeNoRetry(final IByteBufferWriter message) throws IOException {
-        final int size = message.writeBuffer(messageBuffer);
+    private void writeNoRetry(final IByteBufferProvider message) throws IOException {
+        final int size = message.getBuffer(messageBuffer);
         sendTry(size + messageIndex);
     }
 

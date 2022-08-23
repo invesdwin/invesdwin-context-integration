@@ -9,27 +9,27 @@ import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Signs each message separately. Stateless regarding the connection.
  */
 @NotThreadSafe
-public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final IVerificationFactory verificationFactory;
     private IByteBuffer buffer;
     private IByteBuffer unsignedBuffer;
     private IHash hash;
 
-    public VerificationSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+    public VerificationSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
             final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.verificationFactory = verificationFactory;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -50,7 +50,7 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.unsignedBuffer = message.asBuffer();
         try {
             delegate.write(this);
@@ -60,7 +60,7 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         //Sadly we need to copy here. E.g. StreamVerificationEncryptionSynchronousWriter spares a copy by doing this together
         return verificationFactory.copyAndHash(unsignedBuffer, dst, hash);
     }
@@ -70,7 +70,7 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

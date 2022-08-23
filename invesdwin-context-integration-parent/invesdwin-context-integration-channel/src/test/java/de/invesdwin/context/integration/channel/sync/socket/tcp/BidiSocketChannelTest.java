@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class BidiSocketChannelTest extends AChannelTest {
@@ -30,11 +30,11 @@ public class BidiSocketChannelTest extends AChannelTest {
         final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
         final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
 
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new SocketSynchronousWriter(serverChannel);
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new SocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBuffer> requestReader = new SocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new SocketSynchronousWriter(clientChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new SocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBuffer> responseReader = new SocketSynchronousReader(clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

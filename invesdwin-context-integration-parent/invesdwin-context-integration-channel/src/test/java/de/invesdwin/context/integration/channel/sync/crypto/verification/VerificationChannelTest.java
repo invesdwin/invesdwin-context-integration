@@ -14,7 +14,7 @@ import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class VerificationChannelTest extends AChannelTest {
@@ -37,7 +37,7 @@ public class VerificationChannelTest extends AChannelTest {
     }
 
     @Override
-    protected ISynchronousWriter<IByteBufferWriter> newWriter(final File file, final FileChannelType pipes) {
+    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         return new VerificationSynchronousWriter(super.newWriter(file, pipes), VERIFICATION_FACTORY);
     }
 

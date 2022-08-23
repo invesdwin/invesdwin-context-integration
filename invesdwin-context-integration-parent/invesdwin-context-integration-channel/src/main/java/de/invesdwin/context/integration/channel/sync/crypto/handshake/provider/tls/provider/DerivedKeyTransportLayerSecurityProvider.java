@@ -10,6 +10,7 @@ import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.TrustManager;
@@ -84,6 +85,9 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
         }
+        final SSLParameters params = socket.getSSLParameters();
+        configureParams(params);
+        socket.setSSLParameters(params);
     }
 
     /**
@@ -106,8 +110,14 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
         }
+        final SSLParameters params = socket.getSSLParameters();
+        configureParams(params);
+        socket.setSSLParameters(params);
     }
 
+    /**
+     * Here one can do some unencrypted actions when STARTTLS is enabled to then start the handshake manually.
+     */
     @Override
     public void onSocketConnected(final SSLSocket socket) {
         //        try {
@@ -172,7 +182,7 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      * Override this to use a different provider.
      */
     protected SSLContext newContextFromProvider() throws NoSuchAlgorithmException {
-        return SSLContext.getInstance(getProtocol().getName());
+        return SSLContext.getInstance(getProtocol().getFamily());
     }
 
     @Override
@@ -199,11 +209,29 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
                 throw UnknownArgumentException.newInstance(ClientAuth.class, getClientAuth());
             }
         }
-
-        //        final SSLParameters params = engine.getSSLParameters();
-        //        params.setMaximumPacketSize(BlockingDatagramSynchronousChannel.MAX_UNFRAGMENTED_PACKET_SIZE);
-        //        engine.setSSLParameters(params);
+        final SSLParameters params = engine.getSSLParameters();
+        configureParams(params);
+        engine.setSSLParameters(params);
         return engine;
+    }
+
+    protected void configureParams(final SSLParameters params) {
+        if (getProtocol().isVersioned()) {
+            params.setProtocols(new String[] { getProtocol().getName() });
+        }
+        final Integer maximumPacketSize = getMaximumPacketSize();
+        if (maximumPacketSize != null) {
+            params.setMaximumPacketSize(maximumPacketSize);
+        }
+    }
+
+    /**
+     * Can be configured when actually using datagrams as transport or something different restricts the packet size
+     * (e.g. mapped memory).
+     */
+    protected Integer getMaximumPacketSize() {
+        //        return BlockingDatagramSynchronousChannel.MAX_UNFRAGMENTED_PACKET_SIZE;
+        return null;
     }
 
     @Override

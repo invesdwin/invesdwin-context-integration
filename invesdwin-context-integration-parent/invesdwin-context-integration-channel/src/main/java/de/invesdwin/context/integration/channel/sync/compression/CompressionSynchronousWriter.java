@@ -9,34 +9,34 @@ import de.invesdwin.context.integration.compression.ICompressionFactory;
 import de.invesdwin.context.integration.compression.lz4.FastLZ4CompressionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Compress each message separately. Worse compression ratio because each message is isolated. Stateless regarding the
  * connection.
  */
 @NotThreadSafe
-public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBufferWriter>, IByteBufferWriter {
+public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBufferProvider>, IByteBufferProvider {
 
     public static final ICompressionFactory DEFAULT_COMPRESSION_FACTORY = FastLZ4CompressionFactory.INSTANCE;
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final ICompressionFactory compressionFactory;
     private IByteBuffer buffer;
 
     private IByteBuffer decompressedBuffer;
 
-    public CompressionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate) {
+    public CompressionSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate) {
         this(delegate, DEFAULT_COMPRESSION_FACTORY);
     }
 
-    public CompressionSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate,
+    public CompressionSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
             final ICompressionFactory compressionFactory) {
         this.delegate = delegate;
         this.compressionFactory = compressionFactory;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -52,7 +52,7 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public void write(final IByteBufferWriter message) throws IOException {
+    public void write(final IByteBufferProvider message) throws IOException {
         this.decompressedBuffer = message.asBuffer();
         try {
             delegate.write(this);
@@ -62,7 +62,7 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         return compressionFactory.compress(decompressedBuffer, dst);
     }
 
@@ -71,7 +71,7 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

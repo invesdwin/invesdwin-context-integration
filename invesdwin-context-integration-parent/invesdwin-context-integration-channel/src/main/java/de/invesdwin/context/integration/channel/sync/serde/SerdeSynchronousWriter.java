@@ -8,18 +8,18 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBufferWriter {
+public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBufferProvider {
 
-    private final ISynchronousWriter<IByteBufferWriter> delegate;
+    private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final ISerde<M> serde;
     private final int fixedLength;
     private IByteBuffer buffer;
     private M message;
 
-    public SerdeSynchronousWriter(final ISynchronousWriter<IByteBufferWriter> delegate, final ISerde<M> serde,
+    public SerdeSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate, final ISerde<M> serde,
             final Integer fixedLength) {
         this.delegate = delegate;
         this.serde = serde;
@@ -34,7 +34,7 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
         return fixedLength;
     }
 
-    public ISynchronousWriter<IByteBufferWriter> getDelegate() {
+    public ISynchronousWriter<IByteBufferProvider> getDelegate() {
         return delegate;
     }
 
@@ -56,7 +56,7 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
     }
 
     @Override
-    public int writeBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) {
         return serde.toBuffer(dst, message);
     }
 
@@ -66,7 +66,7 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
             //needs to be expandable so that FragmentSynchronousWriter can work properly
             buffer = ByteBuffers.allocateExpandable(this.fixedLength);
         }
-        final int length = writeBuffer(buffer);
+        final int length = getBuffer(buffer);
         return buffer.slice(0, length);
     }
 

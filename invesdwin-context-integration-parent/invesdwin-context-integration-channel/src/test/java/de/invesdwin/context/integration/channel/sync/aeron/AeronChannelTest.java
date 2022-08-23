@@ -12,7 +12,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class AeronChannelTest extends AChannelTest {
@@ -43,13 +43,13 @@ public class AeronChannelTest extends AChannelTest {
             final int responseStreamId, final String requestChannel, final int requestStreamId)
             throws InterruptedException {
         final AeronInstance instance = new AeronInstance(mode);
-        final ISynchronousWriter<IByteBufferWriter> responseWriter = new AeronSynchronousWriter(instance,
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new AeronSynchronousWriter(instance,
                 responseChannel, responseStreamId);
         final ISynchronousReader<IByteBuffer> requestReader = new AeronSynchronousReader(instance, requestChannel,
                 requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferWriter> requestWriter = new AeronSynchronousWriter(instance, requestChannel,
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance, requestChannel,
                 requestStreamId);
         final ISynchronousReader<IByteBuffer> responseReader = new AeronSynchronousReader(instance, responseChannel,
                 responseStreamId);
