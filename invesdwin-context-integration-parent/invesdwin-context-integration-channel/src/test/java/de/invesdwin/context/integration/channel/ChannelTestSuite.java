@@ -12,13 +12,7 @@ import de.invesdwin.context.integration.channel.sync.chronicle.ChronicleChannelT
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.compression.stream.StreamCompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.EncryptionChannelTest;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.stream.StreamEncryptionChannelTest;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelTest;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.stream.StreamVerifiedEncryptionChannelTest;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.dh.DhHandshakeProviderTest;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.ecdh.EcdhHandshakeProviderTest;
-import de.invesdwin.context.integration.channel.sync.crypto.verification.VerificationChannelTest;
+import de.invesdwin.context.integration.channel.sync.crypto.CryptoChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
@@ -37,9 +31,7 @@ import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSui
         ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
         CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
-        CompressionChannelTest.class, StreamCompressionChannelTest.class, EncryptionChannelTest.class,
-        StreamEncryptionChannelTest.class, VerificationChannelTest.class, VerifiedEncryptionChannelTest.class,
-        StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class, EcdhHandshakeProviderTest.class,
+        CompressionChannelTest.class, StreamCompressionChannelTest.class, CryptoChannelTestSuite.class,
         SocketChannelTestSuite.class, NettyChannelTestSuite.class, ChronicleChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {

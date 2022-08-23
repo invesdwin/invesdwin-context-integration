@@ -8,24 +8,27 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class TlsHandshakeProviderTest extends AChannelTest {
+public class DtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
-    public void testTlsHandshakePerformance() throws InterruptedException {
+    public void testDtlsHandshakePerformance() throws InterruptedException {
         Throwables.setDebugStackTraceEnabled(true);
         final boolean tmpfs = true;
-        //handshake will get confused if blocking is not used
+        //we need to block here because multiple messages are written in succession
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
-        final File requestFile = newFile("testTlsHandshakePerformance_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testTlsHandshakePerformance_response.pipe", tmpfs, pipes);
+        final File requestFile = newFile("testDtlsHandshakePerformance_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testDtlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
@@ -44,6 +47,16 @@ public class TlsHandshakeProviderTest extends AChannelTest {
                     protected String getHostname() {
                         return getSocketAddress().getHostName();
                     }
+
+                    @Override
+                    protected Integer getMaximumPacketSize() {
+                        return DtlsHandshakeProviderTest.this.getMaxMessageSize();
+                    }
+
+                    @Override
+                    public ITlsProtocol getProtocol() {
+                        return TlsProtocol.DTLS;
+                    }
                 };
             }
         };
@@ -51,7 +64,8 @@ public class TlsHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 1324;
+        //TlsSynchronousChannel should manage this
+        return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }
 
 }

@@ -24,9 +24,9 @@ import javax.net.ssl.SSLSession;
 import org.apache.commons.io.HexDump;
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 
 /**
@@ -37,13 +37,13 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
  */
 @NotThreadSafe
 //CHECKSTYLE:OFF
-public class DTLSOverDatagram {
+public class DTLSOverDatagramTest {
 
     private static int MAX_HANDSHAKE_LOOPS = 200;
     private static int MAX_APP_READ_LOOPS = 60;
     private static int SOCKET_TIMEOUT = 10 * 1000; // in millis
-    private static int BUFFER_SIZE = BlockingDatagramSynchronousChannel.MAX_UNFRAGMENTED_PACKET_SIZE;
-    private static int MAXIMUM_PACKET_SIZE = BlockingDatagramSynchronousChannel.MAX_UNFRAGMENTED_PACKET_SIZE;
+    private static int BUFFER_SIZE = SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
+    private static int MAXIMUM_PACKET_SIZE = SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
 
     private static Exception clientException = null;
     private static Exception serverException = null;
@@ -567,12 +567,12 @@ public class DTLSOverDatagram {
 
     final static class ServerCallable implements Callable<String> {
 
-        private final DTLSOverDatagram testCase;
+        private final DTLSOverDatagramTest testCase;
         private final DatagramSocket socket;
         private final InetSocketAddress serverSocketAddr;
         private final InetSocketAddress clientSocketAddr;
 
-        ServerCallable(final DTLSOverDatagram testCase, final DatagramSocket socket,
+        ServerCallable(final DTLSOverDatagramTest testCase, final DatagramSocket socket,
                 final InetSocketAddress serverSocketAddr, final InetSocketAddress clientSocketAddr) {
 
             this.testCase = testCase;
@@ -607,11 +607,11 @@ public class DTLSOverDatagram {
 
     final static class ClientCallable implements Callable<String> {
 
-        private final DTLSOverDatagram testCase;
+        private final DTLSOverDatagramTest testCase;
         private final DatagramSocket socket;
         private final InetSocketAddress serverSocketAddr;
 
-        ClientCallable(final DTLSOverDatagram testCase, final DatagramSocket socket,
+        ClientCallable(final DTLSOverDatagramTest testCase, final DatagramSocket socket,
                 final InetSocketAddress serverSocketAddr) {
 
             this.testCase = testCase;

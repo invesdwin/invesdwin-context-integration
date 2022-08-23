@@ -24,6 +24,12 @@ public final class SynchronousChannels {
     public static final Duration DEFAULT_CONNECT_TIMEOUT = ContextProperties.DEFAULT_NETWORK_TIMEOUT;
     public static final Duration DEFAULT_WAIT_INTERVAL = Duration.ONE_MILLISECOND;
 
+    /**
+     * https://stackoverflow.com/questions/1098897/what-is-the-largest-safe-udp-packet-size-on-the-internet
+     */
+    public static final int MAX_FRAGMENTED_DATAGRAM_PACKET_SIZE = 65507;
+    public static final int MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE = 508;
+
     private static final File TMPFS_FOLDER = new File("/dev/shm");
     @GuardedBy("SynchronousChannels.class")
     private static File tmpfsFolderOrFallback;

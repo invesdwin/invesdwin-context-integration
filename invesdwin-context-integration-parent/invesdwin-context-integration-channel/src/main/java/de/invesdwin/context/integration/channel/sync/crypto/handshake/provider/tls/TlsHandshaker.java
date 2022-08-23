@@ -19,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferOutputStream;
+import de.invesdwin.util.streams.pool.PooledFastByteArrayOutputStream;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -41,8 +41,10 @@ public class TlsHandshaker {
     private static final int MAX_PRODUCT_HANDSHAKE_PACKETS_LOOPS = MAX_HANDSHAKE_LOOPS / 2;
     private static final int MAX_APP_READ_LOOPS = 60;
 
-    private static final java.nio.ByteBuffer SERVER_APP = java.nio.ByteBuffer.wrap("Hi Client, I'm Server".getBytes());
-    private static final java.nio.ByteBuffer CLIENT_APP = java.nio.ByteBuffer.wrap("Hi Server, I'm Client".getBytes());
+    private static final java.nio.ByteBuffer VALIDATE_SERVER_APP = java.nio.ByteBuffer
+            .wrap("Hi Client, I'm Server".getBytes());
+    private static final java.nio.ByteBuffer VALIDATE_CLIENT_APP = java.nio.ByteBuffer
+            .wrap("Hi Server, I'm Client".getBytes());
 
     private final java.nio.ByteBuffer handshakeBuffer;
 
@@ -69,12 +71,16 @@ public class TlsHandshaker {
             }
 
             SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-            LOG.debug("%s: %s: =======handshake(%s, %s)=======", address, side, loops, hs);
+            if (LOG.isDebugEnabled()) {
+                debug("%s: %s: =======handshake(%s, %s)=======", address, side, loops, hs);
+            }
             if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
                     || hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
 
-                LOG.debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getFamily(),
-                        hs);
+                if (LOG.isDebugEnabled()) {
+                    debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getFamily(),
+                            hs);
+                }
 
                 final boolean readFinishedRequired;
                 final java.nio.ByteBuffer iNet;
@@ -82,21 +88,29 @@ public class TlsHandshaker {
                 if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
                     if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                         if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
-                            LOG.debug(
-                                    "%s: %s: Warning: Trying to recover from read handshake message timeout exceeded: %s",
-                                    address, side, handshakeTimeout);
+                            //CHECKSTYLE:OFF
+                            if (LOG.isDebugEnabled()) {
+                                //CHECKSTYLE:ON
+                                debug("%s: %s: Warning: Trying to recover from read handshake message timeout exceeded: %s",
+                                        address, side, handshakeTimeout);
+                            }
 
                             final boolean finished = onReceiveTimeout(address, side, engine, writer);
                             //CHECKSTYLE:OFF
                             if (finished) {
-                                //CHECKSTYLE:ON
-                                LOG.debug(
-                                        "%s: %s: Handshake status is FINISHED after calling onReceiveTimeout(), finish the loop",
-                                        address, side);
+                                if (LOG.isDebugEnabled()) {
+                                    //CHECKSTYLE:ON
+                                    debug("%s: %s: Handshake status is FINISHED after calling onReceiveTimeout(), finish the loop",
+                                            address, side);
+                                }
                                 endLoops = true;
                             }
 
-                            LOG.debug("%s: %s: New handshake status is %s", address, side, engine.getHandshakeStatus());
+                            //CHECKSTYLE:OFF
+                            if (LOG.isDebugEnabled()) {
+                                //CHECKSTYLE:ON
+                                debug("%s: %s: New handshake status is %s", address, side, engine.getHandshakeStatus());
+                            }
 
                             continue;
                         } else {
@@ -126,12 +140,16 @@ public class TlsHandshaker {
                     //CHECKSTYLE:ON
                     // OK
                 } else if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
-                    LOG.debug("%s: %s: BUFFER_OVERFLOW, handshake status is %s", address, side, hs);
+                    if (LOG.isDebugEnabled()) {
+                        debug("%s: %s: BUFFER_OVERFLOW, handshake status is %s", address, side, hs);
+                    }
 
                     // the client maximum fragment size config does not work?
                     throw new Exception("Buffer overflow: " + "incorrect client maximum fragment size");
                 } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                    LOG.debug("%s: %s: BUFFER_UNDERFLOW, handshake status is %s", address, side, hs);
+                    if (LOG.isDebugEnabled()) {
+                        debug("%s: %s: BUFFER_UNDERFLOW, handshake status is %s", address, side, hs);
+                    }
 
                     // bad packet, or the client maximum fragment size
                     // config does not work?
@@ -145,20 +163,26 @@ public class TlsHandshaker {
                 }
 
                 if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
-                    LOG.debug("%s: %s: Handshake status is FINISHED, finish the loop", address, side);
+                    if (LOG.isDebugEnabled()) {
+                        debug("%s: %s: Handshake status is FINISHED, finish the loop", address, side);
+                    }
                     endLoops = true;
                 }
             } else if (hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
                 final boolean finished = produceHandshakePackets(address, side, "Produced", engine, writer);
                 if (finished) {
-                    LOG.debug("%s: %s: Handshake status is FINISHED after producing handshake packets, finish the loop",
-                            address, side);
+                    if (LOG.isDebugEnabled()) {
+                        debug("%s: %s: Handshake status is FINISHED after producing handshake packets, finish the loop",
+                                address, side);
+                    }
                     endLoops = true;
                 }
             } else if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
                 runDelegatedTasks(engine);
             } else if (hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-                LOG.debug("%s: %s: Handshake status is NOT_HANDSHAKING, finish the loop", address, side);
+                if (LOG.isDebugEnabled()) {
+                    debug("%s: %s: Handshake status is NOT_HANDSHAKING, finish the loop", address, side);
+                }
                 endLoops = true;
             } else if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
                 throw new Exception("Unexpected status, SSLEngine.getHandshakeStatus() shouldn't return FINISHED");
@@ -168,7 +192,9 @@ public class TlsHandshaker {
         }
 
         final SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-        LOG.debug("%s: %s: Handshake finished, status is %s", address, side, hs);
+        if (LOG.isDebugEnabled()) {
+            debug("%s: %s: Handshake finished, status is %s", address, side, hs);
+        }
 
         if (engine.getHandshakeSession() != null) {
             throw new Exception("Handshake finished, but handshake session is not null");
@@ -178,8 +204,10 @@ public class TlsHandshaker {
         if (session == null) {
             throw new Exception("Handshake finished, but session is null");
         }
-        LOG.debug("%s: %s: Negotiated protocol is %s", address, side, session.getProtocol());
-        LOG.debug("%s: %s: Negotiated cipher suite is %s", address, side, session.getCipherSuite());
+        if (LOG.isDebugEnabled()) {
+            debug("%s: %s: Negotiated protocol is %s", address, side, session.getProtocol());
+            debug("%s: %s: Negotiated cipher suite is %s", address, side, session.getCipherSuite());
+        }
 
         // handshake status should be NOT_HANDSHAKING
         //
@@ -192,22 +220,24 @@ public class TlsHandshaker {
         if (isValidateHandshake()) {
             if (client) {
                 // write client application data
-                deliverAppData(engine, writer, CLIENT_APP);
+                deliverAppData(engine, writer, VALIDATE_CLIENT_APP);
                 // read server application data
-                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, SERVER_APP);
+                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, VALIDATE_SERVER_APP);
             } else {
                 // read client application data
-                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, CLIENT_APP);
+                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, VALIDATE_CLIENT_APP);
                 // write server application data
-                deliverAppData(engine, writer, SERVER_APP);
+                deliverAppData(engine, writer, VALIDATE_SERVER_APP);
             }
 
-            LOG.debug("%s: %s: Handshake validated successfully", address, side);
+            if (LOG.isDebugEnabled()) {
+                debug("%s: %s: Handshake validated successfully", address, side);
+            }
         }
     }
 
     protected boolean isValidateHandshake() {
-        return true;
+        return false;
     }
 
     // retransmission if timeout
@@ -245,13 +275,17 @@ public class TlsHandshaker {
 
             final SSLEngineResult.Status rs = r.getStatus();
             final SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
-            LOG.debug("%s: %s: ----produce handshake packet(%s, %s, %s)----", address, side, loops, rs, hs);
+            if (LOG.isDebugEnabled()) {
+                debug("%s: %s: ----produce handshake packet(%s, %s, %s)----", address, side, loops, rs, hs);
+            }
             if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
                 // the client maximum fragment size config does not work?
                 throw new Exception("Buffer overflow: " + "incorrect server maximum fragment size");
             } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                LOG.debug("%s: %s: Produce handshake packets: BUFFER_UNDERFLOW occured", address, side);
-                LOG.debug("%s: %s: Produce handshake packets: Handshake status: %s", address, side, hs);
+                if (LOG.isDebugEnabled()) {
+                    debug("%s: %s: Produce handshake packets: BUFFER_UNDERFLOW occured", address, side);
+                    debug("%s: %s: Produce handshake packets: Handshake status: %s", address, side, hs);
+                }
                 // bad packet, or the client maximum fragment size
                 // config does not work?
                 if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
@@ -277,9 +311,11 @@ public class TlsHandshaker {
             }
 
             if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
-                LOG.debug("%s: %s: Produce handshake packets: Handshake status is FINISHED, finish the loop", address,
-                        side);
-                LOG.debug("%s: %s: Produced %s packets", address, side, packets);
+                if (LOG.isDebugEnabled()) {
+                    debug("%s: %s: Produce handshake packets: Handshake status is FINISHED, finish the loop", address,
+                            side);
+                    debug("%s: %s: Produced %s packets", address, side, packets);
+                }
                 return true;
             }
 
@@ -306,7 +342,9 @@ public class TlsHandshaker {
             }
         }
 
-        LOG.debug("%s: %s: %s %s packets", address, side, action, packets);
+        if (LOG.isDebugEnabled()) {
+            debug("%s: %s: %s %s packets", address, side, action, packets);
+        }
         return false;
     }
 
@@ -388,7 +426,9 @@ public class TlsHandshaker {
                     printHex(address, side, "Received application data", recBuffer);
                 }
                 if (!recBuffer.equals(expectedApp)) {
-                    LOG.debug("%s: %s: Engine status is %s", address, side, rs);
+                    if (LOG.isDebugEnabled()) {
+                        debug("%s: %s: Engine status is %s", address, side, rs);
+                    }
                     throw new Exception("Not the right application data");
                 }
                 break;
@@ -396,16 +436,23 @@ public class TlsHandshaker {
         }
     }
 
+    private void debug(final String message, final Object... args) {
+        synchronized (LOG) {
+            LOG.debug(message, args);
+        }
+    }
+
     private void printHex(final SocketAddress address, final String side, final String prefix,
             final java.nio.ByteBuffer bb) {
-        final ByteBufferOutputStream bos = new ByteBufferOutputStream();
-        try {
-            final IByteBuffer wrap = ByteBuffers.wrapRelative(bb);
-            HexDump.dump(wrap.asByteArray(0, wrap.capacity()), 0, bos, 0);
-        } catch (final Exception e) {
-            // ignore
+        synchronized (LOG) {
+            try (PooledFastByteArrayOutputStream bos = PooledFastByteArrayOutputStream.newInstance()) {
+                final IByteBuffer wrap = ByteBuffers.wrapRelative(bb);
+                HexDump.dump(wrap.asByteArray(0, wrap.capacity()), 0, bos, 0);
+                LOG.trace("%s: %s: \n%s", address, prefix, bos.toString());
+            } catch (final Exception e) {
+                // ignore
+            }
         }
-        LOG.trace("%s: %s: \n%s", address, prefix, bos.toString());
     }
 
 }

@@ -7,7 +7,6 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult.Status;
-import javax.net.ssl.SSLException;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -102,7 +101,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
         inboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
-        inboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
+        inboundEncodedData = inboundEncodedDataBuffer.asNioByteBuffer();
         // eliminates array creation on each call to SSLEngine.wrap()
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationData };
         inboundApplicationDataArray = new java.nio.ByteBuffer[] { inboundApplicationData };
@@ -201,8 +200,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         final long startNanos = System.nanoTime();
         engine.closeOutbound();
         try {
-            while (!engine.isOutboundDone()) {
-                action();
+            while (action()) {
                 try {
                     SynchronousChannels.DEFAULT_WAIT_INTERVAL.sleep();
                 } catch (final InterruptedException e) {
@@ -217,11 +215,11 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         } catch (final TimeoutException e) {
             throw new RuntimeException(e);
         }
-        try {
-            engine.closeInbound();
-        } catch (final SSLException e) {
-            throw new RuntimeException(e);
-        }
+        //        try {
+        //            engine.closeInbound();
+        //        } catch (final SSLException e) {
+        //            throw new RuntimeException(e);
+        //        }
 
         underlyingWriter.close();
         underlyingReader.close();
