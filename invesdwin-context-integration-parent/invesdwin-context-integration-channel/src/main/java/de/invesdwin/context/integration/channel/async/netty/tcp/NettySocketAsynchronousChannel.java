@@ -111,6 +111,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         }
 
         @Override
+        public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
+            //connection must have been closed by the other side
+            close();
+            super.exceptionCaught(ctx, cause);
+        }
+
+        @Override
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
             try {
                 final IByteBufferProvider output = handler.open();

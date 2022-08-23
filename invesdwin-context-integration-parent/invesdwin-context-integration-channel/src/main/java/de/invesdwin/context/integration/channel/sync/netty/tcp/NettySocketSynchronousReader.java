@@ -97,6 +97,13 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         }
 
         @Override
+        public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
+            //connection must have been closed by the other side
+            close();
+            super.exceptionCaught(ctx, cause);
+        }
+
+        @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
             final ByteBuf msgBuf = (ByteBuf) msg;
             //CHECKSTYLE:OFF
