@@ -68,7 +68,7 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
             buffer.putInt(BlockingSocketSynchronousChannel.SIZE_INDEX, size);
             buffer.getBytesTo(0, out, BlockingSocketSynchronousChannel.MESSAGE_INDEX + size);
             out.flush();
-        } catch (final Throwable e) {
+        } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
