@@ -22,12 +22,12 @@ public final class TlsHandshakerObjectPool extends ATimeoutObjectPool<TlsHandsha
 
     @Override
     public void invalidateObject(final TlsHandshaker element) {
-        //noop
+        element.reset();
     }
 
     @Override
     protected void passivateObject(final TlsHandshaker element) {
-        //noop
+        element.reset();
     }
 
 }

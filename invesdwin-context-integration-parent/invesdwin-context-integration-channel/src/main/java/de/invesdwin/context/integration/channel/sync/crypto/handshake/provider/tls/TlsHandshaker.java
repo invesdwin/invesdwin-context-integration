@@ -1,11 +1,14 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls;
 
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLEngineResult.Status;
 import javax.net.ssl.SSLSession;
 
 import org.apache.commons.io.HexDump;
@@ -15,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -48,34 +52,78 @@ public class TlsHandshaker {
 
     private final java.nio.ByteBuffer handshakeBuffer;
 
+    private boolean server;
+    private String side;
+
+    private Duration handshakeTimeout;
+    private SocketAddress address;
+    private ITlsProtocol protocol;
+    private SSLEngine engine;
+    private ASpinWait readerSpinWait;
+    private ISynchronousReader<IByteBuffer> reader;
+    private ISynchronousWriter<IByteBufferProvider> writer;
+
+    private boolean validateHandshake;
+
     public TlsHandshaker() {
         this.handshakeBuffer = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
     }
 
-    //CHECKSTYLE:OFF
-    public void performHandshake(final Duration handshakeTimeout, final SocketAddress address,
-            final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferProvider> writer)
-            throws Exception {
-        //CHECKSTYLE:ON
-        final boolean client = engine.getUseClientMode();
-        final String side = client ? "Client" : "Server";
+    public void init(final Duration handshakeTimeout, final SocketAddress address, final boolean server,
+            final String side, final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
+            final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferProvider> writer,
+            final boolean validateHandshake) {
+        this.server = server;
+        this.side = side;
 
+        this.handshakeTimeout = handshakeTimeout;
+        this.address = address;
+        this.protocol = protocol;
+        this.engine = engine;
+        this.readerSpinWait = readerSpinWait;
+        this.reader = reader;
+        this.writer = writer;
+
+        this.validateHandshake = validateHandshake;
+    }
+
+    public void reset() {
+        this.server = false;
+        this.side = null;
+
+        this.handshakeTimeout = null;
+        this.address = null;
+        this.protocol = null;
+        this.engine = null;
+        this.readerSpinWait = null;
+        this.reader = null;
+        this.writer = null;
+
+        validateHandshake = false;
+
+        this.handshakeBuffer.clear();
+    }
+
+    //CHECKSTYLE:OFF
+    public void performHandshake() throws IOException, TimeoutException {
+        //CHECKSTYLE:ON
         boolean endLoops = false;
         int loops = MAX_HANDSHAKE_LOOPS;
-        engine.beginHandshake();
+        HandshakeStatus hs = engine.getHandshakeStatus();
+        if (hs == HandshakeStatus.FINISHED || hs == HandshakeStatus.NOT_HANDSHAKING) {
+            engine.beginHandshake();
+        }
         while (!endLoops) {
 
             if (--loops < 0) {
-                throw new RuntimeException("Too many loops to produce handshake packets");
+                throw new IOException("Too many loops to produce handshake packets");
             }
 
-            SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
+            hs = engine.getHandshakeStatus();
             if (LOG.isDebugEnabled()) {
                 debug("%s: %s: =======handshake(%s, %s)=======", address, side, loops, hs);
             }
-            if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
-                    || hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN) {
+            if (hs == HandshakeStatus.NEED_UNWRAP || hs == HandshakeStatus.NEED_UNWRAP_AGAIN) {
 
                 if (LOG.isDebugEnabled()) {
                     debug("%s: %s: Receive %s records, handshake status is %s", address, side, protocol.getFamily(),
@@ -85,37 +133,47 @@ public class TlsHandshaker {
                 final boolean readFinishedRequired;
                 final java.nio.ByteBuffer iNet;
                 final java.nio.ByteBuffer iApp;
-                if (hs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP) {
-                    if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                        if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
-                            //CHECKSTYLE:OFF
-                            if (LOG.isDebugEnabled()) {
-                                //CHECKSTYLE:ON
-                                debug("%s: %s: Warning: Trying to recover from read handshake message timeout exceeded: %s",
-                                        address, side, handshakeTimeout);
-                            }
-
-                            final boolean finished = onReceiveTimeout(address, side, engine, writer);
-                            //CHECKSTYLE:OFF
-                            if (finished) {
+                if (hs == HandshakeStatus.NEED_UNWRAP) {
+                    try {
+                        if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
+                            if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
+                                //CHECKSTYLE:OFF
                                 if (LOG.isDebugEnabled()) {
                                     //CHECKSTYLE:ON
-                                    debug("%s: %s: Handshake status is FINISHED after calling onReceiveTimeout(), finish the loop",
-                                            address, side);
+                                    debug("%s: %s: Warning: Trying to recover from read handshake message timeout exceeded: %s",
+                                            address, side, handshakeTimeout);
                                 }
-                                endLoops = true;
-                            }
 
-                            //CHECKSTYLE:OFF
-                            if (LOG.isDebugEnabled()) {
-                                //CHECKSTYLE:ON
-                                debug("%s: %s: New handshake status is %s", address, side, engine.getHandshakeStatus());
-                            }
+                                final boolean finished = onReceiveTimeout();
+                                //CHECKSTYLE:OFF
+                                if (finished) {
+                                    if (LOG.isDebugEnabled()) {
+                                        //CHECKSTYLE:ON
+                                        debug("%s: %s: Handshake status is FINISHED after calling onReceiveTimeout(), finish the loop",
+                                                address, side);
+                                    }
+                                    endLoops = true;
+                                }
 
-                            continue;
-                        } else {
-                            throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
+                                //CHECKSTYLE:OFF
+                                if (LOG.isDebugEnabled()) {
+                                    //CHECKSTYLE:ON
+                                    debug("%s: %s: New handshake status is %s", address, side,
+                                            engine.getHandshakeStatus());
+                                }
+
+                                continue;
+                            } else {
+                                throw new TimeoutException(
+                                        "Read handshake message timeout exceeded: " + handshakeTimeout);
+                            }
                         }
+                    } catch (final IOException e) {
+                        throw e;
+                    } catch (final TimeoutException e) {
+                        throw e;
+                    } catch (final Exception e) {
+                        throw new IOException(e);
                     }
                     final IByteBuffer message = reader.readMessage();
                     handshakeBuffer.clear();
@@ -133,43 +191,43 @@ public class TlsHandshaker {
                 if (readFinishedRequired) {
                     reader.readFinished();
                 }
-                final SSLEngineResult.Status rs = r.getStatus();
+                final Status rs = r.getStatus();
                 hs = r.getHandshakeStatus();
                 //CHECKSTYLE:OFF
-                if (rs == SSLEngineResult.Status.OK) {
+                if (rs == Status.OK) {
                     //CHECKSTYLE:ON
                     // OK
-                } else if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+                } else if (rs == Status.BUFFER_OVERFLOW) {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: BUFFER_OVERFLOW, handshake status is %s", address, side, hs);
                     }
 
                     // the client maximum fragment size config does not work?
-                    throw new Exception("Buffer overflow: " + "incorrect client maximum fragment size");
-                } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+                    throw new IOException("Buffer overflow: " + "incorrect client maximum fragment size");
+                } else if (rs == Status.BUFFER_UNDERFLOW) {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: BUFFER_UNDERFLOW, handshake status is %s", address, side, hs);
                     }
 
                     // bad packet, or the client maximum fragment size
                     // config does not work?
-                    if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-                        throw new Exception("Buffer underflow: " + "incorrect client maximum fragment size");
+                    if (hs != HandshakeStatus.NOT_HANDSHAKING) {
+                        throw new IOException("Buffer underflow: " + "incorrect client maximum fragment size");
                     } // otherwise, ignore this packet
-                } else if (rs == SSLEngineResult.Status.CLOSED) {
-                    throw new Exception("SSL engine closed, handshake status is " + hs);
+                } else if (rs == Status.CLOSED) {
+                    throw FastEOFException.getInstance("SSL engine closed, handshake status is " + hs);
                 } else {
-                    throw new Exception("Can't reach here, result is " + rs);
+                    throw new IOException("Can't reach here, result is " + rs);
                 }
 
-                if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
+                if (hs == HandshakeStatus.FINISHED) {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: Handshake status is FINISHED, finish the loop", address, side);
                     }
                     endLoops = true;
                 }
-            } else if (hs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
-                final boolean finished = produceHandshakePackets(address, side, "Produced", engine, writer);
+            } else if (hs == HandshakeStatus.NEED_WRAP) {
+                final boolean finished = produceHandshakePackets("Produced");
                 if (finished) {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: Handshake status is FINISHED after producing handshake packets, finish the loop",
@@ -177,32 +235,32 @@ public class TlsHandshaker {
                     }
                     endLoops = true;
                 }
-            } else if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+            } else if (hs == HandshakeStatus.NEED_TASK) {
                 runDelegatedTasks(engine);
-            } else if (hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+            } else if (hs == HandshakeStatus.NOT_HANDSHAKING) {
                 if (LOG.isDebugEnabled()) {
                     debug("%s: %s: Handshake status is NOT_HANDSHAKING, finish the loop", address, side);
                 }
                 endLoops = true;
-            } else if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
-                throw new Exception("Unexpected status, SSLEngine.getHandshakeStatus() shouldn't return FINISHED");
+            } else if (hs == HandshakeStatus.FINISHED) {
+                throw new IOException("Unexpected status, SSLEngine.getHandshakeStatus() shouldn't return FINISHED");
             } else {
-                throw new Exception("Can't reach here, handshake status is " + hs);
+                throw new IOException("Can't reach here, handshake status is " + hs);
             }
         }
 
-        final SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
+        hs = engine.getHandshakeStatus();
         if (LOG.isDebugEnabled()) {
             debug("%s: %s: Handshake finished, status is %s", address, side, hs);
         }
 
         if (engine.getHandshakeSession() != null) {
-            throw new Exception("Handshake finished, but handshake session is not null");
+            throw new IOException("Handshake finished, but handshake session is not null");
         }
 
         final SSLSession session = engine.getSession();
         if (session == null) {
-            throw new Exception("Handshake finished, but session is null");
+            throw new IOException("Handshake finished, but session is null");
         }
         if (LOG.isDebugEnabled()) {
             debug("%s: %s: Negotiated protocol is %s", address, side, session.getProtocol());
@@ -213,21 +271,21 @@ public class TlsHandshaker {
         //
         // According to the spec, SSLEngine.getHandshakeStatus() can't
         // return FINISHED.
-        if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-            throw new Exception("Unexpected handshake status " + hs);
+        if (hs != HandshakeStatus.NOT_HANDSHAKING) {
+            throw new IOException("Unexpected handshake status " + hs);
         }
 
-        if (isValidateHandshake()) {
-            if (client) {
-                // write client application data
-                deliverAppData(engine, writer, VALIDATE_CLIENT_APP);
-                // read server application data
-                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, VALIDATE_SERVER_APP);
-            } else {
+        if (validateHandshake) {
+            if (server) {
                 // read client application data
-                receiveAppData(address, side, handshakeTimeout, engine, readerSpinWait, reader, VALIDATE_CLIENT_APP);
+                receiveAppData(VALIDATE_CLIENT_APP);
                 // write server application data
-                deliverAppData(engine, writer, VALIDATE_SERVER_APP);
+                deliverAppData(VALIDATE_SERVER_APP);
+            } else {
+                // write client application data
+                deliverAppData(VALIDATE_CLIENT_APP);
+                // read server application data
+                receiveAppData(VALIDATE_SERVER_APP);
             }
 
             if (LOG.isDebugEnabled()) {
@@ -236,26 +294,20 @@ public class TlsHandshaker {
         }
     }
 
-    protected boolean isValidateHandshake() {
-        return false;
-    }
-
     // retransmission if timeout
-    private boolean onReceiveTimeout(final SocketAddress address, final String side, final SSLEngine engine,
-            final ISynchronousWriter<IByteBufferProvider> writer) throws Exception {
-        final SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-        if (hs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+    private boolean onReceiveTimeout() throws IOException {
+        final HandshakeStatus hs = engine.getHandshakeStatus();
+        if (hs == HandshakeStatus.NOT_HANDSHAKING) {
             return false;
         } else {
             // retransmission of handshake messages
-            return produceHandshakePackets(address, side, "Reproduced", engine, writer);
+            return produceHandshakePackets("Reproduced");
         }
     }
 
     // produce handshake packets
     //CHECKSTYLE:OFF
-    private boolean produceHandshakePackets(final SocketAddress address, final String side, final String action,
-            final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer) throws Exception {
+    private boolean produceHandshakePackets(final String action) throws IOException {
         //CHECKSTYLE:ON
 
         int packets = 0;
@@ -264,7 +316,7 @@ public class TlsHandshaker {
         while (!endLoops) {
 
             if (--loops < 0) {
-                throw new RuntimeException("Too much loops to produce handshake packets");
+                throw new IOException("Too many loops to produce handshake packets");
             }
 
             handshakeBuffer.clear();
@@ -273,35 +325,7 @@ public class TlsHandshaker {
             final SSLEngineResult r = engine.wrap(oApp, oNet);
             oNet.flip();
 
-            final SSLEngineResult.Status rs = r.getStatus();
-            final SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
-            if (LOG.isDebugEnabled()) {
-                debug("%s: %s: ----produce handshake packet(%s, %s, %s)----", address, side, loops, rs, hs);
-            }
-            if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
-                // the client maximum fragment size config does not work?
-                throw new Exception("Buffer overflow: " + "incorrect server maximum fragment size");
-            } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
-                if (LOG.isDebugEnabled()) {
-                    debug("%s: %s: Produce handshake packets: BUFFER_UNDERFLOW occured", address, side);
-                    debug("%s: %s: Produce handshake packets: Handshake status: %s", address, side, hs);
-                }
-                // bad packet, or the client maximum fragment size
-                // config does not work?
-                if (hs != SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
-                    throw new Exception("Buffer underflow: " + "incorrect server maximum fragment size");
-                } // otherwise, ignore this packet
-            } else if (rs == SSLEngineResult.Status.CLOSED) {
-                throw new Exception("SSLEngine has closed");
-                //CHECKSTYLE:OFF
-            } else if (rs == SSLEngineResult.Status.OK) {
-                //CHECKSTYLE:ON
-                // OK
-            } else {
-                throw new Exception("Can't reach here, result is " + rs);
-            }
-
-            // SSLEngineResult.Status.OK:
+            // Status.OK:
             if (oNet.hasRemaining()) {
                 packets++;
                 if (LOG.isTraceEnabled()) {
@@ -310,7 +334,35 @@ public class TlsHandshaker {
                 writer.write(ByteBuffers.wrapRelative(oNet));
             }
 
-            if (hs == SSLEngineResult.HandshakeStatus.FINISHED) {
+            final Status rs = r.getStatus();
+            final HandshakeStatus hs = r.getHandshakeStatus();
+            if (LOG.isDebugEnabled()) {
+                debug("%s: %s: ----produce handshake packet(%s, %s, %s)----", address, side, loops, rs, hs);
+            }
+            if (rs == Status.BUFFER_OVERFLOW) {
+                // the client maximum fragment size config does not work?
+                throw new IOException("Buffer overflow: " + "incorrect server maximum fragment size");
+            } else if (rs == Status.BUFFER_UNDERFLOW) {
+                if (LOG.isDebugEnabled()) {
+                    debug("%s: %s: Produce handshake packets: BUFFER_UNDERFLOW occured", address, side);
+                    debug("%s: %s: Produce handshake packets: Handshake status: %s", address, side, hs);
+                }
+                // bad packet, or the client maximum fragment size
+                // config does not work?
+                if (hs != HandshakeStatus.NOT_HANDSHAKING) {
+                    throw new IOException("Buffer underflow: " + "incorrect server maximum fragment size");
+                } // otherwise, ignore this packet
+            } else if (rs == Status.CLOSED) {
+                throw FastEOFException.getInstance("SSLEngine has closed");
+                //CHECKSTYLE:OFF
+            } else if (rs == Status.OK) {
+                //CHECKSTYLE:ON
+                // OK
+            } else {
+                throw new IOException("Can't reach here, result is " + rs);
+            }
+
+            if (hs == HandshakeStatus.FINISHED) {
                 if (LOG.isDebugEnabled()) {
                     debug("%s: %s: Produce handshake packets: Handshake status is FINISHED, finish the loop", address,
                             side);
@@ -320,23 +372,22 @@ public class TlsHandshaker {
             }
 
             boolean endInnerLoop = false;
-            SSLEngineResult.HandshakeStatus nhs = hs;
+            HandshakeStatus nhs = hs;
             while (!endInnerLoop) {
-                if (nhs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
+                if (nhs == HandshakeStatus.NEED_TASK) {
                     runDelegatedTasks(engine);
-                } else if (nhs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP
-                        || nhs == SSLEngineResult.HandshakeStatus.NEED_UNWRAP_AGAIN
-                        || nhs == SSLEngineResult.HandshakeStatus.NOT_HANDSHAKING) {
+                } else if (nhs == HandshakeStatus.NEED_UNWRAP || nhs == HandshakeStatus.NEED_UNWRAP_AGAIN
+                        || nhs == HandshakeStatus.NOT_HANDSHAKING) {
 
                     endInnerLoop = true;
                     endLoops = true;
-                } else if (nhs == SSLEngineResult.HandshakeStatus.NEED_WRAP) {
+                } else if (nhs == HandshakeStatus.NEED_WRAP) {
                     endInnerLoop = true;
-                } else if (nhs == SSLEngineResult.HandshakeStatus.FINISHED) {
-                    throw new Exception(
+                } else if (nhs == HandshakeStatus.FINISHED) {
+                    throw new IOException(
                             "Unexpected status, SSLEngine.getHandshakeStatus() " + "shouldn't return FINISHED");
                 } else {
-                    throw new Exception("Can't reach here, handshake status is " + nhs);
+                    throw new IOException("Can't reach here, handshake status is " + nhs);
                 }
                 nhs = engine.getHandshakeStatus();
             }
@@ -349,70 +400,70 @@ public class TlsHandshaker {
     }
 
     // run delegated tasks
-    private void runDelegatedTasks(final SSLEngine engine) throws Exception {
+    private void runDelegatedTasks(final SSLEngine engine) throws IOException {
         Runnable runnable;
         while ((runnable = engine.getDelegatedTask()) != null) {
             runnable.run();
         }
 
-        final SSLEngineResult.HandshakeStatus hs = engine.getHandshakeStatus();
-        if (hs == SSLEngineResult.HandshakeStatus.NEED_TASK) {
-            throw new Exception("handshake shouldn't need additional tasks");
+        final HandshakeStatus hs = engine.getHandshakeStatus();
+        if (hs == HandshakeStatus.NEED_TASK) {
+            throw new IOException("handshake shouldn't need additional tasks");
         }
     }
 
     // deliver application data
-    private void deliverAppData(final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer,
-            final java.nio.ByteBuffer appData) throws Exception {
+    private void deliverAppData(final java.nio.ByteBuffer appData) throws IOException {
         // Note: have not considered the packet loses
-        produceApplicationPackets(engine, writer, appData);
+        produceApplicationPackets(appData);
         appData.flip();
     }
 
     // produce application packets
-    void produceApplicationPackets(final SSLEngine engine, final ISynchronousWriter<IByteBufferProvider> writer,
-            final java.nio.ByteBuffer appData) throws Exception {
+    void produceApplicationPackets(final java.nio.ByteBuffer appData) throws IOException {
 
         handshakeBuffer.clear();
         final java.nio.ByteBuffer appNet = handshakeBuffer;
         final SSLEngineResult r = engine.wrap(appData, appNet);
         appNet.flip();
 
-        final SSLEngineResult.Status rs = r.getStatus();
-        if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
+        final Status rs = r.getStatus();
+        if (rs == Status.BUFFER_OVERFLOW) {
             // the client maximum fragment size config does not work?
-            throw new Exception("Buffer overflow: " + "incorrect server maximum fragment size");
-        } else if (rs == SSLEngineResult.Status.BUFFER_UNDERFLOW) {
+            throw new IOException("Buffer overflow: " + "incorrect server maximum fragment size");
+        } else if (rs == Status.BUFFER_UNDERFLOW) {
             // unlikely
-            throw new Exception("Buffer underflow during wraping");
-        } else if (rs == SSLEngineResult.Status.CLOSED) {
-            throw new Exception("SSLEngine has closed");
+            throw new IOException("Buffer underflow during wraping");
+        } else if (rs == Status.CLOSED) {
+            throw FastEOFException.getInstance("SSLEngine has closed");
             //CHECKSTYLE:OFF
-        } else if (rs == SSLEngineResult.Status.OK) {
+        } else if (rs == Status.OK) {
             //CHECKSTYLE:ON
             // OK
         } else {
-            throw new Exception("Can't reach here, result is " + rs);
+            throw new IOException("Can't reach here, result is " + rs);
         }
 
-        // SSLEngineResult.Status.OK:
+        // Status.OK:
         if (appNet.hasRemaining()) {
             writer.write(ByteBuffers.wrapRelative(appNet));
         }
     }
 
     // receive application data
-    private void receiveAppData(final SocketAddress address, final String side, final Duration handshakeTimeout,
-            final SSLEngine engine, final ASpinWait readerSpinWait, final ISynchronousReader<IByteBuffer> reader,
-            final java.nio.ByteBuffer expectedApp) throws Exception {
+    private void receiveAppData(final java.nio.ByteBuffer expectedApp) throws IOException, TimeoutException {
 
         int loops = MAX_APP_READ_LOOPS;
         while (true) {
             if (--loops < 0) {
                 throw new RuntimeException("Too many loops to receive application data");
             }
-            if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
+            try {
+                if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
+                    throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
+                }
+            } catch (final Exception e) {
+                throw new IOException(e);
             }
             final IByteBuffer message = reader.readMessage();
             handshakeBuffer.clear();
@@ -429,7 +480,7 @@ public class TlsHandshaker {
                     if (LOG.isDebugEnabled()) {
                         debug("%s: %s: Engine status is %s", address, side, rs);
                     }
-                    throw new Exception("Not the right application data");
+                    throw new IOException("Not the right application data");
                 }
                 break;
             }

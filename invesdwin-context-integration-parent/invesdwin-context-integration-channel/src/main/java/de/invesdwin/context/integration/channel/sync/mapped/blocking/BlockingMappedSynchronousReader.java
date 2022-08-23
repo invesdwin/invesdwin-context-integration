@@ -57,8 +57,10 @@ public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
 
     @Override
     public void close() throws IOException {
-        setReadFinished(READFINISHED_CLOSED);
-        super.close();
+        if (mem != null) {
+            setReadFinished(READFINISHED_CLOSED);
+            super.close();
+        }
     }
 
     @Override

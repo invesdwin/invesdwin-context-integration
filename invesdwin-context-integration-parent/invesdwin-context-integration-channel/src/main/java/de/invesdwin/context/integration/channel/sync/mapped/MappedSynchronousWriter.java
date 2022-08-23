@@ -36,9 +36,11 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
 
     @Override
     public void close() throws IOException {
-        setTransaction(TRANSACTION_CLOSED_VALUE);
-        super.close();
-        messageBuffer = null;
+        if (messageBuffer != null) {
+            setTransaction(TRANSACTION_CLOSED_VALUE);
+            super.close();
+            messageBuffer = null;
+        }
     }
 
     /**

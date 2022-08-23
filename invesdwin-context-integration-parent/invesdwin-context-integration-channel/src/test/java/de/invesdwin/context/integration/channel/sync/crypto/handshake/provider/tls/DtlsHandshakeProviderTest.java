@@ -30,15 +30,33 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
         final File requestFile = newFile("testDtlsHandshakePerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testDtlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
+        final TlsProtocol protocol = TlsProtocol.DTLS;
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
-                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
+                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true, protocol));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
-                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
+                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false, protocol));
+        runPerformanceTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
+    }
+
+    @Test
+    public void testSizedTlsHandshakePerformance() throws InterruptedException {
+        Throwables.setDebugStackTraceEnabled(true);
+        final boolean tmpfs = true;
+        //we need to block here because multiple messages are written in succession
+        final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
+        final File requestFile = newFile("testDtlsHandshakePerformance_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile("testDtlsHandshakePerformance_response.pipe", tmpfs, pipes);
+        final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
+        final TlsProtocol protocol = TlsProtocol.TLS;
+        final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
+                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true, protocol));
+        final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
+                newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false, protocol));
         runPerformanceTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,
-            final InetSocketAddress socketAddress, final boolean server) {
+            final InetSocketAddress socketAddress, final boolean server, final ITlsProtocol protocol) {
         return new TlsHandshakeProvider(handshakeTimeout, socketAddress, server) {
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
@@ -55,7 +73,7 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
 
                     @Override
                     public ITlsProtocol getProtocol() {
-                        return TlsProtocol.DTLS;
+                        return protocol;
                     }
                 };
             }

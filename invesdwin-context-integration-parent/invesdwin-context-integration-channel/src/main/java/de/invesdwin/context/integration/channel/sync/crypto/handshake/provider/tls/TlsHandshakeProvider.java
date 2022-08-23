@@ -49,22 +49,12 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
         final ISynchronousWriter<IByteBufferProvider> underlyingWriter = channel.getWriter().getUnderlyingWriter();
         final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
 
-        final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
-        try {
-            handshaker.performHandshake(handshakeTimeout, socketAddress, tlsProvider.getProtocol(), engine,
-                    readerSpinWait, underlyingReader, underlyingWriter);
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        } finally {
-            TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
-        }
-
         final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
                 .valueOf(underlyingWriter);
         final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(underlyingReader);
-        final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout, engine,
-                ignoreOpenCloseReader, ignoreOpenCloseWriter);
+        final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout, socketAddress,
+                tlsProvider.getProtocol(), engine, readerSpinWait, ignoreOpenCloseReader, ignoreOpenCloseWriter);
         final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(tlsChannel);
         final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(tlsChannel);
         channel.getReader().setEncryptedReader(encryptedReader);

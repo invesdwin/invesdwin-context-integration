@@ -53,10 +53,12 @@ public class BlockingMappedSynchronousWriter extends AMappedSynchronousChannel
 
     @Override
     public void close() throws IOException {
-        setTransaction(TRANSACTION_CLOSED_VALUE);
-        setReadFinished(READFINISHED_CLOSED);
-        super.close();
-        messageBuffer = null;
+        if (messageBuffer != null) {
+            setTransaction(TRANSACTION_CLOSED_VALUE);
+            setReadFinished(READFINISHED_CLOSED);
+            super.close();
+            messageBuffer = null;
+        }
     }
 
     /**

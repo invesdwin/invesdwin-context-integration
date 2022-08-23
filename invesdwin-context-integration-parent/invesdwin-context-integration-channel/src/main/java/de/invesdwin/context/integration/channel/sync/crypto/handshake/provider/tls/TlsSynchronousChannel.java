@@ -2,16 +2,20 @@ package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
@@ -32,9 +36,14 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
     private final Duration handshakeTimeout;
+    private final InetSocketAddress socketAdddress;
+    private final ITlsProtocol protocol;
     private final SSLEngine engine;
+    private final ASpinWait readerSpinWait;
     private final ISynchronousReader<IByteBuffer> underlyingReader;
     private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
+    private final boolean server;
+    private final String side;
 
     private java.nio.ByteBuffer outboundApplicationDataSize;
     private java.nio.ByteBuffer outboundApplicationData;
@@ -45,16 +54,20 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private java.nio.ByteBuffer inboundApplicationData;
     private java.nio.ByteBuffer[] outboundApplicationDataArray;
     private java.nio.ByteBuffer[] inboundApplicationDataArray;
-    private final String side;
 
-    public TlsSynchronousChannel(final Duration handshakeTimeout, final SSLEngine engine,
+    public TlsSynchronousChannel(final Duration handshakeTimeout, final InetSocketAddress socketAddress,
+            final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
             final ISynchronousReader<IByteBuffer> underlyingReader,
             final ISynchronousWriter<IByteBufferProvider> underlyingWriter) {
         this.handshakeTimeout = handshakeTimeout;
+        this.socketAdddress = socketAddress;
+        this.protocol = protocol;
         this.engine = engine;
+        this.readerSpinWait = readerSpinWait;
         this.underlyingReader = underlyingReader;
         this.underlyingWriter = underlyingWriter;
-        this.side = engine.getUseClientMode() ? "Client" : "Server";
+        this.server = !engine.getUseClientMode();
+        this.side = server ? "Server" : "Client";
     }
 
     @Override
@@ -101,15 +114,49 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationDataSize, null };
         inboundApplicationDataArray = new java.nio.ByteBuffer[] { inboundApplicationData };
 
+        performHandshake(isValidateHandshake());
     }
 
     public boolean action() throws IOException {
-        boolean busy = false;
+        final HandshakeStatus hs = engine.getHandshakeStatus();
+        if (hs != HandshakeStatus.FINISHED && hs != HandshakeStatus.NOT_HANDSHAKING) {
+            /*
+             * someone (or the underlying implementation for e.g. a re-keying) has requested a rehandshake. Handle this
+             * explicitly since the application might only use one direction of the channel. Thus wrap/unwrap would not
+             * be called properly. Also for DTLS the handshaker handles the packet loss of the rehandshake. The
+             * application only handles packet loss for application data. So another reason to use the handshaker here.
+             */
+            if (!performHandshake(false)) {
+                return false;
+            }
+        }
+        if (receiveAppData()) {
+            return true;
+        }
+        if (deliverAppData()) {
+            return true;
+        }
+        return false;
+    }
 
-        busy |= receiveAppData();
-        busy |= deliverAppData();
+    private boolean performHandshake(final boolean validateHandshake) {
+        final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
+        try {
+            handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
+                    underlyingReader, underlyingWriter, validateHandshake);
+            handshaker.performHandshake();
+            return true;
+        } catch (final EOFException e) {
+            return false;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
+        }
+    }
 
-        return busy;
+    protected boolean isValidateHandshake() {
+        return false;
     }
 
     private boolean receiveAppData() throws IOException {
@@ -202,6 +249,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         final long startNanos = System.nanoTime();
         engine.closeOutbound();
         try {
+            //signal close to the other side for faster exit
             while (action()) {
                 try {
                     SynchronousChannels.DEFAULT_WAIT_INTERVAL.sleep();
