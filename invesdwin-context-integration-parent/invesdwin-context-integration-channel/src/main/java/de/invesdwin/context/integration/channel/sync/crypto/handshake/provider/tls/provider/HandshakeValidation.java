@@ -5,6 +5,8 @@ import javax.annotation.concurrent.Immutable;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.util.bean.AValueObject;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @Immutable
 public class HandshakeValidation extends AValueObject {
@@ -12,19 +14,19 @@ public class HandshakeValidation extends AValueObject {
     public static final HandshakeValidation DEFAULT = new HandshakeValidation("Hi Client, I'm Server".getBytes(),
             "Hi Server, I'm Client".getBytes());
 
-    private final java.nio.ByteBuffer serverPayload;
-    private final java.nio.ByteBuffer clientPayload;
+    private final IByteBuffer serverPayload;
+    private final IByteBuffer clientPayload;
 
     public HandshakeValidation(final byte[] serverPayload, final byte[] clientPayload) {
-        this.serverPayload = java.nio.ByteBuffer.wrap(serverPayload);
-        this.clientPayload = java.nio.ByteBuffer.wrap(clientPayload);
+        this.serverPayload = ByteBuffers.wrap(serverPayload);
+        this.clientPayload = ByteBuffers.wrap(clientPayload);
     }
 
-    public java.nio.ByteBuffer getServerPayload() {
+    public IByteBuffer getServerPayload() {
         return serverPayload;
     }
 
-    public java.nio.ByteBuffer getClientPayload() {
+    public IByteBuffer getClientPayload() {
         return clientPayload;
     }
 
@@ -40,9 +42,9 @@ public class HandshakeValidation extends AValueObject {
         //CHECKSTYLE:ON
         final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
                 password.getBytes());
-        final byte[] derivedServerPayload = derivedKeyProvider.newDerivedKey(serverPayload.array(),
+        final byte[] derivedServerPayload = derivedKeyProvider.newDerivedKey(serverPayload.asByteArray(),
                 serverPayload.capacity());
-        final byte[] derivedClientPayload = derivedKeyProvider.newDerivedKey(clientPayload.array(),
+        final byte[] derivedClientPayload = derivedKeyProvider.newDerivedKey(clientPayload.asByteArray(),
                 clientPayload.capacity());
         return new HandshakeValidation(derivedServerPayload, derivedClientPayload);
     }

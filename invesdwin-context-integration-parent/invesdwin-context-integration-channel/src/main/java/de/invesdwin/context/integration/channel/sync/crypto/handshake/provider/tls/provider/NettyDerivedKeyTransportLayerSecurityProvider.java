@@ -77,7 +77,8 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
 
     @Override
     public HandshakeValidation getHandshakeValidation() {
-        return HandshakeValidation.DEFAULT.withDerivedPassword("handshake-validation-" + getHostname());
+        //        return HandshakeValidation.DEFAULT.withDerivedPassword("handshake-validation-" + getHostname());
+        return null;
     }
 
     public boolean isServer() {

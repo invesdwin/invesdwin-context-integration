@@ -180,7 +180,8 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
 
     @Override
     public HandshakeValidation getHandshakeValidation() {
-        return HandshakeValidation.DEFAULT.withDerivedPassword("handshake-validation-" + getHostname());
+        //        return HandshakeValidation.DEFAULT.withDerivedPassword("handshake-validation-" + getHostname());
+        return null;
     }
 
     /**

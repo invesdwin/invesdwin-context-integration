@@ -274,14 +274,14 @@ public class TlsHandshaker {
         if (handshakeValidation != null) {
             if (server) {
                 // read client application data
-                receiveAppData(handshakeValidation.getClientPayload());
+                receiveAppData(handshakeValidation.getClientPayload().asNioByteBuffer());
                 // write server application data
-                deliverAppData(handshakeValidation.getServerPayload());
+                deliverAppData(handshakeValidation.getServerPayload().asNioByteBuffer());
             } else {
                 // write client application data
-                deliverAppData(handshakeValidation.getClientPayload());
+                deliverAppData(handshakeValidation.getClientPayload().asNioByteBuffer());
                 // read server application data
-                receiveAppData(handshakeValidation.getServerPayload());
+                receiveAppData(handshakeValidation.getServerPayload().asNioByteBuffer());
             }
 
             if (LOG.isDebugEnabled()) {
