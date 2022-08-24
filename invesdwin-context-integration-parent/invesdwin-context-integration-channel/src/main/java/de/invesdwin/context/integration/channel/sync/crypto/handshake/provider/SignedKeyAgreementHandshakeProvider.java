@@ -110,6 +110,10 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
      * Deriving public/private keys from a pre shared pepper and password without a random component will make this as
      * weak as using the unsigned key agreement handshake provider directly, just a bit slower. So this should not be
      * done!
+     * 
+     * Using the pepper here as a password makes this approach similar to J-PAKE in its approach of a two step password
+     * authenticated key exchange. Though we use a signature verification instead of a key confirmation to verify the
+     * common shared secret (pepper). (https://en.wikipedia.org/wiki/Password_Authenticated_Key_Exchange_by_Juggling)
      */
     protected SignatureKey getOurSignatureKey() {
         final ISignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm();

@@ -40,6 +40,8 @@ public interface ITransportLayerSecurityProvider {
      * this only prevents other applications from entering, but does not prevent a Man-in-the-Middle-Attack from
      * impersonating both sides by interchanging their respective certificates.
      * (https://stackoverflow.com/questions/50033054/can-a-man-in-the-middle-attack-on-an-https-read-all-the-communication)
+     * 
+     * This is similar to key confirmation in: https://en.wikipedia.org/wiki/SPEKE
      */
     HandshakeValidation getHandshakeValidation();
 
