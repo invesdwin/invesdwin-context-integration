@@ -85,8 +85,8 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
                 final DerivedKeyProvider derivedKeyProvider = new DerivedKeyProvider(sharedSecret,
                         getDerivationFactory());
                 finishHandshake(channel, ignoreOpenCloseWriter, ignoreOpenCloseReader, derivedKeyProvider);
-            } catch (final NoSuchAlgorithmException | IOException | InvalidKeyException e) {
-                throw new RuntimeException(e);
+            } catch (final NoSuchAlgorithmException | InvalidKeyException e) {
+                throw new IOException(e);
             } finally {
                 Closeables.closeQuietly(handshakeReader);
             }
