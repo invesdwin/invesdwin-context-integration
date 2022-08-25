@@ -25,6 +25,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.s
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep2ResultSerde;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
+import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -136,7 +137,8 @@ public class Srp6ServerHandshakeProvider extends ASrp6HandshakeProvider {
      */
     protected Srp6ServerStep1LookupOutput getServerStep1LookupResult(final Srp6ServerStep1LookupInput input) {
         final SRP6VerifierGenerator srp6VerifierGenerator = getSrp6VerifierGenerator();
-        final BigInteger passwordSaltS = new BigInteger(srp6VerifierGenerator.generateRandomSalt());
+        final BigInteger passwordSaltS = new BigInteger(getPasswordHasher().getDefaultHashLength(),
+                CryptoRandomGenerators.getThreadLocalCryptoRandom());
         final BigInteger passwordVerifierV = srp6VerifierGenerator.generateVerifier(passwordSaltS, input.getUserId(),
                 CryptoProperties.DEFAULT_PEPPER_STR);
         return new Srp6ServerStep1LookupOutput(passwordSaltS, passwordVerifierV);

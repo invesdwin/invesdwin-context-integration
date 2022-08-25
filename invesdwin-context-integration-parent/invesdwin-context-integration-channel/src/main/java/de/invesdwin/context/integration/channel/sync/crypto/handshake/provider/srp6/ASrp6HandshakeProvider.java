@@ -11,6 +11,7 @@ import com.nimbusds.srp6.SRP6VerifierGenerator;
 import com.nimbusds.srp6.XRoutine;
 import com.nimbusds.srp6.XRoutineWithUserIdentity;
 
+import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.AKeyExchangeHandshakeProvider;
 import de.invesdwin.context.security.crypto.key.password.IPasswordHasher;
@@ -107,8 +108,12 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      * Replace this method with a no-op to send the plaintext userId to the server.
      */
     protected String hashSecret(final String secret) {
-        final IPasswordHasher hasher = SimplePasswordHasher.DEFAULT;
+        final IPasswordHasher hasher = getPasswordHasher();
         return Hex.encodeHexString(hasher.hash(Bytes.EMPTY_ARRAY, secret.getBytes(), hasher.getDefaultHashLength()));
+    }
+
+    protected SimplePasswordHasher getPasswordHasher() {
+        return SimplePasswordHasher.DEFAULT;
     }
 
     /**
@@ -118,7 +123,8 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      */
     @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
-        return super.newAuthenticatedHandshakeChannelFactory();
+        //        return super.newAuthenticatedHandshakeChannelFactory();
+        return DisabledChannelFactory.getInstance();
     }
 
 }

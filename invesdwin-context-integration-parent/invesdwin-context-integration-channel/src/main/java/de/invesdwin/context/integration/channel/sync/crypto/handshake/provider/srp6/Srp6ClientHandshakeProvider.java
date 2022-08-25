@@ -77,22 +77,16 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         }
     }
 
-    private BigInteger clientStep3(final ISynchronousReader<IByteBuffer> handshakeReader,
-            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
-            throws IOException, SRP6Exception {
-        //On receiving the server evidence message 'M2':
-        //Validate the server evidence message 'M2' after which user and server are mutually authenticated.
-        waitForMessage(handshakeReaderSpinWait);
-        final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage();
-        final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
-                .fromBuffer(serverStep2ResultMessage, buffer.capacity());
-        handshakeReader.readFinished();
-        client.step3(serverStep2Result.getServerEvidenceMessageM2());
+    private void clientStep1(final ISynchronousWriter<IByteBufferProvider> handshakeWriter, final IByteBuffer buffer,
+            final SRP6ClientSession client) throws IOException {
+        //Store input user identity 'I' and password 'P'.
+        client.step1(userIdHash, passwordHash);
 
-        //On completing mutual authentication:
-        //The established session key 'S' can be used to encrypt further communication between client and server.
-        final BigInteger sessionKey = client.getSessionKey();
-        return sessionKey;
+        //Send user identity 'I' to server.
+        final Srp6ServerStep1LookupInput serverStep1LookupInput = new Srp6ServerStep1LookupInput(userIdHash);
+        final int serverStep1LookupInputLength = Srp6ServerStep1LookupInputSerde.INSTANCE.toBuffer(buffer,
+                serverStep1LookupInput);
+        handshakeWriter.write(buffer.sliceTo(serverStep1LookupInputLength));
     }
 
     private void clientStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
@@ -116,16 +110,22 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         handshakeWriter.write(buffer.sliceTo(clientStep2ResultLength));
     }
 
-    private void clientStep1(final ISynchronousWriter<IByteBufferProvider> handshakeWriter, final IByteBuffer buffer,
-            final SRP6ClientSession client) throws IOException {
-        //Store input user identity 'I' and password 'P'.
-        client.step1(userIdHash, passwordHash);
+    private BigInteger clientStep3(final ISynchronousReader<IByteBuffer> handshakeReader,
+            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
+            throws IOException, SRP6Exception {
+        //On receiving the server evidence message 'M2':
+        //Validate the server evidence message 'M2' after which user and server are mutually authenticated.
+        waitForMessage(handshakeReaderSpinWait);
+        final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage();
+        final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
+                .fromBuffer(serverStep2ResultMessage, buffer.capacity());
+        handshakeReader.readFinished();
+        client.step3(serverStep2Result.getServerEvidenceMessageM2());
 
-        //Send user identity 'I' to server.
-        final Srp6ServerStep1LookupInput serverStep1LookupInput = new Srp6ServerStep1LookupInput(userIdHash);
-        final int serverStep1LookupInputLength = Srp6ServerStep1LookupInputSerde.INSTANCE.toBuffer(buffer,
-                serverStep1LookupInput);
-        handshakeWriter.write(buffer.sliceTo(serverStep1LookupInputLength));
+        //On completing mutual authentication:
+        //The established session key 'S' can be used to encrypt further communication between client and server.
+        final BigInteger sessionKey = client.getSessionKey();
+        return sessionKey;
     }
 
     protected DerivedKeyProvider newDerivedKeyProvider(final byte[] sharedSecret) {

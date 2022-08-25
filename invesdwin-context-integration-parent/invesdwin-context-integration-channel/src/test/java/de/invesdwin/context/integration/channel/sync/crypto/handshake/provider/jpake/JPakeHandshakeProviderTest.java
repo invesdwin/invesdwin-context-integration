@@ -25,7 +25,7 @@ public class JPakeHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 1674;
+        return 1714;
     }
 
 }
