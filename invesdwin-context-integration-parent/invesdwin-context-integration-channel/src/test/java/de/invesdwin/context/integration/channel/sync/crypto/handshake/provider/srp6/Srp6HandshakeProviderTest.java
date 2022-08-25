@@ -33,7 +33,7 @@ public class Srp6HandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 593;
+        return 594;
     }
 
 }
