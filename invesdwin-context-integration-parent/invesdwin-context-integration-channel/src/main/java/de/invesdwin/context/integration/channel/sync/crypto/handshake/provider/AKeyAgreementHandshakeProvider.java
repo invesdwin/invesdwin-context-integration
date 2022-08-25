@@ -171,7 +171,7 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
     }
 
     public SignedKeyAgreementHandshakeProvider asSigned() {
-        return SignedKeyAgreementHandshakeProvider.valueOf(this);
+        return DerivedSignedKeyAgreementHandshakeProvider.valueOf(this);
     }
 
 }

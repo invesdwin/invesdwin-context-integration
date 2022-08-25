@@ -31,9 +31,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * This implementation achieves forward security and non-repudiation even if the pre shared pepper and password are
- * compromised. This will use additional public/private keys with signatures to make sure the authentication is safe
- * against man-in-the-middle-attacks even if the pepper/password in compromised. This is done with non-repudiation
- * during the key exchange using ephemeral keys.
+ * compromised afterwards. This will use additional public/private keys with signatures to make sure the authentication
+ * is safe against man-in-the-middle-attacks. This is done with non-repudiation during the key exchange using ephemeral
+ * keys.
  * 
  * Static/PreShared public/private keys can also be used, but this will be insecure once a private key is compromised.
  * 
@@ -60,45 +60,57 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
             final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader,
             final ISynchronousReader<IByteBuffer> unsignedHandshakeReader) throws IOException {
         final SignatureKey ourSignatureKey = getOurSignatureKey();
-
+        final PublicKey staticOtherVerifyKey = getOtherVerifyKey(ourSignatureKey);
         final ISynchronousWriter<IByteBufferProvider> signedHandshakeWriter;
         final ISynchronousReader<IByteBuffer> signedHandshakeReader;
-        unsignedHandshakeWriter.open();
-        try {
-            unsignedHandshakeReader.open();
+        if (staticOtherVerifyKey != null) {
+            final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(), null,
+                    ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
+            signedHandshakeWriter = newSignedHandshakeChannelFactory(handshakeWriterSignatureKey)
+                    .newWriter(ignoreOpenCloseWriter);
+            final SignatureKey handshakeReaderSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
+                    staticOtherVerifyKey, null, ourSignatureKey.getKeySizeBits());
+            signedHandshakeReader = newSignedHandshakeChannelFactory(handshakeReaderSignatureKey)
+                    .newReader(ignoreOpenCloseReader);
+        } else {
+            unsignedHandshakeWriter.open();
             try {
-                final byte[] ourVerifyKey = ourSignatureKey.getVerifyKey().getEncoded();
-                final IByteBuffer ourVerifyKeyMessage = ByteBuffers.wrap(ourVerifyKey);
-                unsignedHandshakeWriter.write(ourVerifyKeyMessage);
-
-                final ASpinWait spinWait = newSpinWait(unsignedHandshakeReader);
+                unsignedHandshakeReader.open();
                 try {
-                    if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                        throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
+
+                    final byte[] ourVerifyKey = ourSignatureKey.getVerifyKey().getEncoded();
+                    final IByteBuffer ourVerifyKeyMessage = ByteBuffers.wrap(ourVerifyKey);
+                    unsignedHandshakeWriter.write(ourVerifyKeyMessage);
+
+                    final ASpinWait spinWait = newSpinWait(unsignedHandshakeReader);
+                    try {
+                        if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                            throw new TimeoutException(
+                                    "Read handshake message timeout exceeded: " + getHandshakeTimeout());
+                        }
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
                     }
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
+                    final IByteBuffer otherVerifyKeyMessage = unsignedHandshakeReader.readMessage();
+                    final PublicKey otherVerifyKey = SignatureKey.wrapVerifyKey(
+                            ourSignatureKey.getAlgorithm().getKeyAlgorithm(), otherVerifyKeyMessage.asByteArray());
+                    unsignedHandshakeReader.readFinished();
+
+                    final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
+                            null, ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
+                    signedHandshakeWriter = newSignedHandshakeChannelFactory(handshakeWriterSignatureKey)
+                            .newWriter(ignoreOpenCloseWriter);
+                    final SignatureKey handshakeReaderSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
+                            otherVerifyKey, null, ourSignatureKey.getKeySizeBits());
+                    signedHandshakeReader = newSignedHandshakeChannelFactory(handshakeReaderSignatureKey)
+                            .newReader(ignoreOpenCloseReader);
+                } finally {
+                    Closeables.closeQuietly(unsignedHandshakeReader);
                 }
-                final IByteBuffer otherVerifyKeyMessage = unsignedHandshakeReader.readMessage();
-                final PublicKey otherVerifyKey = SignatureKey.wrapVerifyKey(
-                        ourSignatureKey.getAlgorithm().getKeyAlgorithm(), otherVerifyKeyMessage.asByteArray());
-                unsignedHandshakeReader.readFinished();
-
-                final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(), null,
-                        ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
-                signedHandshakeWriter = newSignedHandshakeChannelFactory(handshakeWriterSignatureKey)
-                        .newWriter(ignoreOpenCloseWriter);
-                final SignatureKey handshakeReaderSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
-                        otherVerifyKey, null, ourSignatureKey.getKeySizeBits());
-                signedHandshakeReader = newSignedHandshakeChannelFactory(handshakeReaderSignatureKey)
-                        .newReader(ignoreOpenCloseReader);
             } finally {
-                Closeables.closeQuietly(unsignedHandshakeReader);
+                Closeables.closeQuietly(unsignedHandshakeWriter);
             }
-        } finally {
-            Closeables.closeQuietly(unsignedHandshakeWriter);
         }
-
         super.performHandshake(channel, ignoreOpenCloseWriter, signedHandshakeWriter, ignoreOpenCloseReader,
                 signedHandshakeReader);
     }
@@ -106,10 +118,6 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     /**
      * One could override this method to return a static key here instead. Though using ephemeral keys here will lead to
      * better security.
-     * 
-     * Deriving public/private keys from a pre shared pepper and password without a random component will make this as
-     * weak as using the unsigned key agreement handshake provider directly, just a bit slower. So this should not be
-     * done!
      * 
      * Using the pepper here as a password makes this approach similar to J-PAKE in its approach of a two step password
      * authenticated key exchange. Though we use a signature verification instead of a key confirmation to verify the
@@ -128,6 +136,14 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     }
 
     /**
+     * Return a static/preShared key here to authenticate the other side without needing to send over the public key. In
+     * that case
+     */
+    protected PublicKey getOtherVerifyKey(final SignatureKey ourSignatureKey) {
+        return null;
+    }
+
+    /**
      * We use e.g. ED25519 (EdDSA) here per default.
      */
     protected ISignatureAlgorithm getSignatureAlgorithm() {
@@ -143,9 +159,13 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     }
 
     /**
-     * One could override this with DisabledChannelFactory to not require a pre shared pepper/password. This would not
-     * open up risk for man-in-the-middle attacks. This would allow anyone to open connections, but still not allow
-     * impersonations/hijacking of other connections.
+     * One could override this with DisabledChannelFactory to not require a pre shared pepper/password. This would allow
+     * anyone to open connections and it would allow Man-in-the-Middle attacks where one replaces both sides public
+     * signature keys with his own. DisabledChannelFactory can only be used when getOtherSignatureKey returns a pre
+     * shared public key for the other side.
+     * 
+     * SSH achieves securtity against Man-in-the-Middle-Attacks by checking the fingerprint on subsequent connections.
+     * Though someone could still impersonate the first connection attempt.
      */
     @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
