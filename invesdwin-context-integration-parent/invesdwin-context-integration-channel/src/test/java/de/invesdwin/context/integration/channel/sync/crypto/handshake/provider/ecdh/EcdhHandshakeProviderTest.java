@@ -18,30 +18,36 @@ public class EcdhHandshakeProviderTest extends AChannelTest {
     public void testEcdhHandshakePerformance() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testEcdhHandshakePerformance_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testEcdhHandshakePerformance_response.pipe", tmpfs, pipes);
+        final String sessionIdentifier = "testEcdhHandshakePerformance";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
         runPerformanceTest(pipes, requestFile, responseFile, null, null,
-                new HandshakeChannelFactory(new EcdhHandshakeProvider(MAX_WAIT_DURATION)));
+                new HandshakeChannelFactory(new EcdhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier)));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testEcdhHandshakePerformanceSigned() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testEcdhHandshakePerformanceSigned_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testEcdhHandshakePerformanceSigned_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, new HandshakeChannelFactory(
-                SignedKeyAgreementHandshakeProvider.valueOf(new EcdhHandshakeProvider(MAX_WAIT_DURATION))));
+        final String sessionIdentifier = "testEcdhHandshakePerformanceSigned";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null,
+                new HandshakeChannelFactory(new SignedKeyAgreementHandshakeProvider(
+                        new EcdhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
 
     @Test
     public void testEcdhHandshakePerformanceDerivedSigned() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testEcdhHandshakePerformanceDerivedSigned_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testEcdhHandshakePerformanceDerivedSigned_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, new HandshakeChannelFactory(
-                DerivedSignedKeyAgreementHandshakeProvider.valueOf(new EcdhHandshakeProvider(MAX_WAIT_DURATION))));
+        final String sessionIdentifier = "testEcdhHandshakePerformanceDerivedSigned";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null,
+                new HandshakeChannelFactory(new DerivedSignedKeyAgreementHandshakeProvider(
+                        new EcdhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
 
     @Override

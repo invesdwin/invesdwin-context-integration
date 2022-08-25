@@ -6,7 +6,6 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
-import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
@@ -23,7 +22,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @Immutable
 public class DerivedSignedKeyAgreementHandshakeProvider extends SignedKeyAgreementHandshakeProvider {
 
-    protected DerivedSignedKeyAgreementHandshakeProvider(final AKeyAgreementHandshakeProvider unsignedProvider) {
+    @SuppressWarnings("deprecation")
+    public DerivedSignedKeyAgreementHandshakeProvider(final AKeyAgreementHandshakeProvider unsignedProvider) {
         super(unsignedProvider);
     }
 
@@ -33,8 +33,8 @@ public class DerivedSignedKeyAgreementHandshakeProvider extends SignedKeyAgreeme
     @Override
     protected SignatureKey getOurSignatureKey() {
         final ISignatureAlgorithm signatureAlgorithm = getSignatureAlgorithm();
-        final DerivedKeyProvider ourDerivedKeyProvider = DerivedKeyProvider
-                .fromPassword(CryptoProperties.DEFAULT_PEPPER, "handshake-signature-key");
+        final DerivedKeyProvider ourDerivedKeyProvider = DerivedKeyProvider.fromPassword(getPepper(),
+                "handshake-signature-key" + getSessionIdentifier());
         final SignatureKey ourSignatureKey = new SignatureKey(signatureAlgorithm, ourDerivedKeyProvider);
         return ourSignatureKey;
     }
@@ -50,19 +50,12 @@ public class DerivedSignedKeyAgreementHandshakeProvider extends SignedKeyAgreeme
 
     /**
      * No need to encrypt the traffic based on the pepper because we use derived or preShared/static signature keys.
+     * Will not be used anyhow since the second step is performed using the newSignedHandshakeChannelFactory while the
+     * first step of sending around public keys is skipped.
      */
     @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return DisabledChannelFactory.getInstance();
-    }
-
-    public static DerivedSignedKeyAgreementHandshakeProvider valueOf(
-            final AKeyAgreementHandshakeProvider unsignedProvider) {
-        if (unsignedProvider instanceof SignedKeyAgreementHandshakeProvider) {
-            return (DerivedSignedKeyAgreementHandshakeProvider) unsignedProvider;
-        } else {
-            return new DerivedSignedKeyAgreementHandshakeProvider(unsignedProvider);
-        }
     }
 
 }

@@ -9,12 +9,12 @@ import de.invesdwin.util.time.duration.Duration;
 
 public interface IHandshakeProvider {
 
-    static IHandshakeProvider getDefault() {
-        return getDefault(ContextProperties.DEFAULT_NETWORK_TIMEOUT);
+    static IHandshakeProvider getDefault(final String sessionIdentifier) {
+        return getDefault(ContextProperties.DEFAULT_NETWORK_TIMEOUT, sessionIdentifier);
     }
 
-    static IHandshakeProvider getDefault(final Duration handshakeTimeout) {
-        return new SignedEcdhHandshakeProvider(handshakeTimeout);
+    static IHandshakeProvider getDefault(final Duration handshakeTimeout, final String sessionIdentifier) {
+        return new SignedEcdhHandshakeProvider(handshakeTimeout, sessionIdentifier);
     }
 
     void handshake(HandshakeChannel channel) throws IOException;

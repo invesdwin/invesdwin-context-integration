@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.DerivedSignedKeyAgreementHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -20,12 +21,13 @@ public class SignedDhHandshakeProvider implements IHandshakeProvider {
 
     private final IHandshakeProvider delegate;
 
-    public SignedDhHandshakeProvider(final Duration handshakeTimeout) {
-        this.delegate = newDelegate(handshakeTimeout);
+    public SignedDhHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
+        this.delegate = newDelegate(handshakeTimeout, sessionIdentifier);
     }
 
-    protected IHandshakeProvider newDelegate(final Duration handshakeTimeout) {
-        return new DhHandshakeProvider(handshakeTimeout).asSigned();
+    protected IHandshakeProvider newDelegate(final Duration handshakeTimeout, final String sessionIdentifier) {
+        return new DerivedSignedKeyAgreementHandshakeProvider(
+                new DhHandshakeProvider(handshakeTimeout, sessionIdentifier));
     }
 
     @Override

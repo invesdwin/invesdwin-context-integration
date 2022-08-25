@@ -15,8 +15,8 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class DhHandshakeProvider extends AKeyAgreementHandshakeProvider {
 
-    public DhHandshakeProvider(final Duration handshakeTimeout) {
-        super(handshakeTimeout);
+    public DhHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
+        super(handshakeTimeout, sessionIdentifier);
     }
 
     @Override

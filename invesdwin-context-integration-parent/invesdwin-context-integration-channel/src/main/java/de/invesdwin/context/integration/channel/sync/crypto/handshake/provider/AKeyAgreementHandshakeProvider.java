@@ -17,14 +17,9 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelFactory;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.stream.StreamVerifiedEncryptionChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
 import de.invesdwin.context.security.crypto.encryption.cipher.asymmetric.AsymmetricCipherKey;
-import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
-import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
-import de.invesdwin.context.security.crypto.key.derivation.IDerivationFactory;
-import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -33,29 +28,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @Immutable
-public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvider {
+public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandshakeProvider {
 
-    private final Duration handshakeTimeout;
-
-    public AKeyAgreementHandshakeProvider(final Duration handshakeTimeout) {
-        this.handshakeTimeout = handshakeTimeout;
-    }
-
-    @Override
-    public Duration getHandshakeTimeout() {
-        return handshakeTimeout;
-    }
-
-    /**
-     * Override this to disable spinning or configure type of waits.
-     */
-    public ASpinWait newSpinWait(final ISynchronousReader<IByteBuffer> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.hasNext();
-            }
-        };
+    public AKeyAgreementHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
+        super(handshakeTimeout, sessionIdentifier);
     }
 
     public abstract int getKeySizeBits();
@@ -64,28 +40,10 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
     public abstract String getKeyAlgorithm();
 
-    public IDerivationFactory getDerivationFactory() {
-        return IDerivationFactory.getDefault();
-    }
-
-    @Override
-    public void handshake(final HandshakeChannel channel) throws IOException {
-        final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
-                .valueOf(channel.getWriter().getUnderlyingWriter());
-        final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
-                .valueOf(channel.getReader().getUnderlyingReader());
-
-        final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
-        final ISynchronousWriter<IByteBufferProvider> handshakeWriter = handshakeChannelFactory
-                .newWriter(ignoreOpenCloseWriter);
-        final ISynchronousReader<IByteBuffer> handshakeReader = handshakeChannelFactory
-                .newReader(ignoreOpenCloseReader);
-        performHandshake(channel, ignoreOpenCloseWriter, handshakeWriter, ignoreOpenCloseReader, handshakeReader);
-    }
-
     /**
      * https://neilmadden.blog/2016/05/20/ephemeral-elliptic-curve-diffie-hellman-key-agreement-in-java/
      */
+    @Override
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter,
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
@@ -105,8 +63,8 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
                 final ASpinWait spinWait = newSpinWait(handshakeReader);
                 try {
-                    if (!spinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                        throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
+                    if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                        throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
                     }
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
@@ -126,17 +84,7 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
 
                 final DerivedKeyProvider derivedKeyProvider = new DerivedKeyProvider(sharedSecret,
                         getDerivationFactory());
-
-                final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> encryptedChannelFactory = newEncryptedChannelFactory(
-                        derivedKeyProvider);
-                final ISynchronousReader<IByteBuffer> encryptedReader = encryptedChannelFactory
-                        .newReader(ignoreOpenCloseReader);
-                final ISynchronousWriter<IByteBufferProvider> encryptedWriter = encryptedChannelFactory
-                        .newWriter(ignoreOpenCloseWriter);
-                channel.getReader().setEncryptedReader(encryptedReader);
-                channel.getWriter().setEncryptedWriter(encryptedWriter);
-                encryptedReader.open();
-                encryptedWriter.open();
+                finishHandshake(channel, ignoreOpenCloseWriter, ignoreOpenCloseReader, derivedKeyProvider);
             } catch (final NoSuchAlgorithmException | IOException | InvalidKeyException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -156,22 +104,9 @@ public abstract class AKeyAgreementHandshakeProvider implements IHandshakeProvid
      * To achieve forward security and non-repudiation even if the pre shared pepper and password are compromised, use
      * SignedKeyAgreementHandshake instead.
      */
+    @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
-        return VerifiedEncryptionChannelFactory.fromPassword("handshake-" + getKeyAgreementAlgorithm());
-    }
-
-    /**
-     * We use something like AES128+HMAC_SHA256 here so that messages can not be tampered with. One could also use
-     * ED25519 signatures instead of HMAC_SHA256 hashes for non-repudiation.
-     */
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newEncryptedChannelFactory(
-            final IDerivedKeyProvider derivedKeyProvider) {
-        return new StreamVerifiedEncryptionChannelFactory(new SymmetricEncryptionFactory(derivedKeyProvider),
-                new HashVerificationFactory(derivedKeyProvider));
-    }
-
-    public SignedKeyAgreementHandshakeProvider asSigned() {
-        return DerivedSignedKeyAgreementHandshakeProvider.valueOf(this);
+        return VerifiedEncryptionChannelFactory.fromPassword("authenticated-handshake-" + getSessionIdentifier());
     }
 
 }

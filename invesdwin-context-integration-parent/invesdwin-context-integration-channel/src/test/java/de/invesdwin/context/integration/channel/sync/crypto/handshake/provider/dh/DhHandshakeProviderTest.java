@@ -18,30 +18,36 @@ public class DhHandshakeProviderTest extends AChannelTest {
     public void testDhHandshakePerformance() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testDhHandshakePerformance_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testDhHandshakePerformance_response.pipe", tmpfs, pipes);
+        final String sessionIdentifier = "testDhHandshakePerformance";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
         runPerformanceTest(pipes, requestFile, responseFile, null, null,
-                new HandshakeChannelFactory(new DhHandshakeProvider(MAX_WAIT_DURATION)));
+                new HandshakeChannelFactory(new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier)));
     }
 
+    @SuppressWarnings("deprecation")
     @Test
     public void testDhHandshakePerformanceSigned() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testDhHandshakePerformanceSigned_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testDhHandshakePerformanceSigned_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, new HandshakeChannelFactory(
-                SignedKeyAgreementHandshakeProvider.valueOf(new DhHandshakeProvider(MAX_WAIT_DURATION))));
+        final String sessionIdentifier = "testDhHandshakePerformanceSigned";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null,
+                new HandshakeChannelFactory(new SignedKeyAgreementHandshakeProvider(
+                        new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
 
     @Test
     public void testDhHandshakePerformanceDerivedSigned() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
-        final File requestFile = newFile("testDhHandshakePerformanceDerivedSigned_request.pipe", tmpfs, pipes);
-        final File responseFile = newFile("testDhHandshakePerformanceDerivedSigned_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, new HandshakeChannelFactory(
-                DerivedSignedKeyAgreementHandshakeProvider.valueOf(new DhHandshakeProvider(MAX_WAIT_DURATION))));
+        final String sessionIdentifier = "testDhHandshakePerformanceDerivedSigned";
+        final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
+        final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
+        runPerformanceTest(pipes, requestFile, responseFile, null, null,
+                new HandshakeChannelFactory(new DerivedSignedKeyAgreementHandshakeProvider(
+                        new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
 
     @Override

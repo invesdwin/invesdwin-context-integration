@@ -51,8 +51,6 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      * We use mTls per default
      */
     public static final ClientAuth DEFAULT_CLIENT_AUTH = ClientAuth.NEED;
-    public static final String DEFAULT_DERIVED_KEY_PASSWORD = "ssl-engine-password";
-    public static final String DEFAULT_DERIVED_KEY_INFO = "ssl-engine-key";
     private final InetSocketAddress socketAddress;
     private final boolean server;
 
@@ -251,11 +249,18 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
     }
 
     protected byte[] getDerivedKeyPassword() {
-        return DEFAULT_DERIVED_KEY_PASSWORD.getBytes();
+        return ("tls-handshake-password-" + getSessionIdentifier()).getBytes();
     }
 
     protected byte[] getDerivedKeyInfo() {
-        return DEFAULT_DERIVED_KEY_INFO.getBytes();
+        return ("tls-handshake-key-" + getSessionIdentifier()).getBytes();
+    }
+
+    /**
+     * Using hostname as default session identifier
+     */
+    protected String getSessionIdentifier() {
+        return getHostname();
     }
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {

@@ -249,11 +249,11 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
     }
 
     protected byte[] getDerivedKeyPassword() {
-        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_DERIVED_KEY_PASSWORD.getBytes();
+        return ("tls-handshake-password" + getHostname()).getBytes();
     }
 
     protected byte[] getDerivedKeyInfo() {
-        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_DERIVED_KEY_INFO.getBytes();
+        return ("tls-handshake-key" + getHostname()).getBytes();
     }
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {

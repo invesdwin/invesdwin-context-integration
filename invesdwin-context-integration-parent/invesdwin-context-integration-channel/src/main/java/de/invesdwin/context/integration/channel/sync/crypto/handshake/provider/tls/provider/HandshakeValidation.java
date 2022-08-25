@@ -40,8 +40,13 @@ public class HandshakeValidation extends AValueObject {
     //CHECKSTYLE:OFF
     public HandshakeValidation withDerivedPassword(final String password) {
         //CHECKSTYLE:ON
-        final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(CryptoProperties.DEFAULT_PEPPER,
-                password.getBytes());
+        return withDerivedPassword(CryptoProperties.DEFAULT_PEPPER, password);
+    }
+
+    //CHECKSTYLE:OFF
+    public HandshakeValidation withDerivedPassword(final byte[] salt, final String password) {
+        //CHECKSTYLE:ON
+        final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider.fromPassword(salt, password.getBytes());
         final byte[] derivedServerPayload = derivedKeyProvider.newDerivedKey(serverPayload.asByteArray(),
                 serverPayload.capacity());
         final byte[] derivedClientPayload = derivedKeyProvider.newDerivedKey(clientPayload.asByteArray(),

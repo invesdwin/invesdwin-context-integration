@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousR
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
-import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
@@ -48,8 +47,13 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
 
     private final AKeyAgreementHandshakeProvider unsignedProvider;
 
-    protected SignedKeyAgreementHandshakeProvider(final AKeyAgreementHandshakeProvider unsignedProvider) {
-        super(unsignedProvider.getHandshakeTimeout());
+    /**
+     * WARNING: should use DerivedSignedKeyAgreementHandshake instead as a simpler approach that achieves the same. This
+     * is rather an example that can be customized via extension.
+     */
+    @Deprecated
+    public SignedKeyAgreementHandshakeProvider(final AKeyAgreementHandshakeProvider unsignedProvider) {
+        super(unsignedProvider.getHandshakeTimeout(), unsignedProvider.getSessionIdentifier());
         this.unsignedProvider = unsignedProvider;
     }
 
@@ -129,8 +133,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
         final CryptoRandomGenerator random = CryptoRandomGenerators.getThreadLocalCryptoRandom();
         random.nextBytes(ourRandomKey);
 
-        final DerivedKeyProvider ourDerivedKeyProvider = DerivedKeyProvider.fromRandom(CryptoProperties.DEFAULT_PEPPER,
-                ourRandomKey);
+        final DerivedKeyProvider ourDerivedKeyProvider = DerivedKeyProvider.fromRandom(getPepper(), ourRandomKey);
         final SignatureKey ourSignatureKey = new SignatureKey(signatureAlgorithm, ourDerivedKeyProvider);
         return ourSignatureKey;
     }
@@ -152,8 +155,8 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
 
     protected ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newSignedHandshakeChannelFactory(
             final SignatureKey signatureKey) {
-        final DerivedKeyProvider symmetricDerivedKeyProvider = DerivedKeyProvider
-                .fromPassword(CryptoProperties.DEFAULT_PEPPER, "handshake-" + getKeyAgreementAlgorithm());
+        final DerivedKeyProvider symmetricDerivedKeyProvider = DerivedKeyProvider.fromPassword(getPepper(),
+                "signed-handshake-" + getSessionIdentifier());
         return new VerifiedEncryptionChannelFactory(new SymmetricEncryptionFactory(symmetricDerivedKeyProvider),
                 new SignatureVerificationFactory(signatureKey));
     }
@@ -164,7 +167,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
      * signature keys with his own. DisabledChannelFactory can only be used when getOtherSignatureKey returns a pre
      * shared public key for the other side.
      * 
-     * SSH achieves securtity against Man-in-the-Middle-Attacks by checking the fingerprint on subsequent connections.
+     * SSH achieves security against Man-in-the-Middle-Attacks by checking the fingerprint on subsequent connections.
      * Though someone could still impersonate the first connection attempt.
      */
     @Override
@@ -196,19 +199,6 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newEncryptedChannelFactory(
             final IDerivedKeyProvider derivedKeyProvider) {
         return unsignedProvider.newEncryptedChannelFactory(derivedKeyProvider);
-    }
-
-    @Override
-    public SignedKeyAgreementHandshakeProvider asSigned() {
-        return this;
-    }
-
-    public static SignedKeyAgreementHandshakeProvider valueOf(final AKeyAgreementHandshakeProvider unsignedProvider) {
-        if (unsignedProvider instanceof SignedKeyAgreementHandshakeProvider) {
-            return (SignedKeyAgreementHandshakeProvider) unsignedProvider;
-        } else {
-            return new SignedKeyAgreementHandshakeProvider(unsignedProvider);
-        }
     }
 
 }
