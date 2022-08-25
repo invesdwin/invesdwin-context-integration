@@ -31,7 +31,7 @@ public final class Srp6ServerStep1LookupInputSerde implements ISerde<Srp6ServerS
 
     @Override
     public int toBuffer(final IByteBuffer buffer, final Srp6ServerStep1LookupInput obj) {
-        final String userId = obj.getUserId();
+        final String userId = obj.getUserIdHash();
         final int userIdLength = buffer.putStringUtf8(0, userId);
         return userIdLength;
     }

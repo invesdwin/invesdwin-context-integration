@@ -7,7 +7,6 @@ import javax.annotation.concurrent.Immutable;
 
 import com.nimbusds.srp6.SRP6Exception;
 import com.nimbusds.srp6.SRP6ServerSession;
-import com.nimbusds.srp6.SRP6VerifierGenerator;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -23,9 +22,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.s
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep1ResultSerde;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep2Result;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep2ResultSerde;
-import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
-import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -35,12 +32,12 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @Immutable
-public class Srp6ServerHandshakeProvider extends ASrp6HandshakeProvider {
+public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvider {
 
     /**
      * SessionIdentifier can be null, in that case only the userId is used as the salt for the DerivedKeyProvider.
      */
-    public Srp6ServerHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
+    public ASrp6ServerHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
         super(handshakeTimeout, sessionIdentifier);
     }
 
@@ -92,16 +89,17 @@ public class Srp6ServerHandshakeProvider extends ASrp6HandshakeProvider {
         //Look up stored salt 's' and verifier 'v' for the authenticating user identity 'I'.
         final Srp6ServerStep1LookupOutput serverStep1LookupOutput = getServerStep1LookupResult(serverStep1LookupInput);
         //Compute the server public value 'B'.
-        final String userId = serverStep1LookupInput.getUserId();
-        final BigInteger serverPublicValueB = server.step1(userId, serverStep1LookupOutput.getPasswordSaltS(),
+        final String userIdHash = serverStep1LookupInput.getUserIdHash();
+        final BigInteger serverPublicValueB = server.step1(userIdHash, serverStep1LookupOutput.getPasswordSaltS(),
                 serverStep1LookupOutput.getPasswordVerifierV());
         //Respond with the server public value 'B' and password salt 's'.
         //If the SRP-6a crypto parameters 'N', 'g' and 'H' were not agreed in advance between server and client append them to the response.
-        final Srp6ServerStep1Result step1Result = new Srp6ServerStep1Result(serverStep1LookupOutput.getPasswordSaltS(),
-                serverPublicValueB);
-        final int step1ResultLength = Srp6ServerStep1ResultSerde.INSTANCE.toBuffer(buffer, step1Result);
+        final Srp6ServerStep1Result serverStep1Result = new Srp6ServerStep1Result(
+                serverStep1LookupOutput.getPasswordSaltS(), serverPublicValueB);
+        final int step1ResultLength = Srp6ServerStep1ResultSerde.INSTANCE.toBuffer(buffer, serverStep1Result);
         handshakeWriter.write(buffer.sliceTo(step1ResultLength));
-        return userId;
+
+        return userIdHash;
     }
 
     private void serverStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
@@ -132,17 +130,10 @@ public class Srp6ServerHandshakeProvider extends ASrp6HandshakeProvider {
 
     /**
      * Override this method with something that actually looks up user credentials that are stored from a previous
-     * registration process. In the default implementation we just authenticate against the pre shared pepper. Though
-     * this is a bad idea for applications that run on client computers.
+     * registration process.
      */
-    protected Srp6ServerStep1LookupOutput getServerStep1LookupResult(final Srp6ServerStep1LookupInput input) {
-        final SRP6VerifierGenerator srp6VerifierGenerator = getSrp6VerifierGenerator();
-        final BigInteger passwordSaltS = new BigInteger(getPasswordHasher().getDefaultHashLength(),
-                CryptoRandomGenerators.getThreadLocalCryptoRandom());
-        final BigInteger passwordVerifierV = srp6VerifierGenerator.generateVerifier(passwordSaltS, input.getUserId(),
-                CryptoProperties.DEFAULT_PEPPER_STR);
-        return new Srp6ServerStep1LookupOutput(passwordSaltS, passwordVerifierV);
-    }
+    protected abstract Srp6ServerStep1LookupOutput getServerStep1LookupResult(Srp6ServerStep1LookupInput input)
+            throws IOException;
 
     protected DerivedKeyProvider newDerivedKeyProvider(final String userId, final byte[] sharedSecret) {
         return DerivedKeyProvider.fromRandom(getSessionIdentifierWithUserId(userId).getBytes(), sharedSecret,

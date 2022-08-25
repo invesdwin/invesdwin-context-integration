@@ -11,7 +11,6 @@ import com.nimbusds.srp6.SRP6VerifierGenerator;
 import com.nimbusds.srp6.XRoutine;
 import com.nimbusds.srp6.XRoutineWithUserIdentity;
 
-import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.AKeyExchangeHandshakeProvider;
 import de.invesdwin.context.security.crypto.key.password.IPasswordHasher;
@@ -109,7 +108,9 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      */
     protected String hashSecret(final String secret) {
         final IPasswordHasher hasher = getPasswordHasher();
-        return Hex.encodeHexString(hasher.hash(Bytes.EMPTY_ARRAY, secret.getBytes(), hasher.getDefaultHashLength()));
+        final String encodedHex = Hex
+                .encodeHexString(hasher.hash(Bytes.EMPTY_ARRAY, secret.getBytes(), hasher.getDefaultHashLength()));
+        return encodedHex;
     }
 
     protected SimplePasswordHasher getPasswordHasher() {
@@ -123,8 +124,7 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      */
     @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
-        //        return super.newAuthenticatedHandshakeChannelFactory();
-        return DisabledChannelFactory.getInstance();
+        return super.newAuthenticatedHandshakeChannelFactory();
     }
 
 }

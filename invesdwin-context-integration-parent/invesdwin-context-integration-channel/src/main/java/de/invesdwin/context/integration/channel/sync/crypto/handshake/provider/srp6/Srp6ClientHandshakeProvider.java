@@ -36,10 +36,10 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
     private final String userIdHash;
     private final String passwordHash;
 
-    public Srp6ClientHandshakeProvider(final Duration handshakeTimeout, final String userId, final String password,
-            final String sessionIdentifier) {
+    public Srp6ClientHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier,
+            final String userId, final String password) {
         super(handshakeTimeout, sessionIdentifier);
-        this.userIdHash = hashSecret(sessionIdentifier);
+        this.userIdHash = hashSecret(userId);
         this.passwordHash = hashSecret(password);
     }
 
@@ -58,6 +58,7 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
             try {
                 //Create new client SRP-6a auth session.
                 final SRP6ClientSession client = new SRP6ClientSession();
+                client.setXRoutine(getXRoutine());
 
                 clientStep1(handshakeWriter, buffer, client);
                 clientStep2(handshakeWriter, handshakeReader, handshakeReaderSpinWait, buffer, client);
@@ -118,7 +119,7 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage();
         final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
-                .fromBuffer(serverStep2ResultMessage, buffer.capacity());
+                .fromBuffer(serverStep2ResultMessage, serverStep2ResultMessage.capacity());
         handshakeReader.readFinished();
         client.step3(serverStep2Result.getServerEvidenceMessageM2());
 

@@ -21,18 +21,19 @@ public class Srp6HandshakeProviderTest extends AChannelTest {
         final String sessionIdentifier = "testSrp6HandshakePerformance";
         final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
         final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
+        final String userId = UUIDs.newPseudoRandomUUID();
+        final String password = CryptoProperties.DEFAULT_PEPPER_STR;
         final HandshakeChannelFactory serverHandshakeChannel = new HandshakeChannelFactory(
-                new Srp6ServerHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier));
+                new PreSharedSrp6ServerHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier, userId, password));
         final HandshakeChannelFactory clientHandshakeChannel = new HandshakeChannelFactory(
-                new Srp6ClientHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier, UUIDs.newPseudoRandomUUID(),
-                        CryptoProperties.DEFAULT_PEPPER_STR));
+                new Srp6ClientHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier, userId, password));
         runPerformanceTest(pipes, requestFile, responseFile, null, null, serverHandshakeChannel,
                 clientHandshakeChannel);
     }
 
     @Override
     protected int getMaxMessageSize() {
-        return 553;
+        return 593;
     }
 
 }

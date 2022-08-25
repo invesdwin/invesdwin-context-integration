@@ -4,8 +4,10 @@ import java.math.BigInteger;
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.bean.AValueObject;
+
 @Immutable
-public class Srp6ServerStep2Result {
+public class Srp6ServerStep2Result extends AValueObject {
 
     private final BigInteger serverEvidenceMessageM2;
 

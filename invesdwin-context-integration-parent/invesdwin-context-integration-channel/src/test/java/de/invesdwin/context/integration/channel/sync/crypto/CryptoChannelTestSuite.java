@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.encryption.verificat
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.dh.DhHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.ecdh.EcdhHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.jpake.JPakeHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.Srp6HandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.DtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.TlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.verification.VerificationChannelTest;
@@ -21,7 +22,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.verification.Verific
 @SelectClasses({ EncryptionChannelTest.class, StreamEncryptionChannelTest.class, VerificationChannelTest.class,
         VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class,
         EcdhHandshakeProviderTest.class, TlsHandshakeProviderTest.class, DtlsHandshakeProviderTest.class,
-        JPakeHandshakeProviderTest.class })
+        JPakeHandshakeProviderTest.class, Srp6HandshakeProviderTest.class })
 @Immutable
 public class CryptoChannelTestSuite {
     //CHECKSTYLE:ON

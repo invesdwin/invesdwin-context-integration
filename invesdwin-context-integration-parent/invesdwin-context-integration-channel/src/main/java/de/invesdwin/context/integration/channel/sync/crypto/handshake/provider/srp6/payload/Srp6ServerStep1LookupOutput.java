@@ -4,8 +4,10 @@ import java.math.BigInteger;
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.bean.AValueObject;
+
 @Immutable
-public class Srp6ServerStep1LookupOutput {
+public class Srp6ServerStep1LookupOutput extends AValueObject {
 
     private final BigInteger passwordSaltS;
     private final BigInteger passwordVerifierV;

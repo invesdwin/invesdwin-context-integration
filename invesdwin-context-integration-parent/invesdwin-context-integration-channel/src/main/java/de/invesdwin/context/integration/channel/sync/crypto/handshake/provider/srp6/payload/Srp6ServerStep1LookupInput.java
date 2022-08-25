@@ -2,17 +2,19 @@ package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.bean.AValueObject;
+
 @Immutable
-public class Srp6ServerStep1LookupInput {
+public class Srp6ServerStep1LookupInput extends AValueObject {
 
-    private final String userId;
+    private final String userIdHash;
 
-    public Srp6ServerStep1LookupInput(final String userId) {
-        this.userId = userId;
+    public Srp6ServerStep1LookupInput(final String userIdHash) {
+        this.userIdHash = userIdHash;
     }
 
-    public String getUserId() {
-        return userId;
+    public String getUserIdHash() {
+        return userIdHash;
     }
 
 }
