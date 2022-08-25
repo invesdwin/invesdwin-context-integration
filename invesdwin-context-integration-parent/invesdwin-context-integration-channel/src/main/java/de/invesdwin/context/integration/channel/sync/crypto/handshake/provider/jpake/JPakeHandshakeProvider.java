@@ -27,6 +27,7 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -38,15 +39,11 @@ import de.invesdwin.util.time.duration.Duration;
 @Immutable
 public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
 
-    private final String participantIdentifier;
-
     /**
-     * SessionIdentifier should be common, ParticipantIdentifier should be different on each side.
+     * SessionIdentifier should be common on both sides.
      */
-    public JPakeHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier,
-            final String participantIdentifier) {
+    public JPakeHandshakeProvider(final Duration handshakeTimeout, final String sessionIdentifier) {
         super(handshakeTimeout, sessionIdentifier);
-        this.participantIdentifier = participantIdentifier;
     }
 
     @Override
@@ -60,7 +57,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         try {
             handshakeReader.open();
             try {
-                final JPAKEParticipant ourParticipant = new JPAKEParticipant(getParticipantIdentifier(),
+                final JPAKEParticipant ourParticipant = new JPAKEParticipant(newParticipantIdentifier(),
                         getPresharedPassword().toCharArray(), getPrimeOrderGroup(), newDigest(),
                         CryptoRandomGenerators.getThreadLocalCryptoRandom());
 
@@ -163,8 +160,11 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         return CryptoProperties.DEFAULT_PEPPER_STR + getSessionIdentifier();
     }
 
-    protected String getParticipantIdentifier() {
-        return participantIdentifier;
+    /**
+     * ParticipantIdentifier should be different on each side. We just use a random value thus.
+     */
+    protected String newParticipantIdentifier() {
+        return UUIDs.newPseudoRandomUUID();
     }
 
 }
