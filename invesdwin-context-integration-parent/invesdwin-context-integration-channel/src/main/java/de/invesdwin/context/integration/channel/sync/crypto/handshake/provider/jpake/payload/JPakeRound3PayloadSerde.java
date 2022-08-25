@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.jpake;
+package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.jpake.payload;
 
 import java.math.BigInteger;
 

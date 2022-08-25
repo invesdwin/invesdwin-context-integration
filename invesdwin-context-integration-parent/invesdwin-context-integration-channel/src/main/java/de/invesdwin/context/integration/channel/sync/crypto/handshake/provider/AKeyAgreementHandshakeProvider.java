@@ -11,12 +11,10 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.Immutable;
 import javax.crypto.KeyAgreement;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
 import de.invesdwin.context.security.crypto.encryption.cipher.asymmetric.AsymmetricCipherKey;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
@@ -45,9 +43,9 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
      */
     @Override
     protected void performHandshake(final HandshakeChannel channel,
-            final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter,
+            final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader,
+            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
             final ISynchronousReader<IByteBuffer> handshakeReader) throws IOException {
         handshakeWriter.open();
         try {
@@ -82,9 +80,8 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
                 // Read shared secret
                 final byte[] sharedSecret = ka.generateSecret();
 
-                final DerivedKeyProvider derivedKeyProvider = new DerivedKeyProvider(sharedSecret,
-                        getDerivationFactory());
-                finishHandshake(channel, ignoreOpenCloseWriter, ignoreOpenCloseReader, derivedKeyProvider);
+                final DerivedKeyProvider derivedKeyProvider = newDerivedKeyProvider(sharedSecret);
+                finishHandshake(channel, underlyingWriter, underlyingReader, derivedKeyProvider);
             } catch (final NoSuchAlgorithmException | InvalidKeyException e) {
                 throw new IOException(e);
             } finally {
@@ -95,18 +92,8 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
         }
     }
 
-    /**
-     * Encryption here prevents unauthorized clients from connecting that do not know the pre shared pepper and
-     * password. We use the static password to authenticate the handshake, then use ephemeral-ephemeral ecdh to create a
-     * session key for forward security. See "7.7. Payload security properties" in
-     * http://www.noiseprotocol.org/noise.html for more alternatives.
-     * 
-     * To achieve forward security and non-repudiation even if the pre shared pepper and password are compromised, use
-     * SignedKeyAgreementHandshake instead.
-     */
-    @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
-        return VerifiedEncryptionChannelFactory.fromPassword("authenticated-handshake-" + getSessionIdentifier());
+    protected DerivedKeyProvider newDerivedKeyProvider(final byte[] sharedSecret) {
+        return DerivedKeyProvider.fromRandom(getSessionIdentifier().getBytes(), sharedSecret, getDerivationFactory());
     }
 
 }

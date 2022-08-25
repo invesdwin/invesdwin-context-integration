@@ -26,12 +26,12 @@ public class DisabledHandshakeProvider implements IHandshakeProvider {
 
     @Override
     public void handshake(final HandshakeChannel channel) throws IOException {
-        final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter = IgnoreOpenCloseSynchronousWriter
+        final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter = IgnoreOpenCloseSynchronousWriter
                 .valueOf(channel.getWriter().getUnderlyingWriter());
-        final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader = IgnoreOpenCloseSynchronousReader
+        final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
-        channel.getWriter().setEncryptedWriter(ignoreOpenCloseWriter);
-        channel.getReader().setEncryptedReader(ignoreOpenCloseReader);
+        channel.getWriter().setEncryptedWriter(underlyingWriter);
+        channel.getReader().setEncryptedReader(underlyingReader);
     }
 
     @Override

@@ -59,9 +59,9 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
 
     @Override
     protected void performHandshake(final HandshakeChannel channel,
-            final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> ignoreOpenCloseWriter,
+            final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> unsignedHandshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> ignoreOpenCloseReader,
+            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
             final ISynchronousReader<IByteBuffer> unsignedHandshakeReader) throws IOException {
         final SignatureKey ourSignatureKey = getOurSignatureKey();
         final PublicKey staticOtherVerifyKey = getOtherVerifyKey(ourSignatureKey);
@@ -71,11 +71,11 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
             final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(), null,
                     ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
             signedHandshakeWriter = newSignedHandshakeChannelFactory(handshakeWriterSignatureKey)
-                    .newWriter(ignoreOpenCloseWriter);
+                    .newWriter(underlyingWriter);
             final SignatureKey handshakeReaderSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
                     staticOtherVerifyKey, null, ourSignatureKey.getKeySizeBits());
             signedHandshakeReader = newSignedHandshakeChannelFactory(handshakeReaderSignatureKey)
-                    .newReader(ignoreOpenCloseReader);
+                    .newReader(underlyingReader);
         } else {
             unsignedHandshakeWriter.open();
             try {
@@ -103,11 +103,11 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
                     final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
                             null, ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
                     signedHandshakeWriter = newSignedHandshakeChannelFactory(handshakeWriterSignatureKey)
-                            .newWriter(ignoreOpenCloseWriter);
+                            .newWriter(underlyingWriter);
                     final SignatureKey handshakeReaderSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
                             otherVerifyKey, null, ourSignatureKey.getKeySizeBits());
                     signedHandshakeReader = newSignedHandshakeChannelFactory(handshakeReaderSignatureKey)
-                            .newReader(ignoreOpenCloseReader);
+                            .newReader(underlyingReader);
                 } finally {
                     Closeables.closeQuietly(unsignedHandshakeReader);
                 }
@@ -115,7 +115,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
                 Closeables.closeQuietly(unsignedHandshakeWriter);
             }
         }
-        super.performHandshake(channel, ignoreOpenCloseWriter, signedHandshakeWriter, ignoreOpenCloseReader,
+        super.performHandshake(channel, underlyingWriter, signedHandshakeWriter, underlyingReader,
                 signedHandshakeReader);
     }
 

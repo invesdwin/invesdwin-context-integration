@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>de.invesdwin</groupId>
@@ -93,6 +91,7 @@
 		<version.kryonet>2.22.0-RC1</version.kryonet>
 		<version.chronicle-network>2.22.14</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
+		<version.srp6a>2.1.0</version.srp6a>
 	</properties>
 
 	<dependencyManagement>
@@ -710,6 +709,11 @@
 				<artifactId>chronicle-network</artifactId>
 				<version>${version.chronicle-network}</version>
 			</dependency>
+			<dependency>
+				<groupId>com.nimbusds</groupId>
+				<artifactId>srp6a</artifactId>
+				<version>${version.srp6a}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -751,4 +755,3 @@
 	</ciManagement>
 
 </project>
-
