@@ -121,6 +121,9 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      * We use an encrypted and verified handshake channel to make sure no-one in the middle can read the (hashed) userId
      * over the wire. Though as long as the the userId is sent in a strong hashed form, then DisabledChannelFactory
      * could be used to send the hash in plaintext.
+     * 
+     * Though this recommends using HTTPS for encryption as well:
+     * https://github.com/simbo1905/thinbus-srp-npm#recommendations
      */
     @Override
     public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
