@@ -131,6 +131,10 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
     /**
      * Override this method with something that actually looks up user credentials that are stored from a previous
      * registration process.
+     * 
+     * Use symmetric AES encryption with a key only visible at the webserver to encrypt the verifier v value within the
+     * database. This protects against off-site database backups being used in an offline dictionary attack against v.
+     * (https://github.com/simbo1905/thinbus-srp-npm#recommendations)
      */
     protected abstract Srp6ServerStep1LookupOutput getServerStep1LookupResult(Srp6ServerStep1LookupInput input)
             throws IOException;
