@@ -26,10 +26,8 @@ public final class Srp6ServerStep2ResultSerde implements ISerde<Srp6ServerStep2R
     }
 
     @Override
-    public Srp6ServerStep2Result fromBuffer(final IByteBuffer buffer, final int length) {
-        final byte[] serverEvidenceMessageM2Bytes = new byte[length];
-        buffer.getBytes(0, serverEvidenceMessageM2Bytes);
-        final BigInteger serverEvidenceMessageM2 = new BigInteger(serverEvidenceMessageM2Bytes);
+    public Srp6ServerStep2Result fromBuffer(final IByteBuffer buffer) {
+        final BigInteger serverEvidenceMessageM2 = new BigInteger(buffer.asByteArray());
         return new Srp6ServerStep2Result(serverEvidenceMessageM2);
     }
 

@@ -29,8 +29,8 @@ public final class Srp6ServerStep1LookupOutputSerde implements ISerde<Srp6Server
     }
 
     @Override
-    public Srp6ServerStep1LookupOutput fromBuffer(final IByteBuffer buffer, final int length) {
-        final byte[][] arrays = delegate.fromBuffer(buffer, length);
+    public Srp6ServerStep1LookupOutput fromBuffer(final IByteBuffer buffer) {
+        final byte[][] arrays = delegate.fromBuffer(buffer);
 
         final BigInteger passwordSaltS = new BigInteger(arrays[0]);
         final BigInteger passwordVerifierV = new BigInteger(arrays[1]);

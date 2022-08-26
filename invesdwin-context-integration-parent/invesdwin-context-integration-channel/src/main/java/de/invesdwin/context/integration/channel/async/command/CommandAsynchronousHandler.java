@@ -50,8 +50,7 @@ public class CommandAsynchronousHandler<I, O>
         final int type = inputBuffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = inputBuffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);
         final int messageLength = inputBuffer.capacity() - SynchronousCommandSerde.MESSAGE_INDEX;
-        final I input = inputSerde.fromBuffer(inputBuffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength),
-                messageLength);
+        final I input = inputSerde.fromBuffer(inputBuffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         inputCommand.setType(type);
         inputCommand.setSequence(sequence);
         inputCommand.setMessage(input);

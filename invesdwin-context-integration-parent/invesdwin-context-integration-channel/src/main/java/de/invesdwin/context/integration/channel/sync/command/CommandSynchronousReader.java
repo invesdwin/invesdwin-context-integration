@@ -46,8 +46,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
         final int type = buffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = buffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);
         final int messageLength = buffer.capacity() - SynchronousCommandSerde.MESSAGE_INDEX;
-        final M message = messageSerde.fromBuffer(buffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength),
-                messageLength);
+        final M message = messageSerde.fromBuffer(buffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         command.setType(type);
         command.setSequence(sequence);
         command.setMessage(message);

@@ -29,8 +29,8 @@ public final class Srp6ClientStep2ResultSerde implements ISerde<Srp6ClientStep2R
     }
 
     @Override
-    public Srp6ClientStep2Result fromBuffer(final IByteBuffer buffer, final int length) {
-        final byte[][] arrays = delegate.fromBuffer(buffer, length);
+    public Srp6ClientStep2Result fromBuffer(final IByteBuffer buffer) {
+        final byte[][] arrays = delegate.fromBuffer(buffer);
 
         final BigInteger clientPublicValueA = new BigInteger(arrays[0]);
         final BigInteger clientEvidenceMessageM1 = new BigInteger(arrays[1]);

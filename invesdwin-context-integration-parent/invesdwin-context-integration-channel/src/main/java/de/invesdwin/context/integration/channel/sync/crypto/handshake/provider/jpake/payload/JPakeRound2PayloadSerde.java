@@ -32,8 +32,8 @@ public final class JPakeRound2PayloadSerde implements ISerde<JPAKERound2Payload>
     }
 
     @Override
-    public JPAKERound2Payload fromBuffer(final IByteBuffer buffer, final int length) {
-        final byte[][] arrays = delegate.fromBuffer(buffer, length);
+    public JPAKERound2Payload fromBuffer(final IByteBuffer buffer) {
+        final byte[][] arrays = delegate.fromBuffer(buffer);
         final String participantId = new String(arrays[0], Charsets.UTF_8);
         final BigInteger a = new BigInteger(arrays[1]);
         final BigInteger[] knowledgeProofForX2s = new BigInteger[arrays.length - 2];

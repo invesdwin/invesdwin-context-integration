@@ -63,11 +63,11 @@ public class SynchronousCommandSerde<M> implements ISerde<ISynchronousCommand<M>
     }
 
     @Override
-    public ISynchronousCommand<M> fromBuffer(final IByteBuffer buffer, final int length) {
+    public ISynchronousCommand<M> fromBuffer(final IByteBuffer buffer) {
         final int type = buffer.getInt(TYPE_INDEX);
         final int sequence = buffer.getInt(SEQUENCE_INDEX);
-        final int messageLength = length - MESSAGE_INDEX;
-        final M message = messageSerde.fromBuffer(buffer.slice(MESSAGE_INDEX, messageLength), messageLength);
+        final int messageLength = buffer.capacity() - MESSAGE_INDEX;
+        final M message = messageSerde.fromBuffer(buffer.slice(MESSAGE_INDEX, messageLength));
         return new ImmutableSynchronousCommand<M>(type, sequence, message);
     }
 

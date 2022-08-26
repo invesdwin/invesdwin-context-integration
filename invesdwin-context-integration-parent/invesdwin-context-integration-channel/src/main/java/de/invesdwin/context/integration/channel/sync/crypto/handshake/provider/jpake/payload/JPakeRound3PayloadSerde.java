@@ -32,8 +32,8 @@ public final class JPakeRound3PayloadSerde implements ISerde<JPAKERound3Payload>
     }
 
     @Override
-    public JPAKERound3Payload fromBuffer(final IByteBuffer buffer, final int length) {
-        final byte[][] arrays = delegate.fromBuffer(buffer, length);
+    public JPAKERound3Payload fromBuffer(final IByteBuffer buffer) {
+        final byte[][] arrays = delegate.fromBuffer(buffer);
 
         final String participantId = new String(arrays[0], Charsets.UTF_8);
         final BigInteger a = new BigInteger(arrays[1]);

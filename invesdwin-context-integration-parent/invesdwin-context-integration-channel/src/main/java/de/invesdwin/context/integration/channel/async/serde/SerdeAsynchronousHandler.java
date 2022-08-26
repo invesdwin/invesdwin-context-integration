@@ -42,7 +42,7 @@ public class SerdeAsynchronousHandler<I, O>
 
     @Override
     public IByteBufferProvider handle(final IByteBuffer inputBuffer) throws IOException {
-        final I input = inputSerde.fromBuffer(inputBuffer, inputBuffer.capacity());
+        final I input = inputSerde.fromBuffer(inputBuffer);
         output = delegate.handle(input);
         if (output != null) {
             return this;

@@ -83,7 +83,7 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer serverStep1LookupInputMessage = handshakeReader.readMessage();
         final Srp6ServerStep1LookupInput serverStep1LookupInput = Srp6ServerStep1LookupInputSerde.INSTANCE
-                .fromBuffer(serverStep1LookupInputMessage, serverStep1LookupInputMessage.capacity());
+                .fromBuffer(serverStep1LookupInputMessage);
         handshakeReader.readFinished();
 
         //Look up stored salt 's' and verifier 'v' for the authenticating user identity 'I'.
@@ -109,7 +109,7 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer clientStep2ResultMessage = handshakeReader.readMessage();
         final Srp6ClientStep2Result clientStep2Result = Srp6ClientStep2ResultSerde.INSTANCE
-                .fromBuffer(clientStep2ResultMessage, clientStep2ResultMessage.capacity());
+                .fromBuffer(clientStep2ResultMessage);
         handshakeReader.readFinished();
         //Complete user authentication.
         //Compute server evidence message 'M2'.

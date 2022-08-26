@@ -32,9 +32,9 @@ public final class JPakeRound1PayloadSerde implements ISerde<JPAKERound1Payload>
     }
 
     @Override
-    public JPAKERound1Payload fromBuffer(final IByteBuffer buffer, final int length) {
+    public JPAKERound1Payload fromBuffer(final IByteBuffer buffer) {
         final int knowledgeProofForX1Length = buffer.getInt(0);
-        final byte[][] arrays = delegate.fromBuffer(buffer.sliceFrom(Integer.BYTES), length - Integer.BYTES);
+        final byte[][] arrays = delegate.fromBuffer(buffer.slice(Integer.BYTES, buffer.capacity() - Integer.BYTES));
         final String participantId = new String(arrays[0], Charsets.UTF_8);
         final BigInteger gx1 = new BigInteger(arrays[1]);
         final BigInteger gx2 = new BigInteger(arrays[2]);

@@ -97,7 +97,7 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer serverStep1ResultMessage = handshakeReader.readMessage();
         final Srp6ServerStep1Result serverStep1Result = Srp6ServerStep1ResultSerde.INSTANCE
-                .fromBuffer(serverStep1ResultMessage, serverStep1ResultMessage.capacity());
+                .fromBuffer(serverStep1ResultMessage);
         handshakeReader.readFinished();
 
         //Set the SRP-6a crypto parameters.
@@ -119,7 +119,7 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage();
         final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
-                .fromBuffer(serverStep2ResultMessage, serverStep2ResultMessage.capacity());
+                .fromBuffer(serverStep2ResultMessage);
         handshakeReader.readFinished();
         client.step3(serverStep2Result.getServerEvidenceMessageM2());
 

@@ -102,7 +102,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound1PayloadMessage = handshakeReader.readMessage();
         final JPAKERound1Payload otherRound1Payload = JPakeRound1PayloadSerde.INSTANCE
-                .fromBuffer(otherRound1PayloadMessage, otherRound1PayloadMessage.capacity());
+                .fromBuffer(otherRound1PayloadMessage);
         handshakeReader.readFinished();
 
         ourParticipant.validateRound1PayloadReceived(otherRound1Payload);
@@ -119,7 +119,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound2PayloadMessage = handshakeReader.readMessage();
         final JPAKERound2Payload otherRound2Payload = JPakeRound2PayloadSerde.INSTANCE
-                .fromBuffer(otherRound2PayloadMessage, otherRound2PayloadMessage.capacity());
+                .fromBuffer(otherRound2PayloadMessage);
         handshakeReader.readFinished();
 
         ourParticipant.validateRound2PayloadReceived(otherRound2Payload);
@@ -137,7 +137,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound3PayloadMessage = handshakeReader.readMessage();
         final JPAKERound3Payload otherRound2Payload = JPakeRound3PayloadSerde.INSTANCE
-                .fromBuffer(otherRound3PayloadMessage, otherRound3PayloadMessage.capacity());
+                .fromBuffer(otherRound3PayloadMessage);
         handshakeReader.readFinished();
 
         ourParticipant.validateRound3PayloadReceived(otherRound2Payload, keyingMaterial);

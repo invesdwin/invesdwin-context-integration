@@ -37,7 +37,7 @@ public class SerdeSynchronousReader<M> implements ISynchronousReader<M> {
     @Override
     public M readMessage() throws IOException {
         final IByteBuffer message = delegate.readMessage();
-        return serde.fromBuffer(message, message.capacity());
+        return serde.fromBuffer(message);
     }
 
     @Override
