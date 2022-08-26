@@ -9,13 +9,15 @@ import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSock
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 import nanomsg.AbstractSocket;
 import nanomsg.Nanomsg;
 import nanomsg.NativeLibrary;
 
 @NotThreadSafe
-public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private final com.sun.jna.ptr.PointerByReference ptrBuff = new com.sun.jna.ptr.PointerByReference();
     private final UnsafeByteBuffer wrappedBuffer = new UnsafeByteBuffer();
@@ -62,7 +64,7 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -76,17 +78,13 @@ public class JnanomsgSynchronousReader extends AJnanomsgSynchronousChannel imple
         //noop
     }
 
-    private IByteBuffer getPolledMessage() {
+    private IByteBuffer getPolledMessage() throws IOException {
         if (polledValue != null) {
             final IByteBuffer value = polledValue;
             polledValue = null;
             return value;
         }
-        try {
-            return poll();
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
+        return poll();
     }
 
     private IByteBuffer poll() throws IOException {

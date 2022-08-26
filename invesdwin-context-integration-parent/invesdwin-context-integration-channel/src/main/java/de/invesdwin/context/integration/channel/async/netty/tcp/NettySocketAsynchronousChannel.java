@@ -35,7 +35,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
     }
 
     @Override
-    public void open() {
+    public void open() throws IOException {
         this.reader = new Reader(handler, channel.getSocketSize());
         channel.open(channel -> {
             final ChannelPipeline pipeline = channel.pipeline();
@@ -177,7 +177,11 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                     final IByteBufferProvider output = handler.handle(input);
                     writeOutput(ctx, output);
                 } catch (final IOException e) {
-                    writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                    try {
+                        writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                    } catch (final IOException e1) {
+                        //ignore
+                    }
                     NettySocketAsynchronousChannel.this.closeAsync();
                 }
             }
@@ -188,7 +192,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             return repeat;
         }
 
-        private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferProvider output) {
+        private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferProvider output) throws IOException {
             if (output != null) {
                 buf.setIndex(0, 0); //reset indexes
                 final int size = output.getBuffer(messageBuffer);

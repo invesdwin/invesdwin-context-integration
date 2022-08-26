@@ -84,15 +84,11 @@ public class StreamVerifiedEncryptionSynchronousWriter
     }
 
     @Override
-    public int getBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) throws IOException {
         signatureStreamIn.init(); //in case of exceptions, it is lazy
         encryptingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
-        try {
-            decryptedBuffer.getBytes(0, encryptingStreamIn);
-            encryptingStreamIn.flush();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        decryptedBuffer.getBytes(0, encryptingStreamIn);
+        encryptingStreamIn.flush();
         final int encryptedLength = encryptingStreamOut.position();
         dst.putInt(DECRYPTEDLENGTH_INDEX, decryptedBuffer.capacity());
         final byte[] signature = signatureStreamIn.getHash().doFinal();
@@ -102,7 +98,7 @@ public class StreamVerifiedEncryptionSynchronousWriter
     }
 
     @Override
-    public IByteBuffer asBuffer() {
+    public IByteBuffer asBuffer() throws IOException {
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }

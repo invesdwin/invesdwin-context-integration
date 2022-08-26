@@ -11,10 +11,11 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+        implements ISynchronousReader<IByteBufferProvider>, IByteBufferProvider {
 
     private FileInputStream in;
     private IByteBuffer buffer;
@@ -26,7 +27,6 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
     @Override
     public void open() throws IOException {
         in = new FileInputStream(file);
-        buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
     }
 
     @Override
@@ -48,24 +48,38 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
-        try {
-            buffer.putBytesTo(0, in, MESSAGE_INDEX);
-            final int size = buffer.getInt(SIZE_INDEX);
-            buffer.putBytesTo(0, in, size);
-            if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
-                close();
-                throw FastEOFException.getInstance("closed by other side");
-            }
-            return buffer.sliceTo(size);
-        } catch (final IOException e) {
-            throw FastEOFException.getInstance(e);
-        }
+    public IByteBufferProvider readMessage() throws IOException {
+        return this;
     }
 
     @Override
     public void readFinished() {
         //noop
+    }
+
+    @Override
+    public IByteBuffer asBuffer() throws IOException {
+        if (buffer == null) {
+            buffer = ByteBuffers.allocateExpandable(estimatedMaxMessageSize);
+        }
+        final int length = getBuffer(buffer);
+        return buffer.sliceTo(length);
+    }
+
+    @Override
+    public int getBuffer(final IByteBuffer dst) throws IOException {
+        try {
+            dst.putBytesTo(0, in, MESSAGE_INDEX);
+            final int size = dst.getInt(SIZE_INDEX);
+            dst.putBytesTo(0, in, size);
+            if (ClosedByteBuffer.isClosed(dst, 0, size)) {
+                close();
+                throw FastEOFException.getInstance("closed by other side");
+            }
+            return size;
+        } catch (final IOException e) {
+            throw FastEOFException.getInstance(e);
+        }
     }
 
 }

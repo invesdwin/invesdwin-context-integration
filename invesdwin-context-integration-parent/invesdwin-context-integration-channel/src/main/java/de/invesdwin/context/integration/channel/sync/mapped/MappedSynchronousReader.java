@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * There can be multiple readers per file, but it is better to only have one.
@@ -21,7 +22,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
  *
  */
 @NotThreadSafe
-public class MappedSynchronousReader extends AMappedSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class MappedSynchronousReader extends AMappedSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
     private int lastTransaction;
 
     public MappedSynchronousReader(final File file, final int maxMessageSize) {
@@ -55,7 +57,7 @@ public class MappedSynchronousReader extends AMappedSynchronousChannel implement
     }
 
     @Override
-    public IByteBuffer readMessage() {
+    public IByteBufferProvider readMessage() {
         lastTransaction = getTransaction();
         final int size = getSize();
         final IByteBuffer message = buffer.slice(MESSAGE_INDEX, size);

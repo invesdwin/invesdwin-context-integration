@@ -11,6 +11,7 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagr
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -20,7 +21,7 @@ import io.netty.channel.ChannelPipeline;
 import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
-public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final boolean SERVER = true;
     private NettyDatagramSynchronousChannel channel;
@@ -69,7 +70,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer value = reader.polledValue;
         reader.polledValue = null;
         if (ClosedByteBuffer.isClosed(value)) {

@@ -56,7 +56,7 @@ public class TlsHandshaker {
     private ITlsProtocol protocol;
     private SSLEngine engine;
     private ASpinWait readerSpinWait;
-    private ISynchronousReader<IByteBuffer> reader;
+    private ISynchronousReader<IByteBufferProvider> reader;
     private ISynchronousWriter<IByteBufferProvider> writer;
 
     private HandshakeValidation handshakeValidation;
@@ -67,7 +67,7 @@ public class TlsHandshaker {
 
     public void init(final Duration handshakeTimeout, final SocketAddress address, final boolean server,
             final String side, final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBuffer> reader, final ISynchronousWriter<IByteBufferProvider> writer,
+            final ISynchronousReader<IByteBufferProvider> reader, final ISynchronousWriter<IByteBufferProvider> writer,
             final HandshakeValidation handshakeValidation) {
         this.server = server;
         this.side = side;
@@ -171,7 +171,7 @@ public class TlsHandshaker {
                     } catch (final Exception e) {
                         throw new IOException(e);
                     }
-                    final IByteBuffer message = reader.readMessage();
+                    final IByteBuffer message = reader.readMessage().asBuffer();
                     handshakeBuffer.clear();
                     iNet = message.asNioByteBuffer();
                     iApp = handshakeBuffer;
@@ -452,7 +452,7 @@ public class TlsHandshaker {
         int loops = MAX_APP_READ_LOOPS;
         while (true) {
             if (--loops < 0) {
-                throw new RuntimeException("Too many loops to receive application data");
+                throw new IOException("Too many loops to receive application data");
             }
             try {
                 if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
@@ -461,7 +461,7 @@ public class TlsHandshaker {
             } catch (final Exception e) {
                 throw new IOException(e);
             }
-            final IByteBuffer message = reader.readMessage();
+            final IByteBuffer message = reader.readMessage().asBuffer();
             handshakeBuffer.clear();
             final java.nio.ByteBuffer netBuffer = message.asNioByteBuffer();
             final java.nio.ByteBuffer recBuffer = handshakeBuffer;

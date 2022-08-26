@@ -74,7 +74,7 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
                         try {
                             getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {
-                            throw new RuntimeException(e1);
+                            throw new IOException(e1);
                         }
                     } else {
                         throw e;

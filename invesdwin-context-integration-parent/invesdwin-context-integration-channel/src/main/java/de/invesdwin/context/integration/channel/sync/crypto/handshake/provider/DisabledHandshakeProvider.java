@@ -7,7 +7,6 @@ import javax.annotation.concurrent.Immutable;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -28,7 +27,7 @@ public class DisabledHandshakeProvider implements IHandshakeProvider {
     public void handshake(final HandshakeChannel channel) throws IOException {
         final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter = IgnoreOpenCloseSynchronousWriter
                 .valueOf(channel.getWriter().getUnderlyingWriter());
-        final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader = IgnoreOpenCloseSynchronousReader
+        final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
         channel.getWriter().setEncryptedWriter(underlyingWriter);
         channel.getReader().setEncryptedReader(underlyingReader);

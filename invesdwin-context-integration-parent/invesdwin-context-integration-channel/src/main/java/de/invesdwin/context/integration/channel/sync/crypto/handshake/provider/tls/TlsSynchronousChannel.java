@@ -41,7 +41,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private final ITlsProtocol protocol;
     private final SSLEngine engine;
     private final ASpinWait readerSpinWait;
-    private final ISynchronousReader<IByteBuffer> underlyingReader;
+    private final ISynchronousReader<IByteBufferProvider> underlyingReader;
     private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
     private final boolean server;
     private final String side;
@@ -59,7 +59,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final InetSocketAddress socketAddress,
             final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBuffer> underlyingReader,
+            final ISynchronousReader<IByteBufferProvider> underlyingReader,
             final ISynchronousWriter<IByteBufferProvider> underlyingWriter,
             final HandshakeValidation handshakeValidation) {
         this.handshakeTimeout = handshakeTimeout;
@@ -147,7 +147,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         return false;
     }
 
-    private boolean performHandshake() {
+    private boolean performHandshake() throws IOException {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
             handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
@@ -156,8 +156,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             return true;
         } catch (final EOFException e) {
             return false;
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         } finally {
             TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
         }
@@ -168,7 +170,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
 
         //read encrypted data
         if (inboundEncodedData == null && underlyingReader.hasNext()) {
-            final IByteBuffer encodedMessage = underlyingReader.readMessage();
+            final IByteBuffer encodedMessage = underlyingReader.readMessage().asBuffer();
             inboundEncodedData = encodedMessage.asNioByteBuffer();
         }
 
@@ -258,7 +260,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                 try {
                     SynchronousChannels.DEFAULT_WAIT_INTERVAL.sleep();
                 } catch (final InterruptedException e) {
-                    throw new RuntimeException(e);
+                    throw new IOException(e);
                 }
                 if (handshakeTimeout.isLessThanNanos(System.nanoTime() - startNanos)) {
                     throw new TimeoutException("Close handshake timeout exceeded");
@@ -266,13 +268,15 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             }
         } catch (final EOFException e) {
             //ignore
+        } catch (final IOException e) {
+            throw e;
         } catch (final TimeoutException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
         //        try {
         //            engine.closeInbound();
         //        } catch (final SSLException e) {
-        //            throw new RuntimeException(e);
+        //            throw new IOException(e);
         //        }
 
         underlyingWriter.close();

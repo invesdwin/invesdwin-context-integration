@@ -12,9 +12,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class KryonetSynchronousReader extends AKryonetSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class KryonetSynchronousReader extends AKryonetSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private volatile IByteBuffer polledValue;
 
@@ -42,7 +44,7 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -62,16 +64,12 @@ public class KryonetSynchronousReader extends AKryonetSynchronousChannel impleme
             polledValue = null;
             return value;
         }
-        try {
-            if (polledValue != null) {
-                final IByteBuffer value = polledValue;
-                polledValue = null;
-                return value;
-            } else {
-                return null;
-            }
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        if (polledValue != null) {
+            final IByteBuffer value = polledValue;
+            polledValue = null;
+            return value;
+        } else {
+            return null;
         }
     }
 

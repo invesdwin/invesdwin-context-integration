@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -25,7 +24,7 @@ public class CompressionChannelTest extends AChannelTest {
     }
 
     @Override
-    protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
+    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         return new CompressionSynchronousReader(super.newReader(file, pipes));
     }
 

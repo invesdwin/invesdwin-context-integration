@@ -16,7 +16,6 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerator;
 import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -48,7 +47,7 @@ public class EncryptionChannelTest extends AChannelTest {
     }
 
     @Override
-    protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
+    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         return new EncryptionSynchronousReader(super.newReader(file, pipes), ENCRYPTION_FACTORY);
     }
 

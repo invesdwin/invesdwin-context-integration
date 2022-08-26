@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.chronicle.network.type.Chro
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -35,12 +34,14 @@ public class BidiChronicleNetworkChannelTest extends AChannelTest {
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleNetworkSynchronousWriter(
                 serverChannel);
-        final ISynchronousReader<IByteBuffer> requestReader = new ChronicleNetworkSynchronousReader(serverChannel);
+        final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleNetworkSynchronousReader(
+                serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runChronicleSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleNetworkSynchronousWriter(
                 clientChannel);
-        final ISynchronousReader<IByteBuffer> responseReader = new ChronicleNetworkSynchronousReader(clientChannel);
+        final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleNetworkSynchronousReader(
+                clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

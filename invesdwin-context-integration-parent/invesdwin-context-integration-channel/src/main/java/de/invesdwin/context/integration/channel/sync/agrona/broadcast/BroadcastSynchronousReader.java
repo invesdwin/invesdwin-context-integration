@@ -16,10 +16,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.AgronaDelegateByteBuffer;
 
 @NotThreadSafe
-public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class BroadcastSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final int SIZE_INDEX = BroadcastSynchronousWriter.SIZE_INDEX;
     public static final int SIZE_SIZE = BroadcastSynchronousWriter.SIZE_SIZE;
@@ -56,7 +57,7 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -76,17 +77,13 @@ public class BroadcastSynchronousReader implements ISynchronousReader<IByteBuffe
             reader.close();
             return value;
         }
-        try {
-            final int messagesRead = copyBroadcastReceiver.receive(reader);
-            if (messagesRead == 1) {
-                final IByteBuffer value = reader.getPolledValue();
-                reader.close();
-                return value;
-            } else {
-                return null;
-            }
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        final int messagesRead = copyBroadcastReceiver.receive(reader);
+        if (messagesRead == 1) {
+            final IByteBuffer value = reader.getPolledValue();
+            reader.close();
+            return value;
+        } else {
+            return null;
         }
     }
 

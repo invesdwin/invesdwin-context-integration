@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -117,12 +118,8 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
      * Here one can do some unencrypted actions when STARTTLS is enabled to then start the handshake manually.
      */
     @Override
-    public void onSocketConnected(final SSLSocket socket) {
-        //        try {
+    public void onSocketConnected(final SSLSocket socket) throws IOException {
         //            socket.startHandshake();
-        //        } catch (final IOException e) {
-        //            throw new RuntimeException(e);
-        //        }
     }
 
     @Override

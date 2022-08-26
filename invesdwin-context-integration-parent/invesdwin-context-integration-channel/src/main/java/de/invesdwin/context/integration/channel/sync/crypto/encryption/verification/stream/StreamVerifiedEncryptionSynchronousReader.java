@@ -11,6 +11,7 @@ import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.IHash;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
 
 /**
@@ -18,9 +19,10 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
  * efficient due to object reuse.
  */
 @NotThreadSafe
-public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class StreamVerifiedEncryptionSynchronousReader
+        implements ISynchronousReader<IByteBufferProvider>, IByteBufferProvider {
 
-    private final ISynchronousReader<IByteBuffer> delegate;
+    private final ISynchronousReader<IByteBufferProvider> delegate;
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
     private IByteBuffer decryptedBuffer;
@@ -28,7 +30,7 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
     private InputStream decryptingStreamOut;
     private IHash hash;
 
-    public StreamVerifiedEncryptionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
+    public StreamVerifiedEncryptionSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final IEncryptionFactory encryptionFactory, final IVerificationFactory verificationFactory) {
         this.delegate = delegate;
         this.encryptionFactory = encryptionFactory;
@@ -38,7 +40,6 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
     @Override
     public void open() throws IOException {
         delegate.open();
-        decryptedBuffer = ByteBuffers.allocateExpandable();
         decryptingStreamIn = new ByteBufferInputStream();
         decryptingStreamOut = encryptionFactory.newStreamingDecryptor(decryptingStreamIn);
         hash = verificationFactory.getAlgorithm().newHash();
@@ -65,21 +66,34 @@ public class StreamVerifiedEncryptionSynchronousReader implements ISynchronousRe
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
-        final IByteBuffer encryptedBuffer = delegate.readMessage();
-        final int decryptedLength = encryptedBuffer
-                .getInt(StreamVerifiedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
-        final IByteBuffer payloadBuffer = verificationFactory.verifyAndSlice(
-                encryptedBuffer.sliceFrom(StreamVerifiedEncryptionSynchronousWriter.PAYLOAD_INDEX), hash);
-        decryptingStreamIn.wrap(payloadBuffer);
-        decryptedBuffer.putBytesTo(0, decryptingStreamOut, decryptedLength);
-
-        return decryptedBuffer.sliceTo(decryptedLength);
+    public IByteBufferProvider readMessage() throws IOException {
+        return this;
     }
 
     @Override
     public void readFinished() {
         delegate.readFinished();
+    }
+
+    @Override
+    public IByteBuffer asBuffer() throws IOException {
+        if (decryptedBuffer == null) {
+            decryptedBuffer = ByteBuffers.allocateExpandable();
+        }
+        final int length = getBuffer(decryptedBuffer);
+        return decryptedBuffer.sliceTo(length);
+    }
+
+    @Override
+    public int getBuffer(final IByteBuffer dst) throws IOException {
+        final IByteBuffer encryptedBuffer = delegate.readMessage().asBuffer();
+        final int decryptedLength = encryptedBuffer
+                .getInt(StreamVerifiedEncryptionSynchronousWriter.DECRYPTEDLENGTH_INDEX);
+        final IByteBuffer payloadBuffer = verificationFactory.verifyAndSlice(
+                encryptedBuffer.sliceFrom(StreamVerifiedEncryptionSynchronousWriter.PAYLOAD_INDEX), hash);
+        decryptingStreamIn.wrap(payloadBuffer);
+        dst.putBytesTo(0, decryptingStreamOut, decryptedLength);
+        return decryptedLength;
     }
 
 }

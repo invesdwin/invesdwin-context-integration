@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider;
 
+import java.io.IOException;
+
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
@@ -15,7 +17,7 @@ public interface ITransportLayerSecurityProvider {
 
     void configureSocket(SSLSocket socket);
 
-    void onSocketConnected(SSLSocket socket);
+    void onSocketConnected(SSLSocket socket) throws IOException;
 
     SSLContext newContext();
 

@@ -13,10 +13,11 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class NativeDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NativeDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final boolean SERVER = true;
     private DatagramSynchronousChannel channel;
@@ -71,7 +72,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size

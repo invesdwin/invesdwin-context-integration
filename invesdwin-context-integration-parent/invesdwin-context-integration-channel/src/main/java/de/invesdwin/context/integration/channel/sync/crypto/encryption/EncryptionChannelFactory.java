@@ -9,11 +9,10 @@ import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
 import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
+public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
 
@@ -22,7 +21,7 @@ public class EncryptionChannelFactory implements ISynchronousChannelFactory<IByt
     }
 
     @Override
-    public ISynchronousReader<IByteBuffer> newReader(final ISynchronousReader<IByteBuffer> reader) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new EncryptionSynchronousReader(reader, encryptionFactory);
     }
 

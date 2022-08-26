@@ -11,12 +11,13 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
-public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private SocketSynchronousChannel channel;
     private final int socketSize;
@@ -70,7 +71,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = SocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size

@@ -12,9 +12,10 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBufferProvider> {
 
     private FileInputStream in;
     private FileChannel fileChannel;
@@ -57,7 +58,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         ByteBuffers.position(messageBuffer, 0);
         int targetPosition = MESSAGE_INDEX;
         int size = 0;

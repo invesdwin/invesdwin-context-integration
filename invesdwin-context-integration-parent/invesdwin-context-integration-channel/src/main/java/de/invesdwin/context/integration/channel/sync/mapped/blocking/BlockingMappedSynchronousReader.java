@@ -11,6 +11,7 @@ import de.invesdwin.context.integration.channel.sync.mapped.AMappedSynchronousCh
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -26,7 +27,7 @@ import de.invesdwin.util.time.duration.Duration;
  */
 @NotThreadSafe
 public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+        implements ISynchronousReader<IByteBufferProvider> {
     private int lastTransaction;
     private final ASpinWait readFinishedWait = newSpinWait();
     private final Duration timeout;
@@ -80,13 +81,15 @@ public class BlockingMappedSynchronousReader extends AMappedSynchronousChannel
     }
 
     @Override
-    public IByteBuffer readMessage() {
+    public IByteBuffer readMessage() throws IOException {
         try {
             if (!readFinishedWait.awaitFulfill(System.nanoTime(), timeout)) {
                 throw new TimeoutException("Read message timeout exceeded: " + timeout);
             }
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
 
         lastTransaction = getTransaction();

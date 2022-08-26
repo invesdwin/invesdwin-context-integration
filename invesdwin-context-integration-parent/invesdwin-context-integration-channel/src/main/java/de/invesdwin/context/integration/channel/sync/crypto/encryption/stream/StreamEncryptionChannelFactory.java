@@ -6,11 +6,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class StreamEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
+public class StreamEncryptionChannelFactory
+        implements ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
 
@@ -19,7 +19,7 @@ public class StreamEncryptionChannelFactory implements ISynchronousChannelFactor
     }
 
     @Override
-    public ISynchronousReader<IByteBuffer> newReader(final ISynchronousReader<IByteBuffer> reader) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new StreamEncryptionSynchronousReader(reader, encryptionFactory);
     }
 

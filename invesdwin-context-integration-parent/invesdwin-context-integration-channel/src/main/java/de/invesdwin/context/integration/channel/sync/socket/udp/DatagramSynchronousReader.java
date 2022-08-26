@@ -11,9 +11,10 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class DatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final boolean SERVER = true;
     private DatagramSynchronousChannel channel;
@@ -65,7 +66,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size

@@ -50,6 +50,7 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.ProcessedEventsRateString;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
@@ -87,7 +88,13 @@ public abstract class AChannelTest extends ATest {
             final IAsynchronousChannel clientChannel) throws InterruptedException {
         try {
             final WrappedExecutorService executor = Executors.newFixedThreadPool("runHandlerPerformanceTest", 1);
-            final ListenableFuture<?> openFuture = executor.submit(() -> serverChannel.open());
+            final ListenableFuture<?> openFuture = executor.submit(() -> {
+                try {
+                    serverChannel.open();
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
             clientChannel.open();
             while (!clientChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
@@ -96,11 +103,11 @@ public abstract class AChannelTest extends ATest {
                 FTimeUnit.MILLISECONDS.sleep(1);
             }
             openFuture.get(MAX_WAIT_DURATION.longValue(), MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
-        } catch (ExecutionException | TimeoutException e) {
+        } catch (ExecutionException | TimeoutException | IOException e) {
             throw new RuntimeException(e);
         } finally {
-            serverChannel.close();
-            clientChannel.close();
+            Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(clientChannel);
         }
     }
 
@@ -196,25 +203,26 @@ public abstract class AChannelTest extends ATest {
 
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapper) throws InterruptedException {
+            final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapper)
+            throws InterruptedException {
         runPerformanceTest(pipes, requestFile, responseFile, synchronizeRequest, synchronizeResponse, wrapper, wrapper);
     }
 
     protected void runPerformanceTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapperServer,
-            final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> wrapperClient)
+            final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapperServer,
+            final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapperClient)
             throws InterruptedException {
         try {
             final ISynchronousWriter<IByteBufferProvider> responseWriter = maybeSynchronize(
                     wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
-            final ISynchronousReader<IByteBuffer> requestReader = maybeSynchronize(
+            final ISynchronousReader<IByteBufferProvider> requestReader = maybeSynchronize(
                     wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = maybeSynchronize(
                     wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
-            final ISynchronousReader<IByteBuffer> responseReader = maybeSynchronize(
+            final ISynchronousReader<IByteBufferProvider> responseReader = maybeSynchronize(
                     wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
             read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
@@ -225,7 +233,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
+    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
             return new NativePipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
@@ -266,7 +274,7 @@ public abstract class AChannelTest extends ATest {
         return new SerdeAsynchronousHandler<>(handler, FDateSerde.GET, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    protected ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBuffer> reader) {
+    protected ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new SerdeSynchronousReader<FDate>(reader, FDateSerde.GET);
     }
 

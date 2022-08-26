@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.compression.ICompressionFactory;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
 
 /**
@@ -16,21 +17,22 @@ import de.invesdwin.util.streams.buffer.bytes.stream.ByteBufferInputStream;
  * the connection. Also the compressed fragment header is larger than in an individual compression.
  */
 @NotThreadSafe
-public class StreamCompressionSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class StreamCompressionSynchronousReader
+        implements ISynchronousReader<IByteBufferProvider>, IByteBufferProvider {
 
     public static final ICompressionFactory DEFAULT_COMPRESSION_FACTORY = StreamCompressionSynchronousWriter.DEFAULT_COMPRESSION_FACTORY;
 
-    private final ISynchronousReader<IByteBuffer> delegate;
+    private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ICompressionFactory compressionFactory;
     private IByteBuffer decompressedBuffer;
     private ByteBufferInputStream decompressingStreamIn;
     private InputStream decompressingStreamOut;
 
-    public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate) {
+    public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate) {
         this(delegate, DEFAULT_COMPRESSION_FACTORY);
     }
 
-    public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBuffer> delegate,
+    public StreamCompressionSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ICompressionFactory compressionFactory) {
         this.delegate = delegate;
         this.compressionFactory = compressionFactory;
@@ -39,7 +41,6 @@ public class StreamCompressionSynchronousReader implements ISynchronousReader<IB
     @Override
     public void open() throws IOException {
         delegate.open();
-        decompressedBuffer = ByteBuffers.allocateExpandable();
         decompressingStreamIn = new ByteBufferInputStream();
         decompressingStreamOut = compressionFactory.newDecompressor(decompressingStreamIn);
     }
@@ -61,17 +62,31 @@ public class StreamCompressionSynchronousReader implements ISynchronousReader<IB
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
-        final IByteBuffer compressedBuffer = delegate.readMessage();
-        final int length = compressedBuffer.getInt(StreamCompressionSynchronousWriter.DECOMPRESSEDLENGTH_INDEX);
-        final IByteBuffer payloadBuffer = compressedBuffer.sliceFrom(StreamCompressionSynchronousWriter.PAYLOAD_INDEX);
-        decompressingStreamIn.wrap(payloadBuffer);
-        decompressedBuffer.putBytesTo(0, decompressingStreamOut, length);
-        return decompressedBuffer;
+    public IByteBufferProvider readMessage() throws IOException {
+        return this;
     }
 
     @Override
     public void readFinished() {
         delegate.readFinished();
+    }
+
+    @Override
+    public IByteBuffer asBuffer() throws IOException {
+        if (decompressedBuffer == null) {
+            decompressedBuffer = ByteBuffers.allocateExpandable();
+        }
+        final int length = getBuffer(decompressedBuffer);
+        return decompressedBuffer.sliceTo(length);
+    }
+
+    @Override
+    public int getBuffer(final IByteBuffer dst) throws IOException {
+        final IByteBuffer compressedBuffer = delegate.readMessage().asBuffer();
+        final int length = compressedBuffer.getInt(StreamCompressionSynchronousWriter.DECOMPRESSEDLENGTH_INDEX);
+        final IByteBuffer payloadBuffer = compressedBuffer.sliceFrom(StreamCompressionSynchronousWriter.PAYLOAD_INDEX);
+        decompressingStreamIn.wrap(payloadBuffer);
+        dst.putBytesTo(0, decompressingStreamOut, length);
+        return length;
     }
 }

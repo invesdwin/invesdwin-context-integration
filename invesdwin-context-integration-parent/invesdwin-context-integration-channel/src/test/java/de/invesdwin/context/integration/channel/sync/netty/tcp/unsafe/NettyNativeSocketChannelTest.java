@@ -15,7 +15,6 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.OperatingSystem;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -38,13 +37,13 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyNativeSocketSynchronousWriter(
                 new NettySocketSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> requestReader = new NettyNativeSocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeSocketSynchronousReader(
                 new NettySocketSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeSocketSynchronousWriter(
                 new NettySocketSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> responseReader = new NettyNativeSocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeSocketSynchronousReader(
                 new NettySocketSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

@@ -47,8 +47,8 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousReader<IByteBuffer> handshakeReader) throws IOException {
+            final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException {
         final ASpinWait handshakeReaderSpinWait = newSpinWait(handshakeReader);
 
         handshakeWriter.open();
@@ -91,11 +91,11 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
     }
 
     private void clientStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ISynchronousReader<IByteBuffer> handshakeReader, final ASpinWait handshakeReaderSpinWait,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader, final ASpinWait handshakeReaderSpinWait,
             final IByteBuffer buffer, final SRP6ClientSession client) throws IOException, SRP6Exception {
         //On receiving the server public value 'B' (and crypto parameters):
         waitForMessage(handshakeReaderSpinWait);
-        final IByteBuffer serverStep1ResultMessage = handshakeReader.readMessage();
+        final IByteBuffer serverStep1ResultMessage = handshakeReader.readMessage().asBuffer();
         final Srp6ServerStep1Result serverStep1Result = Srp6ServerStep1ResultSerde.INSTANCE
                 .fromBuffer(serverStep1ResultMessage);
         handshakeReader.readFinished();
@@ -111,13 +111,13 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         handshakeWriter.write(buffer.sliceTo(clientStep2ResultLength));
     }
 
-    private BigInteger clientStep3(final ISynchronousReader<IByteBuffer> handshakeReader,
+    private BigInteger clientStep3(final ISynchronousReader<IByteBufferProvider> handshakeReader,
             final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
             throws IOException, SRP6Exception {
         //On receiving the server evidence message 'M2':
         //Validate the server evidence message 'M2' after which user and server are mutually authenticated.
         waitForMessage(handshakeReaderSpinWait);
-        final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage();
+        final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage().asBuffer();
         final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
                 .fromBuffer(serverStep2ResultMessage);
         handshakeReader.readFinished();

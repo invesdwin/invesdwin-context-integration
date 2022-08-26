@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -32,12 +31,16 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
         final BlockingSocketSynchronousChannel clientChannel = newBlockingSocketSynchronousChannel(address, false,
                 getMaxMessageSize());
 
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingSocketSynchronousWriter(serverChannel);
-        final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(serverChannel);
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingSocketSynchronousWriter(
+                serverChannel);
+        final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingSocketSynchronousReader(
+                serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(clientChannel);
-        final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(clientChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(
+                clientChannel);
+        final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
+                clientChannel);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

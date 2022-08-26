@@ -9,10 +9,11 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
-public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private ChronicleNetworkSynchronousChannel channel;
     private final int socketSize;
@@ -61,7 +62,7 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size

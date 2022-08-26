@@ -10,9 +10,10 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BlockingSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class BlockingSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     protected BlockingSocketSynchronousChannel channel;
     private InputStream in;
@@ -63,7 +64,7 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         try {
             if (channel.isInputStreamAvailableSupported()) {
                 buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);

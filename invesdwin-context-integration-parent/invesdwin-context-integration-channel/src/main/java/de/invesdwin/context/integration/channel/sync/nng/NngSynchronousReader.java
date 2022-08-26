@@ -10,13 +10,14 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NioDelegateByteBuffer;
 import io.sisu.nng.Message;
 import io.sisu.nng.NngException;
 import io.sisu.nng.Socket;
 
 @NotThreadSafe
-public class NngSynchronousReader extends ANngSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class NngSynchronousReader extends ANngSynchronousChannel implements ISynchronousReader<IByteBufferProvider> {
 
     private final NioDelegateByteBuffer wrappedBuffer = new NioDelegateByteBuffer(EmptyByteBuffer.EMPTY_BYTE_BUFFER);
     private IByteBuffer polledValue;
@@ -53,7 +54,7 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -67,17 +68,13 @@ public class NngSynchronousReader extends ANngSynchronousChannel implements ISyn
         //noop
     }
 
-    private IByteBuffer getPolledMessage() {
+    private IByteBuffer getPolledMessage() throws IOException {
         if (polledValue != null) {
             final IByteBuffer value = polledValue;
             polledValue = null;
             return value;
         }
-        try {
-            return poll();
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
+        return poll();
     }
 
     private IByteBuffer poll() throws IOException {

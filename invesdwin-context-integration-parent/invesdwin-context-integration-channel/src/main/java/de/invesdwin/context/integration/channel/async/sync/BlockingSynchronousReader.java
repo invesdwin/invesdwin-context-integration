@@ -57,8 +57,10 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
             if (!spinWait.awaitFulfill(System.nanoTime(), timeout)) {
                 throw new TimeoutException("Read message timeout exceeded: " + timeout);
             }
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
         return delegate.readMessage();
     }

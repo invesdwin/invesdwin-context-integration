@@ -137,7 +137,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
+                                throw new IOException(e1);
                             }
                         } else {
                             throw e;
@@ -161,7 +161,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         }
     }
 
-    private void awaitSocketChannel() {
+    private void awaitSocketChannel() throws IOException {
         try {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
@@ -175,7 +175,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             }
         } catch (final Throwable t) {
             close();
-            throw new RuntimeException(t);
+            throw new IOException(t);
         }
     }
 

@@ -6,16 +6,16 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class HandshakeSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private final HandshakeChannel parent;
 
-    private ISynchronousReader<IByteBuffer> underlyingReader;
+    private ISynchronousReader<IByteBufferProvider> underlyingReader;
     @GuardedBy("this during handshake")
-    private ISynchronousReader<IByteBuffer> encryptedReader;
+    private ISynchronousReader<IByteBufferProvider> encryptedReader;
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
@@ -23,20 +23,20 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
         this.parent = parent;
     }
 
-    public ISynchronousReader<IByteBuffer> getUnderlyingReader() {
+    public ISynchronousReader<IByteBufferProvider> getUnderlyingReader() {
         return underlyingReader;
     }
 
-    public void setUnderlyingReader(final ISynchronousReader<IByteBuffer> underlyingReader) {
+    public void setUnderlyingReader(final ISynchronousReader<IByteBufferProvider> underlyingReader) {
         assert this.underlyingReader == null : "Please always retrieve a reader/writer pair for the handshake to initialize properly. The reader was requested twice in a row which is unsupported.";
         this.underlyingReader = underlyingReader;
     }
 
-    public synchronized ISynchronousReader<IByteBuffer> getEncryptedReader() {
+    public synchronized ISynchronousReader<IByteBufferProvider> getEncryptedReader() {
         return encryptedReader;
     }
 
-    public synchronized void setEncryptedReader(final ISynchronousReader<IByteBuffer> encryptedReader) {
+    public synchronized void setEncryptedReader(final ISynchronousReader<IByteBufferProvider> encryptedReader) {
         this.encryptedReader = encryptedReader;
     }
 
@@ -86,7 +86,7 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         return encryptedReader.readMessage();
     }
 

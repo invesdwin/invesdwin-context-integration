@@ -61,12 +61,12 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> unsignedHandshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousReader<IByteBuffer> unsignedHandshakeReader) throws IOException {
+            final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
+            final ISynchronousReader<IByteBufferProvider> unsignedHandshakeReader) throws IOException {
         final SignatureKey ourSignatureKey = getOurSignatureKey();
         final PublicKey staticOtherVerifyKey = getOtherVerifyKey(ourSignatureKey);
         final ISynchronousWriter<IByteBufferProvider> signedHandshakeWriter;
-        final ISynchronousReader<IByteBuffer> signedHandshakeReader;
+        final ISynchronousReader<IByteBufferProvider> signedHandshakeReader;
         if (staticOtherVerifyKey != null) {
             final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(), null,
                     ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
@@ -92,10 +92,12 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
                             throw new TimeoutException(
                                     "Read handshake message timeout exceeded: " + getHandshakeTimeout());
                         }
+                    } catch (final IOException e) {
+                        throw e;
                     } catch (final Exception e) {
-                        throw new RuntimeException(e);
+                        throw new IOException(e);
                     }
-                    final IByteBuffer otherVerifyKeyMessage = unsignedHandshakeReader.readMessage();
+                    final IByteBuffer otherVerifyKeyMessage = unsignedHandshakeReader.readMessage().asBuffer();
                     final PublicKey otherVerifyKey = SignatureKey.wrapVerifyKey(
                             ourSignatureKey.getAlgorithm().getKeyAlgorithm(), otherVerifyKeyMessage.asByteArray());
                     unsignedHandshakeReader.readFinished();
@@ -153,7 +155,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
         return ISignatureAlgorithm.getDefault();
     }
 
-    protected ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newSignedHandshakeChannelFactory(
+    protected ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newSignedHandshakeChannelFactory(
             final SignatureKey signatureKey) {
         final DerivedKeyProvider symmetricDerivedKeyProvider = DerivedKeyProvider.fromPassword(getPepper(),
                 "signed-handshake-" + getSessionIdentifier());
@@ -171,12 +173,12 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
      * Though someone could still impersonate the first connection attempt.
      */
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return unsignedProvider.newAuthenticatedHandshakeChannelFactory();
     }
 
     @Override
-    public ASpinWait newSpinWait(final ISynchronousReader<IByteBuffer> delegate) {
+    public ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
         return unsignedProvider.newSpinWait(delegate);
     }
 
@@ -196,7 +198,7 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     }
 
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newEncryptedChannelFactory(
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newEncryptedChannelFactory(
             final IDerivedKeyProvider derivedKeyProvider) {
         return unsignedProvider.newEncryptedChannelFactory(derivedKeyProvider);
     }

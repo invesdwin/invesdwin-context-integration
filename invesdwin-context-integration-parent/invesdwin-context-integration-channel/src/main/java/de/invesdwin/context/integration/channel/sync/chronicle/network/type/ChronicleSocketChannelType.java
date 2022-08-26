@@ -89,7 +89,7 @@ public enum ChronicleSocketChannelType implements IChronicleSocketChannelType {
         try {
             return (ServerSocketChannel) VANILLA_SSC_FIELD_GETTER.invoke(serverSocketChannel);
         } catch (final Throwable e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
     }
 

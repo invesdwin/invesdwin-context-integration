@@ -52,7 +52,7 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
      *             in case the end of the file was reached
      */
     @Override
-    public void write(final IByteBufferProvider message) {
+    public void write(final IByteBufferProvider message) throws IOException {
         final byte nextTransaction = getNextTransaction();
         //open transaction
         setTransaction(TRANSACTION_WRITING_VALUE);

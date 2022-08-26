@@ -9,12 +9,13 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ChronicleDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
 
 @NotThreadSafe
 public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousChannel
-        implements ISynchronousReader<IByteBuffer> {
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private ExcerptTailer tailer;
     private net.openhft.chronicle.bytes.Bytes<?> bytes;
@@ -50,7 +51,7 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final int length = (int) bytes.writePosition();
         if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
             close();

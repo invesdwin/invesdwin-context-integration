@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.Future;
@@ -114,7 +115,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         return socketAddress;
     }
 
-    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener) {
+    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener)
+            throws IOException {
         if (!shouldOpen(channelListener)) {
             return;
         }
@@ -156,7 +158,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitDatagramChannel(final Supplier<ChannelFuture> channelFactory) {
+    private void awaitDatagramChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         datagramChannelOpening = true;
         try {
             //init bootstrap
@@ -177,7 +179,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
+                                throw new IOException(e1);
                             }
                         } else {
                             throw t;
@@ -189,14 +191,14 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             }
         } catch (final Throwable t) {
             closeAsync();
-            throw new RuntimeException(t);
+            throw new IOException(t);
         } finally {
             datagramChannelOpening = false;
         }
         awaitDatagramChannel();
     }
 
-    private void awaitDatagramChannel() {
+    private void awaitDatagramChannel() throws IOException {
         try {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
@@ -209,7 +211,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             }
         } catch (final Throwable t) {
             closeAsync();
-            throw new RuntimeException(t);
+            throw new IOException(t);
         }
     }
 

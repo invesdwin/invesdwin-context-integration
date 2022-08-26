@@ -97,8 +97,10 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
                 if (!newSpinWait().awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                     throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
                 }
+            } catch (final IOException e) {
+                throw e;
             } catch (final Exception e) {
-                throw new RuntimeException(e);
+                throw new IOException(e);
             }
         }
         encryptedWriter.write(message);

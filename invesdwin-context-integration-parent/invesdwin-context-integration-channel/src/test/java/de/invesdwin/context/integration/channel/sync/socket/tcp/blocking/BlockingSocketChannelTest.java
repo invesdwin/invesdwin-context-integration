@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -31,13 +30,13 @@ public class BlockingSocketChannelTest extends AChannelTest {
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingSocketSynchronousWriter(
                 newBlockingSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> requestReader = new BlockingSocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingSocketSynchronousReader(
                 newBlockingSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(
                 newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> responseReader = new BlockingSocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
                 newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

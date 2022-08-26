@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -17,7 +18,7 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 
 @NotThreadSafe
-public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NettySocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private NettySocketSynchronousChannel channel;
     private Reader reader;
@@ -55,7 +56,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer value = reader.polledValue;
         reader.polledValue = null;
         if (ClosedByteBuffer.isClosed(value)) {

@@ -15,10 +15,12 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
-public class NativePipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class NativePipeSynchronousReader extends APipeSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private FileInputStream in;
     private FileChannel fileChannel;
@@ -61,7 +63,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel impleme
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int position = 0;
         int targetPosition = MESSAGE_INDEX;
         int size = 0;

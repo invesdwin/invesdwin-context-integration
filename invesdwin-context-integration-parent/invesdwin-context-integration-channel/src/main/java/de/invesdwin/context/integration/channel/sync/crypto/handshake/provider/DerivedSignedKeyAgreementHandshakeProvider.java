@@ -9,7 +9,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
@@ -54,7 +53,7 @@ public class DerivedSignedKeyAgreementHandshakeProvider extends SignedKeyAgreeme
      * first step of sending around public keys is skipped.
      */
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return DisabledChannelFactory.getInstance();
     }
 

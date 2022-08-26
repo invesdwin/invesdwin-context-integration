@@ -13,10 +13,12 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import zmq.ZError;
 
 @NotThreadSafe
-public class JeromqSynchronousReader extends AJeromqSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class JeromqSynchronousReader extends AJeromqSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private IByteBuffer polledValue;
 
@@ -38,7 +40,7 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -52,17 +54,13 @@ public class JeromqSynchronousReader extends AJeromqSynchronousChannel implement
         //noop
     }
 
-    private IByteBuffer getPolledMessage() {
+    private IByteBuffer getPolledMessage() throws IOException {
         if (polledValue != null) {
             final IByteBuffer value = polledValue;
             polledValue = null;
             return value;
         }
-        try {
-            return poll();
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
+        return poll();
     }
 
     private IByteBuffer poll() throws IOException {

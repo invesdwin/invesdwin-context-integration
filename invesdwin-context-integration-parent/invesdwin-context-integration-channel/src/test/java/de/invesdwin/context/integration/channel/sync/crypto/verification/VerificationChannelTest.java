@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.encryption.Encryptio
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -32,7 +31,7 @@ public class VerificationChannelTest extends AChannelTest {
     }
 
     @Override
-    protected ISynchronousReader<IByteBuffer> newReader(final File file, final FileChannelType pipes) {
+    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         return new VerificationSynchronousReader(super.newReader(file, pipes), VERIFICATION_FACTORY);
     }
 

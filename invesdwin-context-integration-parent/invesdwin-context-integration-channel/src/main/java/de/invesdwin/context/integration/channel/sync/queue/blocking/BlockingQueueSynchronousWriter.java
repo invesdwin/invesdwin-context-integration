@@ -36,7 +36,7 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
         try {
             queue.put(newReference(message));
         } catch (final InterruptedException e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 

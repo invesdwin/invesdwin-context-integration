@@ -84,21 +84,17 @@ public class StreamCompressionSynchronousWriter
     }
 
     @Override
-    public int getBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) throws IOException {
         compressingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
-        try {
-            decompressedBuffer.getBytes(0, compressingStreamIn);
-            compressingStreamIn.flush();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        decompressedBuffer.getBytes(0, compressingStreamIn);
+        compressingStreamIn.flush();
         final int compressedLength = compressingStreamOut.position();
         dst.putInt(DECOMPRESSEDLENGTH_INDEX, decompressedBuffer.capacity());
         return PAYLOAD_INDEX + compressedLength;
     }
 
     @Override
-    public IByteBuffer asBuffer() {
+    public IByteBuffer asBuffer() throws IOException {
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }

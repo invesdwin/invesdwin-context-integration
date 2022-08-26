@@ -12,7 +12,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Files;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 
@@ -50,12 +49,14 @@ public class ChronicleQueueChannelTest extends AChannelTest {
         try {
             final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleQueueSynchronousWriter(
                     responseFile);
-            final ISynchronousReader<IByteBuffer> requestReader = new ChronicleQueueSynchronousReader(requestFile);
+            final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleQueueSynchronousReader(
+                    requestFile);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
             executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleQueueSynchronousWriter(
                     requestFile);
-            final ISynchronousReader<IByteBuffer> responseReader = new ChronicleQueueSynchronousReader(responseFile);
+            final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
+                    responseFile);
             read(newCommandWriter(requestWriter), newCommandReader(responseReader));
             executor.shutdown();
             executor.awaitTermination();

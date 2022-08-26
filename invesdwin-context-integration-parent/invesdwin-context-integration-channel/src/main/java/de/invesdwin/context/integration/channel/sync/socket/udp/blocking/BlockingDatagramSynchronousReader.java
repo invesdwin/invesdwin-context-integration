@@ -13,9 +13,10 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BlockingDatagramSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class BlockingDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final boolean SERVER = true;
     private BlockingDatagramSynchronousChannel channel;
@@ -63,7 +64,7 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final int size = packetBuffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         final IByteBuffer message = packetBuffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {

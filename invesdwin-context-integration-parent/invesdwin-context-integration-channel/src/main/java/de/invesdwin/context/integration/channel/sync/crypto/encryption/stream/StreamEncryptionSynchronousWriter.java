@@ -76,21 +76,17 @@ public class StreamEncryptionSynchronousWriter implements ISynchronousWriter<IBy
     }
 
     @Override
-    public int getBuffer(final IByteBuffer dst) {
+    public int getBuffer(final IByteBuffer dst) throws IOException {
         encryptingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
-        try {
-            decryptedBuffer.getBytes(0, encryptingStreamIn);
-            encryptingStreamIn.flush();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
+        decryptedBuffer.getBytes(0, encryptingStreamIn);
+        encryptingStreamIn.flush();
         final int encryptedLength = encryptingStreamOut.position();
         dst.putInt(DECRYPTEDLENGTH_INDEX, decryptedBuffer.capacity());
         return PAYLOAD_INDEX + encryptedLength;
     }
 
     @Override
-    public IByteBuffer asBuffer() {
+    public IByteBuffer asBuffer() throws IOException {
         if (buffer == null) {
             buffer = ByteBuffers.allocateExpandable();
         }

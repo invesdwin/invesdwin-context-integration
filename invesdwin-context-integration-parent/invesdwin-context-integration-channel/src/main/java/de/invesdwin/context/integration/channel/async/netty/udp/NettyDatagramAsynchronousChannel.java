@@ -38,7 +38,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
     }
 
     @Override
-    public void open() {
+    public void open() throws IOException {
         this.reader = new Reader(handler, channel.getSocketAddress(), channel.getSocketSize());
         channel.open(bootstrap -> {
             bootstrap.handler(reader);
@@ -185,7 +185,11 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                     final IByteBufferProvider output = handler.handle(input);
                     writeOutput(ctx, sender, output);
                 } catch (final IOException e) {
-                    writeOutput(ctx, sender, ClosedByteBuffer.INSTANCE);
+                    try {
+                        writeOutput(ctx, sender, ClosedByteBuffer.INSTANCE);
+                    } catch (final IOException e1) {
+                        //ignore
+                    }
                     NettyDatagramAsynchronousChannel.this.closeAsync();
                 }
             }
@@ -197,7 +201,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         }
 
         private void writeOutput(final ChannelHandlerContext ctx, final InetSocketAddress sender,
-                final IByteBufferProvider output) {
+                final IByteBufferProvider output) throws IOException {
             if (output != null) {
                 buf.setIndex(0, 0); //reset indexes
                 final int size = output.getBuffer(messageBuffer);

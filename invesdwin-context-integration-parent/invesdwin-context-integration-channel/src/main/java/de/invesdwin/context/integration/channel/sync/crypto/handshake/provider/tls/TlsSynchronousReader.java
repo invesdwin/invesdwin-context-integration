@@ -7,12 +7,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Adapted from: net.openhft.chronicle.network.ssl.SslEngineStateMachine
  */
 @NotThreadSafe
-public class TlsSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class TlsSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private final TlsSynchronousChannel channel;
 
@@ -53,7 +54,7 @@ public class TlsSynchronousReader implements ISynchronousReader<IByteBuffer> {
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final java.nio.ByteBuffer src = channel.getInboundApplicationData();
         src.flip();
         final IByteBuffer srcBuffer = channel.getInboundApplicationDataBuffer();

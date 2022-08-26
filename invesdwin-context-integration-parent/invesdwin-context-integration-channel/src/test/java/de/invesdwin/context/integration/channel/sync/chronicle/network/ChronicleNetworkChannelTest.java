@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.chronicle.network.type.Chro
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -32,13 +31,13 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleNetworkSynchronousWriter(
                 newChronicleNetworkSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> requestReader = new ChronicleNetworkSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleNetworkSynchronousReader(
                 newChronicleNetworkSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runChronicleSocketPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleNetworkSynchronousWriter(
                 newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
-        final ISynchronousReader<IByteBuffer> responseReader = new ChronicleNetworkSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleNetworkSynchronousReader(
                 newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

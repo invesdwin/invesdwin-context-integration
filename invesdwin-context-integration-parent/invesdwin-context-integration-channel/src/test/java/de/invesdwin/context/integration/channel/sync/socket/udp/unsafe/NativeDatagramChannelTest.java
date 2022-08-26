@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -30,14 +29,14 @@ public class NativeDatagramChannelTest extends AChannelTest {
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeDatagramSynchronousWriter(
                 responseAddress, getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> requestReader = new NativeDatagramSynchronousReader(requestAddress,
-                getMaxMessageSize());
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NativeDatagramSynchronousReader(
+                requestAddress, getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeDatagramSynchronousWriter(requestAddress,
-                getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> responseReader = new NativeDatagramSynchronousReader(responseAddress,
-                getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeDatagramSynchronousWriter(
+                requestAddress, getMaxMessageSize());
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
+                responseAddress, getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

@@ -45,8 +45,8 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousReader<IByteBuffer> handshakeReader) throws IOException {
+            final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException {
         handshakeWriter.open();
         try {
             handshakeReader.open();
@@ -64,10 +64,12 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
                     if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                         throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
                     }
+                } catch (final IOException e) {
+                    throw e;
                 } catch (final Exception e) {
-                    throw new RuntimeException(e);
+                    throw new IOException(e);
                 }
-                final IByteBuffer otherPublicKeyMessage = handshakeReader.readMessage();
+                final IByteBuffer otherPublicKeyMessage = handshakeReader.readMessage().asBuffer();
                 final PublicKey otherPublicKey = AsymmetricCipherKey.wrapPublicKey(getKeyAlgorithm(),
                         otherPublicKeyMessage.asByteArray());
                 handshakeReader.readFinished();

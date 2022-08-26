@@ -11,11 +11,11 @@ import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.Symmetri
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
+public class VerifiedEncryptionChannelFactory
+        implements ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> {
 
     private final IEncryptionFactory encryptionFactory;
     private final IVerificationFactory verificationFactory;
@@ -27,7 +27,7 @@ public class VerifiedEncryptionChannelFactory implements ISynchronousChannelFact
     }
 
     @Override
-    public ISynchronousReader<IByteBuffer> newReader(final ISynchronousReader<IByteBuffer> reader) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new VerifiedEncryptionSynchronousReader(reader, encryptionFactory, verificationFactory);
     }
 

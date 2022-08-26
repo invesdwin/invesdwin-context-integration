@@ -92,7 +92,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
+                                throw new IOException(e1);
                             }
                         } else {
                             throw e;
@@ -130,7 +130,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
+                                throw new IOException(e1);
                             }
                         } else {
                             throw e;

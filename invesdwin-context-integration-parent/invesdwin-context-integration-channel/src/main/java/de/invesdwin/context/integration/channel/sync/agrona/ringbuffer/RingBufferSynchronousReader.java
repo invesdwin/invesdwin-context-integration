@@ -15,10 +15,11 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.AgronaDelegateByteBuffer;
 
 @NotThreadSafe
-public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class RingBufferSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final int SIZE_INDEX = RingBufferSynchronousWriter.SIZE_INDEX;
     public static final int SIZE_SIZE = RingBufferSynchronousWriter.SIZE_SIZE;
@@ -77,7 +78,7 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -97,17 +98,13 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
             reader.close();
             return value;
         }
-        try {
-            final int messagesRead = ringBuffer.read(reader, 1);
-            if (messagesRead == 1) {
-                final IByteBuffer value = reader.getPolledValue();
-                reader.close();
-                return value;
-            } else {
-                return null;
-            }
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        final int messagesRead = ringBuffer.read(reader, 1);
+        if (messagesRead == 1) {
+            final IByteBuffer value = reader.getPolledValue();
+            reader.close();
+            return value;
+        } else {
+            return null;
         }
     }
 

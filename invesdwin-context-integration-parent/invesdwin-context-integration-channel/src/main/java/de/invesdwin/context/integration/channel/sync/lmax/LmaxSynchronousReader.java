@@ -50,8 +50,10 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         }
         try {
             eventPoller.poll(pollerHandler);
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
         return polledValue != null;
     }
@@ -72,7 +74,7 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
         //noop
     }
 
-    private IMutableReference<M> getPolledMessage() {
+    private IMutableReference<M> getPolledMessage() throws IOException {
         if (polledValue != null) {
             final IMutableReference<M> value = polledValue;
             polledValue = null;
@@ -87,8 +89,10 @@ public class LmaxSynchronousReader<M> implements ISynchronousReader<M> {
             } else {
                 return null;
             }
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 

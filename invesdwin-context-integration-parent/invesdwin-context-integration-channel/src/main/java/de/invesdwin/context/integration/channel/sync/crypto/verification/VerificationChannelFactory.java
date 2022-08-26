@@ -6,11 +6,11 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class VerificationChannelFactory implements ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> {
+public class VerificationChannelFactory
+        implements ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> {
 
     private final IVerificationFactory verificationFactory;
 
@@ -19,7 +19,7 @@ public class VerificationChannelFactory implements ISynchronousChannelFactory<IB
     }
 
     @Override
-    public ISynchronousReader<IByteBuffer> newReader(final ISynchronousReader<IByteBuffer> reader) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new VerificationSynchronousReader(reader, verificationFactory);
     }
 

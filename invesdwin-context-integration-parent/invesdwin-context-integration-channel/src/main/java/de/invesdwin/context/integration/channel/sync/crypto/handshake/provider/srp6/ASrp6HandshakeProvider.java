@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6;
 
+import java.io.IOException;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
@@ -19,7 +20,6 @@ import de.invesdwin.context.security.crypto.verification.hash.algorithm.DigestAl
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Strings;
 import de.invesdwin.util.math.Bytes;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -88,13 +88,15 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
         return verifier;
     }
 
-    protected void waitForMessage(final ASpinWait handshakeReaderSpinWait) {
+    protected void waitForMessage(final ASpinWait handshakeReaderSpinWait) throws IOException {
         try {
             if (!handshakeReaderSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                 throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
             }
+        } catch (final IOException e) {
+            throw e;
         } catch (final Exception e) {
-            throw new RuntimeException(e);
+            throw new IOException(e);
         }
     }
 
@@ -126,7 +128,7 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
      * https://github.com/simbo1905/thinbus-srp-npm#recommendations
      */
     @Override
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return super.newAuthenticatedHandshakeChannelFactory();
     }
 

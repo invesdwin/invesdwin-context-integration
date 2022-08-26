@@ -11,11 +11,12 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IByteBuffer> {
+public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private NettySocketSynchronousChannel channel;
     private IByteBuffer buffer;
@@ -88,7 +89,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size

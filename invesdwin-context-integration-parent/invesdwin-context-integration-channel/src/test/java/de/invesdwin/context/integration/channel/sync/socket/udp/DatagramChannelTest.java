@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -31,13 +30,13 @@ public class DatagramChannelTest extends AChannelTest {
             final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new DatagramSynchronousWriter(responseAddress,
                 getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> requestReader = new DatagramSynchronousReader(requestAddress,
+        final ISynchronousReader<IByteBufferProvider> requestReader = new DatagramSynchronousReader(requestAddress,
                 getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new DatagramSynchronousWriter(requestAddress,
                 getMaxMessageSize());
-        final ISynchronousReader<IByteBuffer> responseReader = new DatagramSynchronousReader(responseAddress,
+        final ISynchronousReader<IByteBufferProvider> responseReader = new DatagramSynchronousReader(responseAddress,
                 getMaxMessageSize());
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();

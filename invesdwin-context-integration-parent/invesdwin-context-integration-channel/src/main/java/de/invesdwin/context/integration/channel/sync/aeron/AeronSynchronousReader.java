@@ -8,13 +8,15 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.AgronaDelegateByteBuffer;
 import io.aeron.FragmentAssembler;
 import io.aeron.Subscription;
 import io.aeron.logbuffer.FragmentHandler;
 
 @NotThreadSafe
-public class AeronSynchronousReader extends AAeronSynchronousChannel implements ISynchronousReader<IByteBuffer> {
+public class AeronSynchronousReader extends AAeronSynchronousChannel
+        implements ISynchronousReader<IByteBufferProvider> {
 
     private final AgronaDelegateByteBuffer wrappedBuffer = new AgronaDelegateByteBuffer(
             AgronaDelegateByteBuffer.EMPTY_BYTES);
@@ -55,7 +57,7 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
     }
 
     @Override
-    public IByteBuffer readMessage() throws IOException {
+    public IByteBufferProvider readMessage() throws IOException {
         final IByteBuffer message = getPolledMessage();
         if (message != null && ClosedByteBuffer.isClosed(message)) {
             close();
@@ -75,17 +77,13 @@ public class AeronSynchronousReader extends AAeronSynchronousChannel implements 
             polledValue = null;
             return value;
         }
-        try {
-            final int fragmentsRead = subscription.poll(fragmentHandler, 1);
-            if (fragmentsRead == 1) {
-                final IByteBuffer value = polledValue;
-                polledValue = null;
-                return value;
-            } else {
-                return null;
-            }
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
+        final int fragmentsRead = subscription.poll(fragmentHandler, 1);
+        if (fragmentsRead == 1) {
+            final IByteBuffer value = polledValue;
+            polledValue = null;
+            return value;
+        } else {
+            return null;
         }
     }
 

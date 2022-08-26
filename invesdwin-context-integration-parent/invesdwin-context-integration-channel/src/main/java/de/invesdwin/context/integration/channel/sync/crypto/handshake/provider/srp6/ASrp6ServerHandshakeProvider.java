@@ -45,8 +45,8 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
     protected void performHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
-            final ISynchronousReader<IByteBuffer> handshakeReader) throws IOException {
+            final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException {
         final ASpinWait handshakeReaderSpinWait = newSpinWait(handshakeReader);
 
         handshakeWriter.open();
@@ -78,10 +78,10 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
     }
 
     private String serverStep1(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ISynchronousReader<IByteBuffer> handshakeReader, final ASpinWait handshakeReaderSpinWait,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader, final ASpinWait handshakeReaderSpinWait,
             final IByteBuffer buffer, final SRP6ServerSession server) throws IOException {
         waitForMessage(handshakeReaderSpinWait);
-        final IByteBuffer serverStep1LookupInputMessage = handshakeReader.readMessage();
+        final IByteBuffer serverStep1LookupInputMessage = handshakeReader.readMessage().asBuffer();
         final Srp6ServerStep1LookupInput serverStep1LookupInput = Srp6ServerStep1LookupInputSerde.INSTANCE
                 .fromBuffer(serverStep1LookupInputMessage);
         handshakeReader.readFinished();
@@ -103,11 +103,11 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
     }
 
     private void serverStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ISynchronousReader<IByteBuffer> handshakeReader, final ASpinWait handshakeReaderSpinWait,
+            final ISynchronousReader<IByteBufferProvider> handshakeReader, final ASpinWait handshakeReaderSpinWait,
             final IByteBuffer buffer, final SRP6ServerSession server) throws IOException, SRP6Exception {
         //On receiving the client public value 'A' and evidence message 'M1':
         waitForMessage(handshakeReaderSpinWait);
-        final IByteBuffer clientStep2ResultMessage = handshakeReader.readMessage();
+        final IByteBuffer clientStep2ResultMessage = handshakeReader.readMessage().asBuffer();
         final Srp6ClientStep2Result clientStep2Result = Srp6ClientStep2ResultSerde.INSTANCE
                 .fromBuffer(clientStep2ResultMessage);
         handshakeReader.readFinished();

@@ -11,7 +11,6 @@ import de.invesdwin.context.integration.channel.sync.nng.type.INngSocketType;
 import de.invesdwin.context.integration.channel.sync.nng.type.NngSocketType;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
@@ -76,14 +75,14 @@ public class NngChannelTest extends AChannelTest {
             final String requestChannel) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NngSynchronousWriter(socketType,
                 responseChannel, true);
-        final ISynchronousReader<IByteBuffer> requestReader = new NngSynchronousReader(socketType, requestChannel,
-                true);
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NngSynchronousReader(socketType,
+                requestChannel, true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNngPerformanceTest", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NngSynchronousWriter(socketType, requestChannel,
-                false);
-        final ISynchronousReader<IByteBuffer> responseReader = new NngSynchronousReader(socketType, responseChannel,
-                false);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NngSynchronousWriter(socketType,
+                requestChannel, false);
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NngSynchronousReader(socketType,
+                responseChannel, false);
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

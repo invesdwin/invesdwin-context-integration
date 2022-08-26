@@ -91,11 +91,11 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public void write(final IByteBufferProvider message) {
+    public void write(final IByteBufferProvider message) throws IOException {
         writeFuture(message);
     }
 
-    private void writeFuture(final IByteBufferProvider message) {
+    private void writeFuture(final IByteBufferProvider message) throws IOException {
         buf.setIndex(0, 0); //reset indexes
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);

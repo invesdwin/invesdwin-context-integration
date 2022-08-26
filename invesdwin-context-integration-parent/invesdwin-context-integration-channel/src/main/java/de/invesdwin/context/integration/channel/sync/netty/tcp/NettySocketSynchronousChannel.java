@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.util.NoSuchElementException;
@@ -120,7 +121,7 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
     }
 
-    public void open(final Consumer<SocketChannel> channelListener) {
+    public void open(final Consumer<SocketChannel> channelListener) throws IOException {
         if (!shouldOpen(channelListener)) {
             awaitSocketChannel();
             return;
@@ -210,7 +211,7 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) {
+    private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         socketChannelOpening = true;
         try {
             //init bootstrap
@@ -227,7 +228,7 @@ public class NettySocketSynchronousChannel implements Closeable {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
-                                throw new RuntimeException(e1);
+                                throw new IOException(e1);
                             }
                         } else {
                             throw t;
@@ -239,14 +240,14 @@ public class NettySocketSynchronousChannel implements Closeable {
             }
         } catch (final Throwable t) {
             closeAsync();
-            throw new RuntimeException(t);
+            throw new IOException(t);
         } finally {
             socketChannelOpening = false;
         }
         awaitSocketChannel();
     }
 
-    private void awaitSocketChannel() {
+    private void awaitSocketChannel() throws IOException {
         try {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
@@ -260,7 +261,7 @@ public class NettySocketSynchronousChannel implements Closeable {
             }
         } catch (final Throwable t) {
             closeAsync();
-            throw new RuntimeException(t);
+            throw new IOException(t);
         }
     }
 

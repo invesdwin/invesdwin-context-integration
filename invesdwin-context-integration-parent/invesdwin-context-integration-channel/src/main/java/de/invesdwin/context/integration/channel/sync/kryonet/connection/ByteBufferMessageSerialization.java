@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.kryonet.connection;
 
+import java.io.IOException;
+
 import javax.annotation.concurrent.Immutable;
 
 import com.esotericsoftware.kryonet.Connection;
@@ -32,8 +34,12 @@ public final class ByteBufferMessageSerialization implements Serialization {
         if (object instanceof IByteBufferProvider) {
             final IByteBufferProvider cObject = (IByteBufferProvider) object;
             wrapped.putBoolean(position + KRYO_INDEX, false);
-            final int length = cObject.getBuffer(wrapped.sliceFrom(position + MESSAGE_INDEX));
-            ByteBuffers.position(buffer, position + length + MESSAGE_INDEX);
+            try {
+                final int length = cObject.getBuffer(wrapped.sliceFrom(position + MESSAGE_INDEX));
+                ByteBuffers.position(buffer, position + length + MESSAGE_INDEX);
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             wrapped.putBoolean(position + KRYO_INDEX, true);
             ByteBuffers.position(buffer, position + MESSAGE_INDEX);

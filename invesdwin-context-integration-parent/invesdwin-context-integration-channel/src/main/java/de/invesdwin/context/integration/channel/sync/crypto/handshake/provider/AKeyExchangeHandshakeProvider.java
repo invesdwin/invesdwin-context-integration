@@ -19,7 +19,6 @@ import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.derivation.IDerivationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -50,7 +49,7 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
     /**
      * Override this to disable spinning or configure type of waits.
      */
-    public ASpinWait newSpinWait(final ISynchronousReader<IByteBuffer> delegate) {
+    public ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
         return new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
@@ -67,29 +66,31 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
     public void handshake(final HandshakeChannel channel) throws IOException {
         final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter = IgnoreOpenCloseSynchronousWriter
                 .valueOf(channel.getWriter().getUnderlyingWriter());
-        final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader = IgnoreOpenCloseSynchronousReader
+        final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
 
-        final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
+        final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> handshakeChannelFactory = newAuthenticatedHandshakeChannelFactory();
         final ISynchronousWriter<IByteBufferProvider> handshakeWriter = handshakeChannelFactory
                 .newWriter(underlyingWriter);
-        final ISynchronousReader<IByteBuffer> handshakeReader = handshakeChannelFactory.newReader(underlyingReader);
+        final ISynchronousReader<IByteBufferProvider> handshakeReader = handshakeChannelFactory
+                .newReader(underlyingReader);
         performHandshake(channel, underlyingWriter, handshakeWriter, underlyingReader, handshakeReader);
     }
 
     protected abstract void performHandshake(HandshakeChannel channel,
             IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
             ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
-            ISynchronousReader<IByteBuffer> handshakeReader) throws IOException;
+            IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
+            ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException;
 
     protected void finishHandshake(final HandshakeChannel channel,
             final IgnoreOpenCloseSynchronousWriter<IByteBufferProvider> underlyingWriter,
-            final IgnoreOpenCloseSynchronousReader<IByteBuffer> underlyingReader,
+            final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
             final DerivedKeyProvider derivedKeyProvider) throws IOException {
-        final ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> encryptedChannelFactory = newEncryptedChannelFactory(
+        final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> encryptedChannelFactory = newEncryptedChannelFactory(
                 derivedKeyProvider);
-        final ISynchronousReader<IByteBuffer> encryptedReader = encryptedChannelFactory.newReader(underlyingReader);
+        final ISynchronousReader<IByteBufferProvider> encryptedReader = encryptedChannelFactory
+                .newReader(underlyingReader);
         final ISynchronousWriter<IByteBufferProvider> encryptedWriter = encryptedChannelFactory
                 .newWriter(underlyingWriter);
         channel.getReader().setEncryptedReader(encryptedReader);
@@ -118,7 +119,7 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
      * To achieve forward security and non-repudiation even if the pre shared pepper and password are compromised, use
      * SignedKeyAgreementHandshake instead.
      */
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return VerifiedEncryptionChannelFactory.fromPassword("authenticated-handshake-" + getSessionIdentifier());
     }
 
@@ -126,7 +127,7 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
      * We use something like AES128+HMAC_SHA256 here so that messages can not be tampered with. One could also use
      * ED25519 signatures instead of HMAC_SHA256 hashes for non-repudiation.
      */
-    public ISynchronousChannelFactory<IByteBuffer, IByteBufferProvider> newEncryptedChannelFactory(
+    public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newEncryptedChannelFactory(
             final IDerivedKeyProvider derivedKeyProvider) {
         return new StreamVerifiedEncryptionChannelFactory(new SymmetricEncryptionFactory(derivedKeyProvider),
                 new HashVerificationFactory(derivedKeyProvider));
