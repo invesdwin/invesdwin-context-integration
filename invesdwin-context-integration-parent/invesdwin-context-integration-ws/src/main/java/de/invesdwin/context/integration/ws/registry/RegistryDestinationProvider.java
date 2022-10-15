@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.retry.task.RetryOriginator;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 

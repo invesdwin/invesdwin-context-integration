@@ -25,7 +25,7 @@ import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingDao;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingEntity;
 import de.invesdwin.util.collections.loadingcache.ALoadingCache;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;

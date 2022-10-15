@@ -18,7 +18,7 @@ import de.invesdwin.context.security.crypto.key.password.IPasswordHasher;
 import de.invesdwin.context.security.crypto.key.password.SimplePasswordHasher;
 import de.invesdwin.context.security.crypto.verification.hash.algorithm.DigestAlgorithm;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;

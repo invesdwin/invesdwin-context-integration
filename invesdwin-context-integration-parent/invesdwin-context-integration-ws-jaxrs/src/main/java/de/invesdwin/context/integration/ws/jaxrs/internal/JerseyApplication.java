@@ -6,7 +6,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.ws.jaxrs.JacksonObjectMapperProvider;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 
 @Immutable
 public class JerseyApplication extends ResourceConfig {

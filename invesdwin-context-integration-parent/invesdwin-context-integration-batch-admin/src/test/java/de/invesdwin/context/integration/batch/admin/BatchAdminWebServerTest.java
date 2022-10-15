@@ -9,7 +9,7 @@ import de.invesdwin.context.persistence.jpa.test.APersistenceTest;
 import de.invesdwin.context.test.TestContext;
 import de.invesdwin.context.webserver.test.WebserverTest;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 
 @NotThreadSafe

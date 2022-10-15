@@ -17,7 +17,7 @@ import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.IRestRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 

@@ -6,7 +6,7 @@ import javax.annotation.concurrent.Immutable;
 
 import org.bouncycastle.crypto.agreement.jpake.JPAKERound2Payload;
 
-import de.invesdwin.util.lang.Charsets;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.marshallers.serde.basic.ByteArraySerde;

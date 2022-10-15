@@ -18,7 +18,7 @@ import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingDao;
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingEntity;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe

@@ -52,7 +52,7 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
-import de.invesdwin.util.lang.ProcessedEventsRateString;
+import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;

@@ -26,7 +26,7 @@ import org.apache.ftpserver.usermanager.impl.WriteRequest;
 import org.apache.ftpserver.util.BaseProperties;
 
 import de.invesdwin.util.collections.Collections;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 
 /**
  * <table>

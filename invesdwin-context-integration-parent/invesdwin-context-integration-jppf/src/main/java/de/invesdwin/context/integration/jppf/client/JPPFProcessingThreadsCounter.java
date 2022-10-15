@@ -34,7 +34,7 @@ import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;

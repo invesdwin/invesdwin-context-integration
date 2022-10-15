@@ -10,7 +10,7 @@ import org.springframework.ws.transport.context.TransportContext;
 import org.springframework.ws.transport.context.TransportContextHolder;
 
 import de.invesdwin.context.integration.marshaller.IMergedJaxbContextPath;
-import de.invesdwin.util.lang.Strings;
+import de.invesdwin.util.lang.string.Strings;
 
 @ThreadSafe
 public class XsdWebServiceEndpointMapping extends AbstractMapBasedEndpointMapping {
