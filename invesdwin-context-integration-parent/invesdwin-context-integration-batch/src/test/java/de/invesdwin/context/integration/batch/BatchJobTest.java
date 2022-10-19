@@ -38,8 +38,7 @@ public class BatchJobTest extends APersistenceTest {
 
     private void testJob(final String jobName) throws Exception {
         Assertions.assertThat(jobService.jobExists(jobName)).isTrue();
-        final JobExecution jobExecution = jobService.startOrResumeJobAndWaitForCompleted(jobName, TimeUnit.MILLISECONDS,
-                100);
+        final JobExecution jobExecution = jobService.startOrResumeJobAndWaitForCompleted(jobName, TimeUnit.SECONDS, 3);
         log.info("%s", jobExecution);
         Assertions.assertThat(jobExecution.getStatus()).isEqualTo(BatchStatus.COMPLETED);
         final Collection<StepExecution> stepExecutions = jobExecution.getStepExecutions();
