@@ -20,6 +20,8 @@ import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
+import de.invesdwin.util.lang.uri.header.Headers;
+import de.invesdwin.util.time.date.FTimeUnit;
 
 @Immutable
 public class RemoteRegistryService implements IRegistryService, IRestRegistryService {
@@ -74,12 +76,25 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
         }
     }
 
-    private IURIsConnect connect(final String request) {
+    public static IURIsConnect gateway(final IURIsConnect request) {
+        if (IntegrationWsProperties.isUseRegistryGateway()) {
+            final IURIsConnect connect = connect(GATEWAY);
+            connect.putHeader(GATEWAY_REQUEST, request.getUri().toString());
+            connect.putHeader(GATEWAY_TIMEOUT,
+                    String.valueOf(request.getNetworkTimeout().longValue(FTimeUnit.MILLISECONDS)));
+            connect.putHeader(GATEWAY_HEADERS, Headers.encode(request.getHeaders()));
+            return connect;
+        } else {
+            return request;
+        }
+    }
+
+    private static IURIsConnect connect(final String request) {
         return URIs.connect(getBaseUri() + "/" + request)
                 .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD);
     }
 
-    private String getBaseUri() {
+    private static String getBaseUri() {
         return Strings.putSuffix(Strings.removeEnd(IntegrationWsProperties.getRegistryServerUri().toString(), "/"),
                 "/" + REGISTRY);
     }

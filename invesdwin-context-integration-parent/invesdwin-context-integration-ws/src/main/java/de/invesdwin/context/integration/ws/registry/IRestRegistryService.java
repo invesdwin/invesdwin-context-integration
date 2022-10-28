@@ -16,4 +16,9 @@ public interface IRestRegistryService {
     String AVAILABLE = "available";
     String CLIENTIP = "clientip";
 
+    String GATEWAY_REQUEST = "GW_REQUEST";
+    String GATEWAY_TIMEOUT = "GW_TIMEOUT";
+    String GATEWAY_HEADERS = "GW_HEADERS";
+    String GATEWAY = "gateway";
+
 }

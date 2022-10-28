@@ -72,6 +72,22 @@ public class RegistryServerTest extends APersistenceTest {
     }
 
     @Test
+    public void testGateway() throws IOException, InterruptedException {
+        final boolean registryUseGatewayBefore = IntegrationWsProperties.isUseRegistryGateway();
+        IntegrationWsProperties.setUseRegistryGateway(true);
+        try {
+            final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
+            //check this first because connection caching might lead to wrong result since it remembers basic auth
+            final String info = IntegrationWsProperties.gateway(URIs.connect(infoUri)
+                    .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD))
+                    .download();
+            Assertions.assertThat(info).startsWith("There are 0 Services");
+        } finally {
+            IntegrationWsProperties.setUseRegistryGateway(registryUseGatewayBefore);
+        }
+    }
+
+    @Test
     public void testServiceBindingHeartbeatChecker() throws IOException, InterruptedException {
         final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
         //check this first because connection caching might lead to wrong result since it remembers basic auth

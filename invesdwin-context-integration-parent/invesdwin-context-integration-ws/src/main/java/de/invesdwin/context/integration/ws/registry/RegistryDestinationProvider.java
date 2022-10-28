@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.hook.RetryHookSupport;
 import de.invesdwin.context.integration.retry.task.RetryOriginator;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
+import de.invesdwin.context.integration.ws.registry.internal.RemoteRegistryService;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.string.Strings;
@@ -141,11 +142,12 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
         boolean isOk = false;
         if (accessUri != null) {
             if (Strings.equalsAnyIgnoreCase(accessUri.getScheme(), "http", "https")) {
-                if (maybeWithBasicAuth(URIs.connect(accessUri)).isDownloadPossible()) {
+                if (RemoteRegistryService.gateway(maybeWithBasicAuth(URIs.connect(accessUri))).isDownloadPossible()) {
                     isOk = true;
                 } else {
                     //check rest service aswell
-                    isOk = maybeWithBasicAuth(URIs.connect(accessUri.toString() + "/")).isDownloadPossible();
+                    isOk = RemoteRegistryService.gateway(maybeWithBasicAuth(URIs.connect(accessUri.toString() + "/")))
+                            .isDownloadPossible();
                 }
             } else {
                 isOk = URIs.connect(accessUri).isServerResponding();

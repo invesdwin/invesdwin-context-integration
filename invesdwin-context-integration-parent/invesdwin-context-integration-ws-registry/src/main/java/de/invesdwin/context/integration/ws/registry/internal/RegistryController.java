@@ -5,13 +5,16 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -27,6 +30,10 @@ import de.invesdwin.context.integration.ws.registry.internal.persistence.Service
 import de.invesdwin.util.collections.loadingcache.ALoadingCache;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.lang.uri.connect.IURIsConnect;
+import de.invesdwin.util.lang.uri.connect.InputStreamHttpResponse;
+import de.invesdwin.util.lang.uri.header.Headers;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
@@ -141,6 +148,31 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
     @RequestMapping(AVAILABLE)
     public void available(final HttpServletResponse response) throws IOException {
         response.getOutputStream().print(available);
+    }
+
+    @RequestMapping(GATEWAY)
+    public void gateway(final HttpServletRequest request, final HttpServletResponse response) {
+        final String gatewayRequestStr = request.getHeader(GATEWAY_REQUEST);
+        final String gatewayTimeoutStr = request.getHeader(GATEWAY_TIMEOUT);
+        final String gatewayHeadersStr = request.getHeader(GATEWAY_HEADERS);
+
+        final IURIsConnect connect = URIs.connect(gatewayRequestStr);
+        final Integer durationMs = Integers.valueOfOrNull(gatewayTimeoutStr);
+        if (durationMs != null) {
+            connect.setNetworkTimeout(new Duration(durationMs, FTimeUnit.MILLISECONDS));
+        }
+
+        final Map<String, String> headers = Headers.decode(gatewayHeadersStr);
+        for (final Entry<String, String> entry : headers.entrySet()) {
+            connect.putHeader(entry.getKey(), entry.getValue());
+        }
+
+        try (InputStreamHttpResponse input = connect.downloadInputStream()) {
+            final ServletOutputStream output = response.getOutputStream();
+            IOUtils.copy(input, output);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
