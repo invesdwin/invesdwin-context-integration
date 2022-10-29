@@ -19,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
@@ -150,7 +151,8 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
         response.getOutputStream().print(available);
     }
 
-    @RequestMapping(GATEWAY)
+    @RequestMapping(value = GATEWAY, method = { RequestMethod.GET, RequestMethod.HEAD, RequestMethod.DELETE,
+            RequestMethod.OPTIONS, RequestMethod.PATCH, RequestMethod.POST, RequestMethod.PUT, RequestMethod.TRACE })
     public void gateway(final HttpServletRequest request, final HttpServletResponse response) {
         final String gatewayRequestStr = request.getHeader(GATEWAY_REQUEST);
         final String gatewayTimeoutStr = request.getHeader(GATEWAY_TIMEOUT);
@@ -160,6 +162,12 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
         final Integer durationMs = Integers.valueOfOrNull(gatewayTimeoutStr);
         if (durationMs != null) {
             connect.setNetworkTimeout(new Duration(durationMs, FTimeUnit.MILLISECONDS));
+        }
+        connect.setMethod(request.getMethod());
+        try {
+            connect.setBody(request.getInputStream());
+        } catch (final IOException e1) {
+            throw new RuntimeException(e1);
         }
 
         final Map<String, String> headers = Headers.decode(gatewayHeadersStr);
