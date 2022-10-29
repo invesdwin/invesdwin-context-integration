@@ -164,6 +164,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
             connect.setNetworkTimeout(new Duration(durationMs, FTimeUnit.MILLISECONDS));
         }
         connect.setMethod(request.getMethod());
+        connect.setContentType(request.getContentType());
         try {
             connect.setBody(request.getInputStream());
         } catch (final IOException e1) {
