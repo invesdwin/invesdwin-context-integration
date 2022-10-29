@@ -22,6 +22,7 @@ import de.invesdwin.context.test.TestContext;
 import de.invesdwin.context.webserver.test.WebserverTest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
@@ -78,9 +79,12 @@ public class RegistryServerTest extends APersistenceTest {
         try {
             final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
             //check this first because connection caching might lead to wrong result since it remembers basic auth
-            final String info = IntegrationWsProperties.gateway(URIs.connect(infoUri)
-                    .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD))
-                    .download();
+            final IURIsConnect gateway = IntegrationWsProperties.gateway(URIs.connect(infoUri)
+                    .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER,
+                            IntegrationWsProperties.SPRING_WEB_PASSWORD));
+            final boolean downloadPossible = gateway.isDownloadPossible();
+            Assertions.checkTrue(downloadPossible);
+            final String info = gateway.download();
             Assertions.assertThat(info).startsWith("There are 0 Services");
         } finally {
             IntegrationWsProperties.setUseRegistryGateway(registryUseGatewayBefore);

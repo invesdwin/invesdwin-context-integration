@@ -35,6 +35,7 @@ import de.invesdwin.util.lang.uri.connect.IURIsConnect;
 import de.invesdwin.util.lang.uri.connect.InputStreamHttpResponse;
 import de.invesdwin.util.lang.uri.header.Headers;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.math.Longs;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
@@ -179,6 +180,10 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
         try (InputStreamHttpResponse input = connect.downloadInputStream()) {
             final ServletOutputStream output = response.getOutputStream();
             IOUtils.copy(input, output);
+            final Long contentLength = Longs.valueOfOrNull(input.getResponse().getHeader(Headers.CONTENT_LENGTH));
+            if (contentLength != null) {
+                response.setContentLengthLong(contentLength);
+            }
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
