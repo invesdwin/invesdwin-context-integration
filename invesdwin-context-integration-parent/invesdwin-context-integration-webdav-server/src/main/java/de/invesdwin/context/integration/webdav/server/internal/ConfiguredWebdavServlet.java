@@ -2,8 +2,6 @@ package de.invesdwin.context.integration.webdav.server.internal;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.commonjava.web.dav.servlet.WebdavServlet;
-
 import de.invesdwin.context.integration.webdav.server.WebdavServerProperties;
 import net.sf.webdav.exceptions.WebdavException;
 import net.sf.webdav.impl.LocalFileSystemStore;

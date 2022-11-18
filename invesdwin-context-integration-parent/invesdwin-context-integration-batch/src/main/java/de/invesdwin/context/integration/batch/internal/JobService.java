@@ -6,8 +6,6 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.springframework.batch.core.BatchStatus;
 import org.springframework.batch.core.Job;
@@ -30,6 +28,8 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.time.date.FDate;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 @ThreadSafe
 @Named
@@ -54,7 +54,7 @@ public class JobService implements IJobService {
                     && (lastJobExecution.isRunning() || lastJobExecution.getStatus() == BatchStatus.UNKNOWN
                             || lastJobExecution.getStatus() == BatchStatus.FAILED)) {
                 updateUnknownStepExecutionsToFailed(lastJobExecution);
-                lastJobExecution.setEndTime(new FDate().dateValue());
+                lastJobExecution.setEndTime(new FDate().javaTimeValue());
                 lastJobExecution.setStatus(BatchStatus.FAILED);
                 jobRepository.update(lastJobExecution);
                 executionId = jobOperator.restart(lastJobExecution.getId());

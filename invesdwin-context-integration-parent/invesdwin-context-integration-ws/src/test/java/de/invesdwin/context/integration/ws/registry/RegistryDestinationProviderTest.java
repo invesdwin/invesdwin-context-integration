@@ -1,13 +1,13 @@
 package de.invesdwin.context.integration.ws.registry;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.TestContext;
 import de.invesdwin.util.assertions.Assertions;
+import jakarta.inject.Inject;
 
 @ThreadSafe
 public class RegistryDestinationProviderTest extends ATest {

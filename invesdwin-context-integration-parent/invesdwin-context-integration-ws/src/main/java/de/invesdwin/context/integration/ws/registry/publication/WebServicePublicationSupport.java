@@ -3,9 +3,10 @@ package de.invesdwin.context.integration.ws.registry.publication;
 import java.net.URI;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
 
 import org.springframework.beans.factory.BeanNameAware;
+
+import jakarta.inject.Named;
 
 @Immutable
 @Named

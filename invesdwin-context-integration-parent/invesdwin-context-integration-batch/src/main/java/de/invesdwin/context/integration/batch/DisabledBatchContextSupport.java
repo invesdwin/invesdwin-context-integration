@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.batch;
 import java.util.Set;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 @Named
 @Immutable

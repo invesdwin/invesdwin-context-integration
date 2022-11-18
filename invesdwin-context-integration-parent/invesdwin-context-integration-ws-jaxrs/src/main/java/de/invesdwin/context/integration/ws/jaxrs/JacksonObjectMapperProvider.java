@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.ws.jaxrs;
 
 import javax.annotation.concurrent.Immutable;
-import javax.ws.rs.ext.ContextResolver;
-import javax.ws.rs.ext.Provider;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
+import jakarta.ws.rs.ext.ContextResolver;
+import jakarta.ws.rs.ext.Provider;
 
 @Provider
 @Immutable

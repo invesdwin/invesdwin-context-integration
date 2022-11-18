@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.ws;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
 
 import org.springframework.ws.context.MessageContext;
 import org.springframework.ws.server.endpoint.mapping.AbstractMapBasedEndpointMapping;
@@ -11,6 +10,7 @@ import org.springframework.ws.transport.context.TransportContextHolder;
 
 import de.invesdwin.context.integration.marshaller.IMergedJaxbContextPath;
 import de.invesdwin.util.lang.string.Strings;
+import jakarta.inject.Inject;
 
 @ThreadSafe
 public class XsdWebServiceEndpointMapping extends AbstractMapBasedEndpointMapping {

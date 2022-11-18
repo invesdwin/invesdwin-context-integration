@@ -7,7 +7,6 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Inject;
 
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.integration.retry.Retry;
@@ -20,6 +19,7 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
+import jakarta.inject.Inject;
 
 @NotThreadSafe
 public class RegistryDestinationProvider extends RetryHookSupport implements IDestinationProvider {

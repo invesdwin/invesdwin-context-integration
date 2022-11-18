@@ -9,10 +9,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Controller;
@@ -39,6 +36,9 @@ import de.invesdwin.util.math.Longs;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 @Controller
 @ThreadSafe

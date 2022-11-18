@@ -1,11 +1,11 @@
 package de.invesdwin.context.integration.amqp.internal;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
 
 import org.springframework.util.ErrorHandler;
 
 import de.invesdwin.context.log.error.Err;
+import jakarta.inject.Named;
 
 @Immutable
 @Named

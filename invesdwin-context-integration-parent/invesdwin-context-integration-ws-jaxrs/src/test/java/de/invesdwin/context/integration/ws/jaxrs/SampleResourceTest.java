@@ -1,10 +1,6 @@
 package de.invesdwin.context.integration.ws.jaxrs;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.ws.rs.client.Client;
-import javax.ws.rs.client.ClientBuilder;
-import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.MediaType;
 
 import org.glassfish.jersey.jackson.JacksonFeature;
 import org.junit.jupiter.api.Test;
@@ -13,6 +9,10 @@ import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.webserver.test.WebserverTest;
 import de.invesdwin.util.assertions.Assertions;
+import jakarta.ws.rs.client.Client;
+import jakarta.ws.rs.client.ClientBuilder;
+import jakarta.ws.rs.client.WebTarget;
+import jakarta.ws.rs.core.MediaType;
 
 @NotThreadSafe
 @WebserverTest
@@ -22,8 +22,10 @@ public class SampleResourceTest extends ATest {
     public void testGetIt() {
         final Client c = ClientBuilder.newClient();
         final WebTarget target = c.target(IntegrationProperties.WEBSERVER_BIND_URI + "/jersey/");
-        final String responseMsg = target.path("sampleresource").request().accept(MediaType.TEXT_PLAIN).get(
-                String.class);
+        final String responseMsg = target.path("sampleresource")
+                .request()
+                .accept(MediaType.TEXT_PLAIN)
+                .get(String.class);
         Assertions.checkEquals("Got it!", responseMsg);
     }
 

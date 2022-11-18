@@ -1,9 +1,9 @@
 package de.invesdwin.context.integration.ws.jaxrs;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.xml.bind.annotation.XmlRootElement;
 
 import de.invesdwin.util.bean.AValueObject;
+import jakarta.xml.bind.annotation.XmlRootElement;
 
 @XmlRootElement
 @NotThreadSafe

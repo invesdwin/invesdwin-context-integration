@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.jppf.client;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider;

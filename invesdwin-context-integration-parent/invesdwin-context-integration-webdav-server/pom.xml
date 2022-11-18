@@ -43,7 +43,7 @@
 
 		<dependency>
 			<groupId>org.commonjava.web</groupId>
-			<artifactId>webdav-handler-servlet</artifactId>
+			<artifactId>webdav-handler-common</artifactId>
 		</dependency>
 	</dependencies>
 

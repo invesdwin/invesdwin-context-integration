@@ -3,12 +3,12 @@ package de.invesdwin.context.integration.ws.registry;
 import java.net.URI;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Named;
 
 import de.invesdwin.context.integration.ws.registry.internal.RegistryServiceStubImpl;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.TestContext;
 import de.invesdwin.context.test.stub.StubSupport;
+import jakarta.inject.Named;
 
 @Named
 @ThreadSafe

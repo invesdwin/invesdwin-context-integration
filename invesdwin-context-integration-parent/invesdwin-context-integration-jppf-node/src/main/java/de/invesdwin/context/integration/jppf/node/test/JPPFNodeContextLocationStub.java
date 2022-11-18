@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.jppf.node.test;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
 import de.invesdwin.context.test.ATest;

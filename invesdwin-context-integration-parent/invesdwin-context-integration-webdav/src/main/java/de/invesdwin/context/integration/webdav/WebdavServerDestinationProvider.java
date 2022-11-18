@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.webdav;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;

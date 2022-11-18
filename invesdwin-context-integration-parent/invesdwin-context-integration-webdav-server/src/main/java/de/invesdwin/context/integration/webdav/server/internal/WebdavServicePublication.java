@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.webdav.server.internal;
 import java.net.URI;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.webdav.WebdavClientProperties;
 import de.invesdwin.context.integration.webdav.server.WebdavServerProperties;

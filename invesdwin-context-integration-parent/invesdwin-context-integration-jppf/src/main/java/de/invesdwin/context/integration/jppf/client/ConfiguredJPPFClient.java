@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.jppf.client;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;

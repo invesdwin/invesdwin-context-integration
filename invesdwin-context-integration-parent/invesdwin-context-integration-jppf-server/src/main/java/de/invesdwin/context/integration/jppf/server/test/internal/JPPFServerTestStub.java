@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.jppf.server.test.internal;
 import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 

@@ -7,8 +7,8 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
-import javax.inject.Inject;
-import javax.inject.Named;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;

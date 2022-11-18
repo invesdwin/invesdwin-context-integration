@@ -1,13 +1,13 @@
 package de.invesdwin.context.integration.ws.registry.publication;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.ws.registry.publication.internal.WebServicePublicationManager;
 import de.invesdwin.context.test.ATest;
+import jakarta.inject.Inject;
 
 @Immutable
 public final class XsdWebServicePublicationTest extends ATest {

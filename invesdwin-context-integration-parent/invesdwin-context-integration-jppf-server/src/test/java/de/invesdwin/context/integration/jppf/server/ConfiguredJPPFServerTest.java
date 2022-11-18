@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.jppf.server;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import org.jppf.server.node.local.JPPFLocalNode;
 import org.jppf.server.node.remote.JPPFRemoteNode;

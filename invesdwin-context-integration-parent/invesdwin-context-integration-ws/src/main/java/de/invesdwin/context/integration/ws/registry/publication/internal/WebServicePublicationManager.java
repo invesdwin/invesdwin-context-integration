@@ -7,8 +7,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -20,6 +18,8 @@ import de.invesdwin.context.integration.ws.registry.publication.IWebServicePubli
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 @Named
 @NotThreadSafe

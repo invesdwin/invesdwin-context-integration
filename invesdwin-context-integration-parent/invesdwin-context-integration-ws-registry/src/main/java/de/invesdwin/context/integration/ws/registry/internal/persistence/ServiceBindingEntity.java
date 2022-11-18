@@ -4,10 +4,6 @@ import java.net.URI;
 import java.util.Date;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
 
 import org.joda.time.DateTime;
 
@@ -18,6 +14,10 @@ import de.invesdwin.context.persistence.jpa.api.index.Indexes;
 import de.invesdwin.util.time.DateTimes;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FDates;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 
 @Entity
 @NotThreadSafe

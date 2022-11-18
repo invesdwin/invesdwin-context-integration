@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.ftp.internal;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import org.springframework.scheduling.annotation.Scheduled;
 

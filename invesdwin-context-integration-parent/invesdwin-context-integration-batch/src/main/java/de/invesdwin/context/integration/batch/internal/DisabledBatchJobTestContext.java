@@ -4,7 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
 import de.invesdwin.util.collections.Arrays;

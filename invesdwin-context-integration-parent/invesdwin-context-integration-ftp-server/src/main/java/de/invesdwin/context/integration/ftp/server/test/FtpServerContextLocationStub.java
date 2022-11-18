@@ -1,7 +1,7 @@
 package de.invesdwin.context.integration.ftp.server.test;
 
 import javax.annotation.concurrent.Immutable;
-import javax.inject.Named;
+import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.ftp.server.FtpServerContextLocation;
 import de.invesdwin.context.test.ATest;

@@ -4,7 +4,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import javax.inject.Named;
 
 import org.glassfish.jersey.inject.hk2.ImmediateHk2InjectionManager;
 import org.glassfish.jersey.server.spi.ComponentProvider;
@@ -17,6 +16,7 @@ import org.springframework.core.annotation.AnnotationUtils;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.util.assertions.Assertions;
+import jakarta.inject.Named;
 
 @NotThreadSafe
 public class MergedContextSpringComponentProvider implements ComponentProvider {
