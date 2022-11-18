@@ -46,6 +46,7 @@
 	<bean name="jobRegistry" class="org.springframework.batch.core.configuration.support.MapJobRegistry" />
 	<bean name="jobExplorer" class="org.springframework.batch.core.explore.support.JobExplorerFactoryBean">
 		<property name="dataSource" ref="batchDataSource" />
+		<property name="transactionManager" ref="batchTransactionManager" />
 	</bean>
 
 	<bean id="jobRegistryBeanPostProcessor" class="org.springframework.batch.core.configuration.support.JobRegistryBeanPostProcessor">
