@@ -57,7 +57,7 @@
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
 		<version.spring-amqp>3.0.0-M4</version.spring-amqp>
-		<version.activemq>5.16.3</version.activemq>
+		<version.artemis>2.27.0</version.artemis>
 		<version.org.linkedin.util-core>1.9.0</version.org.linkedin.util-core>
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
 		<version.jakarta.mail>2.1.0</version.jakarta.mail>
@@ -356,46 +356,8 @@
 
 			<dependency>
 				<groupId>org.apache.activemq</groupId>
-				<artifactId>activemq-spring</artifactId>
-				<version>${version.activemq}</version>
-				<exclusions>
-					<exclusion>
-						<artifactId>mqtt-client</artifactId>
-						<groupId>org.fusesource.mqtt-client</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>activemq-protobuf</artifactId>
-						<groupId>org.apache.activemq.protobuf</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>geronimo-jta_1.0.1B_spec</artifactId>
-						<groupId>org.apache.geronimo.specs</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-net</artifactId>
-						<groupId>commons-net</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
-						<artifactId>jasypt</artifactId>
-						<groupId>org.jasypt</groupId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.apache.geronimo.specs</groupId>
-						<artifactId>geronimo-jms_1.1_spec</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.linkedin</groupId>
-						<artifactId>org.linkedin.zookeeper-impl</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>org.springframework</groupId>
-						<artifactId>spring-context</artifactId>
-					</exclusion>
-				</exclusions>
+				<artifactId>artemis-jakarta-server</artifactId>
+				<version>${version.artemis}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.linkedin</groupId>
