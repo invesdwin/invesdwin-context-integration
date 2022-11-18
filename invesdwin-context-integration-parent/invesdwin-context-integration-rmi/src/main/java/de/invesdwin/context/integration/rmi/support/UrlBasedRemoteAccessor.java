@@ -1,3 +1,5 @@
+// CHECKSTYLE:OFF
+// @NotThreadSafe
 package de.invesdwin.context.integration.rmi.support;
 
 import org.springframework.beans.factory.InitializingBean;
