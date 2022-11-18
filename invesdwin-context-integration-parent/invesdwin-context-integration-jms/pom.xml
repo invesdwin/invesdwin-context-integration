@@ -22,6 +22,11 @@
 			<groupId>org.apache.activemq</groupId>
 			<artifactId>artemis-jakarta-server</artifactId>
 		</dependency>
+		<dependency>
+			<!-- upperbound deps -->
+			<groupId>jakarta.jms</groupId>
+			<artifactId>jakarta.jms-api</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>
