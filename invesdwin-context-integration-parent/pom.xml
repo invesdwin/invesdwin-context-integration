@@ -62,6 +62,7 @@
 		<version.javax.jms-api>2.0.1</version.javax.jms-api>
 		<version.jakarta.mail>2.1.0</version.jakarta.mail>
 		<version.wsdl4j>1.6.3</version.wsdl4j>
+		<!-- cxf does not yet support jakarta EE 9: https://issues.apache.org/jira/browse/CXF-8371 -->
 		<version.cxf>3.5.4</version.cxf>
 		<version.jersey>3.1.0</version.jersey>
 		<version.xmlsec>3.0.1</version.xmlsec>
