@@ -27,7 +27,9 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.certificate.SelfSignedCertGenerator;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.EcdsaAlgorithm;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
+import de.invesdwin.context.security.crypto.verification.signature.algorithm.RsaSignatureAlgorithm;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.reflection.field.UnsafeField;
 import de.invesdwin.util.time.range.TimeRange;
@@ -254,19 +256,18 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
     }
 
     protected ISignatureAlgorithm getSignatureAlgorithm() {
-        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_SIGNATURE_ALGORITHM;
-        //netty-tcnative-boringssl-static does not support EcDSA, but OpenSSL version does, so not using below workaround
-        //        switch (sslProvider) {
-        //        case JDK:
-        //            signatureAlgorithm = EcdsaAlgorithm.DEFAULT;
-        //            break;
-        //        case OPENSSL:
-        //        case OPENSSL_REFCNT:
-        //            signatureAlgorithm = RsaSignatureAlgorithm.DEFAULT;
-        //            break;
-        //        default:
-        //            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
-        //        }
+        //        return DerivedKeyTransportLayerSecurityProvider.DEFAULT_SIGNATURE_ALGORITHM;
+        //netty-tcnative-boringssl-static does not support EcDSA, but OpenSSL version does
+        final SslProvider sslProvider = getEngineSslProvider();
+        switch (sslProvider) {
+        case JDK:
+            return EcdsaAlgorithm.DEFAULT;
+        case OPENSSL:
+        case OPENSSL_REFCNT:
+            return RsaSignatureAlgorithm.DEFAULT;
+        default:
+            throw UnknownArgumentException.newInstance(SslProvider.class, sslProvider);
+        }
     }
 
     protected ClientAuth getClientAuth() {
