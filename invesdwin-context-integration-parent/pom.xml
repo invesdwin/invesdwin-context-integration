@@ -80,9 +80,6 @@
 		<version.affinity>3.21ea5</version.affinity>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 
-		<version.jakarta.xml.soap-api>3.0.0</version.jakarta.xml.soap-api>
-		<version.saaj-impl>3.0.0</version.saaj-impl>
-
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.jctools>3.3.0</version.jctools>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
@@ -308,10 +305,6 @@
 				<version>${version.xmlsec}</version>
 				<exclusions>
 					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-					<exclusion>
 						<groupId>org.glassfish.jaxb</groupId>
 						<artifactId>jaxb-runtime</artifactId>
 					</exclusion>
@@ -351,6 +344,10 @@
 						<artifactId>commons-logging</artifactId>
 						<groupId>commons-logging</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>com.sun.xml.bind</groupId>
+						<artifactId>jaxb-impl</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 
@@ -385,12 +382,6 @@
 				<groupId>jakarta.mail</groupId>
 				<artifactId>jakarta.mail-api</artifactId>
 				<version>${version.jakarta.mail}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>wsdl4j</groupId>
@@ -411,12 +402,12 @@
 						<groupId>javax.persistence</groupId>
 					</exclusion>
 					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-					<exclusion>
 						<groupId>com.thoughtworks.xstream</groupId>
 						<artifactId>xstream</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>com.sun.activation</groupId>
+						<artifactId>jakarta.activation</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -434,8 +425,8 @@
 						<groupId>javax.persistence</groupId>
 					</exclusion>
 					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
+						<groupId>com.sun.activation</groupId>
+						<artifactId>jakarta.activation</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -443,17 +434,17 @@
 				<groupId>org.apache.cxf</groupId>
 				<artifactId>cxf-rt-transports-http</artifactId>
 				<version>${version.cxf}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>com.sun.activation</groupId>
+						<artifactId>jakarta.activation</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.ext</groupId>
 				<artifactId>jersey-spring6</artifactId>
 				<version>${version.jersey}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.glassfish.jersey.media</groupId>
@@ -624,29 +615,6 @@
 				<groupId>com.github.lookfirst</groupId>
 				<artifactId>sardine</artifactId>
 				<version>${version.sardine}</version>
-			</dependency>
-
-			<dependency>
-				<groupId>jakarta.xml.soap</groupId>
-				<artifactId>jakarta.xml.soap-api</artifactId>
-				<version>${version.jakarta.xml.soap-api}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>com.sun.xml.messaging.saaj</groupId>
-				<artifactId>saaj-impl</artifactId>
-				<version>${version.saaj-impl}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>jakarta.activation</groupId>
-						<artifactId>jakarta.activation-api</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 
 			<dependency>
