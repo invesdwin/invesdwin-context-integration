@@ -19,6 +19,8 @@
 	<!-- log Spring-WS Exceptions/Faults correctly -->
 	<bean
 		class="org.springframework.ws.soap.server.endpoint.SoapFaultAnnotationExceptionResolver" />
+	<bean
+		class="de.invesdwin.context.integration.ws.internal.XmlRequestMappingHandlerMapping" />
 
 	<!-- WS-Security: -->
 	<!-- Timestamps cause problems with large messages that take long to transmit 
