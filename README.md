@@ -113,13 +113,13 @@ The abstraction in **invesdwin-context-integration-channel** has its origin in t
 
 Old Benchmarks (2016, Core i7-4790K with SSD, Java 8):
 ```
-DatagramSocket (loopback)  Records:   111.01/ms  in  90078 ms    => ~60% slower than Named Pipes
-ArrayDeque (synced)        Records:   127.26/ms  in  78579 ms    => ~50% slower than Named Pipes
-Named Pipes                Records:   281.15/ms  in  35568 ms    => using this as baseline
-SynchronousQueue           Records:   924.90/ms  in  10812 ms    => ~3 times as fast as Named Pipes
-LinkedBlockingQueue        Records:  1988.47/ms  in   5029 ms    => ~7 times as fast as than Named Pipes
-Mapped Memory              Records:  3214.40/ms  in   3111 ms    => ~11 times as fast as than Named Pipes
-Mapped Memory (tmpfs)      Records:  4237.29/ms  in   2360 ms    => ~15 times as fast as than Named Pipes
+DatagramSocket (loopback)  Records:    111.01/ms  in  90.078s    => ~60% slower than Named Pipes
+ArrayDeque (synced)        Records:    127.26/ms  in  78.579s    => ~50% slower than Named Pipes
+Named Pipes                Records:    281.15/ms  in  35.568s    => using this as baseline
+SynchronousQueue           Records:    924.90/ms  in  10.812s    => ~3 times as fast as Named Pipes
+LinkedBlockingQueue        Records:  1,988.47/ms  in   5.029s    => ~7 times as fast as than Named Pipes
+Mapped Memory              Records:  3,214.40/ms  in   3.111s    => ~11 times as fast as than Named Pipes
+Mapped Memory (tmpfs)      Records:  4,237.29/ms  in   2.360s    => ~15 times as fast as than Named Pipes
 ```
 New Benchmarks (2021, Core i9-9900k with SSD, Java 16; best in class marked by `*`):
 ```
