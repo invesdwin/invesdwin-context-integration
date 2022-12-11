@@ -34,6 +34,8 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
  * 
  * Original from:
  * https://github.com/AdoptOpenJDK/openjdk-jdk11/blob/master/test/jdk/javax/net/ssl/DTLS/DTLSOverDatagram.java
+ * 
+ * Debug with -Djavax.net.debug=ssl,handshake
  */
 @NotThreadSafe
 //CHECKSTYLE:OFF
