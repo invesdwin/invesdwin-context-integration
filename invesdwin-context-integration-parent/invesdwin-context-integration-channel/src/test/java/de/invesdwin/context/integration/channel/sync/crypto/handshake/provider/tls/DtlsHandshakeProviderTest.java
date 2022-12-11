@@ -47,7 +47,7 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
         final File requestFile = newFile("testSizedTlsHandshakePerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testSizedTlsHandshakePerformance_response.pipe", tmpfs, pipes);
         final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
-        final TlsProtocol protocol = TlsProtocol.TLS;
+        final TlsProtocol protocol = TlsProtocol.DTLS;
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true, protocol));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(

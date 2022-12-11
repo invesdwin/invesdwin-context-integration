@@ -12,7 +12,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeC
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -20,7 +19,6 @@ public class TlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testTlsHandshakePerformance() throws InterruptedException {
-        Throwables.setDebugStackTraceEnabled(true);
         final boolean tmpfs = true;
         //handshake will get confused if blocking is not used
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
