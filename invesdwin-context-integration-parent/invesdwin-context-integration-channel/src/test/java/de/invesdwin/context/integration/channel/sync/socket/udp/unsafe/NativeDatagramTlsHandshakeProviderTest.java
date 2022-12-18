@@ -76,7 +76,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
                     @Override
                     public ITlsProtocol getProtocol() {
-                        return TlsProtocol.TLS;
+                        return TlsProtocol.DTLS;
                     }
                 };
             }

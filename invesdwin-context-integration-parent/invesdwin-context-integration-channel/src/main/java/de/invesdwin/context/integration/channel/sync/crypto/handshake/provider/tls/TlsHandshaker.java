@@ -207,7 +207,7 @@ public class TlsHandshaker {
 
                     // bad packet, or the client maximum fragment size
                     // config does not work?
-                    if (hs != HandshakeStatus.NOT_HANDSHAKING) {
+                    if (hs != HandshakeStatus.NOT_HANDSHAKING && hs != HandshakeStatus.NEED_UNWRAP) {
                         throw new IOException("Buffer underflow: incorrect client maximum fragment size");
                     } // otherwise, ignore this packet
                 } else if (rs == Status.CLOSED) {

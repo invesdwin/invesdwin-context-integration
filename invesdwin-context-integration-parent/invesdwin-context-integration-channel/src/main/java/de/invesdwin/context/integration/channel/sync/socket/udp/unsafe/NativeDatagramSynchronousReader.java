@@ -25,6 +25,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     private IByteBuffer buffer;
     private FileDescriptor fd;
     private int position;
+    private int bufferOffset = 0;
 
     public NativeDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -63,7 +64,8 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         if (position > 0) {
             return true;
         }
-        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, socketSize);
+        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
+                socketSize - bufferOffset);
         if (read < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
@@ -77,32 +79,42 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         int size = 0;
         //read size
         while (position < targetPosition) {
-            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
                     targetPosition - position);
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
             position += read;
         }
-        size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
+        size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;
         if (remaining > 0) {
-            buffer.ensureCapacity(targetPosition);
-            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
+            buffer.ensureCapacity(bufferOffset + targetPosition);
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
+                    remaining);
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
             position += read;
         }
 
-        position = 0;
-        if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int offset = DatagramSynchronousChannel.MESSAGE_INDEX + size;
+        position -= offset;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
+
+        final IByteBuffer message = buffer.slice(bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX, size);
+        if (position > 0) {
+            //can be a maximum of 2 messages we read like this
+            bufferOffset += offset;
+        } else {
+            bufferOffset = 0;
+        }
+        return message;
     }
 
     @Override

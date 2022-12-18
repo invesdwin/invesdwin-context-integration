@@ -18,7 +18,6 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
     protected BlockingSocketSynchronousChannel channel;
     private InputStream in;
     private IByteBuffer buffer;
-    private final int position = 0;
 
     public BlockingSocketSynchronousReader(final BlockingSocketSynchronousChannel channel) {
         this.channel = channel;
