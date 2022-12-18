@@ -65,10 +65,10 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        int targetPosition = SocketSynchronousChannel.MESSAGE_INDEX;
+        int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
-        while ((messageBuffer.position() - bufferOffset) < targetPosition) {
+        while (messageBuffer.position() < targetPosition) {
             socketChannel.read(messageBuffer);
         }
         size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
@@ -79,22 +79,25 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
             final int capacityBefore = buffer.capacity();
             buffer.putBytesTo(bufferOffset + messageBuffer.position(), socketChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+                final int positionBefore = messageBuffer.position();
+                messageBuffer = buffer.asNioByteBuffer(0, buffer.capacity());
+                ByteBuffers.position(messageBuffer, positionBefore);
             }
+            ByteBuffers.position(messageBuffer, messageBuffer.position() + remaining);
         }
 
         final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
-        ByteBuffers.position(messageBuffer, messageBuffer.position() - offset);
         if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
         final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
-        if (messageBuffer.position() > 0) {
+        if (messageBuffer.position() > (bufferOffset + offset)) {
             //can be a maximum of 2 messages we read like this
             bufferOffset += offset;
         } else {
             bufferOffset = 0;
+            ByteBuffers.position(messageBuffer, 0);
         }
         return message;
     }

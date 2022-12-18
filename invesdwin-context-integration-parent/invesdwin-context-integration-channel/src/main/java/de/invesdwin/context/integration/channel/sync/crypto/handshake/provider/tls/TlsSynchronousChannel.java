@@ -111,8 +111,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         underlyingWriter.open();
 
         outboundApplicationDataSize = java.nio.ByteBuffer.allocateDirect(Integer.BYTES);
-        outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
-        outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
         // eliminates array creation on each call to SSLEngine.wrap()
         outboundApplicationDataArray = new java.nio.ByteBuffer[] { outboundApplicationDataSize, null };
@@ -130,6 +128,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
              * be called properly. Also for DTLS the handshaker handles the packet loss of the rehandshake. The
              * application only handles packet loss for application data. So another reason to use the handshaker here.
              */
+
             if (!performHandshake()) {
                 return false;
             }
@@ -153,6 +152,14 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
                     underlyingReader, underlyingWriter, handshakeValidation);
             handshaker.performHandshake();
+
+            if (outboundEncodedDataBuffer == null
+                    || outboundEncodedDataBuffer.capacity() < engine.getSession().getPacketBufferSize()) {
+                //init outbound afterwards because we will encounter false buffer overflows if the required packet buffer size increased larger than the actual buffer
+                outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
+                outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
+            }
+
             return true;
         } catch (final EOFException e) {
             return false;
