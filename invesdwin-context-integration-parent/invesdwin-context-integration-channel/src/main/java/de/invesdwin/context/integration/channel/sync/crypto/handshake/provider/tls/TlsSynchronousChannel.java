@@ -152,14 +152,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
                     underlyingReader, underlyingWriter, handshakeValidation);
             handshaker.performHandshake();
-
-            if (outboundEncodedDataBuffer == null
-                    || outboundEncodedDataBuffer.capacity() < engine.getSession().getPacketBufferSize()) {
-                //init outbound afterwards because we will encounter false buffer overflows if the required packet buffer size increased larger than the actual buffer
-                outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
-                outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
-            }
-
+            updateOutboundEncodedData();
             return true;
         } catch (final EOFException e) {
             return false;
@@ -169,6 +162,15 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             throw new IOException(e);
         } finally {
             TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
+        }
+    }
+
+    private void updateOutboundEncodedData() {
+        if (outboundEncodedDataBuffer == null
+                || outboundEncodedDataBuffer.capacity() < engine.getSession().getPacketBufferSize()) {
+            //init outbound afterwards because we will encounter false buffer overflows if the required packet buffer size increased larger than the actual buffer
+            outboundEncodedDataBuffer = ByteBuffers.allocateDirect(engine.getSession().getPacketBufferSize());
+            outboundEncodedData = outboundEncodedDataBuffer.asNioByteBuffer();
         }
     }
 
@@ -213,6 +215,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     }
 
     private boolean deliverAppData() throws IOException {
+        if (outboundEncodedData == null) {
+            throw FastEOFException.getInstance("closed");
+        }
+
         boolean busy = false;
         //drain unencrypted output
         if (outboundApplicationData != null) {
