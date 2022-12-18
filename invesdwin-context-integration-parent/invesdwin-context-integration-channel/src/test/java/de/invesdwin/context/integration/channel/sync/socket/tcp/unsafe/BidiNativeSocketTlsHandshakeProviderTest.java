@@ -18,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
+import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -28,7 +29,7 @@ public class BidiNativeSocketTlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
-        final InetSocketAddress address = new InetSocketAddress("subes-lap", 8080);
+        final InetSocketAddress address = new InetSocketAddress("localhost", NetworkUtil.findAvailableTcpPort());
         runNioSocketPerformanceTest(address);
     }
 

@@ -76,7 +76,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         int targetPosition = SocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
-        while (position < targetPosition) {
+        while ((position - bufferOffset) < targetPosition) {
             final int read = read0(fd, buffer.addressOffset(), bufferOffset + position, targetPosition - position);
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");

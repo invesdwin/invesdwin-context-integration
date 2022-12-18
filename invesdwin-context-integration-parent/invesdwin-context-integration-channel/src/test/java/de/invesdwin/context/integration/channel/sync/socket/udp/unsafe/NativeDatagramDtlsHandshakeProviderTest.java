@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.TlsHandshakeProvider;
@@ -25,7 +26,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
+public class NativeDatagramDtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -76,7 +77,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
                     @Override
                     public ITlsProtocol getProtocol() {
-                        return TlsProtocol.TLS;
+                        return TlsProtocol.DTLS;
                     }
                 };
             }
@@ -85,7 +86,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 1324;
+        return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }
 
 }

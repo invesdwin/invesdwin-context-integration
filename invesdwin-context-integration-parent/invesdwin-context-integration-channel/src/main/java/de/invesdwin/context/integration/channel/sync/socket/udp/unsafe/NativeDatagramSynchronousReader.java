@@ -78,7 +78,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
-        while (position < targetPosition) {
+        while ((position - bufferOffset) < targetPosition) {
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
                     targetPosition - position);
             if (read < 0) {

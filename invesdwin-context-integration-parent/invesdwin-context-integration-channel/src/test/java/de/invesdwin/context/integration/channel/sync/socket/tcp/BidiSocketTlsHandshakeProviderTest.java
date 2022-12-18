@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.socket.udp.unsafe;
+package de.invesdwin.context.integration.channel.sync.socket.tcp;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -17,7 +17,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -25,34 +24,33 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
+public class BidiSocketTlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNativeDatagramSocketPerformanceTest(responseAddress, requestAddress);
+        final InetSocketAddress address = new InetSocketAddress("localhost", NetworkUtil.findAvailableTcpPort());
+        runNioSocketPerformanceTest(address);
     }
 
-    protected void runNativeDatagramSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
-        final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
+    protected void runNioSocketPerformanceTest(final InetSocketAddress address) throws InterruptedException {
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
+        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new SocketSynchronousWriter(serverChannel));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new NativeDatagramSynchronousReader(requestAddress, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+                .newReader(new SocketSynchronousReader(serverChannel));
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new SocketSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new NativeDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new SocketSynchronousReader(clientChannel));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();

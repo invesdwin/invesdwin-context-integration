@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.socket.udp.unsafe;
+package de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.TlsHandshakeProvider;
@@ -25,34 +26,33 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
+public class BidiNativeSocketDtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNativeDatagramSocketPerformanceTest(responseAddress, requestAddress);
+        final InetSocketAddress address = new InetSocketAddress("localhost", NetworkUtil.findAvailableTcpPort());
+        runNioSocketPerformanceTest(address);
     }
 
-    protected void runNativeDatagramSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
-        final InetSocketAddress address = new InetSocketAddress("localhost", 8080);
+    protected void runNioSocketPerformanceTest(final InetSocketAddress address) throws InterruptedException {
         final HandshakeChannelFactory serverHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
+        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new NativeSocketSynchronousWriter(serverChannel));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new NativeDatagramSynchronousReader(requestAddress, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+                .newReader(new NativeSocketSynchronousReader(serverChannel));
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new NativeSocketSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new NativeDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new NativeSocketSynchronousReader(clientChannel));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
@@ -76,7 +76,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
                     @Override
                     public ITlsProtocol getProtocol() {
-                        return TlsProtocol.TLS;
+                        return TlsProtocol.DTLS;
                     }
                 };
             }
@@ -85,7 +85,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 1324;
+        return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }
 
 }

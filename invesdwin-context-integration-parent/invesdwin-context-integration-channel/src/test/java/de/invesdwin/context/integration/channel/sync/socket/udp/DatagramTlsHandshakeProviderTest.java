@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.socket.udp.unsafe;
+package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -25,7 +25,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
+public class DatagramTlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -44,15 +44,15 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new DatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new NativeDatagramSynchronousReader(requestAddress, getMaxMessageSize()));
+                .newReader(new DatagramSynchronousReader(requestAddress, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new DatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new NativeDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new DatagramSynchronousReader(responseAddress, getMaxMessageSize()));
         read(newCommandWriter(requestWriter), newCommandReader(responseReader));
         executor.shutdown();
         executor.awaitTermination();
