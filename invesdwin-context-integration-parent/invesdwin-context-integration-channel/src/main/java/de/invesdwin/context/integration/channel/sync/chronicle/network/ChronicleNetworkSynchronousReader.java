@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -66,10 +67,20 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
         int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
+        int tries = 0;
         while (messageBuffer.position() < targetPosition) {
             socketChannel.read(messageBuffer);
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                close();
+                throw FastEOFException.getInstance("read tries exceeded");
+            }
         }
         size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
+        if (size <= 0) {
+            close();
+            throw FastEOFException.getInstance("non positive size");
+        }
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
@@ -98,12 +109,17 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
             throws IOException {
         final int positionBefore = byteBuffer.position();
         int remaining = byteBuffer.remaining();
+        int tries = 0;
         while (remaining > 0) {
             final int count = src.read(byteBuffer);
             if (count == -1) { // EOF
                 break;
             }
             remaining -= count;
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                throw FastEOFException.getInstance("read tries exceeded");
+            }
         }
         ByteBuffers.position(byteBuffer, positionBefore);
         if (remaining > 0) {

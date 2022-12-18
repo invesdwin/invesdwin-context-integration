@@ -151,8 +151,12 @@ public class RingBufferSynchronousReader implements ISynchronousReader<IByteBuff
         public void onMessage(final int msgTypeId, final MutableDirectBuffer buffer, final int index,
                 final int length) {
             final int size = buffer.getInt(index + SIZE_INDEX, ByteBuffers.DEFAULT_ORDER);
-            messageBuffer.putBytes(0, buffer, index + MESSAGE_INDEX, size);
-            polledValue = messageBuffer.sliceTo(size);
+            if (size <= 0) {
+                polledValue = ClosedByteBuffer.INSTANCE;
+            } else {
+                messageBuffer.putBytes(0, buffer, index + MESSAGE_INDEX, size);
+                polledValue = messageBuffer.sliceTo(size);
+            }
         }
 
         @Override

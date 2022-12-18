@@ -69,6 +69,10 @@ public class BlockingSocketSynchronousReader implements ISynchronousReader<IByte
                 buffer.putBytesTo(0, in, BlockingSocketSynchronousChannel.MESSAGE_INDEX);
             }
             final int size = buffer.getInt(BlockingSocketSynchronousChannel.SIZE_INDEX);
+            if (size <= 0) {
+                close();
+                throw FastEOFException.getInstance("non positive size");
+            }
             buffer.putBytesTo(0, in, size);
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 close();

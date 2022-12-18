@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -94,14 +95,24 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
         int size = 0;
         //read size
         try {
+            int tries = 0;
             while (position < targetPosition) {
                 final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
                 position += read;
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    close();
+                    throw FastEOFException.getInstance("read tries exceeded");
+                }
             }
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);
         }
         size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+        if (size <= 0) {
+            close();
+            throw FastEOFException.getInstance("non positive size");
+        }
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;
@@ -132,6 +143,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
         try {
             int position = pos;
             int remaining = length - pos;
+            int tries = 0;
             while (remaining > 0) {
                 final int count = src.read(byteBuffer, position, remaining);
                 if (count == -1) { // EOF
@@ -139,6 +151,10 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
                 }
                 position += count;
                 remaining -= count;
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    throw FastEOFException.getInstance("read tries exceeded");
+                }
             }
             if (remaining > 0) {
                 throw ByteBuffers.newPutBytesToEOF();

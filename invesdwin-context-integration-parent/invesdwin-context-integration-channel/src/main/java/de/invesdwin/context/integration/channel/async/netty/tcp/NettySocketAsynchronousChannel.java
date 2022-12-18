@@ -159,6 +159,10 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             if (size == -1) {
                 //read size and adjust target and remaining
                 size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+                if (size <= 0) {
+                    NettySocketAsynchronousChannel.this.closeAsync();
+                    return false;
+                }
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -171,6 +175,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             //message complete
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
                 NettySocketAsynchronousChannel.this.closeAsync();
+                return false;
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
@@ -183,6 +188,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                         //ignore
                     }
                     NettySocketAsynchronousChannel.this.closeAsync();
+                    return false;
                 }
             }
             targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;

@@ -150,6 +150,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
             if (size == -1) {
                 //read size and adjust target and remaining
                 size = buffer.getInt(NettyDatagramSynchronousChannel.SIZE_INDEX);
+                if (size <= 0) {
+                    polledValue = ClosedByteBuffer.INSTANCE;
+                    return false;
+                }
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -162,6 +166,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
             //message complete
             if (ClosedByteBuffer.isClosed(buffer, NettyDatagramSynchronousChannel.SIZE_INDEX, size)) {
                 polledValue = ClosedByteBuffer.INSTANCE;
+                return false;
             } else {
                 polledValue = buffer.slice(0, size);
             }

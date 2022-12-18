@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -73,42 +74,59 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        int targetPosition = SocketSynchronousChannel.MESSAGE_INDEX;
+        int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
-        while ((position - bufferOffset) < targetPosition) {
+        int tries = 0;
+        while (position < targetPosition) {
             final int read = read0(fd, buffer.addressOffset(), bufferOffset + position, targetPosition - position);
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
             position += read;
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                throw FastEOFException.getInstance("write tries exceeded");
+            }
         }
         size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
+        if (size <= 0) {
+            close();
+            throw FastEOFException.getInstance("non positive size");
+        }
         targetPosition += size;
         //read message if not complete yet
-        final int remaining = targetPosition - position;
+        int remaining = targetPosition - position;
         if (remaining > 0) {
-            buffer.ensureCapacity(bufferOffset + targetPosition);
-            final int read = read0(fd, buffer.addressOffset(), bufferOffset + position, remaining);
-            if (read < 0) {
-                throw FastEOFException.getInstance("socket closed");
+            buffer.ensureCapacity(targetPosition);
+            tries = 0;
+            while (position < targetPosition) {
+                final int read = read0(fd, buffer.addressOffset(), bufferOffset + position, remaining);
+                if (read < 0) {
+                    throw FastEOFException.getInstance("socket closed");
+                }
+                remaining -= read;
+                position += read;
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    throw FastEOFException.getInstance("write tries exceeded");
+                }
             }
-            position += read;
         }
 
         final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
-        position -= offset;
         if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
         final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
-        if (position > 0) {
+        if (position > (bufferOffset + offset)) {
             //can be a maximum of 2 messages we read like this
             bufferOffset += offset;
         } else {
             bufferOffset = 0;
+            position = 0;
         }
         return message;
     }

@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativ
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -103,14 +104,24 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         int size = 0;
         //read size
         try {
+            int tries = 0;
             while (position < targetPosition) {
                 final int read = fd.read(messageBuffer, 0, socketSize);
                 position += read;
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    close();
+                    throw FastEOFException.getInstance("read tries exceeded");
+                }
             }
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);
         }
         size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+        if (size <= 0) {
+            close();
+            throw FastEOFException.getInstance("non positive size");
+        }
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - position;

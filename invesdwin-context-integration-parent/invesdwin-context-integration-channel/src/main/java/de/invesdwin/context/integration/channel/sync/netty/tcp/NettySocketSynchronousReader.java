@@ -136,6 +136,10 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
             if (size == -1) {
                 //read size and adjust target and remaining
                 size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+                if (size <= 0) {
+                    polledValue = ClosedByteBuffer.INSTANCE;
+                    return false;
+                }
                 targetPosition = size;
                 remaining = size;
                 position = 0;
@@ -148,6 +152,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
             //message complete
             if (ClosedByteBuffer.isClosed(buffer, NettySocketSynchronousChannel.SIZE_INDEX, size)) {
                 polledValue = ClosedByteBuffer.INSTANCE;
+                return false;
             } else {
                 polledValue = buffer.slice(0, size);
             }

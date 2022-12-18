@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -68,6 +69,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
+        int tries = 0;
         while (true) {
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
                     targetPosition - position);
@@ -77,19 +79,36 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
             position += read;
             if (read > 0 && position >= targetPosition) {
                 size = buffer.getInt(SIZE_INDEX);
+                if (size <= 0) {
+                    close();
+                    throw FastEOFException.getInstance("non positive size");
+                }
                 targetPosition += size;
                 break;
+            }
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                close();
+                throw FastEOFException.getInstance("read tries exceeded");
             }
         }
         //read message if not complete yet
         final int remaining = targetPosition - position;
         if (remaining > 0) {
             buffer.ensureCapacity(targetPosition);
-            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
-            if (read < 0) {
-                throw FastEOFException.getInstance("socket closed");
+            tries = 0;
+            while (position < targetPosition) {
+                final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
+                if (read < 0) {
+                    throw FastEOFException.getInstance("socket closed");
+                }
+                position += read;
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    close();
+                    throw FastEOFException.getInstance("read tries exceeded");
+                }
             }
-            position += read;
         }
 
         if (ClosedByteBuffer.isClosed(buffer, MESSAGE_INDEX, size)) {

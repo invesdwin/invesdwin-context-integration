@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -71,22 +72,40 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         int targetPosition = bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
+        int tries = 0;
         while (messageBuffer.position() < targetPosition) {
             socketChannel.receive(messageBuffer);
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                close();
+                throw FastEOFException.getInstance("read tries exceeded");
+            }
         }
         size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
+        if (size <= 0) {
+            close();
+            throw FastEOFException.getInstance("non positive size");
+        }
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(bufferOffset + messageBuffer.position(), socketChannel, remaining);
+            buffer.ensureCapacity(targetPosition);
             if (buffer.capacity() != capacityBefore) {
                 final int positionBefore = messageBuffer.position();
                 messageBuffer = buffer.asNioByteBuffer(0, buffer.capacity());
                 ByteBuffers.position(messageBuffer, positionBefore);
             }
-            ByteBuffers.position(messageBuffer, messageBuffer.position() + remaining);
+            tries = 0;
+            while (messageBuffer.position() < targetPosition) {
+                socketChannel.receive(messageBuffer);
+                tries++;
+                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                    close();
+                    throw FastEOFException.getInstance("read tries exceeded");
+                }
+            }
         }
 
         final int offset = DatagramSynchronousChannel.MESSAGE_INDEX + size;

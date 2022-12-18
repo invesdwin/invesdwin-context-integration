@@ -9,6 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -63,6 +64,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
+        int tries = 0;
         while (true) {
             final int read = fileChannel.read(messageBuffer);
             if (read < 0) {
@@ -70,8 +72,17 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             }
             if (read > 0 && messageBuffer.position() >= targetPosition) {
                 size = buffer.getInt(SIZE_INDEX);
+                if (size <= 0) {
+                    close();
+                    throw FastEOFException.getInstance("non positive size");
+                }
                 targetPosition += size;
                 break;
+            }
+            tries++;
+            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                close();
+                throw FastEOFException.getInstance("read tries exceeded");
             }
         }
         //read message if not complete yet
