@@ -21,6 +21,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
     private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
+    private int bufferOffset = 0;
     private DatagramChannel socketChannel;
 
     public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
@@ -67,30 +68,41 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        int targetPosition = DatagramSynchronousChannel.MESSAGE_INDEX;
+        int targetPosition = bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX;
         int size = 0;
         //read size
         while (messageBuffer.position() < targetPosition) {
             socketChannel.receive(messageBuffer);
         }
-        size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
+        size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
         targetPosition += size;
         //read message if not complete yet
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
+            buffer.putBytesTo(bufferOffset + messageBuffer.position(), socketChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+                final int positionBefore = messageBuffer.position();
+                messageBuffer = buffer.asNioByteBuffer(0, buffer.capacity());
+                ByteBuffers.position(messageBuffer, positionBefore);
             }
+            ByteBuffers.position(messageBuffer, messageBuffer.position() + remaining);
         }
 
-        ByteBuffers.position(messageBuffer, 0);
-        if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int offset = DatagramSynchronousChannel.MESSAGE_INDEX + size;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
+        final IByteBuffer message = buffer.slice(bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX, size);
+        if (messageBuffer.position() > (bufferOffset + offset)) {
+            //can be a maximum of 2 messages we read like this
+            bufferOffset += offset;
+        } else {
+            bufferOffset = 0;
+            ByteBuffers.position(messageBuffer, 0);
+        }
+        return message;
     }
 
     @Override
