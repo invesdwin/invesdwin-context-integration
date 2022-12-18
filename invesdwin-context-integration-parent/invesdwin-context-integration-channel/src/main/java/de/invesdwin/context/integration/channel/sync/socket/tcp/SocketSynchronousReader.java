@@ -74,7 +74,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
             socketChannel.read(messageBuffer);
             tries++;
             if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("write tries exceeded");
+                throw FastEOFException.getInstance("read tries exceeded");
             }
         }
         size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);

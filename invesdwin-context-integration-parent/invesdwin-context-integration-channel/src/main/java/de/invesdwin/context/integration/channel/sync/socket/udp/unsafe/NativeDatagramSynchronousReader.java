@@ -89,7 +89,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
             position += read;
             tries++;
             if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("write tries exceeded");
+                throw FastEOFException.getInstance("read tries exceeded");
             }
         }
         size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
@@ -113,7 +113,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
                 remaining -= read;
                 tries++;
                 if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                    throw FastEOFException.getInstance("write tries exceeded");
+                    throw FastEOFException.getInstance("read tries exceeded");
                 }
             }
         }

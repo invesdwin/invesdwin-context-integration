@@ -12,7 +12,6 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativ
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -99,7 +98,6 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
         try {
             int position = pos;
             int remaining = length - pos;
-            int tries = 0;
             while (remaining > 0) {
                 final int count = dst.sendTo(byteBuffer, position, remaining, recipient.getAddress(),
                         recipient.getPort(), fastOpen);
@@ -108,10 +106,6 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
                 }
                 position += count;
                 remaining -= count;
-                tries++;
-                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                    throw FastEOFException.getInstance("write tries exceeded");
-                }
             }
             if (remaining > 0) {
                 throw ByteBuffers.newPutBytesToEOF();

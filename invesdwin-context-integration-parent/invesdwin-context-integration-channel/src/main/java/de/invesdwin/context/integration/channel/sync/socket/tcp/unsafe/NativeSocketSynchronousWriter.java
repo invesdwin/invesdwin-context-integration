@@ -8,7 +8,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -77,7 +76,6 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
             throws IOException {
         int position = pos;
         int remaining = length - pos;
-        int tries = 0;
         while (remaining > 0) {
             final int count = write0(dst, address, position, remaining);
             if (count == -1) { // EOF
@@ -85,10 +83,6 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
             }
             position += count;
             remaining -= count;
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("write tries exceeded");
-            }
         }
         if (remaining > 0) {
             throw ByteBuffers.newPutBytesToEOF();
