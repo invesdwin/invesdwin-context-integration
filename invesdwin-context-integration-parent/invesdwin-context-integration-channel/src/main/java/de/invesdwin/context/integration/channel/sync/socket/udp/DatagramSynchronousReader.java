@@ -18,10 +18,11 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
 
     public static final boolean SERVER = true;
     private DatagramSynchronousChannel channel;
-    private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private DatagramChannel socketChannel;
+    private final int socketSize;
+    private final int truncatedSize;
 
     public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -34,6 +35,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         }
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
+        this.truncatedSize = socketSize - DatagramSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override
@@ -68,13 +70,19 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         if (messageBuffer.position() > socketSize) {
-            throw FastEOFException.getInstance("data truncation occurred");
+            close();
+            throw FastEOFException.getInstance("data truncation occurred: position");
         }
 
         final int size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");
+        }
+
+        if (size > truncatedSize) {
+            close();
+            throw FastEOFException.getInstance("data truncation occurred: size");
         }
 
         if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {

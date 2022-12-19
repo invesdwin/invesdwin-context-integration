@@ -25,7 +25,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     private IByteBuffer buffer;
     private FileDescriptor fd;
     private int position;
-    private final int bufferOffset = 0;
+    private final int truncatedSize;
 
     public NativeDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -38,6 +38,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         }
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
+        this.truncatedSize = socketSize - DatagramSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override
@@ -76,13 +77,19 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         if (position > socketSize) {
-            throw FastEOFException.getInstance("data truncation occurred");
+            close();
+            throw FastEOFException.getInstance("data truncation occurred: position");
         }
 
         final int size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");
+        }
+
+        if (size > truncatedSize) {
+            close();
+            throw FastEOFException.getInstance("data truncation occurred: size");
         }
 
         if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {

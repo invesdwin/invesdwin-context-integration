@@ -23,6 +23,8 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     private IByteBuffer packetBuffer;
     private DatagramPacket packet;
     private DatagramSocket socket;
+    private final int socketSize;
+    private final int truncatedSize;
 
     public BlockingDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -34,13 +36,15 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
             throw new IllegalStateException("datagram reader has to be the server");
         }
         this.channel.setReaderRegistered();
+        this.socketSize = channel.getSocketSize();
+        this.truncatedSize = socketSize - DatagramSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        final byte[] packetBytes = ByteBuffers.allocateByteArray(channel.getSocketSize());
+        final byte[] packetBytes = ByteBuffers.allocateByteArray(socketSize + 1);
         this.packetBuffer = ByteBuffers.wrap(packetBytes);
         this.packet = new DatagramPacket(packetBytes, packetBytes.length);
         this.socket = channel.getSocket();
@@ -66,6 +70,10 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         final int size = packetBuffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
+        if (size > truncatedSize) {
+            close();
+            throw FastEOFException.getInstance("data truncation occurred: size");
+        }
         final IByteBuffer message = packetBuffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {
             close();

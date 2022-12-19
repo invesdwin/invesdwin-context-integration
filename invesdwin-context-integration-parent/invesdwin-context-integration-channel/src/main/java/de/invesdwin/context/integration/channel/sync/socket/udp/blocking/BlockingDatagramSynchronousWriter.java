@@ -25,6 +25,7 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     private IByteBuffer messageBuffer;
     private DatagramPacket packet;
     private DatagramSocket socket;
+    private final int socketSize;
 
     public BlockingDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -36,13 +37,14 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
             throw new IllegalStateException("datagram writer has to be the client");
         }
         this.channel.setWriterRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         //old socket would actually slow down with direct buffer because it requires a byte[]
-        packetBuffer = ByteBuffers.allocateExpandable(channel.getSocketSize());
+        packetBuffer = ByteBuffers.allocateExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, DatagramSynchronousChannel.MESSAGE_INDEX);
         packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0);
         socket = channel.getSocket();
@@ -69,6 +71,11 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
+        final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
+        if (datagramSize > socketSize) {
+            throw new IllegalArgumentException(
+                    "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
+        }
         packetBuffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
         packet.setData(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size);
         socket.send(packet);
