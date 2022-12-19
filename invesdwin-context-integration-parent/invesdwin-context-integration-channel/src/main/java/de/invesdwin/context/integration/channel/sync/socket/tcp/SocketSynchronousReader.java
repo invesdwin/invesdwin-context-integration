@@ -86,7 +86,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
         final int remaining = targetPosition - messageBuffer.position();
         if (remaining > 0) {
             final int capacityBefore = buffer.capacity();
-            buffer.putBytesTo(bufferOffset + messageBuffer.position(), socketChannel, remaining);
+            buffer.putBytesTo(messageBuffer.position(), socketChannel, remaining);
             if (buffer.capacity() != capacityBefore) {
                 final int positionBefore = messageBuffer.position();
                 messageBuffer = buffer.asNioByteBuffer(0, buffer.capacity());
