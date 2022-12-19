@@ -64,7 +64,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         if (position > 0) {
             return true;
         }
-        final int read = read0(fd, buffer.addressOffset(), position, socketSize - position, channel.isServer());
+        final int read = read0(fd, buffer.addressOffset(), position, socketSize - position);
         if (read < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
@@ -78,7 +78,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         //read size
         int tries = 0;
         while (position < targetPosition) {
-            final int read = read0(fd, buffer.addressOffset(), position, targetPosition - position, channel.isServer());
+            final int read = read0(fd, buffer.addressOffset(), position, targetPosition - position);
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
@@ -100,7 +100,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
             buffer.ensureCapacity(targetPosition);
             tries = 0;
             while (position < targetPosition) {
-                final int read = read0(fd, buffer.addressOffset(), position, remaining, channel.isServer());
+                final int read = read0(fd, buffer.addressOffset(), position, remaining);
                 if (read < 0) {
                     throw FastEOFException.getInstance("socket closed");
                 }
@@ -135,8 +135,8 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         //noop
     }
 
-    public static int read0(final FileDescriptor src, final long address, final int position, final int length,
-            final boolean server) throws IOException {
+    public static int read0(final FileDescriptor src, final long address, final int position, final int length)
+            throws IOException {
         final int res = OS.read0(src, address + position, length);
         if (res == IOTools.IOSTATUS_INTERRUPTED) {
             return 0;

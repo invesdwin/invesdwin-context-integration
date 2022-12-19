@@ -72,7 +72,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
         int tries = 0;
         while (true) {
             final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
-                    targetPosition - position, false);
+                    targetPosition - position);
             if (read < 0) {
                 throw FastEOFException.getInstance("closed by other side");
             }
@@ -98,8 +98,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
             buffer.ensureCapacity(targetPosition);
             tries = 0;
             while (position < targetPosition) {
-                final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining,
-                        false);
+                final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining);
                 if (read < 0) {
                     throw FastEOFException.getInstance("socket closed");
                 }
