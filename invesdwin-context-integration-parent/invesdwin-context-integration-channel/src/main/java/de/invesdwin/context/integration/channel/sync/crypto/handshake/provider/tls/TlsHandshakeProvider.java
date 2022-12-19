@@ -51,15 +51,22 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
         final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
         final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
-        final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout, socketAddress,
-                tlsProvider.getProtocol(), engine, readerSpinWait, underlyingReader, underlyingWriter,
-                handshakeValidation);
+        final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout,
+                newHandshakeTimeoutRecoveryTries(), socketAddress, tlsProvider.getProtocol(), engine, readerSpinWait,
+                underlyingReader, underlyingWriter, handshakeValidation);
         final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(tlsChannel);
         final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(tlsChannel);
         channel.getReader().setEncryptedReader(encryptedReader);
         channel.getWriter().setEncryptedWriter(encryptedWriter);
         encryptedReader.open();
         encryptedWriter.open();
+    }
+
+    /**
+     * Return null to disable. This will only be used for DTLS.
+     */
+    protected Integer newHandshakeTimeoutRecoveryTries() {
+        return 3;
     }
 
     protected ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {

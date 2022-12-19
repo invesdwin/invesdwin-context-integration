@@ -52,6 +52,7 @@ public class TlsHandshaker {
     private String side;
 
     private Duration handshakeTimeout;
+    private Integer handshakeTimeoutRecoveryTries;
     private SocketAddress address;
     private ITlsProtocol protocol;
     private SSLEngine engine;
@@ -65,14 +66,16 @@ public class TlsHandshaker {
         this.handshakeBuffer = java.nio.ByteBuffer.allocateDirect(HANDSHAKE_BUFFER_CAPACITY);
     }
 
-    public void init(final Duration handshakeTimeout, final SocketAddress address, final boolean server,
-            final String side, final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
+    public void init(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
+            final SocketAddress address, final boolean server, final String side, final ITlsProtocol protocol,
+            final SSLEngine engine, final ASpinWait readerSpinWait,
             final ISynchronousReader<IByteBufferProvider> reader, final ISynchronousWriter<IByteBufferProvider> writer,
             final HandshakeValidation handshakeValidation) {
         this.server = server;
         this.side = side;
 
         this.handshakeTimeout = handshakeTimeout;
+        this.handshakeTimeoutRecoveryTries = handshakeTimeoutRecoveryTries;
         this.address = address;
         this.protocol = protocol;
         this.engine = engine;
@@ -109,6 +112,7 @@ public class TlsHandshaker {
         if (hs == HandshakeStatus.FINISHED || hs == HandshakeStatus.NOT_HANDSHAKING) {
             engine.beginHandshake();
         }
+        int timeoutTries = 0;
         while (!endLoops) {
 
             if (--loops < 0) {
@@ -133,6 +137,18 @@ public class TlsHandshaker {
                     try {
                         if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                             if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
+                                //CHECKSTYLE:OFF
+                                if (handshakeTimeoutRecoveryTries != null) {
+                                    //CHECKSTYLE:ON
+                                    timeoutTries++;
+                                    //CHECKSTYLE:OFF
+                                    if (timeoutTries > handshakeTimeoutRecoveryTries) {
+                                        //CHECKSTYLE:ON
+                                        throw new TimeoutException("Read handshake message timeout exceeded with "
+                                                + handshakeTimeoutRecoveryTries + " tries: " + handshakeTimeout);
+                                    }
+                                }
+
                                 //CHECKSTYLE:OFF
                                 if (LOG.isDebugEnabled()) {
                                     //CHECKSTYLE:ON

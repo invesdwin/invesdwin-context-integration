@@ -37,6 +37,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
     private final Duration handshakeTimeout;
+    private final Integer handshakeTimeoutRecoveryTries;
     private final InetSocketAddress socketAdddress;
     private final ITlsProtocol protocol;
     private final SSLEngine engine;
@@ -57,12 +58,13 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private java.nio.ByteBuffer[] outboundApplicationDataArray;
     private java.nio.ByteBuffer[] inboundApplicationDataArray;
 
-    public TlsSynchronousChannel(final Duration handshakeTimeout, final InetSocketAddress socketAddress,
-            final ITlsProtocol protocol, final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBufferProvider> underlyingReader,
+    public TlsSynchronousChannel(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
+            final InetSocketAddress socketAddress, final ITlsProtocol protocol, final SSLEngine engine,
+            final ASpinWait readerSpinWait, final ISynchronousReader<IByteBufferProvider> underlyingReader,
             final ISynchronousWriter<IByteBufferProvider> underlyingWriter,
             final HandshakeValidation handshakeValidation) {
         this.handshakeTimeout = handshakeTimeout;
+        this.handshakeTimeoutRecoveryTries = handshakeTimeoutRecoveryTries;
         this.socketAdddress = socketAddress;
         this.protocol = protocol;
         this.engine = engine;
@@ -149,8 +151,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private boolean performHandshake() throws IOException {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
-            handshaker.init(handshakeTimeout, socketAdddress, server, side, protocol, engine, readerSpinWait,
-                    underlyingReader, underlyingWriter, handshakeValidation);
+            handshaker.init(handshakeTimeout, handshakeTimeoutRecoveryTries, socketAdddress, server, side, protocol,
+                    engine, readerSpinWait, underlyingReader, underlyingWriter, handshakeValidation);
             handshaker.performHandshake();
             updateOutboundEncodedData();
             return true;
