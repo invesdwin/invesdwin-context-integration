@@ -72,7 +72,7 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
         final int size = packetBuffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
         if (size > truncatedSize) {
             close();
-            throw FastEOFException.getInstance("data truncation occurred: size");
+            throw new IllegalArgumentException("data truncation occurred: size");
         }
         final IByteBuffer message = packetBuffer.slice(DatagramSynchronousChannel.MESSAGE_INDEX, size);
         if (ClosedByteBuffer.isClosed(message, 0, size)) {
