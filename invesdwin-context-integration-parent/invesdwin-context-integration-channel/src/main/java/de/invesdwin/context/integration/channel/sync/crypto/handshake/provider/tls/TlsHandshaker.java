@@ -142,7 +142,7 @@ public class TlsHandshaker {
                                     //CHECKSTYLE:ON
                                     timeoutTries++;
                                     //CHECKSTYLE:OFF
-                                    if (timeoutTries > handshakeTimeoutRecoveryTries) {
+                                    if (timeoutTries >= handshakeTimeoutRecoveryTries) {
                                         //CHECKSTYLE:ON
                                         throw new TimeoutException("Read handshake message timeout exceeded with "
                                                 + handshakeTimeoutRecoveryTries + " tries: " + handshakeTimeout);
