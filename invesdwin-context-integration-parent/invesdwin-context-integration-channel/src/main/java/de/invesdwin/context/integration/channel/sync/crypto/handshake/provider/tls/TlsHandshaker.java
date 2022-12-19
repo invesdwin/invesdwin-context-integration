@@ -511,7 +511,7 @@ public class TlsHandshaker {
             try (PooledFastByteArrayOutputStream bos = PooledFastByteArrayOutputStream.newInstance()) {
                 final IByteBuffer wrap = ByteBuffers.wrapRelative(bb);
                 HexDump.dump(wrap.asByteArray(0, wrap.capacity()), 0, bos, 0);
-                LOG.trace("%s: %s: \n%s", address, prefix, bos.toString());
+                LOG.trace("%s: %s [%s]: \n%s", address, prefix, wrap.capacity(), bos.toString());
             } catch (final Exception e) {
                 // ignore
             }

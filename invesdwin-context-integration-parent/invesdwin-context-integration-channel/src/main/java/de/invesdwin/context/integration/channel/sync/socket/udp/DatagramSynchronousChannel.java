@@ -42,11 +42,11 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public DatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
+            final int maxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
-        this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.estimatedMaxMessageSize = maxMessageSize;
+        this.socketSize = maxMessageSize;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }

@@ -24,6 +24,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
     private FileDescriptor fd;
+    private final int socketSize;
 
     public NativeDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -35,13 +36,14 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             throw new IllegalStateException("datagram writer has to be the client");
         }
         this.channel.setWriterRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DatagramSynchronousChannel.MESSAGE_INDEX);
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
     }
@@ -67,9 +69,13 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
+        final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
+        if (datagramSize > socketSize) {
+            throw new IllegalArgumentException(
+                    "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
+        }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
-        NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0,
-                DatagramSynchronousChannel.MESSAGE_INDEX + size);
+        NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, datagramSize);
     }
 
 }

@@ -85,7 +85,7 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
 
     @Override
     protected int getMaxMessageSize() {
-        return 1324;
+        return 1328;
     }
 
 }

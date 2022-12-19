@@ -42,4 +42,9 @@ public class NativeDatagramChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
+    @Override
+    protected int getMaxMessageSize() {
+        return 12;
+    }
+
 }

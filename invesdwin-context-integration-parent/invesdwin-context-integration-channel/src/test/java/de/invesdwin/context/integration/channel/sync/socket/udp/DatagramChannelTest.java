@@ -43,4 +43,9 @@ public class DatagramChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
+    @Override
+    protected int getMaxMessageSize() {
+        return 12;
+    }
+
 }

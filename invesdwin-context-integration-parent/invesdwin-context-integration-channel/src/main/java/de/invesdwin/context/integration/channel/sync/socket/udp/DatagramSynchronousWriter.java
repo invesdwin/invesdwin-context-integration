@@ -21,6 +21,7 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
     private DatagramChannel socketChannel;
+    private final int socketSize;
 
     public DatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -32,13 +33,14 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
             throw new IllegalStateException("datagram writer has to be the client");
         }
         this.channel.setWriterRegistered();
+        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DatagramSynchronousChannel.MESSAGE_INDEX);
         socketChannel = channel.getSocketChannel();
     }
@@ -64,8 +66,13 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
+        final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
+        if (datagramSize > socketSize) {
+            throw new IllegalArgumentException(
+                    "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
+        }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
-        buffer.getBytesTo(0, socketChannel, DatagramSynchronousChannel.MESSAGE_INDEX + size);
+        buffer.getBytesTo(0, socketChannel, datagramSize);
     }
 
 }

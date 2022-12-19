@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -73,6 +74,12 @@ public class NativeDatagramDtlsHandshakeProviderTest extends AChannelTest {
                     @Override
                     protected String getHostname() {
                         return getSocketAddress().getHostName();
+                    }
+
+                    @Override
+                    protected Integer getMaximumPacketSize() {
+                        return NativeDatagramDtlsHandshakeProviderTest.this.getMaxMessageSize()
+                                - DatagramSynchronousChannel.MESSAGE_INDEX;
                     }
 
                     @Override

@@ -75,6 +75,11 @@ public class BidiNativeSocketDtlsHandshakeProviderTest extends AChannelTest {
                     }
 
                     @Override
+                    protected Integer getMaximumPacketSize() {
+                        return BidiNativeSocketDtlsHandshakeProviderTest.this.getMaxMessageSize();
+                    }
+
+                    @Override
                     public ITlsProtocol getProtocol() {
                         return TlsProtocol.DTLS;
                     }
