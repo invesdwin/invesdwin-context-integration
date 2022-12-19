@@ -65,8 +65,8 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         if (position > 0) {
             return true;
         }
-        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
-                socketSize - bufferOffset);
+        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+                socketSize - position, channel.isServer());
         if (read < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
@@ -77,12 +77,11 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX;
-        int size = 0;
         //read size
         int tries = 0;
         while (position < targetPosition) {
-            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), bufferOffset + position,
-                    targetPosition - position);
+            final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+                    targetPosition - position, channel.isServer());
             if (read < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
@@ -92,7 +91,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
                 throw FastEOFException.getInstance("read tries exceeded");
             }
         }
-        size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
+        final int size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");
@@ -104,8 +103,8 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
             buffer.ensureCapacity(targetPosition);
             tries = 0;
             while (position < targetPosition) {
-                final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(),
-                        bufferOffset + position, remaining);
+                final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, remaining,
+                        channel.isServer());
                 if (read < 0) {
                     throw FastEOFException.getInstance("socket closed");
                 }

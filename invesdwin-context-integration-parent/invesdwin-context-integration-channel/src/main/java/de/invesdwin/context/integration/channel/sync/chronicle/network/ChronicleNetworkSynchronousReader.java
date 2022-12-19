@@ -65,7 +65,6 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
-        int size = 0;
         //read size
         int tries = 0;
         while (messageBuffer.position() < targetPosition) {
@@ -76,7 +75,7 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
                 throw FastEOFException.getInstance("read tries exceeded");
             }
         }
-        size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
+        final int size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");

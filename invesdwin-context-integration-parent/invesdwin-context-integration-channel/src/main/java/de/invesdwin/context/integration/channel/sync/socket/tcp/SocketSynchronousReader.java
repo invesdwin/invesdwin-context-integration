@@ -67,7 +67,6 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
-        int size = 0;
         //read size
         int tries = 0;
         while (messageBuffer.position() < targetPosition) {
@@ -77,7 +76,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
                 throw FastEOFException.getInstance("read tries exceeded");
             }
         }
-        size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
+        final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");

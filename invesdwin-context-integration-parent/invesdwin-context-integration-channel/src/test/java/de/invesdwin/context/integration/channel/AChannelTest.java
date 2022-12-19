@@ -11,8 +11,6 @@ import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.jupiter.api.Disabled;
-
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.ContextProperties;
@@ -65,7 +63,6 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-@Disabled("manual test")
 public abstract class AChannelTest extends ATest {
 
     public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;

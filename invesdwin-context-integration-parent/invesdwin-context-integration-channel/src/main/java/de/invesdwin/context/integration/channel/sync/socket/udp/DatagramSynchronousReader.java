@@ -70,7 +70,6 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX;
-        int size = 0;
         //read size
         int tries = 0;
         while (messageBuffer.position() < targetPosition) {
@@ -81,7 +80,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
                 throw FastEOFException.getInstance("read tries exceeded");
             }
         }
-        size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
+        final int size = buffer.getInt(bufferOffset + DatagramSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");

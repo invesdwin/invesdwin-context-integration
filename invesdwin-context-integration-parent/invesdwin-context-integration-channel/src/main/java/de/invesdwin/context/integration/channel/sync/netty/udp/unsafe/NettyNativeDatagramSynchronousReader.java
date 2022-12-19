@@ -101,7 +101,6 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
-        int size = 0;
         //read size
         try {
             int tries = 0;
@@ -117,7 +116,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);
         }
-        size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+        final int size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
             close();
             throw FastEOFException.getInstance("non positive size");
