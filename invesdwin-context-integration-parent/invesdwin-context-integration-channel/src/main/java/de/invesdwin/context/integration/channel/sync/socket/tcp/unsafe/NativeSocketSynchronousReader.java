@@ -64,7 +64,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         if (position > 0) {
             return true;
         }
-        final int read = read0(fd, buffer.addressOffset(), position, socketSize - position);
+        final int read = read0(fd, buffer.addressOffset(), position, buffer.remaining(position));
         if (read < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
@@ -121,7 +121,10 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
 
         final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
         if (position > (bufferOffset + offset)) {
-            //can be a maximum of 2 messages we read like this
+            /*
+             * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
+             * hasNext will be done with position 0
+             */
             bufferOffset += offset;
         } else {
             bufferOffset = 0;

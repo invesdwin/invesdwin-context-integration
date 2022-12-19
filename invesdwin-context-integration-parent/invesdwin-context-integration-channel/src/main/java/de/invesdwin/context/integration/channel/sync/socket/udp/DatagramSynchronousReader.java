@@ -114,7 +114,10 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         }
         final IByteBuffer message = buffer.slice(bufferOffset + DatagramSynchronousChannel.MESSAGE_INDEX, size);
         if (messageBuffer.position() > (bufferOffset + offset)) {
-            //can be a maximum of 2 messages we read like this
+            /*
+             * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
+             * hasNext will be done with position 0
+             */
             bufferOffset += offset;
         } else {
             bufferOffset = 0;
