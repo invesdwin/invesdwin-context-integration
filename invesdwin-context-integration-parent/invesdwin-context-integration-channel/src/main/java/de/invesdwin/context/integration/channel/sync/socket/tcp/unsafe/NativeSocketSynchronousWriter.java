@@ -15,10 +15,12 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
+import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
+    private static final int IOSTATUS_UNAVAILABLE = -2;
     private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -78,8 +80,8 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
         int remaining = length - pos;
         while (remaining > 0) {
             final int count = write0(dst, address, position, remaining);
-            if (count == -1) { // EOF
-                break;
+            if (count < 0) {
+                throw FastEOFException.getInstance("closed by other side");
             }
             position += count;
             remaining -= count;
@@ -91,7 +93,12 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
 
     public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
             throws IOException {
-        return OS.write0(dst, address + position, length);
+        final int res = OS.write0(dst, address + position, length);
+        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+            return 0;
+        } else {
+            return IOTools.normaliseIOStatus(res);
+        }
     }
 
 }
