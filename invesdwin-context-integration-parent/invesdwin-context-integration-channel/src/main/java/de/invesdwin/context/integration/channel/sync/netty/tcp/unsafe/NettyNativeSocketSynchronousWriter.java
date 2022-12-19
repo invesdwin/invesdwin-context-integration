@@ -93,7 +93,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             int remaining = length - pos;
             while (remaining > 0) {
                 final int count = dst.write(byteBuffer, position, remaining);
-                if (count == -1) { // EOF
+                if (count < 0) { // EOF
                     break;
                 }
                 position += count;

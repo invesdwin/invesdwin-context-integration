@@ -101,7 +101,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             while (remaining > 0) {
                 final int count = dst.sendTo(byteBuffer, position, remaining, recipient.getAddress(),
                         recipient.getPort(), fastOpen);
-                if (count == -1) { // EOF
+                if (count < 0) { // EOF
                     break;
                 }
                 position += count;

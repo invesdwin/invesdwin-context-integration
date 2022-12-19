@@ -145,7 +145,7 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
             int tries = 0;
             while (remaining > 0) {
                 final int count = src.read(byteBuffer, position, remaining);
-                if (count == -1) { // EOF
+                if (count < 0) { // EOF
                     break;
                 }
                 position += count;

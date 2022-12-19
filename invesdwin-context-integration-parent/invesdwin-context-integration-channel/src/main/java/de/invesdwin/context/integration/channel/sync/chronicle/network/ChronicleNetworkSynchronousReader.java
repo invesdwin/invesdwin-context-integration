@@ -111,7 +111,7 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
         int tries = 0;
         while (remaining > 0) {
             final int count = src.read(byteBuffer);
-            if (count == -1) { // EOF
+            if (count < 0) { // EOF
                 break;
             }
             remaining -= count;

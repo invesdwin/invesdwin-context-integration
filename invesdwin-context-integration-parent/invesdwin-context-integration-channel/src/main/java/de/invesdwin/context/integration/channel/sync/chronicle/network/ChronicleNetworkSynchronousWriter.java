@@ -74,7 +74,7 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
         final int positionBefore = byteBuffer.position();
         while (remaining > 0) {
             final int count = dst.write(byteBuffer);
-            if (count == -1) { // EOF
+            if (count < 0) { // EOF
                 break;
             }
             remaining -= count;
