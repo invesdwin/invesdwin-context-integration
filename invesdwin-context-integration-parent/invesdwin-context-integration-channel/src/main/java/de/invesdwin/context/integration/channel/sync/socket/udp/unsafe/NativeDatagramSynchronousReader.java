@@ -78,7 +78,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     public IByteBufferProvider readMessage() throws IOException {
         if (position > socketSize) {
             close();
-            throw FastEOFException.getInstance("data truncation occurred: position");
+            throw new IllegalArgumentException("data truncation occurred: position");
         }
 
         final int size = buffer.getInt(DatagramSynchronousChannel.SIZE_INDEX);
@@ -89,7 +89,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
 
         if (size > truncatedSize) {
             close();
-            throw FastEOFException.getInstance("data truncation occurred: size");
+            throw new IllegalArgumentException("data truncation occurred: size");
         }
 
         if (ClosedByteBuffer.isClosed(buffer, DatagramSynchronousChannel.MESSAGE_INDEX, size)) {
