@@ -23,7 +23,6 @@ import net.openhft.chronicle.core.io.IOTools;
 @NotThreadSafe
 public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private static final int IOSTATUS_UNAVAILABLE = -2;
     private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
