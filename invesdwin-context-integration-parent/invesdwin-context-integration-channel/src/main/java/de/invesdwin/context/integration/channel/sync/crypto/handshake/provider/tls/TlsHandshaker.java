@@ -500,21 +500,17 @@ public class TlsHandshaker {
     }
 
     private void debug(final String message, final Object... args) {
-        synchronized (LOG) {
-            LOG.debug(message, args);
-        }
+        LOG.debug(message, args);
     }
 
     private void printHex(final SocketAddress address, final String side, final String prefix,
             final java.nio.ByteBuffer bb) {
-        synchronized (LOG) {
-            try (PooledFastByteArrayOutputStream bos = PooledFastByteArrayOutputStream.newInstance()) {
-                final IByteBuffer wrap = ByteBuffers.wrapRelative(bb);
-                HexDump.dump(wrap.asByteArray(0, wrap.capacity()), 0, bos, 0);
-                LOG.trace("%s: %s [%s]: \n%s", address, prefix, wrap.capacity(), bos.toString());
-            } catch (final Exception e) {
-                // ignore
-            }
+        try (PooledFastByteArrayOutputStream bos = PooledFastByteArrayOutputStream.newInstance()) {
+            final IByteBuffer wrap = ByteBuffers.wrapRelative(bb);
+            HexDump.dump(wrap.asByteArray(0, wrap.capacity()), 0, bos, 0);
+            LOG.trace("%s: %s [%s]: \n%s", address, prefix, wrap.capacity(), bos.toString());
+        } catch (final Exception e) {
+            // ignore
         }
     }
 
