@@ -20,6 +20,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -137,8 +138,9 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
             //non-blocking datagrams are a lot faster than blocking ones
             finalizer.socketChannel.configureBlocking(false);
             finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
-                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            finalizer.socket.setReceiveBufferSize(
+                    Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
+                            socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
             finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                     | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         } finally {

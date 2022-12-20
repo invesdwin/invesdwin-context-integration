@@ -17,6 +17,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -127,8 +128,8 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
                 }
             }
             finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setReceiveBufferSize(
-                    Integers.max(finalizer.socket.getReceiveBufferSize(), socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
+                    ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
             finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                     | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         } finally {

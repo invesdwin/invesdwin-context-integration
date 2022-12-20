@@ -18,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -142,8 +143,8 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
         }
         finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                 | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-        finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
-                socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+        finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers
+                .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
         finalizer.socket.setSendBufferSize(socketSize);
         finalizer.socket.setTcpNoDelay(true);
         finalizer.socket.setKeepAlive(true);
