@@ -14,9 +14,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocketChannel;
@@ -142,7 +144,8 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
             }
             //non-blocking sockets are a bit faster than blocking ones
             finalizer.socketChannel.configureBlocking(false);
-            finalizer.socket.setReceiveBufferSize(socketSize);
+            finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
             finalizer.socket.setSendBufferSize(socketSize);
             finalizer.socket.setTcpNoDelay(true);
         } finally {

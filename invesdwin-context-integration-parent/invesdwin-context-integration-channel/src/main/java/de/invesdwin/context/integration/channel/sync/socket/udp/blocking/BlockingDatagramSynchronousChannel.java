@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -25,6 +26,7 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
     public static final int IPTOS_RELIABILITY = 0x04;
     public static final int IPTOS_THROUGHPUT = 0x08;
     public static final int IPTOS_LOWDELAY = 0x10;
+    public static final int RECEIVE_BUFFER_SIZE_MULTIPLIER = 3;
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -125,7 +127,8 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
                 }
             }
             finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setReceiveBufferSize(socketSize);
+            finalizer.socket.setReceiveBufferSize(
+                    Integers.max(finalizer.socket.getReceiveBufferSize(), socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER));
             finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                     | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         } finally {

@@ -7,11 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class SocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -66,14 +67,26 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
         //read size
-        int tries = 0;
         while (messageBuffer.position() < targetPosition) {
-            socketChannel.read(messageBuffer);
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("read tries exceeded");
+            final int count = socketChannel.read(messageBuffer);
+            if (count < 0) { // EOF
+                close();
+                throw ByteBuffers.newEOF();
+            }
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    close();
+                    throw FastEOFException.getInstance("read timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
             }
         }
         final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);

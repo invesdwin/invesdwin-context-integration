@@ -13,11 +13,12 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativ
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
@@ -84,11 +85,11 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             return true;
         }
         try {
-            final int read = fd.read(messageBuffer, 0, socketSize);
-            if (read > 0) {
-                position = read;
+            final int count = fd.read(messageBuffer, 0, socketSize);
+            if (count > 0) {
+                position = count;
                 return true;
-            } else if (read < 0) {
+            } else if (count < 0) {
                 throw FastEOFException.getInstance("closed by other side");
             } else {
                 return false;
@@ -100,17 +101,28 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
         //read size
         try {
-            int tries = 0;
             while (position < targetPosition) {
-                final int read = fd.read(messageBuffer, 0, socketSize);
-                position += read;
-                tries++;
-                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                final int count = fd.read(messageBuffer, 0, socketSize);
+                if (count < 0) { // EOF
                     close();
-                    throw FastEOFException.getInstance("read tries exceeded");
+                    throw ByteBuffers.newEOF();
+                }
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        close();
+                        throw FastEOFException.getInstance("read timeout exceeded");
+                    }
+                } else {
+                    zeroCountNanos = -1L;
+                    position += count;
                 }
             }
         } catch (final ClosedChannelException e) {

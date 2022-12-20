@@ -8,11 +8,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
@@ -76,18 +78,30 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
 
     public static void writeFully(final FileDescriptor dst, final long address, final int pos, final int length)
             throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int position = pos;
         int remaining = length - pos;
         while (remaining > 0) {
             final int count = write0(dst, address, position, remaining);
-            if (count < 0) {
-                throw FastEOFException.getInstance("closed by other side");
+            if (count < 0) { // EOF
+                break;
             }
-            position += count;
-            remaining -= count;
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    throw FastEOFException.getInstance("write timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
+                position += count;
+                remaining -= count;
+            }
         }
         if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
+            throw ByteBuffers.newEOF();
         }
     }
 

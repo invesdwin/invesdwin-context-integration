@@ -8,11 +8,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
@@ -88,6 +90,9 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
 
     public static void writeFully(final FileDescriptor dst, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         try {
             int position = pos;
             int remaining = length - pos;
@@ -96,11 +101,20 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
                 if (count < 0) { // EOF
                     break;
                 }
-                position += count;
-                remaining -= count;
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        throw FastEOFException.getInstance("write timeout exceeded");
+                    }
+                } else {
+                    zeroCountNanos = -1L;
+                    position += count;
+                    remaining -= count;
+                }
             }
             if (remaining > 0) {
-                throw ByteBuffers.newPutBytesToEOF();
+                throw ByteBuffers.newEOF();
             }
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);

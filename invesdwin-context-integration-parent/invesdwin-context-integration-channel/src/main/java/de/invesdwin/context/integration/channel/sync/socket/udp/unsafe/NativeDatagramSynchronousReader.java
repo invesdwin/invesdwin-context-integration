@@ -65,13 +65,13 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         if (position > 0) {
             return true;
         }
-        final int read = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
+        final int count = NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position,
                 buffer.remaining(position));
-        if (read < 0) {
+        if (count < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
-        position += read;
-        return read > 0;
+        position += count;
+        return count > 0;
     }
 
     @Override

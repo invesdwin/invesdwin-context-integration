@@ -9,11 +9,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class PipeSynchronousReader extends APipeSynchronousChannel implements ISynchronousReader<IByteBufferProvider> {
@@ -60,29 +61,37 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         ByteBuffers.position(messageBuffer, 0);
         int targetPosition = MESSAGE_INDEX;
         int size = 0;
         //read size
-        int tries = 0;
         while (true) {
-            final int read = fileChannel.read(messageBuffer);
-            if (read < 0) {
-                throw FastEOFException.getInstance("closed by other side");
-            }
-            if (read > 0 && messageBuffer.position() >= targetPosition) {
-                size = buffer.getInt(SIZE_INDEX);
-                if (size <= 0) {
-                    close();
-                    throw FastEOFException.getInstance("non positive size");
-                }
-                targetPosition += size;
-                break;
-            }
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+            final int count = fileChannel.read(messageBuffer);
+            if (count < 0) { // EOF
                 close();
-                throw FastEOFException.getInstance("read tries exceeded");
+                throw ByteBuffers.newEOF();
+            }
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    close();
+                    throw FastEOFException.getInstance("read timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
+                if (count > 0 && messageBuffer.position() >= targetPosition) {
+                    size = buffer.getInt(SIZE_INDEX);
+                    if (size <= 0) {
+                        close();
+                        throw FastEOFException.getInstance("non positive size");
+                    }
+                    targetPosition += size;
+                    break;
+                }
             }
         }
         //read message if not complete yet

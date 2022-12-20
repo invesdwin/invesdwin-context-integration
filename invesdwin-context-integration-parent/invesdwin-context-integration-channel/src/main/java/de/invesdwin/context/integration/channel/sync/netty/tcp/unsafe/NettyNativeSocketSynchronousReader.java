@@ -8,11 +8,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
@@ -75,11 +76,11 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
             return true;
         }
         try {
-            final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
-            if (read > 0) {
-                position = read;
+            final int count = fd.read(messageBuffer, 0, channel.getSocketSize());
+            if (count > 0) {
+                position = count;
                 return true;
-            } else if (read < 0) {
+            } else if (count < 0) {
                 throw FastEOFException.getInstance("closed by other side");
             } else {
                 return false;
@@ -91,17 +92,28 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
         //read size
         try {
-            int tries = 0;
             while (position < targetPosition) {
-                final int read = fd.read(messageBuffer, 0, channel.getSocketSize());
-                position += read;
-                tries++;
-                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+                final int count = fd.read(messageBuffer, 0, channel.getSocketSize());
+                if (count < 0) { // EOF
                     close();
-                    throw FastEOFException.getInstance("read tries exceeded");
+                    throw ByteBuffers.newEOF();
+                }
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        close();
+                        throw FastEOFException.getInstance("read timeout exceeded");
+                    }
+                } else {
+                    zeroCountNanos = -1L;
+                    position += count;
                 }
             }
         } catch (final ClosedChannelException e) {
@@ -139,24 +151,31 @@ public class NettyNativeSocketSynchronousReader implements ISynchronousReader<IB
 
     public static void readFully(final FileDescriptor src, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         try {
             int position = pos;
             int remaining = length - pos;
-            int tries = 0;
             while (remaining > 0) {
                 final int count = src.read(byteBuffer, position, remaining);
                 if (count < 0) { // EOF
                     break;
                 }
-                position += count;
-                remaining -= count;
-                tries++;
-                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                    throw FastEOFException.getInstance("read tries exceeded");
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        throw FastEOFException.getInstance("read timeout exceeded");
+                    }
+                } else {
+                    zeroCountNanos = -1L;
+                    position += count;
+                    remaining -= count;
                 }
             }
             if (remaining > 0) {
-                throw ByteBuffers.newPutBytesToEOF();
+                throw ByteBuffers.newEOF();
             }
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);

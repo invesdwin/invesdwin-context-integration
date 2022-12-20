@@ -63,8 +63,8 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         if (messageBuffer.position() > 0) {
             return true;
         }
-        final SocketAddress client = socketChannel.receive(messageBuffer);
-        return client != null;
+        socketChannel.receive(messageBuffer);
+        return messageBuffer.position() > 0;
     }
 
     @Override

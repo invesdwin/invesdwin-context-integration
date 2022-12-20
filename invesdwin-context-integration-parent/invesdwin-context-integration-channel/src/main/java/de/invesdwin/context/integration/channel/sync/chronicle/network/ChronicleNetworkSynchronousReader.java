@@ -6,11 +6,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -64,15 +65,26 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
         //read size
-        int tries = 0;
         while (messageBuffer.position() < targetPosition) {
-            socketChannel.read(messageBuffer);
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
+            final int count = socketChannel.read(messageBuffer);
+            if (count < 0) { // EOF
                 close();
-                throw FastEOFException.getInstance("read tries exceeded");
+                throw ByteBuffers.newEOF();
+            }
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    close();
+                    throw FastEOFException.getInstance("read timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
             }
         }
         final int size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
@@ -106,23 +118,30 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
 
     public static void readFully(final ChronicleSocketChannel src, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         final int positionBefore = byteBuffer.position();
         int remaining = byteBuffer.remaining();
-        int tries = 0;
         while (remaining > 0) {
             final int count = src.read(byteBuffer);
             if (count < 0) { // EOF
                 break;
             }
-            remaining -= count;
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("read tries exceeded");
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    throw FastEOFException.getInstance("read timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
+                remaining -= count;
             }
         }
         ByteBuffers.position(byteBuffer, positionBefore);
         if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
+            throw ByteBuffers.newEOF();
         }
     }
 

@@ -6,11 +6,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -70,6 +72,9 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
 
     public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int remaining = byteBuffer.remaining();
         final int positionBefore = byteBuffer.position();
         while (remaining > 0) {
@@ -77,11 +82,20 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
             if (count < 0) { // EOF
                 break;
             }
-            remaining -= count;
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    throw FastEOFException.getInstance("write timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
+                remaining -= count;
+            }
         }
         ByteBuffers.position(byteBuffer, positionBefore);
         if (remaining > 0) {
-            throw ByteBuffers.newPutBytesToEOF();
+            throw ByteBuffers.newEOF();
         }
     }
 

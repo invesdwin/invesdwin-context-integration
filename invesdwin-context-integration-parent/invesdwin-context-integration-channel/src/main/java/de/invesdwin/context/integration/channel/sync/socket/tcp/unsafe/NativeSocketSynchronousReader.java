@@ -8,11 +8,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.InputStreams;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
@@ -64,28 +65,39 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         if (position > 0) {
             return true;
         }
-        final int read = read0(fd, buffer.addressOffset(), position, buffer.remaining(position));
-        if (read < 0) {
+        final int count = read0(fd, buffer.addressOffset(), position, buffer.remaining(position));
+        if (count < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
-        position += read;
-        return read > 0;
+        position += count;
+        return count > 0;
     }
 
+    //CHECKSTYLE:OFF
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        //CHECKSTYLE:ON
+        final Duration timeout = URIs.getDefaultNetworkTimeout();
+        long zeroCountNanos = -1L;
+
         int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
         //read size
-        int tries = 0;
         while (position < targetPosition) {
-            final int read = read0(fd, buffer.addressOffset(), position, targetPosition - position);
-            if (read < 0) {
-                throw FastEOFException.getInstance("socket closed");
+            final int count = read0(fd, buffer.addressOffset(), position, targetPosition - position);
+            if (count < 0) { // EOF
+                close();
+                throw ByteBuffers.newEOF();
             }
-            position += read;
-            tries++;
-            if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                throw FastEOFException.getInstance("read tries exceeded");
+            if (count == 0 && timeout != null) {
+                if (zeroCountNanos == -1) {
+                    zeroCountNanos = System.nanoTime();
+                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                    close();
+                    throw FastEOFException.getInstance("read timeout exceeded");
+                }
+            } else {
+                zeroCountNanos = -1L;
+                position += count;
             }
         }
         final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
@@ -98,17 +110,23 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         int remaining = targetPosition - position;
         if (remaining > 0) {
             buffer.ensureCapacity(targetPosition);
-            tries = 0;
             while (position < targetPosition) {
-                final int read = read0(fd, buffer.addressOffset(), position, remaining);
-                if (read < 0) {
-                    throw FastEOFException.getInstance("socket closed");
+                final int count = read0(fd, buffer.addressOffset(), position, remaining);
+                if (count < 0) { // EOF
+                    close();
+                    throw ByteBuffers.newEOF();
                 }
-                remaining -= read;
-                position += read;
-                tries++;
-                if (tries > InputStreams.MAX_READ_FULLY_TRIES) {
-                    throw FastEOFException.getInstance("read tries exceeded");
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        close();
+                        throw FastEOFException.getInstance("read timeout exceeded");
+                    }
+                } else {
+                    zeroCountNanos = -1L;
+                    remaining -= count;
+                    position += count;
                 }
             }
         }

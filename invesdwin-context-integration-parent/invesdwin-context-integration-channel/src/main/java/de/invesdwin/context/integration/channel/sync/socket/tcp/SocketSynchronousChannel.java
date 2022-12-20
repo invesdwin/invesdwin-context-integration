@@ -18,6 +18,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -151,7 +152,8 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                 //might be unix domain socket
                 finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                         | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-                finalizer.socket.setReceiveBufferSize(socketSize);
+                finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
+                        socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
                 finalizer.socket.setSendBufferSize(socketSize);
                 finalizer.socket.setTcpNoDelay(true);
                 finalizer.socket.setKeepAlive(true);
