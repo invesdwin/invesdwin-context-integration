@@ -224,12 +224,12 @@ Process*   Mapped Memory (tmpfs)                  Records:  6,711.41/ms    => ~6
 | Bidi Native Socket (Baseline) | 366.90/ms | - | - | - | - | - | - |
 | AES128CTR | 294.94/ms | 262.69/ms | 299.63/ms | 185.91/ms | - | - | - |
 | AES256CTR | 288.61/ms | 260.01/ms | 298.26/ms | 172.17/ms | - | - | - |
-| AES128+GCM | 215.47/ms | 203.45/ms | Input too short - need tag | 149.60/ms | - | - | - |
-| AES256+GCM | 210.28/ms | 196.47/ms | Input too short - need tag | 135.45/ms | - | - | - |
 | AES128CTR+HMAC256 | 223.90/ms | 87.72/ms | 208.22/ms | 109.66/ms | - | - | - |
 | AES256CTR+HMAC256 | 219.93/ms | 88.50/ms | 211.86/ms | 106.32/ms | - | - | - |
 | AES128CTR+HMAC512 | 146.79/ms | 61.19/ms | 139.74/ms | 94.58/ms | - | - | - |
 | AES256CTR+HMAC512 | 147.28/ms | 60.66/ms | 140.93/ms | 90.18/ms | - | - | - |
+| AES128+GCM | 215.47/ms | 203.45/ms | Input too short - need tag | 149.60/ms | - | - | - |
+| AES256+GCM | 210.28/ms | 196.47/ms | Input too short - need tag | 135.45/ms | - | - | - |
 | TLS3.0 | 181.08/ms | Garbled Bytes | PKIX Validation Failed | 108.52/ms | 101.24/ms | Conscrypt Garbled Bytes; OpenSSL Binding Outdated | OpenSSL Binding Outdated |
 
 ## Web Concerns
