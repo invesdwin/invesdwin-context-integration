@@ -216,7 +216,21 @@ Thread     AgronaOneToOneRingBuffer (ZeroCopy)    Records:  4,893.33/ms    => ~4
 Process    Mapped Memory                          Records:  6,521.46/ms    => ~61.2 times as fast
 Process*   Mapped Memory (tmpfs)                  Records:  6,711.41/ms    => ~63 times as fast
 ```
-- **Dynamic Client/Server**: you could utilize RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endspoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
+- **Dynamic Client/Server**: you could utilize (e.g.) RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endspoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
+- **Cryptography**: there are some channel implementations with which [invesdwin-context-security-crypto](https://github.com/invesdwin/invesdwin-context-security/#crypto-module) encryption (`StreamEncryptionChannelFactory` for e.g. AES) and verification (`StreamVerifiedEncryptionChannelFactory` for e.g. AES+HMAC) can be added to the communication. There is also a `HandshakeChannelFactory` with providers for secure key exchanges using DH, ECDH, JPake, or SRP6 to negotiate the encryption and verification channels automatically. There is also a TLS and DTLS provider using SSLEngine (JDK and Netty(-TcNative)) that can be used with any underlying transport (not only TCP or UDP). Here some benchmarks with various security providers:
+
+| | JDK17 | Conscrypt | AmazonCorretto | BouncyCastle | WildflyOpenSSL | Netty-TcNative | Commons-Crypto |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Bidi Native Socket (Baseline) | 366.90/ms | - | - | - | - | - | - |
+| AES128CTR | 294.94/ms | 262.69/ms | 299.63/ms | 185.91/ms | - | - | - |
+| AES256CTR | 288.61/ms | 260.01/ms | 298.26/ms | 172.17/ms | - | - | - |
+| AES128CTR+HMAC256 | 223.90/ms | 87.72/ms | 208.22/ms | 109.66/ms | - | - | - |
+| AES256CTR+HMAC256 | 219.93/ms | 88.50/ms | 211.86/ms | 106.32/ms | - | - | - |
+| AES128CTR+HMAC512 | 146.79/ms | 61.19/ms | 139.74/ms | 94.58/ms | - | - | - |
+| AES256CTR+HMAC512 | 147.28/ms | 60.66/ms | 140.93/ms | 90.18/ms | - | - | - |
+| AES128+GCM | 215.47/ms | 203.45/ms | Input too short - need tag | 149.60/ms | - | - | - |
+| AES256+GCM | 210.28/ms | 196.47/ms | Input too short - need tag | 135.45/ms | - | - | - |
+| TLS3.0 | 181.08/ms | Garbled Bytes | PKIX Validation Failed | 108.52/ms | 101.24/ms | Conscrypt Garbled Bytes; OpenSSL Binding Outdated | OpenSSL Binding Outdated |
 
 ## Web Concerns
 
