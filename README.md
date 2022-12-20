@@ -221,7 +221,7 @@ Process*   Mapped Memory (tmpfs)                  Records:  6,711.41/ms    => ~6
 
 | | JDK17 | Conscrypt | AmazonCorretto | BouncyCastle | WildflyOpenSSL | Netty-TcNative | Commons-Crypto |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Bidi Native Socket (Baseline) | 366.90/ms | - | - | - | - | - | - |
+| BidiNativeSocketChannel (loopback, baseline) | 366.90/ms | - | - | - | - | - | - |
 | AES128CTR | 294.94/ms | 262.69/ms | 299.63/ms | 185.91/ms | - | - | - |
 | AES256CTR | 288.61/ms | 260.01/ms | 298.26/ms | 172.17/ms | - | - | - |
 | AES128CTR+HMAC256 | 223.90/ms | 87.72/ms | 208.22/ms | 109.66/ms | - | - | - |
