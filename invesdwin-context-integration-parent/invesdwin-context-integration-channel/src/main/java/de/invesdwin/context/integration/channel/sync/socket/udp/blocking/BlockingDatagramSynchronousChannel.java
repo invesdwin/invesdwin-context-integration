@@ -26,7 +26,7 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
     public static final int IPTOS_RELIABILITY = 0x04;
     public static final int IPTOS_THROUGHPUT = 0x08;
     public static final int IPTOS_LOWDELAY = 0x10;
-    public static final int RECEIVE_BUFFER_SIZE_MULTIPLIER = 3;
+    public static final int RECEIVE_BUFFER_SIZE_MULTIPLIER = 10;
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
