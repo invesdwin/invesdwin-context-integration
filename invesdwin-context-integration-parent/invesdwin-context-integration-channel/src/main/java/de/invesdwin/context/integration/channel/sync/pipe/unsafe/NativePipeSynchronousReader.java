@@ -11,6 +11,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -89,6 +90,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
                     close();
                     throw FastEOFException.getInstance("read timeout exceeded");
                 }
+                ASpinWait.onSpinWaitStatic();
             } else {
                 zeroCountNanos = -1L;
                 position += count;
@@ -118,6 +120,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
                     } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
                         throw FastEOFException.getInstance("read timeout exceeded");
                     }
+                    ASpinWait.onSpinWaitStatic();
                 } else {
                     zeroCountNanos = -1L;
                     position += count;

@@ -8,6 +8,7 @@ import java.nio.channels.FileChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -81,6 +82,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
                     close();
                     throw FastEOFException.getInstance("read timeout exceeded");
                 }
+                ASpinWait.onSpinWaitStatic();
             } else {
                 zeroCountNanos = -1L;
                 if (count > 0 && messageBuffer.position() >= targetPosition) {

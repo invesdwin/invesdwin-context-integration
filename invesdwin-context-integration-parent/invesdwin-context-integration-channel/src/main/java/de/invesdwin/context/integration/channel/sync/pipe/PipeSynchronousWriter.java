@@ -9,6 +9,7 @@ import java.nio.channels.WritableByteChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -84,6 +85,7 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
                 } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
                     throw FastEOFException.getInstance("write timeout exceeded");
                 }
+                ASpinWait.onSpinWaitStatic();
             } else {
                 zeroCountNanos = -1L;
                 remaining -= count;
