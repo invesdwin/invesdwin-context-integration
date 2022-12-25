@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.netty.udt.type;
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
-import io.netty.channel.udt.UdtServerChannel;
 
 public interface INettyUdtChannelType {
 
@@ -13,7 +12,7 @@ public interface INettyUdtChannelType {
 
     Class<? extends UdtChannel> getClientChannelType();
 
-    Class<? extends UdtServerChannel> getServerChannelType();
+    Class<? extends UdtChannel> getServerChannelType();
 
     void channelOptions(IChannelOptionConsumer consumer, int socketSize);
 

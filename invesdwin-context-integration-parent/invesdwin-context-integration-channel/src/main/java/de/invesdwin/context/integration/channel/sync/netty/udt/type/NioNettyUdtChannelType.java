@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.netty.udt.type;
 
+import java.util.concurrent.Executor;
+
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
@@ -12,6 +14,7 @@ import io.netty.channel.udt.UdtChannel;
 import io.netty.channel.udt.UdtServerChannel;
 import io.netty.channel.udt.nio.NioUdtMessageAcceptorChannel;
 import io.netty.channel.udt.nio.NioUdtMessageConnectorChannel;
+import io.netty.channel.udt.nio.NioUdtProvider;
 
 @Immutable
 public class NioNettyUdtChannelType implements INettyUdtChannelType {
@@ -20,12 +23,12 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
 
     @Override
     public EventLoopGroup newServerWorkerGroup() {
-        return new NioEventLoopGroup(1);
+        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new NioEventLoopGroup(1);
+        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
     @Override

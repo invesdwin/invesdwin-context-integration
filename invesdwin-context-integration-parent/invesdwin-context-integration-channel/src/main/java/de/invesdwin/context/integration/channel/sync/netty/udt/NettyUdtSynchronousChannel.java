@@ -4,6 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -23,7 +24,9 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
+import io.netty.channel.udt.nio.NioUdtProvider;
 
 /**
  * https://github.com/wenzhucjy/netty-tutorial/tree/master/netty-4/server/src/main/java/com/netty/udp
@@ -123,7 +126,8 @@ public class NettyUdtSynchronousChannel implements Closeable {
         if (server) {
             awaitUdtChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
+                finalizer.bootstrap.group(new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER))
+                        .channelFactory(NioUdtProvider.MESSAGE_RENDEZVOUS);
                 type.channelOptions(finalizer.bootstrap::option, socketSize);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
