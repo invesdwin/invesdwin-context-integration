@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.udp.type;
+package de.invesdwin.context.integration.channel.sync.netty.udt.type;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -8,13 +8,15 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.DatagramChannel;
-import io.netty.channel.socket.nio.NioDatagramChannel;
+import io.netty.channel.udt.UdtChannel;
+import io.netty.channel.udt.UdtServerChannel;
+import io.netty.channel.udt.nio.NioUdtMessageAcceptorChannel;
+import io.netty.channel.udt.nio.NioUdtMessageConnectorChannel;
 
 @Immutable
-public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
+public class NioNettyUdtChannelType implements INettyUdtChannelType {
 
-    public static final NioNettyDatagramChannelType INSTANCE = new NioNettyDatagramChannelType();
+    public static final NioNettyUdtChannelType INSTANCE = new NioNettyUdtChannelType();
 
     @Override
     public EventLoopGroup newServerWorkerGroup() {
@@ -27,26 +29,24 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     }
 
     @Override
-    public Class<? extends DatagramChannel> getServerChannelType() {
-        return NioDatagramChannel.class;
+    public Class<? extends UdtServerChannel> getServerChannelType() {
+        return NioUdtMessageAcceptorChannel.class;
     }
 
     @Override
-    public Class<? extends DatagramChannel> getClientChannelType() {
-        return NioDatagramChannel.class;
+    public Class<? extends UdtChannel> getClientChannelType() {
+        return NioUdtMessageConnectorChannel.class;
     }
 
     @Override
     public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
         consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
                 .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
     }
 
     @Override
-    public void initChannel(final DatagramChannel channel, final boolean server) throws Exception {
+    public void initChannel(final UdtChannel channel, final boolean server) throws Exception {
         //noop
     }
 }

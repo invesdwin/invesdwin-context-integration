@@ -4,6 +4,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
@@ -54,7 +55,8 @@ public class NioNettySocketChannelType implements INettySocketChannelType {
         consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                 | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
-        consumer.option(ChannelOption.SO_RCVBUF, socketSize);
+        consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
+                .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
     }
 
     @Override

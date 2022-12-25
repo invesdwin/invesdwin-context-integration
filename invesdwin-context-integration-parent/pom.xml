@@ -10,14 +10,12 @@
 	<artifactId>invesdwin-context-integration-parent</artifactId>
 	<version>1.0.3-SNAPSHOT</version>
 	<packaging>pom</packaging>
-
 	<licenses>
 		<license>
 			<name>GNU Lesser General Public License (LGPL), Version 3.0</name>
 			<url>http://www.gnu.org/licenses/lgpl-3.0.html</url>
 		</license>
 	</licenses>
-
 	<modules>
 		<module>invesdwin-context-integration-amqp</module>
 		<module>invesdwin-context-integration-axon</module>
@@ -47,13 +45,11 @@
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-rmi</module>
 	</modules>
-
 	<properties>
 		<project.version.invesdwin-context>1.0.4-SNAPSHOT</project.version.invesdwin-context>
 		<project.version.invesdwin-context-integration>${project.version}</project.version.invesdwin-context-integration>
 		<project.version.invesdwin-context-persistence>1.0.4-SNAPSHOT</project.version.invesdwin-context-persistence>
 		<project.version.invesdwin-context-security>1.0.3-SNAPSHOT</project.version.invesdwin-context-security>
-
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
 		<version.spring-amqp>3.0.0-M4</version.spring-amqp>
@@ -68,18 +64,14 @@
 		<version.jersey>3.1.0</version.jersey>
 		<version.xmlsec>3.0.1</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
-
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
 		<version.sardine>5.8</version.sardine>
-
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
-
 		<version.affinity>3.21ea5</version.affinity>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
-
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.jctools>3.3.0</version.jctools>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
@@ -92,8 +84,8 @@
 		<version.chronicle-network>2.22.14</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
+		<version.barchart-udt>2.3.0</version.barchart-udt>
 	</properties>
-
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -123,7 +115,6 @@
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
-
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-amqp</artifactId>
@@ -263,7 +254,6 @@
 				<artifactId>invesdwin-context-integration-rmi</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.springframework.integration</groupId>
 				<artifactId>spring-integration-amqp</artifactId>
@@ -310,7 +300,6 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-
 			<dependency>
 				<groupId>org.springframework.batch</groupId>
 				<artifactId>spring-batch-admin-manager</artifactId>
@@ -350,8 +339,6 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-
-
 			<dependency>
 				<groupId>org.apache.activemq</groupId>
 				<artifactId>artemis-jakarta-server</artifactId>
@@ -461,7 +448,6 @@
 				<artifactId>jersey-media-jaxb</artifactId>
 				<version>${version.jersey}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.jboss.shrinkwrap.resolver</groupId>
 				<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
@@ -497,7 +483,6 @@
 				<artifactId>aether-transport-wagon</artifactId>
 				<version>${version.eclipse-aether}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.jppf</groupId>
 				<artifactId>jppf-client</artifactId>
@@ -567,7 +552,6 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-
 			<dependency>
 				<groupId>org.jppf</groupId>
 				<artifactId>jppf-common</artifactId>
@@ -583,7 +567,6 @@
 					</exclusion>
 				</exclusions>
 			</dependency>
-
 			<dependency>
 				<groupId>com.github.asbachb</groupId>
 				<artifactId>ftp4j</artifactId>
@@ -594,7 +577,6 @@
 				<artifactId>ftpserver-core</artifactId>
 				<version>${version.ftpserver}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>net.openhft</groupId>
 				<artifactId>affinity</artifactId>
@@ -605,7 +587,6 @@
 				<artifactId>reactive-streams</artifactId>
 				<version>${version.reactive-streams}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>org.commonjava.web</groupId>
 				<artifactId>webdav-handler-common</artifactId>
@@ -616,7 +597,6 @@
 				<artifactId>sardine</artifactId>
 				<version>${version.sardine}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>com.lmax</groupId>
 				<artifactId>disruptor</artifactId>
@@ -657,7 +637,6 @@
 				<artifactId>nng-java</artifactId>
 				<version>${version.nng-java}</version>
 			</dependency>
-
 			<dependency>
 				<groupId>com.esotericsoftware</groupId>
 				<artifactId>kryonet</artifactId>
@@ -673,9 +652,13 @@
 				<artifactId>srp6a</artifactId>
 				<version>${version.srp6a}</version>
 			</dependency>
+			<dependency>
+				<groupId>com.barchart.udt</groupId>
+				<artifactId>barchart-udt-bundle</artifactId>
+				<version>${version.barchart-udt}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
-
 	<distributionManagement>
 		<repository>
 			<id>invesdwin-oss</id>
@@ -688,7 +671,6 @@
 			<url>https://invesdwin.de/repo/invesdwin-oss</url>
 		</snapshotRepository>
 	</distributionManagement>
-
 	<repositories>
 		<repository>
 			<id>invesdwin-oss</id>
@@ -701,16 +683,13 @@
 			<url>https://invesdwin.de/repo/invesdwin-oss-remote</url>
 		</pluginRepository>
 	</pluginRepositories>
-
 	<scm>
 		<url>https://github.com/invesdwin/invesdwin-context-integration</url>
 		<connection>scm:git:https://github.com/invesdwin/invesdwin-context-integration.git</connection>
 		<tag>HEAD</tag>
 	</scm>
-
 	<ciManagement>
 		<system>jenkins</system>
 		<url>https://invesdwin.de/jenkins/job/dgr-deploy-invesdwin-context-integration/</url>
 	</ciManagement>
-
 </project>
