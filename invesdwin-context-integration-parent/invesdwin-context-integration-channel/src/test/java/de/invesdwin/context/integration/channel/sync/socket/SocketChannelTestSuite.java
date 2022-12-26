@@ -28,6 +28,10 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.Blockin
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramTlsHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtDtlsHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtTlsHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
 
 // CHECKSTYLE:OFF
 @Suite
@@ -40,7 +44,9 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDat
         DatagramTlsHandshakeProviderTest.class, BlockingDatagramTlsHandshakeProviderTest.class,
         BlockingDatagramDtlsHandshakeProviderTest.class, NativeDatagramTlsHandshakeProviderTest.class,
         DatagramDtlsHandshakeProviderTest.class, NativeDatagramDtlsHandshakeProviderTest.class,
-        StreamEncryptionNativeSocketChannelTest.class, StreamVerifiedEncryptionNativeSocketChannelTest.class })
+        StreamEncryptionNativeSocketChannelTest.class, StreamVerifiedEncryptionNativeSocketChannelTest.class,
+        UdtChannelTest.class, BidiUdtChannelTest.class, BidiUdtTlsHandshakeProviderTest.class,
+        BidiUdtDtlsHandshakeProviderTest.class })
 @Immutable
 public class SocketChannelTestSuite {
     //CHECKSTYLE:ON
