@@ -38,8 +38,8 @@ public class KQueueNettyDatagramChannelType implements INettyDatagramChannelType
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize);
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
+        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize, server);
     }
 
     @Override

@@ -31,7 +31,7 @@ public interface INettySocketChannelType {
 
     Class<? extends SocketChannel> getClientChannelType();
 
-    void channelOptions(IChannelOptionConsumer consumer, int socketSize);
+    void channelOptions(IChannelOptionConsumer consumer, int socketSize, boolean server);
 
     void initChannel(SocketChannel channel, boolean server) throws Exception;
 

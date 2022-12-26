@@ -37,7 +37,7 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
         consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                 | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);

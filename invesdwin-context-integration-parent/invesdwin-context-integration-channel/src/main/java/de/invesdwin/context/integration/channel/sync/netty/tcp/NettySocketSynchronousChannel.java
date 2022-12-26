@@ -134,7 +134,7 @@ public class NettySocketSynchronousChannel implements Closeable {
                 finalizer.serverBootstrap = new ServerBootstrap();
                 finalizer.serverBootstrap.group(parentGroup, childGroup);
                 finalizer.serverBootstrap.channel(type.getServerChannelType());
-                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize);
+                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize, server);
                 finalizer.serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {
@@ -159,7 +159,7 @@ public class NettySocketSynchronousChannel implements Closeable {
                 finalizer.clientBootstrap = new Bootstrap();
                 finalizer.clientBootstrap.group(type.newClientWorkerGroup());
                 finalizer.clientBootstrap.channel(type.getClientChannelType());
-                type.channelOptions(finalizer.clientBootstrap::option, socketSize);
+                type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
                 finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {

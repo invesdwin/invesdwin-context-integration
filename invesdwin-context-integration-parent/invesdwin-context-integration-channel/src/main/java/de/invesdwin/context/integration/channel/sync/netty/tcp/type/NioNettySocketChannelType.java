@@ -44,7 +44,7 @@ public class NioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
         consumer.option(ChannelOption.SO_KEEPALIVE, true);
         consumer.option(ChannelOption.TCP_NODELAY, true);
         consumer.option(ChannelOption.ALLOW_HALF_CLOSURE, true);

@@ -7,13 +7,12 @@ import javax.annotation.concurrent.Immutable;
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import io.netty.channel.ChannelFactory;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
 import io.netty.channel.udt.UdtServerChannel;
-import io.netty.channel.udt.nio.NioUdtMessageAcceptorChannel;
-import io.netty.channel.udt.nio.NioUdtMessageConnectorChannel;
 import io.netty.channel.udt.nio.NioUdtProvider;
 
 @Immutable
@@ -22,7 +21,12 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
     public static final NioNettyUdtChannelType INSTANCE = new NioNettyUdtChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
+    public EventLoopGroup newServerAcceptorGroup() {
+        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
+    }
+
+    @Override
+    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup parentGroup) {
         return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
@@ -32,20 +36,23 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
     }
 
     @Override
-    public Class<? extends UdtServerChannel> getServerChannelType() {
-        return NioUdtMessageAcceptorChannel.class;
+    public ChannelFactory<? extends UdtServerChannel> getServerChannelFactory() {
+        return NioUdtProvider.MESSAGE_ACCEPTOR;
     }
 
     @Override
-    public Class<? extends UdtChannel> getClientChannelType() {
-        return NioUdtMessageConnectorChannel.class;
+    public ChannelFactory<? extends UdtChannel> getClientChannelFactory() {
+        return NioUdtProvider.MESSAGE_CONNECTOR;
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
         consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
                 .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+        if (server) {
+            consumer.option(ChannelOption.SO_BACKLOG, 10);
+        }
     }
 
     @Override

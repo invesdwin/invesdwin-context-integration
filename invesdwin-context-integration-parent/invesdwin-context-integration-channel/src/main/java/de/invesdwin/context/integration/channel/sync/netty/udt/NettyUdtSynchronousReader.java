@@ -18,7 +18,7 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
-import io.netty.channel.socket.DatagramPacket;
+import io.netty.channel.udt.UdtMessage;
 
 @NotThreadSafe
 public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -120,7 +120,7 @@ public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBuffer
 
         @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
-            final DatagramPacket msgBuf = (DatagramPacket) msg;
+            final UdtMessage msgBuf = (UdtMessage) msg;
             //CHECKSTYLE:OFF
             while (read(ctx, msgBuf.content())) {
             }

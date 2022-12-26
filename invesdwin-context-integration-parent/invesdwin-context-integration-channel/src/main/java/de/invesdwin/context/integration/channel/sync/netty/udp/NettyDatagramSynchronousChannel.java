@@ -124,7 +124,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
                 finalizer.bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
-                type.channelOptions(finalizer.bootstrap::option, socketSize);
+                type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
                     return finalizer.bootstrap.bind(socketAddress);
@@ -136,7 +136,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
                 finalizer.bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
-                type.channelOptions(finalizer.bootstrap::option, socketSize);
+                type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
                     return finalizer.bootstrap.connect(socketAddress);

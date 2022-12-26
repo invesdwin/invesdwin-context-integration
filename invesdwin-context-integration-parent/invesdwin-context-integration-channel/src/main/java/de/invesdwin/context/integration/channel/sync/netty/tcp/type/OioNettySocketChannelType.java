@@ -42,8 +42,8 @@ public class OioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize) {
-        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize);
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
+        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize, server);
     }
 
     @Override

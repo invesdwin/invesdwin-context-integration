@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Executor;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -17,16 +17,19 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
+import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.bootstrap.ServerBootstrapConfig;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.udt.UdtChannel;
-import io.netty.channel.udt.nio.NioUdtProvider;
 
 /**
  * https://github.com/wenzhucjy/netty-tutorial/tree/master/netty-4/server/src/main/java/com/netty/udp
@@ -48,12 +51,13 @@ public class NettyUdtSynchronousChannel implements Closeable {
     protected volatile boolean udtChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    protected final NettyDatagramSynchronousChannelFinalizer finalizer;
+    protected final NettyUdtSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
     private volatile boolean keepBootstrapRunningAfterOpen;
 
+    private final IBufferingIterator<Consumer<UdtChannel>> channelListeners = new BufferingIterator<>();
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
 
@@ -64,7 +68,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
-        this.finalizer = new NettyDatagramSynchronousChannelFinalizer();
+        this.finalizer = new NettyUdtSynchronousChannelFinalizer();
         finalizer.register(this);
     }
 
@@ -118,35 +122,67 @@ public class NettyUdtSynchronousChannel implements Closeable {
         return socketAddress;
     }
 
+    public synchronized void addChannelListener(final Consumer<UdtChannel> channelListener) {
+        if (channelListener != null) {
+            channelListeners.add(channelListener);
+        }
+    }
+
     public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<UdtChannel> channelListener)
             throws IOException {
         if (!shouldOpen(channelListener)) {
+            awaitUdtChannel();
             return;
         }
+        addChannelListener(channelListener);
         if (server) {
             awaitUdtChannel(() -> {
-                finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER))
-                        .channelFactory(NioUdtProvider.MESSAGE_RENDEZVOUS);
-                type.channelOptions(finalizer.bootstrap::option, socketSize);
-                bootstrapListener.accept(finalizer.bootstrap);
-                try {
-                    return finalizer.bootstrap.bind(socketAddress);
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
+                final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
+                final EventLoopGroup childGroup = type.newServerWorkerGroup(parentGroup);
+                finalizer.serverBootstrap = new ServerBootstrap();
+                finalizer.serverBootstrap.group(parentGroup, childGroup);
+                finalizer.serverBootstrap.channelFactory(type.getServerChannelFactory());
+                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize, server);
+                finalizer.serverBootstrap.childHandler(new ChannelInitializer<UdtChannel>() {
+                    @Override
+                    public void initChannel(final UdtChannel ch) throws Exception {
+                        if (finalizer.udtChannel == null) {
+                            type.initChannel(ch, true);
+                            onUdtChannel(ch);
+                            finalizer.udtChannel = ch;
+                            if (parentGroup != childGroup) {
+                                //only allow one client
+                                parentGroup.shutdownGracefully();
+                            }
+                        } else {
+                            //only allow one client
+                            ch.close();
+                        }
+                    }
+                });
+                return finalizer.serverBootstrap.bind(socketAddress);
             });
         } else {
             awaitUdtChannel(() -> {
-                finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
-                type.channelOptions(finalizer.bootstrap::option, socketSize);
-                bootstrapListener.accept(finalizer.bootstrap);
-                try {
-                    return finalizer.bootstrap.connect(socketAddress);
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
+                finalizer.clientBootstrap = new Bootstrap();
+                finalizer.clientBootstrap.group(type.newClientWorkerGroup());
+                finalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
+                type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
+                finalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
+                    @Override
+                    public void initChannel(final UdtChannel ch) throws Exception {
+                        if (finalizer.udtChannel == null) {
+                            type.initChannel(ch, false);
+                            onUdtChannel(ch);
+                            finalizer.udtChannel = ch;
+                        } else {
+                            //only allow one client
+                            ch.close();
+                        }
+                    }
+
+                });
+                return finalizer.clientBootstrap.connect(socketAddress);
             });
         }
     }
@@ -162,6 +198,27 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
     }
 
+    /**
+     * Can be overridden to add handlers
+     */
+    protected void onUdtChannel(final UdtChannel udtChannel) {
+        //        final ChannelPipeline pipeline = udtChannel.pipeline();
+        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
+        //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
+        triggerChannelListeners(udtChannel);
+    }
+
+    private void triggerChannelListeners(final UdtChannel udtChannel) {
+        try {
+            while (true) {
+                final Consumer<UdtChannel> next = channelListeners.next();
+                next.accept(udtChannel);
+            }
+        } catch (final NoSuchElementException e) {
+            //end reached
+        }
+    }
+
     private void awaitUdtChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         udtChannelOpening = true;
         try {
@@ -170,11 +227,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
             final long startNanos = System.nanoTime();
             while (activeCount.get() > 0) {
                 try {
-                    final ChannelFuture sync = channelFactory.get().sync();
-                    type.initChannel(finalizer.udtChannel, server);
-                    onUdtChannel(finalizer.udtChannel);
-                    finalizer.udtChannel = (UdtChannel) sync.channel();
-                    sync.get();
+                    channelFactory.get().sync().get();
                     break;
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
@@ -219,15 +272,6 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
     }
 
-    /**
-     * Can be overridden to add handlers
-     */
-    protected void onUdtChannel(final UdtChannel udtChannel) {
-        //        final ChannelPipeline pipeline = udtChannel.pipeline();
-        //        pipeline.addLast(new FlushConsolidationHandler(256, true));
-        //        pipeline.addLast(new IdleStateHandler(1, 1, 1, TimeUnit.MILLISECONDS));
-    }
-
     protected Duration getMaxConnectRetryDelay() {
         return SynchronousChannels.DEFAULT_MAX_RECONNECT_DELAY;
     }
@@ -253,10 +297,21 @@ public class NettyUdtSynchronousChannel implements Closeable {
 
     private void internalClose() {
         finalizer.closeUdtChannel();
-        final Bootstrap bootstrapCopy = finalizer.bootstrap;
-        if (bootstrapCopy != null) {
-            finalizer.bootstrap = null;
-            final BootstrapConfig config = bootstrapCopy.config();
+        final ServerBootstrap serverBootstrapCopy = finalizer.serverBootstrap;
+        if (serverBootstrapCopy != null) {
+            finalizer.serverBootstrap = null;
+            final ServerBootstrapConfig config = serverBootstrapCopy.config();
+            final EventLoopGroup childGroup = config.childGroup();
+            final Future<?> childGroupShutdown = shutdownGracefully(childGroup);
+            final EventLoopGroup group = config.group();
+            final Future<?> groupShutdown = shutdownGracefully(group);
+            awaitShutdown(childGroupShutdown);
+            awaitShutdown(groupShutdown);
+        }
+        final Bootstrap clientBootstrapCopy = finalizer.clientBootstrap;
+        if (clientBootstrapCopy != null) {
+            finalizer.clientBootstrap = null;
+            final BootstrapConfig config = clientBootstrapCopy.config();
             final EventLoopGroup group = config.group();
             awaitShutdown(shutdownGracefully(group));
         }
@@ -283,13 +338,14 @@ public class NettyUdtSynchronousChannel implements Closeable {
         NettySocketSynchronousChannel.awaitShutdown(future);
     }
 
-    private static final class NettyDatagramSynchronousChannelFinalizer extends AFinalizer {
+    private static final class NettyUdtSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile UdtChannel udtChannel;
-        private volatile Bootstrap bootstrap;
+        private volatile ServerBootstrap serverBootstrap;
+        private volatile Bootstrap clientBootstrap;
 
-        protected NettyDatagramSynchronousChannelFinalizer() {
+        protected NettyUdtSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();
@@ -335,10 +391,17 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
 
         public void closeBootstrapAsync() {
-            final Bootstrap bootstrapCopy = bootstrap;
-            if (bootstrapCopy != null) {
-                bootstrap = null;
-                final BootstrapConfig config = bootstrapCopy.config();
+            if (serverBootstrap != null) {
+                final ServerBootstrapConfig config = serverBootstrap.config();
+                serverBootstrap = null;
+                final EventLoopGroup childGroup = config.childGroup();
+                shutdownGracefully(childGroup);
+                final EventLoopGroup group = config.group();
+                shutdownGracefully(group);
+            }
+            if (clientBootstrap != null) {
+                final BootstrapConfig config = clientBootstrap.config();
+                clientBootstrap = null;
                 final EventLoopGroup group = config.group();
                 shutdownGracefully(group);
             }
