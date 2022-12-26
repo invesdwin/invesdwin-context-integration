@@ -214,6 +214,8 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
             //            socket.setSendBufferSize(socketSize);
             socket.setOption(OptionUDT.UDT_SNDSYN, Boolean.FALSE);
             socket.setOption(OptionUDT.UDT_RCVSYN, Boolean.FALSE);
+            socket.setOption(OptionUDT.Is_Receive_Synchronous, Boolean.FALSE);
+            socket.setOption(OptionUDT.Is_Send_Synchronous, Boolean.FALSE);
         }
     }
 
