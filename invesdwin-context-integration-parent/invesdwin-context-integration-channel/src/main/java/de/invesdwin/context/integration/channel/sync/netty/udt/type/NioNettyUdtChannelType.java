@@ -50,9 +50,6 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
         consumer.option(ChannelOption.SO_SNDBUF, socketSize);
         consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
                 .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
-        if (server) {
-            consumer.option(ChannelOption.SO_BACKLOG, 10);
-        }
     }
 
     @Override
