@@ -241,12 +241,19 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
         return activeCount.incrementAndGet() == 1;
     }
 
+    /**
+     * Can be replaced with DATAGRAM
+     */
+    protected SelectorProviderUDT getUdtProvider() {
+        return SelectorProviderUDT.STREAM;
+    }
+
     protected SocketChannelUDT newSocketChannel() throws IOException {
-        return SelectorProviderUDT.DATAGRAM.openSocketChannel();
+        return getUdtProvider().openSocketChannel();
     }
 
     protected ServerSocketChannelUDT newServerSocketChannel() throws IOException {
-        return SelectorProviderUDT.DATAGRAM.openServerSocketChannel();
+        return getUdtProvider().openServerSocketChannel();
     }
 
     protected Duration getMaxConnectRetryDelay() {
