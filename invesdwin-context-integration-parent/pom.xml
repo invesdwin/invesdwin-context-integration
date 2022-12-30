@@ -86,6 +86,7 @@
 		<version.srp6a>2.1.0</version.srp6a>
 		<version.barchart-udt>2.3.0</version.barchart-udt>
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
+		<version.mina>2.2.1</version.mina>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -662,6 +663,11 @@
 				<groupId>com.github.mucaho</groupId>
 				<artifactId>jnetrobust-samples</artifactId>
 				<version>${version.jnetrobust}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-core</artifactId>
+				<version>${version.mina}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

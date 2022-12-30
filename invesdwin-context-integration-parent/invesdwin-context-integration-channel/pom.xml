@@ -124,5 +124,10 @@
 			<artifactId>jnetrobust-samples</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.mina</groupId>
+			<artifactId>mina-core</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>
