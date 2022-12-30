@@ -119,5 +119,10 @@
 			<artifactId>netty-transport-udt</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.github.mucaho</groupId>
+			<artifactId>jnetrobust-samples</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>

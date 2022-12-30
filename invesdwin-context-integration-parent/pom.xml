@@ -85,6 +85,7 @@
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
 		<version.barchart-udt>2.3.0</version.barchart-udt>
+		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -656,6 +657,11 @@
 				<groupId>com.barchart.udt</groupId>
 				<artifactId>barchart-udt-bundle</artifactId>
 				<version>${version.barchart-udt}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.mucaho</groupId>
+				<artifactId>jnetrobust-samples</artifactId>
+				<version>${version.jnetrobust}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
