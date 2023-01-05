@@ -669,6 +669,11 @@
 				<artifactId>mina-core</artifactId>
 				<version>${version.mina}</version>
 			</dependency>
+			<dependency>
+				<groupId>org.apache.mina</groupId>
+				<artifactId>mina-transport-apr</artifactId>
+				<version>${version.mina}</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 	<distributionManagement>

@@ -126,7 +126,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.apache.mina</groupId>
-			<artifactId>mina-core</artifactId>
+			<artifactId>mina-transport-apr</artifactId>
 			<scope>provided</scope>
 		</dependency>
 	</dependencies>
