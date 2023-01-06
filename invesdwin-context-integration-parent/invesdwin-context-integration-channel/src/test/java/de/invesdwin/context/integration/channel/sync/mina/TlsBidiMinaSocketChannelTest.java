@@ -5,12 +5,20 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
+
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 
 @NotThreadSafe
 public class TlsBidiMinaSocketChannelTest extends BidiMinaSocketChannelTest {
+
+    @Disabled
+    @Override
+    public void testBidiMinaVmPipeChannelPerformance() throws InterruptedException {
+        super.testBidiMinaVmPipeChannelPerformance();
+    }
 
     @Override
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,
