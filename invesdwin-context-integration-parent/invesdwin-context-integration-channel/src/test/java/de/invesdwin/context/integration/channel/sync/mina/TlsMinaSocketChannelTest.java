@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 
-@Disabled
+@Disabled("not working")
 @NotThreadSafe
 public class TlsMinaSocketChannelTest extends MinaSocketChannelTest {
 
@@ -21,10 +21,11 @@ public class TlsMinaSocketChannelTest extends MinaSocketChannelTest {
 
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-                return new DerivedKeyTransportLayerSecurityProvider(socketAddress, server) {
+                final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+                return new DerivedKeyTransportLayerSecurityProvider(inetSocketAddress, server) {
                     @Override
                     protected String getHostname() {
-                        return socketAddress.getHostName();
+                        return inetSocketAddress.getHostName();
                     }
                 };
             }

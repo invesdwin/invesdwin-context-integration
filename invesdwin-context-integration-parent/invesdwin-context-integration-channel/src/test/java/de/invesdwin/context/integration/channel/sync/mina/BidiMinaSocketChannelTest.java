@@ -1,9 +1,11 @@
 package de.invesdwin.context.integration.channel.sync.mina;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -26,7 +28,14 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
         runBidiMinaSocketChannelPerformanceTest(MinaSocketType.NioTcp, address);
     }
 
-    private void runBidiMinaSocketChannelPerformanceTest(final IMinaSocketType type, final InetSocketAddress address)
+    @Test
+    public void testBidiMinaVmPipeChannelPerformance() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final VmPipeAddress address = new VmPipeAddress(port);
+        runBidiMinaSocketChannelPerformanceTest(MinaSocketType.VmPipe, address);
+    }
+
+    private void runBidiMinaSocketChannelPerformanceTest(final IMinaSocketType type, final SocketAddress address)
             throws InterruptedException {
         final MinaSocketSynchronousChannel serverChannel = newMinaSocketChannel(type, address, true,
                 getMaxMessageSize());
@@ -45,7 +54,7 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
     }
 
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
         return new MinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 

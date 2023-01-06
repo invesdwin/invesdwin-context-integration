@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
-import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.NettyDerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.TlsMinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
@@ -19,10 +19,11 @@ public class TlsMinaSocketHandlerTest extends MinaSocketHandlerTest {
         return new TlsMinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize) {
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-                return new NettyDerivedKeyTransportLayerSecurityProvider(socketAddress, server) {
+                final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+                return new DerivedKeyTransportLayerSecurityProvider(inetSocketAddress, server) {
                     @Override
                     protected String getHostname() {
-                        return socketAddress.getHostName();
+                        return inetSocketAddress.getHostName();
                     }
                 };
             }

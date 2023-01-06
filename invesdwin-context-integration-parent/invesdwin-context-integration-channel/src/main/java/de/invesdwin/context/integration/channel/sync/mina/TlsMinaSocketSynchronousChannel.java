@@ -22,6 +22,11 @@ public class TlsMinaSocketSynchronousChannel extends MinaSocketSynchronousChanne
     }
 
     @Override
+    public InetSocketAddress getSocketAddress() {
+        return (InetSocketAddress) super.getSocketAddress();
+    }
+
+    @Override
     protected void onSession(final IoSession session) {
         final ITransportLayerSecurityProvider tlsProvider = newTransportLayerSecurityProvider();
         final SSLContext context = tlsProvider.newContext();
@@ -35,7 +40,13 @@ public class TlsMinaSocketSynchronousChannel extends MinaSocketSynchronousChanne
     }
 
     protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-        return new DerivedKeyTransportLayerSecurityProvider(socketAddress, server);
+        final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+        return new DerivedKeyTransportLayerSecurityProvider(inetSocketAddress, server) {
+            @Override
+            protected String getHostname() {
+                return inetSocketAddress.getHostName();
+            }
+        };
     }
 
 }

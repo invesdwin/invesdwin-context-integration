@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.mina;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -13,15 +14,15 @@ public class TlsBidiMinaSocketChannelTest extends BidiMinaSocketChannelTest {
 
     @Override
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new TlsMinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize) {
-
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+        return new TlsMinaSocketSynchronousChannel(type, inetSocketAddress, server, estimatedMaxMessageSize) {
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-                return new DerivedKeyTransportLayerSecurityProvider(socketAddress, server) {
+                return new DerivedKeyTransportLayerSecurityProvider(inetSocketAddress, server) {
                     @Override
                     protected String getHostname() {
-                        return socketAddress.getHostName();
+                        return inetSocketAddress.getHostName();
                     }
                 };
             }
