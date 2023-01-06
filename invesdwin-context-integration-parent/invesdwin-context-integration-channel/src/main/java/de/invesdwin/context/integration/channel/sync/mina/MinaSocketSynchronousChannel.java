@@ -194,6 +194,12 @@ public class MinaSocketSynchronousChannel implements Closeable {
      */
     protected void onSession(final IoSession session) {
         triggerSessionListeners(session);
+        if (!isWriterRegistered()) {
+            session.suspendWrite();
+        }
+        if (!isReaderRegistered()) {
+            session.suspendRead();
+        }
     }
 
     private void triggerSessionListeners(final IoSession channel) {
