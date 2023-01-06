@@ -150,20 +150,21 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 }
                 final long startNanos = System.nanoTime();
                 while (finalizer.session == null) {
+                    if (Threads.isInterrupted()
+                            || getConnectTimeout().isLessThanNanos(System.nanoTime() - startNanos)) {
+                        throw new RuntimeException("timeout exceeded");
+                    }
                     try {
                         getMaxConnectRetryDelay().sleepRandom();
                     } catch (final InterruptedException e) {
                         throw new RuntimeException(e);
-                    }
-                    if (Threads.isInterrupted()
-                            || getConnectTimeout().isGreaterThanNanos(System.nanoTime() - startNanos)) {
-                        throw new RuntimeException("timeout exceeded");
                     }
                 }
             });
         } else {
             awaitSession(() -> {
                 final IoConnector connector = type.newConnector();
+                connector.setHandler(new IoHandlerAdapter());
                 final ConnectFuture future = connector.connect(socketAddress);
                 try {
                     future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);

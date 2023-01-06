@@ -87,6 +87,7 @@
 		<version.barchart-udt>2.3.0</version.barchart-udt>
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
 		<version.mina>2.2.1</version.mina>
+		<version.tomcat-jni>10.0.27</version.tomcat-jni>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -673,6 +674,11 @@
 				<groupId>org.apache.mina</groupId>
 				<artifactId>mina-transport-apr</artifactId>
 				<version>${version.mina}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat</groupId>
+				<artifactId>tomcat-jni</artifactId>
+				<version>${version.tomcat-jni}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

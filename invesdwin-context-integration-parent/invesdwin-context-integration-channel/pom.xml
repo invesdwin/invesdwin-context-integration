@@ -129,5 +129,10 @@
 			<artifactId>mina-transport-apr</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.apache.tomcat</groupId>
+			<artifactId>tomcat-jni</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>
