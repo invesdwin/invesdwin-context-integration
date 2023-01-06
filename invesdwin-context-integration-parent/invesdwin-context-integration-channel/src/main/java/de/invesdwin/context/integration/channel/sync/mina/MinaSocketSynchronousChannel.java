@@ -127,7 +127,9 @@ public class MinaSocketSynchronousChannel implements Closeable {
                             onSession(session);
                             finalizer.session = session;
                             //only allow one client
-                            acceptor.unbind();
+                            if (type.isUnbindAcceptor()) {
+                                acceptor.unbind();
+                            }
                         } else {
                             //only allow one client
                             session.closeNow();

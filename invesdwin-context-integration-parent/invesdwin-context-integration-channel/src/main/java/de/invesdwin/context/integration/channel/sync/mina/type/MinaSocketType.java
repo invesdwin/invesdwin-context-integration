@@ -25,6 +25,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public IoConnector newConnector() {
             return new VmPipeConnector();
         }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return false;
+        }
     },
     NioTcp {
         @Override
@@ -36,6 +41,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public IoConnector newConnector() {
             return new NioSocketConnector();
         }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return true;
+        }
     },
     NioUdp {
         @Override
@@ -46,6 +56,11 @@ public enum MinaSocketType implements IMinaSocketType {
         @Override
         public IoConnector newConnector() {
             return new NioDatagramConnector();
+        }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return false;
         }
 
     },
@@ -62,6 +77,11 @@ public enum MinaSocketType implements IMinaSocketType {
         @Override
         public IoConnector newConnector() {
             return new AprSocketConnector();
+        }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return false;
         }
     },
 }

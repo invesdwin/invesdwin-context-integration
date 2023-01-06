@@ -29,6 +29,13 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
     }
 
     @Test
+    public void testBidiMinaDatagramChannelPerformance() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runBidiMinaSocketChannelPerformanceTest(MinaSocketType.NioUdp, address);
+    }
+
+    @Test
     public void testBidiMinaVmPipeChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final VmPipeAddress address = new VmPipeAddress(port);

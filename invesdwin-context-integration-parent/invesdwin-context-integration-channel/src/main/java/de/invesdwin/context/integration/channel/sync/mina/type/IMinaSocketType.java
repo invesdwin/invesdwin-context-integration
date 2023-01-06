@@ -9,4 +9,6 @@ public interface IMinaSocketType {
 
     IoConnector newConnector();
 
+    boolean isUnbindAcceptor();
+
 }
