@@ -264,7 +264,8 @@ public class DerivedKeyTransportLayerSecurityProvider implements ITransportLayer
         return DEFAULT_SIGNATURE_ALGORITHM;
     }
 
-    protected ClientAuth getClientAuth() {
+    @Override
+    public ClientAuth getClientAuth() {
         return DEFAULT_CLIENT_AUTH;
     }
 

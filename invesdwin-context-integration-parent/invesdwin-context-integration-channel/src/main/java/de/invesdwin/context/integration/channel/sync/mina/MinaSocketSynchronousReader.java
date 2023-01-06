@@ -27,7 +27,6 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
     public MinaSocketSynchronousReader(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        this.channel.setKeepBootstrapRunningAfterOpen();
     }
 
     @Override

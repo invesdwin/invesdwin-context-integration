@@ -7,6 +7,7 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLServerSocket;
 import javax.net.ssl.SSLSocket;
 
+import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ClientAuth;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 
 public interface ITransportLayerSecurityProvider {
@@ -46,5 +47,7 @@ public interface ITransportLayerSecurityProvider {
      * This is similar to key confirmation in: https://en.wikipedia.org/wiki/SPEKE
      */
     HandshakeValidation getHandshakeValidation();
+
+    ClientAuth getClientAuth();
 
 }

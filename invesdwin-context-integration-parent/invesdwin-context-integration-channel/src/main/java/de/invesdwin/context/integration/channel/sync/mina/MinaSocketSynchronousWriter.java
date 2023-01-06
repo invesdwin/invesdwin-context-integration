@@ -63,8 +63,7 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
         buf.position(0); //reset indexes
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
-        buf.position(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-        buf.flip();
+        buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
         channel.getIoSession().write(buf);
     }
 

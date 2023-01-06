@@ -47,7 +47,6 @@ public class MinaSocketSynchronousChannel implements Closeable {
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
-    private volatile boolean keepBootstrapRunningAfterOpen;
 
     private final IBufferingIterator<Consumer<IoSession>> sessionListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
@@ -87,14 +86,6 @@ public class MinaSocketSynchronousChannel implements Closeable {
             throw new IllegalStateException("writer already registered");
         }
         this.writerRegistered = true;
-    }
-
-    public void setKeepBootstrapRunningAfterOpen() {
-        this.keepBootstrapRunningAfterOpen = true;
-    }
-
-    public boolean isKeepBootstrapRunningAfterOpen() {
-        return keepBootstrapRunningAfterOpen;
     }
 
     public IMinaSocketType getType() {

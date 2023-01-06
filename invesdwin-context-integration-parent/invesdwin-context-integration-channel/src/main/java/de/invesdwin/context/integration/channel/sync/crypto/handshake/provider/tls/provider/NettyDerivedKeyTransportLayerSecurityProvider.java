@@ -270,7 +270,8 @@ public class NettyDerivedKeyTransportLayerSecurityProvider implements ITransport
         }
     }
 
-    protected ClientAuth getClientAuth() {
+    @Override
+    public ClientAuth getClientAuth() {
         return DerivedKeyTransportLayerSecurityProvider.DEFAULT_CLIENT_AUTH;
     }
 
