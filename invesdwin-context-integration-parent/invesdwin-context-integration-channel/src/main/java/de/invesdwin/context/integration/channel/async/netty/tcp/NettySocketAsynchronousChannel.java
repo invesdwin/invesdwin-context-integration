@@ -179,8 +179,10 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
+                    reset();
                     final IByteBufferProvider output = handler.handle(input);
                     writeOutput(ctx, output);
+                    return repeat;
                 } catch (final IOException e) {
                     try {
                         writeOutput(ctx, ClosedByteBuffer.INSTANCE);
@@ -191,11 +193,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                     return false;
                 }
             }
+        }
+
+        private void reset() {
             targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
             remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
-            return repeat;
         }
 
         private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferProvider output) throws IOException {

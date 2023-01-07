@@ -193,8 +193,10 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
+                    reset();
                     final IByteBufferProvider output = handler.handle(input);
                     writeOutput(session, output);
+                    return repeat;
                 } catch (final IOException e) {
                     try {
                         writeOutput(session, ClosedByteBuffer.INSTANCE);
@@ -205,11 +207,13 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                     return false;
                 }
             }
+        }
+
+        private void reset() {
             targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
             remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
-            return repeat;
         }
 
         private void writeOutput(final IoSession session, final IByteBufferProvider output) throws IOException {
