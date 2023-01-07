@@ -81,7 +81,7 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isUnbindAcceptor() {
-            return false;
+            return true;
         }
     },
 }

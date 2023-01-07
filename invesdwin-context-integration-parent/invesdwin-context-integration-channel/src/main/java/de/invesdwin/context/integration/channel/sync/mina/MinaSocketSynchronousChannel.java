@@ -20,6 +20,7 @@ import org.apache.mina.core.session.IoSession;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
+import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
@@ -27,6 +28,7 @@ import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -157,16 +159,31 @@ public class MinaSocketSynchronousChannel implements Closeable {
         } else {
             awaitSession(() -> {
                 final IoConnector connector = type.newConnector();
-                connector.setHandler(new IoHandlerAdapter());
+                if (type == MinaSocketType.AprTcp) {
+                    /*
+                     * sadly APR sends conection refused (-111) on the first read and there is no way to validate the
+                     * connection with mina as it seems, so we add a delay here instead for testing. Our own APR
+                     * channels will not have this problem.
+                     */
+                    try {
+                        FTimeUnit.MILLISECONDS.sleep(5);
+                    } catch (final InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                connector.setHandler(new IoHandlerAdapter() {
+                    @Override
+                    public void sessionOpened(final IoSession session) throws Exception {
+                        onSession(session);
+                        finalizer.session = session;
+                    }
+                });
                 final ConnectFuture future = connector.connect(socketAddress);
                 try {
                     future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
                 }
-                final IoSession session = future.getSession();
-                onSession(session);
-                finalizer.session = session;
             });
         }
     }
