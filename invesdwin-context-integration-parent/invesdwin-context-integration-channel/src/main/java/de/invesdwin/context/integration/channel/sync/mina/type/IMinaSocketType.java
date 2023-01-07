@@ -11,4 +11,6 @@ public interface IMinaSocketType {
 
     boolean isUnbindAcceptor();
 
+    boolean isValidateConnect();
+
 }

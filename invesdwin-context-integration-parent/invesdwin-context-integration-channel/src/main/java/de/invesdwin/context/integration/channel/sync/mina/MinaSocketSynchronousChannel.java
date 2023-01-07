@@ -7,12 +7,15 @@ import java.net.SocketAddress;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.apache.mina.core.filterchain.IoFilterChain.Entry;
 import org.apache.mina.core.future.ConnectFuture;
+import org.apache.mina.core.future.ReadFuture;
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.service.IoHandlerAdapter;
@@ -20,15 +23,14 @@ import org.apache.mina.core.session.IoSession;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
-import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -157,21 +159,18 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 }
             });
         } else {
+            final AtomicBoolean validatingConnect = new AtomicBoolean();
             awaitSession(() -> {
                 final IoConnector connector = type.newConnector();
-                if (type == MinaSocketType.AprTcp) {
-                    /*
-                     * sadly APR sends conection refused (-111) on the first read and there is no way to validate the
-                     * connection with mina as it seems, so we add a delay here instead for testing. Our own APR
-                     * channels will not have this problem.
-                     */
-                    try {
-                        FTimeUnit.MILLISECONDS.sleep(5);
-                    } catch (final InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
                 connector.setHandler(new IoHandlerAdapter() {
+
+                    @Override
+                    public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
+                        if (!validatingConnect.get()) {
+                            super.exceptionCaught(session, cause);
+                        }
+                    }
+
                     @Override
                     public void sessionOpened(final IoSession session) throws Exception {
                         onSession(session);
@@ -183,6 +182,25 @@ public class MinaSocketSynchronousChannel implements Closeable {
                     future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);
                 } catch (final InterruptedException e) {
                     throw new RuntimeException(e);
+                }
+                Assertions.checkSame(finalizer.session, future.getSession());
+                if (type.isValidateConnect()) {
+                    validatingConnect.set(true);
+                    finalizer.session.getConfig().setUseReadOperation(true);
+                    try {
+                        final ReadFuture readFuture = finalizer.session.read();
+                        readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
+                        final Object message = readFuture.getMessage();
+                        if (message != null) {
+                            final Entry filter = connector.getFilterChain().getAll().get(0);
+                            filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
+                        }
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    } finally {
+                        finalizer.session.getConfig().setUseReadOperation(false);
+                        validatingConnect.set(false);
+                    }
                 }
             });
         }

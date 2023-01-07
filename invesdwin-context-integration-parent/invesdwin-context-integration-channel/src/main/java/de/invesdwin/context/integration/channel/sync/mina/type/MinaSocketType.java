@@ -30,6 +30,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public boolean isUnbindAcceptor() {
             return false;
         }
+
+        @Override
+        public boolean isValidateConnect() {
+            return false;
+        }
     },
     NioTcp {
         @Override
@@ -46,6 +51,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public boolean isUnbindAcceptor() {
             return true;
         }
+
+        @Override
+        public boolean isValidateConnect() {
+            return false;
+        }
     },
     NioUdp {
         @Override
@@ -60,6 +70,11 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isUnbindAcceptor() {
+            return false;
+        }
+
+        @Override
+        public boolean isValidateConnect() {
             return false;
         }
 
@@ -81,6 +96,11 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isUnbindAcceptor() {
+            return true;
+        }
+
+        @Override
+        public boolean isValidateConnect() {
             return true;
         }
     },
