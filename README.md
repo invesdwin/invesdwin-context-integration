@@ -173,6 +173,7 @@ Network    AsyncNettySocketEpoll (loopback)       Records:    136.53/ms    => ~2
 Network    BidiBlockingSocket (loopback)          Records:    138.33/ms    => ~30% faster
 Network    NettyDatagramEpoll (loopback)          Records:    142.09/ms    => ~33% faster (unreliable)
 Network    AsyncNettyDatagramEpoll (loopback)     Records:    144.79/ms    => ~36% faster (unreliable; using async handlers for servers)
+Network    BidiNativeMinaSocketApr (loopback)     Records:    169.55/ms    => ~59% faster
 Network*   AeronUDP (loopback)                    Records:    192.37/ms    => ~80% faster (reliable and supports multicast)
 Network    BidiChronicleNetwork (loopback)        Records:    192.52/ms    => ~81% faster (using UnsafeFastJ8SocketChannel)
 Network*   BidiNativeSocketChannel (loopback)     Records:    194.84/ms    => ~83% faster
