@@ -35,7 +35,7 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
         channel.open(channel -> {
             final IoFilterChain pipeline = channel.getFilterChain();
             pipeline.addLast("reader", reader);
-        });
+        }, false);
     }
 
     @Override

@@ -30,7 +30,7 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void open() throws IOException {
         //netty uses direct buffer per default
         this.buf = new SimpleBufferAllocator().allocate(channel.getSocketSize(), true);
-        channel.open(null);
+        channel.open(null, false);
         this.buffer = new UnsafeByteBuffer(buf.buf());
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MinaSocketSynchronousChannel.MESSAGE_INDEX);
     }

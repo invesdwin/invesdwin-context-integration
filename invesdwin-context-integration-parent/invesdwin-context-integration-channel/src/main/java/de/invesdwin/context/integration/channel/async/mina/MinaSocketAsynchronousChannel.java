@@ -49,7 +49,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                     throw new RuntimeException(e);
                 }
             }
-        });
+        }, false);
     }
 
     @Override

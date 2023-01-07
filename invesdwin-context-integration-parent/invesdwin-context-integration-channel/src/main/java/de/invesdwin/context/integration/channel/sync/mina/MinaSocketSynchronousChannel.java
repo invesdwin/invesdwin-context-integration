@@ -20,9 +20,14 @@ import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.transport.socket.apr.AprSession;
+import org.apache.mina.transport.socket.apr.AprSessionAccessor;
+import org.apache.tomcat.jni.Socket;
+import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
+import de.invesdwin.context.integration.channel.sync.mina.unsafe.MinaNativeSocketSynchronousWriter;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
@@ -114,7 +119,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    public void open(final Consumer<IoSession> sessionListener) throws IOException {
+    public void open(final Consumer<IoSession> sessionListener, final boolean validateNative) throws IOException {
         if (!shouldOpen(sessionListener)) {
             awaitIoSession();
             return;
@@ -188,12 +193,23 @@ public class MinaSocketSynchronousChannel implements Closeable {
                     validatingConnect.set(true);
                     finalizer.session.getConfig().setUseReadOperation(true);
                     try {
-                        final ReadFuture readFuture = finalizer.session.read();
-                        readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
-                        final Object message = readFuture.getMessage();
-                        if (message != null) {
-                            final Entry filter = connector.getFilterChain().getAll().get(0);
-                            filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
+                        if (validateNative) {
+                            final AprSession session = (AprSession) finalizer.session;
+                            final long fd = AprSessionAccessor.getDescriptor(session);
+                            //validate connection
+                            final int count = Socket.recv(fd, new byte[0], 0, 1);
+                            if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count)
+                                    && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
+                                throw new RuntimeException(MinaNativeSocketSynchronousWriter.newException(count));
+                            }
+                        } else {
+                            final ReadFuture readFuture = finalizer.session.read();
+                            readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
+                            final Object message = readFuture.getMessage();
+                            if (message != null) {
+                                final Entry filter = connector.getFilterChain().getAll().get(0);
+                                filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
+                            }
                         }
                     } catch (final Exception e) {
                         throw new RuntimeException(e);
