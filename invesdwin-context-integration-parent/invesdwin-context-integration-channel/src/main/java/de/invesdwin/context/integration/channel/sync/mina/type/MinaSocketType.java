@@ -1,11 +1,14 @@
 package de.invesdwin.context.integration.channel.sync.mina.type;
 
+import java.util.concurrent.Executor;
+
 import javax.annotation.concurrent.Immutable;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.transport.socket.apr.AprSocketAcceptor;
 import org.apache.mina.transport.socket.apr.AprSocketConnector;
+import org.apache.mina.transport.socket.apr.FixedAprIoProcessor;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
 import org.apache.mina.transport.socket.nio.NioDatagramConnector;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
@@ -86,12 +89,20 @@ public enum MinaSocketType implements IMinaSocketType {
     AprTcp {
         @Override
         public IoAcceptor newAcceptor() {
-            return new AprSocketAcceptor();
+            return new AprSocketAcceptor(new FixedAprIoProcessor(newDefaultExecutor()));
         }
 
         @Override
         public IoConnector newConnector() {
-            return new AprSocketConnector();
+            return new AprSocketConnector(new FixedAprIoProcessor(newDefaultExecutor()));
+        }
+
+        private Executor newDefaultExecutor() {
+            final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
+            // Set a default reject handler
+            ((java.util.concurrent.ThreadPoolExecutor) executor)
+                    .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+            return executor;
         }
 
         @Override

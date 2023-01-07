@@ -71,7 +71,7 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
         //noop
     }
 
-    private static final class Reader extends IoFilterAdapter implements Closeable {
+    private final class Reader extends IoFilterAdapter implements Closeable {
         private final IoBuffer buf;
         private final UnsafeByteBuffer buffer;
         private int targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
