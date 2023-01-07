@@ -36,6 +36,7 @@ import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -197,7 +198,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                             final AprSession session = (AprSession) finalizer.session;
                             final long fd = AprSessionAccessor.getDescriptor(session);
                             //validate connection
-                            final int count = Socket.recv(fd, new byte[0], 0, 1);
+                            final int count = Socket.recv(fd, Bytes.EMPTY_ARRAY, 0, 1);
                             if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count)
                                     && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
                                 throw new RuntimeException(MinaNativeSocketSynchronousWriter.newException(count));
