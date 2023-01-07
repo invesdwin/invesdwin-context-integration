@@ -664,6 +664,12 @@
 				<groupId>com.github.mucaho</groupId>
 				<artifactId>jnetrobust-samples</artifactId>
 				<version>${version.jnetrobust}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>com.esotericsoftware</groupId>
+						<artifactId>minlog</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.mina</groupId>
@@ -674,6 +680,12 @@
 				<groupId>org.apache.mina</groupId>
 				<artifactId>mina-transport-apr</artifactId>
 				<version>${version.mina}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.apache.mina</groupId>
+						<artifactId>mina-core</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.apache.tomcat</groupId>
