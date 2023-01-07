@@ -19,7 +19,7 @@ import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class MinaNativeSocketChannelTest extends AChannelTest {
+public class BidiMinaNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testMinaSocketChannelPerformance() throws InterruptedException {

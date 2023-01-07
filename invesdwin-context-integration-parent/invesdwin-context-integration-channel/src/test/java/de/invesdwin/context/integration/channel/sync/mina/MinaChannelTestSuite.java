@@ -7,11 +7,12 @@ import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.channel.async.mina.MinaSocketHandlerTest;
 import de.invesdwin.context.integration.channel.async.mina.TlsMinaSocketHandlerTest;
+import de.invesdwin.context.integration.channel.sync.mina.unsafe.BidiMinaNativeSocketChannelTest;
 
 // CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ MinaSocketHandlerTest.class, MinaSocketChannelTest.class, BidiMinaSocketChannelTest.class,
-        TlsMinaSocketHandlerTest.class, TlsMinaSocketChannelTest.class, TlsBidiMinaSocketChannelTest.class })
+        TlsMinaSocketHandlerTest.class, TlsBidiMinaSocketChannelTest.class, BidiMinaNativeSocketChannelTest.class })
 @Immutable
 public class MinaChannelTestSuite {
     //CHECKSTYLE:ON
