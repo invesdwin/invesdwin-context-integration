@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.mina;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -14,14 +15,20 @@ import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 @NotThreadSafe
 public class TlsMinaSocketChannelTest extends MinaSocketChannelTest {
 
+    @Disabled
+    @Override
+    public void testMinaVmPipeChannelPerformance() throws InterruptedException {
+        super.testMinaVmPipeChannelPerformance();
+    }
+
     @Override
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new TlsMinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize) {
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
+        return new TlsMinaSocketSynchronousChannel(type, inetSocketAddress, server, estimatedMaxMessageSize) {
 
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
-                final InetSocketAddress inetSocketAddress = (InetSocketAddress) socketAddress;
                 return new DerivedKeyTransportLayerSecurityProvider(inetSocketAddress, server) {
                     @Override
                     protected String getHostname() {

@@ -1,9 +1,11 @@
 package de.invesdwin.context.integration.channel.sync.mina;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -27,9 +29,24 @@ public class MinaSocketChannelTest extends AChannelTest {
         runMinaSocketChannelPerformanceTest(MinaSocketType.NioTcp, responseAddress, requestAddress);
     }
 
-    private void runMinaSocketChannelPerformanceTest(final IMinaSocketType type,
-            final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
-            throws InterruptedException {
+    @Test
+    public void testMinaDatagramChannelPerformance() throws InterruptedException {
+        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
+        runMinaSocketChannelPerformanceTest(MinaSocketType.NioUdp, responseAddress, requestAddress);
+    }
+
+    @Test
+    public void testMinaVmPipeChannelPerformance() throws InterruptedException {
+        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final VmPipeAddress responseAddress = new VmPipeAddress(ports[0]);
+        final VmPipeAddress requestAddress = new VmPipeAddress(ports[1]);
+        runMinaSocketChannelPerformanceTest(MinaSocketType.VmPipe, responseAddress, requestAddress);
+    }
+
+    private void runMinaSocketChannelPerformanceTest(final IMinaSocketType type, final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new MinaSocketSynchronousWriter(
                 newMinaSocketChannel(type, responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new MinaSocketSynchronousReader(
@@ -46,7 +63,7 @@ public class MinaSocketChannelTest extends AChannelTest {
     }
 
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
         return new MinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
