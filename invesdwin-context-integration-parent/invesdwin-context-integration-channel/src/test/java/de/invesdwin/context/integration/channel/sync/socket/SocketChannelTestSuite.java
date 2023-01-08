@@ -5,6 +5,10 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+import de.invesdwin.context.integration.channel.sync.socket.domain.BidiUnixDomainSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.domain.UnixDomainSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.domain.unsafe.BidiNativeUnixDomainSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.domain.unsafe.NativeUnixDomainSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketTlsHandshakeProviderTest;
@@ -46,7 +50,9 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
         DatagramDtlsHandshakeProviderTest.class, NativeDatagramDtlsHandshakeProviderTest.class,
         StreamEncryptionNativeSocketChannelTest.class, StreamVerifiedEncryptionNativeSocketChannelTest.class,
         UdtChannelTest.class, BidiUdtChannelTest.class, BidiUdtTlsHandshakeProviderTest.class,
-        BidiUdtDtlsHandshakeProviderTest.class })
+        BidiUdtDtlsHandshakeProviderTest.class, UnixDomainSocketChannelTest.class,
+        BidiUnixDomainSocketChannelTest.class, NativeUnixDomainSocketChannelTest.class,
+        BidiNativeUnixDomainSocketChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
     //CHECKSTYLE:ON
