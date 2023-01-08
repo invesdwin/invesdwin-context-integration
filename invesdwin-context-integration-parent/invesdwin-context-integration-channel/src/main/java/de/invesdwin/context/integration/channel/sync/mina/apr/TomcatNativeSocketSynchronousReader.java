@@ -1,23 +1,17 @@
-package de.invesdwin.context.integration.channel.sync.mina.unsafe;
+package de.invesdwin.context.integration.channel.sync.mina.apr;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.mina.transport.socket.apr.AprSession;
-import org.apache.mina.transport.socket.apr.AprSessionAccessor;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.mina.apr.TomcatNativeSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -26,32 +20,23 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+public class TomcatNativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private MinaSocketSynchronousChannel channel;
+    private TomcatNativeSocketSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private long fd;
     private int position = 0;
 
-    public MinaNativeSocketSynchronousReader(final MinaSocketSynchronousChannel channel) {
+    public TomcatNativeSocketSynchronousReader(final TomcatNativeSocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        if (channel.getType() != MinaSocketType.AprTcp) {
-            throw UnknownArgumentException.newInstance(IMinaSocketType.class, channel.getType());
-        }
     }
 
     @Override
     public void open() throws IOException {
-        channel.open(ch -> {
-            //make sure Mina does not process any bytes
-            ch.suspendWrite();
-            ch.suspendRead();
-            //validate connection
-        }, true);
-        final AprSession session = (AprSession) channel.getIoSession();
-        fd = AprSessionAccessor.getDescriptor(session);
+        channel.open();
+        fd = channel.getFileDescriptor();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
