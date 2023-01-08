@@ -312,6 +312,31 @@ public class TomcatNativeSocketSynchronousChannel implements Closeable {
                     }
                 }
 
+                final InetSocketAddress ra = socketAddress;
+                final long sa;
+                if (ra != null) {
+                    if (ra.getAddress() == null) {
+                        sa = Address.info(Address.APR_ANYADDR, Socket.APR_INET, ra.getPort(), 0, finalizer.pool);
+                    } else {
+                        sa = Address.info(ra.getAddress().getHostAddress(), Socket.APR_INET, ra.getPort(), 0,
+                                finalizer.pool);
+                    }
+                } else {
+                    sa = Address.info(Address.APR_ANYADDR, Socket.APR_INET, 0, 0, finalizer.pool);
+                }
+
+                //                final int rv = Socket.connect(handle, sa);
+                //                if (rv == Status.APR_SUCCESS) {
+                //                    return true;
+                //                }
+                //
+                //                if (Status.APR_STATUS_IS_EINPROGRESS(rv)) {
+                //                    return false;
+                //                }
+                //
+                //                throwException(rv);
+                //                throw new InternalError(); // This sentence will never be executed.
+
                 success = true;
                 finalizer.fd = handle;
             } finally {
