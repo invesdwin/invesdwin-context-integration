@@ -9,6 +9,10 @@ import de.invesdwin.context.integration.channel.sync.socket.domain.BidiUnixDomai
 import de.invesdwin.context.integration.channel.sync.socket.domain.UnixDomainSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.domain.unsafe.BidiNativeUnixDomainSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.domain.unsafe.NativeUnixDomainSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.sctp.BidiSctpChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.sctp.unsafe.BidiNativeSctpChannelTest;
+import de.invesdwin.context.integration.channel.sync.socket.sctp.unsafe.NativeSctpChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.BidiSocketTlsHandshakeProviderTest;
@@ -52,7 +56,8 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
         UdtChannelTest.class, BidiUdtChannelTest.class, BidiUdtTlsHandshakeProviderTest.class,
         BidiUdtDtlsHandshakeProviderTest.class, UnixDomainSocketChannelTest.class,
         BidiUnixDomainSocketChannelTest.class, NativeUnixDomainSocketChannelTest.class,
-        BidiNativeUnixDomainSocketChannelTest.class })
+        BidiNativeUnixDomainSocketChannelTest.class, SctpChannelTest.class, BidiSctpChannelTest.class,
+        NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
     //CHECKSTYLE:ON

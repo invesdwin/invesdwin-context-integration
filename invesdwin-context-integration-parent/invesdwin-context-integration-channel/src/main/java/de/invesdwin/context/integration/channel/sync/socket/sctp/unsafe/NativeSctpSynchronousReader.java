@@ -2,6 +2,9 @@ package de.invesdwin.context.integration.channel.sync.socket.sctp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -17,11 +20,29 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+
+    private static final MethodHandle SCTPCHANNELIMPL_RECEIVE0_METHOD;
+    private static final MethodHandle RESULTCONTAINER_CLEAR_METHOD;
+
+    static {
+        try {
+            //static native int receive0(int fd, ResultContainer resultContainer, long address, int length, boolean peek) throws IOException;
+            final Class<?> sctpChannelImpl = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
+            final Method receive0 = Jvm.getMethod(sctpChannelImpl, "receive0", int.class,
+                    sun.nio.ch.sctp.ResultContainer.class, long.class, int.class, boolean.class);
+            SCTPCHANNELIMPL_RECEIVE0_METHOD = MethodHandles.lookup().unreflect(receive0);
+
+            final Class<?> resultContainer = Class.forName("sun.nio.ch.sctp.ResultContainer");
+            final Method clear = Jvm.getMethod(resultContainer, "clear");
+            RESULTCONTAINER_CLEAR_METHOD = MethodHandles.lookup().unreflect(clear);
+        } catch (final ClassNotFoundException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private SctpSynchronousChannel channel;
     private final int socketSize;
@@ -29,6 +50,8 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
     private FileDescriptor fd;
     private int position = 0;
     private int bufferOffset = 0;
+    private int fdVal;
+    private sun.nio.ch.sctp.ResultContainer resultContainer;
 
     public NativeSctpSynchronousReader(final SctpSynchronousChannel channel) {
         this.channel = channel;
@@ -40,6 +63,8 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
     public void open() throws IOException {
         channel.open();
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
+        fdVal = Jvm.getValue(fd, "fd");
+        resultContainer = new sun.nio.ch.sctp.ResultContainer();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         position = 0;
@@ -50,6 +75,8 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         if (buffer != null) {
             buffer = null;
             fd = null;
+            fdVal = 0;
+            resultContainer = null;
         }
         if (channel != null) {
             channel.close();
@@ -62,7 +89,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         if (position > 0) {
             return true;
         }
-        final int count = read0(fd, buffer.addressOffset(), position, buffer.remaining(position));
+        final int count = receive(fdVal, buffer.addressOffset(), position, buffer.remaining(position));
         if (count < 0) {
             throw FastEOFException.getInstance("socket closed");
         }
@@ -80,7 +107,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         int targetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
         //read size
         while (position < targetPosition) {
-            final int count = read0(fd, buffer.addressOffset(), position, targetPosition - position);
+            final int count = receive(fdVal, buffer.addressOffset(), position, targetPosition - position);
             if (count < 0) { // EOF
                 close();
                 throw ByteBuffers.newEOF();
@@ -109,7 +136,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         if (remaining > 0) {
             buffer.ensureCapacity(targetPosition);
             while (position < targetPosition) {
-                final int count = read0(fd, buffer.addressOffset(), position, remaining);
+                final int count = receive(fdVal, buffer.addressOffset(), position, remaining);
                 if (count < 0) { // EOF
                     close();
                     throw ByteBuffers.newEOF();
@@ -155,13 +182,25 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         //noop
     }
 
-    public static int read0(final FileDescriptor src, final long address, final int position, final int length)
-            throws IOException {
-        final int res = OS.read0(src, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
-            return 0;
-        } else {
-            return IOTools.normaliseIOStatus(res);
+    private int receive(final int fd, final long address, final int position, final int length) throws IOException {
+        return receive0(fd, resultContainer, address + position, length, false);
+    }
+
+    public static int receive0(final int fd, final sun.nio.ch.sctp.ResultContainer resultContainer, final long address,
+            final int length, final boolean peek) throws IOException {
+        try {
+            RESULTCONTAINER_CLEAR_METHOD.invoke(resultContainer);
+            final int res = (int) SCTPCHANNELIMPL_RECEIVE0_METHOD.invokeExact(fd, resultContainer, address, length,
+                    peek);
+            if (res == IOTools.IOSTATUS_INTERRUPTED) {
+                return 0;
+            } else {
+                return IOTools.normaliseIOStatus(res);
+            }
+        } catch (final IOException ioe) {
+            throw ioe;
+        } catch (final Throwable e) {
+            throw new IOException(e);
         }
     }
 

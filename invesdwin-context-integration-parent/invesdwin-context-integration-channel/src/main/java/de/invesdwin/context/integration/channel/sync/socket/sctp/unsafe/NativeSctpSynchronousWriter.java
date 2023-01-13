@@ -2,6 +2,10 @@ package de.invesdwin.context.integration.channel.sync.socket.sctp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
+import java.net.InetAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -18,16 +22,30 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
+    private static final MethodHandle SCTPCHANNELIMPL_SEND0_METHOD;
+
+    static {
+        try {
+            //static native int send0(int fd, long address, int length, InetAddress addr, int port, int assocId, int streamNumber, boolean unordered, int ppid) throws IOException;
+            final Class<?> fdi = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
+            final Method send0 = Jvm.getMethod(fdi, "send0", int.class, long.class, int.class, InetAddress.class,
+                    int.class, int.class, int.class, boolean.class, int.class);
+            SCTPCHANNELIMPL_SEND0_METHOD = MethodHandles.lookup().unreflect(send0);
+        } catch (final ClassNotFoundException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private SctpSynchronousChannel channel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
+    private int fdVal;
 
     public NativeSctpSynchronousWriter(final SctpSynchronousChannel channel) {
         this.channel = channel;
@@ -38,6 +56,7 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void open() throws IOException {
         channel.open();
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
+        fdVal = Jvm.getValue(fd, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);
@@ -52,6 +71,7 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
                 //ignore
             }
             fd = null;
+            fdVal = 0;
             buffer = null;
             messageBuffer = null;
         }
@@ -66,13 +86,13 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            writeFully(fdVal, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
-    public static void writeFully(final FileDescriptor dst, final long address, final int pos, final int length)
+    public static void writeFully(final int dst, final long address, final int pos, final int length)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
@@ -80,7 +100,7 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         int position = pos;
         int remaining = length - pos;
         while (remaining > 0) {
-            final int count = write0(dst, address, position, remaining);
+            final int count = send0(dst, address + position, remaining, null, 0, -1, 0, false, 0);
             if (count < 0) { // EOF
                 break;
             }
@@ -102,13 +122,20 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
     }
 
-    public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
-            throws IOException {
-        final int res = OS.write0(dst, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
-            return 0;
-        } else {
-            return IOTools.normaliseIOStatus(res);
+    public static int send0(final int fd, final long address, final int length, final InetAddress addr, final int port,
+            final int assocId, final int streamNumber, final boolean unordered, final int ppid) throws IOException {
+        try {
+            final int res = (int) SCTPCHANNELIMPL_SEND0_METHOD.invokeExact(fd, address, length, addr, port, assocId,
+                    streamNumber, unordered, ppid);
+            if (res == IOTools.IOSTATUS_INTERRUPTED) {
+                return 0;
+            } else {
+                return IOTools.normaliseIOStatus(res);
+            }
+        } catch (final IOException ioe) {
+            throw ioe;
+        } catch (final Throwable e) {
+            throw new IOException(e);
         }
     }
 

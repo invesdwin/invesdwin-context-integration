@@ -59,7 +59,10 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         if (messageBuffer.position() > 0) {
             return true;
         }
-        final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, SctpAssociationHandler.INSTANCE);
+        final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, null);
+        if (messageInfo == null) {
+            return false;
+        }
         final int count = messageInfo.bytes();
         return count > 0;
     }
@@ -72,7 +75,7 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         int targetPosition = bufferOffset + SctpSynchronousChannel.MESSAGE_INDEX;
         //read size
         while (messageBuffer.position() < targetPosition) {
-            final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, SctpAssociationHandler.INSTANCE);
+            final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, null);
             final int count = messageInfo.bytes();
             if (count < 0) { // EOF
                 close();
@@ -143,7 +146,7 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         int remaining = length - pos;
         try {
             while (remaining > 0) {
-                final MessageInfo messageInfo = src.receive(byteBuffer, null, SctpAssociationHandler.INSTANCE);
+                final MessageInfo messageInfo = src.receive(byteBuffer, null, null);
                 final int count = messageInfo.bytes();
                 if (count < 0) { // EOF
                     break;
