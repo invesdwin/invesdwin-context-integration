@@ -29,7 +29,7 @@ public class BidiMinaNativeSocketChannelTest extends AChannelTest {
         }
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runMinaSocketChannelPerformanceTest(MinaSocketType.AprTcp, address);
+        runMinaSocketChannelPerformanceTest(MinaSocketType.AprSctp, address);
     }
 
     private void runMinaSocketChannelPerformanceTest(final IMinaSocketType type, final InetSocketAddress address)

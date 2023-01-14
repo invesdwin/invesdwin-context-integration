@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -24,6 +25,7 @@ public class BidiTomcatNativeSocketChannelTest extends AChannelTest {
             //not supported on windows
             return;
         }
+        Throwables.setDebugStackTraceEnabled(true);
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runTomcatSocketChannelPerformanceTest(address);

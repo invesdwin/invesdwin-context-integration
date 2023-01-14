@@ -68,7 +68,7 @@ public class TomcatNativeSocketSynchronousReader implements ISynchronousReader<I
             if (Status.APR_STATUS_IS_EAGAIN(-count)) {
                 return false;
             }
-            throw FastEOFException.getInstance("closed by other side");
+            throw TomcatNativeSocketSynchronousChannel.newTomcatException(count);
         } else {
             return false;
         }

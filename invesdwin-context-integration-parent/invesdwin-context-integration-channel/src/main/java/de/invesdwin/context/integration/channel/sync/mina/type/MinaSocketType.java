@@ -6,6 +6,8 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.transport.socket.apr.AprSctpAcceptor;
+import org.apache.mina.transport.socket.apr.AprSctpConnector;
 import org.apache.mina.transport.socket.apr.AprSocketAcceptor;
 import org.apache.mina.transport.socket.apr.AprSocketConnector;
 import org.apache.mina.transport.socket.apr.FixedAprIoProcessor;
@@ -38,6 +40,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public boolean isValidateConnect() {
             return false;
         }
+
+        @Override
+        public boolean isNative() {
+            return false;
+        }
     },
     NioTcp {
         @Override
@@ -59,6 +66,11 @@ public enum MinaSocketType implements IMinaSocketType {
         public boolean isValidateConnect() {
             return false;
         }
+
+        @Override
+        public boolean isNative() {
+            return false;
+        }
     },
     NioUdp {
         @Override
@@ -78,6 +90,11 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isValidateConnect() {
+            return false;
+        }
+
+        @Override
+        public boolean isNative() {
             return false;
         }
 
@@ -112,6 +129,49 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isValidateConnect() {
+            return true;
+        }
+
+        @Override
+        public boolean isNative() {
+            return true;
+        }
+    },
+    /**
+     * No AprUdp right now: https://issues.apache.org/jira/browse/DIRMINA-484
+     * https://issues.apache.org/jira/browse/DIRMINA-438
+     */
+    AprSctp {
+        @Override
+        public IoAcceptor newAcceptor() {
+            return new AprSctpAcceptor(new FixedAprIoProcessor(newDefaultExecutor()));
+        }
+
+        @Override
+        public IoConnector newConnector() {
+            return new AprSctpConnector(new FixedAprIoProcessor(newDefaultExecutor()));
+        }
+
+        private Executor newDefaultExecutor() {
+            final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
+            // Set a default reject handler
+            ((java.util.concurrent.ThreadPoolExecutor) executor)
+                    .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+            return executor;
+        }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return true;
+        }
+
+        @Override
+        public boolean isValidateConnect() {
+            return true;
+        }
+
+        @Override
+        public boolean isNative() {
             return true;
         }
     },

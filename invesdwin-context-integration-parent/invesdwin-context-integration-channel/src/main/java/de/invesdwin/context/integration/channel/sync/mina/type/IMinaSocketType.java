@@ -13,4 +13,6 @@ public interface IMinaSocketType {
 
     boolean isValidateConnect();
 
+    boolean isNative();
+
 }
