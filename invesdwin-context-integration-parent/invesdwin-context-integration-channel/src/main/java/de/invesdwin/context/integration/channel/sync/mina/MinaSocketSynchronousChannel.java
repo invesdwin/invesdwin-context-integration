@@ -26,7 +26,6 @@ import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.mina.apr.TomcatNativeSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -201,7 +200,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                             final int count = Socket.recv(fd, Bytes.EMPTY_ARRAY, 0, 1);
                             if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count)
                                     && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
-                                throw new RuntimeException(TomcatNativeSocketSynchronousChannel.newTomcatException(count));
+                                throw new RuntimeException(newTomcatException(count));
                             }
                         } else {
                             final ReadFuture readFuture = finalizer.session.read();
@@ -438,6 +437,10 @@ public class MinaSocketSynchronousChannel implements Closeable {
             }
         }
 
+    }
+
+    public static IOException newTomcatException(final int code) {
+        return new IOException(org.apache.tomcat.jni.Error.strerror(-code) + " (code: " + code + ")");
     }
 
 }

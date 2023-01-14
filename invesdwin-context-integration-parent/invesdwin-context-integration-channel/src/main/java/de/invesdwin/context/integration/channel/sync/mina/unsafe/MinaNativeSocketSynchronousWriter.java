@@ -11,7 +11,6 @@ import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.mina.apr.TomcatNativeSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
@@ -98,7 +97,7 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
                 } else if (Status.APR_STATUS_IS_EOF(-count)) {
                     count = 0;
                 } else {
-                    throw TomcatNativeSocketSynchronousChannel.newTomcatException(count);
+                    throw MinaSocketSynchronousChannel.newTomcatException(count);
                 }
             }
             if (count == 0 && timeout != null) {

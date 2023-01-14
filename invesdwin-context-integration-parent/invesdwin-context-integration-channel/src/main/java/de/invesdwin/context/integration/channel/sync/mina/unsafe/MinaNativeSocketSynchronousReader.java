@@ -12,7 +12,6 @@ import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.mina.apr.TomcatNativeSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
@@ -105,7 +104,7 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
                         count = 0;
                     } else {
                         close();
-                        throw TomcatNativeSocketSynchronousChannel.newTomcatException(count);
+                        throw MinaSocketSynchronousChannel.newTomcatException(count);
                     }
                 }
                 if (count == 0 && timeout != null) {
@@ -169,7 +168,7 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
                 } else if (Status.APR_STATUS_IS_EAGAIN(-count)) {
                     count = 0;
                 } else {
-                    throw TomcatNativeSocketSynchronousChannel.newTomcatException(count);
+                    throw MinaSocketSynchronousChannel.newTomcatException(count);
                 }
             }
             if (count == 0 && timeout != null) {

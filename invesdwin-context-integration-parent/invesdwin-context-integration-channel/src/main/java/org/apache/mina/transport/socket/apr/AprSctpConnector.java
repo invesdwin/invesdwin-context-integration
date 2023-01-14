@@ -3,7 +3,6 @@ package org.apache.mina.transport.socket.apr;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -12,6 +11,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
+
+import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.mina.core.RuntimeIoException;
 import org.apache.mina.core.polling.AbstractPollingIoConnector;
@@ -34,6 +35,7 @@ import org.apache.tomcat.jni.Status;
  * 
  * @author <a href="http://mina.apache.org">Apache MINA Project</a>
  */
+@ThreadSafe
 public final class AprSctpConnector extends AbstractPollingIoConnector<AprSession, Long> implements SocketConnector {
 
     /**
@@ -62,7 +64,7 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
 
     private final Set<Long> failedHandles = new HashSet<Long>(POLLSET_SIZE);
 
-    private volatile ByteBuffer dummyBuffer;
+    private volatile java.nio.ByteBuffer dummyBuffer;
 
     /**
      * Create an {@link AprSctpConnector} with default configuration (multiple thread model).
@@ -166,7 +168,7 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
     @Override
     protected boolean connect(final Long handle, final SocketAddress remoteAddress) throws Exception {
         final InetSocketAddress ra = (InetSocketAddress) remoteAddress;
-        long sa;
+        final long sa;
         if (ra != null) {
             if (ra.getAddress() == null) {
                 sa = Address.info(Address.APR_ANYADDR, Socket.APR_INET, ra.getPort(), 0, pool);
@@ -244,7 +246,7 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
 
             if (localAddress != null) {
                 final InetSocketAddress la = (InetSocketAddress) localAddress;
-                long sa;
+                final long sa;
 
                 if (la.getAddress() == null) {
                     sa = Address.info(Address.APR_ANYADDR, Socket.APR_INET, la.getPort(), 0, pool);

@@ -9,6 +9,8 @@ import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import org.apache.mina.core.RuntimeIoException;
 import org.apache.mina.core.polling.AbstractPollingIoAcceptor;
 import org.apache.mina.core.service.IoAcceptor;
@@ -28,6 +30,7 @@ import org.apache.tomcat.jni.Status;
  *
  * @author <a href="http://mina.apache.org">Apache MINA Project</a>
  */
+@ThreadSafe
 public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession, Long> {
     /**
      * This constant is deduced from the APR code. It is used when the timeout has expired while doing a poll()
@@ -119,8 +122,10 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
     /**
      * {@inheritDoc}
      */
+    //CHECKSTYLE:OFF
     @Override
     protected Long open(final SocketAddress localAddress) throws Exception {
+        //CHECKSTYLE:ON
         final InetSocketAddress la = (InetSocketAddress) localAddress;
         final long handle = Socket.create(Socket.APR_INET, Socket.SOCK_STREAM, Socket.APR_PROTO_SCTP, pool);
 
@@ -146,7 +151,7 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
             }
 
             // and bind.
-            long sa;
+            final long sa;
             if (la != null) {
                 if (la.getAddress() == null) {
                     sa = Address.info(Address.APR_ANYADDR, Socket.APR_INET, la.getPort(), 0, pool);
