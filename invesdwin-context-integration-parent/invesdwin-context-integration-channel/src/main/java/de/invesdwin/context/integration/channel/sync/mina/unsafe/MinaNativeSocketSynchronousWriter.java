@@ -12,7 +12,6 @@ import org.apache.tomcat.jni.Status;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -35,7 +34,7 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
     public MinaNativeSocketSynchronousWriter(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setWriterRegistered();
-        if (!channel.getType().isNative() || channel.getType() == MinaSocketType.AprUdp) {
+        if (!channel.getType().isNative()) {
             throw UnknownArgumentException.newInstance(IMinaSocketType.class, channel.getType());
         }
     }
