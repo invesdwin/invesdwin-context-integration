@@ -434,9 +434,9 @@ public final class AprDatagramIoProcessor extends AbstractPollingIoProcessor<Apr
             writtenBytes = Socket.sendto(session.getDescriptor(), ra, 0, bytes, 0, length);
         } else {
             writtenBytes = Socket.sendto(session.getDescriptor(), ra, 0, buf.array(), buf.position(), length);
-        }
-        if (writtenBytes > 0) {
-            buf.skip(writtenBytes);
+            if (writtenBytes > 0) {
+                buf.skip(writtenBytes);
+            }
         }
 
         if (writtenBytes < 0) {
