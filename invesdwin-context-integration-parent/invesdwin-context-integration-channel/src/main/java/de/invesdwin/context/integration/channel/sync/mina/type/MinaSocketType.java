@@ -145,12 +145,12 @@ public enum MinaSocketType implements IMinaSocketType {
 
         @Override
         public boolean isUnbindAcceptor() {
-            return true;
+            return false;
         }
 
         @Override
         public boolean isValidateConnect() {
-            return true;
+            return false;
         }
 
         @Override
