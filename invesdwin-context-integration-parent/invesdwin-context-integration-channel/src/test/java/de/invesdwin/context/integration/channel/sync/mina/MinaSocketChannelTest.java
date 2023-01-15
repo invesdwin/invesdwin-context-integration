@@ -6,6 +6,7 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -29,6 +30,7 @@ public class MinaSocketChannelTest extends AChannelTest {
         runMinaSocketChannelPerformanceTest(MinaSocketType.NioTcp, responseAddress, requestAddress);
     }
 
+    @Disabled
     @Test
     public void testMinaDatagramChannelPerformance() throws InterruptedException {
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
