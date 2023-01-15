@@ -1,11 +1,14 @@
-package de.invesdwin.context.integration.channel.sync.mina.unsafe;
+package de.invesdwin.context.integration.channel.sync.mina.unsafe.udp;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.mina.transport.socket.apr.AprLibraryAccessor;
 import org.apache.mina.transport.socket.apr.AprSession;
 import org.apache.mina.transport.socket.apr.AprSessionAccessor;
+import org.apache.tomcat.jni.Address;
+import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
@@ -25,17 +28,19 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
+public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private MinaSocketSynchronousChannel channel;
     private long fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private long where;
+    private long pool;
 
-    public MinaNativeSocketSynchronousWriter(final MinaSocketSynchronousChannel channel) {
+    public MinaNativeDatagramSynchronousWriter(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setWriterRegistered();
-        if (!channel.getType().isNative() || channel.getType() == MinaSocketType.AprUdp) {
+        if (channel.getType() != MinaSocketType.AprUdp) {
             throw UnknownArgumentException.newInstance(IMinaSocketType.class, channel.getType());
         }
     }
@@ -50,8 +55,16 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
         final AprSession session = (AprSession) channel.getIoSession();
         fd = AprSessionAccessor.getDescriptor(session);
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        buffer = ByteBuffers.allocateExpandable(channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MinaSocketSynchronousChannel.MESSAGE_INDEX);
+
+        pool = Pool.create(AprLibraryAccessor.getRootPool());
+        try {
+            where = Address.info(channel.getSocketAddress().getAddress().getHostAddress(), Socket.APR_INET,
+                    channel.getSocketAddress().getPort(), 0, pool);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -65,6 +78,8 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
             buffer = null;
             messageBuffer = null;
             fd = 0;
+            where = 0;
+            Pool.destroy(pool);
         }
         if (channel != null) {
             channel.close();
@@ -77,21 +92,21 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.nioByteBuffer(), 0, MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+            writeFully(fd, where, buffer.asByteArray(), 0, MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
-    public static void writeFully(final long dst, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
-            throws IOException {
+    public static void writeFully(final long sock, final long where, final byte[] byteBuffer, final int pos,
+            final int length) throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 
         int position = pos;
         int remaining = length - pos;
         while (remaining > 0) {
-            int count = Socket.sendb(dst, byteBuffer, position, remaining);
+            int count = Socket.sendto(sock, where, 0, byteBuffer, position, remaining);
             if (count < 0) { // EOF
                 if (Status.APR_STATUS_IS_EAGAIN(-count)) {
                     count = 0;

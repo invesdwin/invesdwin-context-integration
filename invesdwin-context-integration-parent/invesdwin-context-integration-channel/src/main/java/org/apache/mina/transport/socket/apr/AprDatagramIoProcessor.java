@@ -237,10 +237,10 @@ public final class AprDatagramIoProcessor extends AbstractPollingIoProcessor<Apr
         Socket.optSet(s, Socket.APR_SO_NONBLOCK, 1);
         Socket.timeoutSet(s, 0);
 
-        final int rv = Poll.add(pollset, s, Poll.APR_POLLIN);
-        if (rv != Status.APR_SUCCESS) {
-            throwException(rv);
-        }
+        //        final int rv = Poll.add(pollset, s, Poll.APR_POLLIN);
+        //        if (rv != Status.APR_SUCCESS) {
+        //            throwException(rv);
+        //        }
 
         session.setInterestedInRead(true);
         allSessions.put(s, session);
@@ -256,23 +256,23 @@ public final class AprDatagramIoProcessor extends AbstractPollingIoProcessor<Apr
             return;
         }
 
-        int ret = Poll.remove(pollset, session.getDescriptor());
-        try {
-            if (ret != Status.APR_SUCCESS) {
-                throwException(ret);
-            }
-        } finally {
-            ret = Socket.close(session.getDescriptor());
+        //        int ret = Poll.remove(pollset, session.getDescriptor());
+        //        try {
+        //            if (ret != Status.APR_SUCCESS) {
+        //                throwException(ret);
+        //            }
+        //        } finally {
+        final int ret = Socket.close(session.getDescriptor());
 
-            // destroying the session because it won't be reused
-            // after this point
-            Socket.destroy(session.getDescriptor());
-            session.setDescriptor(0);
+        // destroying the session because it won't be reused
+        // after this point
+        Socket.destroy(session.getDescriptor());
+        session.setDescriptor(0);
 
-            if (ret != Status.APR_SUCCESS) {
-                throwException(ret);
-            }
+        if (ret != Status.APR_SUCCESS) {
+            throwException(ret);
         }
+        //        }
     }
 
     /**
@@ -328,25 +328,25 @@ public final class AprDatagramIoProcessor extends AbstractPollingIoProcessor<Apr
      */
     @Override
     protected void setInterestedInRead(final AprSession session, final boolean isInterested) throws Exception {
-        if (session.isInterestedInRead() == isInterested) {
-            return;
-        }
-
-        int rv = Poll.remove(pollset, session.getDescriptor());
-
-        if (rv != Status.APR_SUCCESS) {
-            throwException(rv);
-        }
-
-        final int flags = (isInterested ? Poll.APR_POLLIN : 0) | (session.isInterestedInWrite() ? Poll.APR_POLLOUT : 0);
-
-        rv = Poll.add(pollset, session.getDescriptor(), flags);
-
-        if (rv == Status.APR_SUCCESS) {
-            session.setInterestedInRead(isInterested);
-        } else {
-            throwException(rv);
-        }
+        //        if (session.isInterestedInRead() == isInterested) {
+        //            return;
+        //        }
+        //
+        //        int rv = Poll.remove(pollset, session.getDescriptor());
+        //
+        //        if (rv != Status.APR_SUCCESS) {
+        //            throwException(rv);
+        //        }
+        //
+        //        final int flags = (isInterested ? Poll.APR_POLLIN : 0) | (session.isInterestedInWrite() ? Poll.APR_POLLOUT : 0);
+        //
+        //        rv = Poll.add(pollset, session.getDescriptor(), flags);
+        //
+        //        if (rv == Status.APR_SUCCESS) {
+        //            session.setInterestedInRead(isInterested);
+        //        } else {
+        //            throwException(rv);
+        //        }
     }
 
     /**
@@ -354,25 +354,25 @@ public final class AprDatagramIoProcessor extends AbstractPollingIoProcessor<Apr
      */
     @Override
     protected void setInterestedInWrite(final AprSession session, final boolean isInterested) throws Exception {
-        if (session.isInterestedInWrite() == isInterested) {
-            return;
-        }
-
-        int rv = Poll.remove(pollset, session.getDescriptor());
-
-        if (rv != Status.APR_SUCCESS) {
-            throwException(rv);
-        }
-
-        final int flags = (session.isInterestedInRead() ? Poll.APR_POLLIN : 0) | (isInterested ? Poll.APR_POLLOUT : 0);
-
-        rv = Poll.add(pollset, session.getDescriptor(), flags);
-
-        if (rv == Status.APR_SUCCESS) {
-            session.setInterestedInWrite(isInterested);
-        } else {
-            throwException(rv);
-        }
+        //        if (session.isInterestedInWrite() == isInterested) {
+        //            return;
+        //        }
+        //
+        //        int rv = Poll.remove(pollset, session.getDescriptor());
+        //
+        //        if (rv != Status.APR_SUCCESS) {
+        //            throwException(rv);
+        //        }
+        //
+        //        final int flags = (session.isInterestedInRead() ? Poll.APR_POLLIN : 0) | (isInterested ? Poll.APR_POLLOUT : 0);
+        //
+        //        rv = Poll.add(pollset, session.getDescriptor(), flags);
+        //
+        //        if (rv == Status.APR_SUCCESS) {
+        //            session.setInterestedInWrite(isInterested);
+        //        } else {
+        //            throwException(rv);
+        //        }
     }
 
     /**

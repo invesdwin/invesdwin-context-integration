@@ -6,6 +6,9 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.transport.socket.apr.AprDatagramAcceptor;
+import org.apache.mina.transport.socket.apr.AprDatagramConnector;
+import org.apache.mina.transport.socket.apr.AprDatagramIoProcessor;
 import org.apache.mina.transport.socket.apr.AprSctpAcceptor;
 import org.apache.mina.transport.socket.apr.AprSctpConnector;
 import org.apache.mina.transport.socket.apr.AprSocketAcceptor;
@@ -114,12 +117,30 @@ public enum MinaSocketType implements IMinaSocketType {
             return new AprSocketConnector(new FixedAprIoProcessor(newDefaultExecutor()));
         }
 
-        private Executor newDefaultExecutor() {
-            final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
-            // Set a default reject handler
-            ((java.util.concurrent.ThreadPoolExecutor) executor)
-                    .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
-            return executor;
+        @Override
+        public boolean isUnbindAcceptor() {
+            return true;
+        }
+
+        @Override
+        public boolean isValidateConnect() {
+            return true;
+        }
+
+        @Override
+        public boolean isNative() {
+            return true;
+        }
+    },
+    AprUdp {
+        @Override
+        public IoAcceptor newAcceptor() {
+            return new AprDatagramAcceptor();
+        }
+
+        @Override
+        public IoConnector newConnector() {
+            return new AprDatagramConnector(new AprDatagramIoProcessor(newDefaultExecutor()));
         }
 
         @Override
@@ -148,14 +169,6 @@ public enum MinaSocketType implements IMinaSocketType {
             return new AprSctpConnector(new FixedAprIoProcessor(newDefaultExecutor()));
         }
 
-        private Executor newDefaultExecutor() {
-            final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
-            // Set a default reject handler
-            ((java.util.concurrent.ThreadPoolExecutor) executor)
-                    .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
-            return executor;
-        }
-
         @Override
         public boolean isUnbindAcceptor() {
             return true;
@@ -170,5 +183,13 @@ public enum MinaSocketType implements IMinaSocketType {
         public boolean isNative() {
             return true;
         }
-    },
+    };
+
+    private static Executor newDefaultExecutor() {
+        final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
+        // Set a default reject handler
+        ((java.util.concurrent.ThreadPoolExecutor) executor)
+                .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        return executor;
+    }
 }

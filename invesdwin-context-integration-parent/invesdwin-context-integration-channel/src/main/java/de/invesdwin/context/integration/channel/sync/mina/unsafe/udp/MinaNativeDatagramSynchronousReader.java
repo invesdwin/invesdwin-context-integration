@@ -1,12 +1,15 @@
-package de.invesdwin.context.integration.channel.sync.mina.unsafe;
+package de.invesdwin.context.integration.channel.sync.mina.unsafe.udp;
 
 import java.io.IOException;
 import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.mina.transport.socket.apr.AprLibraryAccessor;
 import org.apache.mina.transport.socket.apr.AprSession;
 import org.apache.mina.transport.socket.apr.AprSessionAccessor;
+import org.apache.tomcat.jni.Address;
+import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
@@ -25,18 +28,19 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+public class MinaNativeDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private MinaSocketSynchronousChannel channel;
     private IByteBuffer buffer;
-    private java.nio.ByteBuffer messageBuffer;
     private long fd;
     private int position = 0;
+    private long from;
+    private long pool;
 
-    public MinaNativeSocketSynchronousReader(final MinaSocketSynchronousChannel channel) {
+    public MinaNativeDatagramSynchronousReader(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        if (!channel.getType().isNative() || channel.getType() == MinaSocketType.AprUdp) {
+        if (channel.getType() != MinaSocketType.AprUdp) {
             throw UnknownArgumentException.newInstance(IMinaSocketType.class, channel.getType());
         }
     }
@@ -52,16 +56,23 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         final AprSession session = (AprSession) channel.getIoSession();
         fd = AprSessionAccessor.getDescriptor(session);
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-        messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
+        buffer = ByteBuffers.allocateExpandable(channel.getSocketSize());
+
+        pool = Pool.create(AprLibraryAccessor.getRootPool());
+        try {
+            from = Address.info("123.123.123.123", Socket.APR_INET, 0, 0, pool);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void close() throws IOException {
         if (buffer != null) {
             buffer = null;
-            messageBuffer = null;
             fd = 0;
+            from = 0;
+            Pool.destroy(pool);
         }
         if (channel != null) {
             channel.close();
@@ -74,7 +85,7 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         if (position > 0) {
             return true;
         }
-        final int count = Socket.recvb(fd, messageBuffer, 0, channel.getSocketSize());
+        final int count = Socket.recvfrom(from, fd, 0, buffer.asByteArray(), 0, channel.getSocketSize());
         if (count > 0) {
             position = count;
             return true;
@@ -97,7 +108,7 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         //read size
         try {
             while (position < targetPosition) {
-                int count = Socket.recvb(fd, messageBuffer, 0, channel.getSocketSize());
+                int count = Socket.recvfrom(from, fd, 0, buffer.asByteArray(), 0, channel.getSocketSize());
                 if (count < 0) { // EOF
                     if (Status.APR_STATUS_IS_EOF(-count)) {
                         count = 0;
@@ -133,12 +144,8 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         //read message if not complete yet
         final int remaining = targetPosition - position;
         if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
             buffer.ensureCapacity(targetPosition);
-            if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
-            }
-            readFully(fd, messageBuffer, position, remaining);
+            readFully(from, fd, buffer.asByteArray(), position, remaining);
         }
         position = 0;
 
@@ -154,15 +161,15 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         //noop
     }
 
-    public static void readFully(final long src, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
-            throws IOException {
+    public static void readFully(final long from, final long sock, final byte[] byteBuffer, final int pos,
+            final int length) throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 
         int position = pos;
         int remaining = length - pos;
         while (remaining > 0) {
-            int count = Socket.recvb(src, byteBuffer, position, remaining);
+            int count = Socket.recvfrom(from, sock, 0, byteBuffer, position, remaining);
             if (count < 0) { // EOF
                 if (Status.APR_STATUS_IS_EOF(-count)) {
                     count = 0;

@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.channels.spi.SelectorProvider;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.Executor;
 
 import javax.annotation.concurrent.ThreadSafe;
@@ -49,7 +47,6 @@ public class AprDatagramAcceptor extends APollingConnectionlessIoAcceptor<AprSes
     private volatile long pollset; // socket poller
     private final long[] polledSockets = new long[POLLSET_SIZE << 1];
     private final List<Long> polledHandles = new CircularQueue<Long>(POLLSET_SIZE);
-    private final Set<Long> failedHandles = new HashSet<Long>(POLLSET_SIZE);
     //List of groups this acceptor should belong to...
     private final List<String> groups = new LinkedList<String>();
 
@@ -437,9 +434,7 @@ public class AprDatagramAcceptor extends APollingConnectionlessIoAcceptor<AprSes
 
     @Override
     protected AprSession accept(final IoProcessor<AprSession> processor, final Long handle) throws Exception {
-        final long ra = Address.get(Socket.APR_REMOTE, handle);
-        final InetSocketAddress remoteAddress = new InetSocketAddress(Address.getip(ra), Address.getInfo(ra).port);
-        final AprDatagramSession ds = new AprDatagramSession(this, processor, handle, remoteAddress);
+        final AprDatagramSession ds = new AprDatagramSession(this, processor, handle, null);
         return ds;
     }
 

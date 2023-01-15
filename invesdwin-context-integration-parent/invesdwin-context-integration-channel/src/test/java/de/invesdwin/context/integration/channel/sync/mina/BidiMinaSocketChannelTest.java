@@ -32,7 +32,7 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
     public void testBidiMinaDatagramChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runBidiMinaSocketChannelPerformanceTest(MinaSocketType.NioUdp, address);
+        runBidiMinaSocketChannelPerformanceTest(MinaSocketType.AprUdp, address);
     }
 
     @Test
