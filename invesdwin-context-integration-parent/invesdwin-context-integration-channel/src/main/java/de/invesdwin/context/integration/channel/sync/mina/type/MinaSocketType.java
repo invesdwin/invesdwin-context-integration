@@ -137,10 +137,6 @@ public enum MinaSocketType implements IMinaSocketType {
             return true;
         }
     },
-    /**
-     * No AprUdp right now: https://issues.apache.org/jira/browse/DIRMINA-484
-     * https://issues.apache.org/jira/browse/DIRMINA-438
-     */
     AprSctp {
         @Override
         public IoAcceptor newAcceptor() {

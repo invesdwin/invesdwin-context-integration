@@ -58,24 +58,24 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
      * Constructor for {@link AprSctpAcceptor} using default parameters (multiple thread model).
      */
     public AprSctpAcceptor() {
-        super(new DefaultSocketSessionConfig(), AprIoProcessor.class);
+        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
     /**
-     * Constructor for {@link AprSctpAcceptor} using default parameters, and given number of {@link AprIoProcessor} for
+     * Constructor for {@link AprSctpAcceptor} using default parameters, and given number of {@link AprDatagramIoProcessor} for
      * multithreading I/O operations.
      * 
      * @param processorCount
      *            the number of processor to create and place in a {@link SimpleIoProcessorPool}
      */
     public AprSctpAcceptor(final int processorCount) {
-        super(new DefaultSocketSessionConfig(), AprIoProcessor.class, processorCount);
+        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class, processorCount);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
     /**
-     * Constructor for {@link AprSctpAcceptor} with default configuration but a specific {@link AprIoProcessor}, useful
+     * Constructor for {@link AprSctpAcceptor} with default configuration but a specific {@link AprDatagramIoProcessor}, useful
      * for sharing the same processor over multiple {@link IoService} of the same type.
      *
      * @param processor
@@ -88,7 +88,7 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
 
     /**
      * Constructor for {@link AprSctpAcceptor} with a given {@link Executor} for handling connection events and a given
-     * {@link AprIoProcessor} for handling I/O events, useful for sharing the same processor and executor over multiple
+     * {@link AprDatagramIoProcessor} for handling I/O events, useful for sharing the same processor and executor over multiple
      * {@link IoService} of the same type.
      *
      * @param executor

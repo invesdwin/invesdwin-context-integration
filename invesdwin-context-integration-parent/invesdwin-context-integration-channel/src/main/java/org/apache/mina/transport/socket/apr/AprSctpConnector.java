@@ -70,19 +70,19 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
      * Create an {@link AprSctpConnector} with default configuration (multiple thread model).
      */
     public AprSctpConnector() {
-        super(new DefaultSocketSessionConfig(), AprIoProcessor.class);
+        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
     /**
-     * Constructor for {@link AprSctpConnector} with default configuration, and given number of {@link AprIoProcessor}
+     * Constructor for {@link AprSctpConnector} with default configuration, and given number of {@link AprDatagramIoProcessor}
      * for multithreading I/O operations
      *
      * @param processorCount
      *            the number of processor to create and place in a {@link SimpleIoProcessorPool}
      */
     public AprSctpConnector(final int processorCount) {
-        super(new DefaultSocketSessionConfig(), AprIoProcessor.class, processorCount);
+        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class, processorCount);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
