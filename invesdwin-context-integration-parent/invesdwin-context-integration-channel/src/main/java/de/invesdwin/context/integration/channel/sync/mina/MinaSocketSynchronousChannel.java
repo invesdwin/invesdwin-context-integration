@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.sync.mina;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -49,7 +49,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
     protected final IMinaSocketType type;
     protected final int estimatedMaxMessageSize;
     protected final int socketSize;
-    protected final InetSocketAddress socketAddress;
+    protected final SocketAddress socketAddress;
     protected final boolean server;
     private volatile boolean sessionOpening;
     private final NettySocketSynchronousChannelFinalizer finalizer;
@@ -60,7 +60,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
     private final IBufferingIterator<Consumer<IoSession>> sessionListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public MinaSocketSynchronousChannel(final IMinaSocketType type, final InetSocketAddress socketAddress,
+    public MinaSocketSynchronousChannel(final IMinaSocketType type, final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
@@ -109,7 +109,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
         return socketSize;
     }
 
-    public InetSocketAddress getSocketAddress() {
+    public SocketAddress getSocketAddress() {
         return socketAddress;
     }
 

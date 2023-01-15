@@ -58,25 +58,25 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
      * Constructor for {@link AprSctpAcceptor} using default parameters (multiple thread model).
      */
     public AprSctpAcceptor() {
-        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class);
+        super(new DefaultSocketSessionConfig(), AprIoProcessor.class);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
     /**
-     * Constructor for {@link AprSctpAcceptor} using default parameters, and given number of {@link AprDatagramIoProcessor} for
-     * multithreading I/O operations.
+     * Constructor for {@link AprSctpAcceptor} using default parameters, and given number of
+     * {@link AprDatagramIoProcessor} for multithreading I/O operations.
      * 
      * @param processorCount
      *            the number of processor to create and place in a {@link SimpleIoProcessorPool}
      */
     public AprSctpAcceptor(final int processorCount) {
-        super(new DefaultSocketSessionConfig(), AprDatagramIoProcessor.class, processorCount);
+        super(new DefaultSocketSessionConfig(), AprIoProcessor.class, processorCount);
         ((DefaultSocketSessionConfig) getSessionConfig()).init(this);
     }
 
     /**
-     * Constructor for {@link AprSctpAcceptor} with default configuration but a specific {@link AprDatagramIoProcessor}, useful
-     * for sharing the same processor over multiple {@link IoService} of the same type.
+     * Constructor for {@link AprSctpAcceptor} with default configuration but a specific {@link AprDatagramIoProcessor},
+     * useful for sharing the same processor over multiple {@link IoService} of the same type.
      *
      * @param processor
      *            the processor to use for managing I/O events
@@ -88,8 +88,8 @@ public final class AprSctpAcceptor extends AbstractPollingIoAcceptor<AprSession,
 
     /**
      * Constructor for {@link AprSctpAcceptor} with a given {@link Executor} for handling connection events and a given
-     * {@link AprDatagramIoProcessor} for handling I/O events, useful for sharing the same processor and executor over multiple
-     * {@link IoService} of the same type.
+     * {@link AprDatagramIoProcessor} for handling I/O events, useful for sharing the same processor and executor over
+     * multiple {@link IoService} of the same type.
      *
      * @param executor
      *            the executor for connection

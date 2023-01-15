@@ -34,7 +34,7 @@ public class MinaSocketChannelTest extends AChannelTest {
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runMinaSocketChannelPerformanceTest(MinaSocketType.AprUdp, responseAddress, requestAddress);
+        runMinaSocketChannelPerformanceTest(MinaSocketType.NioUdp, responseAddress, requestAddress);
     }
 
     @Test
