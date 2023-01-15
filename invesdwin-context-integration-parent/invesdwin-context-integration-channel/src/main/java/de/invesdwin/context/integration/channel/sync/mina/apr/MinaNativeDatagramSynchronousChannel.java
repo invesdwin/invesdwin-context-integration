@@ -22,7 +22,7 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public class TomcatNativeDatagramSynchronousChannel implements Closeable {
+public class MinaNativeDatagramSynchronousChannel implements Closeable {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -41,7 +41,7 @@ public class TomcatNativeDatagramSynchronousChannel implements Closeable {
 
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public TomcatNativeDatagramSynchronousChannel(final InetSocketAddress socketAddress, final boolean server,
+    public MinaNativeDatagramSynchronousChannel(final InetSocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -100,7 +100,7 @@ public class TomcatNativeDatagramSynchronousChannel implements Closeable {
         if (server) {
             awaitSession(() -> {
                 try {
-                    AprDatagramServerOpener.openServer(TomcatNativeDatagramSynchronousChannel.this);
+                    MinaNativeDatagramServerOpener.openServer(MinaNativeDatagramSynchronousChannel.this);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -108,7 +108,7 @@ public class TomcatNativeDatagramSynchronousChannel implements Closeable {
         } else {
             awaitSession(() -> {
                 try {
-                    AprDatagramClientOpener.openClient(TomcatNativeDatagramSynchronousChannel.this);
+                    MinaNativeDatagramClientOpener.openClient(MinaNativeDatagramSynchronousChannel.this);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -291,7 +291,7 @@ public class TomcatNativeDatagramSynchronousChannel implements Closeable {
 
         @Override
         protected void onRun() {
-            String warning = "Finalizing unclosed " + TomcatNativeDatagramSynchronousChannel.class.getSimpleName();
+            String warning = "Finalizing unclosed " + MinaNativeDatagramSynchronousChannel.class.getSimpleName();
             if (Throwables.isDebugStackTraceEnabled()) {
                 final Exception stackTrace = initStackTrace;
                 if (stackTrace != null) {

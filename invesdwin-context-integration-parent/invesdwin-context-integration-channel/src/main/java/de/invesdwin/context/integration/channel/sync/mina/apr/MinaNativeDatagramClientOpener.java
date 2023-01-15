@@ -19,13 +19,13 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
 @NotThreadSafe
-public final class AprDatagramClientOpener {
+public final class MinaNativeDatagramClientOpener {
 
     public static final int POLLSET_SIZE = 1024;
 
-    private AprDatagramClientOpener() {}
+    private MinaNativeDatagramClientOpener() {}
 
-    public static void openClient(final TomcatNativeDatagramSynchronousChannel channel) {
+    public static void openClient(final MinaNativeDatagramSynchronousChannel channel) {
         try {
             final long handle = Socket.create(Socket.APR_INET, Socket.SOCK_DGRAM, Socket.APR_PROTO_UDP,
                     channel.getFinalizer().getPool());
@@ -37,17 +37,17 @@ public final class AprDatagramClientOpener {
 
                 int result = Socket.optSet(handle, Socket.APR_SO_NONBLOCK, 1);
                 if (result != Status.APR_SUCCESS) {
-                    throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
                 }
                 result = Socket.timeoutSet(handle, 0);
                 if (result != Status.APR_SUCCESS) {
-                    throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
                 }
 
                 if (!connect(channel, handle)) {
                     result = Poll.add(pollset, handle, Poll.APR_POLLOUT);
                     if (result != Status.APR_SUCCESS) {
-                        throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+                        throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
                     }
                     selectRetry(channel, pollset);
                 }
@@ -55,14 +55,14 @@ public final class AprDatagramClientOpener {
                 //validate connection
                 final int count = Socket.recv(handle, Bytes.EMPTY_ARRAY, 0, 1);
                 if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count) && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
-                    throw new RuntimeException(TomcatNativeDatagramSynchronousChannel.newTomcatException(count));
+                    throw new RuntimeException(MinaNativeDatagramSynchronousChannel.newTomcatException(count));
                 }
                 success = true;
                 channel.getFinalizer().setFd(handle);
             } finally {
                 if (!success) {
                     try {
-                        TomcatNativeDatagramSynchronousChannel.closeHandle(handle);
+                        MinaNativeDatagramSynchronousChannel.closeHandle(handle);
                     } catch (final Exception e) {
                         throw new RuntimeException(e);
                     }
@@ -77,7 +77,7 @@ public final class AprDatagramClientOpener {
         }
     }
 
-    public static long openPollset(final TomcatNativeDatagramSynchronousChannel channel) throws Error {
+    public static long openPollset(final MinaNativeDatagramSynchronousChannel channel) throws Error {
         long pollset = Poll.create(POLLSET_SIZE, channel.getFinalizer().getPool(), Poll.APR_POLLSET_THREADSAFE,
                 Long.MAX_VALUE);
 
@@ -93,7 +93,7 @@ public final class AprDatagramClientOpener {
         return pollset;
     }
 
-    private static boolean connect(final TomcatNativeDatagramSynchronousChannel channel, final long handle)
+    private static boolean connect(final MinaNativeDatagramSynchronousChannel channel, final long handle)
             throws Exception {
         final InetSocketAddress ra = channel.getSocketAddress();
         final long sa;
@@ -118,12 +118,12 @@ public final class AprDatagramClientOpener {
             return false;
         }
 
-        throw TomcatNativeDatagramSynchronousChannel.newTomcatException(rv);
+        throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
     }
 
-    private static LongList selectRetry(final TomcatNativeDatagramSynchronousChannel channel, final long pollset)
+    private static LongList selectRetry(final MinaNativeDatagramSynchronousChannel channel, final long pollset)
             throws Exception, IOException {
-        final long[] polledSockets = new long[AprDatagramServerOpener.POLLSET_SIZE << 1];
+        final long[] polledSockets = new long[MinaNativeDatagramServerOpener.POLLSET_SIZE << 1];
         final LongList polledHandles = new LongArrayList();
 
         final long startNanos = System.nanoTime();
@@ -147,18 +147,18 @@ public final class AprDatagramClientOpener {
 
         //allow only one connection
         for (int i = 1; i < polledHandles.size(); i++) {
-            TomcatNativeDatagramSynchronousChannel.closeHandle(polledHandles.get(i));
+            MinaNativeDatagramSynchronousChannel.closeHandle(polledHandles.get(i));
         }
         return polledHandles;
     }
 
-    private static int select(final TomcatNativeDatagramSynchronousChannel channel, final long pollset,
+    private static int select(final MinaNativeDatagramSynchronousChannel channel, final long pollset,
             final long[] polledSockets, final LongList polledHandles) throws Exception {
         int rv = Poll.poll(pollset, channel.getMaxConnectRetryDelay().longValue(FTimeUnit.MICROSECONDS), polledSockets,
                 false);
         if (rv <= 0) {
-            if (rv != AprDatagramServerOpener.APR_TIMEUP_ERROR) {
-                throw TomcatNativeDatagramSynchronousChannel.newTomcatException(rv);
+            if (rv != MinaNativeDatagramServerOpener.APR_TIMEUP_ERROR) {
+                throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
             }
 
             rv = Poll.maintain(pollset, polledSockets, true);
@@ -167,7 +167,7 @@ public final class AprDatagramClientOpener {
                     Poll.add(pollset, polledSockets[i], Poll.APR_POLLOUT);
                 }
             } else if (rv < 0) {
-                throw TomcatNativeDatagramSynchronousChannel.newTomcatException(rv);
+                throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
             }
 
             return 0;

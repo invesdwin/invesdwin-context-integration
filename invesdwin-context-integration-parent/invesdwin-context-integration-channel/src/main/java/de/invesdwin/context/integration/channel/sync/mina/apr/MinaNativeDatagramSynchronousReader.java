@@ -21,19 +21,19 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class TomcatNativeDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+public class MinaNativeDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private static final boolean SERVER = true;
 
-    private TomcatNativeDatagramSynchronousChannel channel;
+    private MinaNativeDatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private long fd;
     private int position = 0;
 
-    public TomcatNativeDatagramSynchronousReader(final InetSocketAddress socketAddress,
+    public MinaNativeDatagramSynchronousReader(final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
-        this.channel = new TomcatNativeDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize);
+        this.channel = new MinaNativeDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize);
         this.channel.setReaderRegistered();
     }
 
@@ -72,7 +72,7 @@ public class TomcatNativeDatagramSynchronousReader implements ISynchronousReader
             if (Status.APR_STATUS_IS_EAGAIN(-count)) {
                 return false;
             }
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(count);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(count);
         } else {
             return false;
         }
@@ -95,7 +95,7 @@ public class TomcatNativeDatagramSynchronousReader implements ISynchronousReader
                         count = 0;
                     } else {
                         close();
-                        throw TomcatNativeDatagramSynchronousChannel.newTomcatException(count);
+                        throw MinaNativeDatagramSynchronousChannel.newTomcatException(count);
                     }
                 }
                 if (count == 0 && timeout != null) {
@@ -159,7 +159,7 @@ public class TomcatNativeDatagramSynchronousReader implements ISynchronousReader
                 } else if (Status.APR_STATUS_IS_EAGAIN(-count)) {
                     count = 0;
                 } else {
-                    throw TomcatNativeDatagramSynchronousChannel.newTomcatException(count);
+                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(count);
                 }
             }
             if (count == 0 && timeout != null) {

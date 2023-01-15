@@ -21,17 +21,17 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class TomcatNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
+public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private static final boolean SERVER = false;
-    private TomcatNativeDatagramSynchronousChannel channel;
+    private MinaNativeDatagramSynchronousChannel channel;
     private long fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
 
-    public TomcatNativeDatagramSynchronousWriter(final InetSocketAddress socketAddress,
+    public MinaNativeDatagramSynchronousWriter(final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
-        this.channel = new TomcatNativeDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize);
+        this.channel = new MinaNativeDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize);
         this.channel.setWriterRegistered();
     }
 
@@ -88,7 +88,7 @@ public class TomcatNativeDatagramSynchronousWriter implements ISynchronousWriter
                 } else if (Status.APR_STATUS_IS_EOF(-count)) {
                     count = 0;
                 } else {
-                    throw TomcatNativeDatagramSynchronousChannel.newTomcatException(count);
+                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(count);
                 }
             }
             if (count == 0 && timeout != null) {

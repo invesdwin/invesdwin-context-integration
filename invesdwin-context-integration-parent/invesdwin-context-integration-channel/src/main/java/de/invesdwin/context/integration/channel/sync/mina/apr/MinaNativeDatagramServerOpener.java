@@ -15,7 +15,7 @@ import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 
 @NotThreadSafe
-public final class AprDatagramServerOpener {
+public final class MinaNativeDatagramServerOpener {
 
     /**
      * This constant is deduced from the APR code. It is used when the timeout has expired while doing a poll()
@@ -24,9 +24,9 @@ public final class AprDatagramServerOpener {
     public static final int APR_TIMEUP_ERROR = -120001;
     public static final int POLLSET_SIZE = 1024;
 
-    private AprDatagramServerOpener() {}
+    private MinaNativeDatagramServerOpener() {}
 
-    public static void openServer(final TomcatNativeDatagramSynchronousChannel channel) {
+    public static void openServer(final MinaNativeDatagramSynchronousChannel channel) {
         try {
             final long acceptorHandle = Socket.create(Socket.APR_INET, Socket.SOCK_DGRAM, Socket.APR_PROTO_UDP,
                     channel.getFinalizer().getPool());
@@ -37,27 +37,27 @@ public final class AprDatagramServerOpener {
         }
     }
 
-    private static void openAcceptor(final TomcatNativeDatagramSynchronousChannel channel, final long acceptorHandle)
+    private static void openAcceptor(final MinaNativeDatagramSynchronousChannel channel, final long acceptorHandle)
             throws IOException, Exception, Error {
         int result = Socket.optSet(acceptorHandle, Socket.APR_SO_NONBLOCK, 1);
         if (result != Status.APR_SUCCESS) {
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
         }
         result = Socket.timeoutSet(acceptorHandle, 0);
         if (result != Status.APR_SUCCESS) {
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
         }
 
         // Configure the server socket,
         result = Socket.optSet(acceptorHandle, Socket.APR_SO_REUSEADDR, 0);
         if (result != Status.APR_SUCCESS) {
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
         }
         result = Socket.optSet(acceptorHandle, Socket.APR_SO_RCVBUF,
                 Integers.max(Socket.optGet(acceptorHandle, Socket.APR_SO_RCVBUF), ByteBuffers.calculateExpansion(
                         channel.getSocketSize() * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
         if (result != Status.APR_SUCCESS) {
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
         }
 
         // and bind.
@@ -77,7 +77,7 @@ public final class AprDatagramServerOpener {
 
         result = Socket.bind(acceptorHandle, sa);
         if (result != Status.APR_SUCCESS) {
-            throw TomcatNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
         }
     }
 
