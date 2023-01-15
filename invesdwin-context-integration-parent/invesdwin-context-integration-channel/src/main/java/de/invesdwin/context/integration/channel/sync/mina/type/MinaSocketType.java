@@ -6,6 +6,9 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.transport.socket.apr.AprDatagramAcceptor;
+import org.apache.mina.transport.socket.apr.AprDatagramConnector;
+import org.apache.mina.transport.socket.apr.AprDatagramIoProcessor;
 import org.apache.mina.transport.socket.apr.AprSctpAcceptor;
 import org.apache.mina.transport.socket.apr.AprSctpConnector;
 import org.apache.mina.transport.socket.apr.AprSocketAcceptor;
@@ -112,6 +115,32 @@ public enum MinaSocketType implements IMinaSocketType {
         @Override
         public IoConnector newConnector() {
             return new AprSocketConnector(new FixedAprIoProcessor(newDefaultExecutor()));
+        }
+
+        @Override
+        public boolean isUnbindAcceptor() {
+            return true;
+        }
+
+        @Override
+        public boolean isValidateConnect() {
+            return true;
+        }
+
+        @Override
+        public boolean isNative() {
+            return true;
+        }
+    },
+    AprUdp {
+        @Override
+        public IoAcceptor newAcceptor() {
+            return new AprDatagramAcceptor(new AprDatagramIoProcessor(newDefaultExecutor()));
+        }
+
+        @Override
+        public IoConnector newConnector() {
+            return new AprDatagramConnector(new AprDatagramIoProcessor(newDefaultExecutor()));
         }
 
         @Override
