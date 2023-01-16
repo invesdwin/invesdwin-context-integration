@@ -1,16 +1,17 @@
 package de.invesdwin.context.integration.channel.sync.socket.sctp;
 
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
-
-import com.sun.nio.sctp.SctpChannel;
-import com.sun.nio.sctp.SctpServerChannel;
-import com.sun.nio.sctp.SctpStandardSocketOptions;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -19,12 +20,87 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class SctpSynchronousChannel implements ISynchronousChannel {
+
+    public static final Class<?> MESSAGEINFO_CLASS;
+    public static final MethodHandle MESSAGEINFO_BYTES_METHOD;
+    public static final Method MESSAGEINFO_CREATEOUTGOING_METHOD;
+
+    public static final Class<?> SCTPCHANNEL_CLASS;
+    public static final Method SCTPCHANNEL_OPEN_METHOD;
+    public static final MethodHandle SCTPCHANNEL_CONNECT_METHOD;
+    public static final MethodHandle SCTPCHANNEL_CONFIGUREBLOCKING_METHOD;
+    public static final MethodHandle SCTPCHANNEL_GETOPTION_METHOD;
+    public static final MethodHandle SCTPCHANNEL_SETOPTION_METHOD;
+    public static final MethodHandle SCTPCHANNEL_RECEIVE_METHOD;
+    public static final MethodHandle SCTPCHANNEL_SEND_METHOD;
+
+    public static final Class<?> SCTPSERVERCHANNEL_CLASS;
+    public static final Method SCTPSERVERCHANNEL_OPEN_METHOD;
+    public static final MethodHandle SCTPSERVERCHANNEL_BIND_METHOD;
+    public static final MethodHandle SCTPSERVERCHANNEL_ACCEPT_METHOD;
+
+    public static final Class<?> SCTPSTANDARDSOCKETOPTIONS_CLASS;
+    public static final Object SCTPSTANDARDSOCKETOPTIONS_SORCVBUF;
+    public static final Object SCTPSTANDARDSOCKETOPTIONS_SOSNDBUF;
+    public static final Object SCTPSTANDARDSOCKETOPTIONS_SCTPNODELAY;
+
+    static {
+        try {
+            //only OracleJDK contains SCTP as it seems (causes compile errors in maven/jenkins): https://stackoverflow.com/a/26614215
+            //static native int receive0(int fd, ResultContainer resultContainer, long address, int length, boolean peek) throws IOException;
+            MESSAGEINFO_CLASS = Class.forName("com.sun.nio.sctp.MessageInfo");
+            final Method messageInfoBytesMethod = Reflections.findMethod(MESSAGEINFO_CLASS, "bytes");
+            MESSAGEINFO_BYTES_METHOD = MethodHandles.lookup().unreflect(messageInfoBytesMethod);
+            MESSAGEINFO_CREATEOUTGOING_METHOD = Reflections.findMethod(MESSAGEINFO_CLASS, "createOutgoing",
+                    SocketAddress.class, int.class);
+
+            SCTPCHANNEL_CLASS = Class.forName("com.sun.nio.sctp.SctpChannel");
+            SCTPCHANNEL_OPEN_METHOD = Reflections.findMethod(SCTPCHANNEL_CLASS, "open");
+            final Method sctpChannelReceiveMethod = Reflections.findMethodByName(SCTPCHANNEL_CLASS, "receive");
+            SCTPCHANNEL_RECEIVE_METHOD = MethodHandles.lookup().unreflect(sctpChannelReceiveMethod);
+            final Method sctpChannelSendMethod = Reflections.findMethodByName(SCTPCHANNEL_CLASS, "send");
+            SCTPCHANNEL_SEND_METHOD = MethodHandles.lookup().unreflect(sctpChannelSendMethod);
+            final Method sctpChannelConnectMethod = Reflections.findMethod(SCTPCHANNEL_CLASS, "connect",
+                    SocketAddress.class);
+            SCTPCHANNEL_CONNECT_METHOD = MethodHandles.lookup().unreflect(sctpChannelConnectMethod);
+            final Method sctpChannelConfigureBlockingMethod = Reflections.findMethod(SCTPCHANNEL_CLASS,
+                    "configureBlocking", boolean.class);
+            SCTPCHANNEL_CONFIGUREBLOCKING_METHOD = MethodHandles.lookup().unreflect(sctpChannelConfigureBlockingMethod);
+            final Method sctpChannelGetOptionMethod = Reflections.findMethodByName(SCTPCHANNEL_CLASS, "getOption");
+            SCTPCHANNEL_GETOPTION_METHOD = MethodHandles.lookup().unreflect(sctpChannelGetOptionMethod);
+            final Method sctpChannelSetOptionMethod = Reflections.findMethodByName(SCTPCHANNEL_CLASS, "setOption");
+            SCTPCHANNEL_SETOPTION_METHOD = MethodHandles.lookup().unreflect(sctpChannelSetOptionMethod);
+
+            SCTPSERVERCHANNEL_CLASS = Class.forName("com.sun.nio.sctp.SctpServerChannel");
+            SCTPSERVERCHANNEL_OPEN_METHOD = Reflections.findMethod(SCTPSERVERCHANNEL_CLASS, "open");
+            final Method sctpServerChannelBindMethod = Reflections.findMethod(SCTPSERVERCHANNEL_CLASS, "bind",
+                    SocketAddress.class);
+            SCTPSERVERCHANNEL_BIND_METHOD = MethodHandles.lookup().unreflect(sctpServerChannelBindMethod);
+            final Method sctpServerChannelAcceptMethod = Reflections.findMethod(SCTPSERVERCHANNEL_CLASS, "accept");
+            SCTPSERVERCHANNEL_ACCEPT_METHOD = MethodHandles.lookup().unreflect(sctpServerChannelAcceptMethod);
+
+            SCTPSTANDARDSOCKETOPTIONS_CLASS = Class.forName("com.sun.nio.sctp.SctpStandardSocketOptions");
+            final Field sctpStandardSocketOptionsSoRcvbufField = Reflections.findField(SCTPSTANDARDSOCKETOPTIONS_CLASS,
+                    "SO_RCVBUF");
+            SCTPSTANDARDSOCKETOPTIONS_SORCVBUF = sctpStandardSocketOptionsSoRcvbufField.get(null);
+            final Field sctpStandardSocketOptionsSoSndbufField = Reflections.findField(SCTPSTANDARDSOCKETOPTIONS_CLASS,
+                    "SO_SNDBUF");
+            SCTPSTANDARDSOCKETOPTIONS_SOSNDBUF = sctpStandardSocketOptionsSoSndbufField.get(null);
+            final Field sctpStandardSocketOptionsSctpNodelayField = Reflections
+                    .findField(SCTPSTANDARDSOCKETOPTIONS_CLASS, "SCTP_NODELAY");
+            SCTPSTANDARDSOCKETOPTIONS_SCTPNODELAY = sctpStandardSocketOptionsSctpNodelayField.get(null);
+
+        } catch (final ClassNotFoundException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -65,11 +141,11 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
         return socketSize;
     }
 
-    public SctpChannel getSocketChannel() {
+    public Object getSocketChannel() {
         return finalizer.socketChannel;
     }
 
-    public SctpServerChannel getServerSocketChannel() {
+    public Object getServerSocketChannel() {
         return finalizer.serverSocketChannel;
     }
 
@@ -105,18 +181,18 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
         try {
             if (server) {
                 finalizer.serverSocketChannel = newServerSocketChannel();
-                finalizer.serverSocketChannel.bind(socketAddress);
-                finalizer.socketChannel = finalizer.serverSocketChannel.accept();
+                SCTPSERVERCHANNEL_BIND_METHOD.invoke(finalizer.serverSocketChannel, socketAddress);
+                finalizer.socketChannel = SCTPSERVERCHANNEL_ACCEPT_METHOD.invoke(finalizer.serverSocketChannel);
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
                     finalizer.socketChannel = newSocketChannel();
                     try {
-                        finalizer.socketChannel.connect(socketAddress);
+                        SCTPCHANNEL_CONNECT_METHOD.invoke(finalizer.socketChannel, socketAddress);
                         break;
                     } catch (final IOException e) {
-                        finalizer.socketChannel.close();
+                        Closeables.closeQuietly(finalizer.socketChannel);
                         finalizer.socketChannel = null;
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
@@ -131,14 +207,21 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
                 }
             }
             //non-blocking sockets are a bit faster than blocking ones
-            finalizer.socketChannel.configureBlocking(false);
+            SCTPCHANNEL_CONFIGUREBLOCKING_METHOD.invoke(finalizer.socketChannel, false);
             //might be unix domain socket
-            finalizer.socketChannel.setOption(SctpStandardSocketOptions.SO_RCVBUF,
-                    Integers.max(finalizer.socketChannel.getOption(SctpStandardSocketOptions.SO_RCVBUF),
-                            ByteBuffers.calculateExpansion(
-                                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-            finalizer.socketChannel.setOption(SctpStandardSocketOptions.SO_SNDBUF, socketSize);
-            finalizer.socketChannel.setOption(SctpStandardSocketOptions.SCTP_NODELAY, true);
+            final Integer soRcvBuf = (Integer) SCTPCHANNEL_GETOPTION_METHOD.invoke(finalizer.socketChannel,
+                    SCTPSTANDARDSOCKETOPTIONS_SORCVBUF);
+            final Integer newSoRcvBuf = Integers.max(soRcvBuf, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            SCTPCHANNEL_SETOPTION_METHOD.invoke(finalizer.socketChannel, SCTPSTANDARDSOCKETOPTIONS_SORCVBUF,
+                    newSoRcvBuf);
+            SCTPCHANNEL_SETOPTION_METHOD.invoke(finalizer.socketChannel, SCTPSTANDARDSOCKETOPTIONS_SOSNDBUF,
+                    socketSize);
+            SCTPCHANNEL_SETOPTION_METHOD.invoke(finalizer.socketChannel, SCTPSTANDARDSOCKETOPTIONS_SCTPNODELAY, true);
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         } finally {
             socketChannelOpening = false;
         }
@@ -166,12 +249,20 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
         return activeCount.incrementAndGet() == 1;
     }
 
-    protected SctpChannel newSocketChannel() throws IOException {
-        return SctpChannel.open();
+    protected Object newSocketChannel() throws IOException {
+        try {
+            return SCTPCHANNEL_OPEN_METHOD.invoke(null);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    protected SctpServerChannel newServerSocketChannel() throws IOException {
-        return SctpServerChannel.open();
+    protected Object newServerSocketChannel() throws IOException {
+        try {
+            return SCTPSERVERCHANNEL_OPEN_METHOD.invoke(null);
+        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected Duration getMaxConnectRetryDelay() {
@@ -199,8 +290,8 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
     private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
-        private volatile SctpChannel socketChannel;
-        private volatile SctpServerChannel serverSocketChannel;
+        private volatile Object socketChannel;
+        private volatile Object serverSocketChannel;
 
         protected SocketSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -213,12 +304,12 @@ public class SctpSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            final SctpChannel socketChannelCopy = socketChannel;
+            final Object socketChannelCopy = socketChannel;
             if (socketChannelCopy != null) {
                 socketChannel = null;
                 Closeables.closeQuietly(socketChannelCopy);
             }
-            final SctpServerChannel serverSocketChannelCopy = serverSocketChannel;
+            final Object serverSocketChannelCopy = serverSocketChannel;
             if (serverSocketChannelCopy != null) {
                 serverSocketChannel = null;
                 Closeables.closeQuietly(serverSocketChannelCopy);

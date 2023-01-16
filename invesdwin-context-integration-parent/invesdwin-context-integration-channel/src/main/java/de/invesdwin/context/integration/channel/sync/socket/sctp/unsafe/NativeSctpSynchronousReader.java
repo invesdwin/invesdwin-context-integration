@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronous
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -25,7 +26,7 @@ import net.openhft.chronicle.core.io.IOTools;
 @NotThreadSafe
 public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private static Class<?> RESULT_CONTAINER_CLASS;
+    private static final Class<?> RESULTCONTAINER_CLASS;
     private static final MethodHandle SCTPCHANNELIMPL_RECEIVE0_METHOD;
     private static final MethodHandle RESULTCONTAINER_CLEAR_METHOD;
 
@@ -33,14 +34,16 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         try {
             //only OracleJDK contains SCTP as it seems (causes compile errors in maven/jenkins): https://stackoverflow.com/a/26614215
             //static native int receive0(int fd, ResultContainer resultContainer, long address, int length, boolean peek) throws IOException;
-            RESULT_CONTAINER_CLASS = Class.forName("sun.nio.ch.sctp.ResultContainer");
+            RESULTCONTAINER_CLASS = Class.forName("sun.nio.ch.sctp.ResultContainer");
             final Class<?> sctpChannelImplClass = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
-            final Method receive0 = Jvm.getMethod(sctpChannelImplClass, "receive0", int.class, RESULT_CONTAINER_CLASS,
-                    long.class, int.class, boolean.class);
-            SCTPCHANNELIMPL_RECEIVE0_METHOD = MethodHandles.lookup().unreflect(receive0);
+            final Method receive0Method = Reflections.findMethod(sctpChannelImplClass, "receive0", int.class,
+                    RESULTCONTAINER_CLASS, long.class, int.class, boolean.class);
+            Reflections.makeAccessible(receive0Method);
+            SCTPCHANNELIMPL_RECEIVE0_METHOD = MethodHandles.lookup().unreflect(receive0Method);
 
-            final Method clear = Jvm.getMethod(RESULT_CONTAINER_CLASS, "clear");
-            RESULTCONTAINER_CLEAR_METHOD = MethodHandles.lookup().unreflect(clear);
+            final Method clearMethod = Reflections.findMethod(RESULTCONTAINER_CLASS, "clear");
+            Reflections.makeAccessible(clearMethod);
+            RESULTCONTAINER_CLEAR_METHOD = MethodHandles.lookup().unreflect(clearMethod);
         } catch (final ClassNotFoundException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -67,7 +70,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         fdVal = Jvm.getValue(fd, "fd");
         try {
-            resultContainer = RESULT_CONTAINER_CLASS.getConstructor().newInstance();
+            resultContainer = RESULTCONTAINER_CLASS.getConstructor().newInstance();
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -196,8 +199,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
             final boolean peek) throws IOException {
         try {
             RESULTCONTAINER_CLEAR_METHOD.invoke(resultContainer);
-            final int res = (int) SCTPCHANNELIMPL_RECEIVE0_METHOD.invokeExact(fd, resultContainer, address, length,
-                    peek);
+            final int res = (int) SCTPCHANNELIMPL_RECEIVE0_METHOD.invoke(fd, resultContainer, address, length, peek);
             if (res == IOTools.IOSTATUS_INTERRUPTED) {
                 return 0;
             } else {

@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronous
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -31,11 +32,13 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
 
     static {
         try {
+            //only OracleJDK contains SCTP as it seems (causes compile errors in maven/jenkins): https://stackoverflow.com/a/26614215
             //static native int send0(int fd, long address, int length, InetAddress addr, int port, int assocId, int streamNumber, boolean unordered, int ppid) throws IOException;
-            final Class<?> fdi = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
-            final Method send0 = Jvm.getMethod(fdi, "send0", int.class, long.class, int.class, InetAddress.class,
-                    int.class, int.class, int.class, boolean.class, int.class);
-            SCTPCHANNELIMPL_SEND0_METHOD = MethodHandles.lookup().unreflect(send0);
+            final Class<?> sctpChannelImplClass = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
+            final Method send0Method = Reflections.findMethod(sctpChannelImplClass, "send0", int.class, long.class, int.class,
+                    InetAddress.class, int.class, int.class, int.class, boolean.class, int.class);
+            Reflections.makeAccessible(send0Method);
+            SCTPCHANNELIMPL_SEND0_METHOD = MethodHandles.lookup().unreflect(send0Method);
         } catch (final ClassNotFoundException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }

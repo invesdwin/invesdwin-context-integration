@@ -4,9 +4,6 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.sun.nio.sctp.MessageInfo;
-import com.sun.nio.sctp.SctpChannel;
-
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
@@ -25,7 +22,7 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
     private int bufferOffset = 0;
-    private SctpChannel socketChannel;
+    private Object socketChannel;
 
     public SctpSynchronousReader(final SctpSynchronousChannel channel) {
         this.channel = channel;
@@ -59,12 +56,19 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         if (messageBuffer.position() > 0) {
             return true;
         }
-        final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, null);
-        if (messageInfo == null) {
-            return false;
+        try {
+            final Object messageInfo = SctpSynchronousChannel.SCTPCHANNEL_RECEIVE_METHOD.invoke(socketChannel,
+                    messageBuffer, null, null);
+            if (messageInfo == null) {
+                return false;
+            }
+            final int count = (int) SctpSynchronousChannel.MESSAGEINFO_BYTES_METHOD.invoke(messageInfo);
+            return count > 0;
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         }
-        final int count = messageInfo.bytes();
-        return count > 0;
     }
 
     @Override
@@ -74,24 +78,31 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
 
         int targetPosition = bufferOffset + SctpSynchronousChannel.MESSAGE_INDEX;
         //read size
-        while (messageBuffer.position() < targetPosition) {
-            final MessageInfo messageInfo = socketChannel.receive(messageBuffer, null, null);
-            final int count = messageInfo.bytes();
-            if (count < 0) { // EOF
-                close();
-                throw ByteBuffers.newEOF();
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+        try {
+            while (messageBuffer.position() < targetPosition) {
+                final Object messageInfo = SctpSynchronousChannel.SCTPCHANNEL_RECEIVE_METHOD.invoke(socketChannel,
+                        messageBuffer, null, null);
+                final int count = (int) SctpSynchronousChannel.MESSAGEINFO_BYTES_METHOD.invoke(messageInfo);
+                if (count < 0) { // EOF
                     close();
-                    throw FastEOFException.getInstance("read timeout exceeded");
+                    throw ByteBuffers.newEOF();
                 }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
+                if (count == 0 && timeout != null) {
+                    if (zeroCountNanos == -1) {
+                        zeroCountNanos = System.nanoTime();
+                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
+                        close();
+                        throw FastEOFException.getInstance("read timeout exceeded");
+                    }
+                    ASpinWait.onSpinWaitStatic();
+                } else {
+                    zeroCountNanos = -1L;
+                }
             }
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         }
         final int size = buffer.getInt(bufferOffset + SctpSynchronousChannel.SIZE_INDEX);
         if (size <= 0) {
@@ -136,7 +147,7 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         //noop
     }
 
-    public static void readFully(final SctpChannel src, final java.nio.ByteBuffer byteBuffer, final int pos,
+    public static void readFully(final Object socketChannel, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length) throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
@@ -146,8 +157,9 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
         int remaining = length - pos;
         try {
             while (remaining > 0) {
-                final MessageInfo messageInfo = src.receive(byteBuffer, null, null);
-                final int count = messageInfo.bytes();
+                final Object messageInfo = SctpSynchronousChannel.SCTPCHANNEL_RECEIVE_METHOD.invoke(socketChannel,
+                        byteBuffer, null, null);
+                final int count = (int) SctpSynchronousChannel.MESSAGEINFO_BYTES_METHOD.invoke(messageInfo);
                 if (count < 0) { // EOF
                     break;
                 }
@@ -166,6 +178,10 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
             if (remaining > 0) {
                 throw ByteBuffers.newEOF();
             }
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
         } finally {
             byteBuffer.clear();
         }
