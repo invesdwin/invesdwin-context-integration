@@ -88,6 +88,7 @@
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
 		<version.mina>2.2.1</version.mina>
 		<version.tomcat-jni>10.0.27</version.tomcat-jni>
+		<version.jnr-enxio>0.32.14</version.jnr-enxio>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -691,6 +692,11 @@
 				<groupId>org.apache.tomcat</groupId>
 				<artifactId>tomcat-jni</artifactId>
 				<version>${version.tomcat-jni}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.github.jnr</groupId>
+				<artifactId>jnr-enxio</artifactId>
+				<version>${version.jnr-enxio}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
