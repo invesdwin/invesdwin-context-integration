@@ -13,12 +13,12 @@ import de.invesdwin.util.time.duration.Duration;
 public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
 
     private final ISynchronousReader<M> delegate;
-    private final ASpinWait spinWait;
+    private final ASpinWait readerSpinWait;
     private final Duration timeout;
 
     public BlockingSynchronousReader(final ISynchronousReader<M> delegate, final Duration timeout) {
         this.delegate = delegate;
-        this.spinWait = newSpinWait(delegate);
+        this.readerSpinWait = newSpinWait(delegate);
         this.timeout = timeout;
     }
 
@@ -54,7 +54,7 @@ public class BlockingSynchronousReader<M> implements ISynchronousReader<M> {
     public M readMessage() throws IOException {
         try {
             //maybe block here
-            if (!spinWait.awaitFulfill(System.nanoTime(), timeout)) {
+            if (!readerSpinWait.awaitFulfill(System.nanoTime(), timeout)) {
                 throw new TimeoutException("Read message timeout exceeded: " + timeout);
             }
         } catch (final IOException e) {
