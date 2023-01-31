@@ -220,6 +220,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         if (outboundEncodedData == null) {
             throw FastEOFException.getInstance("closed");
         }
+        if (!underlyingWriter.writeFinished()) {
+            //wait for last transmission to complete before sending more bytes through output buffer
+            return true;
+        }
 
         boolean busy = false;
         //drain unencrypted output
@@ -253,12 +257,6 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
                     outboundEncodedData.remaining());
             underlyingWriter.write(encodedMessage);
-            //CHECKSTYLE:OFF
-            while (!underlyingWriter.writeFinished()) {
-                //CHECKSTYLE:ON
-                //System.out.println("TODO: integrate into outer loop");
-                //repeat
-            }
             outboundEncodedData.clear();
         }
         return busy;

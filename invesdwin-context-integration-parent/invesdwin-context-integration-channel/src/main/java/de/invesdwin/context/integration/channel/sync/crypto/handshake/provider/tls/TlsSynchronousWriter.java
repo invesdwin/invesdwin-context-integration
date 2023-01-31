@@ -37,14 +37,11 @@ public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
     public void write(final IByteBufferProvider message) throws IOException {
         final IByteBuffer messageBuffer = message.asBuffer();
         channel.setOutboundApplicationDataBuffer(messageBuffer);
-        while (channel.action()) {
-            continue;
-        }
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return true;
+        return !channel.action();
     }
 
 }
