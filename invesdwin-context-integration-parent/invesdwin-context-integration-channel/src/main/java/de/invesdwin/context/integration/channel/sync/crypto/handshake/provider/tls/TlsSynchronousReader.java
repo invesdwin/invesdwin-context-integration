@@ -36,8 +36,9 @@ public class TlsSynchronousReader implements ISynchronousReader<IByteBufferProvi
 
     @Override
     public boolean hasNext() throws IOException {
-        while (channel.action()) {
-            continue;
+        if (channel.action()) {
+            //wait for rehandshake to complete or message to be fully received
+            return false;
         }
         final java.nio.ByteBuffer src = channel.getInboundApplicationData();
         final int srcPosition = src.position();

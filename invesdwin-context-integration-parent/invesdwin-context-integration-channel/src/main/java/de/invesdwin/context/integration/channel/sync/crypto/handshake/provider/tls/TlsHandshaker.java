@@ -307,7 +307,7 @@ public class TlsHandshaker {
     }
 
     // retransmission if timeout
-    private boolean onReceiveTimeout() throws IOException {
+    private boolean onReceiveTimeout() throws IOException, TimeoutException {
         final HandshakeStatus hs = engine.getHandshakeStatus();
         if (hs == HandshakeStatus.NOT_HANDSHAKING) {
             return false;
@@ -319,7 +319,7 @@ public class TlsHandshaker {
 
     // produce handshake packets
     //CHECKSTYLE:OFF
-    private boolean produceHandshakePackets(final String action) throws IOException {
+    private boolean produceHandshakePackets(final String action) throws IOException, TimeoutException {
         //CHECKSTYLE:ON
 
         int packets = 0;
@@ -344,11 +344,13 @@ public class TlsHandshaker {
                     printHex(address, side, action + " packet", oNet);
                 }
                 writer.write(ByteBuffers.wrapRelative(oNet));
-                //CHECKSTYLE:OFF
+                final long start = System.nanoTime();
                 while (!writer.writeFinished()) {
-                    //CHECKSTYLE:ON
-                    //System.out.println("TODO: integrate into outer loop");
-                    //repeat
+                    if (handshakeTimeout.isLessThanNanos(System.nanoTime() - start)) {
+                        throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
+                    } else {
+                        Thread.onSpinWait();
+                    }
                 }
             }
 
@@ -431,14 +433,14 @@ public class TlsHandshaker {
     }
 
     // deliver application data
-    private void deliverAppData(final java.nio.ByteBuffer appData) throws IOException {
+    private void deliverAppData(final java.nio.ByteBuffer appData) throws IOException, TimeoutException {
         // Note: have not considered the packet loses
         produceApplicationPackets(appData);
         appData.flip();
     }
 
     // produce application packets
-    void produceApplicationPackets(final java.nio.ByteBuffer appData) throws IOException {
+    void produceApplicationPackets(final java.nio.ByteBuffer appData) throws IOException, TimeoutException {
 
         handshakeBuffer.clear();
         final java.nio.ByteBuffer appNet = handshakeBuffer;
@@ -465,11 +467,13 @@ public class TlsHandshaker {
         // Status.OK:
         if (appNet.hasRemaining()) {
             writer.write(ByteBuffers.wrapRelative(appNet));
-            //CHECKSTYLE:OFF
+            final long start = System.nanoTime();
             while (!writer.writeFinished()) {
-                //CHECKSTYLE:ON
-                //System.out.println("TODO: integrate into outer loop");
-                //repeat
+                if (handshakeTimeout.isLessThanNanos(System.nanoTime() - start)) {
+                    throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
+                } else {
+                    Thread.onSpinWait();
+                }
             }
         }
     }

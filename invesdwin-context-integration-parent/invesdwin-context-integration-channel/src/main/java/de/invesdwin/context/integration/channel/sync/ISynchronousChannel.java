@@ -12,4 +12,11 @@ public interface ISynchronousChannel extends Closeable {
      */
     void open() throws IOException;
 
+    /**
+     * Closing should also be done in a different thread than a multiplexing thread, same as open because it might block
+     * to send to termination message to the other side that needs to be ACKnowledged.
+     */
+    @Override
+    default void close() throws IOException {}
+
 }

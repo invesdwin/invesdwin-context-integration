@@ -57,6 +57,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private java.nio.ByteBuffer inboundApplicationData;
     private java.nio.ByteBuffer[] outboundApplicationDataArray;
     private java.nio.ByteBuffer[] inboundApplicationDataArray;
+    private volatile boolean rehandshaking = false;
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
             final InetSocketAddress socketAddress, final ITlsProtocol protocol, final SSLEngine engine,
@@ -122,6 +123,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     }
 
     public boolean action() throws IOException {
+        if (rehandshaking) {
+            //wait for rehandshake to complete
+            return false;
+        }
         final HandshakeStatus hs = engine.getHandshakeStatus();
         if (hs != HandshakeStatus.FINISHED && hs != HandshakeStatus.NOT_HANDSHAKING) {
             /*
@@ -130,7 +135,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
              * be called properly. Also for DTLS the handshaker handles the packet loss of the rehandshake. The
              * application only handles packet loss for application data. So another reason to use the handshaker here.
              */
-
+            rehandshaking = true;
             if (!performHandshake()) {
                 return false;
             }
@@ -148,7 +153,23 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         return false;
     }
 
-    private boolean performHandshake() throws IOException {
+    /**
+     * When used inside a non-blocking multiplexer this method should just throw an IOException instead of performing
+     * the blocking handshake. Then let the client reconnect by itself to a separated acceptor thread in the
+     * multiplexing server.
+     * 
+     * Alternatively override this method to perform the blocking handshake in a separate thread that performs
+     * super.performHandshake(). Further action() calls to the channel will say that this channel has nothing to do for
+     * the multiplexing thread. Once super.performHandshake() finishes, rehandshake is automatically set to true, which
+     * informs the multiplexing thread that this channel again has some work to do (if there is work to do).
+     * 
+     * Though when performing the handshake asynchronously in a different thread, make sure the underlying transport
+     * writer/channel is not used in other threads. Though since TLS is a stateful protocol, it might be hard to reuse
+     * underlying transport writer/channel for multiple TLS sessions (Or why would one even want to do that? Normally
+     * you have a TLS session per e.g. accepted socket client session. Only a non-wrapping gateway might have to handle
+     * this differently.).
+     */
+    protected boolean performHandshake() throws IOException {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
             handshaker.init(handshakeTimeout, handshakeTimeoutRecoveryTries, socketAdddress, server, side, protocol,
@@ -164,6 +185,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             throw new IOException(e);
         } finally {
             TlsHandshakerObjectPool.INSTANCE.returnObject(handshaker);
+            rehandshaking = false;
         }
     }
 
