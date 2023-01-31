@@ -85,15 +85,21 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
                     final byte[] ourVerifyKey = ourSignatureKey.getVerifyKey().getEncoded();
                     final IByteBuffer ourVerifyKeyMessage = ByteBuffers.wrap(ourVerifyKey);
                     unsignedHandshakeWriter.write(ourVerifyKeyMessage);
-                    //CHECKSTYLE:OFF
-                    while (!unsignedHandshakeWriter.writeFinished()) {
-                        //CHECKSTYLE:ON
-                        //repeat
+                    final ASpinWait writerSpinWait = newSpinWait(unsignedHandshakeWriter);
+                    try {
+                        if (!writerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                            throw new TimeoutException(
+                                    "Write handshake message timeout exceeded: " + getHandshakeTimeout());
+                        }
+                    } catch (final IOException e) {
+                        throw e;
+                    } catch (final Exception e) {
+                        throw new IOException(e);
                     }
 
-                    final ASpinWait spinWait = newSpinWait(unsignedHandshakeReader);
+                    final ASpinWait readerSpinWait = newSpinWait(unsignedHandshakeReader);
                     try {
-                        if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                        if (!readerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                             throw new TimeoutException(
                                     "Read handshake message timeout exceeded: " + getHandshakeTimeout());
                         }
@@ -184,6 +190,11 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
 
     @Override
     public ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
+        return unsignedProvider.newSpinWait(delegate);
+    }
+
+    @Override
+    public ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
         return unsignedProvider.newSpinWait(delegate);
     }
 

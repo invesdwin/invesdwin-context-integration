@@ -58,6 +58,18 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
         };
     }
 
+    /**
+     * Override this to disable spinning or configure type of waits.
+     */
+    public ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
+        return new ASpinWait() {
+            @Override
+            public boolean isConditionFulfilled() throws Exception {
+                return delegate.writeFinished();
+            }
+        };
+    }
+
     public IDerivationFactory getDerivationFactory() {
         return IDerivationFactory.getDefault();
     }

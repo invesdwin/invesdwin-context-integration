@@ -56,9 +56,10 @@ public class TlsHandshaker {
     private SocketAddress address;
     private ITlsProtocol protocol;
     private SSLEngine engine;
-    private ASpinWait readerSpinWait;
     private ISynchronousReader<IByteBufferProvider> reader;
+    private ASpinWait readerSpinWait;
     private ISynchronousWriter<IByteBufferProvider> writer;
+    private ASpinWait writerSpinWait;
 
     private HandshakeValidation handshakeValidation;
 
@@ -68,9 +69,9 @@ public class TlsHandshaker {
 
     public void init(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
             final SocketAddress address, final boolean server, final String side, final ITlsProtocol protocol,
-            final SSLEngine engine, final ASpinWait readerSpinWait,
-            final ISynchronousReader<IByteBufferProvider> reader, final ISynchronousWriter<IByteBufferProvider> writer,
-            final HandshakeValidation handshakeValidation) {
+            final SSLEngine engine, final ISynchronousReader<IByteBufferProvider> reader,
+            final ASpinWait readerSpinWait, final ISynchronousWriter<IByteBufferProvider> writer,
+            final ASpinWait writerSpinWait, final HandshakeValidation handshakeValidation) {
         this.server = server;
         this.side = side;
 
@@ -79,9 +80,10 @@ public class TlsHandshaker {
         this.address = address;
         this.protocol = protocol;
         this.engine = engine;
-        this.readerSpinWait = readerSpinWait;
         this.reader = reader;
+        this.readerSpinWait = readerSpinWait;
         this.writer = writer;
+        this.writerSpinWait = writerSpinWait;
 
         this.handshakeValidation = handshakeValidation;
     }
@@ -344,13 +346,12 @@ public class TlsHandshaker {
                     printHex(address, side, action + " packet", oNet);
                 }
                 writer.write(ByteBuffers.wrapRelative(oNet));
-                final long start = System.nanoTime();
-                while (!writer.writeFinished()) {
-                    if (handshakeTimeout.isLessThanNanos(System.nanoTime() - start)) {
+                try {
+                    if (!writerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                         throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
-                    } else {
-                        Thread.onSpinWait();
                     }
+                } catch (final Exception e) {
+                    throw new IOException(e);
                 }
             }
 
@@ -467,13 +468,12 @@ public class TlsHandshaker {
         // Status.OK:
         if (appNet.hasRemaining()) {
             writer.write(ByteBuffers.wrapRelative(appNet));
-            final long start = System.nanoTime();
-            while (!writer.writeFinished()) {
-                if (handshakeTimeout.isLessThanNanos(System.nanoTime() - start)) {
+            try {
+                if (!writerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                     throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
-                } else {
-                    Thread.onSpinWait();
                 }
+            } catch (final Exception e) {
+                throw new IOException(e);
             }
         }
     }

@@ -58,15 +58,21 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
                 final byte[] ourPublicKey = ourKeyPair.getPublic().getEncoded();
                 final IByteBuffer ourPublicKeyMessage = ByteBuffers.wrap(ourPublicKey);
                 handshakeWriter.write(ourPublicKeyMessage);
-                //CHECKSTYLE:OFF
-                while (!handshakeWriter.writeFinished()) {
-                    //CHECKSTYLE:ON
-                    //repeat
+                final ASpinWait writerSpinWait = newSpinWait(handshakeWriter);
+                try {
+                    if (!writerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                        throw new TimeoutException(
+                                "Write handshake message timeout exceeded: " + getHandshakeTimeout());
+                    }
+                } catch (final IOException e) {
+                    throw e;
+                } catch (final Exception e) {
+                    throw new IOException(e);
                 }
 
-                final ASpinWait spinWait = newSpinWait(handshakeReader);
+                final ASpinWait readerSpinWait = newSpinWait(handshakeReader);
                 try {
-                    if (!spinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                    if (!readerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                         throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
                     }
                 } catch (final IOException e) {

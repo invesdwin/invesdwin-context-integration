@@ -41,9 +41,10 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private final InetSocketAddress socketAdddress;
     private final ITlsProtocol protocol;
     private final SSLEngine engine;
-    private final ASpinWait readerSpinWait;
     private final ISynchronousReader<IByteBufferProvider> underlyingReader;
+    private final ASpinWait readerSpinWait;
     private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
+    private final ASpinWait writerSpinWait;
     private final boolean server;
     private final String side;
     private final HandshakeValidation handshakeValidation;
@@ -61,17 +62,18 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
             final InetSocketAddress socketAddress, final ITlsProtocol protocol, final SSLEngine engine,
-            final ASpinWait readerSpinWait, final ISynchronousReader<IByteBufferProvider> underlyingReader,
-            final ISynchronousWriter<IByteBufferProvider> underlyingWriter,
+            final ISynchronousReader<IByteBufferProvider> underlyingReader, final ASpinWait readerSpinWait,
+            final ISynchronousWriter<IByteBufferProvider> underlyingWriter, final ASpinWait writerSpinWait,
             final HandshakeValidation handshakeValidation) {
         this.handshakeTimeout = handshakeTimeout;
         this.handshakeTimeoutRecoveryTries = handshakeTimeoutRecoveryTries;
         this.socketAdddress = socketAddress;
         this.protocol = protocol;
         this.engine = engine;
-        this.readerSpinWait = readerSpinWait;
         this.underlyingReader = underlyingReader;
+        this.readerSpinWait = readerSpinWait;
         this.underlyingWriter = underlyingWriter;
+        this.writerSpinWait = writerSpinWait;
         this.server = !engine.getUseClientMode();
         this.side = server ? "Server" : "Client";
         this.handshakeValidation = handshakeValidation;
@@ -173,7 +175,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
             handshaker.init(handshakeTimeout, handshakeTimeoutRecoveryTries, socketAdddress, server, side, protocol,
-                    engine, readerSpinWait, underlyingReader, underlyingWriter, handshakeValidation);
+                    engine, underlyingReader, readerSpinWait, underlyingWriter, writerSpinWait, handshakeValidation);
             handshaker.performHandshake();
             updateOutboundEncodedData();
             return true;

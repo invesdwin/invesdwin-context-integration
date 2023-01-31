@@ -108,7 +108,7 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
 
     @Override
     public boolean writeFinished() throws IOException {
-        return encryptedWriter.writeFinished();
+        return getEncryptedWriter() != null && encryptedWriter.writeFinished();
     }
 
 }

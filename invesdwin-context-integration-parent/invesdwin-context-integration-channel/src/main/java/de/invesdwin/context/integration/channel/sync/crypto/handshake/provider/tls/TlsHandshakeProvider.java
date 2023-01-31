@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
@@ -51,9 +52,10 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
         final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
         final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
+        final ASpinWait writerSpinWait = newSpinWait(underlyingWriter);
         final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout,
-                newHandshakeTimeoutRecoveryTries(), socketAddress, tlsProvider.getProtocol(), engine, readerSpinWait,
-                underlyingReader, underlyingWriter, handshakeValidation);
+                newHandshakeTimeoutRecoveryTries(), socketAddress, tlsProvider.getProtocol(), engine, underlyingReader,
+                readerSpinWait, underlyingWriter, writerSpinWait, handshakeValidation);
         final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(tlsChannel);
         final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(tlsChannel);
         channel.getReader().setEncryptedReader(encryptedReader);
@@ -74,6 +76,15 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
             @Override
             public boolean isConditionFulfilled() throws Exception {
                 return delegate.hasNext();
+            }
+        };
+    }
+
+    protected ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
+        return new ASpinWait() {
+            @Override
+            public boolean isConditionFulfilled() throws Exception {
+                return delegate.writeFinished();
             }
         };
     }

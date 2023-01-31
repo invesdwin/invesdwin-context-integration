@@ -88,10 +88,22 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
         return verifier;
     }
 
-    protected void waitForMessage(final ASpinWait handshakeReaderSpinWait) throws IOException {
+    protected void waitForRead(final ASpinWait handshakeReaderSpinWait) throws IOException {
         try {
             if (!handshakeReaderSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                 throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
+            }
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    protected void waitForWrite(final ASpinWait handshakeWriterSpinWait) throws IOException {
+        try {
+            if (!handshakeWriterSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                throw new TimeoutException("Write handshake message timeout exceeded: " + getHandshakeTimeout());
             }
         } catch (final IOException e) {
             throw e;

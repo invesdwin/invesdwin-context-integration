@@ -294,24 +294,26 @@ public abstract class AChannelTest extends ATest {
             }
             responseReader.open();
             readsStart = new Instant();
-            final ASpinWait spinWait = new ASpinWait() {
+            final ASpinWait readSpinWait = new ASpinWait() {
                 @Override
                 public boolean isConditionFulfilled() throws Exception {
                     return responseReader.hasNext();
                 }
             };
+            final ASpinWait writeSpinWait = new ASpinWait() {
+                @Override
+                public boolean isConditionFulfilled() throws Exception {
+                    return requestWriter.writeFinished();
+                }
+            };
             long waitingSinceNanos = System.nanoTime();
             while (true) {
                 requestWriter.write(REQUEST_MESSAGE);
-                //CHECKSTYLE:OFF
-                while (!requestWriter.writeFinished()) {
-                    //CHECKSTYLE:ON
-                    //repeat
-                }
+                Assertions.checkTrue(writeSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                 if (DEBUG) {
                     log.info("client request out");
                 }
-                Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
+                Assertions.checkTrue(readSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                 final FDate readMessage = responseReader.readMessage();
                 responseReader.readFinished();
                 if (DEBUG) {
@@ -371,10 +373,16 @@ public abstract class AChannelTest extends ATest {
 
         @Override
         public void run() {
-            final ASpinWait spinWait = new ASpinWait() {
+            final ASpinWait readSpinWait = new ASpinWait() {
                 @Override
                 public boolean isConditionFulfilled() throws Exception {
                     return requestReader.hasNext();
+                }
+            };
+            final ASpinWait writeSpinWait = new ASpinWait() {
+                @Override
+                public boolean isConditionFulfilled() throws Exception {
+                    return responseWriter.writeFinished();
                 }
             };
             try {
@@ -390,7 +398,7 @@ public abstract class AChannelTest extends ATest {
                 final Instant writesStart = new Instant();
                 long waitingSinceNanos = System.nanoTime();
                 for (final FDate date : newValues()) {
-                    Assertions.checkTrue(spinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
+                    Assertions.checkTrue(readSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                     if (DEBUG) {
                         log.info("server request in");
                     }
@@ -398,11 +406,7 @@ public abstract class AChannelTest extends ATest {
                     requestReader.readFinished();
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
                     responseWriter.write(date);
-                    //CHECKSTYLE:OFF
-                    while (!responseWriter.writeFinished()) {
-                        //CHECKSTYLE:ON
-                        //repeat
-                    }
+                    Assertions.checkTrue(writeSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
                     if (DEBUG) {
                         log.info("server response out [" + date + "]");
                     }

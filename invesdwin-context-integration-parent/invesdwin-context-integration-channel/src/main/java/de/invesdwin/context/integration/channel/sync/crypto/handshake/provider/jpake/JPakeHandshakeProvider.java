@@ -59,6 +59,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
             final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
             final ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException {
         final ASpinWait handshakeReaderSpinWait = newSpinWait(handshakeReader);
+        final ASpinWait handshakeWriterSpinWait = newSpinWait(handshakeWriter);
 
         handshakeWriter.open();
         final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
@@ -69,12 +70,14 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
                         getPresharedPassword().toCharArray(), getPrimeOrderGroup(), newDigest(),
                         CryptoRandomGenerators.getThreadLocalCryptoRandom());
 
-                round1(handshakeWriter, handshakeReaderSpinWait, handshakeReader, buffer, ourParticipant);
-                round2(handshakeWriter, handshakeReaderSpinWait, handshakeReader, buffer, ourParticipant);
+                round1(handshakeWriter, handshakeWriterSpinWait, handshakeReader, handshakeReaderSpinWait, buffer,
+                        ourParticipant);
+                round2(handshakeWriter, handshakeWriterSpinWait, handshakeReader, handshakeReaderSpinWait, buffer,
+                        ourParticipant);
 
                 final BigInteger keyingMaterial = ourParticipant.calculateKeyingMaterial();
-                round3(handshakeWriter, handshakeReaderSpinWait, handshakeReader, buffer, ourParticipant,
-                        keyingMaterial);
+                round3(handshakeWriter, handshakeWriterSpinWait, handshakeReader, handshakeReaderSpinWait, buffer,
+                        ourParticipant, keyingMaterial);
 
                 final byte[] sharedSecret = keyingMaterial.toByteArray();
                 final DerivedKeyProvider derivedKeyProvider = DerivedKeyProvider
@@ -92,19 +95,16 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
     }
 
     protected void round1(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ASpinWait handshakeReaderSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
-            final IByteBuffer buffer, final JPAKEParticipant ourParticipant) throws IOException, CryptoException {
+            final ASpinWait handshakeWriterSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
+            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final JPAKEParticipant ourParticipant)
+            throws IOException, CryptoException {
         final JPAKERound1Payload ourRound1Payload = ourParticipant.createRound1PayloadToSend();
 
         final int ourRound1PayloadLength = JPakeRound1PayloadSerde.INSTANCE.toBuffer(buffer, ourRound1Payload);
         handshakeWriter.write(buffer.slice(0, ourRound1PayloadLength));
-        //CHECKSTYLE:OFF
-        while (!handshakeWriter.writeFinished()) {
-            //CHECKSTYLE:ON
-            //repeat
-        }
+        waitForWrite(handshakeWriterSpinWait);
 
-        waitForMessage(handshakeReaderSpinWait);
+        waitForRead(handshakeReaderSpinWait);
         final IByteBuffer otherRound1PayloadMessage = handshakeReader.readMessage().asBuffer();
         final JPAKERound1Payload otherRound1Payload = JPakeRound1PayloadSerde.INSTANCE
                 .fromBuffer(otherRound1PayloadMessage);
@@ -114,19 +114,16 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
     }
 
     protected void round2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ASpinWait handshakeReaderSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
-            final IByteBuffer buffer, final JPAKEParticipant ourParticipant) throws IOException, CryptoException {
+            final ASpinWait handshakeWriterSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
+            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final JPAKEParticipant ourParticipant)
+            throws IOException, CryptoException {
         final JPAKERound2Payload ourRound2Payload = ourParticipant.createRound2PayloadToSend();
 
         final int ourRound2PayloadLength = JPakeRound2PayloadSerde.INSTANCE.toBuffer(buffer, ourRound2Payload);
         handshakeWriter.write(buffer.slice(0, ourRound2PayloadLength));
-        //CHECKSTYLE:OFF
-        while (!handshakeWriter.writeFinished()) {
-            //CHECKSTYLE:ON
-            //repeat
-        }
+        waitForWrite(handshakeWriterSpinWait);
 
-        waitForMessage(handshakeReaderSpinWait);
+        waitForRead(handshakeReaderSpinWait);
         final IByteBuffer otherRound2PayloadMessage = handshakeReader.readMessage().asBuffer();
         final JPAKERound2Payload otherRound2Payload = JPakeRound2PayloadSerde.INSTANCE
                 .fromBuffer(otherRound2PayloadMessage);
@@ -136,20 +133,16 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
     }
 
     protected void round3(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ASpinWait handshakeReaderSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
-            final IByteBuffer buffer, final JPAKEParticipant ourParticipant, final BigInteger keyingMaterial)
-            throws IOException, CryptoException {
+            final ASpinWait handshakeWriterSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
+            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final JPAKEParticipant ourParticipant,
+            final BigInteger keyingMaterial) throws IOException, CryptoException {
         final JPAKERound3Payload ourRound3Payload = ourParticipant.createRound3PayloadToSend(keyingMaterial);
 
         final int ourRound3PayloadLength = JPakeRound3PayloadSerde.INSTANCE.toBuffer(buffer, ourRound3Payload);
         handshakeWriter.write(buffer.slice(0, ourRound3PayloadLength));
-        //CHECKSTYLE:OFF
-        while (!handshakeWriter.writeFinished()) {
-            //CHECKSTYLE:ON
-            //repeat
-        }
+        waitForWrite(handshakeWriterSpinWait);
 
-        waitForMessage(handshakeReaderSpinWait);
+        waitForRead(handshakeReaderSpinWait);
         final IByteBuffer otherRound3PayloadMessage = handshakeReader.readMessage().asBuffer();
         final JPAKERound3Payload otherRound2Payload = JPakeRound3PayloadSerde.INSTANCE
                 .fromBuffer(otherRound3PayloadMessage);
@@ -158,10 +151,22 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
         ourParticipant.validateRound3PayloadReceived(otherRound2Payload, keyingMaterial);
     }
 
-    protected void waitForMessage(final ASpinWait handshakeReaderSpinWait) throws IOException {
+    protected void waitForRead(final ASpinWait handshakeReaderSpinWait) throws IOException {
         try {
             if (!handshakeReaderSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
                 throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
+            }
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Exception e) {
+            throw new IOException(e);
+        }
+    }
+
+    protected void waitForWrite(final ASpinWait handshakeWriterSpinWait) throws IOException {
+        try {
+            if (!handshakeWriterSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
+                throw new TimeoutException("Write handshake message timeout exceeded: " + getHandshakeTimeout());
             }
         } catch (final IOException e) {
             throw e;
