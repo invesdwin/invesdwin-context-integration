@@ -76,16 +76,17 @@ public class StreamVerifiedEncryptionSynchronousWriter
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.decryptedBuffer = message.asBuffer();
-        try {
-            delegate.write(this);
-        } finally {
-            this.decryptedBuffer = null;
-        }
+        delegate.write(this);
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+        if (delegate.writeFinished()) {
+            this.decryptedBuffer = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

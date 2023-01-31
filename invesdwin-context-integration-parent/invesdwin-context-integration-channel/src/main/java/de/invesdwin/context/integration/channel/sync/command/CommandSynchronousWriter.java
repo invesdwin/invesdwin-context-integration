@@ -59,16 +59,17 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     @Override
     public void write(final ISynchronousCommand<M> message) throws IOException {
         this.message = message;
-        try {
-            delegate.write(this);
-        } finally {
-            this.message = null;
-        }
+        delegate.write(this);
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+        if (delegate.writeFinished()) {
+            this.message = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

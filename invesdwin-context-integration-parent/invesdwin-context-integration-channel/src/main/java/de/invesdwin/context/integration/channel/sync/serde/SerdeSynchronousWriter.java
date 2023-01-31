@@ -52,12 +52,16 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
     public void write(final M message) throws IOException {
         this.message = message;
         delegate.write(this);
-        this.message = null;
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+        if (delegate.writeFinished()) {
+            this.message = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

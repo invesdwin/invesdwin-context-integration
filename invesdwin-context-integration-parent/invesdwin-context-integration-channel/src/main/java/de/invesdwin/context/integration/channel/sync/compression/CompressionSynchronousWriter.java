@@ -54,16 +54,17 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.decompressedBuffer = message.asBuffer();
-        try {
-            delegate.write(this);
-        } finally {
-            this.decompressedBuffer = null;
-        }
+        delegate.write(this);
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+        if (delegate.writeFinished()) {
+            this.decompressedBuffer = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

@@ -33,7 +33,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     private IByteBuffer message;
     private byte fragmentCount;
-    private byte currentFragment;
+    private byte currentFragment = 1;
     private int currentPosition;
 
     public FragmentSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
@@ -69,40 +69,38 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.message = message.asBuffer();
-        try {
-            final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
-            final double fragmentCountDoubleRounded = Math.ceil(fragmentCountDouble);
-            if (fragmentCountDouble > Byte.MAX_VALUE) {
-                throw new IllegalStateException("fragmentCount [" + fragmentCountDoubleRounded + "] should not exceed ["
-                        + Byte.MAX_VALUE + "]. Please increase the maxMessageLength [" + maxMessageLength
-                        + "] so that less fragments can be used for efficient delivery of messageLength ["
-                        + this.message.capacity() + "]");
-            }
-            if (fragmentCountDoubleRounded <= 0D) {
-                throw new IllegalStateException(
-                        "fragmentCount [" + fragmentCountDoubleRounded + "] should be greater than 0");
-            }
-            //if there are more than 127 fragments, then the maxMessageLength should be increased so that
-            fragmentCount = Bytes.checkedCast(fragmentCountDoubleRounded);
-            currentPosition = 0;
-
-            for (currentFragment = 1; currentFragment <= fragmentCount; currentFragment++) {
-                delegate.write(this);
-                //CHECKSTYLE:OFF
-                while (!delegate.writeFinished()) {
-                    //CHECKSTYLE:ON
-                    //System.out.println("TODO: non-blocking");
-                    //repeat
-                }
-            }
-        } finally {
-            this.message = null;
+        final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
+        final double fragmentCountDoubleRounded = Math.ceil(fragmentCountDouble);
+        if (fragmentCountDouble > Byte.MAX_VALUE) {
+            throw new IllegalStateException("fragmentCount [" + fragmentCountDoubleRounded + "] should not exceed ["
+                    + Byte.MAX_VALUE + "]. Please increase the maxMessageLength [" + maxMessageLength
+                    + "] so that less fragments can be used for efficient delivery of messageLength ["
+                    + this.message.capacity() + "]");
         }
+        if (fragmentCountDoubleRounded <= 0D) {
+            throw new IllegalStateException(
+                    "fragmentCount [" + fragmentCountDoubleRounded + "] should be greater than 0");
+        }
+        //if there are more than 127 fragments, then the maxMessageLength should be increased so that
+        fragmentCount = Bytes.checkedCast(fragmentCountDoubleRounded);
+        currentPosition = 0;
+        currentFragment = 1;
+        delegate.write(this);
+        currentFragment++;
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return true;
+        if (!delegate.writeFinished()) {
+            return false;
+        } else if (currentFragment > fragmentCount) {
+            this.message = null;
+            return true;
+        } else {
+            delegate.write(this);
+            currentFragment++;
+            return false;
+        }
     }
 
     @Override

@@ -52,16 +52,17 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.unsignedBuffer = message.asBuffer();
-        try {
-            delegate.write(this);
-        } finally {
-            this.unsignedBuffer = null;
-        }
+        delegate.write(this);
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+        if (delegate.writeFinished()) {
+            this.unsignedBuffer = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
