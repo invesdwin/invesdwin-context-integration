@@ -16,14 +16,16 @@ public class ClosedSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public void close() throws IOException {
-    }
+    public void close() throws IOException {}
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
-    public void write(final M message) throws IOException {
+    public void write(final M message) throws IOException {}
+
+    @Override
+    public boolean writeFinished() {
+        return true;
     }
 }

@@ -35,4 +35,9 @@ public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
         connection.send(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

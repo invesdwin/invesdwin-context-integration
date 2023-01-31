@@ -60,6 +60,11 @@ public class VerificationSynchronousWriter implements ISynchronousWriter<IByteBu
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         //Sadly we need to copy here. E.g. StreamVerificationEncryptionSynchronousWriter spares a copy by doing this together
         return verificationFactory.copyAndHash(unsignedBuffer, dst, hash);

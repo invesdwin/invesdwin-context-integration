@@ -40,6 +40,11 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     protected IReference<M> newReference(final M message) {
         return ImmutableReference.of(message);
     }

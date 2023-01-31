@@ -78,4 +78,9 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, datagramSize);
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
 }

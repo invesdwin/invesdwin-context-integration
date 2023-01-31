@@ -71,6 +71,11 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

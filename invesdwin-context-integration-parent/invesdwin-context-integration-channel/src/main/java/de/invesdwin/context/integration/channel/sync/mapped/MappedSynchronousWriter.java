@@ -64,4 +64,9 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
         setTransaction(nextTransaction);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

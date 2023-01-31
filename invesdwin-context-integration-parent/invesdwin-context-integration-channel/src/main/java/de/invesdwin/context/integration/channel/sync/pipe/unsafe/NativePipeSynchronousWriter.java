@@ -70,4 +70,9 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

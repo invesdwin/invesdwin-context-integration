@@ -58,6 +58,11 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
                 final byte[] ourPublicKey = ourKeyPair.getPublic().getEncoded();
                 final IByteBuffer ourPublicKeyMessage = ByteBuffers.wrap(ourPublicKey);
                 handshakeWriter.write(ourPublicKeyMessage);
+                //CHECKSTYLE:OFF
+                while (!handshakeWriter.writeFinished()) {
+                    //CHECKSTYLE:ON
+                    //repeat
+                }
 
                 final ASpinWait spinWait = newSpinWait(handshakeReader);
                 try {

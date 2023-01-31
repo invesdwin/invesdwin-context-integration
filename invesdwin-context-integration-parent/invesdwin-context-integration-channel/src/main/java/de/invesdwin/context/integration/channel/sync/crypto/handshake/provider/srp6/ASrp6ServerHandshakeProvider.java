@@ -98,6 +98,11 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
                 serverStep1LookupOutput.getPasswordSaltS(), serverPublicValueB);
         final int step1ResultLength = Srp6ServerStep1ResultSerde.INSTANCE.toBuffer(buffer, serverStep1Result);
         handshakeWriter.write(buffer.sliceTo(step1ResultLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
 
         return userIdHash;
     }
@@ -119,6 +124,11 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
         final Srp6ServerStep2Result serverStep2Result = new Srp6ServerStep2Result(serverEvidenceMessageM2);
         final int serverStep2ResultLength = Srp6ServerStep2ResultSerde.INSTANCE.toBuffer(buffer, serverStep2Result);
         handshakeWriter.write(buffer.sliceTo(serverStep2ResultLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
     }
 
     private BigInteger serverStep3(final SRP6ServerSession server) {

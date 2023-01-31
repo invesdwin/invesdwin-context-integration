@@ -19,8 +19,7 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public void close() throws IOException {
@@ -34,6 +33,11 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
         final IMutableReference<M> event = ringBuffer.get(seq);
         event.set(message);
         ringBuffer.publish(seq);
+    }
+
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
     }
 
 }

@@ -81,4 +81,9 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
         socket.send(packet);
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
 }

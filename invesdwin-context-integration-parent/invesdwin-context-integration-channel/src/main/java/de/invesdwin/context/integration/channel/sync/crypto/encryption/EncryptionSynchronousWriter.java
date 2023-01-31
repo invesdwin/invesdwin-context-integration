@@ -54,6 +54,11 @@ public class EncryptionSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         return encryptionFactory.encrypt(decryptedBuffer, dst);
     }

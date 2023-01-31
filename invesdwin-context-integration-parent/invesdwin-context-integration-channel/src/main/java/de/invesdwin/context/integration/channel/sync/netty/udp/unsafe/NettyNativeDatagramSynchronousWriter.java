@@ -96,6 +96,11 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     public static void writeFully(final Socket dst, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length, final InetSocketAddress recipient, final boolean fastOpen) throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

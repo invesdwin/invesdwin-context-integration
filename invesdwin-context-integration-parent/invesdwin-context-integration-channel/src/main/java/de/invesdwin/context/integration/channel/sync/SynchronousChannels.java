@@ -14,6 +14,7 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.instrument.DynamicInstrumentationProperties;
+import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -86,6 +87,11 @@ public final class SynchronousChannels {
                 delegate.write(message);
             }
 
+            @Override
+            public synchronized boolean writeFinished() throws IOException {
+                return delegate.writeFinished();
+            }
+
         };
     }
 
@@ -150,6 +156,114 @@ public final class SynchronousChannels {
             public void write(final T message) throws IOException {
                 synchronized (lock) {
                     delegate.write(message);
+                }
+            }
+
+            @Override
+            public boolean writeFinished() throws IOException {
+                synchronized (lock) {
+                    return delegate.writeFinished();
+                }
+            }
+
+        };
+    }
+
+    public static <T> ISynchronousReader<T> synchronize(final ISynchronousReader<T> delegate, final ILock lock) {
+        return new ISynchronousReader<T>() {
+
+            @Override
+            public void close() throws IOException {
+                lock.lock();
+                try {
+                    delegate.close();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void open() throws IOException {
+                lock.lock();
+                try {
+                    delegate.open();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public T readMessage() throws IOException {
+                lock.lock();
+                try {
+                    return delegate.readMessage();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public boolean hasNext() throws IOException {
+                lock.lock();
+                try {
+                    return delegate.hasNext();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void readFinished() {
+                lock.lock();
+                try {
+                    delegate.readFinished();
+                } finally {
+                    lock.unlock();
+                }
+            }
+        };
+    }
+
+    public static <T> ISynchronousWriter<T> synchronize(final ISynchronousWriter<T> delegate, final ILock lock) {
+        return new ISynchronousWriter<T>() {
+
+            @Override
+            public void close() throws IOException {
+                lock.lock();
+                try {
+                    delegate.close();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void open() throws IOException {
+                lock.lock();
+                try {
+                    delegate.open();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public void write(final T message) throws IOException {
+                lock.lock();
+                try {
+                    delegate.write(message);
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
+            public boolean writeFinished() throws IOException {
+                lock.lock();
+                try {
+                    return delegate.writeFinished();
+                } finally {
+                    lock.unlock();
                 }
             }
 

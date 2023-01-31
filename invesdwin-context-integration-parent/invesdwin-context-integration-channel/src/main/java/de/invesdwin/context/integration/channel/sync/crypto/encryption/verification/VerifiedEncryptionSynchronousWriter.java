@@ -64,6 +64,11 @@ public class VerifiedEncryptionSynchronousWriter
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         final int signatureIndex = encryptionFactory.encrypt(decryptedBuffer, dst);
         final int signatureLength = verificationFactory.putHash(dst, signatureIndex, hash);

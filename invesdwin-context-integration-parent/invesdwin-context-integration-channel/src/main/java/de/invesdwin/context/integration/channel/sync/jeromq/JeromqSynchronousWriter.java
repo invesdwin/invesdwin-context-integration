@@ -66,6 +66,11 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
         sendRetrying(size + messageIndex);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
         while (!sendTry(size)) {
             try {

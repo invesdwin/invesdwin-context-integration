@@ -85,6 +85,11 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
                     final byte[] ourVerifyKey = ourSignatureKey.getVerifyKey().getEncoded();
                     final IByteBuffer ourVerifyKeyMessage = ByteBuffers.wrap(ourVerifyKey);
                     unsignedHandshakeWriter.write(ourVerifyKeyMessage);
+                    //CHECKSTYLE:OFF
+                    while (!unsignedHandshakeWriter.writeFinished()) {
+                        //CHECKSTYLE:ON
+                        //repeat
+                    }
 
                     final ASpinWait spinWait = newSpinWait(unsignedHandshakeReader);
                     try {

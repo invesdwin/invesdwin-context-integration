@@ -76,6 +76,11 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
         }
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
     public static void writeFully(final FileDescriptor dst, final long address, final int pos, final int length)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

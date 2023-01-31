@@ -62,6 +62,11 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
         sendRetrying(size);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
         while (!sendTry(size)) {
             try {

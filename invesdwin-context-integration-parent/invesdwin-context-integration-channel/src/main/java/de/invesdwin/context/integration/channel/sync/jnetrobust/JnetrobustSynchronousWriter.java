@@ -54,4 +54,9 @@ public class JnetrobustSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

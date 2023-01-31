@@ -69,4 +69,9 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
         }
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
 }

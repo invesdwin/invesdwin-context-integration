@@ -72,6 +72,11 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         writer.write(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private static final class ExpandableWriter implements IWriter {
         private final RingBuffer ringBuffer;
         private final IByteBuffer buffer;

@@ -52,4 +52,9 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

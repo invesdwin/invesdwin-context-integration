@@ -67,6 +67,11 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         dst.putInt(SynchronousCommandSerde.TYPE_INDEX, message.getType());
         dst.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, message.getSequence());

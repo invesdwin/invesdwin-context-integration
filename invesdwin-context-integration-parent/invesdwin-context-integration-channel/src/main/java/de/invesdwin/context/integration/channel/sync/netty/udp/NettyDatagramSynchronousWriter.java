@@ -106,6 +106,11 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         writeFuture(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private void writeFuture(final IByteBufferProvider message) throws IOException {
         buf.setIndex(0, 0); //reset indexes
         final int size = message.getBuffer(messageBuffer);

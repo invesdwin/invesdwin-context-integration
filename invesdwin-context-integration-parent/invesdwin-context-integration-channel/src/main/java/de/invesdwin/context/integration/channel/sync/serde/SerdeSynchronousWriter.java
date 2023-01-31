@@ -56,6 +56,11 @@ public class SerdeSynchronousWriter<M> implements ISynchronousWriter<M>, IByteBu
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         return serde.toBuffer(dst, message);
     }

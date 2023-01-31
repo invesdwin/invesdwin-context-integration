@@ -88,6 +88,11 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         final int serverStep1LookupInputLength = Srp6ServerStep1LookupInputSerde.INSTANCE.toBuffer(buffer,
                 serverStep1LookupInput);
         handshakeWriter.write(buffer.sliceTo(serverStep1LookupInputLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
     }
 
     private void clientStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
@@ -109,6 +114,11 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
                 srp6ClientCredentials.M1);
         final int clientStep2ResultLength = Srp6ClientStep2ResultSerde.INSTANCE.toBuffer(buffer, clientStep2Result);
         handshakeWriter.write(buffer.sliceTo(clientStep2ResultLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
     }
 
     private BigInteger clientStep3(final ISynchronousReader<IByteBufferProvider> handshakeReader,

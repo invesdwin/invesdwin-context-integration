@@ -253,6 +253,12 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
                     outboundEncodedData.remaining());
             underlyingWriter.write(encodedMessage);
+            //CHECKSTYLE:OFF
+            while (!underlyingWriter.writeFinished()) {
+                //CHECKSTYLE:ON
+                //System.out.println("TODO: integrate into outer loop");
+                //repeat
+            }
             outboundEncodedData.clear();
         }
         return busy;

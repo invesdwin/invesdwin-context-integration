@@ -82,6 +82,11 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     public static void writeFully(final long dst, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

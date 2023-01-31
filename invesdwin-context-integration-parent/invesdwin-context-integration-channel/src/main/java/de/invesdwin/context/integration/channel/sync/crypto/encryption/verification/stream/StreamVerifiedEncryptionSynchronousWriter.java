@@ -84,6 +84,11 @@ public class StreamVerifiedEncryptionSynchronousWriter
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) throws IOException {
         signatureStreamIn.init(); //in case of exceptions, it is lazy
         encryptingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));

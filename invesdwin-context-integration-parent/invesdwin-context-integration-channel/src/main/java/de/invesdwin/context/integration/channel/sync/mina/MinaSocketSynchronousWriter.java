@@ -59,6 +59,11 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
         writeFuture(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private void writeFuture(final IByteBufferProvider message) throws IOException {
         buf.position(0); //reset indexes
         final int size = message.getBuffer(messageBuffer);

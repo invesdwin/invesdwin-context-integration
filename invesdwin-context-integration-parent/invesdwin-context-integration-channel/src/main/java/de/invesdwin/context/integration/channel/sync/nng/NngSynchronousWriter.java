@@ -62,4 +62,9 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

@@ -35,8 +35,8 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
             //only OracleJDK contains SCTP as it seems (causes compile errors in maven/jenkins): https://stackoverflow.com/a/26614215
             //static native int send0(int fd, long address, int length, InetAddress addr, int port, int assocId, int streamNumber, boolean unordered, int ppid) throws IOException;
             final Class<?> sctpChannelImplClass = Class.forName("sun.nio.ch.sctp.SctpChannelImpl");
-            final Method send0Method = Reflections.findMethod(sctpChannelImplClass, "send0", int.class, long.class, int.class,
-                    InetAddress.class, int.class, int.class, int.class, boolean.class, int.class);
+            final Method send0Method = Reflections.findMethod(sctpChannelImplClass, "send0", int.class, long.class,
+                    int.class, InetAddress.class, int.class, int.class, int.class, boolean.class, int.class);
             Reflections.makeAccessible(send0Method);
             SCTPCHANNELIMPL_SEND0_METHOD = MethodHandles.lookup().unreflect(send0Method);
         } catch (final ClassNotFoundException | IllegalAccessException e) {
@@ -93,6 +93,11 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
+    }
+
+    @Override
+    public boolean writeFinished() {
+        return true;
     }
 
     public static void writeFully(final int dst, final long address, final int pos, final int length)

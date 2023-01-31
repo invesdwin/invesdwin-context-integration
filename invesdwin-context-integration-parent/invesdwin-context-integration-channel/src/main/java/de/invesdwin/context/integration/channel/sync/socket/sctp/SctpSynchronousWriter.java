@@ -76,6 +76,11 @@ public class SctpSynchronousWriter implements ISynchronousWriter<IByteBufferProv
         }
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
     public static void writeFully(final Object dst, final java.nio.ByteBuffer byteBuffer, final Object outMessageInfo,
             final int pos, final int length) throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

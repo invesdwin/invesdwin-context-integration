@@ -21,8 +21,7 @@ public class BufferingIteratorSynchronousWriter<M> implements ISynchronousWriter
     }
 
     @Override
-    public void open() throws IOException {
-    }
+    public void open() throws IOException {}
 
     @Override
     public void close() throws IOException {
@@ -37,6 +36,11 @@ public class BufferingIteratorSynchronousWriter<M> implements ISynchronousWriter
     @Override
     public void write(final M message) throws IOException {
         queue.add(newReference(message));
+    }
+
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
     }
 
     protected IReference<M> newReference(final M message) {

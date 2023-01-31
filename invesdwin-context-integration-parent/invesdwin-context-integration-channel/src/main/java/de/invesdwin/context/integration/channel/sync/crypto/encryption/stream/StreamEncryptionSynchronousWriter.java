@@ -76,6 +76,11 @@ public class StreamEncryptionSynchronousWriter implements ISynchronousWriter<IBy
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) throws IOException {
         encryptingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
         decryptedBuffer.getBytes(0, encryptingStreamIn);

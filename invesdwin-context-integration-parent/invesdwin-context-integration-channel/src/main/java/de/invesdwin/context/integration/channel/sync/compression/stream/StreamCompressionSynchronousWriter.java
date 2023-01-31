@@ -84,6 +84,11 @@ public class StreamCompressionSynchronousWriter
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) throws IOException {
         compressingStreamOut.wrap(dst.sliceFrom(PAYLOAD_INDEX));
         decompressedBuffer.getBytes(0, compressingStreamIn);

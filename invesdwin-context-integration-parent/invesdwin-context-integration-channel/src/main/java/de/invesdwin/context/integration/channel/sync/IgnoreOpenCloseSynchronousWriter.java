@@ -28,6 +28,11 @@ public final class IgnoreOpenCloseSynchronousWriter<M> implements ISynchronousWr
         delegate.write(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
     public static <T> IgnoreOpenCloseSynchronousWriter<T> valueOf(final ISynchronousWriter<T> delegate) {
         if (delegate instanceof IgnoreOpenCloseSynchronousWriter) {
             return (IgnoreOpenCloseSynchronousWriter<T>) delegate;

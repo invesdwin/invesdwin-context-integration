@@ -79,6 +79,11 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     public static void writeFully(final int dst, final java.nio.ByteBuffer buffer, final int pos, final int length)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

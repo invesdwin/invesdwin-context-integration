@@ -62,6 +62,11 @@ public class CompressionSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
+    public boolean writeFinished() throws IOException {
+        return delegate.writeFinished();
+    }
+
+    @Override
     public int getBuffer(final IByteBuffer dst) {
         return compressionFactory.compress(decompressedBuffer, dst);
     }

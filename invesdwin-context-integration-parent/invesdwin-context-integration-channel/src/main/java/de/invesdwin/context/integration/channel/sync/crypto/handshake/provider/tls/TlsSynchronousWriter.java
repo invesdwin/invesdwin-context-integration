@@ -42,4 +42,9 @@ public class TlsSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

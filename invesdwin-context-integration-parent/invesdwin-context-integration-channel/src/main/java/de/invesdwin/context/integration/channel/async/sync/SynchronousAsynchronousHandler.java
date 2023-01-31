@@ -42,6 +42,11 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     @Override
     public O handle(final I input) throws IOException {
         inputWriter.write(input);
+        //CHECKSTYLE:OFF
+        while (!inputWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
         if (outputReader.hasNext()) {
             final O message = outputReader.readMessage();
             outputReader.readFinished();

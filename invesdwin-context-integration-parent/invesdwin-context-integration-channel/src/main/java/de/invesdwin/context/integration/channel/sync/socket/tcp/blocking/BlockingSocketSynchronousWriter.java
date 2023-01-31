@@ -73,4 +73,9 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
         }
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
 }

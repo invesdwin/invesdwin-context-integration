@@ -98,6 +98,11 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
 
         final int ourRound1PayloadLength = JPakeRound1PayloadSerde.INSTANCE.toBuffer(buffer, ourRound1Payload);
         handshakeWriter.write(buffer.slice(0, ourRound1PayloadLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
 
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound1PayloadMessage = handshakeReader.readMessage().asBuffer();
@@ -115,6 +120,11 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
 
         final int ourRound2PayloadLength = JPakeRound2PayloadSerde.INSTANCE.toBuffer(buffer, ourRound2Payload);
         handshakeWriter.write(buffer.slice(0, ourRound2PayloadLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
 
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound2PayloadMessage = handshakeReader.readMessage().asBuffer();
@@ -133,6 +143,11 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
 
         final int ourRound3PayloadLength = JPakeRound3PayloadSerde.INSTANCE.toBuffer(buffer, ourRound3Payload);
         handshakeWriter.write(buffer.slice(0, ourRound3PayloadLength));
+        //CHECKSTYLE:OFF
+        while (!handshakeWriter.writeFinished()) {
+            //CHECKSTYLE:ON
+            //repeat
+        }
 
         waitForMessage(handshakeReaderSpinWait);
         final IByteBuffer otherRound3PayloadMessage = handshakeReader.readMessage().asBuffer();

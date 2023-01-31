@@ -64,4 +64,9 @@ public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousCha
         }
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
 }

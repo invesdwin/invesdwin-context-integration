@@ -67,6 +67,11 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
         buffer.getBytesTo(0, fileChannel, MESSAGE_INDEX + size);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     public static void writeFully(final WritableByteChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

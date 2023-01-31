@@ -344,6 +344,12 @@ public class TlsHandshaker {
                     printHex(address, side, action + " packet", oNet);
                 }
                 writer.write(ByteBuffers.wrapRelative(oNet));
+                //CHECKSTYLE:OFF
+                while (!writer.writeFinished()) {
+                    //CHECKSTYLE:ON
+                    //System.out.println("TODO: integrate into outer loop");
+                    //repeat
+                }
             }
 
             final Status rs = r.getStatus();
@@ -459,6 +465,12 @@ public class TlsHandshaker {
         // Status.OK:
         if (appNet.hasRemaining()) {
             writer.write(ByteBuffers.wrapRelative(appNet));
+            //CHECKSTYLE:OFF
+            while (!writer.writeFinished()) {
+                //CHECKSTYLE:ON
+                //System.out.println("TODO: integrate into outer loop");
+                //repeat
+            }
         }
     }
 

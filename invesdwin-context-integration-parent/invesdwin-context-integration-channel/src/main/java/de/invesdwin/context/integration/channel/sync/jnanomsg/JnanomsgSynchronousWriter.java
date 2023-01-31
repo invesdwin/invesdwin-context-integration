@@ -66,6 +66,11 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
         sendRetrying(size + messageIndex);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private void writeNoRetry(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         sendTry(size + messageIndex);

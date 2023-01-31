@@ -57,6 +57,11 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
         writer.write(message);
     }
 
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
+    }
+
     private static final class ExpandableWriter implements IWriter {
         private final BroadcastTransmitter broadcastTransmitter;
         private final IByteBuffer buffer;

@@ -75,4 +75,9 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
         buffer.getBytesTo(0, socketChannel, datagramSize);
     }
 
+    @Override
+    public boolean writeFinished() {
+        return true;
+    }
+
 }

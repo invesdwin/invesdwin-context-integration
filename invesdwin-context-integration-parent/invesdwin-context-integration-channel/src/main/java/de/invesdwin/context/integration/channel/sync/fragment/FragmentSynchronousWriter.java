@@ -88,10 +88,21 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
             for (currentFragment = 1; currentFragment <= fragmentCount; currentFragment++) {
                 delegate.write(this);
+                //CHECKSTYLE:OFF
+                while (!delegate.writeFinished()) {
+                    //CHECKSTYLE:ON
+                    //System.out.println("TODO: non-blocking");
+                    //repeat
+                }
             }
         } finally {
             this.message = null;
         }
+    }
+
+    @Override
+    public boolean writeFinished() throws IOException {
+        return true;
     }
 
     @Override
