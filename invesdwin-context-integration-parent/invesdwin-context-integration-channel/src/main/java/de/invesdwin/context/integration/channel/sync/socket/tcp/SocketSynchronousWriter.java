@@ -20,6 +20,8 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private SocketChannel socketChannel;
+    private java.nio.ByteBuffer messageToWrite;
+    private int positionBefore;
 
     public SocketSynchronousWriter(final SocketSynchronousChannel channel) {
         this.channel = channel;
@@ -51,6 +53,8 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+            messageToWrite = null;
+            positionBefore = 0;
         }
         if (channel != null) {
             channel.close();
@@ -68,19 +72,36 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
      */
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        //System.out.println("TODO non-blocking");
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
-            buffer.getBytesTo(0, socketChannel, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.asNioByteBuffer(0, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            positionBefore = messageToWrite.position();
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            ByteBuffers.position(messageToWrite, positionBefore);
+            messageToWrite = null;
+            positionBefore = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean writeFurther() throws IOException {
+        final int count = socketChannel.write(messageToWrite);
+        if (count < 0) { // EOF
+            throw ByteBuffers.newEOF();
+        }
+        return messageToWrite.hasRemaining();
     }
 
 }

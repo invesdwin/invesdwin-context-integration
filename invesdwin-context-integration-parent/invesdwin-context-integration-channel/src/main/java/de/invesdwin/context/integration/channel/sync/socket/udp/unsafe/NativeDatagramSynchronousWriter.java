@@ -25,6 +25,9 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     private IByteBuffer messageBuffer;
     private FileDescriptor fd;
     private final int socketSize;
+    private long messageToWrite;
+    private int position;
+    private int remaining;
 
     public NativeDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -59,6 +62,9 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             buffer = null;
             messageBuffer = null;
             fd = null;
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -80,13 +86,30 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
                     "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
         }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
-        //System.out.println("TODO non-blocking");
-        NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, datagramSize);
+        messageToWrite = buffer.addressOffset();
+        position = 0;
+        remaining = datagramSize;
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == 0) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean writeFurther() throws IOException {
+        final int count = NativeSocketSynchronousWriter.write0(fd, messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
     }
 
 }

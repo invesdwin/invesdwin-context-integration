@@ -22,6 +22,8 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private IByteBuffer messageBuffer;
     private DatagramChannel socketChannel;
     private final int socketSize;
+    private java.nio.ByteBuffer messageToWrite;
+    private int positionBefore;
 
     public DatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
@@ -77,13 +79,30 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
                     "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
         }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
-        //System.out.println("TODO non-blocking");
-        buffer.getBytesTo(0, socketChannel, datagramSize);
+        messageToWrite = buffer.asNioByteBuffer(0, datagramSize);
+        positionBefore = messageToWrite.position();
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            ByteBuffers.position(messageToWrite, positionBefore);
+            messageToWrite = null;
+            positionBefore = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean writeFurther() throws IOException {
+        final int count = socketChannel.write(messageToWrite);
+        if (count < 0) { // EOF
+            throw ByteBuffers.newEOF();
+        }
+        return messageToWrite.hasRemaining();
     }
 
 }

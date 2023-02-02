@@ -54,6 +54,9 @@ public class UdtSynchronousReader implements ISynchronousReader<IByteBufferProvi
 
     @Override
     public boolean hasNext() throws IOException {
+        if (messageBuffer == null) {
+            throw FastEOFException.getInstance("socket closed");
+        }
         if (messageBuffer.position() > 0) {
             return true;
         }

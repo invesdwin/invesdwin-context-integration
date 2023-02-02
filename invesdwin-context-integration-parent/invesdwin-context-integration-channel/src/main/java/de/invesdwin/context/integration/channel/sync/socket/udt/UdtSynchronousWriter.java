@@ -7,15 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.barchart.udt.SocketUDT;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -24,6 +21,8 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private SocketUDT socket;
+    private java.nio.ByteBuffer messageToWrite;
+    private int positionBefore;
 
     public UdtSynchronousWriter(final UdtSynchronousChannel channel) {
         this.channel = channel;
@@ -67,48 +66,33 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(UdtSynchronousChannel.SIZE_INDEX, size);
-            writeFully(socket, buffer.asNioByteBuffer(0, UdtSynchronousChannel.MESSAGE_INDEX + size));
+            messageToWrite = buffer.asNioByteBuffer(0, UdtSynchronousChannel.MESSAGE_INDEX + size);
+            positionBefore = messageToWrite.position();
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            ByteBuffers.position(messageToWrite, positionBefore);
+            messageToWrite = null;
+            positionBefore = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final SocketUDT dst, final java.nio.ByteBuffer byteBuffer) throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int remaining = byteBuffer.remaining();
-        final int positionBefore = byteBuffer.position();
-        while (remaining > 0) {
-            final int count = dst.send(byteBuffer);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                remaining -= count;
-            }
-        }
-        ByteBuffers.position(byteBuffer, positionBefore);
-        if (remaining > 0) {
+    private boolean writeFurther() throws IOException {
+        final int count = socket.send(messageToWrite);
+        if (count < 0) { // EOF
             throw ByteBuffers.newEOF();
         }
+        return messageToWrite.hasRemaining();
     }
 
 }

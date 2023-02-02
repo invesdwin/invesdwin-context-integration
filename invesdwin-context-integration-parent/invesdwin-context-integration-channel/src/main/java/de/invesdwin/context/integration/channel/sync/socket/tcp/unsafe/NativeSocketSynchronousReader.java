@@ -63,6 +63,9 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
 
     @Override
     public boolean hasNext() throws IOException {
+        if (buffer == null) {
+            throw FastEOFException.getInstance("socket closed");
+        }
         if (position > 0) {
             return true;
         }

@@ -136,9 +136,12 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
              * be called properly. Also for DTLS the handshaker handles the packet loss of the rehandshake. The
              * application only handles packet loss for application data. So another reason to use the handshaker here.
              */
-            rehandshaking = true;
-            if (!performHandshake()) {
-                return false;
+            //don't rehandshake when we are already closing this channel
+            if (inboundApplicationDataBuffer != null) {
+                rehandshaking = true;
+                if (!performHandshake()) {
+                    return false;
+                }
             }
         }
         /*

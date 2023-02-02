@@ -7,15 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
@@ -27,6 +24,9 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
+    private long messageToWrite;
+    private int position;
+    private int remaining;
 
     public NativeSocketSynchronousWriter(final SocketSynchronousChannel channel) {
         this.channel = channel;
@@ -58,6 +58,9 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
             fd = null;
             buffer = null;
             messageBuffer = null;
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -75,49 +78,33 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.addressOffset();
+            position = 0;
+            remaining = SocketSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == 0) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final FileDescriptor dst, final long address, final int pos, final int length)
-            throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = write0(dst, address, position, remaining);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                position += count;
-                remaining -= count;
-            }
-        }
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
-        }
+    private boolean writeFurther() throws IOException {
+        final int count = write0(fd, messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
     }
 
     public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
@@ -126,7 +113,11 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
         if (res == IOTools.IOSTATUS_INTERRUPTED) {
             return 0;
         } else {
-            return IOTools.normaliseIOStatus(res);
+            final int count = IOTools.normaliseIOStatus(res);
+            if (count < 0) { // EOF
+                throw ByteBuffers.newEOF();
+            }
+            return count;
         }
     }
 
