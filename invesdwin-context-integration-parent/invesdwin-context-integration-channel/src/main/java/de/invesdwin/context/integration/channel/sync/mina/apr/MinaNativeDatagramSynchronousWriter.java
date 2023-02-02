@@ -48,7 +48,7 @@ public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<I
     public void close() throws IOException {
         if (buffer != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -63,6 +63,11 @@ public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<I
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
@@ -74,7 +79,7 @@ public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<I
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

@@ -46,7 +46,7 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     public void close() throws IOException {
         if (out != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -64,6 +64,11 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
@@ -71,7 +76,7 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

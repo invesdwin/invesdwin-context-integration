@@ -57,14 +57,19 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return delegate.writeReady();
+    }
+
+    @Override
     public void write(final ISynchronousCommand<M> message) throws IOException {
         this.message = message;
         delegate.write(this);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
-        if (delegate.writeFinished()) {
+    public boolean writeFlushed() throws IOException {
+        if (delegate.writeFlushed()) {
             this.message = null;
             return true;
         } else {

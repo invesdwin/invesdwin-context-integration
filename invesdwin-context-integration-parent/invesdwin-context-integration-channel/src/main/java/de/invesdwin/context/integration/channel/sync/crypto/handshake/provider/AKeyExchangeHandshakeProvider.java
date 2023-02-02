@@ -18,7 +18,6 @@ import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.derivation.IDerivationFactory;
 import de.invesdwin.context.security.crypto.verification.hash.HashVerificationFactory;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -44,30 +43,6 @@ public abstract class AKeyExchangeHandshakeProvider implements IHandshakeProvide
 
     public String getSessionIdentifier() {
         return sessionIdentifier;
-    }
-
-    /**
-     * Override this to disable spinning or configure type of waits.
-     */
-    public ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.hasNext();
-            }
-        };
-    }
-
-    /**
-     * Override this to disable spinning or configure type of waits.
-     */
-    public ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.writeFinished();
-            }
-        };
     }
 
     public IDerivationFactory getDerivationFactory() {

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider;
 
 import java.io.IOException;
 import java.security.PublicKey;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -13,6 +12,10 @@ import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousR
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.verification.VerifiedEncryptionChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWaitPool;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.context.security.crypto.encryption.cipher.symmetric.SymmetricEncryptionFactory;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
 import de.invesdwin.context.security.crypto.key.IDerivedKeyProvider;
@@ -22,7 +25,6 @@ import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -81,37 +83,28 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
             try {
                 unsignedHandshakeReader.open();
                 try {
-
                     final byte[] ourVerifyKey = ourSignatureKey.getVerifyKey().getEncoded();
                     final IByteBuffer ourVerifyKeyMessage = ByteBuffers.wrap(ourVerifyKey);
-                    unsignedHandshakeWriter.write(ourVerifyKeyMessage);
-                    final ASpinWait writerSpinWait = newSpinWait(unsignedHandshakeWriter);
+                    final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
+                            .borrowObject(unsignedHandshakeWriter);
                     try {
-                        if (!writerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                            throw new TimeoutException(
-                                    "Write handshake message timeout exceeded: " + getHandshakeTimeout());
-                        }
-                    } catch (final IOException e) {
-                        throw e;
-                    } catch (final Exception e) {
-                        throw new IOException(e);
+                        writerSpinWait.waitForWrite(ourVerifyKeyMessage, getHandshakeTimeout());
+                    } finally {
+                        SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
                     }
 
-                    final ASpinWait readerSpinWait = newSpinWait(unsignedHandshakeReader);
+                    final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
+                            .borrowObject(unsignedHandshakeReader);
+                    final PublicKey otherVerifyKey;
                     try {
-                        if (!readerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                            throw new TimeoutException(
-                                    "Read handshake message timeout exceeded: " + getHandshakeTimeout());
-                        }
-                    } catch (final IOException e) {
-                        throw e;
-                    } catch (final Exception e) {
-                        throw new IOException(e);
+                        final IByteBuffer otherVerifyKeyMessage = readerSpinWait.waitForRead(getHandshakeTimeout())
+                                .asBuffer();
+                        otherVerifyKey = SignatureKey.wrapVerifyKey(ourSignatureKey.getAlgorithm().getKeyAlgorithm(),
+                                otherVerifyKeyMessage.asByteArray());
+                        unsignedHandshakeReader.readFinished();
+                    } finally {
+                        SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
                     }
-                    final IByteBuffer otherVerifyKeyMessage = unsignedHandshakeReader.readMessage().asBuffer();
-                    final PublicKey otherVerifyKey = SignatureKey.wrapVerifyKey(
-                            ourSignatureKey.getAlgorithm().getKeyAlgorithm(), otherVerifyKeyMessage.asByteArray());
-                    unsignedHandshakeReader.readFinished();
 
                     final SignatureKey handshakeWriterSignatureKey = new SignatureKey(ourSignatureKey.getAlgorithm(),
                             null, ourSignatureKey.getSignKey(), ourSignatureKey.getKeySizeBits());
@@ -186,16 +179,6 @@ public class SignedKeyAgreementHandshakeProvider extends AKeyAgreementHandshakeP
     @Override
     public ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> newAuthenticatedHandshakeChannelFactory() {
         return unsignedProvider.newAuthenticatedHandshakeChannelFactory();
-    }
-
-    @Override
-    public ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
-        return unsignedProvider.newSpinWait(delegate);
-    }
-
-    @Override
-    public ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
-        return unsignedProvider.newSpinWait(delegate);
     }
 
     @Override

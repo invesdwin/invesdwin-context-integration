@@ -43,13 +43,18 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     public void close() throws IOException {
         if (socket != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
             buffer = null;
         }
         super.close();
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -63,7 +68,7 @@ public class NngSynchronousWriter extends ANngSynchronousChannel implements ISyn
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

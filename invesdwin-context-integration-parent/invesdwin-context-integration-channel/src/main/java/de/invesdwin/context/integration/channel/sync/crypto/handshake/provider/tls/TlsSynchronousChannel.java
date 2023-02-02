@@ -11,12 +11,11 @@ import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.HandshakeValidation;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
@@ -41,10 +40,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
     private final InetSocketAddress socketAdddress;
     private final ITlsProtocol protocol;
     private final SSLEngine engine;
-    private final ISynchronousReader<IByteBufferProvider> underlyingReader;
-    private final ASpinWait readerSpinWait;
-    private final ISynchronousWriter<IByteBufferProvider> underlyingWriter;
-    private final ASpinWait writerSpinWait;
+    private final SynchronousReaderSpinWait<IByteBufferProvider> underlyingReaderSpinWait;
+    private final SynchronousWriterSpinWait<IByteBufferProvider> underlyingWriterSpinWait;
     private final boolean server;
     private final String side;
     private final HandshakeValidation handshakeValidation;
@@ -62,21 +59,23 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
 
     public TlsSynchronousChannel(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
             final InetSocketAddress socketAddress, final ITlsProtocol protocol, final SSLEngine engine,
-            final ISynchronousReader<IByteBufferProvider> underlyingReader, final ASpinWait readerSpinWait,
-            final ISynchronousWriter<IByteBufferProvider> underlyingWriter, final ASpinWait writerSpinWait,
+            final SynchronousReaderSpinWait<IByteBufferProvider> underlyingReaderSpinWait,
+            final SynchronousWriterSpinWait<IByteBufferProvider> underlyingWriterSpinWait,
             final HandshakeValidation handshakeValidation) {
         this.handshakeTimeout = handshakeTimeout;
         this.handshakeTimeoutRecoveryTries = handshakeTimeoutRecoveryTries;
         this.socketAdddress = socketAddress;
         this.protocol = protocol;
         this.engine = engine;
-        this.underlyingReader = underlyingReader;
-        this.readerSpinWait = readerSpinWait;
-        this.underlyingWriter = underlyingWriter;
-        this.writerSpinWait = writerSpinWait;
+        this.underlyingReaderSpinWait = underlyingReaderSpinWait;
+        this.underlyingWriterSpinWait = underlyingWriterSpinWait;
         this.server = !engine.getUseClientMode();
         this.side = server ? "Server" : "Client";
         this.handshakeValidation = handshakeValidation;
+    }
+
+    public boolean writeReady() throws IOException {
+        return underlyingWriterSpinWait.getWriter().writeReady();
     }
 
     @Override
@@ -112,8 +111,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                     .allocateDirectExpandable(engine.getSession().getApplicationBufferSize());
         }
 
-        underlyingReader.open();
-        underlyingWriter.open();
+        underlyingReaderSpinWait.getReader().open();
+        underlyingWriterSpinWait.getWriter().open();
 
         outboundApplicationDataSize = java.nio.ByteBuffer.allocateDirect(Integer.BYTES);
         inboundApplicationData = inboundApplicationDataBuffer.asNioByteBuffer();
@@ -175,7 +174,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         final TlsHandshaker handshaker = TlsHandshakerObjectPool.INSTANCE.borrowObject();
         try {
             handshaker.init(handshakeTimeout, handshakeTimeoutRecoveryTries, socketAdddress, server, side, protocol,
-                    engine, underlyingReader, readerSpinWait, underlyingWriter, writerSpinWait, handshakeValidation);
+                    engine, underlyingReaderSpinWait, underlyingWriterSpinWait, handshakeValidation);
             handshaker.performHandshake();
             updateOutboundEncodedData();
             return true;
@@ -204,8 +203,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         boolean busy = false;
 
         //read encrypted data
-        if (inboundEncodedData == null && underlyingReader.hasNext()) {
-            final IByteBuffer encodedMessage = underlyingReader.readMessage().asBuffer();
+        if (inboundEncodedData == null && underlyingReaderSpinWait.getReader().hasNext()) {
+            final IByteBuffer encodedMessage = underlyingReaderSpinWait.getReader().readMessage().asBuffer();
             inboundEncodedData = encodedMessage.asNioByteBuffer();
         }
 
@@ -234,7 +233,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             if (!hasRemaining) {
                 inboundEncodedData.clear();
                 inboundEncodedData = null;
-                underlyingReader.readFinished();
+                underlyingReaderSpinWait.getReader().readFinished();
             }
         }
         return busy;
@@ -244,7 +243,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         if (outboundEncodedData == null) {
             throw FastEOFException.getInstance("closed");
         }
-        if (!underlyingWriter.writeFinished()) {
+        if (!underlyingWriterSpinWait.getWriter().writeFlushed()) {
             //wait for last transmission to complete before sending more bytes through output buffer
             return true;
         }
@@ -252,6 +251,11 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         boolean busy = false;
         //drain unencrypted output
         if (outboundApplicationData != null) {
+            if (!underlyingWriterSpinWait.getWriter().writeReady()) {
+                //we have to wait for additional
+                return true;
+            }
+
             final Status status = engine.wrap(outboundApplicationDataArray, outboundEncodedData).getStatus();
             switch (status) {
             case BUFFER_UNDERFLOW:
@@ -280,7 +284,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             outboundEncodedData.flip();
             final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
                     outboundEncodedData.remaining());
-            underlyingWriter.write(encodedMessage);
+            underlyingWriterSpinWait.getWriter().write(encodedMessage);
             outboundEncodedData.clear();
         }
         return busy;
@@ -322,8 +326,8 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         //            throw new IOException(e);
         //        }
 
-        underlyingWriter.close();
-        underlyingReader.close();
+        underlyingWriterSpinWait.getWriter().close();
+        underlyingReaderSpinWait.getReader().close();
 
         outboundEncodedDataBuffer = null;
         outboundApplicationDataSize = null;

@@ -24,13 +24,18 @@ public final class IgnoreOpenCloseSynchronousWriter<M> implements ISynchronousWr
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return delegate.writeReady();
+    }
+
+    @Override
     public void write(final M message) throws IOException {
         delegate.write(message);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
-        return delegate.writeFinished();
+    public boolean writeFlushed() throws IOException {
+        return delegate.writeFlushed();
     }
 
     public static <T> IgnoreOpenCloseSynchronousWriter<T> valueOf(final ISynchronousWriter<T> delegate) {

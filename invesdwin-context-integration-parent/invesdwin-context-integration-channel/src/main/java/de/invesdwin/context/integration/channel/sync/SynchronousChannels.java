@@ -83,13 +83,18 @@ public final class SynchronousChannels {
             }
 
             @Override
+            public synchronized boolean writeReady() throws IOException {
+                return delegate.writeReady();
+            }
+
+            @Override
             public synchronized void write(final T message) throws IOException {
                 delegate.write(message);
             }
 
             @Override
-            public synchronized boolean writeFinished() throws IOException {
-                return delegate.writeFinished();
+            public synchronized boolean writeFlushed() throws IOException {
+                return delegate.writeFlushed();
             }
 
         };
@@ -153,6 +158,13 @@ public final class SynchronousChannels {
             }
 
             @Override
+            public boolean writeReady() throws IOException {
+                synchronized (lock) {
+                    return delegate.writeReady();
+                }
+            }
+
+            @Override
             public void write(final T message) throws IOException {
                 synchronized (lock) {
                     delegate.write(message);
@@ -160,9 +172,9 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public boolean writeFinished() throws IOException {
+            public boolean writeFlushed() throws IOException {
                 synchronized (lock) {
-                    return delegate.writeFinished();
+                    return delegate.writeFlushed();
                 }
             }
 
@@ -248,6 +260,16 @@ public final class SynchronousChannels {
             }
 
             @Override
+            public boolean writeReady() throws IOException {
+                lock.lock();
+                try {
+                    return delegate.writeReady();
+                } finally {
+                    lock.unlock();
+                }
+            }
+
+            @Override
             public void write(final T message) throws IOException {
                 lock.lock();
                 try {
@@ -258,10 +280,10 @@ public final class SynchronousChannels {
             }
 
             @Override
-            public boolean writeFinished() throws IOException {
+            public boolean writeFlushed() throws IOException {
                 lock.lock();
                 try {
-                    return delegate.writeFinished();
+                    return delegate.writeFlushed();
                 } finally {
                     lock.unlock();
                 }

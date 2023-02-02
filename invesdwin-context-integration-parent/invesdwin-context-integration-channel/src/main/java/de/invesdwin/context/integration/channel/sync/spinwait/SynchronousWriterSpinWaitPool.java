@@ -1,23 +1,25 @@
 package de.invesdwin.context.integration.channel.sync.spinwait;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.pool.AgronaObjectPool;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
 
+@SuppressWarnings({ "rawtypes", "unchecked" })
 @ThreadSafe
-public final class SynchronousWriterSpinWaitPool implements IObjectPool<SynchronousWriterSpinWait> {
+public final class SynchronousWriterSpinWaitPool {
 
-    public static final SynchronousWriterSpinWaitPool INSTANCE = new SynchronousWriterSpinWaitPool();
-
-    private static volatile Supplier<? extends SynchronousWriterSpinWait> factory = () -> new SynchronousWriterSpinWait();
+    private static volatile Function<MutableDelegateSynchronousWriter<?>, ? extends SynchronousWriterSpinWait> factory = (
+            t) -> new SynchronousWriterSpinWait(t);
     private static final AgronaObjectPool<SynchronousWriterSpinWait> POOL = new AgronaObjectPool<SynchronousWriterSpinWait>(
-            () -> factory.get()) {
+            () -> factory.apply(new MutableDelegateSynchronousWriter<>())) {
         @Override
         public void invalidateObject(final SynchronousWriterSpinWait element) {
-            element.setWriter(null);
+            final MutableDelegateSynchronousWriter<?> holder = (MutableDelegateSynchronousWriter<?>) element
+                    .getWriter();
+            holder.setDelegate(null);
         }
     };
 
@@ -26,31 +28,31 @@ public final class SynchronousWriterSpinWaitPool implements IObjectPool<Synchron
     /**
      * This allows to override the default timings of the spinwait.
      */
-    public static void setFactory(final Supplier<? extends SynchronousWriterSpinWait> factory) {
+    public static void setFactory(
+            final Function<MutableDelegateSynchronousWriter<?>, ? extends SynchronousWriterSpinWait> factory) {
         SynchronousWriterSpinWaitPool.factory = factory;
     }
 
-    public static Supplier<? extends SynchronousWriterSpinWait> getFactory() {
+    public static Function<MutableDelegateSynchronousWriter<?>, ? extends SynchronousWriterSpinWait> getFactory() {
         return factory;
     }
 
-    @Override
-    public SynchronousWriterSpinWait borrowObject() {
-        return POOL.borrowObject();
+    public static <M> SynchronousWriterSpinWait<M> borrowObject(final ISynchronousWriter<M> writer) {
+        final SynchronousWriterSpinWait spinWait = POOL.borrowObject();
+        final MutableDelegateSynchronousWriter holder = (MutableDelegateSynchronousWriter) spinWait.getWriter();
+        holder.setDelegate(writer);
+        return spinWait;
     }
 
-    @Override
-    public void returnObject(final SynchronousWriterSpinWait element) {
+    public static void returnObject(final SynchronousWriterSpinWait<?> element) {
         POOL.returnObject(element);
     }
 
-    @Override
-    public void clear() {
+    public static void clear() {
         POOL.clear();
     }
 
-    @Override
-    public void invalidateObject(final SynchronousWriterSpinWait element) {
+    public static void invalidateObject(final SynchronousWriterSpinWait<?> element) {
         POOL.invalidateObject(element);
     }
 

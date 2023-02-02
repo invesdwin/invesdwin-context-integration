@@ -43,6 +43,12 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
         }
     }
 
+    @Override
+    public boolean writeReady() throws IOException {
+        //may overwrite messages here
+        return true;
+    }
+
     /**
      * Writes a message.
      *
@@ -65,7 +71,7 @@ public class MappedSynchronousWriter extends AMappedSynchronousChannel
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

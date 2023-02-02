@@ -67,6 +67,11 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return delegate.writeReady();
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.message = message.asBuffer();
         final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
@@ -90,12 +95,14 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
-        if (!delegate.writeFinished()) {
+    public boolean writeFlushed() throws IOException {
+        if (!delegate.writeFlushed()) {
             return false;
         } else if (currentFragment > fragmentCount) {
             this.message = null;
             return true;
+        } else if (!delegate.writeReady()) {
+            return false;
         } else {
             delegate.write(this);
             currentFragment++;

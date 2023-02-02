@@ -52,7 +52,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     public void close() throws IOException {
         if (fd != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -64,6 +64,11 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             channel.close();
             channel = null;
         }
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -79,7 +84,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     @Override
-    public boolean writeFinished() {
+    public boolean writeFlushed() {
         return true;
     }
 

@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -9,7 +8,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -89,26 +87,18 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return encryptedWriter != null && encryptedWriter.writeReady();
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        if (encryptedWriter == null) {
-            //wait for handshake
-            try {
-                final Duration handshakeTimeout = parent.getParent().getHandshakeTimeout();
-                if (!newSpinWait().awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                    throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
-                }
-            } catch (final IOException e) {
-                throw e;
-            } catch (final Exception e) {
-                throw new IOException(e);
-            }
-        }
         encryptedWriter.write(message);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
-        return getEncryptedWriter() != null && encryptedWriter.writeFinished();
+    public boolean writeFlushed() throws IOException {
+        return encryptedWriter.writeFlushed();
     }
 
 }

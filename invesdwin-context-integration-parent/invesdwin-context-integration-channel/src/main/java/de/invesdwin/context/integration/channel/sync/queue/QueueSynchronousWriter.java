@@ -39,12 +39,17 @@ public class QueueSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final M message) throws IOException {
         queue.add(newReference(message));
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

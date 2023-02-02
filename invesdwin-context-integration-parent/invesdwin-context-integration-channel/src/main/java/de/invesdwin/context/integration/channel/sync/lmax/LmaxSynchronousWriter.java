@@ -28,6 +28,11 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final M message) throws IOException {
         final long seq = ringBuffer.next(); // blocked by ringBuffer's gatingSequence
         final IMutableReference<M> event = ringBuffer.get(seq);
@@ -36,7 +41,7 @@ public class LmaxSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

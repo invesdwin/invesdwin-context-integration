@@ -70,7 +70,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     public void close() throws IOException {
         if (buffer != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -82,6 +82,11 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             channel.close();
             channel = null;
         }
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -97,7 +102,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

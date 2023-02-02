@@ -14,6 +14,10 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
 
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private IByteBuffer combinedBuffer;
+    private IByteBuffer combinedMessage;
+    private int position;
+    private int fragmentCount;
+    private int currentFragment;
 
     public FragmentSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate) {
         this.delegate = delegate;
@@ -28,11 +32,16 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
     public void close() throws IOException {
         delegate.close();
         combinedBuffer = null;
+        reset();
     }
 
     @Override
     public boolean hasNext() throws IOException {
-        return delegate.hasNext();
+        if (combinedMessage != null) {
+            return true;
+        }
+        readFurther();
+        return combinedMessage != null;
     }
 
     @Override
@@ -42,62 +51,72 @@ public class FragmentSynchronousReader implements ISynchronousReader<IByteBuffer
 
     @Override
     public void readFinished() {
-        delegate.readFinished();
+        reset();
+    }
+
+    private void reset() {
+        combinedMessage = null;
+        position = 0;
+        currentFragment = 0;
+        fragmentCount = 0;
     }
 
     @Override
     public IByteBuffer asBuffer() throws IOException {
-        final IByteBuffer buffer = delegate.readMessage().asBuffer();
-        final byte fragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
-        if (fragmentCount == 1) {
-            //zero copy forward
-            return buffer.sliceFrom(FragmentSynchronousWriter.PAYLOAD_INDEX);
-        } else {
-            if (combinedBuffer == null) {
-                combinedBuffer = ByteBuffers.allocateExpandable();
-            }
-            final int length = fillFragments(combinedBuffer, buffer, fragmentCount);
-            return combinedBuffer.sliceTo(length);
+        return combinedMessage;
+    }
+
+    private void readFurther() throws IOException {
+        if (!delegate.hasNext()) {
+            return;
         }
+        final IByteBuffer buffer = delegate.readMessage().asBuffer();
+        if (fragmentCount == 0) {
+            currentFragment = 1;
+            fragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
+            if (fragmentCount == 1) {
+                //zero copy forward
+                combinedMessage = buffer.sliceFrom(FragmentSynchronousWriter.PAYLOAD_INDEX);
+            } else {
+                //initialize combining
+                if (combinedBuffer == null) {
+                    combinedBuffer = ByteBuffers.allocateExpandable();
+                }
+                fillFragments(combinedBuffer, buffer);
+            }
+        } else {
+            //continue filling
+            fillFragments(combinedBuffer, buffer);
+        }
+        delegate.readFinished();
     }
 
     @Override
     public int getBuffer(final IByteBuffer dst) throws IOException {
-        final IByteBuffer buffer = delegate.readMessage().asBuffer();
-        final byte fragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
-        if (fragmentCount == 1) {
-            //zero copy forward
-            final int length = buffer.remaining(FragmentSynchronousWriter.PAYLOAD_INDEX);
-            dst.putBytes(0, buffer, FragmentSynchronousWriter.PAYLOAD_INDEX, length);
-            return length;
-        } else {
-            return fillFragments(dst, buffer, fragmentCount);
-        }
+        final IByteBuffer combinedMessage = asBuffer();
+        dst.putBytes(0, combinedMessage);
+        return combinedMessage.capacity();
     }
 
-    private int fillFragments(final IByteBuffer dst, final IByteBuffer pBuffer, final byte fragmentCount)
-            throws IOException {
-        IByteBuffer buffer = pBuffer;
-        int position = 0;
-        for (byte i = 1; i <= fragmentCount; i++) {
-            if (i > 1) {
-                delegate.readFinished();
-                buffer = delegate.readMessage().asBuffer();
-            }
-            final byte currentFragment = buffer.getByte(FragmentSynchronousWriter.FRAGMENT_INDEX);
-            if (currentFragment != i) {
-                throw new IllegalStateException("i [" + i + "] != currentFragment [" + currentFragment + "]");
-            }
-            final int payloadLength = buffer.getInt(FragmentSynchronousWriter.PAYLOADLENGTH_INDEX);
-            final int newFragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
-            if (fragmentCount != newFragmentCount) {
-                throw new IllegalStateException(
-                        "newFragmentCount [" + newFragmentCount + "] != fragmentCount [" + fragmentCount + "]");
-            }
-            dst.putBytes(position, buffer, FragmentSynchronousWriter.PAYLOAD_INDEX, payloadLength);
-            position += payloadLength;
+    private void fillFragments(final IByteBuffer dst, final IByteBuffer buffer) throws IOException {
+        final byte newCurrentFragment = buffer.getByte(FragmentSynchronousWriter.FRAGMENT_INDEX);
+        if (newCurrentFragment != currentFragment) {
+            throw new IllegalStateException(
+                    "newCurrentFragment [" + newCurrentFragment + "] != currentFragment [" + currentFragment + "]");
         }
-        return position;
+        final int payloadLength = buffer.getInt(FragmentSynchronousWriter.PAYLOADLENGTH_INDEX);
+        final int newFragmentCount = buffer.getByte(FragmentSynchronousWriter.FRAGMENTCOUNT_INDEX);
+        if (fragmentCount != newFragmentCount) {
+            throw new IllegalStateException(
+                    "newFragmentCount [" + newFragmentCount + "] != fragmentCount [" + fragmentCount + "]");
+        }
+        dst.putBytes(position, buffer, FragmentSynchronousWriter.PAYLOAD_INDEX, payloadLength);
+        position += payloadLength;
+        currentFragment++;
+
+        if (currentFragment > fragmentCount) {
+            combinedMessage = combinedBuffer.sliceTo(position);
+        }
     }
 
 }

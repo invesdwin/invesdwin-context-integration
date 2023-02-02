@@ -1,14 +1,13 @@
 package de.invesdwin.context.integration.channel.async.sync;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -19,7 +18,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
 
     private final ISynchronousReader<O> outputReader;
     private final ISynchronousWriter<I> inputWriter;
-    private final ASpinWait writerSpinWait;
+    private final SynchronousWriterSpinWait<I> writerSpinWait;
     private final Duration timeout;
 
     /**
@@ -29,20 +28,8 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
             final ISynchronousWriter<I> inputWriter, final Duration timeout) {
         this.outputReader = outputReader;
         this.inputWriter = inputWriter;
-        this.writerSpinWait = newSpinWait(inputWriter);
+        this.writerSpinWait = new SynchronousWriterSpinWait<I>(inputWriter);
         this.timeout = timeout;
-    }
-
-    /**
-     * Override this to disable spinning or configure type of waits.
-     */
-    protected ASpinWait newSpinWait(final ISynchronousWriter<I> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.writeFinished();
-            }
-        };
     }
 
     @Override
@@ -60,17 +47,8 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
 
     @Override
     public O handle(final I input) throws IOException {
-        inputWriter.write(input);
-        try {
-            //maybe block here
-            if (!writerSpinWait.awaitFulfill(System.nanoTime(), timeout)) {
-                throw new TimeoutException("Write message timeout exceeded: " + timeout);
-            }
-        } catch (final IOException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new IOException(e);
-        }
+        //maybe block here
+        writerSpinWait.waitForWrite(input, timeout);
         if (outputReader.hasNext()) {
             final O message = outputReader.readMessage();
             outputReader.readFinished();

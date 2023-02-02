@@ -22,7 +22,7 @@ public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
     public void close() throws IOException {
         if (connection != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -31,12 +31,17 @@ public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         connection.send(message);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

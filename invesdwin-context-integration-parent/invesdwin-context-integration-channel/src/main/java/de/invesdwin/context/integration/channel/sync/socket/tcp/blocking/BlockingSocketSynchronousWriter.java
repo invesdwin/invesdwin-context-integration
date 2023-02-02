@@ -42,7 +42,7 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
     public void close() throws IOException {
         if (out != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -62,6 +62,11 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
@@ -74,7 +79,7 @@ public class BlockingSocketSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     @Override
-    public boolean writeFinished() {
+    public boolean writeFlushed() {
         return true;
     }
 

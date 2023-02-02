@@ -61,13 +61,18 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         sendRetrying(size + messageIndex);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

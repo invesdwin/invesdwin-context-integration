@@ -22,6 +22,11 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final M message) throws IOException {
         final IReference<M> closedHolder = queue.poll();
         if (closedHolder != null) {
@@ -41,7 +46,7 @@ public class BlockingQueueSynchronousWriter<M> extends ABlockingQueueSynchronous
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

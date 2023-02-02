@@ -6,8 +6,6 @@ import java.net.InetSocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.net.ssl.SSLEngine;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
@@ -15,7 +13,8 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.I
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.HandshakeValidation;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -51,11 +50,13 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
                 .valueOf(channel.getWriter().getUnderlyingWriter());
         final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader = IgnoreOpenCloseSynchronousReader
                 .valueOf(channel.getReader().getUnderlyingReader());
-        final ASpinWait readerSpinWait = newSpinWait(underlyingReader);
-        final ASpinWait writerSpinWait = newSpinWait(underlyingWriter);
+        final SynchronousReaderSpinWait<IByteBufferProvider> underlyingReaderSpinWait = new SynchronousReaderSpinWait<IByteBufferProvider>(
+                underlyingReader);
+        final SynchronousWriterSpinWait<IByteBufferProvider> underlyingWriterSpinWait = new SynchronousWriterSpinWait<IByteBufferProvider>(
+                underlyingWriter);
         final TlsSynchronousChannel tlsChannel = new TlsSynchronousChannel(handshakeTimeout,
-                newHandshakeTimeoutRecoveryTries(), socketAddress, tlsProvider.getProtocol(), engine, underlyingReader,
-                readerSpinWait, underlyingWriter, writerSpinWait, handshakeValidation);
+                newHandshakeTimeoutRecoveryTries(), socketAddress, tlsProvider.getProtocol(), engine,
+                underlyingReaderSpinWait, underlyingWriterSpinWait, handshakeValidation);
         final TlsSynchronousReader encryptedReader = new TlsSynchronousReader(tlsChannel);
         final TlsSynchronousWriter encryptedWriter = new TlsSynchronousWriter(tlsChannel);
         channel.getReader().setEncryptedReader(encryptedReader);
@@ -69,24 +70,6 @@ public class TlsHandshakeProvider implements IHandshakeProvider {
      */
     protected Integer newHandshakeTimeoutRecoveryTries() {
         return 3;
-    }
-
-    protected ASpinWait newSpinWait(final ISynchronousReader<IByteBufferProvider> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.hasNext();
-            }
-        };
-    }
-
-    protected ASpinWait newSpinWait(final ISynchronousWriter<IByteBufferProvider> delegate) {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return delegate.writeFinished();
-            }
-        };
     }
 
     protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {

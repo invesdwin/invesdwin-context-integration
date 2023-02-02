@@ -1,8 +1,5 @@
 package de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6;
 
-import java.io.IOException;
-import java.util.concurrent.TimeoutException;
-
 import javax.annotation.concurrent.Immutable;
 
 import org.apache.commons.codec.binary.Hex;
@@ -17,7 +14,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.A
 import de.invesdwin.context.security.crypto.key.password.IPasswordHasher;
 import de.invesdwin.context.security.crypto.key.password.SimplePasswordHasher;
 import de.invesdwin.context.security.crypto.verification.hash.algorithm.DigestAlgorithm;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -86,30 +82,6 @@ public abstract class ASrp6HandshakeProvider extends AKeyExchangeHandshakeProvid
                 CryptoSrp6Routines.INSTANCE);
         verifier.setXRoutine(getXRoutine());
         return verifier;
-    }
-
-    protected void waitForRead(final ASpinWait handshakeReaderSpinWait) throws IOException {
-        try {
-            if (!handshakeReaderSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
-            }
-        } catch (final IOException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new IOException(e);
-        }
-    }
-
-    protected void waitForWrite(final ASpinWait handshakeWriterSpinWait) throws IOException {
-        try {
-            if (!handshakeWriterSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                throw new TimeoutException("Write handshake message timeout exceeded: " + getHandshakeTimeout());
-            }
-        } catch (final IOException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new IOException(e);
-        }
     }
 
     /**

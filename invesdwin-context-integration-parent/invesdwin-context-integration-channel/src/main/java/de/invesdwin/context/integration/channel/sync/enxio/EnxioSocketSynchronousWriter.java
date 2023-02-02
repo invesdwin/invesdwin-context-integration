@@ -53,7 +53,7 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void close() {
         if (buffer != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -69,6 +69,11 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
@@ -80,7 +85,7 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

@@ -54,7 +54,7 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     public void close() throws IOException {
         if (socket != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -66,6 +66,11 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
             channel.close();
             channel = null;
         }
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -82,7 +87,7 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     }
 
     @Override
-    public boolean writeFinished() {
+    public boolean writeFlushed() {
         return true;
     }
 

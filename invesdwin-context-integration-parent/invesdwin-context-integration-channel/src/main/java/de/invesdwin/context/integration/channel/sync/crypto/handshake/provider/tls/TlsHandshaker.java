@@ -13,12 +13,11 @@ import javax.net.ssl.SSLSession;
 
 import org.apache.commons.io.HexDump;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.HandshakeValidation;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
@@ -56,10 +55,8 @@ public class TlsHandshaker {
     private SocketAddress address;
     private ITlsProtocol protocol;
     private SSLEngine engine;
-    private ISynchronousReader<IByteBufferProvider> reader;
-    private ASpinWait readerSpinWait;
-    private ISynchronousWriter<IByteBufferProvider> writer;
-    private ASpinWait writerSpinWait;
+    private SynchronousReaderSpinWait<IByteBufferProvider> underlyingReaderSpinWait;
+    private SynchronousWriterSpinWait<IByteBufferProvider> underlyingWriterSpinWait;
 
     private HandshakeValidation handshakeValidation;
 
@@ -69,9 +66,9 @@ public class TlsHandshaker {
 
     public void init(final Duration handshakeTimeout, final Integer handshakeTimeoutRecoveryTries,
             final SocketAddress address, final boolean server, final String side, final ITlsProtocol protocol,
-            final SSLEngine engine, final ISynchronousReader<IByteBufferProvider> reader,
-            final ASpinWait readerSpinWait, final ISynchronousWriter<IByteBufferProvider> writer,
-            final ASpinWait writerSpinWait, final HandshakeValidation handshakeValidation) {
+            final SSLEngine engine, final SynchronousReaderSpinWait<IByteBufferProvider> underlyingReaderSpinWait,
+            final SynchronousWriterSpinWait<IByteBufferProvider> underlyingWriterSpinWait,
+            final HandshakeValidation handshakeValidation) {
         this.server = server;
         this.side = side;
 
@@ -80,10 +77,8 @@ public class TlsHandshaker {
         this.address = address;
         this.protocol = protocol;
         this.engine = engine;
-        this.reader = reader;
-        this.readerSpinWait = readerSpinWait;
-        this.writer = writer;
-        this.writerSpinWait = writerSpinWait;
+        this.underlyingReaderSpinWait = underlyingReaderSpinWait;
+        this.underlyingWriterSpinWait = underlyingWriterSpinWait;
 
         this.handshakeValidation = handshakeValidation;
     }
@@ -96,9 +91,8 @@ public class TlsHandshaker {
         this.address = null;
         this.protocol = null;
         this.engine = null;
-        this.readerSpinWait = null;
-        this.reader = null;
-        this.writer = null;
+        this.underlyingReaderSpinWait = null;
+        this.underlyingWriterSpinWait = null;
 
         handshakeValidation = null;
 
@@ -137,7 +131,7 @@ public class TlsHandshaker {
                 final java.nio.ByteBuffer iApp;
                 if (hs == HandshakeStatus.NEED_UNWRAP) {
                     try {
-                        if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
+                        if (!underlyingReaderSpinWait.hasNext().awaitFulfill(System.nanoTime(), handshakeTimeout)) {
                             if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
                                 //CHECKSTYLE:OFF
                                 if (handshakeTimeoutRecoveryTries != null) {
@@ -189,7 +183,7 @@ public class TlsHandshaker {
                     } catch (final Exception e) {
                         throw new IOException(e);
                     }
-                    final IByteBuffer message = reader.readMessage().asBuffer();
+                    final IByteBuffer message = underlyingReaderSpinWait.getReader().readMessage().asBuffer();
                     handshakeBuffer.clear();
                     iNet = message.asNioByteBuffer();
                     iApp = handshakeBuffer;
@@ -203,7 +197,7 @@ public class TlsHandshaker {
 
                 final SSLEngineResult r = engine.unwrap(iNet, iApp);
                 if (readFinishedRequired) {
-                    reader.readFinished();
+                    underlyingReaderSpinWait.getReader().readFinished();
                 }
                 final Status rs = r.getStatus();
                 hs = r.getHandshakeStatus();
@@ -345,14 +339,7 @@ public class TlsHandshaker {
                 if (LOG.isTraceEnabled()) {
                     printHex(address, side, action + " packet", oNet);
                 }
-                writer.write(ByteBuffers.wrapRelative(oNet));
-                try {
-                    if (!writerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                        throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
-                    }
-                } catch (final Exception e) {
-                    throw new IOException(e);
-                }
+                underlyingWriterSpinWait.waitForWrite(ByteBuffers.wrapRelative(oNet), handshakeTimeout);
             }
 
             final Status rs = r.getStatus();
@@ -467,14 +454,7 @@ public class TlsHandshaker {
 
         // Status.OK:
         if (appNet.hasRemaining()) {
-            writer.write(ByteBuffers.wrapRelative(appNet));
-            try {
-                if (!writerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                    throw new TimeoutException("Write handshake message timeout exceeded: " + handshakeTimeout);
-                }
-            } catch (final Exception e) {
-                throw new IOException(e);
-            }
+            underlyingWriterSpinWait.waitForWrite(ByteBuffers.wrapRelative(appNet), handshakeTimeout);
         }
     }
 
@@ -486,19 +466,12 @@ public class TlsHandshaker {
             if (--loops < 0) {
                 throw new IOException("Too many loops to receive application data");
             }
-            try {
-                if (!readerSpinWait.awaitFulfill(System.nanoTime(), handshakeTimeout)) {
-                    throw new TimeoutException("Read handshake message timeout exceeded: " + handshakeTimeout);
-                }
-            } catch (final Exception e) {
-                throw new IOException(e);
-            }
-            final IByteBuffer message = reader.readMessage().asBuffer();
+            final IByteBuffer message = underlyingReaderSpinWait.waitForRead(handshakeTimeout).asBuffer();
             handshakeBuffer.clear();
             final java.nio.ByteBuffer netBuffer = message.asNioByteBuffer();
             final java.nio.ByteBuffer recBuffer = handshakeBuffer;
             final SSLEngineResult rs = engine.unwrap(netBuffer, recBuffer);
-            reader.readFinished();
+            underlyingReaderSpinWait.getReader().readFinished();
             recBuffer.flip();
             if (recBuffer.remaining() != 0) {
                 if (LOG.isTraceEnabled()) {

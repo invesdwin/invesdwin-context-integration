@@ -6,7 +6,6 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
 import javax.crypto.KeyAgreement;
@@ -16,9 +15,12 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.IgnoreOpenCloseSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannel;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWaitPool;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.context.security.crypto.encryption.cipher.asymmetric.AsymmetricCipherKey;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -57,33 +59,26 @@ public abstract class AKeyAgreementHandshakeProvider extends AKeyExchangeHandsha
 
                 final byte[] ourPublicKey = ourKeyPair.getPublic().getEncoded();
                 final IByteBuffer ourPublicKeyMessage = ByteBuffers.wrap(ourPublicKey);
-                handshakeWriter.write(ourPublicKeyMessage);
-                final ASpinWait writerSpinWait = newSpinWait(handshakeWriter);
+                final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
+                        .borrowObject(handshakeWriter);
                 try {
-                    if (!writerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                        throw new TimeoutException(
-                                "Write handshake message timeout exceeded: " + getHandshakeTimeout());
-                    }
-                } catch (final IOException e) {
-                    throw e;
-                } catch (final Exception e) {
-                    throw new IOException(e);
+                    writerSpinWait.waitForWrite(ourPublicKeyMessage, getHandshakeTimeout());
+                } finally {
+                    SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
                 }
 
-                final ASpinWait readerSpinWait = newSpinWait(handshakeReader);
+                final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
+                        .borrowObject(handshakeReader);
+                final PublicKey otherPublicKey;
                 try {
-                    if (!readerSpinWait.awaitFulfill(System.nanoTime(), getHandshakeTimeout())) {
-                        throw new TimeoutException("Read handshake message timeout exceeded: " + getHandshakeTimeout());
-                    }
-                } catch (final IOException e) {
-                    throw e;
-                } catch (final Exception e) {
-                    throw new IOException(e);
+                    final IByteBuffer otherPublicKeyMessage = readerSpinWait.waitForRead(getHandshakeTimeout())
+                            .asBuffer();
+                    otherPublicKey = AsymmetricCipherKey.wrapPublicKey(getKeyAlgorithm(),
+                            otherPublicKeyMessage.asByteArray());
+                    handshakeReader.readFinished();
+                } finally {
+                    SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
                 }
-                final IByteBuffer otherPublicKeyMessage = handshakeReader.readMessage().asBuffer();
-                final PublicKey otherPublicKey = AsymmetricCipherKey.wrapPublicKey(getKeyAlgorithm(),
-                        otherPublicKeyMessage.asByteArray());
-                handshakeReader.readFinished();
 
                 // Perform key agreement
                 final KeyAgreement ka = KeyAgreement.getInstance(getKeyAgreementAlgorithm());

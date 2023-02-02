@@ -37,7 +37,7 @@ public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousCha
     public void close() throws IOException {
         if (out != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -53,6 +53,11 @@ public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousCha
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
@@ -65,7 +70,7 @@ public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousCha
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

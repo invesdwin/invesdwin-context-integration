@@ -43,7 +43,7 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
     public void close() throws IOException {
         if (buffer != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -58,6 +58,11 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
@@ -69,7 +74,7 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
     }
 
     @Override
-    public boolean writeFinished() {
+    public boolean writeFlushed() {
         return true;
     }
 

@@ -34,11 +34,16 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     @Override
     public void close() throws IOException {
         if (appender != null) {
-            writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+            writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             appender.close();
             appender = null;
         }
         super.close();
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -53,7 +58,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

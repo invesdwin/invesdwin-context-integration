@@ -38,13 +38,14 @@ import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueu
 import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueueSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -240,7 +241,7 @@ public abstract class AChannelTest extends ATest {
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
-            return new BlockingMappedSynchronousReader(file, getMaxMessageSize(), Duration.ONE_MINUTE);
+            return new BlockingMappedSynchronousReader(file, getMaxMessageSize());
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
@@ -260,7 +261,7 @@ public abstract class AChannelTest extends ATest {
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.BLOCKING_MAPPED) {
-            return new BlockingMappedSynchronousWriter(file, getMaxMessageSize(), Duration.ONE_MINUTE);
+            return new BlockingMappedSynchronousWriter(file, getMaxMessageSize());
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, pipes);
         }
@@ -294,27 +295,14 @@ public abstract class AChannelTest extends ATest {
             }
             responseReader.open();
             readsStart = new Instant();
-            final ASpinWait readSpinWait = new ASpinWait() {
-                @Override
-                public boolean isConditionFulfilled() throws Exception {
-                    return responseReader.hasNext();
-                }
-            };
-            final ASpinWait writeSpinWait = new ASpinWait() {
-                @Override
-                public boolean isConditionFulfilled() throws Exception {
-                    return requestWriter.writeFinished();
-                }
-            };
-            long waitingSinceNanos = System.nanoTime();
+            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
+            final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
             while (true) {
-                requestWriter.write(REQUEST_MESSAGE);
-                Assertions.checkTrue(writeSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
+                writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
                 if (DEBUG) {
                     log.info("client request out");
                 }
-                Assertions.checkTrue(readSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
-                final FDate readMessage = responseReader.readMessage();
+                final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                 responseReader.readFinished();
                 if (DEBUG) {
                     log.info("client response in [" + readMessage + "]");
@@ -325,7 +313,6 @@ public abstract class AChannelTest extends ATest {
                 }
                 prevValue = readMessage;
                 count++;
-                waitingSinceNanos = System.nanoTime();
             }
         } catch (final EOFException e) {
             //writer closed
@@ -373,18 +360,8 @@ public abstract class AChannelTest extends ATest {
 
         @Override
         public void run() {
-            final ASpinWait readSpinWait = new ASpinWait() {
-                @Override
-                public boolean isConditionFulfilled() throws Exception {
-                    return requestReader.hasNext();
-                }
-            };
-            final ASpinWait writeSpinWait = new ASpinWait() {
-                @Override
-                public boolean isConditionFulfilled() throws Exception {
-                    return responseWriter.writeFinished();
-                }
-            };
+            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(requestReader);
+            final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(responseWriter);
             try {
                 int i = 0;
                 if (DEBUG) {
@@ -396,17 +373,14 @@ public abstract class AChannelTest extends ATest {
                 }
                 responseWriter.open();
                 final Instant writesStart = new Instant();
-                long waitingSinceNanos = System.nanoTime();
                 for (final FDate date : newValues()) {
-                    Assertions.checkTrue(readSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
+                    final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                     if (DEBUG) {
                         log.info("server request in");
                     }
-                    final FDate readMessage = requestReader.readMessage();
                     requestReader.readFinished();
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
-                    responseWriter.write(date);
-                    Assertions.checkTrue(writeSpinWait.awaitFulfill(waitingSinceNanos, MAX_WAIT_DURATION));
+                    writeSpinWait.waitForWrite(date, MAX_WAIT_DURATION);
                     if (DEBUG) {
                         log.info("server response out [" + date + "]");
                     }
@@ -414,7 +388,6 @@ public abstract class AChannelTest extends ATest {
                     if (i % FLUSH_INTERVAL == 0) {
                         printProgress("Writes", writesStart, i, VALUES);
                     }
-                    waitingSinceNanos = System.nanoTime();
                 }
                 printProgress("WritesFinished", writesStart, VALUES, VALUES);
                 if (DEBUG) {

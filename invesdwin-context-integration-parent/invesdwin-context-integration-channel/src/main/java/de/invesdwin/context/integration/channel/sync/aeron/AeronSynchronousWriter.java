@@ -39,7 +39,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
         if (publication != null) {
             if (connected) {
                 try {
-                    writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
                 } catch (final Throwable t) {
                     //ignore
                 }
@@ -55,12 +55,17 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         this.size = message.getBuffer(buffer);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         if (size == 0) {
             return true;
         } else if (sendTry(size)) {

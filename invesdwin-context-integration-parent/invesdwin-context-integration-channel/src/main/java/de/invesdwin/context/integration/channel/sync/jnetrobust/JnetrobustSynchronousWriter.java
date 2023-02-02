@@ -31,13 +31,18 @@ public class JnetrobustSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void close() throws IOException {
         if (channel.getProtocolHandle() != null) {
             try {
-                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
             buffer = null;
         }
         channel.close();
+    }
+
+    @Override
+    public boolean writeReady() throws IOException {
+        return true;
     }
 
     @Override
@@ -55,7 +60,7 @@ public class JnetrobustSynchronousWriter implements ISynchronousWriter<IByteBuff
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 

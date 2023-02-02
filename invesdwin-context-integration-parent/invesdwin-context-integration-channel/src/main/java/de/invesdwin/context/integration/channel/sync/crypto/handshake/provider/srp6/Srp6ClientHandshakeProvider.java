@@ -22,8 +22,11 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.s
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep1ResultSerde;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep2Result;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.srp6.payload.Srp6ServerStep2ResultSerde;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWaitPool;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.context.security.crypto.key.DerivedKeyProvider;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -49,10 +52,11 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
             final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
             final IgnoreOpenCloseSynchronousReader<IByteBufferProvider> underlyingReader,
             final ISynchronousReader<IByteBufferProvider> handshakeReader) throws IOException {
-        final ASpinWait handshakeReaderSpinWait = newSpinWait(handshakeReader);
-        final ASpinWait handshakeWriterSpinWait = newSpinWait(handshakeWriter);
-
         handshakeWriter.open();
+        final SynchronousReaderSpinWait<IByteBufferProvider> handshakeReaderSpinWait = SynchronousReaderSpinWaitPool
+                .borrowObject(handshakeReader);
+        final SynchronousWriterSpinWait<IByteBufferProvider> handshakeWriterSpinWait = SynchronousWriterSpinWaitPool
+                .borrowObject(handshakeWriter);
         final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
         try {
             handshakeReader.open();
@@ -61,10 +65,9 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
                 final SRP6ClientSession client = new SRP6ClientSession();
                 client.setXRoutine(getXRoutine());
 
-                clientStep1(handshakeWriter, handshakeWriterSpinWait, buffer, client);
-                clientStep2(handshakeWriter, handshakeWriterSpinWait, handshakeReader, handshakeReaderSpinWait, buffer,
-                        client);
-                final BigInteger sessionKey = clientStep3(handshakeReader, handshakeReaderSpinWait, buffer, client);
+                clientStep1(handshakeWriterSpinWait, buffer, client);
+                clientStep2(handshakeWriterSpinWait, handshakeReaderSpinWait, buffer, client);
+                final BigInteger sessionKey = clientStep3(handshakeReaderSpinWait, buffer, client);
 
                 final byte[] sharedSecret = sessionKey.toByteArray();
                 final DerivedKeyProvider derivedKeyProvider = newDerivedKeyProvider(sharedSecret);
@@ -77,12 +80,13 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         } finally {
             Closeables.closeQuietly(handshakeWriter);
             ByteBuffers.EXPANDABLE_POOL.returnObject(buffer);
+            SynchronousWriterSpinWaitPool.returnObject(handshakeWriterSpinWait);
+            SynchronousReaderSpinWaitPool.returnObject(handshakeReaderSpinWait);
         }
     }
 
-    private void clientStep1(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ASpinWait handshakeWriterSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
-            throws IOException {
+    private void clientStep1(final SynchronousWriterSpinWait<IByteBufferProvider> handshakeWriterSpinWait,
+            final IByteBuffer buffer, final SRP6ClientSession client) throws IOException {
         //Store input user identity 'I' and password 'P'.
         client.step1(userIdHash, passwordHash);
 
@@ -90,20 +94,18 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         final Srp6ServerStep1LookupInput serverStep1LookupInput = new Srp6ServerStep1LookupInput(userIdHash);
         final int serverStep1LookupInputLength = Srp6ServerStep1LookupInputSerde.INSTANCE.toBuffer(buffer,
                 serverStep1LookupInput);
-        handshakeWriter.write(buffer.sliceTo(serverStep1LookupInputLength));
-        waitForWrite(handshakeWriterSpinWait);
+        handshakeWriterSpinWait.waitForWrite(buffer.sliceTo(serverStep1LookupInputLength), getHandshakeTimeout());
     }
 
-    private void clientStep2(final ISynchronousWriter<IByteBufferProvider> handshakeWriter,
-            final ASpinWait handshakeWriterSpinWait, final ISynchronousReader<IByteBufferProvider> handshakeReader,
-            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
-            throws IOException, SRP6Exception {
+    private void clientStep2(final SynchronousWriterSpinWait<IByteBufferProvider> handshakeWriterSpinWait,
+            final SynchronousReaderSpinWait<IByteBufferProvider> handshakeReaderSpinWait, final IByteBuffer buffer,
+            final SRP6ClientSession client) throws IOException, SRP6Exception {
         //On receiving the server public value 'B' (and crypto parameters):
-        waitForRead(handshakeReaderSpinWait);
-        final IByteBuffer serverStep1ResultMessage = handshakeReader.readMessage().asBuffer();
+        final IByteBuffer serverStep1ResultMessage = handshakeReaderSpinWait.waitForRead(getHandshakeTimeout())
+                .asBuffer();
         final Srp6ServerStep1Result serverStep1Result = Srp6ServerStep1ResultSerde.INSTANCE
                 .fromBuffer(serverStep1ResultMessage);
-        handshakeReader.readFinished();
+        handshakeReaderSpinWait.getReader().readFinished();
 
         //Set the SRP-6a crypto parameters.
         //Compute the client public value 'A' and evidence message 'M1'.
@@ -113,20 +115,18 @@ public class Srp6ClientHandshakeProvider extends ASrp6HandshakeProvider {
         final Srp6ClientStep2Result clientStep2Result = new Srp6ClientStep2Result(srp6ClientCredentials.A,
                 srp6ClientCredentials.M1);
         final int clientStep2ResultLength = Srp6ClientStep2ResultSerde.INSTANCE.toBuffer(buffer, clientStep2Result);
-        handshakeWriter.write(buffer.sliceTo(clientStep2ResultLength));
-        waitForWrite(handshakeWriterSpinWait);
+        handshakeWriterSpinWait.waitForWrite(buffer.sliceTo(clientStep2ResultLength), getHandshakeTimeout());
     }
 
-    private BigInteger clientStep3(final ISynchronousReader<IByteBufferProvider> handshakeReader,
-            final ASpinWait handshakeReaderSpinWait, final IByteBuffer buffer, final SRP6ClientSession client)
-            throws IOException, SRP6Exception {
+    private BigInteger clientStep3(final SynchronousReaderSpinWait<IByteBufferProvider> handshakeReaderSpinWait,
+            final IByteBuffer buffer, final SRP6ClientSession client) throws IOException, SRP6Exception {
         //On receiving the server evidence message 'M2':
         //Validate the server evidence message 'M2' after which user and server are mutually authenticated.
-        waitForRead(handshakeReaderSpinWait);
-        final IByteBuffer serverStep2ResultMessage = handshakeReader.readMessage().asBuffer();
+        final IByteBuffer serverStep2ResultMessage = handshakeReaderSpinWait.waitForRead(getHandshakeTimeout())
+                .asBuffer();
         final Srp6ServerStep2Result serverStep2Result = Srp6ServerStep2ResultSerde.INSTANCE
                 .fromBuffer(serverStep2ResultMessage);
-        handshakeReader.readFinished();
+        handshakeReaderSpinWait.getReader().readFinished();
         client.step3(serverStep2Result.getServerEvidenceMessageM2());
 
         //On completing mutual authentication:

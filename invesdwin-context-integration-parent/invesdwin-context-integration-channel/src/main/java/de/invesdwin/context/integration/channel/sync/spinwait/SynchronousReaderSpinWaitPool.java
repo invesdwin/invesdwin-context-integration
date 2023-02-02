@@ -1,23 +1,25 @@
 package de.invesdwin.context.integration.channel.sync.spinwait;
 
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.pool.AgronaObjectPool;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
 
+@SuppressWarnings({ "unchecked", "rawtypes" })
 @ThreadSafe
-public final class SynchronousReaderSpinWaitPool implements IObjectPool<SynchronousReaderSpinWait> {
+public final class SynchronousReaderSpinWaitPool {
 
-    public static final SynchronousReaderSpinWaitPool INSTANCE = new SynchronousReaderSpinWaitPool();
-
-    private static volatile Supplier<? extends SynchronousReaderSpinWait> factory = () -> new SynchronousReaderSpinWait();
+    private static volatile Function<MutableDelegateSynchronousReader<?>, ? extends SynchronousReaderSpinWait> factory = (
+            t) -> new SynchronousReaderSpinWait(t);
     private static final AgronaObjectPool<SynchronousReaderSpinWait> POOL = new AgronaObjectPool<SynchronousReaderSpinWait>(
-            () -> factory.get()) {
+            () -> factory.apply(new MutableDelegateSynchronousReader<>())) {
         @Override
         public void invalidateObject(final SynchronousReaderSpinWait element) {
-            element.setReader(null);
+            final MutableDelegateSynchronousReader<?> holder = (MutableDelegateSynchronousReader<?>) element
+                    .getReader();
+            holder.setDelegate(null);
         }
     };
 
@@ -26,31 +28,31 @@ public final class SynchronousReaderSpinWaitPool implements IObjectPool<Synchron
     /**
      * This allows to override the default timings of the spinwait.
      */
-    public static void setFactory(final Supplier<? extends SynchronousReaderSpinWait> factory) {
+    public static void setFactory(
+            final Function<MutableDelegateSynchronousReader<?>, ? extends SynchronousReaderSpinWait> factory) {
         SynchronousReaderSpinWaitPool.factory = factory;
     }
 
-    public static Supplier<? extends SynchronousReaderSpinWait> getFactory() {
+    public static Function<MutableDelegateSynchronousReader<?>, ? extends SynchronousReaderSpinWait> getFactory() {
         return factory;
     }
 
-    @Override
-    public SynchronousReaderSpinWait borrowObject() {
-        return POOL.borrowObject();
+    public static <M> SynchronousReaderSpinWait<M> borrowObject(final ISynchronousReader<M> reader) {
+        final SynchronousReaderSpinWait spinWait = POOL.borrowObject();
+        final MutableDelegateSynchronousReader holder = (MutableDelegateSynchronousReader) spinWait.getReader();
+        holder.setDelegate(reader);
+        return spinWait;
     }
 
-    @Override
-    public void returnObject(final SynchronousReaderSpinWait element) {
+    public static void returnObject(final SynchronousReaderSpinWait<?> element) {
         POOL.returnObject(element);
     }
 
-    @Override
-    public void clear() {
+    public static void clear() {
         POOL.clear();
     }
 
-    @Override
-    public void invalidateObject(final SynchronousReaderSpinWait element) {
+    public static void invalidateObject(final SynchronousReaderSpinWait<?> element) {
         POOL.invalidateObject(element);
     }
 

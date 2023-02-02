@@ -102,12 +102,17 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     @Override
+    public boolean writeReady() throws IOException {
+        return true;
+    }
+
+    @Override
     public void write(final IByteBufferProvider message) throws IOException {
         writeFuture(message);
     }
 
     @Override
-    public boolean writeFinished() throws IOException {
+    public boolean writeFlushed() throws IOException {
         return true;
     }
 
