@@ -69,7 +69,7 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void close() {
         if (buffer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

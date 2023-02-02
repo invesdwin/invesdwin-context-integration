@@ -44,7 +44,7 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     public void close() throws IOException {
         if (out != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

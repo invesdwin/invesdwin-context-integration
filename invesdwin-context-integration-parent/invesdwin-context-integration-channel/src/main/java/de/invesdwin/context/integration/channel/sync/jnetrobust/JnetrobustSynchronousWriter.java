@@ -31,7 +31,7 @@ public class JnetrobustSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void close() throws IOException {
         if (channel.getProtocolHandle() != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

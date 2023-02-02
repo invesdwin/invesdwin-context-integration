@@ -22,7 +22,7 @@ public class KryonetSynchronousWriter extends AKryonetSynchronousChannel
     public void close() throws IOException {
         if (connection != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

@@ -51,7 +51,7 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
     public void close() {
         if (buffer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

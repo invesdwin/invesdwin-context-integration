@@ -46,7 +46,7 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     public void close() throws IOException {
         if (out != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

@@ -57,7 +57,7 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
     public void close() throws IOException {
         if (buffer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

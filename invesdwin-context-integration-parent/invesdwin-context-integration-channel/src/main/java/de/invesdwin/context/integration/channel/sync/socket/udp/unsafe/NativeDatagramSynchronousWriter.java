@@ -52,7 +52,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     public void close() throws IOException {
         if (fd != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

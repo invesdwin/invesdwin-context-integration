@@ -34,7 +34,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     @Override
     public void close() throws IOException {
         if (appender != null) {
-            write(ClosedByteBuffer.INSTANCE);
+            writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             appender.close();
             appender = null;
         }

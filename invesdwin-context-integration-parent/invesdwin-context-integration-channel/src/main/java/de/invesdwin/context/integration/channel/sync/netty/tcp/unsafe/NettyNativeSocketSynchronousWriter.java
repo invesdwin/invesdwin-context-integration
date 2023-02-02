@@ -64,7 +64,7 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     public void close() throws IOException {
         if (buffer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

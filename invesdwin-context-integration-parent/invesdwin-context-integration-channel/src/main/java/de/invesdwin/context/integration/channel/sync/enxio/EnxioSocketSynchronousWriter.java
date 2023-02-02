@@ -53,7 +53,7 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void close() {
         if (buffer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

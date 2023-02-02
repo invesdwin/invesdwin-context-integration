@@ -44,7 +44,7 @@ public class BroadcastSynchronousWriter implements ISynchronousWriter<IByteBuffe
     public void close() throws IOException {
         if (writer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }

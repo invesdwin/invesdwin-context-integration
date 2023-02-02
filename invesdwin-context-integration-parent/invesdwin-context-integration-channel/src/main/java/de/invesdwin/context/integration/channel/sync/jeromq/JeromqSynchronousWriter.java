@@ -51,7 +51,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
     public void close() throws IOException {
         if (socket != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
