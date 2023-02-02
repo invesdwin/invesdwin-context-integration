@@ -77,7 +77,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return writer.writeFinished();
+        return writer.writeFlushed();
     }
 
     private static final class ExpandableWriter implements IWriter {
@@ -100,7 +100,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
 
         @Override
-        public boolean writeFinished() throws IOException {
+        public boolean writeFlushed() throws IOException {
             if (size == 0) {
                 return true;
             } else if (sendTry(size)) {
@@ -137,7 +137,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         }
 
         @Override
-        public boolean writeFinished() throws IOException {
+        public boolean writeFlushed() throws IOException {
             if (message == null) {
                 return true;
             } else if (sendTry(message)) {
@@ -163,7 +163,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
     private interface IWriter {
         void write(IByteBufferProvider message) throws IOException;
 
-        boolean writeFinished() throws IOException;
+        boolean writeFlushed() throws IOException;
     }
 
 }
