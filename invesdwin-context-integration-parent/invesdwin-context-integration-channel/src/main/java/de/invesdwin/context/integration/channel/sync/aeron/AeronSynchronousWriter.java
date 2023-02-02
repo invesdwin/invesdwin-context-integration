@@ -1,8 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.aeron;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,7 +10,6 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.date.FTimeUnit;
 import io.aeron.ConcurrentPublication;
 import io.aeron.Publication;
 
@@ -23,6 +20,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
     private ConcurrentPublication publication;
     private boolean connected;
     private IByteBuffer buffer;
+    private int size;
 
     public AeronSynchronousWriter(final AeronInstance instance, final String channel, final int streamId) {
         super(instance, channel, streamId);
@@ -41,7 +39,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
         if (publication != null) {
             if (connected) {
                 try {
-                    write(ClosedByteBuffer.INSTANCE);
+                    writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
                 } catch (final Throwable t) {
                     //ignore
                 }
@@ -58,50 +56,43 @@ public class AeronSynchronousWriter extends AAeronSynchronousChannel
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        final int size = message.getBuffer(buffer);
-        sendRetrying(size);
+        this.size = message.getBuffer(buffer);
     }
 
     @Override
     public boolean writeFinished() throws IOException {
-        return true;
-    }
-
-    private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
-        while (!sendTry(size)) {
-            try {
-                FTimeUnit.MILLISECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                interrupt.initCause(e);
-                throw interrupt;
-            }
+        if (size == 0) {
+            return true;
+        } else if (sendTry(size)) {
+            size = 0;
+            return true;
+        } else {
+            return false;
         }
-        connected = true;
     }
 
-    private boolean sendTry(final int size) throws IOException, EOFException {
+    private boolean sendTry(final int size) throws IOException {
         final long result = publication.offer(buffer.directBuffer(), 0, size);
         if (result <= 0) {
             if (result == Publication.NOT_CONNECTED) {
                 if (connected) {
                     connected = false;
                     close();
-                    throw FastEOFException.getInstance("closed by other side: NOT_CONNECTED=" + result);
+                    throw FastEOFException.getInstance("closed by other side: NOT_CONNECTED=%s", result);
                 } else {
                     return false;
                 }
             } else if (result == Publication.CLOSED) {
                 close();
-                throw FastEOFException.getInstance("closed by other side: CLOSED=" + result);
+                throw FastEOFException.getInstance("closed by other side: CLOSED=%s", result);
             } else if (result == Publication.MAX_POSITION_EXCEEDED) {
                 close();
-                throw FastEOFException.getInstance("closed by other side: MAX_POSITION_EXCEEDED=" + result);
+                throw FastEOFException.getInstance("closed by other side: MAX_POSITION_EXCEEDED=%s", result);
             } else if (result == Publication.BACK_PRESSURED || result == Publication.ADMIN_ACTION) {
                 return false;
             }
         }
+        connected = true;
         return true;
     }
 

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.agrona.ringbuffer;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -14,7 +13,6 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
 public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -59,7 +57,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
     public void close() throws IOException {
         if (writer != null) {
             try {
-                write(ClosedByteBuffer.INSTANCE);
+                writeAndFinishIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
@@ -74,13 +72,14 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
 
     @Override
     public boolean writeFinished() throws IOException {
-        return true;
+        return writer.writeFinished();
     }
 
     private static final class ExpandableWriter implements IWriter {
         private final RingBuffer ringBuffer;
         private final IByteBuffer buffer;
         private final IByteBuffer messageBuffer;
+        private int size = 0;
 
         private ExpandableWriter(final RingBuffer ringBuffer) {
             this.ringBuffer = ringBuffer;
@@ -92,19 +91,18 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         public void write(final IByteBufferProvider message) throws IOException {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SIZE_INDEX, size);
-            sendRetrying(MESSAGE_INDEX + size);
+            this.size = MESSAGE_INDEX + size;
         }
 
-        private void sendRetrying(final int size) throws InterruptedIOException {
-            while (!sendTry(size)) {
-                try {
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                    interrupt.initCause(e);
-                    throw interrupt;
-                }
+        @Override
+        public boolean writeFinished() throws IOException {
+            if (size == 0) {
+                return true;
+            } else if (sendTry(size)) {
+                size = 0;
+                return true;
+            } else {
+                return false;
             }
         }
 
@@ -119,6 +117,7 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
         private final int fixedLength;
         private final int maxMessageFixedLength;
         private final IByteBuffer buffer;
+        private IByteBufferProvider message;
 
         private ZeroCopyWriter(final RingBuffer ringBuffer, final int fixedLength, final int messageFixedLength) {
             this.ringBuffer = ringBuffer;
@@ -129,15 +128,18 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
 
         @Override
         public void write(final IByteBufferProvider message) throws IOException {
-            while (!sendTry(message)) {
-                try {
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                } catch (final InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                    interrupt.initCause(e);
-                    throw interrupt;
-                }
+            this.message = message;
+        }
+
+        @Override
+        public boolean writeFinished() throws IOException {
+            if (message == null) {
+                return true;
+            } else if (sendTry(message)) {
+                message = null;
+                return true;
+            } else {
+                return false;
             }
         }
 
@@ -155,6 +157,8 @@ public class RingBufferSynchronousWriter implements ISynchronousWriter<IByteBuff
 
     private interface IWriter {
         void write(IByteBufferProvider message) throws IOException;
+
+        boolean writeFinished() throws IOException;
     }
 
 }
