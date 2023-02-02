@@ -78,6 +78,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         //CHECKSTYLE:ON
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

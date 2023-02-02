@@ -86,8 +86,12 @@ public class SctpSynchronousWriter implements ISynchronousWriter<IByteBufferProv
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final Object dst, final java.nio.ByteBuffer byteBuffer, final Object outMessageInfo,
             final int pos, final int length) throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

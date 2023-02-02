@@ -78,7 +78,11 @@ public class UdtSynchronousWriter implements ISynchronousWriter<IByteBufferProvi
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final SocketUDT dst, final java.nio.ByteBuffer byteBuffer) throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

@@ -23,6 +23,8 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private ChronicleSocketChannel socketChannel;
+    private java.nio.ByteBuffer messageToWrite;
+    private int positionBefore;
 
     public ChronicleNetworkSynchronousWriter(final ChronicleNetworkSynchronousChannel channel) {
         this.channel = channel;
@@ -52,6 +54,8 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+            messageToWrite = null;
+            positionBefore = 0;
         }
         if (channel != null) {
             channel.close();
@@ -69,8 +73,8 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX, size);
-            writeFully(socketChannel,
-                    buffer.asNioByteBuffer(0, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX + size));
+            messageToWrite = buffer.asNioByteBuffer(0, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX + size);
+            positionBefore = messageToWrite.position();
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
@@ -78,9 +82,28 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            ByteBuffers.position(messageToWrite, positionBefore);
+            messageToWrite = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
+    private boolean writeFurther() throws IOException {
+        final int count = socketChannel.write(messageToWrite);
+        if (count < 0) { // EOF
+            throw ByteBuffers.newEOF();
+        }
+        return messageToWrite.hasRemaining();
+    }
+
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

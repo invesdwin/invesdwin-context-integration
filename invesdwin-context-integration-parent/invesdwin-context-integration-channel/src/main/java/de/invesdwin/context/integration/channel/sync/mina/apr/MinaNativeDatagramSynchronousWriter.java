@@ -83,8 +83,12 @@ public class MinaNativeDatagramSynchronousWriter implements ISynchronousWriter<I
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final long dst, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
             throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

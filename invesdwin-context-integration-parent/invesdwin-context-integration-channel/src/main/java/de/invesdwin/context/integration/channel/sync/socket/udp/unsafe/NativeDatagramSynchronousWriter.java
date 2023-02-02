@@ -80,6 +80,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
                     "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
         }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
+        //System.out.println("TODO non-blocking");
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, datagramSize);
     }
 

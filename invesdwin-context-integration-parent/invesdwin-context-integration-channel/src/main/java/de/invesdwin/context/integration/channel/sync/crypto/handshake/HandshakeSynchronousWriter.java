@@ -6,7 +6,6 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -16,7 +15,7 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
 
     private ISynchronousWriter<IByteBufferProvider> underlyingWriter;
     @GuardedBy("this during handshake")
-    private ISynchronousWriter<IByteBufferProvider> encryptedWriter;
+    private volatile ISynchronousWriter<IByteBufferProvider> encryptedWriter;
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
@@ -71,19 +70,6 @@ public class HandshakeSynchronousWriter implements ISynchronousWriter<IByteBuffe
         if (underlyingWriter != null) {
             underlyingWriter.close();
         }
-    }
-
-    /**
-     * Override this to disable spinning or configure type of waits.
-     */
-    protected ASpinWait newSpinWait() {
-        return new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                //using synchronized getter so we don't need to make it volatile
-                return getEncryptedWriter() != null;
-            }
-        };
     }
 
     @Override

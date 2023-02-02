@@ -15,7 +15,7 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
 
     private ISynchronousReader<IByteBufferProvider> underlyingReader;
     @GuardedBy("this during handshake")
-    private ISynchronousReader<IByteBufferProvider> encryptedReader;
+    private volatile ISynchronousReader<IByteBufferProvider> encryptedReader;
     @GuardedBy("parent")
     private boolean readyForHandshake = false;
 
@@ -75,14 +75,7 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
 
     @Override
     public boolean hasNext() throws IOException {
-        if (encryptedReader == null) {
-            //using synchronized getter so we don't need to make it volatile
-            if (getEncryptedReader() == null) {
-                //wait for handshake
-                return false;
-            }
-        }
-        return encryptedReader.hasNext();
+        return encryptedReader != null && encryptedReader.hasNext();
     }
 
     @Override

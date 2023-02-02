@@ -77,8 +77,12 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final WritableByteChannel dst, final java.nio.ByteBuffer byteBuffer)
             throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

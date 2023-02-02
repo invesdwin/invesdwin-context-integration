@@ -72,6 +72,7 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
+        //System.out.println("TODO non-blocking");
         NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
     }
 

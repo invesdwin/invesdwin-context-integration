@@ -63,8 +63,12 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
+        //System.out.println("TODO non-blocking");
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);

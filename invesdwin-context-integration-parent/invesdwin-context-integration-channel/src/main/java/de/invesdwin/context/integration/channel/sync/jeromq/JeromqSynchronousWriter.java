@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.jeromq;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -17,7 +16,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.extend.ArrayExpandableByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 import zmq.ZError;
 
 @NotThreadSafe
@@ -26,6 +24,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
 
     private ArrayExpandableByteBuffer buffer;
     private IByteBuffer messageBuffer;
+    private int length;
 
     public JeromqSynchronousWriter(final IJeromqSocketType socketType, final String addr, final boolean server) {
         this(socketType.getWriterSocketType(), addr, server);
@@ -56,6 +55,7 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
                 //ignore
             }
             buffer = null;
+            length = 0;
         }
         super.close();
     }
@@ -68,24 +68,18 @@ public class JeromqSynchronousWriter extends AJeromqSynchronousChannel
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
-        sendRetrying(size + messageIndex);
+        this.length = messageIndex + size;
     }
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
-    }
-
-    private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
-        while (!sendTry(size)) {
-            try {
-                FTimeUnit.MILLISECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                interrupt.initCause(e);
-                throw interrupt;
-            }
+        if (length == 0) {
+            return true;
+        } else if (sendTry(length)) {
+            length = 0;
+            return true;
+        } else {
+            return false;
         }
     }
 

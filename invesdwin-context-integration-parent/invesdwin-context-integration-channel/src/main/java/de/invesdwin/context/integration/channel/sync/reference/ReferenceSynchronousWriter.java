@@ -36,7 +36,7 @@ public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public boolean writeReady() throws IOException {
-        return true;
+        return reference.get() == null;
     }
 
     @Override

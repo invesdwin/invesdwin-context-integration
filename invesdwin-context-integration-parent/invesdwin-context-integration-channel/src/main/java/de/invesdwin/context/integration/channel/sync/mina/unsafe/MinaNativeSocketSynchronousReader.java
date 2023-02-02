@@ -89,6 +89,7 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
 

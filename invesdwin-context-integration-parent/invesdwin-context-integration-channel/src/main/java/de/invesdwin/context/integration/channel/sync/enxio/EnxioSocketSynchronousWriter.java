@@ -28,6 +28,9 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
     private int fdVal;
+    private java.nio.ByteBuffer messageToWrite;
+    private int position;
+    private int remaining;
 
     public EnxioSocketSynchronousWriter(final SocketSynchronousChannel channel) {
         this.channel = channel;
@@ -61,6 +64,9 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             fdVal = 0;
             buffer = null;
             messageBuffer = null;
+            messageToWrite = null;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -78,7 +84,9 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fdVal, buffer.asNioByteBuffer(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.asNioByteBuffer();
+            position = 0;
+            remaining = SocketSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
@@ -86,9 +94,29 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
+    private boolean writeFurther() throws IOException {
+        final int count = write0(fdVal, messageToWrite, position, remaining);
+        if (count < 0) { // EOF
+            throw ByteBuffers.newEOF();
+        }
+        remaining -= count;
+        position += count;
+        return remaining > 0;
+    }
+
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final int dst, final java.nio.ByteBuffer buffer, final int pos, final int length)
             throws IOException {
         final Duration timeout = URIs.getDefaultNetworkTimeout();

@@ -77,6 +77,7 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
                     "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
         }
         buffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
+        //System.out.println("TODO non-blocking");
         buffer.getBytesTo(0, socketChannel, datagramSize);
     }
 

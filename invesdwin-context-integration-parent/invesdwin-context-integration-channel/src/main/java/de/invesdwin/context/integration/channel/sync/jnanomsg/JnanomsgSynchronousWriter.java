@@ -1,8 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.jnanomsg;
 
-import java.io.EOFException;
 import java.io.IOException;
-import java.io.InterruptedIOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -14,7 +12,6 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 import nanomsg.AbstractSocket;
 import nanomsg.Nanomsg;
 import nanomsg.NativeLibrary;
@@ -25,6 +22,7 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
 
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
+    private int length;
 
     public JnanomsgSynchronousWriter(final IJnanomsgSocketType socketType, final String addr, final boolean server) {
         super(socketType, addr, server);
@@ -51,11 +49,12 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
     public void close() throws IOException {
         if (socket != null) {
             try {
-                writeNoRetry(ClosedByteBuffer.INSTANCE);
+                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
             buffer = null;
+            length = 0;
         }
         super.close();
     }
@@ -68,29 +67,18 @@ public class JnanomsgSynchronousWriter extends AJnanomsgSynchronousChannel
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
-        sendRetrying(size + messageIndex);
+        this.length = messageIndex + size;
     }
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
-    }
-
-    private void writeNoRetry(final IByteBufferProvider message) throws IOException {
-        final int size = message.getBuffer(messageBuffer);
-        sendTry(size + messageIndex);
-    }
-
-    private void sendRetrying(final int size) throws IOException, EOFException, InterruptedIOException {
-        while (!sendTry(size)) {
-            try {
-                FTimeUnit.MILLISECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                final InterruptedIOException interrupt = new InterruptedIOException(e.getMessage());
-                interrupt.initCause(e);
-                throw interrupt;
-            }
+        if (length == 0) {
+            return true;
+        } else if (sendTry(length)) {
+            length = 0;
+            return true;
+        } else {
+            return false;
         }
     }
 

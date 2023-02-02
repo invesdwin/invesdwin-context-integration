@@ -106,8 +106,12 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
         return true;
     }
 
+    /**
+     * Old, blocking variation of the write
+     */
     public static void writeFully(final Socket dst, final java.nio.ByteBuffer byteBuffer, final int pos,
             final int length, final InetSocketAddress recipient, final boolean fastOpen) throws IOException {
+        //System.out.println("TODO non-blocking");
         final Duration timeout = URIs.getDefaultNetworkTimeout();
         long zeroCountNanos = -1L;
         try {
