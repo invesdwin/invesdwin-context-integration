@@ -12,16 +12,13 @@ import org.apache.tomcat.jni.Status;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -30,6 +27,9 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
     private long fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private java.nio.ByteBuffer messageToWrite;
+    private int position;
+    private int remaining;
 
     public MinaNativeSocketSynchronousWriter(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
@@ -64,6 +64,9 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
             buffer = null;
             messageBuffer = null;
             fd = 0;
+            messageToWrite = null;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -81,7 +84,9 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.nioByteBuffer(), 0, MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.asNioByteBuffer();
+            position = 0;
+            remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
@@ -89,47 +94,39 @@ public class MinaNativeSocketSynchronousWriter implements ISynchronousWriter<IBy
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = null;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final long dst, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
-            throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
+    private boolean writeFurther() throws IOException {
+        final int count = write0(fd, messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
+    }
 
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            int count = Socket.sendb(dst, byteBuffer, position, remaining);
-            if (count < 0) { // EOF
-                if (Status.APR_STATUS_IS_EAGAIN(-count)) {
-                    count = 0;
-                } else if (Status.APR_STATUS_IS_EOF(-count)) {
-                    count = 0;
-                } else {
-                    throw MinaSocketSynchronousChannel.newTomcatException(count);
-                }
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
+    @SuppressWarnings("deprecation")
+    public static int write0(final long dst, final java.nio.ByteBuffer byteBuffer, final int position,
+            final int remaining) throws IOException {
+        int count = Socket.sendb(dst, byteBuffer, position, remaining);
+        if (count < 0) { // EOF
+            if (Status.APR_STATUS_IS_EAGAIN(-count)) {
+                count = 0;
+            } else if (Status.APR_STATUS_IS_EOF(-count)) {
+                count = 0;
             } else {
-                zeroCountNanos = -1L;
-                position += count;
-                remaining -= count;
+                throw MinaSocketSynchronousChannel.newTomcatException(count);
             }
         }
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
-        }
+        return count;
     }
 
 }

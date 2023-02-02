@@ -5,15 +5,12 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -87,6 +84,7 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
         } else if (!writeFurther()) {
             ByteBuffers.position(messageToWrite, positionBefore);
             messageToWrite = null;
+            positionBefore = 0;
             return true;
         } else {
             return false;
@@ -99,39 +97,6 @@ public class ChronicleNetworkSynchronousWriter implements ISynchronousWriter<IBy
             throw ByteBuffers.newEOF();
         }
         return messageToWrite.hasRemaining();
-    }
-
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final ChronicleSocketChannel dst, final java.nio.ByteBuffer byteBuffer)
-            throws IOException {
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int remaining = byteBuffer.remaining();
-        final int positionBefore = byteBuffer.position();
-        while (remaining > 0) {
-            final int count = dst.write(byteBuffer);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                remaining -= count;
-            }
-        }
-        ByteBuffers.position(byteBuffer, positionBefore);
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
-        }
     }
 
 }

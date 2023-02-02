@@ -1,21 +1,17 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
 
@@ -26,6 +22,9 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
     private FileDescriptor fd;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private java.nio.ByteBuffer messageToWrite;
+    private int position;
+    private int remaining;
 
     public NettyNativeSocketSynchronousWriter(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
@@ -71,6 +70,9 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
             buffer = null;
             messageBuffer = null;
             fd = null;
+            messageToWrite = null;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -88,7 +90,9 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fd, buffer.nioByteBuffer(), 0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.asNioByteBuffer();
+            position = 0;
+            remaining = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
@@ -96,45 +100,23 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = null;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final FileDescriptor dst, final java.nio.ByteBuffer byteBuffer, final int pos,
-            final int length) throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        try {
-            int position = pos;
-            int remaining = length - pos;
-            while (remaining > 0) {
-                final int count = dst.write(byteBuffer, position, remaining);
-                if (count < 0) { // EOF
-                    break;
-                }
-                if (count == 0 && timeout != null) {
-                    if (zeroCountNanos == -1) {
-                        zeroCountNanos = System.nanoTime();
-                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                        throw FastEOFException.getInstance("write timeout exceeded");
-                    }
-                    ASpinWait.onSpinWaitStatic();
-                } else {
-                    zeroCountNanos = -1L;
-                    position += count;
-                    remaining -= count;
-                }
-            }
-            if (remaining > 0) {
-                throw ByteBuffers.newEOF();
-            }
-        } catch (final ClosedChannelException e) {
-            throw FastEOFException.getInstance(e);
-        }
+    private boolean writeFurther() throws IOException {
+        final int count = fd.write(messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
     }
 
 }

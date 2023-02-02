@@ -4,20 +4,15 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.channels.WritableByteChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
-import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class PipeSynchronousWriter extends APipeSynchronousChannel implements ISynchronousWriter<IByteBufferProvider> {
@@ -26,6 +21,8 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     private FileChannel fileChannel;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private java.nio.ByteBuffer messageToWrite;
+    private int positionBefore;
 
     public PipeSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
@@ -57,6 +54,8 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
             fileChannel = null;
             buffer = null;
             messageBuffer = null;
+            messageToWrite = null;
+            positionBefore = 0;
         }
     }
 
@@ -69,46 +68,30 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
-        buffer.getBytesTo(0, fileChannel, MESSAGE_INDEX + size);
+        messageToWrite = buffer.asNioByteBuffer(0, MESSAGE_INDEX + size);
+        positionBefore = messageToWrite.position();
     }
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == null) {
+            return true;
+        } else if (!writeFurther()) {
+            ByteBuffers.position(messageToWrite, positionBefore);
+            messageToWrite = null;
+            positionBefore = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final WritableByteChannel dst, final java.nio.ByteBuffer byteBuffer)
-            throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int remaining = byteBuffer.remaining();
-        final int positionBefore = byteBuffer.position();
-        while (remaining > 0) {
-            final int count = dst.write(byteBuffer);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                remaining -= count;
-            }
-        }
-        ByteBuffers.position(byteBuffer, positionBefore);
-        if (remaining > 0) {
+    private boolean writeFurther() throws IOException {
+        final int count = fileChannel.write(messageToWrite);
+        if (count < 0) { // EOF
             throw ByteBuffers.newEOF();
         }
+        return messageToWrite.hasRemaining();
     }
 
 }

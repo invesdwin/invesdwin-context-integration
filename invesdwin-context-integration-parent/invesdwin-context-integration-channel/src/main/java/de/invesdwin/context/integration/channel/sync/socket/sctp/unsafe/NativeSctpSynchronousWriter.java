@@ -12,16 +12,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.core.Jvm;
 import net.openhft.chronicle.core.io.IOTools;
 
@@ -49,6 +46,9 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
     private int fdVal;
+    private long messageToWrite;
+    private int position;
+    private int remaining;
 
     public NativeSctpSynchronousWriter(final SctpSynchronousChannel channel) {
         this.channel = channel;
@@ -77,6 +77,9 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
             fdVal = 0;
             buffer = null;
             messageBuffer = null;
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
         }
         if (channel != null) {
             channel.close();
@@ -94,52 +97,45 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         try {
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
-            writeFully(fdVal, buffer.addressOffset(), 0, SocketSynchronousChannel.MESSAGE_INDEX + size);
+            messageToWrite = buffer.addressOffset();
+            position = 0;
+            remaining = SctpSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }
     }
 
     @Override
-    public boolean writeFlushed() {
-        return true;
+    public boolean writeFlushed() throws IOException {
+        if (messageToWrite == 0) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
     }
 
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final int dst, final long address, final int pos, final int length)
-            throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
+    private boolean writeFurther() throws IOException {
+        final int count = write0(fdVal, messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
+    }
 
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = send0(dst, address + position, remaining, null, 0, -1, 0, false, 0);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                position += count;
-                remaining -= count;
-            }
-        }
-        if (remaining > 0) {
+    private static int write0(final int dst, final long address, final int position, final int remaining)
+            throws IOException, FastEOFException {
+        final int count = send0(dst, address + position, remaining, null, 0, -1, 0, false, 0);
+        if (count < 0) { // EOF
             throw ByteBuffers.newEOF();
         }
+        return count;
     }
 
-    public static int send0(final int fd, final long address, final int length, final InetAddress addr, final int port,
+    private static int send0(final int fd, final long address, final int length, final InetAddress addr, final int port,
             final int assocId, final int streamNumber, final boolean unordered, final int ppid) throws IOException {
         try {
             final int res = (int) SCTPCHANNELIMPL_SEND0_METHOD.invokeExact(fd, address, length, addr, port, assocId,

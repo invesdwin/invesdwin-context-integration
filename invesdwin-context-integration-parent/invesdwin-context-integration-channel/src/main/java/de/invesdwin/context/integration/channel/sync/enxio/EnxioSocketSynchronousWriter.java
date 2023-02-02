@@ -7,15 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.time.duration.Duration;
 import jnr.enxio.channels.Native;
 import jnr.enxio.channels.NativeAccessor;
 import net.openhft.chronicle.core.Jvm;
@@ -98,6 +95,8 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             return true;
         } else if (!writeFurther()) {
             messageToWrite = null;
+            position = 0;
+            remaining = 0;
             return true;
         } else {
             return false;
@@ -106,45 +105,9 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     private boolean writeFurther() throws IOException {
         final int count = write0(fdVal, messageToWrite, position, remaining);
-        if (count < 0) { // EOF
-            throw ByteBuffers.newEOF();
-        }
         remaining -= count;
         position += count;
         return remaining > 0;
-    }
-
-    /**
-     * Old, blocking variation of the write
-     */
-    public static void writeFully(final int dst, final java.nio.ByteBuffer buffer, final int pos, final int length)
-            throws IOException {
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            final int count = write0(dst, buffer, position, remaining);
-            if (count < 0) { // EOF
-                break;
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("write timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                position += count;
-                remaining -= count;
-            }
-        }
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
-        }
     }
 
     public static int write0(final int dst, final java.nio.ByteBuffer buffer, final int position, final int length)

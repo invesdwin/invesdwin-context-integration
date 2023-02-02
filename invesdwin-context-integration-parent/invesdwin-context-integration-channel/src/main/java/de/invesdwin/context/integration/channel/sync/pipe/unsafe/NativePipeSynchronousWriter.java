@@ -27,6 +27,9 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private FileDescriptor fd;
+    private long messageToWrite;
+    private int position;
+    private int remaining;
 
     public NativePipeSynchronousWriter(final File file, final int maxMessageSize) {
         super(file, maxMessageSize);
@@ -60,6 +63,9 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
             buffer = null;
             messageBuffer = null;
             fd = null;
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
         }
     }
 
@@ -72,13 +78,30 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(SIZE_INDEX, size);
-        //System.out.println("TODO non-blocking");
-        NativeSocketSynchronousWriter.writeFully(fd, buffer.addressOffset(), 0, MESSAGE_INDEX + size);
+        messageToWrite = buffer.addressOffset();
+        position = 0;
+        remaining = MESSAGE_INDEX + size;
     }
 
     @Override
     public boolean writeFlushed() throws IOException {
-        return true;
+        if (messageToWrite == 0) {
+            return true;
+        } else if (!writeFurther()) {
+            messageToWrite = 0;
+            position = 0;
+            remaining = 0;
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean writeFurther() throws IOException {
+        final int count = NativeSocketSynchronousWriter.write0(fd, messageToWrite, position, remaining);
+        remaining -= count;
+        position += count;
+        return remaining > 0;
     }
 
 }
