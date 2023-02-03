@@ -5,14 +5,12 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleSocketChannel;
 
 @NotThreadSafe
@@ -23,6 +21,9 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
     private ChronicleSocketChannel socketChannel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
+    private int position = 0;
+    private int bufferOffset = 0;
+    private int messageTargetPosition = 0;
 
     public ChronicleNetworkSynchronousReader(final ChronicleNetworkSynchronousChannel channel) {
         this.channel = channel;
@@ -48,6 +49,9 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+            position = 0;
+            bufferOffset = 0;
+            messageTargetPosition = 0;
         }
         if (channel != null) {
             channel.close();
@@ -57,61 +61,66 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
 
     @Override
     public boolean hasNext() throws IOException {
-        if (messageBuffer.position() > 0) {
-            return true;
+        if (buffer == null) {
+            throw FastEOFException.getInstance("socket closed");
         }
-        final int read = socketChannel.read(messageBuffer);
-        return read > 0;
+        return hasMessage();
+    }
+
+    private boolean hasMessage() throws IOException {
+        if (messageTargetPosition == 0) {
+            final int sizeTargetPosition = bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX;
+            //allow reading further than required to reduce the syscalls if possible
+            if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
+                return false;
+            }
+            final int size = buffer.getInt(bufferOffset + NettySocketSynchronousChannel.SIZE_INDEX);
+            if (size <= 0) {
+                close();
+                throw FastEOFException.getInstance("non positive size");
+            }
+            this.messageTargetPosition = sizeTargetPosition + size;
+            if (buffer.capacity() < messageTargetPosition) {
+                buffer.ensureCapacity(messageTargetPosition);
+                messageBuffer = buffer.asNioByteBuffer();
+            }
+        }
+        /*
+         * only read as much further as required, so that we have a message where we can reset the position to 0 so the
+         * expandable buffer does not grow endlessly due to fragmented messages piling up at the end each time.
+         */
+        return readFurther(messageTargetPosition, messageTargetPosition - position);
+    }
+
+    private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
+        if (position < targetPosition) {
+            position += read0(socketChannel, messageBuffer, position, readLength);
+        }
+        return position >= targetPosition;
     }
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int targetPosition = ChronicleNetworkSynchronousChannel.MESSAGE_INDEX;
-        //read size
-        while (messageBuffer.position() < targetPosition) {
-            final int count = socketChannel.read(messageBuffer);
-            if (count < 0) { // EOF
-                close();
-                throw ByteBuffers.newEOF();
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    close();
-                    throw FastEOFException.getInstance("read timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-            }
-        }
-        final int size = buffer.getInt(ChronicleNetworkSynchronousChannel.SIZE_INDEX);
-        if (size <= 0) {
-            close();
-            throw FastEOFException.getInstance("non positive size");
-        }
-        targetPosition += size;
-        //read message if not complete yet
-        final int remaining = targetPosition - messageBuffer.position();
-        if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
-            readFully(socketChannel, buffer.asNioByteBuffer(messageBuffer.position(), remaining));
-            if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
-            }
-        }
-
-        ByteBuffers.position(messageBuffer, 0);
-        if (ClosedByteBuffer.isClosed(buffer, ChronicleNetworkSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - NettySocketSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(ChronicleNetworkSynchronousChannel.MESSAGE_INDEX, size);
+
+        final IByteBuffer message = buffer.slice(bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
+        if (position > (bufferOffset + offset)) {
+            /*
+             * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
+             * hasNext will be done with position 0
+             */
+            bufferOffset += offset;
+        } else {
+            bufferOffset = 0;
+            position = 0;
+        }
+        messageTargetPosition = 0;
+        return message;
     }
 
     @Override
@@ -119,33 +128,18 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
         //noop
     }
 
-    public static void readFully(final ChronicleSocketChannel src, final java.nio.ByteBuffer byteBuffer)
-            throws IOException {
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        final int positionBefore = byteBuffer.position();
-        int remaining = byteBuffer.remaining();
-        while (remaining > 0) {
-            final int count = src.read(byteBuffer);
+    public static int read0(final ChronicleSocketChannel channel, final java.nio.ByteBuffer buffer, final int position,
+            final int length) throws IOException, FastEOFException {
+        ByteBuffers.position(buffer, position);
+        buffer.limit(position + length);
+        try {
+            final int count = channel.read(buffer);
             if (count < 0) { // EOF
-                break;
+                throw ByteBuffers.newEOF();
             }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("read timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
-            } else {
-                zeroCountNanos = -1L;
-                remaining -= count;
-            }
-        }
-        ByteBuffers.position(byteBuffer, positionBefore);
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
+            return count;
+        } finally {
+            buffer.clear();
         }
     }
 
