@@ -10,7 +10,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Integers;
@@ -69,12 +68,12 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -112,14 +111,14 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - SocketSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + MESSAGE_INDEX, size);
+        final int offset = MESSAGE_INDEX + size;
         if (position > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in

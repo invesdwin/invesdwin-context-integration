@@ -10,7 +10,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -104,12 +103,12 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + SctpSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + SctpSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -133,14 +132,14 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - SocketSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - SctpSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SctpSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + SctpSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = SctpSynchronousChannel.MESSAGE_INDEX + size;
         if (position > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in

@@ -7,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mina.unsafe.MinaNativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -68,12 +67,12 @@ public class MinaNativeDatagramSynchronousReader implements ISynchronousReader<I
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + MinaNativeDatagramSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + NettySocketSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + MinaNativeDatagramSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -100,14 +99,16 @@ public class MinaNativeDatagramSynchronousReader implements ISynchronousReader<I
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - NettySocketSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - MinaNativeDatagramSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + MinaNativeDatagramSynchronousChannel.MESSAGE_INDEX,
+                size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + MinaNativeDatagramSynchronousChannel.MESSAGE_INDEX,
+                size);
+        final int offset = MinaNativeDatagramSynchronousChannel.MESSAGE_INDEX + size;
         if (position > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
