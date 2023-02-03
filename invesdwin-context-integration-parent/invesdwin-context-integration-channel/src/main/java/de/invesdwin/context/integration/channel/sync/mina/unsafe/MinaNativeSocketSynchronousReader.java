@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.mina.unsafe;
 
 import java.io.IOException;
-import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -13,15 +12,13 @@ import org.apache.tomcat.jni.Status;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -31,6 +28,8 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
     private java.nio.ByteBuffer messageBuffer;
     private long fd;
     private int position = 0;
+    private int bufferOffset = 0;
+    private int messageTargetPosition = 0;
 
     public MinaNativeSocketSynchronousReader(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
@@ -61,6 +60,9 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
             buffer = null;
             messageBuffer = null;
             fd = 0;
+            position = 0;
+            bufferOffset = 0;
+            messageTargetPosition = 0;
         }
         if (channel != null) {
             channel.close();
@@ -70,83 +72,66 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
 
     @Override
     public boolean hasNext() throws IOException {
-        if (position > 0) {
-            return true;
+        if (buffer == null) {
+            throw FastEOFException.getInstance("socket closed");
         }
-        final int count = Socket.recvb(fd, messageBuffer, 0, channel.getSocketSize());
-        if (count > 0) {
-            position = count;
-            return true;
-        } else if (count < 0) {
-            if (Status.APR_STATUS_IS_EAGAIN(-count)) {
+        return hasMessage();
+    }
+
+    private boolean hasMessage() throws IOException {
+        if (messageTargetPosition == 0) {
+            final int sizeTargetPosition = bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX;
+            //allow reading further than required to reduce the syscalls if possible
+            if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-            throw MinaSocketSynchronousChannel.newTomcatException(count);
-        } else {
-            return false;
+            final int size = buffer.getInt(bufferOffset + NettySocketSynchronousChannel.SIZE_INDEX);
+            if (size <= 0) {
+                close();
+                throw FastEOFException.getInstance("non positive size");
+            }
+            this.messageTargetPosition = sizeTargetPosition + size;
+            if (buffer.capacity() < messageTargetPosition) {
+                buffer.ensureCapacity(messageTargetPosition);
+                messageBuffer = buffer.asNioByteBuffer();
+            }
         }
+        /*
+         * only read as much further as required, so that we have a message where we can reset the position to 0 so the
+         * expandable buffer does not grow endlessly due to fragmented messages piling up at the end each time.
+         */
+        return readFurther(messageTargetPosition, messageTargetPosition - position);
+    }
+
+    private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
+        if (position < targetPosition) {
+            position += read0(fd, messageBuffer, position, readLength);
+        }
+        return position >= targetPosition;
     }
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
-        //read size
-        try {
-            while (position < targetPosition) {
-                int count = Socket.recvb(fd, messageBuffer, 0, channel.getSocketSize());
-                if (count < 0) { // EOF
-                    if (Status.APR_STATUS_IS_EOF(-count)) {
-                        count = 0;
-                    } else if (Status.APR_STATUS_IS_EAGAIN(-count)) {
-                        count = 0;
-                    } else {
-                        close();
-                        throw MinaSocketSynchronousChannel.newTomcatException(count);
-                    }
-                }
-                if (count == 0 && timeout != null) {
-                    if (zeroCountNanos == -1) {
-                        zeroCountNanos = System.nanoTime();
-                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                        close();
-                        throw FastEOFException.getInstance("read timeout exceeded");
-                    }
-                    ASpinWait.onSpinWaitStatic();
-                } else {
-                    zeroCountNanos = -1L;
-                    position += count;
-                }
-            }
-        } catch (final ClosedChannelException e) {
-            throw FastEOFException.getInstance(e);
-        }
-        final int size = buffer.getInt(MinaSocketSynchronousChannel.SIZE_INDEX);
-        if (size <= 0) {
-            close();
-            throw FastEOFException.getInstance("non positive size");
-        }
-        targetPosition += size;
-        //read message if not complete yet
-        final int remaining = targetPosition - position;
-        if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
-            buffer.ensureCapacity(targetPosition);
-            if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, channel.getSocketSize());
-            }
-            readFully(fd, messageBuffer, position, remaining);
-        }
-        position = 0;
-
-        if (ClosedByteBuffer.isClosed(buffer, MinaSocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - NettySocketSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(MinaSocketSynchronousChannel.MESSAGE_INDEX, size);
+
+        final IByteBuffer message = buffer.slice(bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
+        if (position > (bufferOffset + offset)) {
+            /*
+             * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
+             * hasNext will be done with position 0
+             */
+            bufferOffset += offset;
+        } else {
+            bufferOffset = 0;
+            position = 0;
+        }
+        messageTargetPosition = 0;
+        return message;
     }
 
     @Override
@@ -154,40 +139,20 @@ public class MinaNativeSocketSynchronousReader implements ISynchronousReader<IBy
         //noop
     }
 
-    public static void readFully(final long src, final java.nio.ByteBuffer byteBuffer, final int pos, final int length)
-            throws IOException {
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int position = pos;
-        int remaining = length - pos;
-        while (remaining > 0) {
-            int count = Socket.recvb(src, byteBuffer, position, remaining);
-            if (count < 0) { // EOF
-                if (Status.APR_STATUS_IS_EOF(-count)) {
-                    count = 0;
-                } else if (Status.APR_STATUS_IS_EAGAIN(-count)) {
-                    count = 0;
-                } else {
-                    throw MinaSocketSynchronousChannel.newTomcatException(count);
-                }
-            }
-            if (count == 0 && timeout != null) {
-                if (zeroCountNanos == -1) {
-                    zeroCountNanos = System.nanoTime();
-                } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                    throw FastEOFException.getInstance("read timeout exceeded");
-                }
-                ASpinWait.onSpinWaitStatic();
+    @SuppressWarnings("deprecation")
+    public static int read0(final long src, final java.nio.ByteBuffer byteBuffer, final int position,
+            final int remaining) throws IOException {
+        int count = Socket.recvb(src, byteBuffer, position, remaining);
+        if (count < 0) { // EOF
+            if (Status.APR_STATUS_IS_EOF(-count)) {
+                count = 0;
+            } else if (Status.APR_STATUS_IS_EAGAIN(-count)) {
+                count = 0;
             } else {
-                zeroCountNanos = -1L;
-                position += count;
-                remaining -= count;
+                throw MinaSocketSynchronousChannel.newTomcatException(count);
             }
         }
-        if (remaining > 0) {
-            throw ByteBuffers.newEOF();
-        }
+        return count;
     }
 
 }

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.unsafe;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -12,14 +11,11 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativ
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.duration.Duration;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.unix.FileDescriptor;
 import io.netty.channel.unix.UnixChannel;
@@ -34,6 +30,8 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     private java.nio.ByteBuffer messageBuffer;
     private FileDescriptor fd;
     private int position = 0;
+    private int bufferOffset = 0;
+    private int messageTargetPosition = 0;
 
     public NettyNativeDatagramSynchronousReader(final INettyDatagramChannelType type,
             final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
@@ -63,7 +61,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             fd = unixChannel.fd();
             //use direct buffer to prevent another copy from byte[] to native
             buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-            messageBuffer = buffer.asNioByteBuffer(0, socketSize);
+            messageBuffer = buffer.asNioByteBuffer();
         }
     }
 
@@ -73,6 +71,9 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
             buffer = null;
             messageBuffer = null;
             fd = null;
+            position = 0;
+            bufferOffset = 0;
+            messageTargetPosition = 0;
         }
         if (channel != null) {
             channel.close();
@@ -82,78 +83,66 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     @Override
     public boolean hasNext() throws IOException {
-        if (position > 0) {
-            return true;
+        if (buffer == null) {
+            throw FastEOFException.getInstance("socket closed");
         }
-        try {
-            final int count = fd.read(messageBuffer, 0, socketSize);
-            if (count > 0) {
-                position = count;
-                return true;
-            } else if (count < 0) {
-                throw FastEOFException.getInstance("closed by other side");
-            } else {
+        return hasMessage();
+    }
+
+    private boolean hasMessage() throws IOException {
+        if (messageTargetPosition == 0) {
+            final int sizeTargetPosition = bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX;
+            //allow reading further than required to reduce the syscalls if possible
+            if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-        } catch (final ClosedChannelException e) {
-            throw FastEOFException.getInstance(e);
+            final int size = buffer.getInt(bufferOffset + NettySocketSynchronousChannel.SIZE_INDEX);
+            if (size <= 0) {
+                close();
+                throw FastEOFException.getInstance("non positive size");
+            }
+            this.messageTargetPosition = sizeTargetPosition + size;
+            if (buffer.capacity() < messageTargetPosition) {
+                buffer.ensureCapacity(messageTargetPosition);
+                messageBuffer = buffer.asNioByteBuffer();
+            }
         }
+        /*
+         * only read as much further as required, so that we have a message where we can reset the position to 0 so the
+         * expandable buffer does not grow endlessly due to fragmented messages piling up at the end each time.
+         */
+        return readFurther(messageTargetPosition, messageTargetPosition - position);
+    }
+
+    private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
+        if (position < targetPosition) {
+            position += NettyNativeSocketSynchronousReader.read0(fd, messageBuffer, position, readLength);
+        }
+        return position >= targetPosition;
     }
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        //System.out.println("TODO non-blocking");
-        final Duration timeout = URIs.getDefaultNetworkTimeout();
-        long zeroCountNanos = -1L;
-
-        int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
-        //read size
-        try {
-            while (position < targetPosition) {
-                final int count = fd.read(messageBuffer, 0, socketSize);
-                if (count < 0) { // EOF
-                    close();
-                    throw ByteBuffers.newEOF();
-                }
-                if (count == 0 && timeout != null) {
-                    if (zeroCountNanos == -1) {
-                        zeroCountNanos = System.nanoTime();
-                    } else if (timeout.isLessThanNanos(System.nanoTime() - zeroCountNanos)) {
-                        close();
-                        throw FastEOFException.getInstance("read timeout exceeded");
-                    }
-                    ASpinWait.onSpinWaitStatic();
-                } else {
-                    zeroCountNanos = -1L;
-                    position += count;
-                }
-            }
-        } catch (final ClosedChannelException e) {
-            throw FastEOFException.getInstance(e);
-        }
-        final int size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
-        if (size <= 0) {
-            close();
-            throw FastEOFException.getInstance("non positive size");
-        }
-        targetPosition += size;
-        //read message if not complete yet
-        final int remaining = targetPosition - position;
-        if (remaining > 0) {
-            final int capacityBefore = buffer.capacity();
-            buffer.ensureCapacity(targetPosition);
-            if (buffer.capacity() != capacityBefore) {
-                messageBuffer = buffer.asNioByteBuffer(0, socketSize);
-            }
-            NettyNativeSocketSynchronousReader.readFully(fd, messageBuffer, position, remaining);
-        }
-        position = 0;
-
-        if (ClosedByteBuffer.isClosed(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - NettySocketSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return buffer.slice(NettySocketSynchronousChannel.MESSAGE_INDEX, size);
+
+        final IByteBuffer message = buffer.slice(bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
+        if (position > (bufferOffset + offset)) {
+            /*
+             * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
+             * hasNext will be done with position 0
+             */
+            bufferOffset += offset;
+        } else {
+            bufferOffset = 0;
+            position = 0;
+        }
+        messageTargetPosition = 0;
+        return message;
     }
 
     @Override
