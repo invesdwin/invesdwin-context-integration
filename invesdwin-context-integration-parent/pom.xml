@@ -44,6 +44,9 @@
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-rmi</module>
+		<module>invesdwin-context-integration-mpi</module>
+		<module>invesdwin-context-integration-mpi-ompi</module>
+		<module>invesdwin-context-integration-mpi-mpj</module>
 	</modules>
 	<properties>
 		<project.version.invesdwin-context>1.0.4-SNAPSHOT</project.version.invesdwin-context>
@@ -89,6 +92,9 @@
 		<version.mina>2.2.1</version.mina>
 		<version.tomcat-jni>10.0.27</version.tomcat-jni>
 		<version.jnr-enxio>0.32.14</version.jnr-enxio>
+		<version.fastmpj>1.0_7</version.fastmpj>
+		<version.openmpi>4.1.4</version.openmpi>
+		<version.mpjexpress>0.44</version.mpjexpress>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -256,6 +262,21 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-rmi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-mpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-mpi-ompi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-mpi-mpj</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -697,6 +718,21 @@
 				<groupId>com.github.jnr</groupId>
 				<artifactId>jnr-enxio</artifactId>
 				<version>${version.jnr-enxio}</version>
+			</dependency>
+			<dependency>
+				<groupId>fastmpj</groupId>
+				<artifactId>mpj</artifactId>
+				<version>${version.fastmpj}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.mpjexpress</groupId>
+				<artifactId>mpj</artifactId>
+				<version>${version.mpjexpress}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openmpi</groupId>
+				<artifactId>mpi</artifactId>
+				<version>${version.openmpi}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
