@@ -91,13 +91,18 @@ public final class ProvidedMpiSynchronousChannelFactory
     }
 
     @Override
-    public ISynchronousReader<IByteBufferProvider> newISend() {
-        return getProvidedInstance().newISend();
+    public ISynchronousWriter<IByteBufferProvider> newBcast() {
+        return getProvidedInstance().newBcast();
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newIReceive() {
-        return getProvidedInstance().newIReceive();
+    public ISynchronousReader<IByteBufferProvider> newReceive() {
+        return getProvidedInstance().newReceive();
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newSend() {
+        return getProvidedInstance().newSend();
     }
 
     @Override

@@ -11,12 +11,17 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class OpenMpiSynchronousChannelFactory implements IMpiSynchronousChannelFactory {
 
     @Override
-    public ISynchronousReader<IByteBufferProvider> newISend() {
+    public ISynchronousWriter<IByteBufferProvider> newBcast() {
         return null;
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newIReceive() {
+    public ISynchronousWriter<IByteBufferProvider> newSend() {
+        return null;
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newReceive() {
         return null;
     }
 

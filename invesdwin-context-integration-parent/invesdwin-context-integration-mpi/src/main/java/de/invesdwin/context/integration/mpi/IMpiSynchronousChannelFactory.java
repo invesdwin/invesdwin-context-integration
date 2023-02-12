@@ -6,8 +6,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 public interface IMpiSynchronousChannelFactory {
 
-    ISynchronousReader<IByteBufferProvider> newISend();
+    ISynchronousWriter<IByteBufferProvider> newBcast();
 
-    ISynchronousWriter<IByteBufferProvider> newIReceive();
+    ISynchronousWriter<IByteBufferProvider> newSend();
+
+    ISynchronousReader<IByteBufferProvider> newReceive();
 
 }
