@@ -43,7 +43,7 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
         try {
-            request = MPI.COMM_WORLD.iBcast(buffer.asNioByteBuffer(), length, MPI.BYTE, root.get());
+            request = MPI.COMM_WORLD.iBcast(buffer.nioByteBuffer(), length, MPI.BYTE, root.get());
         } catch (final MPIException e) {
             throw new IOException(e);
         }

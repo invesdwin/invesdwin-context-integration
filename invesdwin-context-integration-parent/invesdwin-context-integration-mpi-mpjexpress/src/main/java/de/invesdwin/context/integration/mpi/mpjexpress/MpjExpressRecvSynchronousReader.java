@@ -32,7 +32,7 @@ public class MpjExpressRecvSynchronousReader implements ISynchronousReader<IByte
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocate(maxMessageSize);
     }
 
     @Override
@@ -45,8 +45,7 @@ public class MpjExpressRecvSynchronousReader implements ISynchronousReader<IByte
         if (request != null) {
             return hasMessage();
         }
-        request = MPI.COMM_WORLD.Irecv(buffer.asNioByteBuffer(), 0, buffer.capacity(), MPI.BYTE, source.get(),
-                tag.get());
+        request = MPI.COMM_WORLD.Irecv(buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, source.get(), tag.get());
         return hasMessage();
     }
 

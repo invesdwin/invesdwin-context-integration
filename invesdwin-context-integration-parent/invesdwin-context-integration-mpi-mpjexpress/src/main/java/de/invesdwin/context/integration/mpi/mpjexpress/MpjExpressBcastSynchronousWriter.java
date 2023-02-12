@@ -23,7 +23,7 @@ public class MpjExpressBcastSynchronousWriter implements ISynchronousWriter<IByt
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirectExpandable();
+        buffer = ByteBuffers.allocateExpandable();
     }
 
     @Override
@@ -39,7 +39,7 @@ public class MpjExpressBcastSynchronousWriter implements ISynchronousWriter<IByt
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
-        MPI.COMM_WORLD.Bcast(buffer.asNioByteBuffer(), 0, length, MPI.BYTE, root.get());
+        MPI.COMM_WORLD.Bcast(buffer.byteArray(), 0, length, MPI.BYTE, root.get());
     }
 
     @Override

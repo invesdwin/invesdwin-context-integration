@@ -42,7 +42,7 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
             return hasMessage();
         }
         try {
-            request = MPI.COMM_WORLD.iBcast(buffer.asNioByteBuffer(), buffer.capacity(), MPI.BYTE, root.get());
+            request = MPI.COMM_WORLD.iBcast(buffer.nioByteBuffer(), buffer.capacity(), MPI.BYTE, root.get());
         } catch (final MPIException e) {
             throw new IOException(e);
         }

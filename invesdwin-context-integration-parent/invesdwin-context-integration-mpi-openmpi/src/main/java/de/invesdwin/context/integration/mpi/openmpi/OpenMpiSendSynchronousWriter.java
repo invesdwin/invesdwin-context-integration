@@ -45,7 +45,7 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
         try {
-            request = MPI.COMM_WORLD.iSend(buffer.asNioByteBuffer(), length, MPI.BYTE, dest.get(), tag.get());
+            request = MPI.COMM_WORLD.iSend(buffer.nioByteBuffer(), length, MPI.BYTE, dest.get(), tag.get());
         } catch (final MPIException e) {
             throw new IOException(e);
         }

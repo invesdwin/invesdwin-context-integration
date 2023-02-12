@@ -27,7 +27,7 @@ public class MpjExpressBcastSynchronousReader implements ISynchronousReader<IByt
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocate(maxMessageSize);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class MpjExpressBcastSynchronousReader implements ISynchronousReader<IByt
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        status = MpjBroadcast.mstBroadcast(buffer.asNioByteBuffer(), 0, buffer.capacity(), MPI.BYTE, root.get());
+        status = MpjExpressBroadcast.mstBroadcast(buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, root.get());
         final int length = status.Get_count(MPI.BYTE);
         return buffer.sliceTo(length);
     }

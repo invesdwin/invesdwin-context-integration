@@ -44,7 +44,7 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
             return hasMessage();
         }
         try {
-            request = MPI.COMM_WORLD.iRecv(buffer.asNioByteBuffer(), buffer.capacity(), MPI.BYTE, source.get(),
+            request = MPI.COMM_WORLD.iRecv(buffer.nioByteBuffer(), buffer.capacity(), MPI.BYTE, source.get(),
                     tag.get());
         } catch (final MPIException e) {
             throw new IOException(e);

@@ -28,7 +28,7 @@ public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirectExpandable();
+        buffer = ByteBuffers.allocateExpandable();
     }
 
     @Override
@@ -44,7 +44,7 @@ public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByte
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
-        request = MPI.COMM_WORLD.Isend(buffer.asNioByteBuffer(), 0, length, MPI.BYTE, dest.get(), tag.get());
+        request = MPI.COMM_WORLD.Isend(buffer.byteArray(), 0, length, MPI.BYTE, dest.get(), tag.get());
     }
 
     @Override

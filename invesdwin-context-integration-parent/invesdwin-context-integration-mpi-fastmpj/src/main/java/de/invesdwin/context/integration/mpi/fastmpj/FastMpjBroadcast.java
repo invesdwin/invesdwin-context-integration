@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.mpi.mpjexpress;
+package de.invesdwin.context.integration.mpi.fastmpj;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -8,11 +8,11 @@ import mpi.MPIException;
 import mpi.Status;
 
 @Immutable
-public final class MpjBroadcast {
+public final class FastMpjBroadcast {
 
     private static final int BCAST_TAG = 35000;
 
-    private MpjBroadcast() {}
+    private FastMpjBroadcast() {}
 
     public static Status mstBroadcast(final Object buf, final int offset, final int count, final Datatype type,
             final int root) throws MPIException {
