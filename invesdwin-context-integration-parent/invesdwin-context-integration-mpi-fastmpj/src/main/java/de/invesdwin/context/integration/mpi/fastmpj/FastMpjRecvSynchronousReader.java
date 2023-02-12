@@ -5,7 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.concurrent.reference.integer.IIntReference;
+import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -16,14 +16,17 @@ import mpi.Status;
 @NotThreadSafe
 public class FastMpjRecvSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private final IIntReference source;
-    private final IIntReference tag;
+    private final IMutableIntReference source;
+    private final IMutableIntReference tag;
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
     private Status status;
+    private int sourceBefore;
+    private int tagBefore;
 
-    public FastMpjRecvSynchronousReader(final IIntReference source, final IIntReference tag, final int maxMessageSize) {
+    public FastMpjRecvSynchronousReader(final IMutableIntReference source, final IMutableIntReference tag,
+            final int maxMessageSize) {
         this.source = source;
         this.tag = tag;
         this.maxMessageSize = maxMessageSize;
@@ -59,6 +62,8 @@ public class FastMpjRecvSynchronousReader implements ISynchronousReader<IByteBuf
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         final int length = status.Get_count(MPI.BYTE);
+        sourceBefore = source.getAndSet(status.source);
+        tagBefore = tag.getAndSet(status.tag);
         return buffer.sliceTo(length);
     }
 
@@ -67,6 +72,8 @@ public class FastMpjRecvSynchronousReader implements ISynchronousReader<IByteBuf
         request.Free();
         request = null;
         status = null;
+        source.set(sourceBefore);
+        tag.set(tagBefore);
     }
 
 }

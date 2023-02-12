@@ -18,17 +18,20 @@ public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByte
 
     private final IIntReference dest;
     private final IIntReference tag;
+    private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
 
-    public MpjExpressSendSynchronousWriter(final IIntReference dest, final IIntReference tag) {
+    public MpjExpressSendSynchronousWriter(final IIntReference dest, final IIntReference tag,
+            final int maxMessageSize) {
         this.dest = dest;
         this.tag = tag;
+        this.maxMessageSize = maxMessageSize;
     }
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateExpandable();
+        buffer = ByteBuffers.allocate(maxMessageSize);
     }
 
     @Override

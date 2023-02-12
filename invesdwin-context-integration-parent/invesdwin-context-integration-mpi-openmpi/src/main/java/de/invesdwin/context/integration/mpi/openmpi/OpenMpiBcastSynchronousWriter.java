@@ -17,16 +17,18 @@ import mpi.Request;
 public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private final IIntReference root;
+    private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
 
-    public OpenMpiBcastSynchronousWriter(final IIntReference root) {
+    public OpenMpiBcastSynchronousWriter(final IIntReference root, final int maxMessageSize) {
         this.root = root;
+        this.maxMessageSize = maxMessageSize;
     }
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirectExpandable();
+        buffer = ByteBuffers.allocateDirect(maxMessageSize);
     }
 
     @Override

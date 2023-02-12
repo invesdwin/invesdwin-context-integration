@@ -18,17 +18,19 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     private final IIntReference dest;
     private final IIntReference tag;
+    private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
 
-    public OpenMpiSendSynchronousWriter(final IIntReference dest, final IIntReference tag) {
+    public OpenMpiSendSynchronousWriter(final IIntReference dest, final IIntReference tag, final int maxMessageSize) {
         this.dest = dest;
         this.tag = tag;
+        this.maxMessageSize = maxMessageSize;
     }
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirectExpandable();
+        buffer = ByteBuffers.allocateDirect(maxMessageSize);
     }
 
     @Override

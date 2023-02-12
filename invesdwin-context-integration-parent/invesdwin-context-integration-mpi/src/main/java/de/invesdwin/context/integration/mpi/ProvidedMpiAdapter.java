@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
+import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -125,13 +126,13 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final int root) {
-        return getProvidedInstance().newBcastWriter(root);
+    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final int root, final int maxMessageSize) {
+        return getProvidedInstance().newBcastWriter(root, maxMessageSize);
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root) {
-        return getProvidedInstance().newBcastWriter(root);
+    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root, final int maxMessageSize) {
+        return getProvidedInstance().newBcastWriter(root, maxMessageSize);
     }
 
     @Override
@@ -145,24 +146,20 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final int dest, final int tag) {
-        return getProvidedInstance().newSendWriter(dest, tag);
-    }
-
-    @Override
-    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag) {
-        return getProvidedInstance().newSendWriter(dest, tag);
-    }
-
-    @Override
-    public ISynchronousReader<IByteBufferProvider> newRecvReader(final int source, final int tag,
+    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final int dest, final int tag,
             final int maxMessageSize) {
-        return getProvidedInstance().newRecvReader(source, tag, maxMessageSize);
+        return getProvidedInstance().newSendWriter(dest, tag, maxMessageSize);
     }
 
     @Override
-    public ISynchronousReader<IByteBufferProvider> newRecvReader(final IIntReference source, final IIntReference tag,
+    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag,
             final int maxMessageSize) {
+        return getProvidedInstance().newSendWriter(dest, tag, maxMessageSize);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newRecvReader(final IMutableIntReference source,
+            final IMutableIntReference tag, final int maxMessageSize) {
         return getProvidedInstance().newRecvReader(source, tag, maxMessageSize);
     }
 

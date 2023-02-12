@@ -5,6 +5,7 @@ import java.io.Closeable;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
+import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.ImmutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -34,8 +35,14 @@ public interface IMpiAdapter extends Closeable {
      */
     int size();
 
+    /**
+     * Can be used in readers to read from any source.
+     */
     int anySource();
 
+    /**
+     * Can be used in readers to read from any tag.
+     */
     int anyTag();
 
     /**
@@ -43,8 +50,8 @@ public interface IMpiAdapter extends Closeable {
      */
     void barrier();
 
-    default ISynchronousWriter<IByteBufferProvider> newBcastWriter(final int root) {
-        return newBcastWriter(ImmutableIntReference.of(root));
+    default ISynchronousWriter<IByteBufferProvider> newBcastWriter(final int root, final int maxMessageSize) {
+        return newBcastWriter(ImmutableIntReference.of(root), maxMessageSize);
     }
 
     /**
@@ -52,7 +59,7 @@ public interface IMpiAdapter extends Closeable {
      * processes in the same communicator. This is a collective operation; it must be called by all processes in the
      * communicator. To see the blocking counterpart of MPI_Ibcast, see MPI_Bcast.
      */
-    ISynchronousWriter<IByteBufferProvider> newBcastWriter(IIntReference root);
+    ISynchronousWriter<IByteBufferProvider> newBcastWriter(IIntReference root, int maxMessageSize);
 
     default ISynchronousReader<IByteBufferProvider> newBcastReader(final int root, final int maxMessageSize) {
         return newBcastReader(ImmutableIntReference.of(root), maxMessageSize);
@@ -65,11 +72,14 @@ public interface IMpiAdapter extends Closeable {
      * 
      * The length of the received message must be less than or equal to the length of the receive buffer. An
      * MPI_ERR_TRUNCATE is returned upon the overflow condition.
+     * 
+     * https://mpitutorial.com/tutorials/mpi-broadcast-and-collective-communication/
      */
     ISynchronousReader<IByteBufferProvider> newBcastReader(IIntReference root, int maxMessageSize);
 
-    default ISynchronousWriter<IByteBufferProvider> newSendWriter(final int dest, final int tag) {
-        return newSendWriter(ImmutableIntReference.of(dest), ImmutableIntReference.of(tag));
+    default ISynchronousWriter<IByteBufferProvider> newSendWriter(final int dest, final int tag,
+            final int maxMessageSize) {
+        return newSendWriter(ImmutableIntReference.of(dest), ImmutableIntReference.of(tag), maxMessageSize);
     }
 
     /**
@@ -83,12 +93,7 @@ public interface IMpiAdapter extends Closeable {
      * or MPI_Test). Other non-blocking sends are MPI_Ibsend, MPI_Issend, MPI_Irsend. Refer to its blocking counterpart,
      * MPI_Send, to understand when the completion is reached.
      */
-    ISynchronousWriter<IByteBufferProvider> newSendWriter(IIntReference dest, IIntReference tag);
-
-    default ISynchronousReader<IByteBufferProvider> newRecvReader(final int source, final int tag,
-            final int maxMessageSize) {
-        return newRecvReader(ImmutableIntReference.of(source), ImmutableIntReference.of(tag), maxMessageSize);
-    }
+    ISynchronousWriter<IByteBufferProvider> newSendWriter(IIntReference dest, IIntReference tag, int maxMessageSize);
 
     /**
      * MPI_Irecv stands for MPI Receive with Immediate return; it does not block until the message is received. To know
@@ -97,8 +102,14 @@ public interface IMpiAdapter extends Closeable {
      * 
      * The length of the received message must be less than or equal to the length of the receive buffer. An
      * MPI_ERR_TRUNCATE is returned upon the overflow condition.
+     * 
+     * After a message has been read, the source and tag are modified to the one the message originates from (only
+     * different when specifying ANY_SOURCE or ANY_TAG). Thus a mutable reference is always required.
+     * 
+     * https://mpitutorial.com/tutorials/dynamic-receiving-with-mpi-probe-and-mpi-status/
      */
-    ISynchronousReader<IByteBufferProvider> newRecvReader(IIntReference source, IIntReference tag, int maxMessageSize);
+    ISynchronousReader<IByteBufferProvider> newRecvReader(IMutableIntReference source, IMutableIntReference tag,
+            int maxMessageSize);
 
     /**
      * MPI_Abort terminates the processes that belong to the communicator passed. When the communicator passed is

@@ -7,6 +7,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.mpi.IMpiAdapter;
 import de.invesdwin.context.integration.mpi.MpiThreadSupport;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
+import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import mpi.MPI;
 
@@ -46,8 +47,8 @@ public class FastMpjAdapter implements IMpiAdapter {
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root) {
-        return new FastMpjBcastSynchronousWriter(root);
+    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root, final int maxMessageSize) {
+        return new FastMpjBcastSynchronousWriter(root, maxMessageSize);
     }
 
     @Override
@@ -56,13 +57,14 @@ public class FastMpjAdapter implements IMpiAdapter {
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag) {
-        return new FastMpjSendSynchronousWriter(dest, tag);
+    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag,
+            final int maxMessageSize) {
+        return new FastMpjSendSynchronousWriter(dest, tag, maxMessageSize);
     }
 
     @Override
-    public ISynchronousReader<IByteBufferProvider> newRecvReader(final IIntReference source, final IIntReference tag,
-            final int maxMessageSize) {
+    public ISynchronousReader<IByteBufferProvider> newRecvReader(final IMutableIntReference source,
+            final IMutableIntReference tag, final int maxMessageSize) {
         return new FastMpjRecvSynchronousReader(source, tag, maxMessageSize);
     }
 

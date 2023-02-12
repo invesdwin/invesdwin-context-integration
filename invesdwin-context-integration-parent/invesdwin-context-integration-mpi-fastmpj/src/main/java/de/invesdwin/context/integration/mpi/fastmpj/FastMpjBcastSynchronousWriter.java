@@ -15,15 +15,17 @@ import mpi.MPI;
 public class FastMpjBcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private final IIntReference root;
+    private final int maxMessageSize;
     private IByteBuffer buffer;
 
-    public FastMpjBcastSynchronousWriter(final IIntReference root) {
+    public FastMpjBcastSynchronousWriter(final IIntReference root, final int maxMessageSize) {
         this.root = root;
+        this.maxMessageSize = maxMessageSize;
     }
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateExpandable();
+        buffer = ByteBuffers.allocate(maxMessageSize);
     }
 
     @Override
