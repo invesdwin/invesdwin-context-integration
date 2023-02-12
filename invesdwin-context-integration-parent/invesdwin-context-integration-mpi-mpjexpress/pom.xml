@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-mpi-mpj</artifactId>
+	<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
 	<packaging>jar</packaging>
 	<build>
 		<plugins>
@@ -33,10 +33,5 @@
 			<artifactId>mpj</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<!--<dependency>
-			<groupId>fastmpj</groupId>
-			<artifactId>mpj</artifactId>
-			<scope>provided</scope>
-		</dependency>-->
 	</dependencies>
 </project>

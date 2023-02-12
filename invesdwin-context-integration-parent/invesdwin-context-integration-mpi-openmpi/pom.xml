@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-mpi-ompi</artifactId>
+	<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
 	<packaging>jar</packaging>
 	<build>
 		<plugins>

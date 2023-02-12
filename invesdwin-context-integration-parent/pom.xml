@@ -45,8 +45,9 @@
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
-		<module>invesdwin-context-integration-mpi-ompi</module>
-		<module>invesdwin-context-integration-mpi-mpj</module>
+		<module>invesdwin-context-integration-mpi-openmpi</module>
+		<module>invesdwin-context-integration-mpi-mpjexpress</module>
+		<module>invesdwin-context-integration-mpi-fastmpj</module>
 	</modules>
 	<properties>
 		<project.version.invesdwin-context>1.0.4-SNAPSHOT</project.version.invesdwin-context>
@@ -271,12 +272,17 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-ompi</artifactId>
+				<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-mpj</artifactId>
+				<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
