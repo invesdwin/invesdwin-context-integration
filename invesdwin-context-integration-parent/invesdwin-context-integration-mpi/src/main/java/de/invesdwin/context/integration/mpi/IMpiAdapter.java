@@ -122,6 +122,19 @@ public interface IMpiAdapter extends Closeable {
     void abort(int errorCode);
 
     /**
+     * MPI_Comm_split partitions the group of MPI processes associated with the communicator passed into disjoint
+     * subgroups. The split is determined by the colour value passed: MPI processes providing the same colour value will
+     * be put in the same subgroup. Within each subgroup, the rank of the MPI processes put in each subgroup are ordered
+     * according to the value of the key passed. When multiple MPI processes of a subgroup have provided the same key
+     * value, their rank in that subgroup will be determined according to their rank in the old group. A new
+     * communicator is created for each subgroup and returned. A process may supply the colour value MPI_UNDEFINED, in
+     * which case the new communicator returned is MPI_COMM_NULL. This is a collective call, therefore all MPI processes
+     * in the communicator must call the routine, however each process is permitted to provide different values for
+     * colour and key.
+     */
+    IMpiAdapter split(int color, int key);
+
+    /**
      * Calls MPI.finalize()
      */
     @Override

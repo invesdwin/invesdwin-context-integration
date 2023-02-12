@@ -9,10 +9,25 @@ import de.invesdwin.context.integration.mpi.MpiThreadSupport;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import mpi.Intracomm;
 import mpi.MPI;
 
 @Immutable
 public class MpjExpressAdapter implements IMpiAdapter {
+
+    private final Intracomm comm;
+
+    public MpjExpressAdapter() {
+        this.comm = MPI.COMM_WORLD;
+    }
+
+    public MpjExpressAdapter(final Intracomm comm) {
+        this.comm = comm;
+    }
+
+    public Intracomm getComm() {
+        return comm;
+    }
 
     @Override
     public MpiThreadSupport initThread(final String[] args, final MpiThreadSupport required) {
@@ -23,12 +38,12 @@ public class MpjExpressAdapter implements IMpiAdapter {
 
     @Override
     public int rank() {
-        return MPI.COMM_WORLD.Rank();
+        return comm.Rank();
     }
 
     @Override
     public int size() {
-        return MPI.COMM_WORLD.Size();
+        return comm.Size();
     }
 
     @Override
@@ -43,34 +58,39 @@ public class MpjExpressAdapter implements IMpiAdapter {
 
     @Override
     public void barrier() {
-        MPI.COMM_WORLD.Barrier();
+        comm.Barrier();
     }
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root, final int maxMessageSize) {
-        return new MpjExpressBcastSynchronousWriter(root, maxMessageSize);
+        return new MpjExpressBcastSynchronousWriter(comm, root, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newBcastReader(final IIntReference root, final int maxMessageSize) {
-        return new MpjExpressBcastSynchronousReader(root, maxMessageSize);
+        return new MpjExpressBcastSynchronousReader(comm, root, maxMessageSize);
     }
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag,
             final int maxMessageSize) {
-        return new MpjExpressSendSynchronousWriter(dest, tag, maxMessageSize);
+        return new MpjExpressSendSynchronousWriter(comm, dest, tag, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newRecvReader(final IMutableIntReference source,
             final IMutableIntReference tag, final int maxMessageSize) {
-        return new MpjExpressRecvSynchronousReader(source, tag, maxMessageSize);
+        return new MpjExpressRecvSynchronousReader(comm, source, tag, maxMessageSize);
+    }
+
+    @Override
+    public IMpiAdapter split(final int color, final int key) {
+        return new MpjExpressAdapter(comm.Split(color, key));
     }
 
     @Override
     public void abort(final int errorCode) {
-        MPI.COMM_WORLD.Abort(errorCode);
+        comm.Abort(errorCode);
     }
 
     @Override

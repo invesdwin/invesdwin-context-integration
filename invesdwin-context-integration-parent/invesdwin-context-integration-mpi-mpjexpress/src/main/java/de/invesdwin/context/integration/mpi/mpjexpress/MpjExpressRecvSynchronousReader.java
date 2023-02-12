@@ -9,6 +9,7 @@ import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import mpi.Intracomm;
 import mpi.MPI;
 import mpi.Request;
 import mpi.Status;
@@ -16,6 +17,7 @@ import mpi.Status;
 @NotThreadSafe
 public class MpjExpressRecvSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
+    private final Intracomm comm;
     private final IMutableIntReference source;
     private final IMutableIntReference tag;
     private final int maxMessageSize;
@@ -25,8 +27,9 @@ public class MpjExpressRecvSynchronousReader implements ISynchronousReader<IByte
     private int sourceBefore;
     private int tagBefore;
 
-    public MpjExpressRecvSynchronousReader(final IMutableIntReference source, final IMutableIntReference tag,
-            final int maxMessageSize) {
+    public MpjExpressRecvSynchronousReader(final Intracomm comm, final IMutableIntReference source,
+            final IMutableIntReference tag, final int maxMessageSize) {
+        this.comm = comm;
         this.source = source;
         this.tag = tag;
         this.maxMessageSize = maxMessageSize;
@@ -47,7 +50,7 @@ public class MpjExpressRecvSynchronousReader implements ISynchronousReader<IByte
         if (request != null) {
             return hasMessage();
         }
-        request = MPI.COMM_WORLD.Irecv(buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, source.get(), tag.get());
+        request = comm.Irecv(buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, source.get(), tag.get());
         return hasMessage();
     }
 

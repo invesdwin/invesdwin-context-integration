@@ -9,16 +9,19 @@ import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import mpi.Intracomm;
 import mpi.MPI;
 
 @NotThreadSafe
 public class MpjExpressBcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
+    private final Intracomm comm;
     private final IIntReference root;
     private final int maxMessageSize;
     private IByteBuffer buffer;
 
-    public MpjExpressBcastSynchronousWriter(final IIntReference root, final int maxMessageSize) {
+    public MpjExpressBcastSynchronousWriter(final Intracomm comm, final IIntReference root, final int maxMessageSize) {
+        this.comm = comm;
         this.root = root;
         this.maxMessageSize = maxMessageSize;
     }
@@ -41,7 +44,7 @@ public class MpjExpressBcastSynchronousWriter implements ISynchronousWriter<IByt
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
-        MPI.COMM_WORLD.Bcast(buffer.byteArray(), 0, length, MPI.BYTE, root.get());
+        comm.Bcast(buffer.byteArray(), 0, length, MPI.BYTE, root.get());
     }
 
     @Override

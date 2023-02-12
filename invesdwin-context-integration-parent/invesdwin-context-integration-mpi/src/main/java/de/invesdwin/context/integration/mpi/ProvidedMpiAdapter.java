@@ -164,6 +164,11 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
+    public IMpiAdapter split(final int color, final int key) {
+        return getProvidedInstance().split(color, key);
+    }
+
+    @Override
     public void abort(final int errorCode) {
         getProvidedInstance().abort(errorCode);
     }

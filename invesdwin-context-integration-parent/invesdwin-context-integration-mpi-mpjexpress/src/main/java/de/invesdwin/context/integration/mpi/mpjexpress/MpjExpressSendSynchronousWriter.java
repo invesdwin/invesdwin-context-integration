@@ -9,6 +9,7 @@ import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import mpi.Intracomm;
 import mpi.MPI;
 import mpi.Request;
 import mpi.Status;
@@ -16,14 +17,16 @@ import mpi.Status;
 @NotThreadSafe
 public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
+    private final Intracomm comm;
     private final IIntReference dest;
     private final IIntReference tag;
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
 
-    public MpjExpressSendSynchronousWriter(final IIntReference dest, final IIntReference tag,
+    public MpjExpressSendSynchronousWriter(final Intracomm comm, final IIntReference dest, final IIntReference tag,
             final int maxMessageSize) {
+        this.comm = comm;
         this.dest = dest;
         this.tag = tag;
         this.maxMessageSize = maxMessageSize;
@@ -47,7 +50,7 @@ public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByte
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
-        request = MPI.COMM_WORLD.Isend(buffer.byteArray(), 0, length, MPI.BYTE, dest.get(), tag.get());
+        request = comm.Isend(buffer.byteArray(), 0, length, MPI.BYTE, dest.get(), tag.get());
     }
 
     @Override

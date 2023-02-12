@@ -9,18 +9,21 @@ import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import mpi.Intracomm;
 import mpi.MPI;
 import mpi.Status;
 
 @NotThreadSafe
 public class FastMpjBcastSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
+    private final Intracomm comm;
     private final IIntReference root;
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Status status;
 
-    public FastMpjBcastSynchronousReader(final IIntReference root, final int maxMessageSize) {
+    public FastMpjBcastSynchronousReader(final Intracomm comm, final IIntReference root, final int maxMessageSize) {
+        this.comm = comm;
         this.root = root;
         this.maxMessageSize = maxMessageSize;
     }
@@ -42,7 +45,7 @@ public class FastMpjBcastSynchronousReader implements ISynchronousReader<IByteBu
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        status = FastMpjBroadcast.mstBroadcast(buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, root.get());
+        status = FastMpjBroadcast.mstBroadcast(comm, buffer.byteArray(), 0, buffer.capacity(), MPI.BYTE, root.get());
         final int length = status.Get_count(MPI.BYTE);
         return buffer.sliceTo(length);
     }
