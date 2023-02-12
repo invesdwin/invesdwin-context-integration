@@ -137,7 +137,8 @@ public interface IMpiAdapter extends Closeable {
     IMpiAdapter split(int color, int key);
 
     /**
-     * Calls MPI.finalize()
+     * Calls MPI.finalize(). MPI_Finalize shuts down the MPI library. It must be called by each process at the end of
+     * the MPI program.
      */
     @Override
     void close();
