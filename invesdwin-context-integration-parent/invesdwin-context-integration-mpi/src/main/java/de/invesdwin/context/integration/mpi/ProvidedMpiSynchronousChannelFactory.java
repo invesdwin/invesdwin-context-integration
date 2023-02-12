@@ -91,6 +91,16 @@ public final class ProvidedMpiSynchronousChannelFactory
     }
 
     @Override
+    public void init(final String[] args) {
+        getProvidedInstance().init(args);
+    }
+
+    @Override
+    public MpiThreadSupport initThread(final String[] args, final MpiThreadSupport required) {
+        return getProvidedInstance().initThread(args, required);
+    }
+
+    @Override
     public ISynchronousWriter<IByteBufferProvider> newBcast() {
         return getProvidedInstance().newBcast();
     }
@@ -103,6 +113,11 @@ public final class ProvidedMpiSynchronousChannelFactory
     @Override
     public ISynchronousWriter<IByteBufferProvider> newSend() {
         return getProvidedInstance().newSend();
+    }
+
+    @Override
+    public void close() {
+        getProvidedInstance().close();
     }
 
     @Override
