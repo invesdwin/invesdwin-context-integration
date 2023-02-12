@@ -60,7 +60,7 @@ public class StreamEncryptionSynchronousReader implements ISynchronousReader<IBy
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

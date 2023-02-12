@@ -48,7 +48,7 @@ public class EncryptionSynchronousReader implements ISynchronousReader<IByteBuff
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

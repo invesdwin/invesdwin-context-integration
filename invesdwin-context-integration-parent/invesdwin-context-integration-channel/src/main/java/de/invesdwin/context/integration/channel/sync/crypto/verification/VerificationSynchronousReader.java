@@ -52,7 +52,7 @@ public class VerificationSynchronousReader implements ISynchronousReader<IByteBu
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

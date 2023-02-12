@@ -56,7 +56,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

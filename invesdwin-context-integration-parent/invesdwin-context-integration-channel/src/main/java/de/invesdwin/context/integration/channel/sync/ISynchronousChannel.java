@@ -18,6 +18,6 @@ public interface ISynchronousChannel extends Closeable {
      * to send to termination message to the other side that needs to be ACKnowledged.
      */
     @Override
-    default void close() throws IOException {}
+    void close() throws IOException;
 
 }

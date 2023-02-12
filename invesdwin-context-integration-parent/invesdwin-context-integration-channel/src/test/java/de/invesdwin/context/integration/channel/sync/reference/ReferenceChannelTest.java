@@ -17,7 +17,6 @@ import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.reference.AtomicReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
 import de.invesdwin.util.concurrent.reference.IReference;
-import de.invesdwin.util.concurrent.reference.JavaLockedReference;
 import de.invesdwin.util.concurrent.reference.LockedReference;
 import de.invesdwin.util.concurrent.reference.SynchronizedReference;
 import de.invesdwin.util.concurrent.reference.VolatileReference;
@@ -41,13 +40,12 @@ public class ReferenceChannelTest extends AChannelTest {
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 
-    @Test
     public void testJavaLockedReferencePerformance() throws InterruptedException {
         //CHECKSTYLE:OFF
         final Lock lock = new ReentrantLock();
         //CHECKSTYLE:ON
-        final IMutableReference<IReference<FDate>> responseQueue = new JavaLockedReference<IReference<FDate>>(lock);
-        final IMutableReference<IReference<FDate>> requestQueue = new JavaLockedReference<IReference<FDate>>(lock);
+        final IMutableReference<IReference<FDate>> responseQueue = new LockedReference<IReference<FDate>>(lock);
+        final IMutableReference<IReference<FDate>> requestQueue = new LockedReference<IReference<FDate>>(lock);
         runReferencePerformanceTest(responseQueue, requestQueue);
     }
 

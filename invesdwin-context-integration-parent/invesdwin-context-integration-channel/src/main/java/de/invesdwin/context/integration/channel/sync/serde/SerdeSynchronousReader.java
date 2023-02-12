@@ -42,7 +42,7 @@ public class SerdeSynchronousReader<M> implements ISynchronousReader<M> {
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

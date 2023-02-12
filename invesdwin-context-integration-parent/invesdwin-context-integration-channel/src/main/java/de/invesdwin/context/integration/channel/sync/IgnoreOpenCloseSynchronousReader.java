@@ -34,7 +34,7 @@ public final class IgnoreOpenCloseSynchronousReader<M> implements ISynchronousRe
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

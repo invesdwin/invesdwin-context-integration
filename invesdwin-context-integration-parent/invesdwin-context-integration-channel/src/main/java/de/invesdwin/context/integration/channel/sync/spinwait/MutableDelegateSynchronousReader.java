@@ -25,6 +25,11 @@ public class MutableDelegateSynchronousReader<M> implements ISynchronousReader<M
     }
 
     @Override
+    public void close() throws IOException {
+        delegate.close();
+    }
+
+    @Override
     public boolean hasNext() throws IOException {
         return delegate.hasNext();
     }
@@ -35,7 +40,7 @@ public class MutableDelegateSynchronousReader<M> implements ISynchronousReader<M
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 

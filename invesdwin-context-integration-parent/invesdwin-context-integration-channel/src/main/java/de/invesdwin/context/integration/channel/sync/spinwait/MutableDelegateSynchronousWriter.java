@@ -25,6 +25,11 @@ public class MutableDelegateSynchronousWriter<M> implements ISynchronousWriter<M
     }
 
     @Override
+    public void close() throws IOException {
+        delegate.close();
+    }
+
+    @Override
     public boolean writeReady() throws IOException {
         return delegate.writeReady();
     }

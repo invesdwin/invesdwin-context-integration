@@ -19,6 +19,6 @@ public interface ISynchronousReader<M> extends ISynchronousChannel {
     /**
      * Call this when you are done with reading the message so that the message buffer can be freed/recycled.
      */
-    void readFinished();
+    void readFinished() throws IOException;
 
 }

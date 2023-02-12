@@ -84,7 +84,7 @@ public class HandshakeSynchronousReader implements ISynchronousReader<IByteBuffe
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         encryptedReader.readFinished();
     }
 

@@ -12,6 +12,7 @@ import org.springframework.beans.factory.FactoryBean;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.system.properties.SystemProperties;
+import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -23,33 +24,31 @@ import jakarta.inject.Named;
  */
 @Immutable
 @Named
-public final class ProvidedMpiSynchronousChannelFactory
-        implements IMpiSynchronousChannelFactory, FactoryBean<ProvidedMpiSynchronousChannelFactory> {
+public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<ProvidedMpiAdapter> {
 
-    public static final String PROVIDED_INSTANCE_KEY = IMpiSynchronousChannelFactory.class.getName();
+    public static final String PROVIDED_INSTANCE_KEY = IMpiAdapter.class.getName();
 
-    public static final ProvidedMpiSynchronousChannelFactory INSTANCE = new ProvidedMpiSynchronousChannelFactory();
+    public static final ProvidedMpiAdapter INSTANCE = new ProvidedMpiAdapter();
 
     @GuardedBy("this.class")
-    private static IMpiSynchronousChannelFactory providedInstance;
+    private static IMpiAdapter providedInstance;
 
-    private ProvidedMpiSynchronousChannelFactory() {}
+    private ProvidedMpiAdapter() {}
 
-    public static synchronized IMpiSynchronousChannelFactory getProvidedInstance() {
+    public static synchronized IMpiAdapter getProvidedInstance() {
         if (providedInstance == null) {
             final SystemProperties systemProperties = new SystemProperties();
             if (systemProperties.containsValue(PROVIDED_INSTANCE_KEY)) {
                 try {
                     final String factory = systemProperties.getString(PROVIDED_INSTANCE_KEY);
-                    return (IMpiSynchronousChannelFactory) Reflections.classForName(factory).newInstance();
+                    return (IMpiAdapter) Reflections.classForName(factory).newInstance();
                 } catch (InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             } else {
-                final Map<String, IMpiSynchronousChannelFactory> factories = new LinkedHashMap<String, IMpiSynchronousChannelFactory>();
-                for (final IMpiSynchronousChannelFactory factory : ServiceLoader
-                        .load(IMpiSynchronousChannelFactory.class)) {
-                    final IMpiSynchronousChannelFactory existing = factories.put(factory.getClass().getName(), factory);
+                final Map<String, IMpiAdapter> factories = new LinkedHashMap<String, IMpiAdapter>();
+                for (final IMpiAdapter factory : ServiceLoader.load(IMpiAdapter.class)) {
+                    final IMpiAdapter existing = factories.put(factory.getClass().getName(), factory);
                     if (existing != null) {
                         throw new IllegalStateException("Duplicate service provider found for [" + PROVIDED_INSTANCE_KEY
                                 + "=" + existing.getClass().getName()
@@ -80,8 +79,8 @@ public final class ProvidedMpiSynchronousChannelFactory
         return providedInstance;
     }
 
-    public static synchronized void setProvidedInstance(final IMpiSynchronousChannelFactory providedInstance) {
-        ProvidedMpiSynchronousChannelFactory.providedInstance = providedInstance;
+    public static synchronized void setProvidedInstance(final IMpiAdapter providedInstance) {
+        ProvidedMpiAdapter.providedInstance = providedInstance;
         final SystemProperties systemProperties = new SystemProperties();
         if (providedInstance == null) {
             systemProperties.setString(PROVIDED_INSTANCE_KEY, null);
@@ -101,18 +100,75 @@ public final class ProvidedMpiSynchronousChannelFactory
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newBcast() {
-        return getProvidedInstance().newBcast();
+    public int rank() {
+        return getProvidedInstance().rank();
     }
 
     @Override
-    public ISynchronousReader<IByteBufferProvider> newReceive() {
-        return getProvidedInstance().newReceive();
+    public int size() {
+        return getProvidedInstance().size();
     }
 
     @Override
-    public ISynchronousWriter<IByteBufferProvider> newSend() {
-        return getProvidedInstance().newSend();
+    public int anySource() {
+        return getProvidedInstance().anySource();
+    }
+
+    @Override
+    public int anyTag() {
+        return getProvidedInstance().anyTag();
+    }
+
+    @Override
+    public void barrier() {
+        getProvidedInstance().barrier();
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final int root) {
+        return getProvidedInstance().newBcastWriter(root);
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root) {
+        return getProvidedInstance().newBcastWriter(root);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newBcastReader(final int root, final int maxMessageSize) {
+        return getProvidedInstance().newBcastReader(root, maxMessageSize);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newBcastReader(final IIntReference root, final int maxMessageSize) {
+        return getProvidedInstance().newBcastReader(root, maxMessageSize);
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final int dest, final int tag) {
+        return getProvidedInstance().newSendWriter(dest, tag);
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag) {
+        return getProvidedInstance().newSendWriter(dest, tag);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newRecvReader(final int source, final int tag,
+            final int maxMessageSize) {
+        return getProvidedInstance().newRecvReader(source, tag, maxMessageSize);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newRecvReader(final IIntReference source, final IIntReference tag,
+            final int maxMessageSize) {
+        return getProvidedInstance().newRecvReader(source, tag, maxMessageSize);
+    }
+
+    @Override
+    public void abort(final int errorCode) {
+        getProvidedInstance().abort(errorCode);
     }
 
     @Override
@@ -122,7 +178,7 @@ public final class ProvidedMpiSynchronousChannelFactory
 
     @Override
     public Class<?> getObjectType() {
-        return ProvidedMpiSynchronousChannelFactory.class;
+        return ProvidedMpiAdapter.class;
     }
 
     @Override
@@ -131,7 +187,7 @@ public final class ProvidedMpiSynchronousChannelFactory
     }
 
     @Override
-    public ProvidedMpiSynchronousChannelFactory getObject() throws Exception {
+    public ProvidedMpiAdapter getObject() throws Exception {
         return INSTANCE;
     }
 

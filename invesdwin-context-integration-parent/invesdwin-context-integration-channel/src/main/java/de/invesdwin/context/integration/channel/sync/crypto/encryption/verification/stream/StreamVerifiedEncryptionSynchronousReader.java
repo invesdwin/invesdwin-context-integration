@@ -71,7 +71,7 @@ public class StreamVerifiedEncryptionSynchronousReader
     }
 
     @Override
-    public void readFinished() {
+    public void readFinished() throws IOException {
         delegate.readFinished();
     }
 
