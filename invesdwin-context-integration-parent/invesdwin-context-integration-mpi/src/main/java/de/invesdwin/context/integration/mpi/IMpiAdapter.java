@@ -131,6 +131,8 @@ public interface IMpiAdapter extends Closeable {
      * which case the new communicator returned is MPI_COMM_NULL. This is a collective call, therefore all MPI processes
      * in the communicator must call the routine, however each process is permitted to provide different values for
      * colour and key.
+     * 
+     * https://rookiehpc.github.io/mpi/docs/mpi_comm_split/index.html
      */
     IMpiAdapter split(int color, int key);
 
