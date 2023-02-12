@@ -40,41 +40,41 @@ public final class ProvidedMpiSynchronousChannelFactory
             final SystemProperties systemProperties = new SystemProperties();
             if (systemProperties.containsValue(PROVIDED_INSTANCE_KEY)) {
                 try {
-                    final String runner = systemProperties.getString(PROVIDED_INSTANCE_KEY);
-                    return (IMpiSynchronousChannelFactory) Reflections.classForName(runner).newInstance();
+                    final String factory = systemProperties.getString(PROVIDED_INSTANCE_KEY);
+                    return (IMpiSynchronousChannelFactory) Reflections.classForName(factory).newInstance();
                 } catch (InstantiationException | IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
             } else {
-                final Map<String, IMpiSynchronousChannelFactory> runners = new LinkedHashMap<String, IMpiSynchronousChannelFactory>();
-                for (final IMpiSynchronousChannelFactory runner : ServiceLoader
+                final Map<String, IMpiSynchronousChannelFactory> factories = new LinkedHashMap<String, IMpiSynchronousChannelFactory>();
+                for (final IMpiSynchronousChannelFactory factory : ServiceLoader
                         .load(IMpiSynchronousChannelFactory.class)) {
-                    final IMpiSynchronousChannelFactory existing = runners.put(runner.getClass().getName(), runner);
+                    final IMpiSynchronousChannelFactory existing = factories.put(factory.getClass().getName(), factory);
                     if (existing != null) {
                         throw new IllegalStateException("Duplicate service provider found for [" + PROVIDED_INSTANCE_KEY
                                 + "=" + existing.getClass().getName()
                                 + "]. Please make sure you have only one provider for it in the classpath.");
                     }
                 }
-                if (runners.isEmpty()) {
+                if (factories.isEmpty()) {
                     throw new IllegalStateException("No service provider found for [" + PROVIDED_INSTANCE_KEY
                             + "]. Please add one provider for it to the classpath.");
                 }
-                if (runners.size() > 1) {
-                    final StringBuilder runnersStr = new StringBuilder("(");
-                    for (final String runner : runners.keySet()) {
-                        runnersStr.append(runner);
-                        runnersStr.append("|");
+                if (factories.size() > 1) {
+                    final StringBuilder factoriesStr = new StringBuilder("(");
+                    for (final String factory : factories.keySet()) {
+                        factoriesStr.append(factory);
+                        factoriesStr.append("|");
                     }
-                    Strings.removeEnd(runnersStr, "|");
-                    runnersStr.append(")");
+                    Strings.removeEnd(factoriesStr, "|");
+                    factoriesStr.append(")");
                     throw new IllegalStateException("More than one service provider found for [" + PROVIDED_INSTANCE_KEY
-                            + "=" + runnersStr
+                            + "=" + factoriesStr
                             + "] to choose from. Please remove unwanted ones from the classpath or choose a "
                             + "specific one by defining a system property for the preferred one. E.g. on the command line with -D"
-                            + PROVIDED_INSTANCE_KEY + "=" + runners.keySet().iterator().next());
+                            + PROVIDED_INSTANCE_KEY + "=" + factories.keySet().iterator().next());
                 }
-                setProvidedInstance(runners.values().iterator().next());
+                setProvidedInstance(factories.values().iterator().next());
             }
         }
         return providedInstance;
