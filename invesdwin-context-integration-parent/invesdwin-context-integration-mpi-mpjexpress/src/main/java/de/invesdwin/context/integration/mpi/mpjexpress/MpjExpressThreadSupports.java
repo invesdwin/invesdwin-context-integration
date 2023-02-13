@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.mpi.fastmpj;
+package de.invesdwin.context.integration.mpi.mpjexpress;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -7,9 +7,9 @@ import de.invesdwin.util.error.UnknownArgumentException;
 import mpi.MPI;
 
 @Immutable
-public final class MpiThreadSupports {
+public final class MpjExpressThreadSupports {
 
-    private MpiThreadSupports() {}
+    private MpjExpressThreadSupports() {}
 
     public static int toMpi(final MpiThreadSupport v) {
         switch (v) {
@@ -27,16 +27,15 @@ public final class MpiThreadSupports {
     }
 
     public static MpiThreadSupport fromMpi(final int v) {
-        switch (v) {
-        case MPI.THREAD_SINGLE:
+        if (v == MPI.THREAD_SINGLE) {
             return MpiThreadSupport.THREAD_SINGLE;
-        case MPI.THREAD_FUNNELED:
+        } else if (v == MPI.THREAD_FUNNELED) {
             return MpiThreadSupport.THREAD_FUNNELED;
-        case MPI.THREAD_SERIALIZED:
+        } else if (v == MPI.THREAD_SERIALIZED) {
             return MpiThreadSupport.THREAD_SERIALIZED;
-        case MPI.THREAD_MULTIPLE:
+        } else if (v == MPI.THREAD_MULTIPLE) {
             return MpiThreadSupport.THREAD_MULTIPLE;
-        default:
+        } else {
             throw UnknownArgumentException.newInstance(int.class, v);
         }
     }

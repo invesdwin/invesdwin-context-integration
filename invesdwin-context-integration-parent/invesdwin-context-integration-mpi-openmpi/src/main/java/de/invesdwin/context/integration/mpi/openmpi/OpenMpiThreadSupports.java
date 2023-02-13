@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.mpi.mpjexpress;
+package de.invesdwin.context.integration.mpi.openmpi;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -7,9 +7,9 @@ import de.invesdwin.util.error.UnknownArgumentException;
 import mpi.MPI;
 
 @Immutable
-public final class MpiThreadSupports {
+public final class OpenMpiThreadSupports {
 
-    private MpiThreadSupports() {}
+    private OpenMpiThreadSupports() {}
 
     public static int toMpi(final MpiThreadSupport v) {
         switch (v) {
