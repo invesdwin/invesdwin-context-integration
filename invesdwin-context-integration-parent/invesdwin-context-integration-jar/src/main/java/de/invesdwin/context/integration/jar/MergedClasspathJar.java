@@ -37,7 +37,7 @@ public class MergedClasspathJar {
         try {
             if (alreadyGenerated == null || !alreadyGenerated.exists()) {
                 final File file = new File(ContextProperties.TEMP_DIRECTORY,
-                        MergedClasspathJar.class.getName() + ".jar");
+                        MergedClasspathJar.class.getName() + "_" + filter.name() + ".jar");
                 final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
 
                 try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(file))) {
