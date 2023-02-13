@@ -41,6 +41,7 @@
 		<module>invesdwin-context-integration-ws-registry</module>
 		<module>invesdwin-context-integration-ws-registry-dist</module>
 		<module>invesdwin-context-integration-maven</module>
+		<module>invesdwin-context-integration-jar</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-rmi</module>
@@ -248,6 +249,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-maven</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-jar</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
