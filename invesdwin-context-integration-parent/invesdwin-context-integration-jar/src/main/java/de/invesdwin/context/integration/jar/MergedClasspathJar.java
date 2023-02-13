@@ -12,6 +12,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.jar.visitor.IMergedClasspathJarFilter;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarVisitor;
 import de.invesdwin.context.log.error.Err;
@@ -20,7 +21,7 @@ import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;
 @ThreadSafe
 public class MergedClasspathJar {
 
-    private final MergedClasspathJarFilter filter;
+    private final IMergedClasspathJarFilter filter;
     @GuardedBy("this")
     private File alreadyGenerated;
 
@@ -28,7 +29,7 @@ public class MergedClasspathJar {
         this(MergedClasspathJarFilter.DEFAULT);
     }
 
-    public MergedClasspathJar(final MergedClasspathJarFilter filter) {
+    public MergedClasspathJar(final IMergedClasspathJarFilter filter) {
         this.filter = filter;
     }
 
