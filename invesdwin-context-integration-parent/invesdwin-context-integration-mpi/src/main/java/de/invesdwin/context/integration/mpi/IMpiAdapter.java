@@ -9,6 +9,15 @@ import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.ImmutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
+/**
+ * We are not integrating Scatter/Gather and other communication patterns where multiple messages are
+ * combined/distributed at the same time because MPI requires all messages to be of the same size. Instead these message
+ * patterns should be implemented on top of ISynchronousChannels and should be able to handle variations in message
+ * size.
+ *
+ * @author subes
+ *
+ */
 public interface IMpiAdapter extends Closeable {
 
     default void init(final String[] args) {
