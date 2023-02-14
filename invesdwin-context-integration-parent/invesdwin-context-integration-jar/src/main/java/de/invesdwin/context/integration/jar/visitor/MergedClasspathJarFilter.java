@@ -39,6 +39,17 @@ public enum MergedClasspathJarFilter implements IMergedClasspathJarFilter {
         public String[] getWhitelist() {
             return Strings.EMPTY_ARRAY;
         }
+    },
+    MPI_YARN {
+        @Override
+        public String[] getBlacklist() {
+            return MPI_YARN_BLACKLIST;
+        }
+
+        @Override
+        public String[] getWhitelist() {
+            return MPI_YARN_WHITELIST;
+        }
     };
 
     //<filters>
@@ -69,5 +80,8 @@ public enum MergedClasspathJarFilter implements IMergedClasspathJarFilter {
 
     private static final String[] MPI_BLACKLIST = Arrays.concat(DEFAULT_BLACKLIST,
             new String[] { "mpi/.*", "mpjbuf/.*", "mpjdev/.*", "xdev/.*" });
+
+    private static final String[] MPI_YARN_BLACKLIST = Arrays.concat(HADOOP_BLACKLIST, MPI_BLACKLIST);
+    private static final String[] MPI_YARN_WHITELIST = HADOOP_WHITELIST;
 
 }
