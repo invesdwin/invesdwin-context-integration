@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.mpi.fastmpj;
 
+import java.util.function.Supplier;
+
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -15,18 +17,18 @@ import mpi.MPI;
 @Immutable
 public class FastMpjAdapter implements IMpiAdapter {
 
-    private final Intracomm comm;
+    private final Supplier<Intracomm> comm;
 
     public FastMpjAdapter() {
-        this.comm = MPI.COMM_WORLD;
+        this.comm = () -> MPI.COMM_WORLD;
     }
 
-    public FastMpjAdapter(final Intracomm comm) {
+    public FastMpjAdapter(final Supplier<Intracomm> comm) {
         this.comm = comm;
     }
 
     public Intracomm getComm() {
-        return comm;
+        return comm.get();
     }
 
     @Override
@@ -43,12 +45,12 @@ public class FastMpjAdapter implements IMpiAdapter {
 
     @Override
     public int rank() {
-        return comm.Rank();
+        return getComm().Rank();
     }
 
     @Override
     public int size() {
-        return comm.Size();
+        return getComm().Size();
     }
 
     @Override
@@ -63,39 +65,40 @@ public class FastMpjAdapter implements IMpiAdapter {
 
     @Override
     public void barrier() {
-        comm.Barrier();
+        getComm().Barrier();
     }
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root, final int maxMessageSize) {
-        return new FastMpjBcastSynchronousWriter(comm, root, maxMessageSize);
+        return new FastMpjBcastSynchronousWriter(getComm(), root, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newBcastReader(final IIntReference root, final int maxMessageSize) {
-        return new FastMpjBcastSynchronousReader(comm, root, maxMessageSize);
+        return new FastMpjBcastSynchronousReader(getComm(), root, maxMessageSize);
     }
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag,
             final int maxMessageSize) {
-        return new FastMpjSendSynchronousWriter(comm, dest, tag, maxMessageSize);
+        return new FastMpjSendSynchronousWriter(getComm(), dest, tag, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newRecvReader(final IMutableIntReference source,
             final IMutableIntReference tag, final int maxMessageSize) {
-        return new FastMpjRecvSynchronousReader(comm, source, tag, maxMessageSize);
+        return new FastMpjRecvSynchronousReader(getComm(), source, tag, maxMessageSize);
     }
 
     @Override
     public IMpiAdapter split(final int color, final int key) {
-        return new FastMpjAdapter(comm.Split(color, key));
+        final Intracomm split = getComm().Split(color, key);
+        return new FastMpjAdapter(() -> split);
     }
 
     @Override
     public void abort(final int errorCode) {
-        comm.Abort(errorCode);
+        getComm().Abort(errorCode);
     }
 
     @Override

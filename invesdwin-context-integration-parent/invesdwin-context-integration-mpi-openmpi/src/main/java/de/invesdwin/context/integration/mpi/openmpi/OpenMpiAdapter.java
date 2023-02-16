@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.mpi.openmpi;
 
+import java.util.function.Supplier;
+
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -16,18 +18,18 @@ import mpi.MPIException;
 @Immutable
 public class OpenMpiAdapter implements IMpiAdapter {
 
-    private final Intracomm comm;
+    private final Supplier<Intracomm> comm;
 
     public OpenMpiAdapter() {
-        this.comm = MPI.COMM_WORLD;
+        this.comm = () -> MPI.COMM_WORLD;
     }
 
-    public OpenMpiAdapter(final Intracomm comm) {
+    public OpenMpiAdapter(final Supplier<Intracomm> comm) {
         this.comm = comm;
     }
 
     public Intracomm getComm() {
-        return comm;
+        return comm.get();
     }
 
     @Override
@@ -52,7 +54,7 @@ public class OpenMpiAdapter implements IMpiAdapter {
     @Override
     public int rank() {
         try {
-            return comm.getRank();
+            return getComm().getRank();
         } catch (final MPIException e) {
             throw new RuntimeException(e);
         }
@@ -61,7 +63,7 @@ public class OpenMpiAdapter implements IMpiAdapter {
     @Override
     public int size() {
         try {
-            return comm.getSize();
+            return getComm().getSize();
         } catch (final MPIException e) {
             throw new RuntimeException(e);
         }
@@ -80,7 +82,7 @@ public class OpenMpiAdapter implements IMpiAdapter {
     @Override
     public void barrier() {
         try {
-            comm.barrier();
+            getComm().barrier();
         } catch (final MPIException e) {
             throw new RuntimeException(e);
         }
@@ -88,30 +90,31 @@ public class OpenMpiAdapter implements IMpiAdapter {
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newBcastWriter(final IIntReference root, final int maxMessageSize) {
-        return new OpenMpiBcastSynchronousWriter(comm, root, maxMessageSize);
+        return new OpenMpiBcastSynchronousWriter(getComm(), root, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newBcastReader(final IIntReference root, final int maxMessageSize) {
-        return new OpenMpiBcastSynchronousReader(comm, root, maxMessageSize);
+        return new OpenMpiBcastSynchronousReader(getComm(), root, maxMessageSize);
     }
 
     @Override
     public ISynchronousWriter<IByteBufferProvider> newSendWriter(final IIntReference dest, final IIntReference tag,
             final int maxMessageSize) {
-        return new OpenMpiSendSynchronousWriter(comm, dest, tag, maxMessageSize);
+        return new OpenMpiSendSynchronousWriter(getComm(), dest, tag, maxMessageSize);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> newRecvReader(final IMutableIntReference source,
             final IMutableIntReference tag, final int maxMessageSize) {
-        return new OpenMpiRecvSynchronousReader(comm, source, tag, maxMessageSize);
+        return new OpenMpiRecvSynchronousReader(getComm(), source, tag, maxMessageSize);
     }
 
     @Override
     public IMpiAdapter split(final int color, final int key) {
         try {
-            return new OpenMpiAdapter(comm.split(color, key));
+            final Intracomm split = getComm().split(color, key);
+            return new OpenMpiAdapter(() -> split);
         } catch (final MPIException e) {
             throw new RuntimeException(e);
         }
@@ -120,7 +123,7 @@ public class OpenMpiAdapter implements IMpiAdapter {
     @Override
     public void abort(final int errorCode) {
         try {
-            comm.abort(errorCode);
+            getComm().abort(errorCode);
         } catch (final MPIException e) {
             throw new RuntimeException(e);
         }
