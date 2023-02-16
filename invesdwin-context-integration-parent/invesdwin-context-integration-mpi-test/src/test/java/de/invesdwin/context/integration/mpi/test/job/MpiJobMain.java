@@ -10,6 +10,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import org.zeroturnaround.exec.stream.slf4j.Slf4jOutputStream;
+import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -22,6 +24,7 @@ import de.invesdwin.context.integration.mpi.ProvidedMpiAdapter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.streams.BroadcastingOutputStream;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
@@ -66,8 +69,10 @@ public class MpiJobMain extends AMain {
     }
 
     private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
-        return new BufferedOutputStream(
+        final Slf4jOutputStream log = Slf4jStream.of(taskClass).asInfo();
+        final BufferedOutputStream file = new BufferedOutputStream(
                 new FileOutputStream(new File(logDir, rank + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
+        return new BroadcastingOutputStream(log, file);
     }
 
     public static void main(final String[] args) {
