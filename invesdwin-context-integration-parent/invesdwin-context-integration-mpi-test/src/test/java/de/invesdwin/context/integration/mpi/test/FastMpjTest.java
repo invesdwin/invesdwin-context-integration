@@ -36,8 +36,8 @@ public class FastMpjTest extends ATest {
 
         final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
-                .redirectOutput(Slf4jStream.of(Files.class).asInfo())
-                .redirectError(Slf4jStream.of(Files.class).asWarn())
+                .redirectOutput(Slf4jStream.of(FastMpjTest.class).asInfo())
+                .redirectError(Slf4jStream.of(FastMpjTest.class).asWarn())
                 .execute();
         Assertions.checkEquals(0, result.getExitValue());
     }
