@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel;
 import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -10,6 +11,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
+
+import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -53,6 +56,7 @@ import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
+import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
@@ -82,8 +86,6 @@ public abstract class AChannelTest extends ATest {
         BLOCKING_MAPPED,
         UNIX_SOCKET;
     }
-
-    private static final Log LOG = new Log(AChannelTest.class);
 
     protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,
             final IAsynchronousChannel clientChannel) throws InterruptedException {
@@ -283,11 +285,15 @@ public abstract class AChannelTest extends ATest {
         return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    protected static void printProgress(final String action, final Instant start, final int count, final int maxCount) {
+    protected static void printProgress(final OutputStream log, final String action, final Instant start,
+            final int count, final int maxCount) throws IOException {
         final Duration duration = start.toDuration();
-        LOG.info("%s: %s/%s (%s) %s during %s", action, count, maxCount,
-                new Percent(count, maxCount).toString(PercentScale.PERCENT),
-                new ProcessedEventsRateString(count, duration), duration);
+        log.write(
+                TextDescription
+                        .format("%s: %s/%s (%s) %s during %s\n", action, count, maxCount,
+                                new Percent(count, maxCount).toString(PercentScale.PERCENT),
+                                new ProcessedEventsRateString(count, duration), duration)
+                        .getBytes());
     }
 
     protected static ICloseableIterable<FDate> newValues() {
@@ -296,11 +302,23 @@ public abstract class AChannelTest extends ATest {
 
     public static class ReaderTask implements Runnable {
 
+        private final OutputStream log;
         private final ISynchronousWriter<FDate> requestWriter;
         private final ISynchronousReader<FDate> responseReader;
 
         public ReaderTask(final ISynchronousWriter<FDate> requestWriter,
                 final ISynchronousReader<FDate> responseReader) {
+            this(new Log(ReaderTask.class), requestWriter, responseReader);
+        }
+
+        public ReaderTask(final Log log, final ISynchronousWriter<FDate> requestWriter,
+                final ISynchronousReader<FDate> responseReader) {
+            this(Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
+        }
+
+        public ReaderTask(final OutputStream log, final ISynchronousWriter<FDate> requestWriter,
+                final ISynchronousReader<FDate> responseReader) {
+            this.log = log;
             this.requestWriter = requestWriter;
             this.responseReader = responseReader;
         }
@@ -313,11 +331,11 @@ public abstract class AChannelTest extends ATest {
             int count = 0;
             try {
                 if (DEBUG) {
-                    LOG.info("client open request writer");
+                    log.write("client open request writer\n".getBytes());
                 }
                 requestWriter.open();
                 if (DEBUG) {
-                    LOG.info("client open response reader");
+                    log.write("client open response reader\n".getBytes());
                 }
                 responseReader.open();
                 readsStart = new Instant();
@@ -326,12 +344,12 @@ public abstract class AChannelTest extends ATest {
                 while (true) {
                     writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
                     if (DEBUG) {
-                        LOG.info("client request out");
+                        log.write("client request out\n".getBytes());
                     }
                     final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                     responseReader.readFinished();
                     if (DEBUG) {
-                        LOG.info("client response in [" + readMessage + "]");
+                        log.write(("client response in [" + readMessage + "]\n").getBytes());
                     }
                     Assertions.checkNotNull(readMessage);
                     if (prevValue != null) {
@@ -348,29 +366,40 @@ public abstract class AChannelTest extends ATest {
             Assertions.checkEquals(VALUES, count);
             try {
                 if (DEBUG) {
-                    LOG.info("client close response reader");
+                    log.write("client close response reader\n".getBytes());
                 }
                 responseReader.close();
                 if (DEBUG) {
-                    LOG.info("client close request writer");
+                    log.write("client close request writer\n".getBytes());
                 }
                 requestWriter.close();
+                printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
-
-            printProgress("ReadsFinished", readsStart, VALUES, VALUES);
         }
 
     }
 
     public static class WriterTask implements Runnable {
 
+        private final OutputStream log;
         private final ISynchronousReader<FDate> requestReader;
         private final ISynchronousWriter<FDate> responseWriter;
 
         public WriterTask(final ISynchronousReader<FDate> requestReader,
                 final ISynchronousWriter<FDate> responseWriter) {
+            this(new Log(WriterTask.class), requestReader, responseWriter);
+        }
+
+        public WriterTask(final Log log, final ISynchronousReader<FDate> requestReader,
+                final ISynchronousWriter<FDate> responseWriter) {
+            this(Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
+        }
+
+        public WriterTask(final OutputStream log, final ISynchronousReader<FDate> requestReader,
+                final ISynchronousWriter<FDate> responseWriter) {
+            this.log = log;
             this.requestReader = requestReader;
             this.responseWriter = responseWriter;
         }
@@ -382,37 +411,37 @@ public abstract class AChannelTest extends ATest {
             try {
                 int i = 0;
                 if (DEBUG) {
-                    LOG.info("server open request reader");
+                    log.write("server open request reader\n".getBytes());
                 }
                 requestReader.open();
                 if (DEBUG) {
-                    LOG.info("server open response writer");
+                    log.write("server open response writer\n".getBytes());
                 }
                 responseWriter.open();
                 final Instant writesStart = new Instant();
                 for (final FDate date : newValues()) {
                     final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                     if (DEBUG) {
-                        LOG.info("server request in");
+                        log.write("server request in\n".getBytes());
                     }
                     requestReader.readFinished();
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
                     writeSpinWait.waitForWrite(date, MAX_WAIT_DURATION);
                     if (DEBUG) {
-                        LOG.info("server response out [" + date + "]");
+                        log.write(("server response out [" + date + "]\n").getBytes());
                     }
                     i++;
                     if (i % FLUSH_INTERVAL == 0) {
-                        printProgress("Writes", writesStart, i, VALUES);
+                        printProgress(log, "Writes", writesStart, i, VALUES);
                     }
                 }
-                printProgress("WritesFinished", writesStart, VALUES, VALUES);
+                printProgress(log, "WritesFinished", writesStart, VALUES, VALUES);
                 if (DEBUG) {
-                    LOG.info("server close response writer");
+                    log.write("server close response writer\n".getBytes());
                 }
                 responseWriter.close();
                 if (DEBUG) {
-                    LOG.info("server close request reader");
+                    log.write("server close request reader\n".getBytes());
                 }
                 requestReader.close();
             } catch (final Exception e) {
@@ -422,13 +451,24 @@ public abstract class AChannelTest extends ATest {
 
     }
 
-    public class ReaderHandler implements IAsynchronousHandler<FDate, FDate> {
+    public static class ReaderHandler implements IAsynchronousHandler<FDate, FDate> {
 
+        private final OutputStream log;
         private Instant readsStart;
         private int count;
         private FDate prevValue;
 
-        public ReaderHandler() {}
+        public ReaderHandler() {
+            this(new Log(ReaderHandler.class));
+        }
+
+        public ReaderHandler(final Log log) {
+            this(Slf4jStream.of(log).asInfo());
+        }
+
+        public ReaderHandler(final OutputStream log) {
+            this.log = log;
+        }
 
         @Override
         public FDate open() throws IOException {
@@ -441,10 +481,10 @@ public abstract class AChannelTest extends ATest {
         @Override
         public FDate handle(final FDate readMessage) throws IOException {
             if (DEBUG) {
-                log.info("client request out");
+                log.write("client request out\n".getBytes());
             }
             if (DEBUG) {
-                log.info("client response in [" + readMessage + "]");
+                log.write(("client response in [" + readMessage + "]\n").getBytes());
             }
             Assertions.checkNotNull(readMessage);
             if (prevValue != null && !prevValue.isBefore(readMessage)) {
@@ -456,23 +496,34 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public void close() {
+        public void close() throws IOException {
             Assertions.checkEquals(count, VALUES);
             if (DEBUG) {
-                log.info("client close handler");
+                log.write("client close handler\n".getBytes());
             }
-            printProgress("ReadsFinished", readsStart, VALUES, VALUES);
+            printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
         }
 
     }
 
-    public class WriterHandler implements IAsynchronousHandler<FDate, FDate> {
+    public static class WriterHandler implements IAsynchronousHandler<FDate, FDate> {
 
+        private final OutputStream log;
         private Instant writesStart;
         private int i;
         private ICloseableIterator<FDate> values;
 
-        public WriterHandler() {}
+        public WriterHandler() {
+            this(new Log(WriterHandler.class));
+        }
+
+        public WriterHandler(final Log log) {
+            this(Slf4jStream.of(log).asInfo());
+        }
+
+        public WriterHandler(final OutputStream log) {
+            this.log = log;
+        }
 
         @Override
         public FDate open() throws IOException {
@@ -480,7 +531,7 @@ public abstract class AChannelTest extends ATest {
             i = 0;
             this.values = newValues().iterator();
             if (DEBUG) {
-                log.info("server open handler");
+                log.write("server open handler\n".getBytes());
             }
             return null;
         }
@@ -488,17 +539,17 @@ public abstract class AChannelTest extends ATest {
         @Override
         public FDate handle(final FDate readMessage) throws IOException {
             if (DEBUG) {
-                log.info("server request in");
+                log.write("server request in\n".getBytes());
             }
             Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
             try {
                 final FDate date = values.next();
                 if (DEBUG) {
-                    log.info("server response out [" + date + "]");
+                    log.write(("server response out [" + date + "]\n").getBytes());
                 }
                 i++;
                 if (i % FLUSH_INTERVAL == 0) {
-                    printProgress("Writes", writesStart, i, VALUES);
+                    printProgress(log, "Writes", writesStart, i, VALUES);
                 }
                 return date;
             } catch (final NoSuchElementException e) {
@@ -507,10 +558,10 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public void close() {
-            printProgress("WritesFinished", writesStart, VALUES, VALUES);
+        public void close() throws IOException {
+            printProgress(log, "WritesFinished", writesStart, VALUES, VALUES);
             if (DEBUG) {
-                log.info("server close handler");
+                log.write("server close handler\n".getBytes());
             }
         }
 

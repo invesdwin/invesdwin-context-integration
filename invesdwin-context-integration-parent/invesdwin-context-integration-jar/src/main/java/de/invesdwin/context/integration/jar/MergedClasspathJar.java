@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.jar;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.jar.JarOutputStream;
@@ -37,19 +38,22 @@ public class MergedClasspathJar {
         try {
             if (alreadyGenerated == null || !alreadyGenerated.exists()) {
                 final File file = newFile();
-                final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
-
-                final FileOutputStream fos = new FileOutputStream(file);
-                try (JarOutputStream jarOut = newJarOutputStream(fos)) {
-                    beforeProcess(jarOut);
-                    processor.process(new MergedClasspathJarVisitor(jarOut, filter));
-                    afterProcess(jarOut);
-                }
+                generate(file);
                 alreadyGenerated = file;
             }
             return new FileSystemResource(alreadyGenerated);
         } catch (final IOException e) {
             throw Err.process(e);
+        }
+    }
+
+    protected void generate(final File file) throws FileNotFoundException, IOException {
+        final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
+        final FileOutputStream fos = new FileOutputStream(file);
+        try (JarOutputStream jarOut = newJarOutputStream(fos)) {
+            beforeProcess(jarOut);
+            processor.process(new MergedClasspathJarVisitor(jarOut, filter));
+            afterProcess(jarOut);
         }
     }
 

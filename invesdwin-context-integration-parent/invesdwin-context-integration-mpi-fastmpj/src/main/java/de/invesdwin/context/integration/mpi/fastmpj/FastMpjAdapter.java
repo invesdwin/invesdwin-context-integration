@@ -30,6 +30,11 @@ public class FastMpjAdapter implements IMpiAdapter {
     }
 
     @Override
+    public String[] init(final String[] args) {
+        return MPI.Init(args);
+    }
+
+    @Override
     public MpiThreadSupport initThread(final String[] args, final MpiThreadSupport required) {
         MPI.Init(args);
         final int support = MPI.queryThread();

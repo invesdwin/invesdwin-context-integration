@@ -31,6 +31,15 @@ public class OpenMpiAdapter implements IMpiAdapter {
     }
 
     @Override
+    public String[] init(final String[] args) {
+        try {
+            return MPI.Init(args);
+        } catch (final MPIException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public MpiThreadSupport initThread(final String[] args, final MpiThreadSupport required) {
         try {
             final int support = MPI.InitThread(args, OpenMpiThreadSupports.toMpi(required));

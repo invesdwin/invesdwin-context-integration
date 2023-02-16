@@ -35,8 +35,8 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
-    public void init(final String[] args) {
-        getProvidedInstance().init(args);
+    public String[] init(final String[] args) {
+        return getProvidedInstance().init(args);
     }
 
     @Override

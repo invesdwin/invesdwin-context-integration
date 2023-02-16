@@ -1,11 +1,20 @@
 package de.invesdwin.context.integration.mpi.test.job;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest.ReaderTask;
+import de.invesdwin.context.integration.channel.AChannelTest.WriterTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.mpi.IMpiAdapter;
@@ -19,6 +28,9 @@ import de.invesdwin.util.time.date.FDate;
 public class MpiJobMain extends AMain {
 
     private static final IMpiAdapter MPI = ProvidedMpiAdapter.getProvidedInstance();
+
+    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
+    protected File logDir;
 
     public MpiJobMain(final String[] args) {
         super(args);
@@ -35,24 +47,33 @@ public class MpiJobMain extends AMain {
                     .newCommandWriter(MPI.newSendWriter(1, 0, AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousReader<FDate> responseReader = AChannelTest
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            new AChannelTest.ReaderTask(requestWriter, responseReader).run();
+            try (OutputStream log = newLog(rank, size, ReaderTask.class)) {
+                new ReaderTask(log, requestWriter, responseReader).run();
+            }
             break;
         case 1:
             final ISynchronousReader<FDate> requestReader = AChannelTest
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousWriter<FDate> responseWriter = AChannelTest
                     .newCommandWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            new AChannelTest.WriterTask(requestReader, responseWriter).run();
+            try (OutputStream log = newLog(rank, size, WriterTask.class)) {
+                new WriterTask(log, requestReader, responseWriter).run();
+            }
             break;
         default:
             throw UnknownArgumentException.newInstance(int.class, rank);
         }
     }
 
+    private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
+        return new BufferedOutputStream(
+                new FileOutputStream(new File(logDir, rank + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
+    }
+
     public static void main(final String[] args) {
-        MPI.init(args);
+        final String[] jobArgs = MPI.init(args);
         try {
-            new MpiJobMain(args);
+            new MpiJobMain(jobArgs);
         } catch (final Throwable t) {
             Err.process(t);
             MPI.abort(-1);

@@ -19,9 +19,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
  */
 public interface IMpiAdapter {
 
-    default void init(final String[] args) {
-        initThread(args, MpiThreadSupport.THREAD_SINGLE);
-    }
+    /**
+     * Returns stripped arguments that the job can use without getting confused by mpi internal arguments.
+     */
+    String[] init(String[] args);
 
     /**
      * MPI_Init_thread initialises the MPI environment like MPI_Init does, except that the former also explicitly

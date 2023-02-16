@@ -29,7 +29,8 @@ public class FastMpjTest extends ATest {
         script = script.replace("{FMPJ_HOME}", new File("mpj/FastMpj-1.0_7").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{ARGS}",
-                "-np 2 -jar " + MpiJobMainJar.INSTANCE.getResource().getFile().getAbsolutePath());
+                "-np 2 -jar " + MpiJobMainJar.INSTANCE.getResource().getFile().getAbsolutePath() + " --logDir \""
+                        + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "fastmpj_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
