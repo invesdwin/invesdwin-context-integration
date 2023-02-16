@@ -1,0 +1,108 @@
+
+Version 1.0_7 - October 9, 2014
+
+[CHANGE] (mxmdev): added support for the following MXM versions: 2.1, 3.0, 3.1 and 3.2
+[CHANGE] (ibvdev): the maximum data size to be sent "inline" can also be specified manually (by default, this value is autodetected)
+
+
+Version 1.0_6 - March 20, 2014
+
+[NEW] (runtime): added support for the Application Level Placement Scheduler (ALPS), which is the Cray supported mechanism for placing and launching applications under the Extreme Scalability Mode (ESM) on compute nodes running Compute Node Linux (CNL) (e.g., Cray XE/XK/XC systems)
+[NEW] (runtime): added native support for PBS and Torque job schedulers using the TM library
+[NEW] (runtime): implemented basic support to control the processor affinity (bind processes to cores) using the Portable Hardware Locality (hwloc) software package. The -cpu-bind option for fmpjrun/fmpjexec commands was added for this purpose. At this moment, only binding to core is supported on GNU/Linux systems
+[NEW] (runtime): added -display-bind option for fmpjrun/fmpjexec commands
+[NEW] (ugnidev): this device adds support for the user-level Generic Network Interface (uGNI), which provides RDMA communications on Cray systems with Gemini/Aries interconnects (e.g., Cray XE/XK/XC)
+[CHANGE] (runtime): some commands now return non-zero exit code on failures (e.g., fmpjdboot/fmpjdallexit)
+[CHANGE] (mpi): it is no longer required to call the MPI.Init method before accessing the application arguments
+[CHANGE] (mxmdev): this device has been updated to MXM 2.0 API
+[CHANGE] (ibvdev): the connection setup time has been improved
+[BUG] (runtime): fixed the issue that might cause a degradation in the overall performance when the application makes a huge use of the output streams (System.out/System.err)
+[BUG] (runtime): the SLURM launcher did not work properly when the node list contains hostnames with leading zeros
+[BUG] (ibvdev): fixed the issue when sending an MPI.OBJECT datatype using the Sendrecv operation for multiple times
+[BUG] (ibvdev): fixed the bug related with the unexpected event RDMA_CM_EVENT_REJECTED when using the RDMA CM connection method
+
+
+Version 1.0_5 - October 1, 2013
+
+[CHANGE] (runtime): the fill-up strategy now makes a more balanced allocation of processes for some specific cases
+[CHANGE] (mxmdev): this device has been updated to MXM 1.5 API. The support for older (and buggy) MXM versions has been dropped in this release (e.g., MXM 1.0 and MXM 1.1)
+[CHANGE] (ibvdev): removed the requirement to set IBVX_HOME and LD_LIBRARY_PATH environment variables
+[BUG] (ibvdev): manual selection of the RDMA device did not work properly when more than one device was available
+[BUG] (mxmdev): fixed the connection establishment flow
+[BUG] (niodev): the JVM did not terminate when an exception was raised from the MPJ application after MPI.Init
+
+
+Version 1.0_4 - July 18, 2013
+
+[CHANGE] (ibvdev): improved the detection of the maximum data size that can be sent "inline"
+[BUG] (mpi): fixed a bug in Gather and Scatter collective operations
+[BUG] (ibvdev): fixed the issue that causes some applications to fail in "ibv_post_send" when using the "inline" feature
+[BUG] (ibvdev): the connection setup using the RDMA CM API did not work properly
+
+
+Version 1.0_3 - June 4, 2013 
+
+[NEW] (examples): added new MPJ example programs (examples directory): Ring, MatrixMatrixMult, MatrixVectorMult and NumericalIntegrationPi
+[BUG] (mpi): fixed a bug in MST-based algorithms for Gather/Gatherv and Scatter/Scatterv collective operations
+
+
+Version 1.0_2 - February 13, 2013
+
+[NEW] (runtime): added native support for the Grid Engine job scheduler
+[NEW] (runtime): added native support for the SLURM job scheduler
+[NEW] (runtime): added ssh support for Windows OSs (using openSSH)
+[NEW] (runtime): added WMI support for Windows OSs
+[NEW] (runtime): added wmiconf.bat script (bin directory) to help configure WMI
+[NEW] (runtime): added fmpjd.vbs script (bin directory) for the manual execution of the daemons in Windows OSs (in addition to fmpjd.bat)
+[NEW] (runtime): added OS name and version info when starting MPJ applications
+[NEW] (runtime): added -tag-ouput option for fmpjrun/fmpjexec commands
+[NEW] (runtime): added -env option for fmpjrun/fmpjexec commands
+[NEW] (runtime): now the runtime tries to abort the MPJ application when one of the ranks fail
+[NEW] (runtime): added an specific runtime configuration file (conf/runtime_win.properties) for Windows OSs to avoid enconding issues
+[NEW] (runtime): added fmpj-env and fmpj-env.bat scripts (bin directory) to set commom variables values for the Java runtime utilies
+[NEW] (runtime): JVM options can be passed to the Java runtime utilities using the "fmpjDaemonJvmOpts" parameter in conf/runtime.properties 
+		 (or conf/runtime_win.properties). Default value explicitly sets the initial and maximum JVM heap size
+[NEW] (ibvdev): added support for IPv6 addresses in TCP-based connection setup
+[NEW] (mxmdev): added a new InfiniBand-based device which adds beta support for the Mellanox Messaging Accelerator (MXM) API
+[CHANGE] (mpi): MPIException class constructors visibility changed to public as required by the mpiJava 1.2 API
+[CHANGE] (runtime): reduced the amount of the overhead incurred for handling the I/O of the processes launched by the runtime
+[CHANGE] (runtime): "fmpjBoot" parameter in conf/runtime.properties has been replaced by "fmpjBootstrap", which allows to select the launcher to use (auto by default)
+[CHANGE] (runtime): FastMPJ daemons try to destroy local MPJ processes on exit
+[CHANGE] (runtime): fmpjrun/fmpjexec commands don't use "machines" as default value for -machinefile (or -hostfile) option
+[CHANGE] (runtime): updated fmpjd.bat script. The ComSpec variable is read to get the location of the cmd.exe command in Windows OSs
+[CHANGE] (runtime): updated the runtime scripts (fmpj*) located in bin directory in order to use the fmpj-env and fmpj-env.bat scripts
+[CHANGE] (ibvdev): properly detect of FDR10 and FDR OpenFabrics devices
+[CHANGE] (niodev): improved internal buffer usage
+[CHANGE] (smdev): this device now ignores the machines file (it always runs on localhost)
+[CHANGE] (examples): MPJ examples (examples directory) have been updated
+[BUG] (installer): the installer did not create the correct path to save FastMPJ logs, causing a crash when debugging is enabled
+[BUG] (runtime): fixed the issue related with the machines file when one hostname appears multiple times
+[BUG] (runtime): fixed the classpath separator used by fmpjdboot command in Windows OSs
+[BUG] (runtime): fixed some issues related with absolute paths including blank spaces in Windows OSs
+[BUG] (runtime): the use of fmpjrun command after starting the daemons with fmpjdboot didn't work
+[BUG] (mpi): MPI.Init_thread() and MPI.queryThread() methods now return the correct thread-safety level support depending on the device used 
+[BUG] (ibvdev): fixed a bug which caused an error in DNS resolution when hostnames were too long
+[BUG] (niodev): fixed a bug in the connection setup which could hang the initialization of the application when using more than 128 cores
+
+
+Version 1.0_1 - July 26, 2012
+
+[NEW] (runtime): added some info when starting MPJ applications (util for reporting bugs)
+[NEW] (ibvdev): added support for RDMA over Converged Ethernet (RoCE) adapters
+[NEW] (ibvdev): added support for iWARP adapters
+[CHANGE] (mpi): MPI.TAG_UB constant value changed to 32767
+[CHANGE] (ibvdev)(mxdev): improved start-up latencies for small messages
+[CHANGE] (test): updated MB_MPJ micro-benchmarking suite to version 1.1
+[BUG] (mpi): fixed a bug in MPI.Wtick() method which can cause to return 0
+[BUG] (runtime): fixed the X11 forwarding bug
+
+
+Version 1.0b_2 - April 3, 2012
+
+[BUG] (runtime): fixed the fmpjdexit and fmpjdkilljobs commands execution bug
+
+
+Version 1.0b_1 - March 30, 2012
+
+- Initial release
+

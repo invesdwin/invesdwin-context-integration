@@ -1,0 +1,15 @@
+#!/bin/sh
+
+JAVA_CMD="java"
+JAVAC_CMD="javac"
+
+if [ ! -z "$JAVA_HOME" ]; then
+	JAVA_CMD="$JAVA_HOME/bin/java"
+	JAVAC_CMD="$JAVA_HOME/bin/javac"
+fi
+
+JVM_CP="-cp $FMPJ_HOME/lib/mpj.jar:$FMPJ_HOME/lib/runtime.jar:$FMPJ_HOME/lib/jhwloc.jar"
+JVM_LD_PATH="-Djava.library.path=$FMPJ_HOME/lib"
+JVM_OPTS=`cat $FMPJ_HOME/conf/runtime.properties | grep -v "#" | grep fmpjDaemonJvmOpts | cut -d "=" -f 2`
+JAVA_COMMAND="$JAVA_CMD $JVM_OPTS $JVM_CP $JVM_LD_PATH"
+JAVAC_COMMAND="$JAVAC_CMD -cp $FMPJ_HOME/lib/mpj.jar"

@@ -1,0 +1,198 @@
+#!/bin/sh
+
+function help()
+{
+echo "";
+echo "########################################################################################";
+echo "";
+echo " fmpjrun-ext [OPTIONS] -spawner <value> -class <class_file>|-jar <jar_file> [APP_ARGS]"
+echo "";
+echo " Spawner supported values"
+echo "  mpi"
+echo "	for 'mpirun' spawner"
+echo "  alps"
+echo "	for 'aprun' spawner (Cray ALPS)"
+echo "";
+echo " OPTIONS"
+echo "  -dev <arg0>"
+echo "	Device to use"
+echo "  -nt <arg0>"
+echo "	Number of threads (only for the smdev device)"
+echo "  -dport <arg0>"
+echo "	Initial device port"
+echo "  -psl <arg0>"
+echo "	Protocol Switch Limit value"
+echo "";
+echo "  ...any JVM arguments..."
+echo "";
+echo " Note: 'FMPJ_HOME' variable must be set"
+echo "";
+echo "########################################################################################";
+echo "";
+exit
+}
+
+if [ -z "$FMPJ_HOME" ]; then
+        echo "FMPJ_HOME must be set";
+        exit
+fi
+
+if [ $# = 0 ]; then
+	help
+fi
+
+APP_ARGS=
+JVM_ARGS=
+USER_CLASSPATH=
+JAVA_LIBRARY_PATH=
+NTHREADS=1
+app=0
+DEVICE=niodev
+DPORT=20000
+PSL=65536
+
+while (( $# )) 
+ do
+  case $1 in
+   '-cp' )
+	if [ -z $USER_CLASSPATH ]; then
+		USER_CLASSPATH=$2
+	else
+		USER_CLASSPATH="$USER_CLASSPATH:$2"
+	fi
+	shift
+	;;
+
+   '-nt' )
+	NTHREADS=$2
+        shift
+        ;;
+
+   '-spawner' )
+        LAUNCHER=$2
+        shift
+        ;;
+
+   '-dev' )
+        DEVICE=$2
+        shift
+        ;;
+
+   '-dport' )
+        DPORT=$2
+        shift
+        ;;
+
+   '-psl' )
+        PSL=$2
+        shift
+        ;;
+
+   '-class' )
+	if [ -z $2 ]; then
+		help
+	fi
+	if [ $app -eq 1 ]; then
+		help
+	fi
+	JAVA_APPLICATION=$2
+	app=1
+	shift
+	;;
+
+   '-jar' )
+	if [ -z $2 ]; then
+		help
+	fi
+	if [ $app -eq 1 ]; then
+		help
+	fi
+
+	JAR_PATH=$(readlink -f $2)
+	
+	if [ ! -f $JAR_PATH ]; then
+		echo "fmpjrun-ext: $2: jar file not found!";
+		exit;
+	fi
+
+    	JAVA_CLASSPATH="$JAVA_CLASSPATH:$JAR_PATH"
+	JAVA_APPLICATION=$2
+	app=1
+	shift
+	;;
+
+   *)
+	if [ $app -eq 0 ]; then
+		JVM_ARGS="$JVM_ARGS $1";
+		if [ -z $2 ]; then
+			JVM_ARGS="$JVM_ARGS $2";
+		fi
+	else
+		APP_ARGS="$APP_ARGS $1"
+	fi
+	;;
+  esac
+
+  shift
+done
+
+if [ $app -eq 0 ]; then
+	echo "";
+	echo "You have to specify a class or jar file to be executed";
+	help
+fi
+
+if [ -z $LAUNCHER ]; then
+        echo "";
+        echo "You have to specify a spawner to be used";
+        help
+fi
+
+if [ -z "$IBVX_HOME" ]; then
+	JAVA_LIBRARY_PATH="$FMPJ_HOME/lib"
+else
+	JAVA_LIBRARY_PATH="$FMPJ_HOME/lib:$IBVX_HOME/lib"
+fi
+
+if [ $DEVICE == "smdev" ];then
+	if [ $NTHREADS -le 0 ];then
+		echo "";
+        	echo "The number of threads for the <smdev> device must be >= 1";
+		exit;
+	fi 
+
+	JAVA_CLASSPATH=$FMPJ_HOME/lib/runtime.jar:$FMPJ_HOME/lib/smdev-shared.jar:$FMPJ_HOME/lib/jhwloc.jar
+	WDIR=`pwd`
+
+	if [ -z $USER_CLASSPATH ]; then
+		USER_CLASSPATH=$WDIR
+	else
+		USER_CLASSPATH="$USER_CLASSPATH:$WDIR"
+	fi
+
+	JVM_ARGS="$JVM_ARGS -cp $JAVA_CLASSPATH -Djava.library.path=$JAVA_LIBRARY_PATH -Duser.classpath=$USER_CLASSPATH"
+else
+	JAVA_CLASSPATH=$FMPJ_HOME/lib/runtime.jar:$FMPJ_HOME/lib/mpj.jar:$FMPJ_HOME/lib/xxdev.jar:$FMPJ_HOME/lib/$DEVICE.jar:$FMPJ_HOME/lib/jhwloc.jar:$FMPJ_HOME/lib/mpj-test.jar:$FMPJ_HOME/lib/mpj-examples.jar
+
+	if [ ! -z $USER_CLASSPATH ]; then
+                JAVA_CLASSPATH="$JAVA_CLASSPATH:$USER_CLASSPATH"
+        fi
+
+	JVM_ARGS="$JVM_ARGS -cp $JAVA_CLASSPATH -Djava.library.path=$JAVA_LIBRARY_PATH"
+fi
+
+OPTIONS="$DEVICE $NTHREADS $PSL $DPORT $LAUNCHER"
+RUNTIME_APP="runtime.external.FMPJRun"
+
+if [ -z "$JAVA_HOME" ]; then
+        COMMAND="java $JVM_ARGS $RUNTIME_APP $OPTIONS $JAVA_APPLICATION $APP_ARGS"
+else
+        COMMAND="$JAVA_HOME/bin/java $JVM_ARGS $RUNTIME_APP $OPTIONS $JAVA_APPLICATION $APP_ARGS"
+fi
+
+if [ $LAUNCHER == "alps" ];then
+        exec $FMPJ_HOME/bin/alps-spawner $COMMAND
+else
+        exec $COMMAND
+fi
+

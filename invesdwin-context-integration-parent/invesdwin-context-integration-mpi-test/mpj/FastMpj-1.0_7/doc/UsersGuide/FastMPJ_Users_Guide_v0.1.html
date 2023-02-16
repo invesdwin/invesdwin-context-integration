@@ -1,0 +1,4170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+<meta name="generator" content="AsciiDoc 8.6.7" />
+<title>FastMPJ User&#8217;s Guide</title>
+<style type="text/css">
+/* Shared CSS for AsciiDoc xhtml11 and html5 backends */
+
+/* Default font. */
+body {
+  font-family: Georgia,serif;
+}
+
+/* Title font. */
+h1, h2, h3, h4, h5, h6,
+div.title, caption.title,
+thead, p.table.header,
+#toctitle,
+#author, #revnumber, #revdate, #revremark,
+#footer {
+  font-family: Arial,Helvetica,sans-serif;
+}
+
+body {
+  margin: 1em 5% 1em 5%;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+a:visited {
+  color: fuchsia;
+}
+
+em {
+  font-style: italic;
+  color: navy;
+}
+
+strong {
+  font-weight: bold;
+  color: #083194;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #527bbd;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+  line-height: 1.3;
+}
+
+h1, h2, h3 {
+  border-bottom: 2px solid silver;
+}
+h2 {
+  padding-top: 0.5em;
+}
+h3 {
+  float: left;
+}
+h3 + * {
+  clear: left;
+}
+h5 {
+  font-size: 1.0em;
+}
+
+div.sectionbody {
+  margin-left: 0;
+}
+
+hr {
+  border: 1px solid silver;
+}
+
+p {
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+ul, ol, li > p {
+  margin-top: 0;
+}
+ul > li     { color: #aaa; }
+ul > li > * { color: black; }
+
+pre {
+  padding: 0;
+  margin: 0;
+}
+
+#author {
+  color: #527bbd;
+  font-weight: bold;
+  font-size: 1.1em;
+}
+#email {
+}
+#revnumber, #revdate, #revremark {
+}
+
+#footer {
+  font-size: small;
+  border-top: 2px solid silver;
+  padding-top: 0.5em;
+  margin-top: 4.0em;
+}
+#footer-text {
+  float: left;
+  padding-bottom: 0.5em;
+}
+#footer-badges {
+  float: right;
+  padding-bottom: 0.5em;
+}
+
+#preamble {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+}
+div.imageblock, div.exampleblock, div.verseblock,
+div.quoteblock, div.literalblock, div.listingblock, div.sidebarblock,
+div.admonitionblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.admonitionblock {
+  margin-top: 2.0em;
+  margin-bottom: 2.0em;
+  margin-right: 10%;
+  color: #606060;
+}
+
+div.content { /* Block element content. */
+  padding: 0;
+}
+
+/* Block element titles. */
+div.title, caption.title {
+  color: #527bbd;
+  font-weight: bold;
+  text-align: left;
+  margin-top: 1.0em;
+  margin-bottom: 0.5em;
+}
+div.title + * {
+  margin-top: 0;
+}
+
+td div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content div.title:first-child {
+  margin-top: 0.0em;
+}
+div.content + div.title {
+  margin-top: 0.0em;
+}
+
+div.sidebarblock > div.content {
+  background: #ffffee;
+  border: 1px solid #dddddd;
+  border-left: 4px solid #f0f0f0;
+  padding: 0.5em;
+}
+
+div.listingblock > div.content {
+  border: 1px solid #dddddd;
+  border-left: 5px solid #f0f0f0;
+  background: #f8f8f8;
+  padding: 0.5em;
+}
+
+div.quoteblock, div.verseblock {
+  padding-left: 1.0em;
+  margin-left: 1.0em;
+  margin-right: 10%;
+  border-left: 5px solid #f0f0f0;
+  color: #888;
+}
+
+div.quoteblock > div.attribution {
+  padding-top: 0.5em;
+  text-align: right;
+}
+
+div.verseblock > pre.content {
+  font-family: inherit;
+  font-size: inherit;
+}
+div.verseblock > div.attribution {
+  padding-top: 0.75em;
+  text-align: left;
+}
+/* DEPRECATED: Pre version 8.2.7 verse style literal block. */
+div.verseblock + div.attribution {
+  text-align: left;
+}
+
+div.admonitionblock .icon {
+  vertical-align: top;
+  font-size: 1.1em;
+  font-weight: bold;
+  text-decoration: underline;
+  color: #527bbd;
+  padding-right: 0.5em;
+}
+div.admonitionblock td.content {
+  padding-left: 0.5em;
+  border-left: 3px solid #dddddd;
+}
+
+div.exampleblock > div.content {
+  border-left: 3px solid #dddddd;
+  padding-left: 0.5em;
+}
+
+div.imageblock div.content { padding-left: 0; }
+span.image img { border-style: none; }
+a.image:visited { color: white; }
+
+dl {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+dt {
+  margin-top: 0.5em;
+  margin-bottom: 0;
+  font-style: normal;
+  color: navy;
+}
+dd > *:first-child {
+  margin-top: 0.1em;
+}
+
+ul, ol {
+    list-style-position: outside;
+}
+ol.arabic {
+  list-style-type: decimal;
+}
+ol.loweralpha {
+  list-style-type: lower-alpha;
+}
+ol.upperalpha {
+  list-style-type: upper-alpha;
+}
+ol.lowerroman {
+  list-style-type: lower-roman;
+}
+ol.upperroman {
+  list-style-type: upper-roman;
+}
+
+div.compact ul, div.compact ol,
+div.compact p, div.compact p,
+div.compact div, div.compact div {
+  margin-top: 0.1em;
+  margin-bottom: 0.1em;
+}
+
+tfoot {
+  font-weight: bold;
+}
+td > div.verse {
+  white-space: pre;
+}
+
+div.hdlist {
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+}
+div.hdlist tr {
+  padding-bottom: 15px;
+}
+dt.hdlist1.strong, td.hdlist1.strong {
+  font-weight: bold;
+}
+td.hdlist1 {
+  vertical-align: top;
+  font-style: normal;
+  padding-right: 0.8em;
+  color: navy;
+}
+td.hdlist2 {
+  vertical-align: top;
+}
+div.hdlist.compact tr {
+  margin: 0;
+  padding-bottom: 0;
+}
+
+.comment {
+  background: yellow;
+}
+
+.footnote, .footnoteref {
+  font-size: 0.8em;
+}
+
+span.footnote, span.footnoteref {
+  vertical-align: super;
+}
+
+#footnotes {
+  margin: 20px 0 20px 0;
+  padding: 7px 0 0 0;
+}
+
+#footnotes div.footnote {
+  margin: 0 0 5px 0;
+}
+
+#footnotes hr {
+  border: none;
+  border-top: 1px solid silver;
+  height: 1px;
+  text-align: left;
+  margin-left: 0;
+  width: 20%;
+  min-width: 100px;
+}
+
+div.colist td {
+  padding-right: 0.5em;
+  padding-bottom: 0.3em;
+  vertical-align: top;
+}
+div.colist td img {
+  margin-top: 0.3em;
+}
+
+@media print {
+  #footer-badges { display: none; }
+}
+
+#toc {
+  margin-bottom: 2.5em;
+}
+
+#toctitle {
+  color: #527bbd;
+  font-size: 1.1em;
+  font-weight: bold;
+  margin-top: 1.0em;
+  margin-bottom: 0.1em;
+}
+
+div.toclevel0, div.toclevel1, div.toclevel2, div.toclevel3, div.toclevel4 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+div.toclevel2 {
+  margin-left: 2em;
+  font-size: 0.9em;
+}
+div.toclevel3 {
+  margin-left: 4em;
+  font-size: 0.9em;
+}
+div.toclevel4 {
+  margin-left: 6em;
+  font-size: 0.9em;
+}
+
+span.aqua { color: aqua; }
+span.black { color: black; }
+span.blue { color: blue; }
+span.fuchsia { color: fuchsia; }
+span.gray { color: gray; }
+span.green { color: green; }
+span.lime { color: lime; }
+span.maroon { color: maroon; }
+span.navy { color: navy; }
+span.olive { color: olive; }
+span.purple { color: purple; }
+span.red { color: red; }
+span.silver { color: silver; }
+span.teal { color: teal; }
+span.white { color: white; }
+span.yellow { color: yellow; }
+
+span.aqua-background { background: aqua; }
+span.black-background { background: black; }
+span.blue-background { background: blue; }
+span.fuchsia-background { background: fuchsia; }
+span.gray-background { background: gray; }
+span.green-background { background: green; }
+span.lime-background { background: lime; }
+span.maroon-background { background: maroon; }
+span.navy-background { background: navy; }
+span.olive-background { background: olive; }
+span.purple-background { background: purple; }
+span.red-background { background: red; }
+span.silver-background { background: silver; }
+span.teal-background { background: teal; }
+span.white-background { background: white; }
+span.yellow-background { background: yellow; }
+
+span.big { font-size: 2em; }
+span.small { font-size: 0.6em; }
+
+span.underline { text-decoration: underline; }
+span.overline { text-decoration: overline; }
+span.line-through { text-decoration: line-through; }
+
+div.unbreakable { page-break-inside: avoid; }
+
+
+/*
+ * xhtml11 specific
+ *
+ * */
+
+tt {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+div.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+div.tableblock > table {
+  border: 3px solid #527bbd;
+}
+thead, p.table.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.table {
+  margin-top: 0;
+}
+/* Because the table frame attribute is overriden by CSS in most browsers. */
+div.tableblock > table[frame="void"] {
+  border-style: none;
+}
+div.tableblock > table[frame="hsides"] {
+  border-left-style: none;
+  border-right-style: none;
+}
+div.tableblock > table[frame="vsides"] {
+  border-top-style: none;
+  border-bottom-style: none;
+}
+
+
+/*
+ * html5 specific
+ *
+ * */
+
+.monospaced {
+  font-family: "Courier New", Courier, monospace;
+  font-size: inherit;
+  color: navy;
+}
+
+table.tableblock {
+  margin-top: 1.0em;
+  margin-bottom: 1.5em;
+}
+thead, p.tableblock.header {
+  font-weight: bold;
+  color: #527bbd;
+}
+p.tableblock {
+  margin-top: 0;
+}
+table.tableblock {
+  border-width: 3px;
+  border-spacing: 0px;
+  border-style: solid;
+  border-color: #527bbd;
+  border-collapse: collapse;
+}
+th.tableblock, td.tableblock {
+  border-width: 1px;
+  padding: 4px;
+  border-style: solid;
+  border-color: #527bbd;
+}
+
+table.tableblock.frame-topbot {
+  border-left-style: hidden;
+  border-right-style: hidden;
+}
+table.tableblock.frame-sides {
+  border-top-style: hidden;
+  border-bottom-style: hidden;
+}
+table.tableblock.frame-none {
+  border-style: hidden;
+}
+
+th.tableblock.halign-left, td.tableblock.halign-left {
+  text-align: left;
+}
+th.tableblock.halign-center, td.tableblock.halign-center {
+  text-align: center;
+}
+th.tableblock.halign-right, td.tableblock.halign-right {
+  text-align: right;
+}
+
+th.tableblock.valign-top, td.tableblock.valign-top {
+  vertical-align: top;
+}
+th.tableblock.valign-middle, td.tableblock.valign-middle {
+  vertical-align: middle;
+}
+th.tableblock.valign-bottom, td.tableblock.valign-bottom {
+  vertical-align: bottom;
+}
+
+
+/*
+ * manpage specific
+ *
+ * */
+
+body.manpage h1 {
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  border-top: 2px solid silver;
+  border-bottom: 2px solid silver;
+}
+body.manpage h2 {
+  border-style: none;
+}
+body.manpage div.sectionbody {
+  margin-left: 3em;
+}
+
+@media print {
+  body.manpage div#toc { display: none; }
+}
+</style>
+<script type="text/javascript">
+/*<![CDATA[*/
+var asciidoc = {  // Namespace.
+
+/////////////////////////////////////////////////////////////////////
+// Table Of Contents generator
+/////////////////////////////////////////////////////////////////////
+
+/* Author: Mihai Bazon, September 2002
+ * http://students.infoiasi.ro/~mishoo
+ *
+ * Table Of Content generator
+ * Version: 0.4
+ *
+ * Feel free to use this script under the terms of the GNU General Public
+ * License, as long as you do not remove or alter this notice.
+ */
+
+ /* modified by Troy D. Hanson, September 2006. License: GPL */
+ /* modified by Stuart Rackham, 2006, 2009. License: GPL */
+
+// toclevels = 1..4.
+toc: function (toclevels) {
+
+  function getText(el) {
+    var text = "";
+    for (var i = el.firstChild; i != null; i = i.nextSibling) {
+      if (i.nodeType == 3 /* Node.TEXT_NODE */) // IE doesn't speak constants.
+        text += i.data;
+      else if (i.firstChild != null)
+        text += getText(i);
+    }
+    return text;
+  }
+
+  function TocEntry(el, text, toclevel) {
+    this.element = el;
+    this.text = text;
+    this.toclevel = toclevel;
+  }
+
+  function tocEntries(el, toclevels) {
+    var result = new Array;
+    var re = new RegExp('[hH]([1-'+(toclevels+1)+'])');
+    // Function that scans the DOM tree for header elements (the DOM2
+    // nodeIterator API would be a better technique but not supported by all
+    // browsers).
+    var iterate = function (el) {
+      for (var i = el.firstChild; i != null; i = i.nextSibling) {
+        if (i.nodeType == 1 /* Node.ELEMENT_NODE */) {
+          var mo = re.exec(i.tagName);
+          if (mo && (i.getAttribute("class") || i.getAttribute("className")) != "float") {
+            result[result.length] = new TocEntry(i, getText(i), mo[1]-1);
+          }
+          iterate(i);
+        }
+      }
+    }
+    iterate(el);
+    return result;
+  }
+
+  var toc = document.getElementById("toc");
+  if (!toc) {
+    return;
+  }
+
+  // Delete existing TOC entries in case we're reloading the TOC.
+  var tocEntriesToRemove = [];
+  var i;
+  for (i = 0; i < toc.childNodes.length; i++) {
+    var entry = toc.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div'
+     && entry.getAttribute("class")
+     && entry.getAttribute("class").match(/^toclevel/))
+      tocEntriesToRemove.push(entry);
+  }
+  for (i = 0; i < tocEntriesToRemove.length; i++) {
+    toc.removeChild(tocEntriesToRemove[i]);
+  }
+
+  // Rebuild TOC entries.
+  var entries = tocEntries(document.getElementById("content"), toclevels);
+  for (var i = 0; i < entries.length; ++i) {
+    var entry = entries[i];
+    if (entry.element.id == "")
+      entry.element.id = "_toc_" + i;
+    var a = document.createElement("a");
+    a.href = "#" + entry.element.id;
+    a.appendChild(document.createTextNode(entry.text));
+    var div = document.createElement("div");
+    div.appendChild(a);
+    div.className = "toclevel" + entry.toclevel;
+    toc.appendChild(div);
+  }
+  if (entries.length == 0)
+    toc.parentNode.removeChild(toc);
+},
+
+
+/////////////////////////////////////////////////////////////////////
+// Footnotes generator
+/////////////////////////////////////////////////////////////////////
+
+/* Based on footnote generation code from:
+ * http://www.brandspankingnew.net/archive/2005/07/format_footnote.html
+ */
+
+footnotes: function () {
+  // Delete existing footnote entries in case we're reloading the footnodes.
+  var i;
+  var noteholder = document.getElementById("footnotes");
+  if (!noteholder) {
+    return;
+  }
+  var entriesToRemove = [];
+  for (i = 0; i < noteholder.childNodes.length; i++) {
+    var entry = noteholder.childNodes[i];
+    if (entry.nodeName.toLowerCase() == 'div' && entry.getAttribute("class") == "footnote")
+      entriesToRemove.push(entry);
+  }
+  for (i = 0; i < entriesToRemove.length; i++) {
+    noteholder.removeChild(entriesToRemove[i]);
+  }
+
+  // Rebuild footnote entries.
+  var cont = document.getElementById("content");
+  var spans = cont.getElementsByTagName("span");
+  var refs = {};
+  var n = 0;
+  for (i=0; i<spans.length; i++) {
+    if (spans[i].className == "footnote") {
+      n++;
+      var note = spans[i].getAttribute("data-note");
+      if (!note) {
+        // Use [\s\S] in place of . so multi-line matches work.
+        // Because JavaScript has no s (dotall) regex flag.
+        note = spans[i].innerHTML.match(/\s*\[([\s\S]*)]\s*/)[1];
+        spans[i].innerHTML =
+          "[<a id='_footnoteref_" + n + "' href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+        spans[i].setAttribute("data-note", note);
+      }
+      noteholder.innerHTML +=
+        "<div class='footnote' id='_footnote_" + n + "'>" +
+        "<a href='#_footnoteref_" + n + "' title='Return to text'>" +
+        n + "</a>. " + note + "</div>";
+      var id =spans[i].getAttribute("id");
+      if (id != null) refs["#"+id] = n;
+    }
+  }
+  if (n == 0)
+    noteholder.parentNode.removeChild(noteholder);
+  else {
+    // Process footnoterefs.
+    for (i=0; i<spans.length; i++) {
+      if (spans[i].className == "footnoteref") {
+        var href = spans[i].getElementsByTagName("a")[0].getAttribute("href");
+        href = href.match(/#.*/)[0];  // Because IE return full URL.
+        n = refs[href];
+        spans[i].innerHTML =
+          "[<a href='#_footnote_" + n +
+          "' title='View footnote' class='footnote'>" + n + "</a>]";
+      }
+    }
+  }
+},
+
+install: function(toclevels) {
+  var timerId;
+
+  function reinstall() {
+    asciidoc.footnotes();
+    if (toclevels) {
+      asciidoc.toc(toclevels);
+    }
+  }
+
+  function reinstallAndRemoveTimer() {
+    clearInterval(timerId);
+    reinstall();
+  }
+
+  timerId = setInterval(reinstall, 500);
+  if (document.addEventListener)
+    document.addEventListener("DOMContentLoaded", reinstallAndRemoveTimer, false);
+  else
+    window.onload = reinstallAndRemoveTimer;
+}
+
+}
+asciidoc.install(2);
+/*]]>*/
+</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>FastMPJ User&#8217;s Guide</h1>
+<span id="author">FastMPJ Team</span><br />
+<span id="email"><tt>&lt;<a href="mailto:info@torusware.com">info@torusware.com</a>&gt;</tt></span><br />
+<div id="toc">
+  <div id="toctitle">Table of Contents</div>
+  <noscript><p><b>JavaScript must be enabled in your browser to display the table of contents.</b></p></noscript>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_introduction">Introduction</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><strong>FastMPJ</strong>, the fastest Java messaging library, enables Java for high
+performance solutions, especially suitable for the financial sector,
+particularly in High Frequency Trading (HFT), as well as for High
+Performance Computing (HPC) and performance critical environments in
+particular in IT, Energy and Defense/Space.</p></div>
+<div class="paragraph"><p>FastMPJ, outcome of a research project of the
+<a href="http://gac.udc.es/english/">Computer Architecture Group</a>
+of the <a href="http://www.udc.es/index.html?language=en">University of Corunna</a>,
+has as main objective the provision of a high
+performance, scalable, mature and stable solution with a friendly
+interface. Thanks to the Investment Fund in Science of the non-profit
+<a href="http://www.fundacionbarrie.org/en">Fundación Barrié</a>, FastMPJ is now being
+improved and available for download.</p></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_quickstart_guide">QuickStart Guide</h2>
+<div class="sectionbody">
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Make sure you have Java 1.6 or higher version
+</p>
+</li>
+<li>
+<p>
+Run the installer by double clicking or running the command:
+<tt>java -jar &lt;installer&gt;.jar</tt>.
+Depending on the installation directory, you should run the installer
+with admin privileges if the installation directory is not under
+your user home path. On windows platforms you must execute a
+console having administrator permissions before running the command
+above.
+</p>
+</li>
+<li>
+<p>
+Set <strong>FMPJ_HOME</strong>, <strong>PATH</strong> and <strong>JAVA_HOME</strong> environmental variables
+</p>
+<div class="olist lowerroman"><ol class="lowerroman">
+<li>
+<p>
+On <strong>UNIX/Linux/Mac</strong> you can set them in your profile or your shell
+        configuration files, please just follow the instructions
+        below:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>export FMPJ_HOME=/path/to/fmpj/
+export PATH=$FMPJ_HOME/bin:$PATH
+export JAVA_HOME=/path/to/java</tt></pre>
+</div></div>
+</li>
+<li>
+<p>
+On <strong>Windows</strong> systems the installer automatically sets the
+        registry. For manual setup, please follow these instructions:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>set (setx if available) FMPJ_HOME=\path\to\fmpj\
+set (setx if available) PATH=%PATH%;%FMPJ_HOME%\bin
+set (setx if available) JAVA_HOME=\path\to\java</tt></pre>
+</div></div>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+After the installation process you can verify the installation
+running the examples provided:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>fmpjrun -np 2 -class examples.HelloWorld
+fmpjrun -np 2 -class examples.MonteCarloPi
+fmpjrun -np 2 -class examples.Echo</tt></pre>
+</div></div>
+</li>
+<li>
+<p>
+Compiling your own MPJ code requires including
+<tt>$FMPJ_HOME/lib/mpj.jar</tt> in your classpath. An example (compiling
+<tt>HelloWorld.java</tt> placed in <tt>$FMPJ_HOME/examples</tt>) is, on Linux platforms:
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>javac -cp $FMPJ_HOME/lib/mpj.jar $FMPJ_HOME/examples/HelloWorld.java</tt></pre>
+</div></div>
+<div class="paragraph"><p> Alternatively you can use <strong>fmpjc</strong>, a command that simplifies the
+process:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>fmpjc $FMPJ_HOME/examples/HelloWorld.java</tt></pre>
+</div></div>
+</li>
+</ol></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>To launch the installer in console mode rather than in GUI
+mode (the default), you can specify one of the following parameters
+on the command line:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<strong>-console</strong>: to run the installation in interactive console mode
+</p>
+</li>
+<li>
+<p>
+<strong>-language &lt;iso3_lang&gt;</strong>: specifies the iso3 code of the language
+pack to use. Available languages are English (eng)
+and Spanish (spa).
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>By this way, an example to launch an interactive console
+installation could be:<br />
+<tt>java -jar &lt;installer&gt;.jar -console</tt></p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_install_guide">Install Guide</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_minimum_system_requirements">Minimum System Requirements</h3>
+<div class="paragraph"><p>Please make sure that the computer on which you plan to install FastMPJ
+has <strong>Java 1.6</strong> or <strong>higher version</strong>.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_installation_instructions_for_windows_xp_vista_7_8">Installation Instructions for Windows XP/Vista/7/8</h3>
+<div class="paragraph"><p>To install FastMPJ, first download the latest version from the FastMPJ
+project homepage: <a href="http://www.torusware.com">www.torusware.com</a>.</p></div>
+<div class="paragraph"><p>On Windows platforms you can run the installer  directly by double clicking
+or running the command <tt>java -jar &lt;installer&gt;.jar</tt> on a system console.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Installation with administrator privileges</div>
+<div class="paragraph"><p>Depending on the installation directory, for example if you want do the
+installation under <tt>C:\Program Files</tt> directly, you must have administrator
+privileges on your PC.</p></div>
+<div class="paragraph"><p>To do this, simply execute a console having administrator permissions
+before runnint the command above.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Other installation methods</div>
+<div class="paragraph"><p>To launch the installer in console mode rather than in GUI
+mode (the default), you can specify one of the following parameters
+on the command line:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+<strong>-console</strong>: to run the installation in interactive console mode
+</p>
+</li>
+<li>
+<p>
+<strong>-language &lt;iso3_lang&gt;</strong>: specifies the iso3 code of the language
+pack to use. Available languages are English (eng) and Spanish (spa).
+</p>
+</li>
+</ol></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>Once you have run the installer, you enter the following installation
+steps:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+First, you can select the installation language in this window:
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/1win7.png" alt="images/installer/1win7.png" width="111" height="93" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Next, the installer shows you the welcome window with basic information,
+click on next to continue.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/2win7.png" alt="images/installer/2win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Now, you can read detailed information about the project, click on next
+again:
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/3win7.png" alt="images/installer/3win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+In this step, you must agree the license terms before continue, please
+read them carefully:
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/4win7.png" alt="images/installer/4win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+After that, you can choose the installation directory. Please notice
+that you are not allowed to choose an arbitrary location unless you are
+running the installer with administrator privileges.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/5win7.png" alt="images/installer/5win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Depending on the installer version, in this moment you could select the
+packages to install:
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/6win7.png" alt="images/installer/6win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Again, according to the installer type, you could be asked to launch a
+demo at the end of the installation process. The FastMPJ TCP/IP version
+provides an MPJ master-worker implementation for the Mandelbrot set that
+shows the potential benefits of MPJ applications.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/7win7.png" alt="images/installer/7win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+When you click next in the previous window, the installation process
+starts and, if you have choosed to launch the demo, you can see the
+installation progress and the demo, in this case the Mandelbrot demo.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/8win7.png" alt="images/installer/8win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Closing the demo, the final windows appears and you can
+exit the installation process clicking on <em>Done</em>.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/9win7.png" alt="images/installer/9win7.png" width="470" height="310" />
+</div>
+</div>
+</li>
+<li>
+<p>
+Finally, even though the installer must do it by itself, you should
+check if the <strong>FMPJ_HOME</strong> and <strong>JAVA_HOME</strong> variables were set, and if the
+<em>bin</em> directory (under <em>FMPJ_HOME</em>)  was added to the <strong>PATH</strong>.
+</p>
+<div class="paragraph"><p>Depending on the Windows operating system, you could proceed in a different
+way:</p></div>
+<div class="olist lowerroman"><ol class="lowerroman">
+<li>
+<p>
+<strong>Windows Vista</strong>
+    <br />
+     Right click <tt>My Computer</tt> icon
+    <br />
+     Choose <tt>Properties</tt> from the context menu
+    <br />
+     Click <tt>Advanced tab</tt> (Advanced system settings link in Vista)
+</p>
+</li>
+<li>
+<p>
+<strong>Windows 7</strong>
+    <br />
+</p>
+<div class="olist loweralpha"><ol class="loweralpha">
+<li>
+<p>
+<strong><em>Administrator users</em></strong>:
+       <br />
+        Select <tt>Computer</tt> from the <tt>Start</tt> menu
+       <br />
+        Choose <tt>System Properties</tt> from the context menu
+       <br />
+        Click <tt>Advanced system settings</tt> &gt; <tt>Advanced</tt> tab
+</p>
+</li>
+<li>
+<p>
+<strong><em>Non administrator users</em></strong>:
+       <br />
+        Select <tt>Control Panel</tt> from the <tt>Start</tt> menu
+       <br />
+        Choose <tt>User Accounts</tt>
+       <br />
+        On the left side click on <tt>Change environmental variables</tt>
+</p>
+</li>
+</ol></div>
+</li>
+<li>
+<p>
+<strong>Windows XP</strong>
+    <br />
+     Right-click <tt>My Computer</tt>, and then click <tt>Properties</tt>.
+    <br />
+     Click the <tt>Advanced</tt> tab.
+    <br />
+     Click <tt>Environment variables</tt>.
+</p>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/installer/10env.png" alt="images/installer/10env.png" width="406" height="247" />
+</div>
+</div>
+</li>
+</ol></div>
+</li>
+</ol></div>
+<div class="paragraph"><p>For manual setup, please follow these instructions in a command window:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>set (setx if available) FMPJ_HOME=\path\to\fmpj\
+set (setx if available) PATH=%PATH%;%FMPJ_HOME%\bin
+set (setx if available) JAVA_HOME=\path\to\java</tt></pre>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_installation_instructions_for_linux_mac">Installation Instructions for Linux/Mac</h3>
+<div class="paragraph"><p>When the installation is performed on Unix based platforms, you can proceed
+as it would be performed on a Windows platform except in the final step,
+when you check the environmental variables <strong>FMPJ_HOME</strong>, <strong>JAVA_HOME</strong> and
+<strong>PATH</strong>.</p></div>
+<div class="paragraph"><p>In this case you must set them in your profile (<tt>/etc/profile</tt> or
+<tt>$HOME/.profile</tt> -requires logout-) or your shell configuration
+(<tt>$HOME/.bashrc</tt>) files, just adding the instructions below:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>export FMPJ_HOME=/path/to/fmpj
+export PATH=$FMPJ_HOME/bin:$PATH
+export JAVA_HOME=/path/to/java</tt></pre>
+</div></div>
+<div class="paragraph"><p>Additionally, if you have a version that provides <strong>Infiniband</strong> support (lower
+than 1.0_5), the <strong>IBVX_HOME</strong> variable should be set. This variable points to
+an independent library provided by the FastMPJ project. Moreover, the
+<tt>$IBVX_HOME/lib</tt> directory might be added to the dynamic linker search path.</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>export IBVX_HOME=/path/to/fmpj
+export LD_LIBRARY_PATH=$IBVX_HOME/lib:$LD_LIBRARY_PATH</tt></pre>
+</div></div>
+<div class="paragraph"><p>Finally, referring again to versions with <strong>Infiniband</strong> and <strong>PSM</strong> support,
+the <strong>LD_PRELOAD</strong> variable should point to the <strong>libjsig.so</strong> signal-chaining
+library to ensure the correct working of the <tt>psmdev</tt> device. As an
+example, in <strong>OpenJDK</strong> implementations, you could set it like that:</p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>export LD_PRELOAD=$JAVA_HOME/jre/lib/amd64/server/libjsig.so</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="title">Commercial Versions</div>
+<div class="paragraph"><p>Please, pay attention to the special configuration features for <strong>Infiniband</strong>
+(<tt>ibvdev</tt>) and <strong>PSM</strong> (<tt>psmdev</tt>) devices.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compiling_and_running_your_first_application">Compiling And Running Your First Application</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In this section, it is shown a basic <em>MPJ Hello World</em> application and how
+to compile and run it.</p></div>
+<div class="paragraph"><p>First of all, the source code is presented below:</p></div>
+<div class="listingblock">
+<div class="title">MPJ Example: HelloWorld</div>
+<div class="content">
+<pre><tt>import mpi.*;
+
+public class HelloWorld
+{
+  public static void main(String args[]) throws Exception
+  {
+    int me,size;
+
+    args=MPI.Init(args);
+    me = MPI.COMM_WORLD.Rank();
+    size = MPI.COMM_WORLD.Size();
+
+    System.out.println(MPI.Get_processor_name()+": Hello World from "+me+" of "+size);
+
+    MPI.Finalize();
+  }
+}</tt></pre>
+</div></div>
+<div class="paragraph"><p>Although this is a very simple code, it satisfy the basic structure of an
+MPJ program:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Imports the <strong>mpi</strong> package.
+</p>
+</li>
+<li>
+<p>
+Initializes the MPI environment (<tt>MPI.Init(args)</tt>).
+</p>
+</li>
+<li>
+<p>
+Identifies each process in the communicator (<tt>MPI.COMM_WORLD.Rank()</tt>).
+</p>
+</li>
+<li>
+<p>
+Performs the parallel computation.
+</p>
+</li>
+<li>
+<p>
+Cleans up the MPI environment.
+</p>
+</li>
+</ol></div>
+<div class="paragraph"><p>Now, to compile this MPJ code, you only need to include
+<strong>$FMPJ_HOME/lib/mpj.jar</strong> in your <strong>classpath</strong> as it is made in the following
+instruction:</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p>javac -cp $FMPJ_HOME/lib/mpj.jar HelloWorld.java</p></div>
+</div></div>
+<div class="paragraph"><p>Alternatively, you can use <strong>fmpjc</strong>, a command provided by the library that
+simplifies the process:</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p>fmpjc HelloWorld.java</p></div>
+</div></div>
+<div class="paragraph"><p>After your program is compiled, it is ready to be executed. The easy way to
+do that is using the <strong>fmpjrun</strong> command. An example to run the program with
+22 processes in localhost could be:</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p>fmpjrun -np 2 -class HelloWorld</p></div>
+</div></div>
+<div class="paragraph"><p>You can also specify where the processes must run, for doing that write a
+machines file and save  it as <strong>machines</strong>, stating host names or IP
+addresses of all machines involved in the parallel execution. An example
+could be:</p></div>
+<div class="listingblock">
+<div class="title">machines</div>
+<div class="content">
+<pre><tt>      compute-0-14.local
+      compute-0-15.local</tt></pre>
+</div></div>
+<div class="paragraph"><p>And the result after running the program:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>-bash-3.2$ fmpjrun  -np 2 -class HelloWorld
+#-----------------------------------------------------------
+# FastMPJ Runtime: Operating System detected is Linux
+# FastMPJ Runtime: Starting &lt; 2&gt; daemons...
+# FastMPJ Runtime: Running &lt; 2&gt; daemons of &lt; 2&gt;
+#-----------------------------------------------------------
+#-----------------------------------------------------------
+#                   FastMPJ v1.0 b
+#-----------------------------------------------------------
+# Communication Device: &lt;niodev&gt;
+# Runtime Configuration: &lt;CLUSTER&gt;
+# Boot Daemon Method: &lt;DEFAULT&gt;
+# Number of processes: &lt; 2&gt;
+# PSL value in bytes: &lt; 65536&gt;
+#-----------------------------------------------------------
+# Running MPJ Application: &lt;HelloWorld&gt;
+# User specified classpath: No classpath specified
+#-----------------------------------------------------------
+compute-0-14.local: Hello World from 1 of 2
+compute-0-15.local: Hello World from 0 of 2
+#-----------------------------------------------------------
+# FastMPJ Runtime: Stopping &lt; 2&gt; daemons...
+# FastMPJ Runtime: Stopped &lt; 1&gt; daemons of &lt; 2&gt;
+#-----------------------------------------------------------</tt></pre>
+</div></div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_running_mpj_programs">Running MPJ Programs</h2>
+<div class="sectionbody">
+<div class="paragraph"><p>In this section the principal commands for running your programs in an MPJ
+environment are presented.</p></div>
+<div class="paragraph"><p>This guide starts explaining the <strong>fmpjrun</strong> command as the easiest
+way to run MPJ applications because it hides the complexity of the daemons
+management. Then, the rest of the daemons are explained.</p></div>
+<div class="sect2">
+<h3 id="_fmpjrun">fmpjrun</h3>
+<div class="paragraph"><p><strong>fmpjrun</strong> starts a FastMPJ parallel job just as the daemons involved.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjrun [OPTIONS] -class &lt;class_file&gt;|-jar &lt;jar_file&gt; [APP_ARGS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -np|--np &lt;arg0&gt;
+                       Number of processes to run (1)
+  -dev|--dev &lt;arg0&gt;
+                       Device to use (niodev)
+  -dport|--dport &lt;arg0&gt;
+                       Initial device port to use (20000)
+  -psl|--psl &lt;arg0&gt;
+                       Protocol Switch Limit value (65536)
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -round-robin|--round-robin
+                       Allocate processes in a round-robin fashion
+  -fill-up|--fill-up
+                       Allocate processes in a fill-up fashion
+  -npernode|--npernode &lt;arg0&gt;
+                       Launch n processes per node on all allocated nodes
+  -display-map|--display-map
+                       Display the process map just before launch
+  -cp|-classpath &lt;arg0&gt;
+                       Class search path of directories and zip/jar files
+  -wdir|--wdir &lt;arg0&gt;
+                       Set the working directory of the started processes
+                       (user.dir)
+  -port|--port &lt;arg0&gt;
+                       Port number for the FastMPJ daemons (default value in
+                       $FMPJ_HOME/conf/runtime.properties)
+  -wd|--wd &lt;arg0&gt;
+                       Synonym for -wdir
+  -n|--n &lt;arg0&gt;
+                       Synonym for -np
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -dp|--dp &lt;arg0&gt;
+                       Synonym for -dport
+  -rr|--rr
+                       Synonym for -round-robin
+  -fu|--fu
+                       Synonym for -fill-up
+  -dmap|--dmap
+                       Synonym for -display-map
+  -v|--version
+                       Prints version and exit
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjd">fmpjd</h3>
+<div class="paragraph"><p><strong>fmpjd</strong> starts a FastMPJ daemon in local machine.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjd [OPTION]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -port|--port &lt;arg0&gt;
+                       Port number for the FastMPJ daemon (default value
+                       in $FMPJ_HOME/conf/runtime.properties)
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdexit">fmpjdexit</h3>
+<div class="paragraph"><p><strong>fmpjdexit</strong> stops a FastMPJ daemon in local machine.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdexit [OPTION]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTION
+  -port|--port &lt;arg0&gt;
+                       Port number where the FastMPJ daemon is running
+                       (default value in $FMPJ_HOME/conf/runtime.properties)
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdscan">fmpjdscan</h3>
+<div class="paragraph"><p><strong>fmpjdscan</strong> shows FastMPJ daemon status (running/not running).</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdscan [OPTIONS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -host &lt;arg0&gt;
+                       Host to check the FastMPJ daemon status (localhost)
+  -port|--port &lt;arg0&gt;
+                       Port number to check the FastMPJ daemon status
+                       (default value in $FMPJ_HOME/conf/runtime.properties)
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdboot">fmpjdboot</h3>
+<div class="paragraph"><p><strong>fmpjdboot</strong> starts a ring of FastMPJ daemons all at once.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdboot [OPTIONS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -port|--port &lt;arg0&gt;
+                       Port number for the FastMPJ daemons (default value
+                       in $FMPJ_HOME/conf/runtime.properties)
+  -num|--num &lt;arg0&gt;
+                       Specifies the total number of FastMPJ daemons to
+                       start
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -n|--n &lt;arg0&gt;
+                       Synonym for -num
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdallexit">fmpjdallexit</h3>
+<div class="paragraph"><p><strong>fmpjdallexit</strong> takes down all FastMPJ daemons in ring all at once.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdallexit [OPTIONS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -port|--port &lt;arg0&gt;
+                       Port number where the FastMPJ daemons are running
+                       (default value in $FMPJ_HOME/conf/runtime.properties)
+  -num|--num &lt;arg0&gt;
+                       Specifies the total number of FastMPJ daemons to
+                       shutdown
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -n|--n &lt;arg0&gt;
+                       Synonym for -num
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdtrace">fmpjdtrace</h3>
+<div class="paragraph"><p><strong>fmpjdtrace</strong> shows all FastMPJ daemons status (running/not running).</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdtrace [OPTIONS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -port|--port &lt;arg0&gt;
+                       Port number to check the FastMPJ daemon status
+                       (default value in $FMPJ_HOME/conf/runtime.properties)
+  -num|--num &lt;arg0&gt;
+                       Specifies the total number of FastMPJ daemons to
+                       trace
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -n|--n &lt;arg0&gt;
+                       Synonym for -num
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjexec">fmpjexec</h3>
+<div class="paragraph"><p><strong>fmpjexec</strong> starts a FastMPJ parallel job.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjexec [OPTIONS] -class &lt;class_file&gt;|-jar &lt;jar_file&gt; [APP_ARGS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -np|--np &lt;arg0&gt;
+                       Number of processes to run (1)
+  -dev|--dev &lt;arg0&gt;
+                       Device to use (niodev)
+  -dport|--dport &lt;arg0&gt;
+                       Initial device port to use (20000)
+  -psl|--psl &lt;arg0&gt;
+                       Protocol Switch Limit value (65536)
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -round-robin|--round-robin
+                       Allocate processes in a round-robin fashion
+  -fill-up|--fill-up
+                       Allocate processes in a fill-up fashion
+  -npernode|--npernode &lt;arg0&gt;
+                       Launch n processes per node on all allocated nodes
+  -display-map|--display-map
+                       Display the process map just before launch
+  -cp|-classpath &lt;arg0&gt;
+                       Class search path of directories and zip/jar files
+  -wdir|--wdir &lt;arg0&gt;
+                       Set the working directory of the started processes
+                       (user.dir)
+  -wd|--wd &lt;arg0&gt;
+                       Synonym for -wdir
+  -n|--n &lt;arg0&gt;
+                       Synonym for -np
+  -dp|--dp &lt;arg0&gt;
+                       Synonym for -dport
+  -rr|--rr
+                       Synonym for -round-robin
+  -fu|--fu
+                       Synonym for -fill-up
+  -dmap|--dmap
+                       Synonym for -display-map
+  -v|--version
+                       Print version and exit
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Caution</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>Before running <strong>fmpjexec</strong> the FastMPJ daemons must be running. Check <strong>fmpjd</strong>
+and <strong>fmpjdboot</strong> commands.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdkilljobs">fmpjdkilljobs</h3>
+<div class="paragraph"><p><strong>fmpjdkilljobs</strong> kills all FastMPJ parallel jobs.</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>fmpjdkilljobs [OPTIONS]</strong></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>OPTIONS
+  -machinefile|-hostfile &lt;arg0&gt;
+                       Provide a hostfile (machines)
+  -port|--port &lt;arg0&gt;
+                       Port number where the FastMPJ daemons are running
+                       (default value in
+                       $FMPJ_HOME/conf/runtime.properties)
+  -num|--num &lt;arg0&gt;
+                       Specifies the total number of FastMPJ daemons to use
+  -p|--p &lt;arg0&gt;
+                       Synonym for -port
+  -n|--n &lt;arg0&gt;
+                       Synonym for -num
+  -h |--help
+                       Prints the help message</tt></pre>
+</div></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>You can check the hostfile format of FastMPJ <a href="#hostfile_format">here</a>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_fmpjdhelp">fmpjdhelp</h3>
+<div class="paragraph"><p><strong>fmpjdhelp</strong> prints information about the available commands.</p></div>
+</div>
+<div class="sect2">
+<h3 id="hostfile_format">The hostfile format</h3>
+<div class="paragraph"><p>A hostfile is a simple file that contains the host names and, optionally,
+the processes per host, one per line, following the format
+<strong>hostname[:processes_per_host]</strong>. An example hostfile could be like the
+one shown below:</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>&lt;hostname1&gt;[:&lt;processes_per_host1&gt;]
+&lt;hostname2&gt;[:&lt;processes_per_host2&gt;]
+...</tt></pre>
+</div></div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mpj_on_clusters">MPJ on Clusters</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_installation_advices">Installation Advices</h3>
+<div class="paragraph"><p>When the installation is performed in a supercomputer, there are 3 basic
+steps that every administrator knows:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+The installation directory must be situated in a shared location. In
+most cases, under Linux architectures, the <em>/opt</em> directory could be a
+suitable location.
+</p>
+</li>
+<li>
+<p>
+A custom user must perform the installation, only allowing to the
+conventional users to read the libraries and to execute the binaries.
+</p>
+</li>
+<li>
+<p>
+If necessary, the application must be integrated into the batch-queuing
+systems as is explained in the following <a href="#batch">point</a>. Pay special
+attention to the <strong>fmpjBootstrap</strong> property.
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect2">
+<h3 id="batch">Running FastMPJ Programs Under Batch-Queuing Systems</h3>
+<div class="paragraph"><p>This section shows, through examples, how to execute <strong>FastMPJ applications</strong>
+under different batch-queuing systems. Please read them carefully and be
+sure you follow the examples and that the <strong>fmpjBootstrap</strong> property, in the
+<em>runtime.properties</em> file, is set correctly.</p></div>
+<div class="sect3">
+<h4 id="_grid_engine_open_grid_scheduler">Grid Engine / Open Grid Scheduler</h4>
+<div class="paragraph"><p>The next block contains a general script for running <em>FastMPJ applications</em>
+with <em>Grid Engine</em>.</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_ge script</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+
+if [ $# -lt 2 ]; then
+  echo "Sintaxis: $0 MPJ_PROGRAM DEVICE [PROGRAM_ARGS]"
+  exit -1
+fi
+
+PROGRAM=$1
+DEVICE=$2
+shift 2
+
+$FMPJ_HOME/bin/fmpjrun -np $NSLOTS -dev $DEVICE -dmap -class $PROGRAM $@</tt></pre>
+</div></div>
+<div class="paragraph"><p>The script only receives the java class, the device to employ, the number
+of processes and, optionally, the application own arguments.</p></div>
+<div class="paragraph"><p>The <em>runFMPJ_ge</em> script above could be used to run the <em>HelloWorld</em> example,
+provided by the FastMPJ library, with 2 processes and the niodev device,
+as follows:</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p>qsub -pe mpi 2 runFMPJ examples.HelloWorld niodev 2</p></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>For the correct running with <em>Grid Engine</em>, you must set the <strong>fmpjBootstrap</strong>
+property (located in the <em>runtime.properties</em> file under <em>conf</em> in the
+installation directory) to <strong>auto</strong>, <strong>grid_engine</strong> or <strong>ge</strong>. Simply as follows:</p></div>
+<div class="paragraph"><p><strong>fmpjBootstrap=ge</strong></p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>In addition, you can also use the following script in the queuing process to
+avoid the native engine and <strong>run FMPJ through ssh</strong>.</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_ge_ssh</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+
+if [ $# -lt 2 ]; then
+  echo "Sintaxis: $0 MPJ_PROGRAM DEVICE [PROGRAM_ARGS]"
+  exit -1
+fi
+
+PROGRAM=$1
+DEVICE=$2
+shift 2
+
+HOSTFILE=$HOME/hostfile.$JOB_ID
+cat $PE_HOSTFILE | cut -d " " -f 1 | sort -n &gt; $HOSTFILE
+
+$FMPJ_HOME/bin/fmpjrun -np $NSLOTS -dev $DEVICE -hostfile $HOSTFILE -dmap -class $PROGRAM $@
+
+rm -rf $HOSTFILE &gt;&amp; /dev/null</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>In this case, you should force the use of <em>ssh</em> setting the <strong>fmpjBootstrap</strong>
+to <strong>ssh</strong>, skipping the native Grid Engine.</p></div>
+<div class="paragraph"><p><strong>fmpjBootstrap=ssh</strong></p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_slurm">Slurm</h4>
+<div class="paragraph"><p>To face the execution of parallel programs under <em>Slurm</em>, you could use a
+script based in the next one:</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_slurm</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+
+if [ $# -lt 2 ]; then
+  echo "Sintaxis: $0 MPJ_PROGRAM DEVICE [PROGRAM_ARGS]"
+  exit -1
+fi
+
+PROGRAM=$1
+DEVICE=$2
+shift 2
+
+$FMPJ_HOME/bin/fmpjrun -np $SLURM_NTASKS -dev $DEVICE -dmap -class $PROGRAM $@</tt></pre>
+</div></div>
+<div class="paragraph"><p>now, to queue the HelloWorld example with the ibvdev device and 2 tasks, you should
+type the following command:</p></div>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p>mnsubmit -total_tasks 2 runFMPJ_slurm examples.HelloWorld ibvdev</p></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>As in the Grid Engine case, for the correct running with <em>Slurm</em>, you
+should set the <strong>fmpjBootstrap</strong> property to <strong>auto</strong> or <strong>slurm</strong>. Simply as follows:</p></div>
+<div class="paragraph"><p><strong>fmpjBootstrap=slurm</strong></p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>If you want run the <em>MPJ program</em> through <strong>ssh</strong>, you should use the following script
+for submitting jobs:</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_slurm_ssh</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+
+if [ $# -lt 2 ]; then
+  echo "Sintaxis: $0 MPJ_PROGRAM DEVICE [PROGRAM_ARGS]"
+  exit -1
+fi
+
+PROGRAM=$1
+DEVICE=$2
+shift 2
+
+HOSTFILE=$HOME/hostfile.$SLURM_JOB_ID
+scontrol show hostname $SLURM_JOB_NODELIST &gt; $HOSTFILE
+
+$FMPJ_HOME/bin/fmpjrun -np $SLURM_NTASKS -dev $DEVICE -hostfile $HOSTFILE -dmap -class $PROGRAM $@
+
+rm -rf $HOSTFILE &gt;&amp; /dev/null</tt></pre>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>Beware of force the <strong>ssh</strong> use</p></div>
+<div class="paragraph"><p><strong>fmpjBootstrap=ssh</strong></p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_lsf">LSF</h4>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">The LSF native support is not yet supported</span></p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>The <em>runFMPJ_lsf_ssh</em> script below could be used for run FMPJ with <strong>ssh</strong> support.</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_lsf_ssh</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+#BSUB -o fastmpj_out.%J
+#BSUB -e fastmpj_err.%J
+#BSUB -n 2
+#BSUB -R"span[ptile=1]"
+#BSUB -J FastMPJ
+#BSUB -t 00:01
+
+PROGRAM=examples.HelloWorld
+DEVICE=niodev
+ARGS=
+
+##  You shouldn't need to change anything below this line for most runs.
+HOSTFILE=$HOME/hostfile.$LSB_JOBID
+NPROCS=`wc -l $LSB_DJOB_HOSTFILE|cut -f 1 -d ' '`
+
+for i in $(sort -u $LSB_DJOB_HOSTFILE)
+do
+  slots=0
+  for j in $(cat $LSB_DJOB_HOSTFILE)
+  do
+    if [ "$i" == "$j" ]; then
+      slots=`expr $slots + 1`
+    fi
+  done
+  echo "$i:$slots" &gt;&gt; $HOSTFILE
+done
+
+$FMPJ_HOME/bin/fmpjrun -np $NPROCS -dev $DEVICE -machinefile $HOSTFILE -dmap -class $PROGRAM $ARGS
+
+rm -rf $HOSTFILE &gt;&amp; /dev/null</tt></pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_pbs">PBS</h4>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Important</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">The PBS native support is not yet supported</span></p></div>
+</td>
+</tr></table>
+</div>
+<div class="paragraph"><p>The <em>runFMPJ_pbs_ssh</em> script below could be used for run FMPJ through <strong>ssh</strong>.</p></div>
+<div class="listingblock">
+<div class="title">runFMPJ_pbs_ssh</div>
+<div class="content">
+<pre><tt>#!/bin/bash
+
+#PBS -l mem=2gb
+#PBS -l nodes=2:ppn=1
+#PBS -q force-6
+#PBS -N testjob
+#PBS -l walltime=00:02:00
+#PBS -j oe
+#PBS -o test.out.$PBS_JOBID
+
+cd $PBS_O_WORKDIR
+
+PROGRAM=examples.HelloWorld
+DEVICE=niodev
+ARGS=
+
+##  You shouldn't need to change anything below this line for most runs.
+NPROCS=$(wc -l &lt; $PBS_NODEFILE)
+HOSTFILE=$HOME/hosfile.$PBS_JOBID
+
+for i in $(sort -u $PBS_NODEFILE)
+do
+  slots=0
+  for j in $(cat $PBS_NODEFILE)
+  do
+    if [ "$i" == "$j" ]; then
+      slots=`expr $slots + 1`
+    fi
+  done
+  echo "$i:$slots" &gt;&gt; $HOSTFILE
+done
+
+$FMPJ_HOME/bin/fmpjrun -np $NPROCS -dev $DEVICE -machinefile $HOSTFILE -dmap -class $PROGRAM $ARGS
+
+rm -rf $HOSTFILE &gt;&amp; /dev/null</tt></pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_windows">Windows</h4>
+<div class="paragraph"><p>In Windows environments you can run FMPJ through <strong>ssh</strong> or <strong>WMI</strong>.</p></div>
+<div class="sect4">
+<h5 id="_ssh">SSH</h5>
+<div class="paragraph"><p>Running FMPJ under ssh is as easy as taking the steps below to configure the environment:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Set the <strong>fmpjBootstratp</strong> variable in <em>%FMPJ_HOME\conf\runtime_win.properties</em> to <strong>ssh</strong>
+</p>
+</li>
+<li>
+<p>
+Install and configure a ssh server/client. Beware of the ssh connection shows the Windows prompt
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect4">
+<h5 id="_wmi">WMI</h5>
+<div class="paragraph"><p>FMPJ also can run through WMI, taking advantage of the Windows native support, configuring the
+system as follows:</p></div>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+Set the <strong>fmpjBootstrap</strong> variable in <em>%FMPJ_HOME\conf\runtime_win.properties</em> to <strong>wmi</strong>
+</p>
+</li>
+<li>
+<p>
+Configure <strong>WMI</strong>.
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+<a href="http://msdn.microsoft.com/en-us/library/aa393266(VS.85).aspx">http://msdn.microsoft.com/en-us/library/aa393266(VS.85).aspx</a>
+</p>
+</li>
+<li>
+<p>
+<a href="http://www.poweradmin.com/help/enableWMI.aspx">http://www.poweradmin.com/help/enableWMI.aspx</a>
+</p>
+</li>
+</ul></div>
+</li>
+</ol></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_compiling_and_running_fastmpj_applications_in_java_ides">Compiling and Running FastMPJ Applications in Java IDEs</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_eclipse">Eclipse</h3>
+<div class="paragraph"><p>Since Eclipse needs all the libraries involved at code creation time in the
+project&#8217;s classpath for the smooth running, you might include the
+<em>FastMPJ</em> <em>mpj.jar</em> library.</p></div>
+<div class="paragraph"><p>You could do this at the <strong>Project/Properties</strong> menu and, in the box
+that pops up, in the <strong>Libraries</strong> tab at the <strong>Java Build Path tag</strong>. Once in
+this window, you could click the <strong>Add External JARs&#8230;</strong> button and add the
+<strong>mpj.jar</strong> library from its <em>PATH</em> under the <em>FMPJ_HOME</em> directory.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/eclipse/1.png" alt="images/eclipse/1.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>If you wish to run your programs inside the IDE, you must add a <strong>New</strong>
+configuration to run a <strong>Program</strong> going to the <strong>Run/External Tools/External
+Tools Configurations&#8230;</strong> menu. There, in the <strong>Main</strong> tab you should add the
+entire path of the <strong>fmpjrun.bat</strong> script (<strong>fmpjrun</strong> in <em>Linux</em>
+architectures), which is in the <em>FMPJ_HOME</em> under the <em>bin</em> directory.
+Apart from the before mentioned, your working directory might contain the
+compiled classes and your main class should be passed as argument. All this
+is shown in the next image, where the configuration is for running the
+HelloWorld example with 4 processes.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/eclipse/2.png" alt="images/eclipse/2.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>The following image shows the output of the execution, using the
+configuration&#8217;s example, after clicking the <strong>Run external tools</strong> icon.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/eclipse/3.png" alt="images/eclipse/3.png" width="470" height="310" />
+</div>
+</div>
+<div class="sect3">
+<h4 id="_adding_the_javadoc">Adding the Javadoc</h4>
+<div class="paragraph"><p>After complete the steps above, to add <em>Javadoc</em> to the <em>FastMPJ</em> library
+you should open the <em>Java Build Path</em> page of a project again
+(<strong>Project/Properties/Java Build Path</strong>). On the <em>Libraries</em> tab expand the
+<strong>mpj.jar</strong> library&#8217;s node, select the <em>Javadoc location</em> attribute and press
+<strong>Edit</strong>.</p></div>
+<div class="paragraph"><p>Finally, you only must enter the location to the directory wich contains
+the <em>Javadoc</em>, in this case the <strong>javadoc</strong> directory under the <strong>FMPJ_HOME &#8594;
+doc</strong> directory.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/eclipse/4.png" alt="images/eclipse/4.png" width="470" height="310" />
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_netbeans">Netbeans</h3>
+<div class="paragraph"><p>As in the Eclipse case, at the code creation time you might add the
+<em>mpj.jar</em> file to the project libraries. You could do this in the window
+that pops up at the <strong>File/Project Properties</strong> menu, going to the <strong>Compile</strong>
+tab at the  <strong>Libraries</strong> tag. The image below illustrates this step.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/netbeans/1.png" alt="images/netbeans/1.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>Now, when you proceed to execute your application inside the IDE&#8217;s
+environment, you might go to the <strong>Libraries</strong> configuration tag again, but
+in this case to the <strong>Run</strong> tab. There, you must add the <strong>mpj.jar</strong> and
+<strong>runtime.jar</strong> JAR files (placed in the <em>FastMPJ lib</em> directory).</p></div>
+<div class="paragraph"><p>Then, in the <strong>Run</strong> tag, on the left, you should create a new
+configuration where the main class might be  <strong>runtime.FMPJRun</strong>, being in the
+arguments box where  you pass the <strong>main class of your project</strong> and the
+desired FastMPJ arguments. Moreover, be sure that the working directory
+contains the compiled classes.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/netbeans/2.png" alt="images/netbeans/2.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>Finally, running the configuration above for the HelloWorld example, you
+could obtain the following output:</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/netbeans/3.png" alt="images/netbeans/3.png" width="470" height="310" />
+</div>
+</div>
+<div class="sect3">
+<h4 id="_adding_the_javadoc_2">Adding the Javadoc</h4>
+<div class="paragraph"><p>After complete the steps above, to add <em>Javadoc</em> to the <em>FastMPJ</em> library
+you should open the <em>Project Properties</em> page of a project again
+(<strong>File/Project Properties</strong>). On the <em>Libraries</em> tab click on <strong>Edit</strong> on the
+<strong>mpj.jar</strong> library.</p></div>
+<div class="paragraph"><p>Finally, on the <strong>Javadoc</strong> tab, you only must enter the location to the
+directory wich contains the documentation, in this case the <strong>javadoc</strong>
+directory under the <strong>FMPJ_HOME &#8594; doc</strong> directory.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/netbeans/4.png" alt="images/netbeans/4.png" width="470" height="310" />
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_jcreator">JCreator</h3>
+<div class="paragraph"><p>When you are creating your code with <em>JCreator</em>, you must add the jar file
+<strong>%FMPJ_HOME%\lib\mpj.jar</strong> to the project. This can be done at the project
+creation time or, once it is opened, adding the file  in the
+<strong>Project/Project Settings&#8230;</strong> menu and clicking on the <strong>Required
+Libraries</strong> tab:</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/1.png" alt="images/jcreator/1.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>Reached this point, click <strong>New&#8230;</strong> and in the dialog box that pops up enter
+a name of your choice for the loaded library (<em>FastMPJ</em> in this case). Under
+the <strong>Classes</strong> tab, click on the <strong>Add</strong> button.
+Finally, in the submenu that pops-up, select <strong>Add Archive&#8230;</strong> and enter the
+path to <strong>mpj.jar</strong> file.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/2.png" alt="images/jcreator/2.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>Now, it only remains to click on the checkbox next to the local library
+name (<em>FastMPJ</em> in the image) to add the jar to the current project.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/3.png" alt="images/jcreator/3.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>If you wish to run your applications inside the IDE environment, for
+example, for debugging purposes, you should customize your runtime
+configuration in the <strong>Run/Runtime Configuration&#8230;</strong> menu. There, you might
+add a new configuration for the runtime in the dialog box that pops up.
+In the Run Application tab you must set the <strong>fmpjrun</strong> complete command
+path, like in the next image:</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/4.png" alt="images/jcreator/4.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>You also could set the command parameters on the <strong>Parameters</strong> tab. In the
+image that follows, the <em>fmpjrun</em> parameters are <em>-np 4 -class
+$[JavaClass]</em> for running the <em>HelloWorld</em> example with 4 processes.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/5.png" alt="images/jcreator/5.png" width="470" height="310" />
+</div>
+</div>
+<div class="paragraph"><p>Once the runtime configuration is customized,  you are able to run your
+FastMPJ application inside the IDE. The following image shows the output
+of the example configuration with 4 processes.</p></div>
+<div class="imageblock" style="text-align:center;">
+<div class="content">
+<img src="images/jcreator/6.png" alt="images/jcreator/6.png" width="470" height="310" />
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mpi_java_api_specification_changes">MPI Java API Specification Changes</h2>
+<div class="sectionbody">
+<div class="paragraph"><p><strong>FastMPJ</strong> implements the MPI Java 1.2 API Specification, except some
+divergences as the next ones.</p></div>
+<div class="sect2">
+<h3 id="_point_to_point_communication">Point-to-Point Communication</h3>
+<div class="sect3">
+<h4 id="_buffer_allocation_and_usage">Buffer allocation and usage</h4>
+<div class="paragraph"><p><tt>void MPI.Buffer_attach(BufferMPI buffer)</tt></p></div>
+<div class="literalblock">
+<div class="content">
+<pre><tt>buffer BufferMPI object</tt></pre>
+</div></div>
+<div class="paragraph"><p>Provides to MPI a buffer in user&#8217;s memory to be used for buffering outgoing
+messages. The buffer is used only by messages sent in buffered mode. Only
+one buffer can be attached to a process at a time.</p></div>
+<div class="paragraph"><p><tt>void MPI.Buffer_detach()</tt></p></div>
+<div class="paragraph"><p>Detach the buffer currently associated with MPI.</p></div>
+</div>
+<div class="sect3">
+<h4 id="_pack_and_unpack">Pack and Unpack</h4>
+<div class="paragraph"><p><tt>int Comm.Pack_size(int incount, Object[] obj)</tt></p></div>
+<div class="paragraph"><p>This function is added as a Special version of <tt>Pack_size</tt> for <tt>MPI.OBJECT</tt>
+datatype.</p></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_collective_communication">Collective Communication</h3>
+<div class="paragraph"><p>This implementation is adapted for future MPI Java API Specifications and
+it consideres the collective communication operations as members of the <tt>Comm</tt>
+class.</p></div>
+</div>
+<div class="sect2">
+<h3 id="_groups_contexts_and_communicators">Groups, Contexts and Communicators</h3>
+<div class="sect3">
+<h4 id="_caching">Caching</h4>
+<div class="paragraph"><p><tt>Object Comm.Get_attr(Keyval key)</tt></p></div>
+<div class="paragraph"><p>Retrieves attribute value by key. This function replaces the API
+Specification function:</p></div>
+<div class="paragraph"><p><tt>int Comm.Attr_get(int keyval)</tt>.</p></div>
+<div class="paragraph"><p>Retrieves attribute value by key. The call is erroneous if there is no key
+with value keyval. On the other hand, the call is correct if the key value
+exists, but no attribute is attached on comm for that key; in such case,
+the call returns null.</p></div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_examples_and_benchmarks_provided_by_fastmpj">Examples and Benchmarks Provided by FastMPJ</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_examples">Examples</h3>
+<div class="sect3">
+<h4 id="_helloworld">HelloWorld</h4>
+<div class="listingblock">
+<div class="content">
+<pre><tt>package examples;
+
+import mpi.*;
+
+public class HelloWorld
+{
+  public static void main(String args[]) throws Exception
+  {
+    int me,size;
+
+    args = MPI.Init(args);
+    me = MPI.COMM_WORLD.Rank();
+    size = MPI.COMM_WORLD.Size();
+
+    System.out.println(MPI.Get_processor_name()+": Hello World from "+me+" of "+size);
+
+    MPI.Finalize();
+  }
+}</tt></pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_echo">Echo</h4>
+<div class="listingblock">
+<div class="content">
+<pre><tt>package examples;
+
+import mpi.*;
+
+public class Echo
+{
+  public Echo() {
+      }
+
+  public static void main(String args[]) throws Exception
+  {
+          args=MPI.Init(args);
+
+    try
+    {
+      int me = MPI.COMM_WORLD.Rank();
+            int size = MPI.COMM_WORLD.Size();
+
+      if(size!=2)
+      {
+        System.out.println("Run this echo with 2 processes!");
+        MPI.Finalize();
+        System.exit(1);
+      }
+
+      int data[]=new int[1];
+
+      if(me==0)
+      {
+        data[0]=100;
+        MPI.COMM_WORLD.Send(data,0,1,MPI.INT,1,10);
+        System.out.println("Process "+me+" sends number "+data[0]+" to Process 1");
+      }
+      else
+      {
+        MPI.COMM_WORLD.Recv(data,0,1,MPI.INT,0,10);
+        System.out.println("Process "+me+" receives number "+data[0]+" from Process 0");
+      }
+
+    } catch (MPIException e)
+    {
+      e.printStackTrace();
+    } finally
+    {
+      MPI.Finalize();
+    }
+  }
+}</tt></pre>
+</div></div>
+</div>
+<div class="sect3">
+<h4 id="_montecarlopi">MonteCarloPi</h4>
+<div class="paragraph"><p>MPJ program that uses a Monte Carlo method to compute the value of PI.</p></div>
+<div class="listingblock">
+<div class="content">
+<pre><tt>package examples;
+
+import mpi.*;
+
+public class MonteCarloPi
+{
+  public static final double PI = 3.141592653589793238462643;
+  public static final int NUM = 2000000000;
+
+  public MonteCarloPi() {
+      }
+
+  public static void main(String args[]) throws Exception
+  {
+    int[] intervals = new int[1];
+    double[] mypi = new double[1];
+    double[] pi = new double[1];
+    long n;
+    double h,x;
+    double sum=0.0;
+
+    try
+    {
+            args=MPI.Init(args);
+      int me = MPI.COMM_WORLD.Rank();
+            int size = MPI.COMM_WORLD.Size();
+      intervals[0]=NUM;
+
+      if(me==0)
+      {
+        System.out.println("Pi calculation with MonterCarlo method");
+        System.out.println("Number of intervals (can be changed in source code): "+NUM);
+        System.out.println("Number of processes: "+size);
+        System.out.print("Calculating...");
+      }
+
+      MPI.COMM_WORLD.Bcast(intervals, 0, 1, MPI.INT, 0);
+
+      n = intervals[0];
+      h   = 1.0 / (double) intervals[0];
+      sum = 0.0;
+
+      double start = MPI.Wtime();
+
+      for (int i = me + 1; i &lt;= n; i += size)
+      {
+        x = h * ((double)i - 0.5);
+        sum += (4.0 / (1.0 + x*x));
+      }
+      mypi[0] = h * sum;
+      double end = MPI.Wtime();
+
+      MPI.COMM_WORLD.Reduce(mypi, 0, pi, 0, 1, MPI.DOUBLE, MPI.SUM, 0);
+
+            if(me==0)
+            {
+        System.out.println("done!");
+              System.out.format("Time: %f seconds\n",end-start);
+              System.out.format("Pi is approximately %.16f\n",pi[0]);
+              System.out.format("Error is %.16f\n",pi[0]-MonteCarloPi.PI);
+            }
+    }
+    catch (MPIException e)
+    {
+      e.printStackTrace();
+    }
+    finally
+    {
+      MPI.Finalize();
+    }
+  }
+}</tt></pre>
+</div></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_benchmarks">Benchmarks</h3>
+<div class="sect3">
+<h4 id="_the_java_grande_forum_mpj_benchmarks">The Java Grande Forum MPJ Benchmarks</h4>
+<div class="paragraph"><p>This is a MPJ version of the Java Grande benchmark suite, which is designed
+for parallel execution on distributed memory multiprocessors. The
+benchmarks in Sections 2 and 3 are message passing versions of a subset of
+the corrsponding benchmarks in the sequential version. Section 1 contains
+some low-level message passing benchmarks.</p></div>
+<div class="paragraph"><p>The current benchmarks have been developed using the mpiJava 1.2
+specification, which is implemented on top of native MPI libraries. This
+interface may be subject to future changes.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>These benchmarks were obtained at
+<a href="http://www2.epcc.ed.ac.uk/computing/research_activities/java_grande/mpj.html">The
+Java Grande Forum MPJ Benchmarks webpage</a> that is why the source code is
+not provided.</p></div>
+</td>
+</tr></table>
+</div>
+<div class="sect4">
+<h5 id="_running_jgf_benchmarks">Running JGF Benchmarks</h5>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+You must define the "machines" file. For example, it could be:
+        compute-0-0.local
+        compute-0-1.local
+</p>
+</li>
+<li>
+<p>
+To launch a specific benchmark, you only need to know its <em>name</em> and its
+section because, like that, the package would be <strong>jgf_benchmarks.section&lt;number&gt;</strong>.
+By this way, you could run the <em>JGFPingPongBench</em> benchmark (which is in
+section1) with 2 processes as follows:
+</p>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>-bash-3.2$</strong> fmpjrun -np 2 -hostfile machines -class jgv_benchmarks.section1.JGFPingPongBench</p></div>
+</div></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">The source code was modified only creating packages under
+jgf_benchmarks</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+</ol></div>
+</div>
+<div class="sect4">
+<h5 id="_available_benchmarks">Available Benchmarks</h5>
+<div class="paragraph"><p>The information about the benchmarks is available at the
+<a href="http://www2.epcc.ed.ac.uk/computing/research_activities/java_grande/mpj/contents.html">Benchmark Suite Contents</a></p></div>
+<div class="paragraph"><p>FastMPJ provides the version 1.0 which consists of the next benchmarks:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+Section 1: Low Level Operations - measuring the performance of low level
+operations.
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+JGFPingPongBench: point-to-point communication.
+</p>
+</li>
+<li>
+<p>
+JGFBarrierBench: synchronization.
+</p>
+</li>
+<li>
+<p>
+JGFAlltoallBench: all-to-all communication.
+</p>
+</li>
+<li>
+<p>
+JGFBcastBench: one-to-all communication.
+</p>
+</li>
+<li>
+<p>
+JGFScatterBench: one-to-all communication.
+</p>
+</li>
+<li>
+<p>
+JGFGatherBench: all-to-one communication.
+</p>
+</li>
+<li>
+<p>
+JGFReduceBench: reduction.
+</p>
+</li>
+<li>
+<p>
+JGFAll: runs the section 1 benchmarks set.
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Section 2: Kernels - short codes which carry out specific operations
+frequently used in Grande applications.
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+JGFSeriesBenchSize[A|B|C]: Fourier coefficient analysis.
+</p>
+</li>
+<li>
+<p>
+JGFLUFactBenchSize[A|B|C]: LU Factorization.
+</p>
+</li>
+<li>
+<p>
+JGFSORBenchSize[A|B|C]: Successive over-relaxation.
+</p>
+</li>
+<li>
+<p>
+JGFCryptBenchSize[A|B|C]: IDEA encryption.
+</p>
+</li>
+<li>
+<p>
+JGFSparseBenchSize[A|B|C]: sparse matrix multiplication.
+</p>
+</li>
+<li>
+<p>
+JGFAllSize[A|B|C]: runs the section 2 benchmarks set with a specific dataset (A, B or C).
+</p>
+</li>
+</ul></div>
+</li>
+<li>
+<p>
+Section 3: Large Scale Applications -  larger codes, representing
+complete Grande applications.
+</p>
+<div class="ulist"><ul>
+<li>
+<p>
+JGFMolDynBenchSize[A|B]: molecular dynamics simulation.
+</p>
+</li>
+<li>
+<p>
+JGFMonteCarloBenchSize[A|B]: Monte Carlo simulation.
+</p>
+</li>
+<li>
+<p>
+JGFRayTracerBenchSize[A|B]: 3D ray tracer.
+</p>
+</li>
+<li>
+<p>
+JGFAllSize[A|B]: runs the section 3 benchmarks set with a specific dataset (A or B).
+</p>
+</li>
+</ul></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_message_passing_in_java_mpj_benchmarks_suite">Message-Passing in Java (MPJ) Benchmarks Suite</h4>
+<div class="paragraph"><p>The code included in this <em>microbenchmark</em> suite is a java version of the
+Intel MPI benchmarks, available at:
+<a href="http://software.intel.com/en-us/articles/intel-mpi-benchmarks/">http://software.intel.com/en-us/articles/intel-mpi-benchmarks/</a>.</p></div>
+<div class="paragraph"><p>For questions, enquiries or petitions please feel free to
+contact us at <a href="mailto:info@torusware.com">info@torusware.com</a></p></div>
+<div class="sect4">
+<h5 id="_running_mb_mpj_benchmarks">Running MB_MPJ Benchmarks</h5>
+<div class="olist arabic"><ol class="arabic">
+<li>
+<p>
+You must define the "machines" file needed for run the microbenchmarks.
+For example, it could be:
+        compute-0-0.local
+        compute-0-1.local
+</p>
+</li>
+<li>
+<p>
+Launch the desired benchmark using the appropiate command. For example,
+running the <em>PingPong</em> benchmark with 2 processes is as easy as:
+</p>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>-bash-3.2$</strong> fmpjrun -np 2 -hostfile machines -class MB_MPJ.PingPong</p></div>
+</div></div>
+</li>
+<li>
+<p>
+To see all available options run any benchmark with -help parameter:
+</p>
+<div class="sidebarblock">
+<div class="content">
+<div class="paragraph"><p><strong>-bash-3.2$</strong> fmpjrun -np 2 -hostfile machines -class MB_MPJ.PingPong -help</p></div>
+</div></div>
+</li>
+</ol></div>
+</div>
+<div class="sect4">
+<h5 id="_available_benchmarks_2">Available Benchmarks</h5>
+<div class="ulist"><ul>
+<li>
+<p>
+Single Transfer Benchmarks
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>PingPong
+PingPing</tt></pre>
+</div></div>
+</li>
+<li>
+<p>
+Collective Benchmarks
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>Allgather
+Allgatherv
+Alltoall
+Alltoallv
+Allreduce
+Barrier
+Bcast
+Gather
+Gatherv
+Reduce
+Reduce_scatter
+Scan
+Scatter
+Scatterv</tt></pre>
+</div></div>
+</li>
+<li>
+<p>
+Parallel Transfer Benchmarks
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>Exchange
+Sendrecv</tt></pre>
+</div></div>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mpi_tutorial">MPI Tutorial</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_introduction_2">Introduction</h3>
+<div class="paragraph"><p>As is frequently done when studying a new programming language, we begin
+our study of MPI with a parallel version of the ubiquitous "Hello World"
+program. This example illustrates the basic structure of an MPI program
+without any communications between processes. It is shown in Figure 1.</p></div>
+<div class="listingblock">
+<div class="title">Figure 1: HelloWorld</div>
+<div class="content">
+<pre><tt>import mpi.*;                                                            <b>&lt;1&gt;</b>
+
+public class HelloWorld
+{
+  public static void main(String args[]) throws Exception
+  {
+    int me,size;
+
+    args = MPI.Init(args);                                               <b>&lt;2&gt;</b>
+    me = MPI.COMM_WORLD.Rank();                                          <b>&lt;3&gt;</b>
+    size = MPI.COMM_WORLD.Size();                                        <b>&lt;4&gt;</b>
+
+    System.out.println(MPI.Get_processor_name()+": Hello World from "    <b>&lt;5&gt;</b>
+    +me+" of "+size);
+
+    MPI.Finalize();                                                      <b>&lt;6&gt;</b>
+  }
+}</tt></pre>
+</div></div>
+<div class="colist arabic"><ol>
+<li>
+<p>
+<tt>import mpi.*;</tt> is the package that contains the definitions and functions
+necessary for compiling an MPI program.
+</p>
+</li>
+<li>
+<p>
+<tt>java.lang.String[] MPI.Init(java.lang.String[] argv)</tt> initializes the
+MPI execution environment, all processes must call this routine before any
+other MPI functions (apart from MPI_Initialized).
+</p>
+</li>
+<li>
+<p>
+<tt>int MPI.COMM_WORLD.Rank()</tt> determines the rank (i.e., which process number
+am I?) of the calling process in the communicator (in this case the
+communicator <tt>COMM_WORLD</tt> is MPI+s shorthand for all the processes running
+your program).
+</p>
+</li>
+<li>
+<p>
+<tt>int MPI.COMM_WORLD.Size()</tt> determines the size(i.e., number of processes)
+of the group associated with the communicator (<tt>COMM_WORLD</tt> in this case).
+</p>
+</li>
+<li>
+<p>
+<tt>java.lang.String MPI.Get_processor_name()</tt> returns the name of the
+processor on which it is called.
+</p>
+</li>
+<li>
+<p>
+<tt>void MPI.Finalize()</tt> terminates the MPI execution environment; all
+processes must call this routine before exiting.
+</p>
+</li>
+</ol></div>
+</div>
+<div class="sect2">
+<h3 id="_mpi_datatypes">MPI Datatypes</h3>
+<div class="tableblock">
+<table rules="all"
+width="35%"
+frame="border"
+cellspacing="0" cellpadding="4">
+<col width="50%" />
+<col width="50%" />
+<thead>
+<tr>
+<th align="left" valign="middle"> MPI datatype </th>
+<th align="left" valign="middle"> Java datatype</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.BYTE</p></td>
+<td align="left" valign="middle"><p class="table">byte</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.CHAR</p></td>
+<td align="left" valign="middle"><p class="table">char</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.SHORT</p></td>
+<td align="left" valign="middle"><p class="table">short</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.BOOLEAN</p></td>
+<td align="left" valign="middle"><p class="table">boolean</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.INT</p></td>
+<td align="left" valign="middle"><p class="table">int</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.LONG</p></td>
+<td align="left" valign="middle"><p class="table">long</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.FLOAT</p></td>
+<td align="left" valign="middle"><p class="table">float</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.DOUBLE</p></td>
+<td align="left" valign="middle"><p class="table">double</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.OBJECT</p></td>
+<td align="left" valign="middle"><p class="table">Object</p></td>
+</tr>
+<tr>
+<td align="left" valign="middle"><p class="table">MPI.PACKED</p></td>
+<td align="left" valign="middle"><p class="table">byte</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>void Datatype.Commit()</strong>
+</p>
+<div class="paragraph"><p>Commit a derived datatype.</p></div>
+</li>
+<li>
+<p>
+<strong>static Datatype Datatype.Contiguous(int count, Datatype oldtype)</strong>
+</p>
+<div class="paragraph"><p>Construct new datatype representing replication of old datatype into contiguous locations.</p></div>
+<div class="paragraph"><p>The base type of the new datatype is the same as the base type of oldtype.</p></div>
+</li>
+<li>
+<p>
+<strong>int Datatype.Extent()</strong>
+</p>
+<div class="paragraph"><p>Returns the extent of a datatype.</p></div>
+<div class="paragraph"><p>Returns the difference between upper and lower bound.</p></div>
+</li>
+<li>
+<p>
+<strong>void Datatype.finalize()</strong>
+</p>
+<div class="paragraph"><p>Destructor.</p></div>
+</li>
+<li>
+<p>
+<strong>java.lang.String Datatype.Get_name()</strong>
+</p>
+<div class="paragraph"><p>Get the print name for a datatype.</p></div>
+</li>
+<li>
+<p>
+<strong>static Datatype.Indexed(int[] array_of_blocklengths, int[] array_of_displacements,
+Datatype oldtype)</strong>
+</p>
+<div class="paragraph"><p>Construct new datatype representing replication of the old datatype into a
+sequence of blocks where each block can contain a different number of
+copies and have a different displacement.</p></div>
+<div class="paragraph"><p>The number of blocks is taken to be size of the <tt>array_of_blocklengths</tt>
+argument. The second argument, <tt>array_of_displacements</tt>, should be the same
+size. The base type of the new datatype is the same as the base type of
+oldtype.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>static Datatype Datatype.Hindexed(int[] array_of_blocklengths, int[]
+array_of_displacements, Datatype oldtype)</strong>
+</p>
+<div class="paragraph"><p>Identical to Indexed except that the displacements are expressed directly
+in terms of the buffer index, rather than the units of the old type.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><em>Unlike other language bindings, the values in array_of_displacements are
+not measured in bytes</em>.</p></div>
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>static Datatype Datatype.Vector(int count, int blocklength, int stride, Datatype oldtype)</strong>
+</p>
+<div class="paragraph"><p>Construct new datatype representing replication of old datatype into
+locations that consist of equally spaced blocks.</p></div>
+<div class="paragraph"><p>The base type of the new datatype is the same as the base type of oldtype.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>static Datatype Datatype.Hvector(int count, int blocklength, int stride, Datatype oldtype)</strong>
+</p>
+<div class="paragraph"><p>Identical to Vector except that the stride is expressed directly in terms
+of the buffer index, rather than the units of the old type.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><em>Unlike other language bindings, the value of stride is not measured in
+bytes</em>.</p></div>
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>int Datatype.Lb()</strong>
+</p>
+<div class="paragraph"><p>Find the lower bound of a datatype - the least value in its displacement
+sequence.</p></div>
+</li>
+<li>
+<p>
+<strong>int Datatype.Ub()</strong>
+</p>
+<div class="paragraph"><p>Find the upper bound of a datatype - the greatest value in its displacement
+sequence.</p></div>
+</li>
+<li>
+<p>
+<strong>void Datatype.Set_name(java.lang.String name)</strong>
+</p>
+<div class="paragraph"><p>Set datatype name.</p></div>
+</li>
+<li>
+<p>
+<strong>int Datatype.Size()</strong>
+</p>
+<div class="paragraph"><p>Returns the total size of the type.</p></div>
+<div class="paragraph"><p>Size is defined as the total number of buffer elements incorporated by the
+data type, or equivalently as the length of the displacement sequence.
+Unlike other language bindings, the size is not measured in bytes.</p></div>
+</li>
+<li>
+<p>
+<strong>static Datatype Datatype.Struct(int[] array_of_blocklengths, int[] array_of_displacements,
+Datatype[] array_of_types)</strong>
+</p>
+<div class="paragraph"><p>The most general type constructor.</p></div>
+<div class="paragraph"><p>The number of blocks is taken to be size of the array_of_blocklengths
+argument. The second and third arguments, array_of_displacements, and
+array_of_types, should be the same size. Unlike other language bindings,
+the values in array_of_displacements are not measured in bytes. All
+elements of array_of_types with definite base types must have the same
+base type: this will be the base type of new datatype.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+</ul></div>
+</div>
+<div class="sect2">
+<h3 id="_point_to_point_communication_2">Point-to-Point Communication</h3>
+<div class="sect3">
+<h4 id="_blocking_communication">Blocking Communication</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Status Comm.Recv(Object buf, int offset, int count, Datatype
+datatype, int source, int tag)</strong>
+</p>
+<div class="paragraph"><p>Blocking receive operation.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Send(Object buf, int offset, int count, Datatype datatype,
+int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Blocking send operation.</p></div>
+<div class="paragraph"><p>The actual argument associated with <tt>buf</tt> must be one-dimensional array. The
+value <tt>offset</tt> is a subscript in this array, defining the position of the
+first item of the message.</p></div>
+<div class="paragraph"><p>If the <tt>datatype</tt> argument represents an MPI basic type, its value must agree
+with the element type of buf---either a primitive type or class type
+(object). If the datatype argument represents an MPI derived type, its base
+type must agree with the element type of buf.</p></div>
+<div class="paragraph"><p>If a data type has MPI.OBJECT as its base type, the objects in the buffer
+will be transparently serialized and unserialized inside the communication
+operations.</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>The <em>Status Object</em> is made of the following fields and methods:</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>int Status.index</strong>
+</p>
+</li>
+<li>
+<p>
+<strong>int Status.numObj</strong>
+</p>
+</li>
+<li>
+<p>
+<strong>int Status.source</strong>
+</p>
+</li>
+<li>
+<p>
+<strong>int Status.tag</strong>
+</p>
+</li>
+<li>
+<p>
+<strong>int Status.Get_count(Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>Gets the number of "top level" elements.</p></div>
+</li>
+<li>
+<p>
+<strong>int Status.Get_elements(Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>Retrieve number of basic elements from status.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_communication_modes">Communication Modes</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>void Comm.Bsend(Object buf, int offset, int count, Datatype
+datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Send in buffered mode. This operation copies message into a buffer
+specified by <tt>MPI.Buffer_attach</tt> operation, and then sends using the standard
+mode of communication. Further comments as for Send.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Ssend(Object buf, int offset, int count, Datatype datatype, int
+dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Send in synchronous mode.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Rsend(Object buf, int offset, int count, Datatype datatype,
+int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Send in ready mode.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_buffer_allocation_and_usage_2">Buffer Allocation and Usage</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>static void MPI.Buffer_attach(BufferMPI buffer)</strong>
+</p>
+<div class="paragraph"><p>Attaches a user-provided buffer for sending.</p></div>
+<div class="paragraph"><p>Provides to MPI a buffer in user&#8217;s memory to be used for buffering outgoing
+messages. The buffer is used only by messages sent in buffered mode. Only
+one buffer can be attached to a process at a time.</p></div>
+</li>
+<li>
+<p>
+<strong>static void MPI.Buffer_detach()</strong>
+</p>
+<div class="paragraph"><p>Detach the buffer currently associated with MPI.</p></div>
+</li>
+<li>
+<p>
+<strong>public BufferMPI(int count, Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>This constructor should be called to create a new BufferMPI Object.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_nonblocking_communication">Nonblocking Communication</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Request Comm.Isend(Object buf, int offset, int count,
+Datatype datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Start a standard mode, nonblocking send.</p></div>
+</li>
+<li>
+<p>
+<strong>Request Comm.Ibsend(Object buf, int offset, int count,
+Datatype datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Start a buffered mode, nonblocking send.</p></div>
+</li>
+<li>
+<p>
+<strong>Request Comm.Issend(Object buf, int offset, int count,
+Datatype datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Start a synchronous mode, nonblocking send.</p></div>
+</li>
+<li>
+<p>
+<strong>Request Comm.Irsend(Object buf, int offset, int count,
+Datatype datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Start a ready mode, nonblocking send.</p></div>
+</li>
+<li>
+<p>
+<strong>Request Comm.Irecv(Object buf, int offset, int count,
+Datatype datatype, int source, int tag)</strong>
+</p>
+<div class="paragraph"><p>Start a nonblocking receive.</p></div>
+</li>
+</ul></div>
+<div class="paragraph"><p>The following methods are used to complete nonblocking communication
+operations (and also communications started using the persistent
+communication requests).</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Status Request.Wait()</strong>
+</p>
+<div class="paragraph"><p>Waits for a request to complete.</p></div>
+<div class="paragraph"><p>Blocks until the operation identified by the request is complete. After the
+call returns, the request object becomes inactive.</p></div>
+</li>
+<li>
+<p>
+<strong>Status Request.Test()</strong>
+</p>
+<div class="paragraph"><p>Tests for the completion of a request.</p></div>
+<div class="paragraph"><p>Returns a status object if the operation identified by the request is
+complete, or a null reference otherwise. After the call, if the operation
+is complete (ie, if the return value is non-null), the request object
+becomes an inactive request.</p></div>
+</li>
+<li>
+<p>
+<strong>boolean Request.Is_null()</strong>
+</p>
+<div class="paragraph"><p>Test if request object is void.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>This funcion returns always false on instances of the subclass Prequest.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>void Request.Free()</strong>
+</p>
+<div class="paragraph"><p>Set the request object to be void.</p></div>
+</li>
+<li>
+<p>
+<strong>static Status Request.Waitany(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Blocks until one of the operations associated with the active requests in
+the array has completed.</p></div>
+<div class="paragraph"><p>The index in <tt>array_of_requests</tt> for the request that completed can be
+obtained from the returned status object through the <tt>Status.index</tt> field.
+The corresponding element of <tt>array_of_requests</tt> becomes inactive. The array
+of requests may contain inactive requests. If the list contains no active
+requests, the method immediately returns a status in which the index field
+is <tt>MPI.UNDEFINED</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>Status Request.Testany(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Tests for completion of either one or none of the operations associated
+with active requests.</p></div>
+<div class="paragraph"><p>If some request completed, the index in <tt>array_of_requests</tt> for that request
+can be obtained from the returned status object through the <tt>Status.index</tt>
+field. The corresponding element of <tt>array_of_requests</tt> becomes inactive. If
+no request completed, <tt>Testany</tt> returns a null reference.</p></div>
+</li>
+<li>
+<p>
+<strong>static Status[] Request.Waitall(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Blocks until all of the operations associated with the active requests in
+the array have completed.</p></div>
+<div class="paragraph"><p>The result array will be the same size as <tt>array_of_requests</tt>. On exit,
+requests become inactive. If the input value of <tt>arrayOfRequests</tt>
+contains any inactive requests, corresponding elements of the result
+array will contain null status references.</p></div>
+</li>
+<li>
+<p>
+<strong>static Status[] Request.Testall(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Tests for completion of all of the operations associated with active requests.</p></div>
+<div class="paragraph"><p>If all operations have completed, the exit values of the argument array and
+the result array are as for <tt>Waitall</tt>. If any operation has not completed,
+the result value is null and no element of the argument array is
+modified.</p></div>
+</li>
+<li>
+<p>
+<strong>static Status[] Request.Waitsome(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Blocks until at least one of the operations associated with the active requests in the array has completed.</p></div>
+<div class="paragraph"><p>The size of the result array will be the number of operations that
+completed. The index in <tt>array_of_requests</tt> for each request that completed
+can be obtained from the <em>index</em> field of the returned status object. The
+corresponding element in <tt>array_of_requests</tt> becomes inactive.</p></div>
+<div class="paragraph"><p>If array of requests list contains no active requests, <tt>Waitsome</tt> immediately
+returns a null reference.</p></div>
+</li>
+<li>
+<p>
+<strong>static Status[] Request.Testsome(Request[] array_of_requests)</strong>
+</p>
+<div class="paragraph"><p>Behaves like <tt>Waitsome</tt>, except that it returns immediately.</p></div>
+<div class="paragraph"><p>If no operation has completed, <tt>TestSome</tt> returns an array of length zero and
+elements of <tt>array_of_requests</tt> are unchanged. Otherwise, arguments and
+return value are as for <tt>Waitsome</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>Status Request.Get_status()</strong>
+</p>
+<div class="paragraph"><p>Non-desctructive test for the completion of a request.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>Unlike <tt>Test</tt>, the request object does not becomes inactive.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_probe_and_cancel">Probe and Cancel</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Status Comm.Iprobe(int source, int tag)</strong>
+</p>
+<div class="paragraph"><p>Check if there is an incoming message matching the pattern specified.</p></div>
+<div class="paragraph"><p>If such a message is currently available, a status object similar to the
+return value of a matching Recv operation is returned. Otherwise a null
+reference is returned.</p></div>
+</li>
+<li>
+<p>
+<strong>Status Comm.Probe(int source, int tag)</strong>
+</p>
+<div class="paragraph"><p>Wait until there is an incoming message matching the pattern specified.</p></div>
+<div class="paragraph"><p>Returns a <tt>Status</tt> object similar to the return value of a matching <tt>Recv</tt>
+operation.</p></div>
+</li>
+<li>
+<p>
+<strong>void Request.Cancel()</strong>
+</p>
+<div class="paragraph"><p>Mark a pending nonblocking communication for cancellation.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>boolean Status.Test_cancelled()</strong>
+</p>
+<div class="paragraph"><p>Test if communication was cancelled.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_persistent_communication_requests">Persistent communication requests</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Prequest Comm.Send_init(Object buf, int offset, int count, Datatype datatype,
+int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates a persistent communication request for a standard mode send.</p></div>
+</li>
+<li>
+<p>
+<strong>Prequest Comm.Bsend_init(Object buf, int offset, int count, Datatype datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates a persistent communication request for a buffered mode send.</p></div>
+</li>
+<li>
+<p>
+<strong>Prequest Comm.Ssend_init(Object buf, int offset, int count, Datatype
+datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates a persistent communication request for a synchronous mode send.</p></div>
+</li>
+<li>
+<p>
+<strong>Prequest Comm.Rsend_init(Object buf, int offset, int count, Datatype
+datatype, int dest, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates a persistent communication request for a ready mode send.</p></div>
+</li>
+<li>
+<p>
+<strong>Prequest Comm.Recv_init(Object buf, int offset, int count,
+Datatype datatype, int source, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates a persistent communication request for a receive operation.</p></div>
+</li>
+<li>
+<p>
+<strong>void Prequest.Start()</strong>
+</p>
+<div class="paragraph"><p>Activate a persistent communication request.</p></div>
+</li>
+<li>
+<p>
+<strong>static void Prequest.Startall(Prequest[] prequests)</strong>
+</p>
+<div class="paragraph"><p>Activate a list of communication requests.</p></div>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>A communication started with a call to <tt>Start</tt> or <tt>Startall</tt> is completed by a
+call to <tt>Request.Wait</tt>, <tt>Request.Test</tt>, or one of the derived functions. On
+successful completion the request becomes inactive again. It can be
+reactivated by a further call to <tt>Start</tt>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+<div class="sect3">
+<h4 id="_send_receive">Send-receive</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Status Comm.Sendrecv(Object sendbuf, int sendoffset, int
+sendcount, Datatype sendtype, int dest, int sendtag, Object
+recvbuf, int recvoffset, int recvcount, Datatype recvtype, int source, int
+recvtag)</strong>
+</p>
+<div class="paragraph"><p>Execute a blocking send and receive operation.</p></div>
+</li>
+<li>
+<p>
+<strong>Status Comm.Sendrecv_replace(Object buf, int offset, int count,
+Datatype datatype, int dest, int sendtag, int source, int recvtag)</strong>
+</p>
+<div class="paragraph"><p>Execute a blocking send and receive operation, receiving message into send
+buffer.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_packed_data_management">Packed Data Management</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>int Comm.Pack_size(int incount, Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>Returns an upper bound on the increment of position effected by <tt>Pack</tt>.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>It is an error to call this function if the base type of datatype is
+<tt>MPI.OBJECT</tt> (FastMPJ provides <tt>Pack_size(int,Object[])</tt> method instead) or
+<tt>MPI.PACKED</tt> (not sense).</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>int Comm.Pack_size(int incount, Object[] obj)</strong>
+</p>
+<div class="paragraph"><p>Special version of <tt>Pack_size</tt> for <tt>MPI.OBJECT</tt> datatype.</p></div>
+</li>
+<li>
+<p>
+<strong>int Comm.Pack(Object inbuf, int offset, int incount, Datatype datatype,
+byte[] outbuf, int position)</strong>
+</p>
+<div class="paragraph"><p>Packs message in send buffer inbuf into space specified in outbuf.</p></div>
+<div class="paragraph"><p>The return value is the output value of position - the inital value
+incremented by the number of bytes written.</p></div>
+</li>
+<li>
+<p>
+<strong>int Comm.Unpack(byte[] inbuf, int position, Object outbuf, int offset,
+int outcount, Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>Unpacks message in receive buffer <tt>outbuf</tt> into space specified in <tt>inbuf</tt>.</p></div>
+<div class="paragraph"><p>The return value is the output value of position - the inital value
+incremented by the number of bytes read.</p></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_collective_communication_routines">Collective Communication Routines</h3>
+<div class="sect3">
+<h4 id="_synchronization">Synchronization</h4>
+<div class="paragraph"><p>Processes wait until all members of the group have reached the
+synchronization point.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>void Comm.Barrier()</strong>
+</p>
+<div class="paragraph"><p>A call to Barrier blocks the caller until all processes in the group have
+called it. The call returns at any process only after all group members
+have entered the call. This function can be used when a synchronization of
+all processes is needed.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_data_movement">Data Movement</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>void Comm.Bcast(java.lang.Object buf, int offset, int count, Datatype
+datatype, int root)</strong>
+</p>
+<div class="paragraph"><p>Broadcast a message from the process with rank root to all processes of the
+group, itself included. It is called by all members of group using the same
+arguments. On return, the contents of root&#8217;s communication buffer have been
+copied to all processes. The type signature of count, datatype on any
+process must be equal to the type signature of count, datatype at the root.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Gather(java.lang.Object sendbuf, int sendoffset, int
+sendcount, Datatype sendtype, java.lang.Object recvbuf, int recvoffset, int
+recvcount, Datatype recvtype, int root)</strong>
+</p>
+<div class="paragraph"><p>Each process (root process included) sends the contents of its send buffer
+to the root process, which receives these contents in its <tt>recvbuf</tt>. The
+messages are concatenated in rank order. The type signature of <tt>sendcount</tt>,
+<tt>sendtype</tt> on any process must be equal to the type signature of
+<tt>recvcounts</tt>, <tt>recvtype</tt> at the root.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Allgather(java.lang.Object sendbuf, int sendoffset, int
+sendcount, Datatype sendtype, java.lang.Object recvbuf, int recvoffset,
+int recvcount, Datatype recvtype)</strong>
+</p>
+<div class="paragraph"><p>Similar to <strong>Gather</strong>, but all processes receive the result. The block of data
+sent from the process jth is received by every process and placed in the
+<tt>jth</tt> block of the buffer <tt>recvbuf</tt>. The type signature associated with
+<tt>sendcount</tt>, <tt>sendtype</tt>, at a process must be equal to the type signature
+associated with <tt>recvcount</tt>, <tt>recvtype</tt> at any other process.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Alltoall(java.lang.Object sendbuf, int sendoffset, int sendcount,
+Datatype sendtype, java.lang.Object recvbuf, int recvoffset, int
+recvcount, Datatype recvtype)</strong>
+</p>
+<div class="paragraph"><p>Extension of <strong>Allgather</strong> to the case where each process sends distinct data
+to each of the receivers. The <tt>jth</tt> block sent from process <tt>i</tt> is received by
+process <tt>j</tt> and is placed in the <tt>ith</tt> block of <tt>recvbuf</tt>. The type signature
+associated with <tt>sendcount</tt>, <tt>sendtype</tt>, at a process must be equal to the type
+signature associated with <tt>recvcount</tt>, <tt>recvtype</tt> at any other process.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Alltoallv(java.lang.Object sendbuf, int sendoffset, int[] sendcount,
+int[] sdispls, Datatype sendtype, java.lang.Object recvbuf, int
+recvoffset, int[] recvcount, int[] rdispls, Datatype recvtype)</strong>
+</p>
+<div class="paragraph"><p>Adds flexibility to <strong>Alltoall</strong>: location of data for send is specified by
+<tt>sdispls</tt> and location to place data on receive side is specified by
+<tt>rdispls</tt>.
+The <tt>jth</tt> block sent from process <tt>i</tt> is received by process <tt>j</tt> and is placed in
+the <tt>ith</tt> block of <tt>recvbuf</tt>. These blocks need not all have the same size. The
+type signature associated with <tt>sendcount[j]</tt>, <tt>sendtype</tt> at process <tt>i</tt> must be
+equal to the type signature associated with <tt>recvcounts[i]</tt>, <tt>recvtype</tt> at
+process <tt>j</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Gatherv(java.lang.Object sendbuf, int sendoffset, int sendcount,
+Datatype sendtype, java.lang.Object recvbuf, int recvoffset, int[]
+recvcount, int[] displs, Datatype recvtype, int root)</strong>
+</p>
+<div class="paragraph"><p>Extend the functionality of <strong>Gather</strong> by allowing varying counts of data from
+each process. It also allows more flexibility as to where the data is
+placed on the root, by providing the new argument, displs. Messages are
+placed in the receive buffer of the root process in rank order.</p></div>
+<div class="paragraph"><p>The size of arrays <tt>recvcounts</tt> and <tt>displs</tt> should be the size of the group.
+Entry <tt>i</tt> of <tt>displs</tt> specifies the displacement relative to element
+<tt>recvoffset</tt> of <tt>recvbuf</tt> at which to place incoming data. <tt>sendtype</tt> and
+<tt>recvtype</tt> must be the same.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Allgatherv(java.lang.Object sendbuf, int sendoffset, int sendcount,
+Datatype sendtype, java.lang.Object recvbuf, int recvoffset, int[]
+recvcount, int[] displs, Datatype recvtype)</strong>
+</p>
+<div class="paragraph"><p>Similar to <strong>Gatherv</strong>, but all processes receive the result. The block of data
+sent from jth process is received by every process and placed in the <tt>jth</tt>
+block of the buffer <tt>recvbuf</tt>. These blocks need not all be the same size.
+The type signature associated with <tt>sendcount</tt>, <tt>sendtype</tt>, at process <tt>j</tt> must
+be equal to the type signature associated with <tt>recvcounts[j]</tt>, <tt>recvtype</tt> at
+any other process.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Scatter(java.lang.Object sendbuf, int sendoffset, int sendcount,
+Datatype sendtype, java.lang.Object recvbuf, int recvoffset, int
+recvcount, Datatype recvtype, int root)</strong>
+</p>
+<div class="paragraph"><p>Inverse of the operation <strong>Gather</strong>. It is similar to <strong>Bcast</strong> but any process
+receives different data. The root sends a message which is split into <tt>n</tt>
+equal segments and the <tt>ith</tt> segment is received by the <tt>ith</tt> process in the
+group. The type signature associated with <tt>sendcount</tt>, <tt>sendtype</tt> at the root
+must be equal to the type signature associated with <tt>recvcount</tt>, <tt>recvtype</tt> at
+all processes. The argument root must have identical values on all
+processes.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Scatterv(java.lang.Object sendbuf, int sendoffset, int[] sendcount,
+int[] displs, Datatype sendtype, java.lang.Object recvbuf, int
+recvoffset, int recvcount, Datatype recvtype, int root)</strong>
+</p>
+<div class="paragraph"><p>Inverse of the operation <strong>Gatherv</strong>. It extends the operation <strong>Scatter</strong> by
+allowing sending different <tt>MPIUtil.counts</tt> of data to each process, since
+<tt>sendcount</tt> is now an array. It also allows more flexibility as to where the
+data is taken from on the root, by providing the new argument, <tt>displs</tt>. The
+type signature implied by <tt>sendcount[i]</tt>, <tt>sendtype</tt> at the root must be equal
+to the type signature implied by <tt>recvcount</tt>, <tt>recvtype</tt> at process <tt>i</tt>.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_collective_computation">Collective Computation</h4>
+<div class="paragraph"><p>One member of the group collects data from the other members and performs
+an operation (min, max, add, multiply, etc.) on the data.</p></div>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>void Comm.Allreduce(java.lang.Object sendbuf, int sendoffset, java.lang.Object
+recvbuf, int recvoffset, int count, Datatype datatype, Op op)</strong>
+</p>
+<div class="paragraph"><p>Same as <strong>Reduce</strong> except that the result appears in the receive buffer of all
+processes in the group. All processes must receive identical results.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Reduce_scatter(java.lang.Object sendbuf, int sendoffset,
+java.lang.Object recvbuf, int recvoffset, int[] recvcounts, Datatype
+datatype, Op op)</strong>
+</p>
+<div class="paragraph"><p>Combine elements in input buffer of each process using the reduce
+operation, and scatter the combined values over the output buffers of the
+processes. The <tt>ith</tt> segment in result vector is sent to process <tt>i</tt> and stored
+in the receive buffer defined by <tt>recvbuf</tt>, <tt>recvcounts[i]</tt> and datatype.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Reduce(java.lang.Object sendbuf, int sendoffset, java.lang.Object recvbuf,
+int recvoffset, int count, Datatype datatype, Op op, int root)</strong>
+</p>
+<div class="paragraph"><p>Combine elements in input buffer of each process using the reduce
+operation, and return the combined value in the output buffer of the root
+process. Arguments count, datatype, op and root must be the same in all
+processes. Input and output buffers have the same length and elements of
+the same type. Each process can provide one element, or a sequence of
+elements, in which case the combine operation is executed element-wise on
+each entry of the sequence.</p></div>
+<div class="paragraph"><p><tt>op</tt> can be a predefined operation or an user-defined operation. The
+predefined operations are available in Java as <tt>MPI.MAX</tt>, <tt>MPI.MIN</tt>,
+<tt>MPI.SUM</tt>, <tt>MPI.PROD</tt>, <tt>MPI.LAND</tt>, <tt>MPI.BAND</tt>, <tt>MPI.LOR</tt>, <tt>MPI.BOR</tt>,
+<tt>MPI.LXOR</tt>, <tt>MPI.BXOR</tt>, <tt>MPI.MINLOC</tt> and <tt>MPI.MAXLOC</tt>. The operation is
+always assumed to be associative. The datatype must be compatible with
+<tt>op</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Scan(java.lang.Object sendbuf, int sendoffset, java.lang.Object
+recvbuf, int recvoffset, int count, Datatype datatype, Op op)</strong>
+</p>
+<div class="paragraph"><p>Perform a prefix reduction on data distributed across the group. The
+operation returns, in the <tt>recvbuf</tt> of the process with rank <tt>i</tt>, the reduction
+of the values in the send buffers of processes with ranks 0,&#8230;,i
+(inclusive). Operations supported, semantics and constraints of arguments
+are as for <tt>Reduce</tt>.</p></div>
+</li>
+</ul></div>
+<div class="sect4">
+<h5 id="_user_op">User Op</h5>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>public Op(User_Function function, boolean commute)</strong>
+</p>
+<div class="paragraph"><p>Bind a user-defined global reduction operation to an <tt>Op</tt> object.</p></div>
+<div class="paragraph"><p>To define a new operation, the programmer should define a concrete subclass
+of <tt>User_function</tt>, implementing the <tt>Call</tt> method, then pass an object
+from this class to the <tt>Op</tt> constructor.</p></div>
+</li>
+<li>
+<p>
+<strong>void User_Function.Call(java.lang.Object invec, int inoffset, java.lang.Object inoutvec, int
+inoutoffset, int count, Datatype datatype)</strong>
+</p>
+<div class="paragraph"><p>User-defined function for a new <tt>Op</tt>.</p></div>
+</li>
+</ul></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">These collectives are not implemented for <tt>Intercomm</tt> in the current
+release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_groups_contexts_and_communicators_2">Groups, Contexts and Communicators</h3>
+<div class="sect3">
+<h4 id="_group_management">Group Management</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>int Group.Size()</strong>
+</p>
+<div class="paragraph"><p>Returns the size of the group.</p></div>
+</li>
+<li>
+<p>
+<strong>int Group.Rank()</strong>
+</p>
+<div class="paragraph"><p>Returns the rank of the calling process in the group.</p></div>
+</li>
+<li>
+<p>
+<strong>static int [] Group.Translate_ranks(Group group1, int[] ranks1, Group
+group2)</strong>
+</p>
+<div class="paragraph"><p>Translate ranks within first group to ranks within second group.</p></div>
+</li>
+<li>
+<p>
+<strong>static int Group.Compare(Group group1, Group group2)</strong>
+</p>
+<div class="paragraph"><p>Compare two groups.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><tt>MPI.IDENT</tt> results if the group members and group order are exactly the same
+in both groups. <tt>MPI.SIMILAR</tt> results if the group members are the same but
+the order is different. <tt>MPI.UNEQUAL</tt> results otherwise.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>Group Comm.Group</strong>
+</p>
+<div class="paragraph"><p>Return group associated with a communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>static Group Group.Union(Group group1, Group group2)</strong>
+</p>
+<div class="paragraph"><p>Set union of two groups.</p></div>
+<div class="paragraph"><p>Produces a group by combining the two input groups.</p></div>
+</li>
+<li>
+<p>
+<strong>static Group Group.Intersection(Group group1, Group group2)</strong>
+</p>
+<div class="paragraph"><p>Set intersection of two groups.</p></div>
+<div class="paragraph"><p>The output group contains those processes that are in both group1 and
+group2.</p></div>
+</li>
+<li>
+<p>
+<strong>static Group Group.Difference(Group group1, Group group2)</strong>
+</p>
+<div class="paragraph"><p>Makes a group from the difference of two groups.</p></div>
+<div class="paragraph"><p>Result contains all elements of the first group that are not in the second
+group.</p></div>
+</li>
+<li>
+<p>
+<strong>Group Group.Incl(int [] ranks)</strong>
+</p>
+<div class="paragraph"><p>Create a subset group including specified processes.</p></div>
+<div class="paragraph"><p>This method returns a new group object including all the ranks specified in
+the argument array. Each item of the argument array should be a valid rank
+in the calling group. The total number of items in argument array should
+not be more than the size of the existing group. This method is a local
+operation.</p></div>
+</li>
+<li>
+<p>
+<strong>Group Group.Excl(int[] ranks)</strong>
+</p>
+<div class="literalblock">
+<div class="content">
+<pre><tt>Create a subset group excluding specified processes.</tt></pre>
+</div></div>
+<div class="paragraph"><p>This method returns a new group object excluding all the ranks specified in
+the argument array. Each item of the argument array should be a valid rank
+in the calling group. The total number of items in argument array should
+not be more than the size of the existing group. This method is a local
+operation.</p></div>
+</li>
+<li>
+<p>
+<strong>Group Group.Range_incl(int[][] ranges)</strong>
+</p>
+<div class="paragraph"><p>Create a subset group including processes specified by strided intervals
+of ranks.</p></div>
+<div class="paragraph"><p>The triplets are of the form (first rank, last rank, stride) indicating
+ranks in this group to be included in the new group. The size of the first
+dimension of ranges is the number of triplets. The size of the second
+dimension is 3.</p></div>
+</li>
+<li>
+<p>
+<strong>Group Group.Range_excl(int[][] ranges)</strong>
+</p>
+<div class="paragraph"><p>Create a subset group excluding processes speci ed by strided intervals of
+ranks.</p></div>
+<div class="paragraph"><p>Triplet array is defined as for <tt>Range_incl</tt>, the ranges indicating ranks in
+this group to be excluded from the new group.</p></div>
+</li>
+<li>
+<p>
+<strong>void Group.finalize()</strong>
+</p>
+<div class="paragraph"><p>Destroy the calling group.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_communicator_management">Communicator Management</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>int Comm.Size()</strong>
+</p>
+<div class="paragraph"><p>Size of group of the communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>int Comm.Rank()</strong>
+</p>
+<div class="paragraph"><p>Rank of this process in group of this communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>static int Comm.Compare(Comm comm1, Comm comm2)</strong>
+</p>
+<div class="paragraph"><p>Compare two communicators.</p></div>
+</li>
+<li>
+<p>
+<strong>Object Comm.clone()</strong>
+</p>
+<div class="paragraph"><p>Duplicate the communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>Intracomm Intracomm.Create(Group group)</strong>
+</p>
+<div class="paragraph"><p>Creates a new communicator.</p></div>
+<div class="paragraph"><p>This method creates a new communicator with communication group defined by
+group and a new context. The call is erroneous if group is not a subset of
+the group associated with this intra-communicator. This method returns
+<tt>MPI.COMM_NULL</tt> to processes that are not in group. Note that the call is to
+be executed by all processes in this intra-communicator, even if they do
+not belong to the new group. This call applies only to intra-communicators.</p></div>
+</li>
+<li>
+<p>
+<strong>Intracomm Intracomm.Split(int color, int key)</strong>
+</p>
+<div class="paragraph"><p>Partition the group associated with this communicator and create a new
+communicator within each subgroup.</p></div>
+<div class="paragraph"><p>This function partitions the group associated with this communicator into
+disjoint subgroups, one for each value of color. Each subgroup contains all
+processes of the same color. Within each subgroup, the processes are ranked
+in the order defined by the value of the argument key, with ties broken
+according to their rank in the old group. A new communicator is created for
+each subgroup and returned. A process may supply the color value
+<tt>MPI.UNDEFINED</tt>, in which case this method returns <tt>MPI.COMM_NULL</tt>. The value
+of color must be nonnegative. This call applies only to
+intra-communicators.</p></div>
+</li>
+<li>
+<p>
+<strong>Comm.Free()</strong>
+</p>
+<div class="paragraph"><p>Destroy this communicator.</p></div>
+<div class="paragraph"><p>An explicitly called Free method is required rather than an implicitly
+called finalize method, because <tt>MPI_COMM_FREE</tt> is a collective operation. We
+cannot assume that the Java garbage collector will call a finalize method
+synchronously on all processors.
+<strong>boolean Comm.Is_null()</strong></p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Set_name(String name)</strong>
+</p>
+<div class="paragraph"><p>Sets the print name for a communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Set_attr(Keyval key, Object attribute_val)</strong>
+</p>
+<div class="paragraph"><p>Stores attribute value associated with a key.</p></div>
+<div class="paragraph"><p>If the value is already present, then the outcome is as if
+<tt>Comm.Delete_attr()</tt> was first called to delete the previous value, and a new
+value was next stored.</p></div>
+</li>
+<li>
+<p>
+<strong>String Comm.Get_name()</strong>
+</p>
+<div class="paragraph"><p>Return the print name from the communicator.</p></div>
+<div class="paragraph"><p>The three predefined communicators will have predefined names associated
+with them. Thus, the names of <tt>MPI.COMM_WORLD</tt>, <tt>MPI.COMM_SELF</tt> and
+<tt>MPI.COMM_NULL</tt> will have the default of <tt>MPI.COMM_WORLD</tt>, <tt>MPI.COMM_SELF</tt> and
+<tt>MPI.COMM_NULL</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Delete_attr(Keyval key)</strong>
+</p>
+<div class="paragraph"><p>Deletes an attribute value associated with a key on a communicator.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_inter_communication">Inter-Communication</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>boolean Comm.Test_inter()</strong>
+</p>
+<div class="paragraph"><p>Test if this communicator is an inter-communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>int Intercomm.Remote_size()</strong>
+</p>
+<div class="paragraph"><p>Determines the size of the remote group associated with an
+inter-communicator.</p></div>
+</li>
+<li>
+<p>
+<strong>Group Intercomm.Remote_Group()</strong>
+</p>
+<div class="paragraph"><p>Return the remote group.</p></div>
+</li>
+<li>
+<p>
+<strong>Intercomm Comm.Create_intercomm Comm.Create_intercomm(Comm local_intracomm, int local_leader,
+int remote_leader, int tag)</strong>
+</p>
+<div class="paragraph"><p>Creates an inter-communicator from two intra-communicators.
+This operation is defined as a method on the "peer intra-communicator",
+making it analogous to a Send or Recv communication with the remote
+group leader.
+The MPI 1.2 standard contains two mutually exclusive comments on the
+input intra-communicators. One says that their respective groups must
+be disjoint; the other that the leaders can be the same process.</p></div>
+</li>
+<li>
+<p>
+<strong>Intracomm Intercomm.Merge(boolean high)</strong>
+</p>
+<div class="paragraph"><p>Creates an intra-communicator from the union of the two groups in this
+inter-communicator.</p></div>
+<div class="paragraph"><p>The high argument is used to order the groups when creating the new
+intra-communicator. All processes should provide the same high value within
+each of the two groups. If processes in one group provided the value <tt>high =
+false</tt> and processes in the other group provided the value <tt>high = true</tt> then
+the union orders the "low" group before the "high" group. If all processes
+provided the same high argument then the order of the union is arbitrary.
+This call is blocking and collective within the union of the two groups.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_caching_2">Caching</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Object Comm.Get_attr(Keyval key)</strong>
+</p>
+<div class="paragraph"><p>Retrieves attribute value by key.</p></div>
+<div class="paragraph"><p>Retrieves attribute value by key. The call is erroneous if there is no key
+with value keyval. On the other hand, the call is correct if the key value
+exists, but no attribute is attached on comm for that key; in such case,
+the call returns null.</p></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_topologies">Topologies</h3>
+<div class="sect3">
+<h4 id="_topology_constructors">Topology Constructors</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>Cartcomm Intracomm.Create_cart(int[] dims, boolean[] periods, boolean
+reorder)</strong>
+</p>
+<div class="paragraph"><p>Create a Cartesian topology communicator whose group is a subset of the
+group of this communicator.</p></div>
+<div class="paragraph"><p>The number of dimensions of the Cartesian grid is taken to be the size of
+the dims argument. The array periods must be the same size.</p></div>
+</li>
+<li>
+<p>
+<strong>static void Cartcomm.Dims_create(int nnodes, int[] dims)</strong>
+</p>
+<div class="paragraph"><p>Select a balanced distribution of processes per coordinate direction.</p></div>
+<div class="paragraph"><p>The number of dimensions is taken to be size of the dims argument. The
+caller may further constrain the operation of this method by specifying
+elements of array dims. If dims[i] is set to a positive number, this method
+will not modify the number of nodes in dimension i; only those entries
+where dims[i] = 0 are modified by the call. Negative input values of
+dims[i] are erroneous. For dims[i] set by the call, dims[i] will be ordered
+in non-increasing order. Note that dims is an inout parameter.</p></div>
+</li>
+<li>
+<p>
+<strong>Graphcomm Intracomm.Create_graph(int[] index, int[] edges, boolean reorder)</strong>
+</p>
+<div class="paragraph"><p>Create a graph topology communicator whose group is a subset of the group
+of this communicator.</p></div>
+<div class="paragraph"><p>The number of nodes in the graph, <tt>nnodes</tt>, is taken to be size of the index
+argument. The size of array edges must be <tt>index[nnodes - 1]</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>int Comm.Topo_test()</strong>
+</p>
+<div class="paragraph"><p>Returns the type of topology associated with the communicator.</p></div>
+<div class="paragraph"><p>The return value will be one of <tt>MPI.GRAPH</tt>, <tt>MPI.CART</tt> or <tt>MPI.UNDEFINED</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>GraphParms Graphcomm.Get()</strong>
+</p>
+<div class="paragraph"><p>Returns graph topology information.</p></div>
+<div class="paragraph"><p>The number of nodes and number of edges can be extracted from the sizes of
+the index and edges fields of the returned object.</p></div>
+</li>
+<li>
+<p>
+<strong>CartParms Cartcomm.Get()</strong>
+</p>
+<div class="paragraph"><p>Returns Cartesian topology information.</p></div>
+<div class="paragraph"><p>The number of dimensions can be obtained from the size of (eg) dims field
+of the returned object.</p></div>
+</li>
+<li>
+<p>
+<strong>int Cartcomm.Rank(int [] coords)</strong>
+</p>
+<div class="paragraph"><p>Translate logical process coordinates to process rank.</p></div>
+</li>
+<li>
+<p>
+<strong>int [] Cartcomm.Coords(int rank)</strong>
+</p>
+<div class="paragraph"><p>Translate process rank to logical process coordinates.</p></div>
+</li>
+<li>
+<p>
+<strong>int [] Graphcomm.Neighbours(int rank)</strong>
+</p>
+<div class="paragraph"><p>Provides adjacency information for general graph topology.</p></div>
+<div class="paragraph"><p>The number of neighbours can be extracted from the size of the result.</p></div>
+</li>
+<li>
+<p>
+<strong>ShiftParms Cartcomm.Shift(int direction, int disp)</strong>
+</p>
+<div class="paragraph"><p>Compute source and destination ranks for "shift" communication.</p></div>
+<div class="paragraph"><p>The <tt>direction</tt> argument indicates the dimension of the shift, i.e., the
+coordinate which value is modified by the shift. Depending on the
+periodicity of the cartesian group in the specified coordinate direction,
+Shift provides the identifiers for a circular or an end-off shift. In the
+case of an end-off shift, the value <tt>MPI.PROC_NULL</tt> may be returned in the
+fields rankSource or rankDest of the returned ShiftParms object, indicating
+that the source or the destination for the shift is out of range.</p></div>
+</li>
+<li>
+<p>
+<strong>Cartcomm Cartcomm.Sub(boolean[] remainDims)</strong>
+</p>
+<div class="paragraph"><p>Partition Cartesian communicator into subgroups of lower dimension.</p></div>
+<div class="paragraph"><p>This method can be used to partition the communicator group into subgroups
+that form lower-dimensional cartesian subgrids, and to build for each
+subgroup a communicator with the associated subgrid cartesian topology.</p></div>
+</li>
+<li>
+<p>
+<strong>int Cartcomm.Map(int[] dims, boolean[] periods)</strong>
+</p>
+<div class="paragraph"><p>Compute an optimal placement.</p></div>
+<div class="paragraph"><p>The number of dimensions is taken to be size of the <tt>dims</tt> argument.</p></div>
+</li>
+<li>
+<p>
+<strong>int Graphcomm.Map(int[] index, int[] edges)</strong>
+</p>
+<div class="paragraph"><p>Compute an optimal placement.</p></div>
+<div class="paragraph"><p>The number of nodes is taken to be size of the <tt>index</tt> argument.</p></div>
+</li>
+</ul></div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mpi_environmental_management">MPI Environmental Management</h3>
+<div class="sect3">
+<h4 id="_implementation_information">Implementation information</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>static String MPI.Get_processor_name()</strong>
+</p>
+<div class="paragraph"><p>Returns the name of the processor on which it is called.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_error_handling">Error handling</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>static void Comm.Errorhandler_set(Errhandler errhandler)</strong>
+</p>
+<div class="paragraph"><p>Associates a new error handler with communicator at the calling process.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+<li>
+<p>
+<strong>static Errhandler Comm.Errorhandler_get()</strong>
+</p>
+<div class="paragraph"><p>Returns the error handler currently associated with the communicator.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p><span class="red">Not implemented in the current release</span>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_timers">Timers</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>static double MPI.Wtime()</strong>
+</p>
+<div class="paragraph"><p>Returns wallclock time.</p></div>
+<div class="paragraph"><p>If the attribute <tt>MPI.WTIME_IS_GLOBAL</tt> is defined and true, then the value is
+synchronized across all processes in <tt>MPI.COMM_WORLD</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>static double MPI.Wtick()</strong>
+</p>
+<div class="paragraph"><p>Returns the resolution of <tt>MPI.Wtime</tt>.</p></div>
+</li>
+</ul></div>
+</div>
+<div class="sect3">
+<h4 id="_startup">Startup</h4>
+<div class="ulist"><ul>
+<li>
+<p>
+<strong>static String MPI.Init(String[] argv)</strong>
+</p>
+<div class="paragraph"><p>Initialize the MPI execution environment.</p></div>
+</li>
+<li>
+<p>
+<strong>static void MPI.Finalize()</strong>
+</p>
+<div class="paragraph"><p>Terminates MPI execution environment.</p></div>
+</li>
+<li>
+<p>
+<strong>static boolean MPI.Initialized()</strong>
+</p>
+<div class="paragraph"><p>Indicates whether <tt>MPI.Init</tt> has been called.</p></div>
+<div class="paragraph"><p>This routine may be used to determine whether <tt>MPI.INIT</tt> has been called. It
+is the only MPI&#8217;s routine that may be called before <em>MPI.INIT</em> is called.</p></div>
+</li>
+<li>
+<p>
+<strong>static boolean MPI.Finalized()</strong>
+</p>
+<div class="paragraph"><p>Indicates whether <tt>MPI.Finalize</tt> has been called.</p></div>
+<div class="paragraph"><p>This routine returns true if MPI.FINALIZE has completed. It is legal to
+call <tt>MPI.FINALIZED</tt> before <tt>MPI.INIT</tt> and after <tt>MPI.FINALIZE</tt>.</p></div>
+</li>
+<li>
+<p>
+<strong>void Comm.Abort(int errorcode)</strong>
+</p>
+<div class="paragraph"><p>Abort MPI.</p></div>
+<div class="admonitionblock">
+<table><tr>
+<td class="icon">
+<div class="title">Note</div>
+</td>
+<td class="content">
+<div class="paragraph"><p>The MPI standard says: the process calling <tt>MPI_Abort</tt> must be a member of
+the communicator passed in. If the communicator is invalid or the process
+is not a member of the communicator, <tt>MPI_Abort</tt> is called on
+<tt>MPI_COMM_WORLD</tt>.</p></div>
+</td>
+</tr></table>
+</div>
+</li>
+</ul></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div id="footnotes"><hr /></div>
+<div id="footer">
+<div id="footer-text">
+Last updated 2013-06-18 09:57:42 CEST
+</div>
+</div>
+</body>
+</html>

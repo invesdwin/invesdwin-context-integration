@@ -1,0 +1,10 @@
+#!/bin/sh
+
+if [ -z "$FMPJ_HOME" ]; then
+	echo "FMPJ_HOME must be set";
+	exit 127;
+fi
+
+. $FMPJ_HOME/bin/fmpj-env
+
+$JAVAC_COMMAND "$@"
