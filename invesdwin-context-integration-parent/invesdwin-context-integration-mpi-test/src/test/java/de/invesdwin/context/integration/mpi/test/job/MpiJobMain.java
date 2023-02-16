@@ -4,6 +4,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -40,7 +41,7 @@ public class MpiJobMain extends AMain {
     }
 
     @Override
-    protected void startApplication(final CmdLineParser parser) throws Exception {
+    protected void startApplication(final CmdLineParser parser) {
         final int rank = MPI.rank();
         final int size = MPI.size();
         Assertions.checkEquals(2, size);
@@ -52,6 +53,8 @@ public class MpiJobMain extends AMain {
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
             try (OutputStream log = newLog(rank, size, ReaderTask.class)) {
                 new ReaderTask(log, requestWriter, responseReader).run();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
             break;
         case 1:
@@ -61,6 +64,8 @@ public class MpiJobMain extends AMain {
                     .newCommandWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
             try (OutputStream log = newLog(rank, size, WriterTask.class)) {
                 new WriterTask(log, requestReader, responseWriter).run();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
             break;
         default:
@@ -70,8 +75,8 @@ public class MpiJobMain extends AMain {
 
     private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
         final Slf4jOutputStream log = Slf4jStream.of(taskClass).asInfo();
-        final BufferedOutputStream file = new BufferedOutputStream(
-                new FileOutputStream(new File(logDir, rank + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
+        final BufferedOutputStream file = new BufferedOutputStream(new FileOutputStream(
+                new File(logDir, (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
         return new BroadcastingOutputStream(log, file);
     }
 
