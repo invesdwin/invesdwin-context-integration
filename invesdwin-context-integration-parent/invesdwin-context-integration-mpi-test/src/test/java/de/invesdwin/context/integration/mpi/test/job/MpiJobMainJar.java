@@ -24,7 +24,7 @@ public final class MpiJobMainJar extends MergedClasspathJar {
     private final Log log = new Log(this);
 
     private MpiJobMainJar() {
-        super(MergedClasspathJarFilter.MPI_YARN);
+        super(MergedClasspathJarFilter.MPI);
     }
 
     @Override
