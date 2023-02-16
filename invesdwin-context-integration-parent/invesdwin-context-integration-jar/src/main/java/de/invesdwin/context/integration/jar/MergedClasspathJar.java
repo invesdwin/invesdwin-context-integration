@@ -36,12 +36,14 @@ public class MergedClasspathJar {
     public synchronized Resource getResource() {
         try {
             if (alreadyGenerated == null || !alreadyGenerated.exists()) {
-                final File file = new File(ContextProperties.TEMP_DIRECTORY,
-                        MergedClasspathJar.class.getName() + "_" + filter.name() + ".jar");
+                final File file = newFile();
                 final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
 
-                try (JarOutputStream jarOut = new JarOutputStream(new FileOutputStream(file))) {
+                final FileOutputStream fos = new FileOutputStream(file);
+                try (JarOutputStream jarOut = newJarOutputStream(fos)) {
+                    beforeProcess(jarOut);
                     processor.process(new MergedClasspathJarVisitor(jarOut, filter));
+                    afterProcess(jarOut);
                 }
                 alreadyGenerated = file;
             }
@@ -50,4 +52,17 @@ public class MergedClasspathJar {
             throw Err.process(e);
         }
     }
+
+    protected File newFile() {
+        return new File(ContextProperties.TEMP_DIRECTORY,
+                MergedClasspathJar.class.getName() + "_" + filter.name() + ".jar");
+    }
+
+    protected JarOutputStream newJarOutputStream(final FileOutputStream fos) throws IOException {
+        return new JarOutputStream(fos);
+    }
+
+    protected void beforeProcess(final JarOutputStream jarOut) throws IOException {}
+
+    protected void afterProcess(final JarOutputStream jarOut) throws IOException {}
 }

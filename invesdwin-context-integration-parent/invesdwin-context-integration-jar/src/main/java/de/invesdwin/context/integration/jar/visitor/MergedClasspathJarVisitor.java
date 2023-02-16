@@ -21,6 +21,7 @@ import org.apache.maven.plugins.shade.resource.XmlAppendingTransformer;
 
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @NotThreadSafe
@@ -103,7 +104,7 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
         try {
             for (final ResourceTransformer transformer : transformers) {
                 if (transformer.canTransformResource(resourcePath)) {
-                    transformer.processResource(resourcePath, inputStream, null);
+                    transformer.processResource(resourcePath, inputStream, Collections.emptyList());
                     return true;
                 }
             }

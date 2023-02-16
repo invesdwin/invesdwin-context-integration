@@ -4,6 +4,7 @@ import java.io.Closeable;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.concurrent.reference.integer.ImmutableMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.ImmutableIntReference;
@@ -103,6 +104,12 @@ public interface IMpiAdapter extends Closeable {
      * MPI_Send, to understand when the completion is reached.
      */
     ISynchronousWriter<IByteBufferProvider> newSendWriter(IIntReference dest, IIntReference tag, int maxMessageSize);
+
+    default ISynchronousReader<IByteBufferProvider> newRecvReader(final int source, final int tag,
+            final int maxMessageSize) {
+        return newRecvReader(ImmutableMutableIntReference.of(source), ImmutableMutableIntReference.of(tag),
+                maxMessageSize);
+    }
 
     /**
      * MPI_Irecv stands for MPI Receive with Immediate return; it does not block until the message is received. To know

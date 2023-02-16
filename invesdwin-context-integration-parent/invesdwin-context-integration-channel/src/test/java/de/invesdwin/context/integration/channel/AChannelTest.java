@@ -40,6 +40,7 @@ import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReade
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
@@ -82,6 +83,8 @@ public abstract class AChannelTest extends ATest {
         UNIX_SOCKET;
     }
 
+    private static final Log LOG = new Log(AChannelTest.class);
+
     protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,
             final IAsynchronousChannel clientChannel) throws InterruptedException {
         try {
@@ -122,7 +125,7 @@ public abstract class AChannelTest extends ATest {
                 new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -144,7 +147,7 @@ public abstract class AChannelTest extends ATest {
                 new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -222,7 +225,7 @@ public abstract class AChannelTest extends ATest {
                     wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
             final ISynchronousReader<IByteBufferProvider> responseReader = maybeSynchronize(
                     wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
-            read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+            new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
             executor.shutdown();
             executor.awaitTermination();
         } finally {
@@ -272,82 +275,96 @@ public abstract class AChannelTest extends ATest {
         return new SerdeAsynchronousHandler<>(handler, FDateSerde.GET, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    protected ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBufferProvider> reader) {
+    public static ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBufferProvider> reader) {
         return new SerdeSynchronousReader<FDate>(reader, FDateSerde.GET);
     }
 
-    protected ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
+    public static ISynchronousWriter<FDate> newCommandWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    protected void read(final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
-
-        Instant readsStart = new Instant();
-        FDate prevValue = null;
-        int count = 0;
-        try {
-            if (DEBUG) {
-                log.info("client open request writer");
-            }
-            requestWriter.open();
-            if (DEBUG) {
-                log.info("client open response reader");
-            }
-            responseReader.open();
-            readsStart = new Instant();
-            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
-            final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
-            while (true) {
-                writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
-                if (DEBUG) {
-                    log.info("client request out");
-                }
-                final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
-                responseReader.readFinished();
-                if (DEBUG) {
-                    log.info("client response in [" + readMessage + "]");
-                }
-                Assertions.checkNotNull(readMessage);
-                if (prevValue != null) {
-                    Assertions.checkTrue(prevValue.isBefore(readMessage));
-                }
-                prevValue = readMessage;
-                count++;
-            }
-        } catch (final EOFException e) {
-            //writer closed
-        } catch (final Exception e) {
-            throw new RuntimeException(e);
-        }
-        Assertions.checkEquals(VALUES, count);
-        try {
-            if (DEBUG) {
-                log.info("client close response reader");
-            }
-            responseReader.close();
-            if (DEBUG) {
-                log.info("client close request writer");
-            }
-            requestWriter.close();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        printProgress("ReadsFinished", readsStart, VALUES, VALUES);
-    }
-
-    protected void printProgress(final String action, final Instant start, final int count, final int maxCount) {
+    protected static void printProgress(final String action, final Instant start, final int count, final int maxCount) {
         final Duration duration = start.toDuration();
-        log.info("%s: %s/%s (%s) %s during %s", action, count, maxCount,
+        LOG.info("%s: %s/%s (%s) %s during %s", action, count, maxCount,
                 new Percent(count, maxCount).toString(PercentScale.PERCENT),
                 new ProcessedEventsRateString(count, duration), duration);
     }
 
-    protected ICloseableIterable<FDate> newValues() {
+    protected static ICloseableIterable<FDate> newValues() {
         return FDates.iterable(FDate.MIN_DATE, FDate.MIN_DATE.addMilliseconds(VALUES - 1), FTimeUnit.MILLISECONDS, 1);
     }
 
-    public class WriterTask implements Runnable {
+    public static class ReaderTask implements Runnable {
+
+        private final ISynchronousWriter<FDate> requestWriter;
+        private final ISynchronousReader<FDate> responseReader;
+
+        public ReaderTask(final ISynchronousWriter<FDate> requestWriter,
+                final ISynchronousReader<FDate> responseReader) {
+            this.requestWriter = requestWriter;
+            this.responseReader = responseReader;
+        }
+
+        @Override
+        public void run() {
+
+            Instant readsStart = new Instant();
+            FDate prevValue = null;
+            int count = 0;
+            try {
+                if (DEBUG) {
+                    LOG.info("client open request writer");
+                }
+                requestWriter.open();
+                if (DEBUG) {
+                    LOG.info("client open response reader");
+                }
+                responseReader.open();
+                readsStart = new Instant();
+                final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
+                final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
+                while (true) {
+                    writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
+                    if (DEBUG) {
+                        LOG.info("client request out");
+                    }
+                    final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                    responseReader.readFinished();
+                    if (DEBUG) {
+                        LOG.info("client response in [" + readMessage + "]");
+                    }
+                    Assertions.checkNotNull(readMessage);
+                    if (prevValue != null) {
+                        Assertions.checkTrue(prevValue.isBefore(readMessage));
+                    }
+                    prevValue = readMessage;
+                    count++;
+                }
+            } catch (final EOFException e) {
+                //writer closed
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+            Assertions.checkEquals(VALUES, count);
+            try {
+                if (DEBUG) {
+                    LOG.info("client close response reader");
+                }
+                responseReader.close();
+                if (DEBUG) {
+                    LOG.info("client close request writer");
+                }
+                requestWriter.close();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            printProgress("ReadsFinished", readsStart, VALUES, VALUES);
+        }
+
+    }
+
+    public static class WriterTask implements Runnable {
 
         private final ISynchronousReader<FDate> requestReader;
         private final ISynchronousWriter<FDate> responseWriter;
@@ -365,24 +382,24 @@ public abstract class AChannelTest extends ATest {
             try {
                 int i = 0;
                 if (DEBUG) {
-                    log.info("server open request reader");
+                    LOG.info("server open request reader");
                 }
                 requestReader.open();
                 if (DEBUG) {
-                    log.info("server open response writer");
+                    LOG.info("server open response writer");
                 }
                 responseWriter.open();
                 final Instant writesStart = new Instant();
                 for (final FDate date : newValues()) {
                     final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                     if (DEBUG) {
-                        log.info("server request in");
+                        LOG.info("server request in");
                     }
                     requestReader.readFinished();
                     Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
                     writeSpinWait.waitForWrite(date, MAX_WAIT_DURATION);
                     if (DEBUG) {
-                        log.info("server response out [" + date + "]");
+                        LOG.info("server response out [" + date + "]");
                     }
                     i++;
                     if (i % FLUSH_INTERVAL == 0) {
@@ -391,11 +408,11 @@ public abstract class AChannelTest extends ATest {
                 }
                 printProgress("WritesFinished", writesStart, VALUES, VALUES);
                 if (DEBUG) {
-                    log.info("server close response writer");
+                    LOG.info("server close response writer");
                 }
                 responseWriter.close();
                 if (DEBUG) {
-                    log.info("server close request reader");
+                    LOG.info("server close request reader");
                 }
                 requestReader.close();
             } catch (final Exception e) {
