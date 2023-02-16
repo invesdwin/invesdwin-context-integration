@@ -111,7 +111,7 @@ public class AgronaChannelTest extends AChannelTest {
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -132,7 +132,7 @@ public class AgronaChannelTest extends AChannelTest {
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BroadcastSynchronousWriter(requestChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BroadcastSynchronousReader(responseChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

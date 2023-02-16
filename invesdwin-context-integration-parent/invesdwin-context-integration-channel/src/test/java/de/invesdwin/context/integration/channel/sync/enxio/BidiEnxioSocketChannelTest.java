@@ -36,7 +36,7 @@ public class BidiEnxioSocketChannelTest extends AChannelTest {
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new EnxioSocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

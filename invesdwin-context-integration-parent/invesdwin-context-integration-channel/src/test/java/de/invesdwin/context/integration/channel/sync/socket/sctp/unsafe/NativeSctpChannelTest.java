@@ -39,7 +39,7 @@ public class NativeSctpChannelTest extends AChannelTest {
                 newSctpSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSctpSynchronousReader(
                 newSctpSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

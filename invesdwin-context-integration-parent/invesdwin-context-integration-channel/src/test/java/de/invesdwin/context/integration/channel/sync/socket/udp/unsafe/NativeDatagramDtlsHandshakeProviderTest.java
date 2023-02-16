@@ -55,7 +55,7 @@ public class NativeDatagramDtlsHandshakeProviderTest extends AChannelTest {
                 .newWriter(new NativeDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new NativeDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -46,7 +46,7 @@ public class StreamEncryptionNativeSocketChannelTest extends AChannelTest {
                 new NativeSocketSynchronousWriter(clientChannel), ENCRYPTION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> responseReader = new StreamEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(clientChannel), ENCRYPTION_FACTORY);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

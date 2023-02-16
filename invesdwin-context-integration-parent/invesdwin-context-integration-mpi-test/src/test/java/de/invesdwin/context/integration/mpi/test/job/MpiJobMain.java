@@ -57,7 +57,7 @@ public class MpiJobMain extends AMain {
             Err.process(t);
             MPI.abort(-1);
         } finally {
-            MPI.close();
+            MPI.finalizeMpi();
         }
     }
 

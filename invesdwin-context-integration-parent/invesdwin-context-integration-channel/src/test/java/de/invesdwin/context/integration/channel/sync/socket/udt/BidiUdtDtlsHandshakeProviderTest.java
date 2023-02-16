@@ -51,7 +51,7 @@ public class BidiUdtDtlsHandshakeProviderTest extends AChannelTest {
                 .newWriter(new UdtSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new UdtSynchronousReader(clientChannel));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -49,7 +49,7 @@ public class BidiMinaNativeSocketChannelTest extends AChannelTest {
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaNativeSocketSynchronousReader(
                 clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

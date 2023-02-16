@@ -38,7 +38,7 @@ public class BlockingSocketChannelTest extends AChannelTest {
                 newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
                 newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

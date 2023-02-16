@@ -1,13 +1,15 @@
 package de.invesdwin.context.integration.mpi.test.job;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.jar.Attributes.Name;
+import java.util.jar.Attributes;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 
@@ -23,8 +25,15 @@ public final class MpiJobMainJar extends MergedClasspathJar {
     @Override
     protected JarOutputStream newJarOutputStream(final FileOutputStream fos) throws IOException {
         final Manifest manifest = new Manifest();
-        manifest.getMainAttributes().put(Name.MAIN_CLASS, MpiJobMain.class.getName());
+        final Attributes global = manifest.getMainAttributes();
+        global.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+        global.put(Attributes.Name.MAIN_CLASS, MpiJobMain.class.getName());
         return new JarOutputStream(fos, manifest);
+    }
+
+    @Override
+    protected File newFile() {
+        return new File(ContextProperties.getCacheDirectory(), MpiJobMain.class.getSimpleName() + ".jar");
     }
 
 }

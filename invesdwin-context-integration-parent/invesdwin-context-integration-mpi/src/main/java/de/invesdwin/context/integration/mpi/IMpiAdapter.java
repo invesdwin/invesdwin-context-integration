@@ -1,13 +1,11 @@
 package de.invesdwin.context.integration.mpi;
 
-import java.io.Closeable;
-
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.reference.integer.ImmutableMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
 import de.invesdwin.util.concurrent.reference.integer.ImmutableIntReference;
+import de.invesdwin.util.concurrent.reference.integer.ImmutableMutableIntReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
@@ -19,7 +17,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
  * @author subes
  *
  */
-public interface IMpiAdapter extends Closeable {
+public interface IMpiAdapter {
 
     default void init(final String[] args) {
         initThread(args, MpiThreadSupport.THREAD_SINGLE);
@@ -156,7 +154,6 @@ public interface IMpiAdapter extends Closeable {
      * Calls MPI.finalize(). MPI_Finalize shuts down the MPI library. It must be called by each process at the end of
      * the MPI program.
      */
-    @Override
-    void close();
+    void finalizeMpi();
 
 }

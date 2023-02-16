@@ -56,7 +56,7 @@ public class DatagramDtlsHandshakeProviderTest extends AChannelTest {
                 .newWriter(new DatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new DatagramSynchronousReader(responseAddress, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

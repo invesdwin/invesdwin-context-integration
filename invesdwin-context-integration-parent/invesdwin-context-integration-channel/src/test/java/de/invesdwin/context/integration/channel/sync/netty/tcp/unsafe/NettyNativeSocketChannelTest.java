@@ -45,7 +45,7 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
                 new NettySocketSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeSocketSynchronousReader(
                 new NettySocketSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

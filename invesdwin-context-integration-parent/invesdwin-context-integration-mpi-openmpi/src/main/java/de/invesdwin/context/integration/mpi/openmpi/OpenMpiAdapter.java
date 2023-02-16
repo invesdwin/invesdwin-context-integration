@@ -118,7 +118,7 @@ public class OpenMpiAdapter implements IMpiAdapter {
     }
 
     @Override
-    public void close() {
+    public void finalizeMpi() {
         try {
             MPI.Finalize();
         } catch (final MPIException e) {

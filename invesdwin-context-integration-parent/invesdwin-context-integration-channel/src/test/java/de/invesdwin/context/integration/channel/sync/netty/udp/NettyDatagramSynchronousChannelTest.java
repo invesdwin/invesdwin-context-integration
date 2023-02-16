@@ -41,7 +41,7 @@ public class NettyDatagramSynchronousChannelTest extends AChannelTest {
                 requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyDatagramSynchronousReader(type,
                 responseAddress, getMaxMessageSize());
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

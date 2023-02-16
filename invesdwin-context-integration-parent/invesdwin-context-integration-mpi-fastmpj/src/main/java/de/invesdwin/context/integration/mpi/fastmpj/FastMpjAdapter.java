@@ -94,7 +94,7 @@ public class FastMpjAdapter implements IMpiAdapter {
     }
 
     @Override
-    public void close() {
+    public void finalizeMpi() {
         MPI.Finalize();
     }
 

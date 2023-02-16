@@ -39,7 +39,7 @@ public class EnxioSocketChannelTest extends AChannelTest {
                 newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(
                 newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

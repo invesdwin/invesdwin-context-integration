@@ -59,7 +59,7 @@ public class MinaSocketChannelTest extends AChannelTest {
                 newMinaSocketChannel(type, requestAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaSocketSynchronousReader(
                 newMinaSocketChannel(type, responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

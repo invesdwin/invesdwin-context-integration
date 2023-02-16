@@ -98,7 +98,7 @@ public class BufferingIteratorChannelTest extends AChannelTest {
                 }, synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BufferingIteratorSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

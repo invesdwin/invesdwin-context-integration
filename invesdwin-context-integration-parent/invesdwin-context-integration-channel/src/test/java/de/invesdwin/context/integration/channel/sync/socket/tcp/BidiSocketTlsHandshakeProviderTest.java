@@ -51,7 +51,7 @@ public class BidiSocketTlsHandshakeProviderTest extends AChannelTest {
                 .newWriter(new SocketSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new SocketSynchronousReader(clientChannel));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

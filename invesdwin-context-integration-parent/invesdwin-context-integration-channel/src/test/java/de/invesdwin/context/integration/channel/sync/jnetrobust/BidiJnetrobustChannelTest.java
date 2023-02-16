@@ -36,7 +36,7 @@ public class BidiJnetrobustChannelTest extends AChannelTest {
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new JnetrobustSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JnetrobustSynchronousReader(clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

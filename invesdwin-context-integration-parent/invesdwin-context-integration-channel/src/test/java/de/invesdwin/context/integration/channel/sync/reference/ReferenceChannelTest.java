@@ -71,7 +71,7 @@ public class ReferenceChannelTest extends AChannelTest {
         executor.execute(new WriterTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new ReferenceSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ReferenceSynchronousReader<FDate>(responseQueue);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

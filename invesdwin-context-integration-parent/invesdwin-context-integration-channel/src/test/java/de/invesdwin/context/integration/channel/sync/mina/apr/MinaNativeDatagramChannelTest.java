@@ -42,7 +42,7 @@ public class MinaNativeDatagramChannelTest extends AChannelTest {
                 requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaNativeDatagramSynchronousReader(
                 responseAddress, getMaxMessageSize());
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

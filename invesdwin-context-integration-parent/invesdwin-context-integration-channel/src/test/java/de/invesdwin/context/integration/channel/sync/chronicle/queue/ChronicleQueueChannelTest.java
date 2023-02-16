@@ -57,7 +57,7 @@ public class ChronicleQueueChannelTest extends AChannelTest {
                     requestFile);
             final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
                     responseFile);
-            read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+            new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
             executor.shutdown();
             executor.awaitTermination();
         } finally {

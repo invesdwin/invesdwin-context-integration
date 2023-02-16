@@ -52,7 +52,7 @@ public class AeronChannelTest extends AChannelTest {
                 requestChannel, requestStreamId);
         final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
                 responseChannel, responseStreamId);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
         Assertions.checkTrue(instance.isClosed());

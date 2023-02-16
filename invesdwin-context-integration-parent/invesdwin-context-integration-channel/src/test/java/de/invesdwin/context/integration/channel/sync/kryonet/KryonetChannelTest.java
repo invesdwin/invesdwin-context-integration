@@ -39,7 +39,7 @@ public class KryonetChannelTest extends AChannelTest {
                 requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> responseReader = new KryonetSynchronousReader(address,
                 responseTcpPort, responseUdpPort, false);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

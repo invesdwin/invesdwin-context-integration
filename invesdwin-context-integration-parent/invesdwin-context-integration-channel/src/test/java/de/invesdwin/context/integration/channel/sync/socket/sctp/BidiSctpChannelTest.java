@@ -35,7 +35,7 @@ public class BidiSctpChannelTest extends AChannelTest {
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new SctpSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new SctpSynchronousReader(clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

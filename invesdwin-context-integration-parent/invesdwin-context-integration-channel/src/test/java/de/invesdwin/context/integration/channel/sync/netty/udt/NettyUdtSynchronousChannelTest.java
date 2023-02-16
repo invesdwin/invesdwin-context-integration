@@ -43,7 +43,7 @@ public class NettyUdtSynchronousChannelTest extends AChannelTest {
                 requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(type,
                 responseAddress, getMaxMessageSize());
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

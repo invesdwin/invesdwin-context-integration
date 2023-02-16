@@ -54,8 +54,7 @@ public class MergedClasspathJar {
     }
 
     protected File newFile() {
-        return new File(ContextProperties.TEMP_DIRECTORY,
-                MergedClasspathJar.class.getName() + "_" + filter.name() + ".jar");
+        return new File(ContextProperties.TEMP_DIRECTORY, getClass().getName() + "_" + filter.name() + ".jar");
     }
 
     protected JarOutputStream newJarOutputStream(final FileOutputStream fos) throws IOException {

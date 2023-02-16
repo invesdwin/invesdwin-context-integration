@@ -37,7 +37,7 @@ public class NativeDatagramChannelTest extends AChannelTest {
                 requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
                 responseAddress, getMaxMessageSize());
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

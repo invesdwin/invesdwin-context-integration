@@ -39,7 +39,7 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
                 newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleNetworkSynchronousReader(
                 newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

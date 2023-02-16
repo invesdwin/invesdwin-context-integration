@@ -35,7 +35,7 @@ public class BidiSocketChannelTest extends AChannelTest {
         executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new SocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new SocketSynchronousReader(clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

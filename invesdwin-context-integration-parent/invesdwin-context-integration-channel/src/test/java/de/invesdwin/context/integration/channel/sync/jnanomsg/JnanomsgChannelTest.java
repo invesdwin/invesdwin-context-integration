@@ -83,7 +83,7 @@ public class JnanomsgChannelTest extends AChannelTest {
                 requestChannel, false);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JnanomsgSynchronousReader(socketType,
                 responseChannel, false);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

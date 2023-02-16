@@ -48,7 +48,7 @@ public class LmaxChannelTest extends AChannelTest {
         executor.execute(new WriterTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new LmaxSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new LmaxSynchronousReader<FDate>(responseQueue);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

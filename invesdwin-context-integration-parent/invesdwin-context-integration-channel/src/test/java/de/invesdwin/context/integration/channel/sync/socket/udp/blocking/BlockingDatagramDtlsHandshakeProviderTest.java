@@ -57,7 +57,7 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends AChannelTest {
                 .newWriter(new BlockingDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new BlockingDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

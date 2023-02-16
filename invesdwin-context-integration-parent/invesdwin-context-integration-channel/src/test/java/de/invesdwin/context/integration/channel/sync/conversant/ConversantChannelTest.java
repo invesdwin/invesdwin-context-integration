@@ -57,7 +57,7 @@ public class ConversantChannelTest extends AChannelTest {
         executor.execute(new WriterTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new ConversantSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ConversantSynchronousReader<FDate>(responseQueue);
-        read(requestWriter, responseReader);
+        new ReaderTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

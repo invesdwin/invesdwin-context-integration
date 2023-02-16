@@ -41,7 +41,7 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
                 clientChannel);
-        read(newCommandWriter(requestWriter), newCommandReader(responseReader));
+        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
