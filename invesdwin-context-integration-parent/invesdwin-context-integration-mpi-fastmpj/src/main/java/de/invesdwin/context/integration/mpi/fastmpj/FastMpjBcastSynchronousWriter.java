@@ -44,7 +44,7 @@ public class FastMpjBcastSynchronousWriter implements ISynchronousWriter<IByteBu
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final int length = message.getBuffer(buffer);
-        comm.Bcast(buffer.byteArray(), 0, length, MPI.BYTE, root.get());
+        FastMpjBroadcast.mstBroadcast(comm, buffer.byteArray(), 0, length, MPI.BYTE, root.get());
     }
 
     @Override
