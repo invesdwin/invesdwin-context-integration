@@ -6,7 +6,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import mpi.Intracomm;
@@ -41,6 +43,9 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
 
     @Override
     public boolean hasNext() throws IOException {
+        if (buffer == null) {
+            throw FastEOFException.getInstance("closed");
+        }
         if (request != null) {
             return hasMessage();
         }
@@ -64,6 +69,10 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     public IByteBufferProvider readMessage() throws IOException {
         try {
             final int length = request.getStatus().getCount(MPI.BYTE);
+            if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
+                close();
+                throw FastEOFException.getInstance("closed by other side");
+            }
             return buffer.sliceTo(length);
         } catch (final MPIException e) {
             throw new RuntimeException(e);

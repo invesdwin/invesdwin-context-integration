@@ -6,7 +6,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.integer.IMutableIntReference;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import mpi.Intracomm;
@@ -47,6 +49,9 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
 
     @Override
     public boolean hasNext() throws IOException {
+        if (buffer == null) {
+            return false;
+        }
         if (request != null) {
             return hasMessage();
         }
@@ -71,6 +76,10 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
         try {
             final Status status = request.getStatus();
             final int length = status.getCount(MPI.BYTE);
+            if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
+                close();
+                throw FastEOFException.getInstance("closed by other side");
+            }
             sourceBefore = source.getAndSet(status.getSource());
             tagBefore = tag.getAndSet(status.getTag());
             return buffer.sliceTo(length);

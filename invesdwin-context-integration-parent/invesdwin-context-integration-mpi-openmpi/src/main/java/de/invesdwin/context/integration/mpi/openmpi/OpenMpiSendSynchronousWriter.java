@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import mpi.Intracomm;
@@ -39,7 +40,10 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public void close() throws IOException {
-        buffer = null;
+        if (buffer != null) {
+            write(ClosedByteBuffer.INSTANCE);
+            buffer = null;
+        }
     }
 
     @Override
