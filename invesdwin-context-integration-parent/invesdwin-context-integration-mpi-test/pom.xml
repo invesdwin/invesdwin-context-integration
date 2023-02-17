@@ -26,16 +26,14 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi</artifactId>
 		</dependency>
-		<!--<dependency>
+		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
-			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
-			<scope>provided</scope>
-		</dependency>-->
+		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
@@ -44,7 +42,7 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-jar</artifactId>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-docker</artifactId>
