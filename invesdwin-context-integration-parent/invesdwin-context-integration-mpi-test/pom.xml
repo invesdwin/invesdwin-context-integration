@@ -26,17 +26,19 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi</artifactId>
 		</dependency>
+		<!--<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
+			<scope>provided</scope>
+		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
-		</dependency>
+			<scope>provided</scope>
+		</dependency>-->
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>

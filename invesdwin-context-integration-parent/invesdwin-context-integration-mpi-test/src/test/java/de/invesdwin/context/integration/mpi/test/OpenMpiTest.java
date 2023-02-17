@@ -11,6 +11,7 @@ import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -24,8 +25,9 @@ public class OpenMpiTest extends ATest {
         final File scriptTemplate = new File("mpj/openmpi_test_template.sh");
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
         script = script.replace("{ARGS}",
-                "-np 2 java -jar " + MpiJobMainJar.INSTANCE.getResource().getFile().getAbsolutePath() + " --logDir \""
-                        + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
+                "-np 2 java -jar "
+                        + new MpiJobMainJar(MergedClasspathJarFilter.DEFAULT).getResource().getFile().getAbsolutePath()
+                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "openmpi_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 

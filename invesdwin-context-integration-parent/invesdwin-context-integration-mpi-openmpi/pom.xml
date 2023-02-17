@@ -1,6 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<parent>
 		<groupId>de.invesdwin</groupId>
@@ -29,9 +27,9 @@
 			<artifactId>invesdwin-context-integration-mpi</artifactId>
 		</dependency>
 		<dependency>
+			<!-- openmpi clients need to embed their own mpi jar -->
 			<groupId>org.openmpi</groupId>
 			<artifactId>mpi</artifactId>
-			<scope>provided</scope>
 		</dependency>
 	</dependencies>
 </project>

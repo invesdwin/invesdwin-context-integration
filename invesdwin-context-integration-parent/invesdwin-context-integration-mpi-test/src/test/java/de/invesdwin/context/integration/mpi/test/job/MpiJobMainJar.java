@@ -12,19 +12,17 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.jar.visitor.IMergedClasspathJarFilter;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.time.Instant;
 
 @ThreadSafe
 public final class MpiJobMainJar extends MergedClasspathJar {
 
-    public static final MpiJobMainJar INSTANCE = new MpiJobMainJar();
-
     private final Log log = new Log(this);
 
-    private MpiJobMainJar() {
-        super(MergedClasspathJarFilter.MPI);
+    public MpiJobMainJar(final IMergedClasspathJarFilter filter) {
+        super(filter);
     }
 
     @Override
