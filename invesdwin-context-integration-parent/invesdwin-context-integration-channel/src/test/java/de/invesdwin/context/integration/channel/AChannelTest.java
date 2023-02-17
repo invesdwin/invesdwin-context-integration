@@ -340,7 +340,7 @@ public abstract class AChannelTest extends ATest {
                 readsStart = new Instant();
                 final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
                 final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
-                while (true) {
+                while (count < VALUES) {
                     writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
                     if (DEBUG) {
                         log.write("client request out\n".getBytes());
