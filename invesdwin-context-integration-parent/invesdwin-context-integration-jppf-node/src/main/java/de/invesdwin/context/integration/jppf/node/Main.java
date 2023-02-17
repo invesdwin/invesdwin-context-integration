@@ -20,6 +20,6 @@ public final class Main extends AMain {
 
     public static void main(final String[] args) {
         JPPFNodeContextLocation.activate();
-        new Main(args);
+        new Main(args).run();
     }
 }

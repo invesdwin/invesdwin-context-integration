@@ -21,6 +21,6 @@ public final class Main extends AMain {
 
     public static void main(final String[] args) {
         JPPFServerContextLocation.activate();
-        new Main(args);
+        new Main(args).run();
     }
 }

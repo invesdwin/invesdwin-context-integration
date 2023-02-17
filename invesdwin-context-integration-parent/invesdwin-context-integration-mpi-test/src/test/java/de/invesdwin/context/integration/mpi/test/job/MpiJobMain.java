@@ -15,7 +15,6 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jOutputStream;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.AChannelTest.ReaderTask;
@@ -50,13 +49,12 @@ public class MpiJobMain extends AMain {
     private final Log log = new Log(this);
 
     public MpiJobMain(final String[] args) {
-        super(args, false);
-        test();
+        super(args, true);
     }
 
     @Override
     protected void startApplication(final CmdLineParser parser) {
-        //noop
+        test();
     }
 
     private void test() {
@@ -163,10 +161,10 @@ public class MpiJobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        PlatformInitializerProperties.setAllowed(false);
+        //        PlatformInitializerProperties.setAllowed(false);
         final String[] jobArgs = MPI.init(args);
         try {
-            new MpiJobMain(jobArgs);
+            new MpiJobMain(jobArgs).run();
         } catch (final Throwable t) {
             Err.process(t);
             MPI.abort(-1);
