@@ -14,6 +14,7 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
+import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -74,7 +75,9 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
         try {
             if (request == null) {
                 return true;
-            } else if (request.test()) {
+            }
+            final Status status = request.testStatus();
+            if (status != null) {
                 request.free();
                 request = null;
                 return true;

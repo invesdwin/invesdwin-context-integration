@@ -26,6 +26,7 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
+    private Status status;
     private int sourceBefore;
     private int tagBefore;
 
@@ -45,6 +46,8 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
     @Override
     public void close() throws IOException {
         buffer = null;
+        request = null;
+        status = null;
     }
 
     @Override
@@ -64,8 +67,12 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
     }
 
     private boolean hasMessage() throws IOException {
+        if (status != null) {
+            return true;
+        }
         try {
-            return request.test();
+            status = request.testStatus();
+            return status != null;
         } catch (final MPIException e) {
             throw new IOException(e);
         }
@@ -96,6 +103,7 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
             throw new IOException(e);
         }
         request = null;
+        status = null;
         source.set(sourceBefore);
         tag.set(tagBefore);
     }

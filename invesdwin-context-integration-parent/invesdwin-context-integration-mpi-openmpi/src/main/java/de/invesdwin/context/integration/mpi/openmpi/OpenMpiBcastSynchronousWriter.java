@@ -13,6 +13,7 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
+import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -67,7 +68,9 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
         try {
             if (request == null) {
                 return true;
-            } else if (request.test()) {
+            }
+            final Status status = request.testStatus();
+            if (status != null) {
                 request.free();
                 request = null;
                 return true;

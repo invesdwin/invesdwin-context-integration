@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.integer.IIntReference;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -15,6 +16,7 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
+import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -24,6 +26,7 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
+    private Status status;
 
     public OpenMpiBcastSynchronousReader(final Intracomm comm, final IIntReference root, final int maxMessageSize) {
         this.comm = comm;
@@ -39,6 +42,8 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     @Override
     public void close() throws IOException {
         buffer = null;
+        request = null;
+        status = null;
     }
 
     @Override
@@ -58,8 +63,12 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     }
 
     private boolean hasMessage() throws IOException {
+        if (status != null) {
+            return true;
+        }
         try {
-            return request.test();
+            status = request.waitStatus();
+            return status != null;
         } catch (final MPIException e) {
             throw new IOException(e);
         }
@@ -68,7 +77,12 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         try {
-            final int length = request.getStatus().getCount(MPI.BYTE);
+            final int length = status.getCount(MPI.BYTE);
+            System.out.println("******* " + Objects.toString(status) + " position=" + buffer.nioByteBuffer().position()
+                    + " count=" + status.getCount(MPI.BYTE) + " elements=" + status.getElements(MPI.BYTE) + " error="
+                    + status.getError() + " index=" + status.getIndex() + " source=" + status.getSource() + " tag="
+                    + status.getTag());
+            //            + " elementsX=" + status.getElementsX(MPI.BYTE));
             if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
                 close();
                 throw FastEOFException.getInstance("closed by other side");
@@ -86,6 +100,7 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
         } catch (final MPIException e) {
             throw new IOException(e);
         }
+        status = null;
         request = null;
     }
 
