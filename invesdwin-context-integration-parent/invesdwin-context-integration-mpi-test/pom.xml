@@ -38,15 +38,14 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-jar</artifactId>
+		</dependency>
 		
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-docker</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-jar</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
