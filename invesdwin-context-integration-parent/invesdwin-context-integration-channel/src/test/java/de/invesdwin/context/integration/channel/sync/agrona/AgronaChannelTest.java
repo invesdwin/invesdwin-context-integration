@@ -106,12 +106,12 @@ public class AgronaChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new RingBufferSynchronousReader(requestChannel,
                 zeroCopy);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaRingBufferPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new RingBufferSynchronousWriter(requestChannel,
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -129,10 +129,10 @@ public class AgronaChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BroadcastSynchronousWriter(responseChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new BroadcastSynchronousReader(requestChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaBroadcastPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BroadcastSynchronousWriter(requestChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BroadcastSynchronousReader(responseChannel);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

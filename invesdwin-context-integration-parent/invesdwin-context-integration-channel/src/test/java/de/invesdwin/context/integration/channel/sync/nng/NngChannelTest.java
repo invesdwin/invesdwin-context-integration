@@ -78,12 +78,12 @@ public class NngChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new NngSynchronousReader(socketType,
                 requestChannel, true);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNngPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NngSynchronousWriter(socketType,
                 requestChannel, false);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NngSynchronousReader(socketType,
                 responseChannel, false);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

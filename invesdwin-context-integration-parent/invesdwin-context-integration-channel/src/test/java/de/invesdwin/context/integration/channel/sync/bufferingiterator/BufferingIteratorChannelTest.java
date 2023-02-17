@@ -83,7 +83,7 @@ public class BufferingIteratorChannelTest extends AChannelTest {
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new BufferingIteratorSynchronousReader<FDate>(requestQueue), synchronizeRequest);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runBufferingIteratorPerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new BufferingIteratorSynchronousWriter<FDate>(requestQueue) {
                     @Override
@@ -98,7 +98,7 @@ public class BufferingIteratorChannelTest extends AChannelTest {
                 }, synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BufferingIteratorSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

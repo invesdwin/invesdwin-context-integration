@@ -54,10 +54,10 @@ public class ConversantChannelTest extends AChannelTest {
         final ISynchronousWriter<FDate> responseWriter = new ConversantSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new ConversantSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new ConversantSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ConversantSynchronousReader<FDate>(responseQueue);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

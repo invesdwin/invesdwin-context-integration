@@ -122,12 +122,12 @@ public abstract class AChannelTest extends ATest {
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -144,12 +144,12 @@ public abstract class AChannelTest extends ATest {
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBlockingQueuePerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
@@ -222,12 +222,12 @@ public abstract class AChannelTest extends ATest {
             final ISynchronousReader<IByteBufferProvider> requestReader = maybeSynchronize(
                     wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+            executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = maybeSynchronize(
                     wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
             final ISynchronousReader<IByteBufferProvider> responseReader = maybeSynchronize(
                     wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
-            new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+            new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
             executor.shutdown();
             executor.awaitTermination();
         } finally {
@@ -300,23 +300,23 @@ public abstract class AChannelTest extends ATest {
         return FDates.iterable(FDate.MIN_DATE, FDate.MIN_DATE.addMilliseconds(VALUES - 1), FTimeUnit.MILLISECONDS, 1);
     }
 
-    public static class ReaderTask implements Runnable {
+    public static class ClientTask implements Runnable {
 
         private final OutputStream log;
         private final ISynchronousWriter<FDate> requestWriter;
         private final ISynchronousReader<FDate> responseReader;
 
-        public ReaderTask(final ISynchronousWriter<FDate> requestWriter,
+        public ClientTask(final ISynchronousWriter<FDate> requestWriter,
                 final ISynchronousReader<FDate> responseReader) {
-            this(new Log(ReaderTask.class), requestWriter, responseReader);
+            this(new Log(ClientTask.class), requestWriter, responseReader);
         }
 
-        public ReaderTask(final Log log, final ISynchronousWriter<FDate> requestWriter,
+        public ClientTask(final Log log, final ISynchronousWriter<FDate> requestWriter,
                 final ISynchronousReader<FDate> responseReader) {
             this(Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
         }
 
-        public ReaderTask(final OutputStream log, final ISynchronousWriter<FDate> requestWriter,
+        public ClientTask(final OutputStream log, final ISynchronousWriter<FDate> requestWriter,
                 final ISynchronousReader<FDate> responseReader) {
             this.log = log;
             this.requestWriter = requestWriter;
@@ -380,23 +380,23 @@ public abstract class AChannelTest extends ATest {
 
     }
 
-    public static class WriterTask implements Runnable {
+    public static class ServerTask implements Runnable {
 
         private final OutputStream log;
         private final ISynchronousReader<FDate> requestReader;
         private final ISynchronousWriter<FDate> responseWriter;
 
-        public WriterTask(final ISynchronousReader<FDate> requestReader,
+        public ServerTask(final ISynchronousReader<FDate> requestReader,
                 final ISynchronousWriter<FDate> responseWriter) {
-            this(new Log(WriterTask.class), requestReader, responseWriter);
+            this(new Log(ServerTask.class), requestReader, responseWriter);
         }
 
-        public WriterTask(final Log log, final ISynchronousReader<FDate> requestReader,
+        public ServerTask(final Log log, final ISynchronousReader<FDate> requestReader,
                 final ISynchronousWriter<FDate> responseWriter) {
             this(Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
         }
 
-        public WriterTask(final OutputStream log, final ISynchronousReader<FDate> requestReader,
+        public ServerTask(final OutputStream log, final ISynchronousReader<FDate> requestReader,
                 final ISynchronousWriter<FDate> responseWriter) {
             this.log = log;
             this.requestReader = requestReader;

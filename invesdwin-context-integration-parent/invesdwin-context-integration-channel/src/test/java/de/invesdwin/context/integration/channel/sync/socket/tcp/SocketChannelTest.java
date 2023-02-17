@@ -33,12 +33,12 @@ public class SocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new SocketSynchronousReader(
                 newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new SocketSynchronousWriter(
                 newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new SocketSynchronousReader(
                 newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

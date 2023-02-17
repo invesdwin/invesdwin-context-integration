@@ -44,12 +44,12 @@ public class StreamVerifiedEncryptionNativeSocketChannelTest extends AChannelTes
         final ISynchronousReader<IByteBufferProvider> requestReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(serverChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new StreamVerifiedEncryptionSynchronousWriter(
                 new NativeSocketSynchronousWriter(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> responseReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

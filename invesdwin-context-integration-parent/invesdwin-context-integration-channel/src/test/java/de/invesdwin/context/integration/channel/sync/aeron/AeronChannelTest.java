@@ -47,12 +47,12 @@ public class AeronChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new AeronSynchronousReader(instance,
                 requestChannel, requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance,
                 requestChannel, requestStreamId);
         final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
                 responseChannel, responseStreamId);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
         Assertions.checkTrue(instance.isClosed());

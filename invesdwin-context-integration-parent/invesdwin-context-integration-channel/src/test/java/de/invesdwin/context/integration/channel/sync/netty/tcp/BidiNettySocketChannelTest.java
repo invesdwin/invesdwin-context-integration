@@ -36,10 +36,10 @@ public class BidiNettySocketChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettySocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettySocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettySocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettySocketSynchronousReader(clientChannel);
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

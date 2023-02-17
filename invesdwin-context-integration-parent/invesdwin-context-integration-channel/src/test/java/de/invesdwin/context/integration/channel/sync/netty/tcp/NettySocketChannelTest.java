@@ -35,12 +35,12 @@ public class NettySocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettySocketSynchronousReader(
                 newNettySocketChannel(type, requestAddress, false, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettySocketSynchronousWriter(
                 newNettySocketChannel(type, requestAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettySocketSynchronousReader(
                 newNettySocketChannel(type, responseAddress, false, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

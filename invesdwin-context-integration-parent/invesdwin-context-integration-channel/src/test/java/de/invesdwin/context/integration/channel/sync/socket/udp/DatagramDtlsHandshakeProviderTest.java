@@ -51,12 +51,12 @@ public class DatagramDtlsHandshakeProviderTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new DatagramSynchronousReader(requestAddress, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new DatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new DatagramSynchronousReader(responseAddress, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -45,10 +45,10 @@ public class LmaxChannelTest extends AChannelTest {
         final ISynchronousWriter<FDate> responseWriter = new LmaxSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new LmaxSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new LmaxSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new LmaxSynchronousReader<FDate>(responseQueue);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

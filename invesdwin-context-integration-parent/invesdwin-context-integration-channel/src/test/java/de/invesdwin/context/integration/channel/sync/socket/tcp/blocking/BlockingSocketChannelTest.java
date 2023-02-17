@@ -33,12 +33,12 @@ public class BlockingSocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingSocketSynchronousReader(
                 newBlockingSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(
                 newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
                 newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

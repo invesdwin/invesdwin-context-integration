@@ -32,12 +32,12 @@ public class UdtChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new UdtSynchronousReader(
                 newUdtSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testUdtPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new UdtSynchronousWriter(
                 newUdtSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new UdtSynchronousReader(
                 newUdtSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

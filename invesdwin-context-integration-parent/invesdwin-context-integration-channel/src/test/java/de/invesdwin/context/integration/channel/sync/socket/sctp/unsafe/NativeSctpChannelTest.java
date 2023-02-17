@@ -34,12 +34,12 @@ public class NativeSctpChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new NativeSctpSynchronousReader(
                 newSctpSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNativeSocketPerformanceTest", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeSctpSynchronousWriter(
                 newSctpSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSctpSynchronousReader(
                 newSctpSynchronousChannel(responseAddress, false, getMaxMessageSize()));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

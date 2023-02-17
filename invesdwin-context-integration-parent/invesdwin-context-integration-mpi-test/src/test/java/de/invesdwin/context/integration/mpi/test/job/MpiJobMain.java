@@ -15,10 +15,11 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jOutputStream;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.AChannelTest.ReaderTask;
-import de.invesdwin.context.integration.channel.AChannelTest.WriterTask;
+import de.invesdwin.context.integration.channel.AChannelTest.ClientTask;
+import de.invesdwin.context.integration.channel.AChannelTest.ServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
@@ -41,6 +42,7 @@ import de.invesdwin.util.time.date.FDate;
 @NotThreadSafe
 public class MpiJobMain extends AMain {
 
+    private static final boolean BOOTSTRAP = true;
     private static final IMpiAdapter MPI = ProvidedMpiAdapter.getProvidedInstance();
 
     @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
@@ -49,7 +51,7 @@ public class MpiJobMain extends AMain {
     private final Log log = new Log(this);
 
     public MpiJobMain(final String[] args) {
-        super(args, true);
+        super(args, BOOTSTRAP);
     }
 
     @Override
@@ -131,8 +133,8 @@ public class MpiJobMain extends AMain {
                     .newCommandWriter(MPI.newSendWriter(1, 0, AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousReader<FDate> responseReader = AChannelTest
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ReaderTask.class)) {
-                new ReaderTask(log, requestWriter, responseReader).run();
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ClientTask.class)) {
+                new ClientTask(log, requestWriter, responseReader).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
@@ -142,8 +144,8 @@ public class MpiJobMain extends AMain {
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousWriter<FDate> responseWriter = AChannelTest
                     .newCommandWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(MPI.rank(), MPI.size(), WriterTask.class)) {
-                new WriterTask(log, requestReader, responseWriter).run();
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ServerTask.class)) {
+                new ServerTask(log, requestReader, responseWriter).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
@@ -161,7 +163,7 @@ public class MpiJobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        //        PlatformInitializerProperties.setAllowed(false);
+        PlatformInitializerProperties.setAllowed(BOOTSTRAP);
         final String[] jobArgs = MPI.init(args);
         try {
             new MpiJobMain(jobArgs).run();

@@ -48,12 +48,12 @@ public class BidiNativeSocketDtlsHandshakeProviderTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new NativeSocketSynchronousReader(serverChannel));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new WriterTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new NativeSocketSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new NativeSocketSynchronousReader(clientChannel));
-        new ReaderTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -68,10 +68,10 @@ public class ReferenceChannelTest extends AChannelTest {
         final ISynchronousWriter<FDate> responseWriter = new ReferenceSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new ReferenceSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runReferencePerformanceTest", 1);
-        executor.execute(new WriterTask(requestReader, responseWriter));
+        executor.execute(new ServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new ReferenceSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ReferenceSynchronousReader<FDate>(responseQueue);
-        new ReaderTask(requestWriter, responseReader).run();
+        new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
