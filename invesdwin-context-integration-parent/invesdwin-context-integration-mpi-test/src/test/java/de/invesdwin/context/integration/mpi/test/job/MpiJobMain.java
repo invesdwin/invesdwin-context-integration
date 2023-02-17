@@ -32,7 +32,8 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.streams.BroadcastingOutputStream;
-import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
@@ -77,6 +78,7 @@ public class MpiJobMain extends AMain {
     private void testBcast() {
         final Instant start = new Instant();
         log.info("%s/%s: Started broadcast", MPI.rank() + 1, MPI.size());
+        final int bcastValue = Integer.MAX_VALUE;
         switch (MPI.rank()) {
         case 0:
             try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
@@ -84,10 +86,13 @@ public class MpiJobMain extends AMain {
                 bcastWriter.open();
                 final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
                         .borrowObject(bcastWriter);
+                final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
                 try {
-                    bcastWriterSpinWait.waitForWrite(ClosedByteBuffer.INSTANCE,
+                    buffer.putInt(0, bcastValue);
+                    bcastWriterSpinWait.waitForWrite(buffer.slice(0, Integer.BYTES),
                             ContextProperties.DEFAULT_NETWORK_TIMEOUT);
                 } finally {
+                    ByteBuffers.EXPANDABLE_POOL.returnObject(buffer);
                     SynchronousWriterSpinWaitPool.returnObject(bcastWriterSpinWait);
                 }
             } catch (final IOException e) {
@@ -101,9 +106,11 @@ public class MpiJobMain extends AMain {
                 final SynchronousReaderSpinWait<IByteBufferProvider> bcastReaderSpinWait = SynchronousReaderSpinWaitPool
                         .borrowObject(bcastReader);
                 try {
-                    final IByteBufferProvider message = bcastReaderSpinWait
-                            .waitForRead(ContextProperties.DEFAULT_NETWORK_TIMEOUT);
-                    Assertions.checkTrue(ClosedByteBuffer.isClosed(message.asBuffer()));
+                    final IByteBuffer message = bcastReaderSpinWait
+                            .waitForRead(ContextProperties.DEFAULT_NETWORK_TIMEOUT)
+                            .asBuffer();
+                    Assertions.checkEquals(Integer.BYTES, message.capacity());
+                    Assertions.checkEquals(bcastValue, message.getInt(0));
                     bcastReaderSpinWait.getReader().readFinished();
                 } finally {
                     SynchronousReaderSpinWaitPool.returnObject(bcastReaderSpinWait);
