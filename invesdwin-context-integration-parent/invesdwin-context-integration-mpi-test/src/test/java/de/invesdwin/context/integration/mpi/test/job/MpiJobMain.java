@@ -58,12 +58,13 @@ public class MpiJobMain extends AMain {
     }
 
     private void test() {
-        final int rank = MPI.rank();
         final int size = MPI.size();
         Assertions.checkEquals(2, size);
+        final int rank = MPI.rank();
+        Assertions.assertThat(rank).isBetween(0, 1);
         testBarrier();
-        testBcast(rank);
-        testPerformance(rank, size);
+        testBcast();
+        testPerformance();
     }
 
     private void testBarrier() {
@@ -73,10 +74,10 @@ public class MpiJobMain extends AMain {
         log.info("%s/%s: Finished waiting for barrier after %s", MPI.rank() + 1, MPI.size(), start);
     }
 
-    private void testBcast(final int rank) {
+    private void testBcast() {
         final Instant start = new Instant();
         log.info("%s/%s: Started broadcast", MPI.rank() + 1, MPI.size());
-        switch (rank) {
+        switch (MPI.rank()) {
         case 0:
             try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
                     AChannelTest.MAX_MESSAGE_SIZE)) {
@@ -112,19 +113,19 @@ public class MpiJobMain extends AMain {
             }
             break;
         default:
-            throw UnknownArgumentException.newInstance(int.class, rank);
+            throw UnknownArgumentException.newInstance(int.class, MPI.rank());
         }
         log.info("%s/%s: Finished broadcast after %s", MPI.rank() + 1, MPI.size(), start);
     }
 
-    private void testPerformance(final int rank, final int size) {
-        switch (rank) {
+    private void testPerformance() {
+        switch (MPI.rank()) {
         case 0:
             final ISynchronousWriter<FDate> requestWriter = AChannelTest
                     .newCommandWriter(MPI.newSendWriter(1, 0, AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousReader<FDate> responseReader = AChannelTest
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(rank, size, ReaderTask.class)) {
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ReaderTask.class)) {
                 new ReaderTask(log, requestWriter, responseReader).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -135,14 +136,14 @@ public class MpiJobMain extends AMain {
                     .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
             final ISynchronousWriter<FDate> responseWriter = AChannelTest
                     .newCommandWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(rank, size, WriterTask.class)) {
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), WriterTask.class)) {
                 new WriterTask(log, requestReader, responseWriter).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
             break;
         default:
-            throw UnknownArgumentException.newInstance(int.class, rank);
+            throw UnknownArgumentException.newInstance(int.class, MPI.rank());
         }
     }
 
