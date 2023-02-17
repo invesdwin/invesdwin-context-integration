@@ -20,8 +20,6 @@ import de.invesdwin.util.lang.Files;
 @NotThreadSafe
 public class FastMpjTest extends ATest {
 
-    public FastMpjTest() {}
-
     @Test
     public void test() throws Throwable {
         final File scriptTemplate = new File("mpj/fastmpj_test_template.sh");
@@ -36,8 +34,8 @@ public class FastMpjTest extends ATest {
 
         final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
-                .redirectOutput(Slf4jStream.of(FastMpjTest.class).asInfo())
-                .redirectError(Slf4jStream.of(FastMpjTest.class).asWarn())
+                .redirectOutput(Slf4jStream.of(getClass()).asInfo())
+                .redirectError(Slf4jStream.of(getClass()).asWarn())
                 .execute();
         Assertions.checkEquals(0, result.getExitValue());
     }

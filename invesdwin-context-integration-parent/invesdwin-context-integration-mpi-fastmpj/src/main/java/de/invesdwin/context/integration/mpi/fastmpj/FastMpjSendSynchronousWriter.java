@@ -43,6 +43,7 @@ public class FastMpjSendSynchronousWriter implements ISynchronousWriter<IByteBuf
         if (buffer != null) {
             write(ClosedByteBuffer.INSTANCE);
             buffer = null;
+            request = null;
         }
     }
 

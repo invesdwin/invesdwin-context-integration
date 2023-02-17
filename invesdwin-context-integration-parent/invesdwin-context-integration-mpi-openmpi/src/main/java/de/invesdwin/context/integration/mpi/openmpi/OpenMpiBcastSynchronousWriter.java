@@ -37,6 +37,7 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
     @Override
     public void close() throws IOException {
         buffer = null;
+        request = null;
     }
 
     @Override

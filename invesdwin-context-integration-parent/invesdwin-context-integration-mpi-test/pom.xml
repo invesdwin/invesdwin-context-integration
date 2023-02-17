@@ -36,14 +36,13 @@
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-jar</artifactId>
 		</dependency>
 		
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
-			<scope>test</scope>
-		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-docker</artifactId>
