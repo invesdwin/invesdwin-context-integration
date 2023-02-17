@@ -62,9 +62,11 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        final int length = message.getBuffer(buffer);
+        final int length = message.getBuffer(buffer.sliceFrom(OpenMpiAdapter.MESSAGE_INDEX));
+        buffer.putInt(OpenMpiAdapter.SIZE_INDEX, length);
         try {
-            request = comm.iSend(buffer.nioByteBuffer(), length, MPI.BYTE, dest.get(), tag.get());
+            request = comm.iSend(buffer.nioByteBuffer(), OpenMpiAdapter.MESSAGE_INDEX + length, MPI.BYTE, dest.get(),
+                    tag.get());
         } catch (final MPIException e) {
             throw new IOException(e);
         }

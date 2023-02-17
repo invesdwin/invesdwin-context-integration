@@ -6,7 +6,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.ByteBuffer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -39,9 +38,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
-import mpi.MPIException;
-import mpi.Request;
-import mpi.Status;
 
 @NotThreadSafe
 public class MpiJobMain extends AMain {
@@ -68,39 +64,9 @@ public class MpiJobMain extends AMain {
         Assertions.checkEquals(2, size);
         final int rank = MPI.rank();
         Assertions.assertThat(rank).isBetween(0, 1);
-        testNativeBcast();
-        //        testBcast();
-        //        testBarrier();
-        //        testPerformance();
-    }
-
-    private void testNativeBcast() {
-        try {
-            int root, myself, tasks;
-            final int size = Integer.BYTES;
-            final ByteBuffer out = ByteBuffer.allocateDirect(size * 10);
-            Request req;
-
-            myself = mpi.MPI.COMM_WORLD.getRank();
-            tasks = mpi.MPI.COMM_WORLD.getSize();
-
-            root = 0;
-            if (myself == root) {
-                out.putInt(0, Integer.MAX_VALUE);
-            }
-
-            req = mpi.MPI.COMM_WORLD.iBcast(out, size, mpi.MPI.BYTE, root);
-            final Status waitStatus = req.waitStatus();
-            System.out.println("****************** " + waitStatus.getCount(mpi.MPI.BYTE));
-            req.free();
-
-            if (out.getInt(0) != Integer.MAX_VALUE) {
-                throw new IllegalStateException(" bad answer (" + out.getInt(0) + ") at index");
-            }
-            mpi.MPI.COMM_WORLD.barrier();
-        } catch (final MPIException e) {
-            throw new RuntimeException(e);
-        }
+        testBcast();
+        testBarrier();
+        testPerformance();
     }
 
     private void testBarrier() {

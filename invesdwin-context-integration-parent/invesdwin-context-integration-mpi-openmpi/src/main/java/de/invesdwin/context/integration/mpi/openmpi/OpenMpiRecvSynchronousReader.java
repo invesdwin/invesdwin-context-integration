@@ -80,19 +80,14 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        try {
-            final Status status = request.getStatus();
-            final int length = status.getCount(MPI.BYTE);
-            if (ClosedByteBuffer.isClosed(buffer, 0, length)) {
-                close();
-                throw FastEOFException.getInstance("closed by other side");
-            }
-            sourceBefore = source.getAndSet(status.getSource());
-            tagBefore = tag.getAndSet(status.getTag());
-            return buffer.sliceTo(length);
-        } catch (final MPIException e) {
-            throw new RuntimeException(e);
+        final int length = buffer.getInt(OpenMpiAdapter.SIZE_INDEX);
+        if (ClosedByteBuffer.isClosed(buffer, OpenMpiAdapter.MESSAGE_INDEX, length)) {
+            close();
+            throw FastEOFException.getInstance("closed by other side");
         }
+        sourceBefore = source.getAndSet(status.getSource());
+        tagBefore = tag.getAndSet(status.getTag());
+        return buffer.slice(OpenMpiAdapter.MESSAGE_INDEX, length);
     }
 
     @Override

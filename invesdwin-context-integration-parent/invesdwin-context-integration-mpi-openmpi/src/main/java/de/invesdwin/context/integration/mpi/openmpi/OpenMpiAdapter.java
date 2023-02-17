@@ -18,6 +18,11 @@ import mpi.MPIException;
 @Immutable
 public class OpenMpiAdapter implements IMpiAdapter {
 
+    public static final int SIZE_INDEX = 0;
+    public static final int SIZE_SIZE = Integer.BYTES;
+
+    public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
+
     private final Supplier<Intracomm> comm;
 
     public OpenMpiAdapter() {
