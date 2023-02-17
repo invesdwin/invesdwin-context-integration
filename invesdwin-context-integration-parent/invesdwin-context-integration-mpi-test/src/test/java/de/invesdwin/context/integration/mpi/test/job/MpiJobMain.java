@@ -63,8 +63,8 @@ public class MpiJobMain extends AMain {
         Assertions.checkEquals(2, size);
         final int rank = MPI.rank();
         Assertions.assertThat(rank).isBetween(0, 1);
-        testBarrier();
         testBcast();
+        testBarrier();
         testPerformance();
     }
 
