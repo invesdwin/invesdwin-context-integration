@@ -14,18 +14,27 @@ import org.kohsuke.args4j.Option;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jOutputStream;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.AChannelTest.ReaderTask;
 import de.invesdwin.context.integration.channel.AChannelTest.WriterTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWaitPool;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.context.integration.mpi.IMpiAdapter;
 import de.invesdwin.context.integration.mpi.ProvidedMpiAdapter;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.streams.BroadcastingOutputStream;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
@@ -36,15 +45,79 @@ public class MpiJobMain extends AMain {
     @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
     protected File logDir;
 
+    private final Log log = new Log(this);
+
     public MpiJobMain(final String[] args) {
         super(args);
+        test();
     }
 
     @Override
     protected void startApplication(final CmdLineParser parser) {
+        //noop
+    }
+
+    private void test() {
         final int rank = MPI.rank();
         final int size = MPI.size();
         Assertions.checkEquals(2, size);
+        testBarrier();
+        testBcast(rank);
+        testPerformance(rank, size);
+    }
+
+    private void testBarrier() {
+        final Instant start = new Instant();
+        log.info("%s/%s: Started waiting for barrier", MPI.rank() + 1, MPI.size());
+        MPI.barrier();
+        log.info("%s/%s: Finished waiting for barrier after %s", MPI.rank() + 1, MPI.size(), start);
+    }
+
+    private void testBcast(final int rank) {
+        final Instant start = new Instant();
+        log.info("%s/%s: Started broadcast", MPI.rank() + 1, MPI.size());
+        switch (rank) {
+        case 0:
+            try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
+                    AChannelTest.MAX_MESSAGE_SIZE)) {
+                bcastWriter.open();
+                final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
+                        .borrowObject(bcastWriter);
+                try {
+                    bcastWriterSpinWait.waitForWrite(ClosedByteBuffer.INSTANCE,
+                            ContextProperties.DEFAULT_NETWORK_TIMEOUT);
+                } finally {
+                    SynchronousWriterSpinWaitPool.returnObject(bcastWriterSpinWait);
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+            break;
+        case 1:
+            try (ISynchronousReader<IByteBufferProvider> bcastReader = MPI.newBcastReader(0,
+                    AChannelTest.MAX_MESSAGE_SIZE)) {
+                bcastReader.open();
+                final SynchronousReaderSpinWait<IByteBufferProvider> bcastReaderSpinWait = SynchronousReaderSpinWaitPool
+                        .borrowObject(bcastReader);
+                try {
+                    final IByteBufferProvider message = bcastReaderSpinWait
+                            .waitForRead(ContextProperties.DEFAULT_NETWORK_TIMEOUT);
+                    Assertions.checkTrue(ClosedByteBuffer.isClosed(message.asBuffer()));
+                    bcastReaderSpinWait.getReader().readFinished();
+                } finally {
+                    SynchronousReaderSpinWaitPool.returnObject(bcastReaderSpinWait);
+                }
+            } catch (final IOException e1) {
+                throw new RuntimeException(e1);
+            }
+            break;
+        default:
+            throw UnknownArgumentException.newInstance(int.class, rank);
+        }
+        log.info("%s/%s: Finished broadcast after %s", MPI.rank() + 1, MPI.size(), start);
+    }
+
+    private void testPerformance(final int rank, final int size) {
         switch (rank) {
         case 0:
             final ISynchronousWriter<FDate> requestWriter = AChannelTest
