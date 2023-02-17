@@ -78,6 +78,7 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
             if (request == null) {
                 return true;
             }
+            //System.out.println("TODO: check if we can get rid of the status object");
             final Status status = request.testStatus();
             if (status != null) {
                 request.free();
