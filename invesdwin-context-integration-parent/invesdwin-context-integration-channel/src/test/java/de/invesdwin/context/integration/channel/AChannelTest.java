@@ -325,7 +325,6 @@ public abstract class AChannelTest extends ATest {
 
         @Override
         public void run() {
-
             Instant readsStart = new Instant();
             FDate prevValue = null;
             int count = 0;

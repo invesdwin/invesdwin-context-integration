@@ -43,6 +43,13 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
         if (buffer != null) {
             write(ClosedByteBuffer.INSTANCE);
             buffer = null;
+        }
+        if (request != null) {
+            try {
+                request.free();
+            } catch (final MPIException e) {
+                throw new RuntimeException(e);
+            }
             request = null;
         }
     }

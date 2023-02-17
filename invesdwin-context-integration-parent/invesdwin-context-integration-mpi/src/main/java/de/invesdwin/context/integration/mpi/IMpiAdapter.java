@@ -155,6 +155,6 @@ public interface IMpiAdapter {
      * Calls MPI.finalize(). MPI_Finalize shuts down the MPI library. It must be called by each process at the end of
      * the MPI program.
      */
-    void finalizeMpi();
+    void free();
 
 }

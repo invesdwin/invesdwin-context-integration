@@ -37,7 +37,14 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
     @Override
     public void close() throws IOException {
         buffer = null;
-        request = null;
+        if (request != null) {
+            try {
+                request.free();
+            } catch (final MPIException e) {
+                throw new RuntimeException(e);
+            }
+            request = null;
+        }
     }
 
     @Override

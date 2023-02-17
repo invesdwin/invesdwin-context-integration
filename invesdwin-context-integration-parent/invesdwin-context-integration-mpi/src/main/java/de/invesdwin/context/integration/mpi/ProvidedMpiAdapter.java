@@ -118,8 +118,8 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
-    public void finalizeMpi() {
-        getProvidedInstance().finalizeMpi();
+    public void free() {
+        getProvidedInstance().free();
     }
 
     @Override

@@ -102,7 +102,7 @@ public class MpjExpressAdapter implements IMpiAdapter {
     }
 
     @Override
-    public void finalizeMpi() {
+    public void free() {
         MPI.Finalize();
     }
 

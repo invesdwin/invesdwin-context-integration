@@ -43,6 +43,9 @@ public class MpjExpressSendSynchronousWriter implements ISynchronousWriter<IByte
         if (buffer != null) {
             write(ClosedByteBuffer.INSTANCE);
             buffer = null;
+        }
+        if (request != null) {
+            request.finalize();
             request = null;
         }
     }
