@@ -35,6 +35,7 @@ import de.invesdwin.util.lang.uri.URIs;
 @Testcontainers
 public class MpjExpressYarnTest extends ATest {
 
+    private static final boolean EXPOSE_HOST = false;
     private static final String HADOOP_VERSION = "3.3.4";
     private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
     private static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
@@ -43,7 +44,9 @@ public class MpjExpressYarnTest extends ATest {
 
     @SuppressWarnings({ "deprecation", "resource" })
     private static GenericContainer<?> newHadoopContainer() {
-        org.testcontainers.Testcontainers.exposeHostPorts(40002);
+        if (EXPOSE_HOST) {
+            org.testcontainers.Testcontainers.exposeHostPorts(40002);
+        }
         maybeDownloadAndExtractHadoop();
         final FixedHostPortGenericContainer<?> container = new FixedHostPortGenericContainer<>(
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
@@ -60,9 +63,11 @@ public class MpjExpressYarnTest extends ATest {
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
         container.withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
-        container.withAccessToHost(true);
-        //https://stackoverflow.com/a/60740997
-        container.withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
+        if (EXPOSE_HOST) {
+            container.withAccessToHost(true);
+            //https://stackoverflow.com/a/60740997
+            container.withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
+        }
 
         //logs are available at: http://localhost:9870/logs/
         return container;
