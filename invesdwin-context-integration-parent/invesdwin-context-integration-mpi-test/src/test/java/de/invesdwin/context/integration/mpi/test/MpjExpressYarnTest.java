@@ -34,6 +34,7 @@ import de.invesdwin.util.lang.uri.URIs;
 public class MpjExpressYarnTest extends ATest {
 
     private static final String HADOOP_VERSION = "3.3.4";
+    private static final File HADOOP_FOLDER = new File("mpj/hadoop/hadoop");
     @Container
     private static final GenericContainer<?> HADOOP = newHadoopContainer();
 
@@ -59,8 +60,7 @@ public class MpjExpressYarnTest extends ATest {
     }
 
     private static void maybeDownloadAndExtractHadoop() {
-        final File hadoopFolder = new File("mpj/hadoop/hadoop");
-        final File hadoopVersionedFolder = new File(hadoopFolder.getAbsolutePath() + "-" + HADOOP_VERSION);
+        final File hadoopVersionedFolder = new File(HADOOP_FOLDER.getAbsolutePath() + "-" + HADOOP_VERSION);
         final File hadoopFile = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION + ".tar.gz");
         try {
             if (!hadoopFile.exists()) {
@@ -69,14 +69,14 @@ public class MpjExpressYarnTest extends ATest {
                 IOUtils.copy(URIs.asUrl("http://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
                         + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
                 hadoopFilePart.renameTo(hadoopFile);
-                Files.deleteQuietly(hadoopFolder);
+                Files.deleteQuietly(HADOOP_FOLDER);
                 Files.deleteQuietly(hadoopVersionedFolder);
             }
-            if (!hadoopFolder.exists()) {
+            if (!HADOOP_FOLDER.exists()) {
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
-                hadoopVersionedFolder.renameTo(hadoopFolder);
+                hadoopVersionedFolder.renameTo(HADOOP_FOLDER);
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -88,15 +88,16 @@ public class MpjExpressYarnTest extends ATest {
         final File workDir = new File(ContextProperties.getCacheDirectory(), "work");
         Files.forceMkdir(workDir);
 
-        final File scriptTemplate = new File("mpj/mpjexpress_test_template.sh");
+        final File scriptTemplate = new File("mpj/mpjexpressyarn_test_template.sh");
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
         script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
+        script = script.replace("{HADOOP_HOME}", HADOOP_FOLDER.getAbsolutePath());
         script = script.replace("{ARGS}",
                 "-yarn -np 2 -dev niodev -wdir \"" + workDir.getAbsolutePath() + "\" -jar "
                         + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
-        final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpress_test.sh");
+        final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
         final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
