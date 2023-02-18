@@ -42,8 +42,13 @@ import de.invesdwin.util.time.date.FDate;
 @NotThreadSafe
 public class MpiJobMain extends AMain {
 
-    private static final boolean BOOTSTRAP = true;
-    private static final IMpiAdapter MPI = ProvidedMpiAdapter.getProvidedInstance();
+    private static final boolean BOOTSTRAP = false;
+    private static final IMpiAdapter MPI;
+
+    static {
+        PlatformInitializerProperties.setAllowed(BOOTSTRAP);
+        MPI = ProvidedMpiAdapter.getProvidedInstance();
+    }
 
     @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
     protected File logDir;
@@ -157,13 +162,15 @@ public class MpiJobMain extends AMain {
 
     private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
         final Slf4jOutputStream log = Slf4jStream.of(taskClass).asInfo();
+        if (logDir == null) {
+            return log;
+        }
         final BufferedOutputStream file = new BufferedOutputStream(new FileOutputStream(
                 new File(logDir, (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
         return new BroadcastingOutputStream(log, file);
     }
 
     public static void main(final String[] args) {
-        PlatformInitializerProperties.setAllowed(BOOTSTRAP);
         final String[] jobArgs = MPI.init(args);
         try {
             new MpiJobMain(jobArgs).run();

@@ -7,14 +7,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 
 @NotThreadSafe
@@ -31,12 +29,12 @@ public class OpenMpiTest extends ATest {
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "openmpi_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
-        final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
+        new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
+                .exitValueNormal()
                 .redirectOutput(Slf4jStream.of(getClass()).asInfo())
                 .redirectError(Slf4jStream.of(getClass()).asWarn())
                 .execute();
-        Assertions.checkEquals(0, result.getExitValue());
     }
 
 }

@@ -7,6 +7,7 @@ RUN apt-get update -y \
         sudo \
         curl \
         ssh \
+        openjdk-17-jdk-headless \
     && apt-get clean
 RUN useradd -m hduser && echo "hduser:supergroup" | chpasswd && adduser hduser sudo && echo "hduser     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && cd /usr/bin/ && sudo ln -s python3 python
 COPY ssh_config /etc/ssh/ssh_config
@@ -23,8 +24,6 @@ RUN cat hadoop-*.tar.gz \
  && rm -rf ${HADOOP_HOME}/share/doc
 RUN rm -rf hadoop-*.tar.gz
 RUN ln -s /home/hduser/hadoop-* $HADOOP_HOME
-
-COPY invesdwin-instrument-burningwave-*-standalone.jar ${HADOOP_AGENT}
 
 ENV HDFS_NAMENODE_USER hduser
 ENV HDFS_DATANODE_USER hduser

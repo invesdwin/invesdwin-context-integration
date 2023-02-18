@@ -17,14 +17,13 @@ import org.testcontainers.images.builder.ImageFromDockerfile;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
-import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -116,17 +115,16 @@ public class MpjExpressYarnTest extends ATest {
                 "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/\" -debugYarn -wdir \"" + workDir.getAbsolutePath()
                         + "\" -jar "
                         + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
-                        + " " + MpiJobMain.class.getName() + " --logDir \""
-                        + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
+                        + " " + MpiJobYarnMain.class.getName());
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
-        final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
+        new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
+                .exitValueNormal()
                 .redirectOutput(Slf4jStream.of(getClass()).asInfo())
                 .redirectError(Slf4jStream.of(getClass()).asWarn())
                 .execute();
-        Assertions.checkEquals(0, result.getExitValue());
     }
 
 }
