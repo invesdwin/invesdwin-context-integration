@@ -59,7 +59,8 @@ public class MpjExpressYarnTest extends ATest {
     }
 
     private static void maybeDownloadAndExtractHadoop() {
-        final File hadoopFolder = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION);
+        final File hadoopFolder = new File("mpj/hadoop/hadoop");
+        final File hadoopVersionedFolder = new File(hadoopFolder.getAbsolutePath() + "-" + HADOOP_VERSION);
         final File hadoopFile = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION + ".tar.gz");
         try {
             if (!hadoopFile.exists()) {
@@ -69,11 +70,13 @@ public class MpjExpressYarnTest extends ATest {
                         + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
                 hadoopFilePart.renameTo(hadoopFile);
                 Files.deleteQuietly(hadoopFolder);
+                Files.deleteQuietly(hadoopVersionedFolder);
             }
             if (!hadoopFolder.exists()) {
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
-                archiver.extract(hadoopFile, hadoopFolder.getParentFile());
-                Assertions.assertThat(hadoopFolder).exists();
+                archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
+                Assertions.assertThat(hadoopVersionedFolder).exists();
+                hadoopVersionedFolder.renameTo(hadoopFolder);
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);

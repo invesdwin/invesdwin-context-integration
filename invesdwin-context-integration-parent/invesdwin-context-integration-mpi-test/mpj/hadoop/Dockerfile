@@ -16,8 +16,7 @@ USER hduser
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys
 
 ENV HADOOP_HOME /home/hduser/hadoop
-COPY hadoop-* /home/hduser/
-RUN mv /home/hduser/hadoop-* $HADOOP_HOME
+COPY hadoop /home/hduser/
 RUN rm -rf ${HADOOP_HOME}/share/doc
 
 ENV HDFS_NAMENODE_USER hduser
