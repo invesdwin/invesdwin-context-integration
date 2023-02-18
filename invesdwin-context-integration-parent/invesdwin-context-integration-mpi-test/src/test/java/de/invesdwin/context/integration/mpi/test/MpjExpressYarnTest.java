@@ -23,6 +23,7 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.context.test.ATest;
@@ -62,6 +63,8 @@ public class MpjExpressYarnTest extends ATest {
         container.withAccessToHost(true);
         //https://stackoverflow.com/a/60740997
         container.withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
+
+        //logs are available at: http://localhost:9870/logs/
         return container;
     }
 
@@ -108,7 +111,8 @@ public class MpjExpressYarnTest extends ATest {
                 "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/\" -debugYarn -wdir \"" + workDir.getAbsolutePath()
                         + "\" -jar "
                         + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
-                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
+                        + " " + MpiJobMain.class.getName() + " --logDir \""
+                        + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
