@@ -17,13 +17,12 @@ if [[ "$_java" ]]; then
     if [[ "$version" = "1.8" ]]; then
         JAVA8="true"
     else
-        echo "WARNING: skipping projects in build that require java 1.8 to build without errors"
         JAVA8="false"
     fi
 fi
 
 if [[ "$JAVA8" = "false" ]]; then
-    echo "requires Java 8 to compile against Hadoop"
+    echo "ERROR: requires Java 8 to compile against Hadoop"
     exit 1
 fi
 
