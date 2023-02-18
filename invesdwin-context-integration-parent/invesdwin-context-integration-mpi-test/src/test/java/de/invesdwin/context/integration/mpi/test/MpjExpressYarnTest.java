@@ -44,18 +44,19 @@ public class MpjExpressYarnTest extends ATest {
         final FixedHostPortGenericContainer<?> container = new FixedHostPortGenericContainer<>(
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
                         .withFileFromPath(".", new File("mpj/hadoop/").toPath())
-                        .get())
-                                //dfs.datanode.http.address - The secondary namenode http/https server address and port.
-                                .withFixedExposedPort(9864, 9864)
-                                //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
-                                .withFixedExposedPort(9870, 9870)
-                                //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
-                                .withFixedExposedPort(8088, 8088)
-                                //fs.defaultFS - The name of the default file system.
-                                .withFixedExposedPort(9000, 9000)
-                                //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
-                                .withFixedExposedPort(8032, 8032);
+                        .get());
+        //dfs.datanode.http.address - The secondary namenode http/https server address and port.
+        container.withFixedExposedPort(9864, 9864);
+        //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
+        container.withFixedExposedPort(9870, 9870);
+        //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
+        container.withFixedExposedPort(8088, 8088);
+        //fs.defaultFS - The name of the default file system.
+        container.withFixedExposedPort(9000, 9000);
+        //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
+        container.withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
+        container.withAccessToHost(true);
         return container;
     }
 
@@ -94,7 +95,8 @@ public class MpjExpressYarnTest extends ATest {
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{HADOOP_HOME}", HADOOP_FOLDER.getAbsolutePath());
         script = script.replace("{ARGS}",
-                "-yarn -np 2 -dev niodev -wdir \"" + workDir.getAbsolutePath() + "\" -jar "
+                "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/" + getClass().getSimpleName() + "/\" -wdir \""
+                        + workDir.getAbsolutePath() + "\" -jar "
                         + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
