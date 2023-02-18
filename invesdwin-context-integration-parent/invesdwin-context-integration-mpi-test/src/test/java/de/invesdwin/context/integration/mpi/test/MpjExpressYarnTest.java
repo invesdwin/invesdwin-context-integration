@@ -1,10 +1,80 @@
 package de.invesdwin.context.integration.mpi.test;
 
+import java.io.File;
+import java.nio.charset.Charset;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Test;
+import org.testcontainers.containers.FixedHostPortGenericContainer;
+import org.testcontainers.containers.GenericContainer;
+import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy;
+import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.ProcessResult;
+import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
+
+import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
+import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.context.test.ATest;
+import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.Files;
 
 @NotThreadSafe
+@Testcontainers
 public class MpjExpressYarnTest extends ATest {
+
+    @Container
+    private static final GenericContainer<?> HADOOP = newHadoopContainer();
+
+    @SuppressWarnings({ "deprecation", "resource" })
+    private static GenericContainer<?> newHadoopContainer() {
+        //        URIs.connect(null)
+
+        final FixedHostPortGenericContainer<?> container = new FixedHostPortGenericContainer<>(
+                new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
+                        .withFileFromPath(".", new File("mpj/hadoop").toPath())
+                        .get())
+                                //dfs.datanode.http.address - The secondary namenode http/https server address and port.
+                                .withFixedExposedPort(9864, 9864)
+                                //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
+                                .withFixedExposedPort(9870, 9870)
+                                //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
+                                .withFixedExposedPort(8088, 8088)
+                                //fs.defaultFS - The name of the default file system.
+                                .withFixedExposedPort(9000, 9000)
+                                //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
+                                .withFixedExposedPort(8032, 8032);
+        container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
+        return container;
+    }
+
+    @Test
+    public void test() throws Throwable {
+        final File workDir = new File(ContextProperties.getCacheDirectory(), "work");
+        Files.forceMkdir(workDir);
+
+        final File scriptTemplate = new File("mpj/mpjexpress_test_template.sh");
+        String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
+        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
+        script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
+        script = script.replace("{ARGS}",
+                "-yarn -np 2 -dev niodev -wdir \"" + workDir.getAbsolutePath() + "\" -jar "
+                        + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
+                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
+        final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpress_test.sh");
+        Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
+
+        final ProcessResult result = new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
+                .destroyOnExit()
+                .redirectOutput(Slf4jStream.of(getClass()).asInfo())
+                .redirectError(Slf4jStream.of(getClass()).asWarn())
+                .execute();
+        Assertions.checkEquals(0, result.getExitValue());
+    }
 
 }
