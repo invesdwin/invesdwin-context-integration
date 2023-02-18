@@ -1,7 +1,7 @@
 # https://github.com/rancavil/hadoop-single-node-cluster
 # https://mygit.th-deg.de/mh11395/hadoop-single-node-cluster/-/tree/master
 
-FROM eclipse-temurin:11-jdk-jammy
+FROM eclipse-temurin:17-jdk-jammy
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive && apt-get install -y --no-install-recommends \
         sudo \
@@ -24,6 +24,10 @@ RUN cat hadoop-*.tar.gz \
 RUN rm -rf hadoop-*.tar.gz
 RUN ln -s /home/hduser/hadoop-* $HADOOP_HOME
 
+ENV HADOOP_AGENT /home/hduser/invesdwin-instrument-burningwave-standalone.jar
+
+COPY invesdwin-instrument-burningwave-*-standalone.jar ${HADOOP_AGENT}
+
 ENV HDFS_NAMENODE_USER hduser
 ENV HDFS_DATANODE_USER hduser
 ENV HDFS_SECONDARYNAMENODE_USER hduser
@@ -32,7 +36,7 @@ ENV YARN_RESOURCEMANAGER_USER hduser
 ENV YARN_NODEMANAGER_USER hduser
 
 RUN echo "export JAVA_HOME=/opt/java/openjdk/" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
-#RUN echo "export _JAVA_OPTIONS=\"--add-opens=java.base/java.lang=ALL-UNNAMED\"" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
+RUN echo "export _JAVA_OPTIONS=\"-javaagent:${HADOOP_AGENT}\"" >> $HADOOP_HOME/etc/hadoop/hadoop-env.sh
 COPY core-site.xml $HADOOP_HOME/etc/hadoop/
 COPY hdfs-site.xml $HADOOP_HOME/etc/hadoop/
 COPY yarn-site.xml $HADOOP_HOME/etc/hadoop/
