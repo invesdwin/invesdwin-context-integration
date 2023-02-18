@@ -14,13 +14,11 @@ COPY ssh_config /etc/ssh/ssh_config
 WORKDIR /home/hduser
 USER hduser
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys
-ENV HADOOP_VERSION=3.3.4
-ENV HADOOP_HOME /home/hduser/hadoop-${HADOOP_VERSION}
-RUN curl -sL --retry 3 \
-  "http://archive.apache.org/dist/hadoop/common/hadoop-$HADOOP_VERSION/hadoop-$HADOOP_VERSION.tar.gz" \
-  | gunzip \
-  | tar -x -C /home/hduser/ \
- && rm -rf ${HADOOP_HOME}/share/doc
+
+ENV HADOOP_HOME /home/hduser/hadoop
+COPY hadoop-* /home/hduser/
+RUN mv /home/hduser/hadoop-* $HADOOP_HOME
+RUN rm -rf ${HADOOP_HOME}/share/doc
 
 ENV HDFS_NAMENODE_USER hduser
 ENV HDFS_DATANODE_USER hduser

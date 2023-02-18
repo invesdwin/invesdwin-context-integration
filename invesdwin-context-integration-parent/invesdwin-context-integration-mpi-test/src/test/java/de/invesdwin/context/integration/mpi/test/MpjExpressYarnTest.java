@@ -1,11 +1,15 @@
 package de.invesdwin.context.integration.mpi.test;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
+import org.rauschig.jarchivelib.Archiver;
+import org.rauschig.jarchivelib.ArchiverFactory;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy;
@@ -23,21 +27,22 @@ import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.uri.URIs;
 
 @NotThreadSafe
 @Testcontainers
 public class MpjExpressYarnTest extends ATest {
 
+    private static final String HADOOP_VERSION = "3.3.4";
     @Container
     private static final GenericContainer<?> HADOOP = newHadoopContainer();
 
     @SuppressWarnings({ "deprecation", "resource" })
     private static GenericContainer<?> newHadoopContainer() {
-        //        URIs.connect(null)
-
+        maybeDownloadAndExtractHadoop();
         final FixedHostPortGenericContainer<?> container = new FixedHostPortGenericContainer<>(
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
-                        .withFileFromPath(".", new File("mpj/hadoop").toPath())
+                        .withFileFromPath(".", new File("mpj/hadoop/").toPath())
                         .get())
                                 //dfs.datanode.http.address - The secondary namenode http/https server address and port.
                                 .withFixedExposedPort(9864, 9864)
@@ -51,6 +56,28 @@ public class MpjExpressYarnTest extends ATest {
                                 .withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
         return container;
+    }
+
+    private static void maybeDownloadAndExtractHadoop() {
+        final File hadoopFolder = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION);
+        final File hadoopFile = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION + ".tar.gz");
+        try {
+            if (!hadoopFile.exists()) {
+                final File hadoopFilePart = new File(hadoopFile.getAbsolutePath() + ".part");
+                Files.deleteQuietly(hadoopFilePart);
+                IOUtils.copy(URIs.asUrl("http://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
+                        + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
+                hadoopFilePart.renameTo(hadoopFile);
+                Files.deleteQuietly(hadoopFolder);
+            }
+            if (!hadoopFolder.exists()) {
+                final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
+                archiver.extract(hadoopFile, hadoopFolder.getParentFile());
+                Assertions.assertThat(hadoopFolder).exists();
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
