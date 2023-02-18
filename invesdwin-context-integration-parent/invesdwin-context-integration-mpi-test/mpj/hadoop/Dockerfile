@@ -1,7 +1,7 @@
 # https://github.com/rancavil/hadoop-single-node-cluster
 # https://mygit.th-deg.de/mh11395/hadoop-single-node-cluster/-/tree/master
 
-FROM eclipse-temurin:17-jdk-jammy
+FROM eclipse-temurin:8-jdk-jammy
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive && apt-get install -y --no-install-recommends \
         sudo \

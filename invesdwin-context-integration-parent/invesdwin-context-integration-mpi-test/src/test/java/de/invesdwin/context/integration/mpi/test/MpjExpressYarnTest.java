@@ -34,16 +34,18 @@ import de.invesdwin.util.lang.uri.URIs;
 public class MpjExpressYarnTest extends ATest {
 
     private static final String HADOOP_VERSION = "3.3.4";
-    private static final File HADOOP_FOLDER = new File("mpj/hadoop/hadoop");
+    private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
+    private static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
     @Container
     private static final GenericContainer<?> HADOOP = newHadoopContainer();
 
     @SuppressWarnings({ "deprecation", "resource" })
     private static GenericContainer<?> newHadoopContainer() {
+        org.testcontainers.Testcontainers.exposeHostPorts(40002);
         maybeDownloadAndExtractHadoop();
         final FixedHostPortGenericContainer<?> container = new FixedHostPortGenericContainer<>(
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
-                        .withFileFromPath(".", new File("mpj/hadoop/").toPath())
+                        .withFileFromPath(".", HADOOP_DOCKER_FOLDER.toPath())
                         .get());
         //dfs.datanode.http.address - The secondary namenode http/https server address and port.
         container.withFixedExposedPort(9864, 9864);
@@ -57,6 +59,8 @@ public class MpjExpressYarnTest extends ATest {
         container.withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
         container.withAccessToHost(true);
+        //https://stackoverflow.com/a/60740997
+        container.withExtraHost("subes-lap-old", "172.17.0.1");
         return container;
     }
 
@@ -78,6 +82,11 @@ public class MpjExpressYarnTest extends ATest {
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
                 hadoopVersionedFolder.renameTo(HADOOP_FOLDER);
+                //                COPY core-site.xml $HADOOP_HOME/etc/hadoop/
+                for (final String filename : new String[] { "core-site.xml", "hdfs-site.xml", "yarn-site.xml" }) {
+                    Files.copyFile(new File(HADOOP_DOCKER_FOLDER, filename),
+                            new File(HADOOP_FOLDER, "etc/hadoop/" + filename));
+                }
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -95,8 +104,8 @@ public class MpjExpressYarnTest extends ATest {
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{HADOOP_HOME}", HADOOP_FOLDER.getAbsolutePath());
         script = script.replace("{ARGS}",
-                "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/" + getClass().getSimpleName() + "/\" -wdir \""
-                        + workDir.getAbsolutePath() + "\" -jar "
+                "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/\" -debugYarn -wdir \"" + workDir.getAbsolutePath()
+                        + "\" -jar "
                         + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN).getResource().getFile().getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
