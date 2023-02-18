@@ -21,6 +21,7 @@ import org.zeroturnaround.exec.ProcessResult;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.system.properties.SystemProperties;
@@ -60,7 +61,7 @@ public class MpjExpressYarnTest extends ATest {
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
         container.withAccessToHost(true);
         //https://stackoverflow.com/a/60740997
-        container.withExtraHost("subes-lap-old", "172.17.0.1");
+        container.withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
         return container;
     }
 
