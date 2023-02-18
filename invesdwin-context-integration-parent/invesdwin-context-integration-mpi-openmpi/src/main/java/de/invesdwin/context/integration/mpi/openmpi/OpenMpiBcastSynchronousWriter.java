@@ -13,7 +13,6 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
-import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -32,7 +31,7 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocateDirect(OpenMpiAdapter.MESSAGE_INDEX + maxMessageSize);
     }
 
     @Override
@@ -70,8 +69,7 @@ public class OpenMpiBcastSynchronousWriter implements ISynchronousWriter<IByteBu
             if (request == null) {
                 return true;
             }
-            final Status status = request.testStatus();
-            if (status != null) {
+            if (request.test()) {
                 request.free();
                 request = null;
                 return true;

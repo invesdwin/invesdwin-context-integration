@@ -14,7 +14,6 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
-import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -36,7 +35,7 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocateDirect(OpenMpiAdapter.MESSAGE_INDEX + maxMessageSize);
     }
 
     @Override
@@ -78,9 +77,7 @@ public class OpenMpiSendSynchronousWriter implements ISynchronousWriter<IByteBuf
             if (request == null) {
                 return true;
             }
-            //System.out.println("TODO: check if we can get rid of the status object");
-            final Status status = request.testStatus();
-            if (status != null) {
+            if (request.test()) {
                 request.free();
                 request = null;
                 return true;

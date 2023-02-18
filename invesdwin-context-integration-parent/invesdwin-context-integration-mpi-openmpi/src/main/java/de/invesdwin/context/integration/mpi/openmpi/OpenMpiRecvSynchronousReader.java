@@ -40,7 +40,7 @@ public class OpenMpiRecvSynchronousReader implements ISynchronousReader<IByteBuf
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocateDirect(OpenMpiAdapter.MESSAGE_INDEX + maxMessageSize);
     }
 
     @Override

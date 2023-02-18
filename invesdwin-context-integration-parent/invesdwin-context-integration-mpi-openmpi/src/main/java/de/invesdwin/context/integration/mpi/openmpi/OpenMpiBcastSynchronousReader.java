@@ -15,7 +15,6 @@ import mpi.Intracomm;
 import mpi.MPI;
 import mpi.MPIException;
 import mpi.Request;
-import mpi.Status;
 
 @NotThreadSafe
 public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -25,7 +24,7 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     private final int maxMessageSize;
     private IByteBuffer buffer;
     private Request request;
-    private Status status;
+    private boolean status;
 
     public OpenMpiBcastSynchronousReader(final Intracomm comm, final IIntReference root, final int maxMessageSize) {
         this.comm = comm;
@@ -35,14 +34,14 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
 
     @Override
     public void open() throws IOException {
-        buffer = ByteBuffers.allocateDirect(maxMessageSize);
+        buffer = ByteBuffers.allocateDirect(OpenMpiAdapter.MESSAGE_INDEX + maxMessageSize);
     }
 
     @Override
     public void close() throws IOException {
         buffer = null;
         request = null;
-        status = null;
+        status = false;
     }
 
     @Override
@@ -62,12 +61,12 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
     }
 
     private boolean hasMessage() throws IOException {
-        if (status != null) {
+        if (status) {
             return true;
         }
         try {
-            status = request.testStatus();
-            return status != null;
+            status = request.test();
+            return status;
         } catch (final MPIException e) {
             throw new IOException(e);
         }
@@ -90,7 +89,7 @@ public class OpenMpiBcastSynchronousReader implements ISynchronousReader<IByteBu
         } catch (final MPIException e) {
             throw new IOException(e);
         }
-        status = null;
+        status = false;
         request = null;
     }
 

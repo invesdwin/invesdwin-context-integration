@@ -18,6 +18,9 @@ import mpi.MPIException;
 @Immutable
 public class OpenMpiAdapter implements IMpiAdapter {
 
+    /**
+     * Status only contains gibberish, so we have to encode our own lengths
+     */
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
 
