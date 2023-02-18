@@ -109,6 +109,11 @@
             <include name="*.jar"/>
             </fileset>
 
+            <!--<fileset dir="${hadoop_home}/share/hadoop/mapreduce/lib">
+            <include name="*.jar"/>
+            </fileset>-->
+
+
             <fileset dir="${hadoop_home}/share/hadoop/common">
             <include name="*.jar"/>
             </fileset>
