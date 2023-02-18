@@ -42,7 +42,7 @@ import de.invesdwin.util.time.date.FDate;
 @NotThreadSafe
 public class MpiJobMain extends AMain {
 
-    private static final boolean BOOTSTRAP = false;
+    private static final boolean BOOTSTRAP = true;
     private static final IMpiAdapter MPI;
 
     static {

@@ -75,7 +75,7 @@ public enum MergedClasspathJarFilter implements IMergedClasspathJarFilter {
                     "javax/annotation/.*", "org/apache/commons/configuration/.*", "org/slf4j/.*", "org/apache/log4j/.*",
                     "org/apache/commons/io/.*", "org/apache/commons/codec/.*", "junit/.*",
                     "org/apache/commons/logging/.*", "javax/el/.*", "org/apache/commons/cli/.*",
-                    "org/codehaus/jettison/.*" });
+                    "org/codehaus/jettison/.*", "META-INF/services/javax\\.cache\\.spi\\.CachingProvider" });
     private static final String[] HADOOP_WHITELIST = { "org/slf4j/ext/.*" };
 
     private static final String[] MPI_BLACKLIST = Arrays.concat(DEFAULT_BLACKLIST,
