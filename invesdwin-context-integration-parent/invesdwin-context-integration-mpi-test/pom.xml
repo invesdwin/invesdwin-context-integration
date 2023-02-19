@@ -7,20 +7,6 @@
 	</parent>
 	<artifactId>invesdwin-context-integration-mpi-test</artifactId>
 	<packaging>jar</packaging>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-surefire-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<!-- disabled for now until amqp is used again -->
-						<exclude>**/*</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
