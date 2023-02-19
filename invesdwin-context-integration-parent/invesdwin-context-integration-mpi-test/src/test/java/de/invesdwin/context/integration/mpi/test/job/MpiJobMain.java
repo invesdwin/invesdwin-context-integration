@@ -17,6 +17,7 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
+import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.AChannelTest.ClientTask;
 import de.invesdwin.context.integration.channel.AChannelTest.ServerTask;
@@ -46,6 +47,7 @@ public class MpiJobMain extends AMain {
     private static final IMpiAdapter MPI;
 
     static {
+        AspectJWeaverIncludesConfigurer.setShowWeaveInfo(false);
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
         MPI = ProvidedMpiAdapter.getProvidedInstance();
     }
