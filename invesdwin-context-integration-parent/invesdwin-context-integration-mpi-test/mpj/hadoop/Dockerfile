@@ -8,7 +8,6 @@ RUN apt-get update -y \
         sudo \
         curl \
         ssh \
-        openjdk-17-jdk-headless \
     && apt-get clean
 RUN useradd -m hduser && echo "hduser:supergroup" | chpasswd && adduser hduser sudo && echo "hduser     ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && cd /usr/bin/ && sudo ln -s python3 python
 COPY ssh_config /etc/ssh/ssh_config

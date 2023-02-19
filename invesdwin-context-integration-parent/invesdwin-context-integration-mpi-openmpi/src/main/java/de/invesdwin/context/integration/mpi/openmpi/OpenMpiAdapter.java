@@ -60,6 +60,16 @@ public class OpenMpiAdapter implements IMpiAdapter {
     }
 
     @Override
+    public MpiThreadSupport queryThread() {
+        try {
+            final int support = MPI.queryThread();
+            return OpenMpiThreadSupports.fromMpi(support);
+        } catch (final MPIException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public int rank() {
         try {
             return getComm().getRank();

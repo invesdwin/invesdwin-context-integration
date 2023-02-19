@@ -33,6 +33,8 @@ public interface IMpiAdapter {
      */
     MpiThreadSupport initThread(String[] args, MpiThreadSupport threadRequirement);
 
+    MpiThreadSupport queryThread();
+
     /**
      * Gets the rank of the calling MPI process in the communicator specified. If the calling MPI process does not
      * belong to the communicator passed, MPI_PROC_NULL is returned.

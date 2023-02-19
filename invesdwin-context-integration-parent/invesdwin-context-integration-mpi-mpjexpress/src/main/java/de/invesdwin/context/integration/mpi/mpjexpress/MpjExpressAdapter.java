@@ -39,6 +39,11 @@ public class MpjExpressAdapter implements IMpiAdapter {
     @Override
     public MpiThreadSupport initThread(final String[] args, final MpiThreadSupport required) {
         MPI.Init(args);
+        return queryThread();
+    }
+
+    @Override
+    public MpiThreadSupport queryThread() {
         final int support = MPI.queryThread();
         return MpjExpressThreadSupports.fromMpi(support);
     }

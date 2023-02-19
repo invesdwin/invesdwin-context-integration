@@ -128,7 +128,7 @@ public class UdtSynchronousReader implements ISynchronousReader<IByteBufferProvi
     public static int read0(final SocketUDT channel, final java.nio.ByteBuffer buffer, final int position,
             final int length) throws IOException, FastEOFException {
         ByteBuffers.position(buffer, position);
-        buffer.limit(position + length);
+        ByteBuffers.limit(buffer, position + length);
         try {
             final int count = channel.receive(buffer);
             if (count < 0) { //-1 means non blocking nothing received in UDT

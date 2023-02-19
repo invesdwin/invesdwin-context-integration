@@ -45,6 +45,11 @@ public final class ProvidedMpiAdapter implements IMpiAdapter, FactoryBean<Provid
     }
 
     @Override
+    public MpiThreadSupport queryThread() {
+        return getProvidedInstance().queryThread();
+    }
+
+    @Override
     public int rank() {
         return getProvidedInstance().rank();
     }

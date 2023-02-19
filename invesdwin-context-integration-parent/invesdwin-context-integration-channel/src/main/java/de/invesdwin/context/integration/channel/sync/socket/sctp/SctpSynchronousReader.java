@@ -128,7 +128,7 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
     private static int read0(final Object socketChannel, final java.nio.ByteBuffer buffer, final int position,
             final int length) throws IOException {
         ByteBuffers.position(buffer, position);
-        buffer.limit(position + length);
+        ByteBuffers.limit(buffer, position + length);
         final int count;
         try {
             final Object messageInfo = SctpSynchronousChannel.SCTPCHANNEL_RECEIVE_METHOD.invoke(socketChannel, buffer,

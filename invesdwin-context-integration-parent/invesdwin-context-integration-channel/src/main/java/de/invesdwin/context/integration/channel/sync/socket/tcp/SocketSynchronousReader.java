@@ -134,7 +134,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
     public static int read0(final SocketChannel channel, final java.nio.ByteBuffer buffer, final int position,
             final int length) throws IOException, FastEOFException {
         ByteBuffers.position(buffer, position);
-        buffer.limit(position + length);
+        ByteBuffers.limit(buffer, position + length);
         try {
             final int count = channel.read(buffer);
             if (count < 0) { // EOF
