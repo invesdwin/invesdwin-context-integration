@@ -111,10 +111,16 @@ public class MpjExpressYarnTest extends ATest {
         script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{HADOOP_HOME}", HADOOP_FOLDER.getAbsolutePath());
-        script = script.replace("{ARGS}", "-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/\" -debugYarn -wdir \""
-                + workDir.getAbsolutePath() + "\" -jar "
-                + new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN3).getResource().getFile().getAbsolutePath() + " "
-                + MpiJobYarnMain.class.getName());
+        final StringBuilder args = new StringBuilder();
+        args.append("-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/" + getClass().getSimpleName() + "\" ");
+        //        args.append("-debugYarn");
+        args.append(" -wdir \"");
+        args.append(workDir.getAbsolutePath());
+        args.append("\" -jar ");
+        args.append(new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN3).getResource().getFile().getAbsolutePath());
+        args.append(" ");
+        args.append(MpiJobYarnMain.class.getName());
+        script = script.replace("{ARGS}", args.toString());
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 

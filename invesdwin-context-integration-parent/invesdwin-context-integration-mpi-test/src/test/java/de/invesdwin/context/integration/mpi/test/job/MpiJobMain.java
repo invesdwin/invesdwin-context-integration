@@ -182,6 +182,8 @@ public class MpiJobMain extends AMain {
         } finally {
             MPI.free();
         }
+        //kill any outstanding threads
+        System.exit(0);
     }
 
 }

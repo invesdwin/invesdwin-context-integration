@@ -71,6 +71,7 @@ public final class MpiJobYarnMain {
                     .exitValueNormal()
                     .redirectOutput(Slf4jStream.of(MpiJobYarnMain.class).asInfo())
                     .redirectError(Slf4jStream.of(MpiJobYarnMain.class).asWarn())
+                    .environment(System.getenv())
                     .stopper(new ProcessStopper() {
                         @Override
                         public void stop(final Process process) {
@@ -81,6 +82,8 @@ public final class MpiJobYarnMain {
         } catch (final Throwable e) {
             throw Err.process(e);
         }
+        //kill any outstanding threads
+        System.exit(0);
     }
 
     private static File maybeDownloadAndExtractJava17() {
