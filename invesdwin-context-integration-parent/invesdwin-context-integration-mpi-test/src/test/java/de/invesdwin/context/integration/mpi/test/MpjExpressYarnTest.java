@@ -34,6 +34,9 @@ import de.invesdwin.util.lang.uri.URIs;
 @Testcontainers
 public class MpjExpressYarnTest extends ATest {
 
+    //not needed to run the jobs
+    private static final boolean ACCESS_HADOOP_FRONTENDS = true;
+    //not needed because MpjExpress can work without connection to the host
     private static final boolean EXPOSE_HOST = false;
     private static final String HADOOP_VERSION = "3.3.4";
     private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
@@ -51,12 +54,14 @@ public class MpjExpressYarnTest extends ATest {
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
                         .withFileFromPath(".", HADOOP_DOCKER_FOLDER.toPath())
                         .get());
-        //dfs.datanode.http.address - The secondary namenode http/https server address and port.
-        container.withFixedExposedPort(9864, 9864);
-        //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
-        container.withFixedExposedPort(9870, 9870);
-        //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
-        container.withFixedExposedPort(8088, 8088);
+        if (ACCESS_HADOOP_FRONTENDS) {
+            //dfs.datanode.http.address - The secondary namenode http/https server address and port.
+            container.withFixedExposedPort(9864, 9864);
+            //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
+            container.withFixedExposedPort(9870, 9870);
+            //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
+            container.withFixedExposedPort(8088, 8088);
+        }
         //fs.defaultFS - The name of the default file system.
         container.withFixedExposedPort(9000, 9000);
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
