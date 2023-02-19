@@ -35,9 +35,9 @@ import de.invesdwin.util.lang.uri.URIs;
 public class MpjExpressYarnTest extends ATest {
 
     //not needed to run the jobs
-    private static final boolean ACCESS_HADOOP_FRONTENDS = true;
+    private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
-    private static final boolean EXPOSE_HOST = false;
+    private static final boolean HADOOP_EXPOSE_HOST = false;
     private static final String HADOOP_VERSION = "3.3.4";
     private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
     private static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
@@ -46,7 +46,7 @@ public class MpjExpressYarnTest extends ATest {
 
     @SuppressWarnings({ "deprecation", "resource" })
     private static GenericContainer<?> newHadoopContainer() {
-        if (EXPOSE_HOST) {
+        if (HADOOP_EXPOSE_HOST) {
             org.testcontainers.Testcontainers.exposeHostPorts(40002);
         }
         maybeDownloadAndExtractHadoop();
@@ -54,7 +54,7 @@ public class MpjExpressYarnTest extends ATest {
                 new ImageFromDockerfile(MpjExpressYarnTest.class.getSimpleName().toLowerCase())
                         .withFileFromPath(".", HADOOP_DOCKER_FOLDER.toPath())
                         .get());
-        if (ACCESS_HADOOP_FRONTENDS) {
+        if (HADOOP_FRONTENDS) {
             //dfs.datanode.http.address - The secondary namenode http/https server address and port.
             container.withFixedExposedPort(9864, 9864);
             //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
@@ -67,7 +67,7 @@ public class MpjExpressYarnTest extends ATest {
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
         container.withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
-        if (EXPOSE_HOST) {
+        if (HADOOP_EXPOSE_HOST) {
             container.withAccessToHost(true);
             //https://stackoverflow.com/a/60740997
             container.withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
