@@ -284,7 +284,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
         }
         //send encrypted output
         if (outboundEncodedData.position() != 0) {
-            outboundEncodedData.flip();
+            ByteBuffers.flip(outboundEncodedData);
             final IByteBuffer encodedMessage = outboundEncodedDataBuffer.slice(outboundEncodedData.position(),
                     outboundEncodedData.remaining());
             underlyingWriterSpinWait.getWriter().write(encodedMessage);

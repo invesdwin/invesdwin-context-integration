@@ -331,7 +331,7 @@ public class TlsHandshaker {
             final java.nio.ByteBuffer oApp = EmptyByteBuffer.EMPTY_DIRECT_BYTE_BUFFER;
             final java.nio.ByteBuffer oNet = handshakeBuffer;
             final SSLEngineResult r = engine.wrap(oApp, oNet);
-            oNet.flip();
+            ByteBuffers.flip(oNet);
 
             // Status.OK:
             if (oNet.hasRemaining()) {
@@ -424,7 +424,7 @@ public class TlsHandshaker {
     private void deliverAppData(final java.nio.ByteBuffer appData) throws IOException, TimeoutException {
         // Note: have not considered the packet loses
         produceApplicationPackets(appData);
-        appData.flip();
+        ByteBuffers.flip(appData);
     }
 
     // produce application packets
@@ -433,7 +433,7 @@ public class TlsHandshaker {
         handshakeBuffer.clear();
         final java.nio.ByteBuffer appNet = handshakeBuffer;
         final SSLEngineResult r = engine.wrap(appData, appNet);
-        appNet.flip();
+        ByteBuffers.flip(appNet);
 
         final Status rs = r.getStatus();
         if (rs == Status.BUFFER_OVERFLOW) {
@@ -472,7 +472,7 @@ public class TlsHandshaker {
             final java.nio.ByteBuffer recBuffer = handshakeBuffer;
             final SSLEngineResult rs = engine.unwrap(netBuffer, recBuffer);
             underlyingReaderSpinWait.getReader().readFinished();
-            recBuffer.flip();
+            ByteBuffers.flip(recBuffer);
             if (recBuffer.remaining() != 0) {
                 if (LOG.isTraceEnabled()) {
                     printHex(address, side, "Received application data", recBuffer);

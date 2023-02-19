@@ -57,7 +57,7 @@ public class TlsSynchronousReader implements ISynchronousReader<IByteBufferProvi
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         final java.nio.ByteBuffer src = channel.getInboundApplicationData();
-        src.flip();
+        ByteBuffers.flip(src);
         final IByteBuffer srcBuffer = channel.getInboundApplicationDataBuffer();
         final int messageLength = src.getInt(TlsSynchronousChannel.SIZE_INDEX);
         final IByteBuffer messageBuffer = srcBuffer.slice(TlsSynchronousChannel.MESSAGE_INDEX, messageLength);

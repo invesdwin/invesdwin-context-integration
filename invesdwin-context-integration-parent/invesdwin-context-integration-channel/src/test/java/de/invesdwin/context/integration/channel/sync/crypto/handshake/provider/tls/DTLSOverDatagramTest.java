@@ -246,7 +246,7 @@ public class DTLSOverDatagramTest {
 
         // Note: have not consider the packet loses
         final List<DatagramPacket> packets = produceApplicationPackets(engine, appData, peerAddr);
-        appData.flip();
+        ByteBuffers.flip(appData);
         for (final DatagramPacket p : packets) {
             socket.send(p);
         }
@@ -268,7 +268,7 @@ public class DTLSOverDatagramTest {
             final java.nio.ByteBuffer netBuffer = java.nio.ByteBuffer.wrap(buf, 0, packet.getLength());
             final java.nio.ByteBuffer recBuffer = java.nio.ByteBuffer.allocate(BUFFER_SIZE);
             final SSLEngineResult rs = engine.unwrap(netBuffer, recBuffer);
-            recBuffer.flip();
+            ByteBuffers.flip(recBuffer);
             if (recBuffer.remaining() != 0) {
                 printHex("Received application data", recBuffer);
                 if (!recBuffer.equals(expectedApp)) {
@@ -295,7 +295,7 @@ public class DTLSOverDatagramTest {
             final java.nio.ByteBuffer oNet = java.nio.ByteBuffer.allocate(32768);
             final java.nio.ByteBuffer oApp = java.nio.ByteBuffer.allocate(0);
             final SSLEngineResult r = engine.wrap(oApp, oNet);
-            oNet.flip();
+            ByteBuffers.flip(oNet);
 
             final SSLEngineResult.Status rs = r.getStatus();
             final SSLEngineResult.HandshakeStatus hs = r.getHandshakeStatus();
@@ -369,7 +369,7 @@ public class DTLSOverDatagramTest {
         final List<DatagramPacket> packets = new ArrayList<>();
         final java.nio.ByteBuffer appNet = java.nio.ByteBuffer.allocate(32768);
         final SSLEngineResult r = engine.wrap(source, appNet);
-        appNet.flip();
+        ByteBuffers.flip(appNet);
 
         final SSLEngineResult.Status rs = r.getStatus();
         if (rs == SSLEngineResult.Status.BUFFER_OVERFLOW) {
