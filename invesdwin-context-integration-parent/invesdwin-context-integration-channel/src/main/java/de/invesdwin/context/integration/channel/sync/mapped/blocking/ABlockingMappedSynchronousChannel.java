@@ -7,8 +7,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.util.math.Integers;
-import de.invesdwin.util.streams.buffer.MemoryMappedFile;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
+import de.invesdwin.util.streams.buffer.file.IMemoryMappedFile;
 
 @NotThreadSafe
 public abstract class ABlockingMappedSynchronousChannel implements ISynchronousChannel {
@@ -33,7 +33,7 @@ public abstract class ABlockingMappedSynchronousChannel implements ISynchronousC
 
     public static final int MIN_PHYSICAL_MESSAGE_SIZE = 4096 - MESSAGE_INDEX;
 
-    protected MemoryMappedFile mem;
+    protected IMemoryMappedFile mem;
     protected UnsafeByteBuffer buffer;
     protected final File file;
     private final int maxMessageSize;
@@ -50,8 +50,8 @@ public abstract class ABlockingMappedSynchronousChannel implements ISynchronousC
     public void open() throws IOException {
         final int fileSize = maxMessageSize + MESSAGE_INDEX;
         try {
-            this.mem = new MemoryMappedFile(file.getAbsolutePath(), fileSize, false);
-            this.buffer = new UnsafeByteBuffer(mem.getAddress(), Integers.checkedCast(mem.getLength()));
+            this.mem = IMemoryMappedFile.map(file.getAbsolutePath(), 0L, fileSize, false);
+            this.buffer = new UnsafeByteBuffer(mem.addressOffset(), Integers.checkedCast(mem.capacity()));
         } catch (final Exception e) {
             throw new IOException("Unable to open file: " + file, e);
         }
