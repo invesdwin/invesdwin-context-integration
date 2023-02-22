@@ -144,5 +144,15 @@
 			<artifactId>jnr-enxio</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.openucx</groupId>
+			<artifactId>jucx</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.ibm.disni</groupId>
+			<artifactId>disni</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>

@@ -100,6 +100,8 @@
 		<version.openmpi>4.1.4</version.openmpi>
 		<version.mpjexpress>0.44</version.mpjexpress>
 		<version.testcontainers>1.17.6</version.testcontainers>
+		<version.disni>2.1</version.disni>
+		<version.jucx>1.14.100</version.jucx>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -305,7 +307,7 @@
 				<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
-				<dependency>
+			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-mpi-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
@@ -774,6 +776,16 @@
 				<groupId>org.testcontainers</groupId>
 				<artifactId>junit-jupiter</artifactId>
 				<version>${version.testcontainers}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openucx</groupId>
+				<artifactId>jucx</artifactId>
+				<version>${version.jucx}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.ibm.disni</groupId>
+				<artifactId>disni</artifactId>
+				<version>${version.disni}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
