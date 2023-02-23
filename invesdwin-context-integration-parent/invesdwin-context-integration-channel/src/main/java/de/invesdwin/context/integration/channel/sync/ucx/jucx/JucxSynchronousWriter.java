@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openucx.jucx.ucp.UcpMemory;
+import org.openucx.jucx.ucp.UcpRequest;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
@@ -25,6 +26,7 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     private long messageToWrite;
     private int position;
     private int remaining;
+    private UcpRequest request;
 
     public JucxSynchronousWriter(final JucxSynchronousChannel channel) {
         this.channel = channel;
@@ -54,6 +56,7 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             messageToWrite = 0;
             position = 0;
             remaining = 0;
+            request = null;
         }
         if (channel != null) {
             channel.close();
@@ -94,14 +97,24 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     }
 
     private boolean writeFurther() throws IOException {
-        //        final long tag = TagUtil.setMessageType(remoteTag, TagUtil.MessageType.DEFAULT);
-        //        final boolean completed = channel.getUcpEndpoint()
-        //                .receiveTaggedMessage(buffer.addressOffset() + position, remaining, tag, TagUtil.TAG_MASK_FULL, true,
-        //                        false);
-        //        final int count = write0(fd, messageToWrite, position, remaining);
-        //        remaining -= count;
-        //        position += count;
-        return remaining > 0;
+        if (request == null) {
+            request = channel.getUcpEndpoint()
+                    .sendTaggedNonBlocking(buffer.addressOffset() + position, remaining, channel.getRemoteTag(),
+                            channel.getErrorUcxCallback().reset());
+        }
+        try {
+            channel.getUcpWorker().progressRequest(request);
+        } catch (final Exception e) {
+            throw new IOException(e);
+        }
+        channel.getErrorUcxCallback().maybeThrow();
+        if (!request.isCompleted()) {
+            return true;
+        }
+        remaining = 0;
+        position += remaining;
+        request = null;
+        return false;
     }
 
 }

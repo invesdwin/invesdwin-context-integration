@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucp.UcpRequest;
 
+import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
@@ -24,6 +25,7 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
     private int position = 0;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
+    private UcpRequest request;
 
     public JucxSynchronousReader(final JucxSynchronousChannel channel) {
         this.channel = channel;
@@ -46,6 +48,7 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
             position = 0;
             bufferOffset = 0;
             messageTargetPosition = 0;
+            request = null;
         }
         if (channel != null) {
             channel.close();
@@ -85,9 +88,20 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
-            final UcpRequest request = channel.getUcpWorker().recvTaggedNonBlocking(buffer.asNioByteBuffer(), null);
-            if (request != null && request.getRecvSize() > 0) {
+            if (request == null) {
+                request = channel.getUcpWorker()
+                        .recvTaggedNonBlocking(buffer.addressOffset() + position, readLength, channel.getRemoteTag(),
+                                TagUtil.TAG_MASK_FULL, channel.getErrorUcxCallback().reset());
+            }
+            try {
+                channel.getUcpWorker().progressRequest(request);
+            } catch (final Exception e) {
+                throw new IOException(e);
+            }
+            channel.getErrorUcxCallback().maybeThrow();
+            if (request.isCompleted()) {
                 position += request.getRecvSize();
+                request = null;
             }
         }
         return position >= targetPosition;

@@ -3,29 +3,28 @@ package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openucx.jucx.ucp.UcpRequest;
-import org.openucx.jucx.ucp.UcpWorker;
 
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 
 @NotThreadSafe
 public class UcpRequestSpinWait extends ASpinWait {
 
-    private UcpWorker worker;
+    private final JucxSynchronousChannel channel;
     private UcpRequest request;
 
-    public void init(final UcpWorker worker, final UcpRequest request) {
-        this.worker = worker;
-        this.request = request;
+    public UcpRequestSpinWait(final JucxSynchronousChannel channel) {
+        this.channel = channel;
     }
 
-    public void clear() {
-        request = null;
-        worker = null;
+    public void init(final UcpRequest request) {
+        this.request = request;
     }
 
     @Override
     public boolean isConditionFulfilled() throws Exception {
-        worker.progressRequest(request);
+        channel.getUcpWorker().progress();
+        channel.getUcpWorker().progressRequest(request);
+        channel.getErrorUcxCallback().maybeThrow();
         return request.isCompleted();
     }
 

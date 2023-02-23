@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.openucx.jucx.UcxException;
+import org.openucx.jucx.UcxCallback;
 import org.openucx.jucx.ucp.UcpConnectionRequest;
 import org.openucx.jucx.ucp.UcpConstants;
 import org.openucx.jucx.ucp.UcpContext;
@@ -24,7 +24,6 @@ import org.openucx.jucx.ucp.UcpParams;
 import org.openucx.jucx.ucp.UcpRequest;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
-import org.openucx.jucx.ucs.UcsConstants;
 
 import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
@@ -64,9 +63,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     private volatile boolean writerRegistered;
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
-    private final UcpRequestSpinWait requestSpinWait = new UcpRequestSpinWait();
+    private final UcpRequestSpinWait requestSpinWait = new UcpRequestSpinWait(this);
     private long localTag;
     private long remoteTag;
+    private final ErrorUcxCallback errorUcxCallback = new ErrorUcxCallback();
 
     public JucxSynchronousChannel(final InetSocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
@@ -139,6 +139,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         return remoteTag;
     }
 
+    public ErrorUcxCallback getErrorUcxCallback() {
+        return errorUcxCallback;
+    }
+
     public boolean isReaderRegistered() {
         return readerRegistered;
     }
@@ -202,11 +206,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                     try {
                         finalizer.ucpEndpoint = finalizer.ucpWorker
                                 .newEndpoint(newUcpEndpointParams().setErrorHandler((ep, status, errorMsg) -> {
-                                    if (status == UcsConstants.STATUS.UCS_ERR_CONNECTION_RESET) {
-                                        throw new ConnectException(errorMsg);
-                                    } else {
-                                        throw new UcxException(errorMsg);
-                                    }
+                                    errorUcxCallback.onError(status, errorMsg);
                                 }).setSocketAddress(socketAddress));
                         break;
                     } catch (final Throwable e) {
@@ -238,16 +238,19 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         try {
             localTag = TagUtil.generateId();
             final long localChecksum = TagUtil.calculateChecksum(localTag);
+            //TODO: remove tag from message
             sendBuffer.putLong(0, localTag);
             sendBuffer.putLong(Long.BYTES, localChecksum);
 
             //Exchanging tags to establish connection
             final UcpRequest sendRequest = finalizer.ucpEndpoint.sendStreamNonBlocking(sendBuffer.addressOffset(),
-                    CONNECT_BUFFER_SIZE, null);
-            final UcpRequest recvRequest = finalizer.ucpEndpoint.recvStreamNonBlocking(receiveBuffer.addressOffset(),
-                    CONNECT_BUFFER_SIZE, UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, null);
+                    CONNECT_BUFFER_SIZE, errorUcxCallback.reset());
             waitForRequest(sendRequest);
+            errorUcxCallback.maybeThrow();
+            final UcpRequest recvRequest = finalizer.ucpEndpoint.recvStreamNonBlocking(receiveBuffer.addressOffset(),
+                    CONNECT_BUFFER_SIZE, UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, errorUcxCallback.reset());
             waitForRequest(recvRequest);
+            errorUcxCallback.maybeThrow();
 
             final long tag = recvRequest.getSenderTag();
             remoteTag = receiveBuffer.getLong(0);
@@ -268,7 +271,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     private void waitForRequest(final UcpRequest request) throws IOException {
         try {
-            requestSpinWait.init(finalizer.ucpWorker, request);
+            requestSpinWait.init(request);
             requestSpinWait.awaitFulfill(System.nanoTime(), getConnectTimeout());
         } catch (final Throwable t) {
             close();
@@ -328,6 +331,45 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         finalizer.close();
         localTag = 0;
         remoteTag = 0;
+    }
+
+    public static final class ErrorUcxCallback extends UcxCallback {
+
+        private volatile boolean finished;
+        private volatile String error;
+
+        public ErrorUcxCallback reset() {
+            finished = false;
+            error = null;
+            return this;
+        }
+
+        public boolean isFinished() {
+            return finished;
+        }
+
+        public String getError() {
+            return error;
+        }
+
+        @Override
+        public void onSuccess(final UcpRequest request) {
+            finished = true;
+            error = null;
+        }
+
+        @Override
+        public void onError(final int ucsStatus, final String errorMsg) {
+            finished = true;
+            error = ucsStatus + ": " + errorMsg;
+        }
+
+        public void maybeThrow() throws IOException {
+            final String errorCopy = error;
+            if (errorCopy != null) {
+                throw new IOException(errorCopy);
+            }
+        }
     }
 
     private static final class UcxSynchronousChannelFinalizer extends AFinalizer {
