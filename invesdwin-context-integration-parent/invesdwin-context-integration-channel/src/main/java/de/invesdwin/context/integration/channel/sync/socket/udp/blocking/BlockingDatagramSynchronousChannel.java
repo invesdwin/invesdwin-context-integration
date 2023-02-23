@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -127,14 +128,22 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
-            finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(),
-                    ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-            finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            configureSocket(finalizer.socket);
         } finally {
             socketOpening = false;
         }
+    }
+
+    protected void configureSocket(final DatagramSocket socket) throws SocketException {
+        configureSocketStatic(socket, socketSize);
+    }
+
+    public static void configureSocketStatic(final DatagramSocket socket, final int socketSize) throws SocketException {
+        socket.setSendBufferSize(socketSize);
+        socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(),
+                ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+        socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
     }
 
     private void awaitSocketChannel() throws IOException {

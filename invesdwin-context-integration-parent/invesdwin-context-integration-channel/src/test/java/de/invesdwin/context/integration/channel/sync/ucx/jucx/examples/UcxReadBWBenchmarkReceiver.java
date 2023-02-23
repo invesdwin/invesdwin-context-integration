@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.jucx.examples;
+package de.invesdwin.context.integration.channel.sync.ucx.jucx.examples;
 
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;

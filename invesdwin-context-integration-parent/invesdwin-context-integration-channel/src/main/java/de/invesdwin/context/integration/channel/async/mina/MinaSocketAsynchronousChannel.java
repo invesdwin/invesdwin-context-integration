@@ -14,7 +14,6 @@ import org.apache.mina.core.session.IoSession;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -95,8 +94,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         private final IoBuffer buf;
         private final UnsafeByteBuffer buffer;
         private final IByteBuffer messageBuffer;
-        private int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
-        private int remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
+        private int targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
+        private int remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
@@ -106,7 +105,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             //netty uses direct buffers per default
             this.buf = new SimpleBufferAllocator().allocate(socketSize, true);
             this.buffer = new UnsafeByteBuffer(buf.buf());
-            this.messageBuffer = buffer.newSliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
+            this.messageBuffer = buffer.newSliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
         }
 
         @Override
@@ -172,7 +171,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             }
             if (size == -1) {
                 //read size and adjust target and remaining
-                size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
+                size = buffer.getInt(MinaSocketSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
                     MinaSocketAsynchronousChannel.this.closeAsync();
                     return false;
@@ -210,8 +209,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         }
 
         private void reset() {
-            targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
-            remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
+            targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
+            remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX;
             position = 0;
             size = -1;
         }
@@ -220,8 +219,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             if (output != null) {
                 buf.position(0); //reset indexes
                 final int size = output.getBuffer(messageBuffer);
-                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-                buf.limit(NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+                buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
+                buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
                 session.write(buf);
             }
         }

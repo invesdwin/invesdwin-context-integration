@@ -52,7 +52,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
     protected final SocketAddress socketAddress;
     protected final boolean server;
     private volatile boolean sessionOpening;
-    private final NettySocketSynchronousChannelFinalizer finalizer;
+    private final MinaSocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -67,7 +67,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
-        this.finalizer = new NettySocketSynchronousChannelFinalizer();
+        this.finalizer = new MinaSocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
 
@@ -373,14 +373,14 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    private static final class NettySocketSynchronousChannelFinalizer extends AFinalizer {
+    private static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile IoSession session;
         private volatile IoAcceptor serverAcceptor;
         private volatile IoConnector clientConnector;
 
-        protected NettySocketSynchronousChannelFinalizer() {
+        protected MinaSocketSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();

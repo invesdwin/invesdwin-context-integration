@@ -29,15 +29,25 @@ public class BidiSocketChannelTest extends AChannelTest {
         final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
         final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
 
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new SocketSynchronousWriter(serverChannel);
-        final ISynchronousReader<IByteBufferProvider> requestReader = new SocketSynchronousReader(serverChannel);
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(serverChannel);
+        final ISynchronousReader<IByteBufferProvider> requestReader = newSocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new SocketSynchronousWriter(clientChannel);
-        final ISynchronousReader<IByteBufferProvider> responseReader = new SocketSynchronousReader(clientChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = newSocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(clientChannel);
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    protected ISynchronousReader<IByteBufferProvider> newSocketSynchronousReader(
+            final SocketSynchronousChannel channel) {
+        return new SocketSynchronousReader(channel);
+    }
+
+    protected ISynchronousWriter<IByteBufferProvider> newSocketSynchronousWriter(
+            final SocketSynchronousChannel channel) {
+        return new SocketSynchronousWriter(channel);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,

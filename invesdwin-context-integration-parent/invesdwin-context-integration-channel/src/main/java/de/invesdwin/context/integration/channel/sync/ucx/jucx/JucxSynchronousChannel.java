@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.jucx;
+package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -269,6 +269,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
         private final boolean peerErrorHandlingMode;
         private final Exception initStackTrace;
+        //TODO: should be a global per application
         private volatile UcpContext ucpContext;
         private volatile UcpWorker ucpWorker;
         private volatile UcpListener ucpListener;

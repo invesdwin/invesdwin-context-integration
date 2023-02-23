@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.DatagramChannel;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
@@ -19,8 +20,6 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
-import de.invesdwin.util.math.Integers;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -137,15 +136,14 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
             }
             //non-blocking datagrams are a lot faster than blocking ones
             finalizer.socketChannel.configureBlocking(false);
-            finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setReceiveBufferSize(
-                    Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
-                            socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-            finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            configureSocket(finalizer.socket);
         } finally {
             socketChannelOpening = false;
         }
+    }
+
+    protected void configureSocket(final DatagramSocket socket) throws SocketException {
+        BlockingDatagramSynchronousChannel.configureSocketStatic(socket, socketSize);
     }
 
     private void awaitSocketChannel() throws IOException {

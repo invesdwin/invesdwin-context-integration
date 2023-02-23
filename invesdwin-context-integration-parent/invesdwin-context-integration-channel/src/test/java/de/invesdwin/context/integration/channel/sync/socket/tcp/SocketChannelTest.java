@@ -28,19 +28,29 @@ public class SocketChannelTest extends AChannelTest {
 
     protected void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new SocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
                 newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
-        final ISynchronousReader<IByteBufferProvider> requestReader = new SocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> requestReader = newSocketSynchronousReader(
                 newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new SocketSynchronousWriter(
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = newSocketSynchronousWriter(
                 newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
-        final ISynchronousReader<IByteBufferProvider> responseReader = new SocketSynchronousReader(
+        final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(
                 newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    protected ISynchronousReader<IByteBufferProvider> newSocketSynchronousReader(
+            final SocketSynchronousChannel channel) {
+        return new SocketSynchronousReader(channel);
+    }
+
+    protected ISynchronousWriter<IByteBufferProvider> newSocketSynchronousWriter(
+            final SocketSynchronousChannel channel) {
+        return new SocketSynchronousWriter(channel);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,

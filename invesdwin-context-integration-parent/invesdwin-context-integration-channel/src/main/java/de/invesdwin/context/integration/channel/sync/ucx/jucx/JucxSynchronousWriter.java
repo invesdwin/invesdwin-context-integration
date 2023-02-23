@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.jucx;
+package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 
 import java.io.FileDescriptor;
 import java.io.IOException;

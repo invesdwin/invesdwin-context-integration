@@ -6,7 +6,6 @@ import java.nio.channels.SocketChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -16,14 +15,14 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class SocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private SocketSynchronousChannel channel;
-    private final int socketSize;
-    private IByteBuffer buffer;
-    private java.nio.ByteBuffer messageBuffer;
-    private SocketChannel socketChannel;
-    private int position = 0;
-    private int bufferOffset = 0;
-    private int messageTargetPosition = 0;
+    protected SocketSynchronousChannel channel;
+    protected final int socketSize;
+    protected IByteBuffer buffer;
+    protected java.nio.ByteBuffer messageBuffer;
+    protected SocketChannel socketChannel;
+    protected int position = 0;
+    protected int bufferOffset = 0;
+    protected int messageTargetPosition = 0;
 
     public SocketSynchronousReader(final SocketSynchronousChannel channel) {
         this.channel = channel;
@@ -72,12 +71,12 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + NettySocketSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -95,7 +94,7 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
         return readFurther(messageTargetPosition, messageTargetPosition - position);
     }
 
-    private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
+    protected boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
             position += read0(socketChannel, messageBuffer, position, readLength);
         }
@@ -104,14 +103,14 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - NettySocketSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - SocketSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + NettySocketSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = NettySocketSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
         if (position > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in

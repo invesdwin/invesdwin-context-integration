@@ -5,6 +5,7 @@ import java.net.ConnectException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -141,13 +142,21 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
                 }
             }
         }
-        finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+        configureSocket(finalizer.socket);
+    }
+
+    protected void configureSocket(final Socket socket) throws SocketException {
+        configureSocketStatic(socket, socketSize);
+    }
+
+    public static void configureSocketStatic(final Socket socket, final int socketSize) throws SocketException {
+        socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
                 | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-        finalizer.socket.setReceiveBufferSize(Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers
+        socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(), ByteBuffers
                 .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-        finalizer.socket.setSendBufferSize(socketSize);
-        finalizer.socket.setTcpNoDelay(true);
-        finalizer.socket.setKeepAlive(true);
+        socket.setSendBufferSize(socketSize);
+        socket.setTcpNoDelay(true);
+        socket.setKeepAlive(true);
     }
 
     private void awaitSocket() throws IOException {

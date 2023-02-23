@@ -16,12 +16,12 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 @NotThreadSafe
 public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private SocketSynchronousChannel channel;
-    private IByteBuffer buffer;
-    private SlicedFromDelegateByteBuffer messageBuffer;
-    private SocketChannel socketChannel;
-    private java.nio.ByteBuffer messageToWrite;
-    private int positionBefore;
+    protected SocketSynchronousChannel channel;
+    protected IByteBuffer buffer;
+    protected SlicedFromDelegateByteBuffer messageBuffer;
+    protected SocketChannel socketChannel;
+    protected java.nio.ByteBuffer messageToWrite;
+    protected int positionBefore;
 
     public SocketSynchronousWriter(final SocketSynchronousChannel channel) {
         this.channel = channel;
@@ -96,7 +96,7 @@ public class SocketSynchronousWriter implements ISynchronousWriter<IByteBufferPr
         }
     }
 
-    private boolean writeFurther() throws IOException {
+    protected boolean writeFurther() throws IOException {
         final int count = socketChannel.write(messageToWrite);
         if (count < 0) { // EOF
             throw ByteBuffers.newEOF();

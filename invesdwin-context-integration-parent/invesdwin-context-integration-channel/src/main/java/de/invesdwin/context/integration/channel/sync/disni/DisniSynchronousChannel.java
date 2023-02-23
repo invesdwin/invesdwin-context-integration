@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,13 +14,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousChannel;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
-import de.invesdwin.util.math.Integers;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -150,19 +149,15 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
             //non-blocking sockets are a bit faster than blocking ones
             finalizer.socketChannel.configureBlocking(false);
             if (finalizer.socket != null) {
-                //might be unix domain socket
-                finalizer.socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                        | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-                finalizer.socket.setReceiveBufferSize(
-                        Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
-                                socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-                finalizer.socket.setSendBufferSize(socketSize);
-                finalizer.socket.setTcpNoDelay(true);
-                finalizer.socket.setKeepAlive(true);
+                configureSocket(finalizer.socket);
             }
         } finally {
             socketChannelOpening = false;
         }
+    }
+
+    protected void configureSocket(final Socket socket) throws SocketException {
+        BlockingSocketSynchronousChannel.configureSocketStatic(socket, socketSize);
     }
 
     private void awaitSocketChannel() throws IOException {
