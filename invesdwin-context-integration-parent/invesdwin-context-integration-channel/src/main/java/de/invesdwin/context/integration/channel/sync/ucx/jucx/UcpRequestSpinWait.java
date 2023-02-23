@@ -9,10 +9,10 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 @NotThreadSafe
 public class UcpRequestSpinWait extends ASpinWait {
 
-    private final JucxSynchronousChannel channel;
+    private final IJucxSynchronousChannel channel;
     private UcpRequest request;
 
-    public UcpRequestSpinWait(final JucxSynchronousChannel channel) {
+    public UcpRequestSpinWait(final IJucxSynchronousChannel channel) {
         this.channel = channel;
     }
 

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.ucx.jucx;
+package de.invesdwin.context.integration.channel.sync.ucx.jucx.stream;
 
 import java.net.InetSocketAddress;
 
@@ -15,23 +15,23 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class JucxChannelTest extends AChannelTest {
+public class JucxStreamChannelTest extends AChannelTest {
 
     @Test
-    public void testNioSocketPerformance() throws InterruptedException {
+    public void testNioSocketPerfoStreamnce() throws InterruptedException {
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNioJucxPerformanceTest(responseAddress, requestAddress);
+        runNioJucxPerfoStreamnceTest(responseAddress, requestAddress);
     }
 
-    protected void runNioJucxPerformanceTest(final InetSocketAddress responseAddress,
+    protected void runNioJucxPerfoStreamnceTest(final InetSocketAddress responseAddress,
             final InetSocketAddress requestAddress) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newJucxSynchronousWriter(
                 newJucxSynchronousChannel(responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = newJucxSynchronousReader(
                 newJucxSynchronousChannel(requestAddress, true, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testJucxPerformance", 1);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testJucxPerfoStreamnce", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = newJucxSynchronousWriter(
                 newJucxSynchronousChannel(requestAddress, false, getMaxMessageSize()));
@@ -42,17 +42,19 @@ public class JucxChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(final JucxSynchronousChannel channel) {
-        return new JucxSynchronousReader(channel);
+    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(
+            final JucxStreamSynchronousChannel channel) {
+        return new JucxStreamSynchronousReader(channel);
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(final JucxSynchronousChannel channel) {
-        return new JucxSynchronousWriter(channel);
+    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(
+            final JucxStreamSynchronousChannel channel) {
+        return new JucxStreamSynchronousWriter(channel);
     }
 
-    protected JucxSynchronousChannel newJucxSynchronousChannel(final InetSocketAddress socketAddress,
+    protected JucxStreamSynchronousChannel newJucxSynchronousChannel(final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new JucxSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new JucxStreamSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

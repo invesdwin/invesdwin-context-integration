@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.ucx.jucx;
+package de.invesdwin.context.integration.channel.sync.ucx.jucx.rma;
 
 import java.net.InetSocketAddress;
 
@@ -15,7 +15,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiJucxChannelTest extends AChannelTest {
+public class BidiJucxRmaChannelTest extends AChannelTest {
 
     @Test
     public void testBidiJucxPerformance() throws InterruptedException {
@@ -25,8 +25,8 @@ public class BidiJucxChannelTest extends AChannelTest {
     }
 
     protected void runJucxPerformanceTest(final InetSocketAddress address) throws InterruptedException {
-        final JucxSynchronousChannel serverChannel = newJucxSynchronousChannel(address, true, getMaxMessageSize());
-        final JucxSynchronousChannel clientChannel = newJucxSynchronousChannel(address, false, getMaxMessageSize());
+        final JucxRmaSynchronousChannel serverChannel = newJucxSynchronousChannel(address, true, getMaxMessageSize());
+        final JucxRmaSynchronousChannel clientChannel = newJucxSynchronousChannel(address, false, getMaxMessageSize());
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newJucxSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = newJucxSynchronousReader(serverChannel);
@@ -39,17 +39,19 @@ public class BidiJucxChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(final JucxSynchronousChannel channel) {
-        return new JucxSynchronousReader(channel);
+    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(
+            final JucxRmaSynchronousChannel channel) {
+        return new JucxRmaSynchronousReader(channel);
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(final JucxSynchronousChannel channel) {
-        return new JucxSynchronousWriter(channel);
+    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(
+            final JucxRmaSynchronousChannel channel) {
+        return new JucxRmaSynchronousWriter(channel);
     }
 
-    protected JucxSynchronousChannel newJucxSynchronousChannel(final InetSocketAddress socketAddress,
+    protected JucxRmaSynchronousChannel newJucxSynchronousChannel(final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new JucxSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new JucxRmaSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }
