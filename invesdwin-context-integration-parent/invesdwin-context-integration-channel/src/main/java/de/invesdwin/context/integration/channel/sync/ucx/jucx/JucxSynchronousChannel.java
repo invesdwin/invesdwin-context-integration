@@ -13,7 +13,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openucx.jucx.UcxCallback;
 import org.openucx.jucx.ucp.UcpConnectionRequest;
-import org.openucx.jucx.ucp.UcpConstants;
 import org.openucx.jucx.ucp.UcpContext;
 import org.openucx.jucx.ucp.UcpEndpoint;
 import org.openucx.jucx.ucp.UcpEndpointParams;
@@ -201,6 +200,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                 finalizer.ucpListener = null;
                 finalizer.ucpEndpoint = finalizer.ucpWorker
                         .newEndpoint(newUcpEndpointParams().setConnectionRequest(connRequest.get()));
+                establishConnection();
             } else {
                 while (true) {
                     try {
@@ -208,6 +208,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                                 .newEndpoint(newUcpEndpointParams().setErrorHandler((ep, status, errorMsg) -> {
                                     errorUcxCallback.onError(status, errorMsg);
                                 }).setSocketAddress(socketAddress));
+                        establishConnection();
                         break;
                     } catch (final Throwable e) {
                         if (finalizer.ucpEndpoint != null) {
@@ -226,46 +227,39 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
-            establishConnection();
         } finally {
             ucpEndpointOpening = false;
         }
     }
 
     void establishConnection() throws IOException {
-        final IByteBuffer sendBuffer = CONNECT_BUFFER_POOL.borrowObject();
-        final IByteBuffer receiveBuffer = CONNECT_BUFFER_POOL.borrowObject();
+        final IByteBuffer buffer = CONNECT_BUFFER_POOL.borrowObject();
         try {
             localTag = TagUtil.generateId();
             final long localChecksum = TagUtil.calculateChecksum(localTag);
-            //TODO: remove tag from message
-            sendBuffer.putLong(0, localTag);
-            sendBuffer.putLong(Long.BYTES, localChecksum);
+            buffer.putLong(0, localTag);
+            buffer.putLong(Long.BYTES, localChecksum);
 
             //Exchanging tags to establish connection
-            final UcpRequest sendRequest = finalizer.ucpEndpoint.sendStreamNonBlocking(sendBuffer.addressOffset(),
-                    CONNECT_BUFFER_SIZE, errorUcxCallback.reset());
+            errorUcxCallback.maybeThrow();
+            final UcpRequest sendRequest = finalizer.ucpEndpoint.sendTaggedNonBlocking(buffer.asNioByteBuffer(),
+                    errorUcxCallback);
             waitForRequest(sendRequest);
             errorUcxCallback.maybeThrow();
-            final UcpRequest recvRequest = finalizer.ucpEndpoint.recvStreamNonBlocking(receiveBuffer.addressOffset(),
-                    CONNECT_BUFFER_SIZE, UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, errorUcxCallback.reset());
+            final UcpRequest recvRequest = finalizer.ucpWorker.recvTaggedNonBlocking(buffer.asNioByteBuffer(),
+                    errorUcxCallback.reset());
             waitForRequest(recvRequest);
             errorUcxCallback.maybeThrow();
 
-            final long tag = recvRequest.getSenderTag();
-            remoteTag = receiveBuffer.getLong(0);
-            if (tag != remoteTag) {
-                throw new IllegalStateException("Remote tag mismatch: " + remoteTag + " != " + tag);
-            }
-            final long remoteChecksum = receiveBuffer.getLong(Long.BYTES);
+            remoteTag = buffer.getLong(0);
+            final long remoteChecksum = buffer.getLong(Long.BYTES);
             final long expectedChecksum = TagUtil.calculateChecksum(remoteTag);
             if (remoteChecksum != expectedChecksum) {
                 throw new IllegalStateException(
                         "Remote tag checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
             }
         } finally {
-            CONNECT_BUFFER_POOL.returnObject(receiveBuffer);
-            CONNECT_BUFFER_POOL.returnObject(sendBuffer);
+            CONNECT_BUFFER_POOL.returnObject(buffer);
         }
     }
 
