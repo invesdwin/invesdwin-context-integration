@@ -78,7 +78,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         return new UcpParams().requestWakeupFeature()
                 .requestRmaFeature()
                 .requestTagFeature()
-                .requestStreamFeature()
+                //                                .requestStreamFeature()
                 .setEstimatedNumEps(1)
                 .setMtWorkersShared(false);
     }
@@ -427,10 +427,14 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
             final UcpEndpoint ucpEndpointCopy = ucpEndpoint;
             if (ucpEndpointCopy != null) {
                 ucpEndpoint = null;
-                if (peerErrorHandlingMode) {
-                    ucpEndpointCopy.closeNonBlockingForce();
-                } else {
-                    ucpEndpointCopy.closeNonBlockingFlush();
+                try {
+                    if (peerErrorHandlingMode) {
+                        ucpWorker.progressRequest(ucpEndpointCopy.closeNonBlockingForce());
+                    } else {
+                        ucpWorker.progressRequest(ucpEndpointCopy.closeNonBlockingFlush());
+                    }
+                } catch (final Exception e) {
+                    //ignore
                 }
                 Closeables.closeQuietly(ucpEndpointCopy);
             }
