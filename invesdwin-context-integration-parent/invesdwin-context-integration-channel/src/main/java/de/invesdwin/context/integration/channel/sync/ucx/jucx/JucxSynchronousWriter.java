@@ -96,9 +96,12 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
 
     private boolean writeFurther() throws IOException {
         if (request == null) {
+            System.out.println("send");
             request = channel.getUcpEndpoint()
                     .putNonBlocking(buffer.addressOffset() + position, remaining, channel.getRemoteAddress(),
                             channel.getUcpRemoteKey(), channel.getErrorUcxCallback().reset());
+            //            request = channel.getUcpEndpoint()
+            //                    .sendTaggedNonBlocking(buffer.asNioByteBuffer(), channel.getErrorUcxCallback().reset());
         }
         try {
             channel.getUcpWorker().progressRequest(request);
