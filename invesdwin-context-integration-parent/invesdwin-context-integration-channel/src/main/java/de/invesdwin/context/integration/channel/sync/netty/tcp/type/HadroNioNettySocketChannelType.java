@@ -3,9 +3,11 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.hadronio.HadroNioEventLoopGroup;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.hadronio.HadroNioNettyServerSocketChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.hadronio.HadroNioNettySocketChannel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
-import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
@@ -16,17 +18,17 @@ public class HadroNioNettySocketChannelType implements INettySocketChannelType {
 
     @Override
     public EventLoopGroup newServerAcceptorGroup() {
-        return new NioEventLoopGroup(1);
+        return new HadroNioEventLoopGroup(1);
     }
 
     @Override
     public EventLoopGroup newServerWorkerGroup(final EventLoopGroup parentGroup) {
-        return new NioEventLoopGroup(1);
+        return new HadroNioEventLoopGroup(1);
     }
 
     @Override
     public EventLoopGroup newClientWorkerGroup() {
-        return new NioEventLoopGroup(1);
+        return new HadroNioEventLoopGroup(1);
     }
 
     @Override
