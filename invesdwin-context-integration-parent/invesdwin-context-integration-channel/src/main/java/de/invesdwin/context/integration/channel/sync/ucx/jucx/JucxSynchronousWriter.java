@@ -37,8 +37,7 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     public void open() throws IOException {
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        memory = channel.getUcpContext().memoryMap(channel.getUcpMemMapParams());
-        buffer = new UnsafeByteBuffer(memory.getAddress(), channel.getSocketSize());
+        buffer = new UnsafeByteBuffer(channel.getUcpMemory().getAddress(), channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);
     }
 
@@ -50,7 +49,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             } catch (final Throwable t) {
                 //ignore
             }
-            memory.close();
             buffer = null;
             messageBuffer = null;
             messageToWrite = 0;
@@ -99,11 +97,12 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     private boolean writeFurther() throws IOException {
         if (request == null) {
             request = channel.getUcpEndpoint()
-                    .sendTaggedNonBlocking(buffer.addressOffset() + position, remaining, channel.getRemoteTag(),
-                            channel.getErrorUcxCallback().reset());
+                    .putNonBlocking(buffer.addressOffset() + position, remaining, channel.getRemoteAddress(),
+                            channel.getUcpRemoteKey(), channel.getErrorUcxCallback().reset());
         }
         try {
             channel.getUcpWorker().progressRequest(request);
+            channel.getUcpWorker().progress();
         } catch (final Exception e) {
             throw new IOException(e);
         }

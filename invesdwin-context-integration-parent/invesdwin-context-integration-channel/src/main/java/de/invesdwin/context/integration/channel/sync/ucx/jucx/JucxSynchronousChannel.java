@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
+import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -19,23 +20,19 @@ import org.openucx.jucx.ucp.UcpEndpointParams;
 import org.openucx.jucx.ucp.UcpListener;
 import org.openucx.jucx.ucp.UcpListenerParams;
 import org.openucx.jucx.ucp.UcpMemMapParams;
+import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucp.UcpParams;
+import org.openucx.jucx.ucp.UcpRemoteKey;
 import org.openucx.jucx.ucp.UcpRequest;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
 
-import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.util.concurrent.pool.AgronaObjectPool;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
-import de.invesdwin.util.streams.buffer.bytes.ByteBufferAlignment;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -43,10 +40,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
-
-    private static final int CONNECT_BUFFER_SIZE = Long.BYTES + Long.BYTES;
-    private static final IObjectPool<IByteBuffer> CONNECT_BUFFER_POOL = new AgronaObjectPool<IByteBuffer>(
-            () -> ByteBuffers.allocateDirectFixedAligned(CONNECT_BUFFER_SIZE, ByteBufferAlignment.PAGE));
 
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
@@ -63,8 +56,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
     private final UcpRequestSpinWait requestSpinWait = new UcpRequestSpinWait(this);
-    private long localTag;
-    private long remoteTag;
     private final ErrorUcxCallback errorUcxCallback = new ErrorUcxCallback();
 
     public JucxSynchronousChannel(final InetSocketAddress socketAddress, final boolean server,
@@ -91,7 +82,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     }
 
     protected UcpMemMapParams newUcpMemMapParams() {
-        return new UcpMemMapParams().allocate().setLength(socketSize);
+        return new UcpMemMapParams().allocate().setLength(socketSize).nonBlocking();
     }
 
     protected UcpEndpointParams newUcpEndpointParams() {
@@ -130,12 +121,16 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         return finalizer.ucpEndpoint;
     }
 
-    public long getLocalTag() {
-        return localTag;
+    public UcpMemory getUcpMemory() {
+        return finalizer.ucpMemory;
     }
 
-    public long getRemoteTag() {
-        return remoteTag;
+    public long getRemoteAddress() {
+        return finalizer.remoteAddress;
+    }
+
+    public UcpRemoteKey getUcpRemoteKey() {
+        return finalizer.ucpRemoteKey;
     }
 
     public ErrorUcxCallback getErrorUcxCallback() {
@@ -233,34 +228,35 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     }
 
     void establishConnection() throws IOException {
-        final IByteBuffer buffer = CONNECT_BUFFER_POOL.borrowObject();
-        try {
-            localTag = TagUtil.generateId();
-            final long localChecksum = TagUtil.calculateChecksum(localTag);
-            buffer.putLong(0, localTag);
-            buffer.putLong(Long.BYTES, localChecksum);
+        finalizer.ucpMemory = finalizer.ucpContext.memoryMap(getUcpMemMapParams());
 
-            //Exchanging tags to establish connection
-            errorUcxCallback.maybeThrow();
-            final UcpRequest sendRequest = finalizer.ucpEndpoint.sendTaggedNonBlocking(buffer.asNioByteBuffer(),
-                    errorUcxCallback);
-            waitForRequest(sendRequest);
-            errorUcxCallback.maybeThrow();
-            final UcpRequest recvRequest = finalizer.ucpWorker.recvTaggedNonBlocking(buffer.asNioByteBuffer(),
-                    errorUcxCallback.reset());
-            waitForRequest(recvRequest);
-            errorUcxCallback.maybeThrow();
+        // Send worker and memory address and Rkey to receiver.
+        final ByteBuffer rkeyBuffer = finalizer.ucpMemory.getRemoteKeyBuffer();
 
-            remoteTag = buffer.getLong(0);
-            final long remoteChecksum = buffer.getLong(Long.BYTES);
-            final long expectedChecksum = TagUtil.calculateChecksum(remoteTag);
-            if (remoteChecksum != expectedChecksum) {
-                throw new IllegalStateException(
-                        "Remote tag checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
-            }
-        } finally {
-            CONNECT_BUFFER_POOL.returnObject(buffer);
-        }
+        final ByteBuffer buffer = ByteBuffer.allocateDirect(Long.BYTES + Integer.BYTES + rkeyBuffer.capacity());
+        buffer.putLong(finalizer.ucpMemory.getAddress());
+        buffer.putInt(socketSize);
+        buffer.put(rkeyBuffer);
+        buffer.clear();
+
+        // Send memory metadata and wait until receiver will finish benchmark.
+
+        //Exchanging tags to establish connection
+        errorUcxCallback.maybeThrow();
+        final UcpRequest sendRequest = finalizer.ucpEndpoint.sendTaggedNonBlocking(buffer, errorUcxCallback);
+        waitForRequest(sendRequest);
+        errorUcxCallback.maybeThrow();
+        final UcpRequest recvRequest = finalizer.ucpWorker.recvTaggedNonBlocking(buffer, errorUcxCallback.reset());
+        waitForRequest(recvRequest);
+        errorUcxCallback.maybeThrow();
+
+        finalizer.remoteAddress = buffer.getLong();
+        final int rkeyBufferOffset = buffer.position();
+
+        buffer.position(rkeyBufferOffset);
+        final UcpRemoteKey remoteKey = finalizer.ucpEndpoint.unpackRemoteKey(buffer);
+        finalizer.ucpRemoteKey = remoteKey;
+        System.out.println("connected");
     }
 
     private void waitForRequest(final UcpRequest request) throws IOException {
@@ -323,8 +319,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
             }
         }
         finalizer.close();
-        localTag = 0;
-        remoteTag = 0;
     }
 
     public static final class ErrorUcxCallback extends UcxCallback {
@@ -368,6 +362,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     private static final class UcxSynchronousChannelFinalizer extends AFinalizer {
 
+        public long remoteAddress;
         private final boolean peerErrorHandlingMode;
         private final Exception initStackTrace;
         //TODO: should be a global per application
@@ -375,6 +370,8 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         private volatile UcpWorker ucpWorker;
         private volatile UcpListener ucpListener;
         private volatile UcpEndpoint ucpEndpoint;
+        private volatile UcpMemory ucpMemory;
+        public UcpRemoteKey ucpRemoteKey;
 
         protected UcxSynchronousChannelFinalizer(final boolean peerErrorHandlingMode) {
             this.peerErrorHandlingMode = peerErrorHandlingMode;
@@ -388,6 +385,16 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
+            final UcpRemoteKey ucpRemoteKeyCopy = ucpRemoteKey;
+            if (ucpRemoteKeyCopy != null) {
+                ucpRemoteKey = null;
+                Closeables.closeQuietly(ucpRemoteKeyCopy);
+            }
+            final UcpMemory ucpMemoryCopy = ucpMemory;
+            if (ucpMemoryCopy != null) {
+                ucpMemory = null;
+                Closeables.closeQuietly(ucpMemoryCopy);
+            }
             final UcpEndpoint ucpEndpointCopy = ucpEndpoint;
             if (ucpEndpointCopy != null) {
                 ucpEndpoint = null;

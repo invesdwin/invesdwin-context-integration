@@ -7,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucp.UcpRequest;
 
-import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
@@ -89,12 +88,13 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
             if (request == null) {
-                request = channel.getUcpWorker()
-                        .recvTaggedNonBlocking(buffer.addressOffset() + position, readLength, channel.getRemoteTag(),
-                                TagUtil.TAG_MASK_FULL, channel.getErrorUcxCallback().reset());
+                request = channel.getUcpEndpoint()
+                        .getNonBlocking(channel.getRemoteAddress(), channel.getUcpRemoteKey(),
+                                buffer.addressOffset() + position, readLength, channel.getErrorUcxCallback().reset());
             }
             try {
                 channel.getUcpWorker().progressRequest(request);
+                channel.getUcpWorker().progress();
             } catch (final Exception e) {
                 throw new IOException(e);
             }
