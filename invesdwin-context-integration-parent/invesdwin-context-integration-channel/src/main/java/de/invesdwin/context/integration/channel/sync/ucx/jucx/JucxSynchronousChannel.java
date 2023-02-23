@@ -30,9 +30,12 @@ import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.concurrent.pool.AgronaObjectPool;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.streams.buffer.bytes.ByteBufferAlignment;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
@@ -42,6 +45,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
+
+    private static final int CONNECT_BUFFER_SIZE = Long.BYTES + Long.BYTES;
+    private static final IObjectPool<IByteBuffer> CONNECT_BUFFER_POOL = new AgronaObjectPool<IByteBuffer>(
+            () -> ByteBuffers.allocateDirectFixedAligned(CONNECT_BUFFER_SIZE, ByteBufferAlignment.PAGE));
 
     public static final int MESSAGE_INDEX = SIZE_INDEX + SIZE_SIZE;
 
@@ -226,13 +233,9 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     }
 
     void establishConnection() throws IOException {
-        final IByteBuffer sendBuffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
-        final IByteBuffer receiveBuffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
+        final IByteBuffer sendBuffer = CONNECT_BUFFER_POOL.borrowObject();
+        final IByteBuffer receiveBuffer = CONNECT_BUFFER_POOL.borrowObject();
         try {
-            final int capacity = Long.BYTES + Long.BYTES;
-            sendBuffer.ensureCapacity(capacity);
-            receiveBuffer.ensureCapacity(capacity);
-
             localTag = TagUtil.generateId();
             final long localChecksum = TagUtil.calculateChecksum(localTag);
             sendBuffer.putLong(0, localTag);
@@ -240,9 +243,9 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
             //Exchanging tags to establish connection
             final UcpRequest sendRequest = finalizer.ucpEndpoint.sendStreamNonBlocking(sendBuffer.addressOffset(),
-                    capacity, null);
+                    CONNECT_BUFFER_SIZE, null);
             final UcpRequest recvRequest = finalizer.ucpEndpoint.recvStreamNonBlocking(receiveBuffer.addressOffset(),
-                    capacity, UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, null);
+                    CONNECT_BUFFER_SIZE, UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, null);
             waitForRequest(sendRequest);
             waitForRequest(recvRequest);
 
@@ -258,8 +261,8 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                         "Remote tag checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
             }
         } finally {
-            ByteBuffers.EXPANDABLE_POOL.returnObject(sendBuffer);
-            ByteBuffers.EXPANDABLE_POOL.returnObject(receiveBuffer);
+            CONNECT_BUFFER_POOL.returnObject(receiveBuffer);
+            CONNECT_BUFFER_POOL.returnObject(sendBuffer);
         }
     }
 
