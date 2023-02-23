@@ -1,28 +1,27 @@
 package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.openucx.jucx.ucp.UcpMemory;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import net.openhft.chronicle.core.OS;
-import net.openhft.chronicle.core.io.IOTools;
+import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private JucxSynchronousChannel channel;
+    private UcpMemory memory;
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
-    private FileDescriptor fd;
     private long messageToWrite;
     private int position;
     private int remaining;
@@ -36,7 +35,8 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     public void open() throws IOException {
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        memory = channel.getUcpContext().memoryMap(channel.getUcpMemMapParams());
+        buffer = new UnsafeByteBuffer(memory.getAddress(), channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);
     }
 
@@ -48,7 +48,7 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             } catch (final Throwable t) {
                 //ignore
             }
-            fd = null;
+            memory.close();
             buffer = null;
             messageBuffer = null;
             messageToWrite = 0;
@@ -94,24 +94,14 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     }
 
     private boolean writeFurther() throws IOException {
-        final int count = write0(fd, messageToWrite, position, remaining);
-        remaining -= count;
-        position += count;
+        //        final long tag = TagUtil.setMessageType(remoteTag, TagUtil.MessageType.DEFAULT);
+        //        final boolean completed = channel.getUcpEndpoint()
+        //                .receiveTaggedMessage(buffer.addressOffset() + position, remaining, tag, TagUtil.TAG_MASK_FULL, true,
+        //                        false);
+        //        final int count = write0(fd, messageToWrite, position, remaining);
+        //        remaining -= count;
+        //        position += count;
         return remaining > 0;
-    }
-
-    public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
-            throws IOException {
-        final int res = OS.write0(dst, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
-            return 0;
-        } else {
-            final int count = IOTools.normaliseIOStatus(res);
-            if (count < 0) { // EOF
-                throw ByteBuffers.newEOF();
-            }
-            return count;
-        }
     }
 
 }

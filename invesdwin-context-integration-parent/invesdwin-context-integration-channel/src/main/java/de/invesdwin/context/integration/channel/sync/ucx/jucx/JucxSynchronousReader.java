@@ -1,27 +1,26 @@
 package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.openucx.jucx.ucp.UcpMemory;
+import org.openucx.jucx.ucp.UcpRequest;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import net.openhft.chronicle.core.OS;
-import net.openhft.chronicle.core.io.IOTools;
+import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private JucxSynchronousChannel channel;
-    private final int socketSize;
+    private UcpMemory memory;
     private IByteBuffer buffer;
-    private FileDescriptor fd;
     private int position = 0;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
@@ -29,21 +28,21 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
     public JucxSynchronousReader(final JucxSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        memory = channel.getUcpContext().memoryMap(channel.getUcpMemMapParams());
+        buffer = new UnsafeByteBuffer(memory.getAddress(), channel.getSocketSize());
     }
 
     @Override
     public void close() {
         if (buffer != null) {
+            memory.close();
             buffer = null;
-            fd = null;
             position = 0;
             bufferOffset = 0;
             messageTargetPosition = 0;
@@ -86,7 +85,10 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
-            position += read0(fd, buffer.addressOffset(), position, readLength);
+            final UcpRequest request = channel.getUcpWorker().recvTaggedNonBlocking(buffer.asNioByteBuffer(), null);
+            if (request != null && request.getRecvSize() > 0) {
+                position += request.getRecvSize();
+            }
         }
         return position >= targetPosition;
     }
@@ -118,20 +120,6 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
     @Override
     public void readFinished() {
         //noop
-    }
-
-    public static int read0(final FileDescriptor src, final long address, final int position, final int length)
-            throws IOException {
-        final int res = OS.read0(src, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
-            return 0;
-        } else {
-            final int count = IOTools.normaliseIOStatus(res);
-            if (count < 0) {
-                throw FastEOFException.getInstance("socket closed");
-            }
-            return count;
-        }
     }
 
 }
