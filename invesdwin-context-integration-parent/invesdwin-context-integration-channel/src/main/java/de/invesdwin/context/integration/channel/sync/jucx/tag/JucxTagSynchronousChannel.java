@@ -23,10 +23,10 @@ import org.openucx.jucx.ucp.UcpRequest;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
 
-import de.hhu.bsinfo.hadronio.util.TagUtil;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.jucx.ErrorUcxCallback;
 import de.invesdwin.context.integration.channel.sync.jucx.IJucxSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.jucx.JucxTags;
 import de.invesdwin.context.integration.channel.sync.jucx.UcpRequestSpinWait;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.pool.AgronaObjectPool;
@@ -246,8 +246,8 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
     void establishConnection() throws IOException {
         final IByteBuffer buffer = CONNECT_BUFFER_POOL.borrowObject();
         try {
-            localTag = TagUtil.generateId();
-            final long localChecksum = TagUtil.calculateChecksum(localTag);
+            localTag = JucxTags.nextTag();
+            final long localChecksum = JucxTags.checksum(localTag);
             buffer.putLong(0, localTag);
             buffer.putLong(Long.BYTES, localChecksum);
 
@@ -263,7 +263,7 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
 
             remoteTag = buffer.getLong(0);
             final long remoteChecksum = buffer.getLong(Long.BYTES);
-            final long expectedChecksum = TagUtil.calculateChecksum(remoteTag);
+            final long expectedChecksum = JucxTags.checksum(remoteTag);
             if (remoteChecksum != expectedChecksum) {
                 throw new IllegalStateException(
                         "Remote tag checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
