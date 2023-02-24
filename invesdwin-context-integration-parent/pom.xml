@@ -792,6 +792,12 @@
 				<groupId>com.ibm.disni</groupId>
 				<artifactId>disni</artifactId>
 				<version>${version.disni}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-log4j12</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
