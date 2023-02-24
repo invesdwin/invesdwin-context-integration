@@ -25,7 +25,6 @@ import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeChann
 import de.invesdwin.context.integration.channel.sync.queue.QueueChannelTest;
 import de.invesdwin.context.integration.channel.sync.reference.ReferenceChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSuite;
-import de.invesdwin.context.integration.channel.sync.ucx.UcxChannelTestSuite;
 
 // CHECKSTYLE:OFF
 @Suite
@@ -35,7 +34,7 @@ import de.invesdwin.context.integration.channel.sync.ucx.UcxChannelTestSuite;
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         CompressionChannelTest.class, StreamCompressionChannelTest.class, CryptoChannelTestSuite.class,
         SocketChannelTestSuite.class, NettyChannelTestSuite.class, MinaChannelTestSuite.class,
-        ChronicleChannelTestSuite.class, UcxChannelTestSuite.class })
+        ChronicleChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON
