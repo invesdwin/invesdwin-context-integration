@@ -1,0 +1,20 @@
+package de.invesdwin.context.integration.channel.sync.hadronio;
+
+import javax.annotation.concurrent.Immutable;
+
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
+
+import de.hhu.bsinfo.hadronio.HadronioSocketChannel;
+import de.invesdwin.context.integration.channel.sync.hadronio.blocking.BidiBlockingHadronioSocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.hadronio.blocking.BlockingHadronioSocketChannelTest;
+
+// CHECKSTYLE:OFF
+@Suite
+@SelectClasses({ BidiBlockingHadronioSocketChannelTest.class, BlockingHadronioSocketChannelTest.class,
+        BidiHadronioSocketChannelTest.class, HadronioSocketChannel.class })
+@Immutable
+public class HadronioChannelTestSuite {
+    //CHECKSTYLE:ON
+
+}

@@ -154,10 +154,5 @@
 			<artifactId>disni</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>de.hhu.bsinfo</groupId>
-			<artifactId>hadronio</artifactId>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 </project>
