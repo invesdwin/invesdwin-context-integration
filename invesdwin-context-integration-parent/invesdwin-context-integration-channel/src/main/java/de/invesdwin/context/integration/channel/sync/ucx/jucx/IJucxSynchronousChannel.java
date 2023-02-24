@@ -2,7 +2,9 @@ package de.invesdwin.context.integration.channel.sync.ucx.jucx;
 
 import org.openucx.jucx.ucp.UcpWorker;
 
-public interface IJucxSynchronousChannel {
+import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+
+public interface IJucxSynchronousChannel extends ISynchronousChannel {
 
     UcpWorker getUcpWorker();
 

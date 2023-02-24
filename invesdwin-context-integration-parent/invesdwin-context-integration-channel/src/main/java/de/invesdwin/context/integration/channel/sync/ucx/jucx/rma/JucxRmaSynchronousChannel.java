@@ -26,7 +26,6 @@ import org.openucx.jucx.ucp.UcpRequest;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.ucx.jucx.ErrorUcxCallback;
 import de.invesdwin.context.integration.channel.sync.ucx.jucx.IJucxSynchronousChannel;
@@ -39,7 +38,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class JucxRmaSynchronousChannel implements ISynchronousChannel, IJucxSynchronousChannel {
+public class JucxRmaSynchronousChannel implements IJucxSynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
