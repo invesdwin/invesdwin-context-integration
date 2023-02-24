@@ -1,6 +1,6 @@
 // @NotThreadSafe
 // CHECKSTYLE:OFF
-package de.invesdwin.context.integration.channel.sync.ucx.jucx.examples;
+package de.invesdwin.context.integration.channel.sync.jucx.examples;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;

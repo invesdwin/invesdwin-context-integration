@@ -1,6 +1,6 @@
 // @NotThreadSafe
 // CHECKSTYLE:OFF
-package de.invesdwin.context.integration.channel.sync.ucx.jucx.examples;
+package de.invesdwin.context.integration.channel.sync.jucx.examples;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
