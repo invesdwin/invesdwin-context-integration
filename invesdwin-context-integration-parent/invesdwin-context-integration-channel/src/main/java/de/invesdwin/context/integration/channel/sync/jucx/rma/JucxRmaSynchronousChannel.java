@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.jucx.rma;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.nio.ByteBuffer;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -263,9 +262,10 @@ public class JucxRmaSynchronousChannel implements IJucxSynchronousChannel {
 
     void establishConnection() throws IOException {
         // Send worker and memory address and Rkey to receiver.
-        final ByteBuffer rkeyBuffer = finalizer.ucpMemory.getRemoteKeyBuffer();
+        final java.nio.ByteBuffer rkeyBuffer = finalizer.ucpMemory.getRemoteKeyBuffer();
 
-        final ByteBuffer buffer = ByteBuffer.allocateDirect(Long.BYTES + Integer.BYTES + rkeyBuffer.capacity());
+        final java.nio.ByteBuffer buffer = java.nio.ByteBuffer
+                .allocateDirect(Long.BYTES + Integer.BYTES + rkeyBuffer.capacity());
         buffer.putLong(finalizer.ucpMemory.getAddress());
         buffer.putInt(socketSize);
         buffer.put(rkeyBuffer);
