@@ -6,9 +6,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.hadronio.HadronioSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.hadronio.HadronioSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.hadronio.HadronioSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

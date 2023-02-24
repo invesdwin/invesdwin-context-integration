@@ -4,7 +4,6 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.hadronio.blocking.BlockingHadronioSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BidiBlockingSocketChannelTest;
 
 @NotThreadSafe
