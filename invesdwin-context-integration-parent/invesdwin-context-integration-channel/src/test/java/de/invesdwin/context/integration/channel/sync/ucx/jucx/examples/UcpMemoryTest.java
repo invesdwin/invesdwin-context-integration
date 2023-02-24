@@ -1,6 +1,5 @@
-/*
- * Copyright (c) NVIDIA CORPORATION & AFFILIATES, 2001-2019. ALL RIGHTS RESERVED. See file LICENSE for terms.
- */
+// @NotThreadSafe
+// CHECKSTYLE:OFF
 package de.invesdwin.context.integration.channel.sync.ucx.jucx.examples;
 
 import static java.nio.file.StandardOpenOption.CREATE;

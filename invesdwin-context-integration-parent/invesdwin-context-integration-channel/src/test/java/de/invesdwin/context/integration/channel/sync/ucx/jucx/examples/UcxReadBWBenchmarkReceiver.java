@@ -1,3 +1,5 @@
+// @NotThreadSafe
+// CHECKSTYLE:OFF
 package de.invesdwin.context.integration.channel.sync.ucx.jucx.examples;
 
 import java.net.InetSocketAddress;
