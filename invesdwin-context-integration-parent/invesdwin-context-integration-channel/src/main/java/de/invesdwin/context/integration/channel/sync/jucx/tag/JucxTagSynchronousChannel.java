@@ -40,6 +40,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
+/**
+ * https://github.com/openucx/ucx/discussions/6612
+ */
 @NotThreadSafe
 public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
 
