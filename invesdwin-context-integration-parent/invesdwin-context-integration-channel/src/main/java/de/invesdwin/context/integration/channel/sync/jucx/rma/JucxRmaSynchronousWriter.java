@@ -102,7 +102,7 @@ public class JucxRmaSynchronousWriter implements ISynchronousWriter<IByteBufferP
         }
         try {
             channel.getUcpWorker().progressRequest(request);
-            channel.getUcpWorker().progress();
+            //            channel.getUcpWorker().progress();
         } catch (final Exception e) {
             throw new IOException(e);
         }

@@ -37,7 +37,6 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.streams.buffer.bytes.ByteBufferAlignment;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -107,6 +106,7 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
         if (isPeerErrorHandlingMode()) {
             ucpEndpointParams.setPeerErrorHandlingMode();
         }
+        ucpEndpointParams.setErrorHandler((ep, status, errorMsg) -> errorUcxCallback.onError(status, errorMsg));
         return ucpEndpointParams;
     }
 
@@ -210,24 +210,20 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
                 finalizer.ucpListener = null;
                 finalizer.ucpEndpoint = finalizer.ucpWorker
                         .newEndpoint(newUcpEndpointParams().setConnectionRequest(connRequest.get()));
+                establishConnection();
             } else {
-                try {
-                    FTimeUnit.SECONDS.sleep(1);
-                } catch (final InterruptedException e2) {
-                    throw new RuntimeException(e2);
-                }
                 while (true) {
                     try {
                         finalizer.ucpEndpoint = finalizer.ucpWorker
-                                .newEndpoint(newUcpEndpointParams().setErrorHandler((ep, status, errorMsg) -> {
-                                    errorUcxCallback.onError(status, errorMsg);
-                                }).setSocketAddress(socketAddress));
+                                .newEndpoint(newUcpEndpointParams().setSocketAddress(socketAddress));
+                        establishConnection();
                         break;
                     } catch (final Throwable e) {
                         if (finalizer.ucpEndpoint != null) {
                             finalizer.ucpEndpoint.close();
                             finalizer.ucpEndpoint = null;
                         }
+                        errorUcxCallback.reset();
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
@@ -240,7 +236,6 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
                     }
                 }
             }
-            establishConnection();
         } finally {
             ucpEndpointOpening = false;
         }
@@ -256,13 +251,11 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
 
             //Exchanging tags to establish connection
             final UcpRequest sendRequest = finalizer.ucpEndpoint.sendTaggedNonBlocking(buffer.nioByteBuffer(),
-                    errorUcxCallback.reset());
-            waitForRequest(sendRequest);
-            errorUcxCallback.maybeThrow();
+                    errorUcxCallback.maybeThrowAndReset());
+            requestSpinWait.waitForRequest(sendRequest, getConnectTimeout());
             final UcpRequest recvRequest = finalizer.ucpWorker.recvTaggedNonBlocking(buffer.nioByteBuffer(),
-                    errorUcxCallback.reset());
-            waitForRequest(recvRequest);
-            errorUcxCallback.maybeThrow();
+                    errorUcxCallback.maybeThrowAndReset());
+            requestSpinWait.waitForRequest(recvRequest, getConnectTimeout());
 
             remoteTag = buffer.getLong(0);
             final long remoteChecksum = buffer.getLong(Long.BYTES);
@@ -273,15 +266,6 @@ public class JucxTagSynchronousChannel implements IJucxSynchronousChannel {
             }
         } finally {
             CONNECT_BUFFER_POOL.returnObject(buffer);
-        }
-    }
-
-    private void waitForRequest(final UcpRequest request) throws IOException {
-        try {
-            requestSpinWait.init(request);
-            requestSpinWait.awaitFulfill(System.nanoTime(), getConnectTimeout());
-        } catch (final Throwable t) {
-            throw new IOException(t);
         }
     }
 

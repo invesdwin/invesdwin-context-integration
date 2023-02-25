@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.jucx;
 
 import java.io.IOException;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.openucx.jucx.UcxCallback;
@@ -10,8 +11,10 @@ import org.openucx.jucx.ucp.UcpRequest;
 @ThreadSafe
 public class ErrorUcxCallback extends UcxCallback {
 
-    private volatile boolean finished;
-    private volatile String error;
+    @GuardedBy("this")
+    private boolean finished;
+    @GuardedBy("this")
+    private String error;
 
     public ErrorUcxCallback reset() {
         finished = false;
@@ -19,27 +22,32 @@ public class ErrorUcxCallback extends UcxCallback {
         return this;
     }
 
-    public boolean isFinished() {
+    public synchronized boolean isFinished() {
         return finished;
     }
 
-    public String getError() {
+    public synchronized String getError() {
         return error;
     }
 
     @Override
-    public void onSuccess(final UcpRequest request) {
+    public synchronized void onSuccess(final UcpRequest request) {
         finished = true;
         error = null;
     }
 
     @Override
-    public void onError(final int ucsStatus, final String errorMsg) {
+    public synchronized void onError(final int ucsStatus, final String errorMsg) {
         finished = true;
         error = ucsStatus + ": " + errorMsg;
     }
 
-    public void maybeThrow() throws IOException {
+    public synchronized ErrorUcxCallback maybeThrowAndReset() throws IOException {
+        maybeThrow();
+        return reset();
+    }
+
+    public synchronized void maybeThrow() throws IOException {
         final String errorCopy = error;
         if (errorCopy != null) {
             throw new IOException(errorCopy);

@@ -94,7 +94,7 @@ public class JucxRmaSynchronousReader implements ISynchronousReader<IByteBufferP
             }
             try {
                 channel.getUcpWorker().progressRequest(request);
-                channel.getUcpWorker().progress();
+                //                channel.getUcpWorker().progress();
             } catch (final Exception e) {
                 throw new IOException(e);
             }
