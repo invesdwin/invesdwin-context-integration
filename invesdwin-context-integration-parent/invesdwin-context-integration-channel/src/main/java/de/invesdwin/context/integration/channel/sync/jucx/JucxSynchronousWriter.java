@@ -9,7 +9,6 @@ import org.openucx.jucx.ucp.UcpRequest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
@@ -42,11 +41,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     @Override
     public void close() {
         if (buffer != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
-            }
             buffer = null;
             messageBuffer = null;
             messageToWrite = 0;
