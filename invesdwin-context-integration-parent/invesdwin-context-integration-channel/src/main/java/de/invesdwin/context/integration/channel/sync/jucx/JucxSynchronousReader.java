@@ -93,8 +93,7 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
                                 channel.getErrorUcxCallback().reset());
             }
             try {
-                channel.getUcpWorker().progressRequest(request);
-                //                channel.getUcpWorker().progress();
+                channel.getUcpWorker().progress();
             } catch (final Exception e) {
                 throw new IOException(e);
             }

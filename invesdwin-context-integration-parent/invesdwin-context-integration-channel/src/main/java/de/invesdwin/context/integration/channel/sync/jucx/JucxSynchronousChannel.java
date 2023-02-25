@@ -266,7 +266,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         }
     }
 
-    void establishConnection() throws IOException {
+    private void establishConnection() throws IOException {
         // Send worker and memory address and Rkey to receiver.
         final java.nio.ByteBuffer rkeyBuffer = finalizer.ucpMemory.getRemoteKeyBuffer();
 
@@ -292,8 +292,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                     expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
             requestSpinWait.waitForRequest(sendRequest, getConnectTimeout());
             final UcpRequest recvRequest = type.establishConnectionRecvNonBlocking(this,
-                    expandableBuffer.addressOffset(), expandableBuffer.capacity(),
-                    errorUcxCallback.maybeThrowAndReset());
+                    expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
             requestSpinWait.waitForRequest(recvRequest, getConnectTimeout());
 
             Assertions.checkEquals(0, buffer.position());
