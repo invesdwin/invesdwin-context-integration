@@ -1,11 +1,13 @@
 package de.invesdwin.context.integration.channel.sync.jucx;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.PrimitiveIterator;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.CRC32;
@@ -199,6 +201,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         this.writerRegistered = true;
     }
 
+    public Stack<Closeable> getCloseables() {
+        return finalizer.closeables;
+    }
+
     @Override
     public void open() throws IOException {
         if (!shouldOpen()) {
@@ -210,8 +216,11 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         final long startNanos = System.nanoTime();
         try {
             finalizer.ucpContext = new UcpContext(newUcpContextParams());
+            finalizer.closeables.push(finalizer.ucpContext);
             finalizer.ucpWorker = finalizer.ucpContext.newWorker(newUcpWorkerParams());
+            finalizer.closeables.push(finalizer.ucpWorker);
             finalizer.ucpMemory = finalizer.ucpContext.memoryMap(getUcpMemMapParams());
+            finalizer.closeables.push(finalizer.ucpMemory);
             if (server) {
                 final AtomicReference<UcpConnectionRequest> connRequest = new AtomicReference<>(null);
                 finalizer.ucpListener = finalizer.ucpWorker.newListener(
@@ -236,12 +245,14 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                 finalizer.ucpEndpoint = finalizer.ucpWorker
                         .newEndpoint(newUcpEndpointParams().setConnectionRequest(connRequest.get()));
                 establishConnection();
+                finalizer.closeables.push(finalizer.ucpEndpoint);
             } else {
                 while (true) {
                     try {
                         finalizer.ucpEndpoint = finalizer.ucpWorker
                                 .newEndpoint(newUcpEndpointParams().setSocketAddress(socketAddress));
                         establishConnection();
+                        finalizer.closeables.push(finalizer.ucpEndpoint);
                         break;
                     } catch (final Throwable e) {
                         if (finalizer.ucpEndpoint != null) {
@@ -317,6 +328,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
             ByteBuffers.limit(buffer, checksumIndex);
             finalizer.ucpRemoteKey = finalizer.ucpEndpoint.unpackRemoteKey(buffer);
+            finalizer.closeables.push(finalizer.ucpRemoteKey);
         } finally {
             buffer.clear();
             ByteBuffers.EXPANDABLE_POOL.returnObject(expandableBuffer);
@@ -403,6 +415,8 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         private UcpMemory ucpMemory;
         private UcpRemoteKey ucpRemoteKey;
 
+        private final Stack<Closeable> closeables = new Stack<>();
+
         protected UcxSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
@@ -414,35 +428,14 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            final UcpRemoteKey ucpRemoteKeyCopy = ucpRemoteKey;
-            if (ucpRemoteKeyCopy != null) {
-                ucpRemoteKey = null;
-                Closeables.closeQuietly(ucpRemoteKeyCopy);
-            }
-            final UcpMemory ucpMemoryCopy = ucpMemory;
-            if (ucpMemoryCopy != null) {
-                ucpMemory = null;
-                Closeables.closeQuietly(ucpMemoryCopy);
-            }
-            final UcpEndpoint ucpEndpointCopy = ucpEndpoint;
-            if (ucpEndpointCopy != null) {
-                ucpEndpoint = null;
-                Closeables.closeQuietly(ucpEndpointCopy);
-            }
-            final UcpListener ucpListenerCopy = ucpListener;
-            if (ucpListenerCopy != null) {
-                ucpListener = null;
-                Closeables.closeQuietly(ucpListenerCopy);
-            }
-            final UcpWorker workerCopy = ucpWorker;
-            if (workerCopy != null) {
-                ucpWorker = null;
-                Closeables.closeQuietly(workerCopy);
-            }
-            final UcpContext contextCopy = ucpContext;
-            if (contextCopy != null) {
-                ucpContext = null;
-                Closeables.closeQuietly(contextCopy);
+            ucpRemoteKey = null;
+            ucpMemory = null;
+            ucpEndpoint = null;
+            ucpListener = null;
+            ucpWorker = null;
+            ucpContext = null;
+            while (!closeables.isEmpty()) {
+                Closeables.closeQuietly(closeables.pop());
             }
         }
 

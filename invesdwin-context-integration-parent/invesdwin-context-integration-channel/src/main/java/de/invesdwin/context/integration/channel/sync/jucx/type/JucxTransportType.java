@@ -14,58 +14,6 @@ import de.invesdwin.context.integration.channel.sync.jucx.JucxSynchronousChannel
 
 @Immutable
 public enum JucxTransportType implements IJucxTransportType {
-    RMA {
-        @Override
-        public UcpRequest establishConnectionSendNonBlocking(final JucxSynchronousChannel channel, final long address,
-                final int length, final ErrorUcxCallback callback) {
-            return TAG.establishConnectionSendNonBlocking(channel, address, length, callback);
-        }
-
-        @Override
-        public UcpRequest establishConnectionRecvNonBlocking(final JucxSynchronousChannel channel, final long address,
-                final int length, final ErrorUcxCallback callback) {
-            return TAG.establishConnectionRecvNonBlocking(channel, address, length, callback);
-        }
-
-        @Override
-        public UcpRequest sendNonBlocking(final JucxSynchronousChannel channel, final long address, final int length,
-                final ErrorUcxCallback callback) {
-            return TAG.establishConnectionSendNonBlocking(channel, address, length, callback);
-            //            return channel.getUcpEndpoint()
-            //                    .putNonBlocking(address, length, channel.getRemoteAddress(), channel.getUcpRemoteKey(),
-            //                            channel.getErrorUcxCallback().reset());
-        }
-
-        @Override
-        public UcpRequest recvNonBlocking(final JucxSynchronousChannel channel, final long address, final int length,
-                final ErrorUcxCallback callback) {
-            return channel.getUcpEndpoint()
-                    .getNonBlocking(channel.getRemoteAddress(), channel.getUcpRemoteKey(), address, length,
-                            channel.getErrorUcxCallback().reset());
-        }
-
-        @Override
-        public void configureContextParams(final UcpParams params) {
-            params.requestRmaFeature().requestTagFeature();
-        }
-
-        @Override
-        public void configureWorkerParams(final UcpWorkerParams params) {
-            params.requestWakeupRMA();
-        }
-
-        @Override
-        public void configureMemMapParams(final UcpMemMapParams params) {}
-
-        @Override
-        public void configureEndpointParams(final UcpEndpointParams params) {}
-
-        @Override
-        public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
-            channel.getUcpWorker().progress();
-        }
-
-    },
     STREAM {
         @Override
         public UcpRequest establishConnectionSendNonBlocking(final JucxSynchronousChannel channel, final long address,

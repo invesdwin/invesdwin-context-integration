@@ -36,13 +36,14 @@ public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProv
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
         memory = channel.getUcpContext().memoryMap(channel.getUcpMemMapParams());
+        channel.getCloseables().push(memory);
         buffer = new UnsafeByteBuffer(memory.getAddress(), channel.getSocketSize());
     }
 
     @Override
     public void close() {
         if (buffer != null) {
-            memory.close();
+            memory = null;
             buffer = null;
             position = 0;
             bufferOffset = 0;
