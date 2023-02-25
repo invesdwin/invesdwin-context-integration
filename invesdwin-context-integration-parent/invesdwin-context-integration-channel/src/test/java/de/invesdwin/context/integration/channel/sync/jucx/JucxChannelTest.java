@@ -24,7 +24,7 @@ public class JucxChannelTest extends AChannelTest {
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNioJucxPerformanceTest(JucxTransportType.TAG, responseAddress, requestAddress);
+        runNioJucxPerformanceTest(JucxTransportType.DEFAULT, responseAddress, requestAddress);
     }
 
     protected void runNioJucxPerformanceTest(final IJucxTransportType type, final InetSocketAddress responseAddress,

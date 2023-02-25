@@ -56,9 +56,9 @@ public enum JucxTransportType implements IJucxTransportType {
 
         @Override
         public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
+            //this is actually non blocking
             channel.getUcpWorker().progress();
         }
-
     },
     TAG {
         @Override
@@ -103,10 +103,11 @@ public enum JucxTransportType implements IJucxTransportType {
 
         @Override
         public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
-            //somehow tag send/receive does not work without progressRequest loop
+            //somehow tag send/receive does not work without progressRequest blocking loop
             channel.getUcpWorker().progressRequest(request);
         }
-
     };
+
+    public static final JucxTransportType DEFAULT = STREAM;
 
 }
