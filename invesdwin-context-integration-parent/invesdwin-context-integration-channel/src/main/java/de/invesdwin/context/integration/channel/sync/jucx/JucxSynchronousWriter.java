@@ -99,8 +99,10 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
                             channel.getErrorUcxCallback().reset());
         }
         try {
-            channel.getUcpWorker().progress();
-        } catch (final Exception e) {
+            channel.getType().progress(channel, request);
+        } catch (final IOException e) {
+            throw e;
+        } catch (final Throwable e) {
             throw new IOException(e);
         }
         channel.getErrorUcxCallback().maybeThrow();

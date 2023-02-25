@@ -60,6 +60,11 @@ public enum JucxTransportType implements IJucxTransportType {
         @Override
         public void configureEndpointParams(final UcpEndpointParams params) {}
 
+        @Override
+        public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
+            channel.getUcpWorker().progress();
+        }
+
     },
     STREAM {
         @Override
@@ -99,8 +104,11 @@ public enum JucxTransportType implements IJucxTransportType {
         public void configureMemMapParams(final UcpMemMapParams params) {}
 
         @Override
-        public void configureEndpointParams(final UcpEndpointParams params) {
-            params.setPeerErrorHandlingMode();
+        public void configureEndpointParams(final UcpEndpointParams params) {}
+
+        @Override
+        public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
+            channel.getUcpWorker().progress();
         }
 
     },
@@ -144,6 +152,12 @@ public enum JucxTransportType implements IJucxTransportType {
 
         @Override
         public void configureEndpointParams(final UcpEndpointParams params) {}
+
+        @Override
+        public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
+            //somehow tag send/receive does not work without progressRequest loop
+            channel.getUcpWorker().progressRequest(request);
+        }
 
     };
 

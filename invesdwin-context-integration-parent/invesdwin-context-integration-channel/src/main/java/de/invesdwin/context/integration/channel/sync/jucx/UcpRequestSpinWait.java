@@ -36,7 +36,7 @@ public class UcpRequestSpinWait extends ASpinWait {
 
     @Override
     public boolean isConditionFulfilled() throws Exception {
-        channel.getUcpWorker().progress();
+        channel.getType().progress(channel, request);
         channel.getErrorUcxCallback().maybeThrow();
         return request.isCompleted();
     }

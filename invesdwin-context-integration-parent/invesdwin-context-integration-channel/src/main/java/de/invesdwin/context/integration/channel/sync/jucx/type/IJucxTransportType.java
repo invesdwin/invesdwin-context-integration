@@ -29,4 +29,6 @@ public interface IJucxTransportType {
 
     void configureMemMapParams(UcpMemMapParams params);
 
+    void progress(JucxSynchronousChannel channel, UcpRequest request) throws Exception;
+
 }
