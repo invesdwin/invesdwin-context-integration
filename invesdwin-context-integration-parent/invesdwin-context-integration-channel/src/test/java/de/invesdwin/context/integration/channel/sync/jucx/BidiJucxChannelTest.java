@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.jucx.stream;
+package de.invesdwin.context.integration.channel.sync.jucx;
 
 import java.net.InetSocketAddress;
 
@@ -9,30 +9,33 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.jucx.type.IJucxTransportType;
+import de.invesdwin.context.integration.channel.sync.jucx.type.JucxTransportType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiJucxStreamChannelTest extends AChannelTest {
+public class BidiJucxChannelTest extends AChannelTest {
 
     @Test
-    public void testBidiJucxPerfoStreamnce() throws InterruptedException {
+    public void testBidiJucxPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runJucxPerfoStreamnceTest(address);
+        runJucxPerformanceTest(JucxTransportType.STREAM, address);
     }
 
-    protected void runJucxPerfoStreamnceTest(final InetSocketAddress address) throws InterruptedException {
-        final JucxStreamSynchronousChannel serverChannel = newJucxSynchronousChannel(address, true,
+    protected void runJucxPerformanceTest(final IJucxTransportType type, final InetSocketAddress address)
+            throws InterruptedException {
+        final JucxSynchronousChannel serverChannel = newJucxSynchronousChannel(type, address, true,
                 getMaxMessageSize());
-        final JucxStreamSynchronousChannel clientChannel = newJucxSynchronousChannel(address, false,
+        final JucxSynchronousChannel clientChannel = newJucxSynchronousChannel(type, address, false,
                 getMaxMessageSize());
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newJucxSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = newJucxSynchronousReader(serverChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiJucxPerfoStreamnce", 1);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiJucxPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = newJucxSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = newJucxSynchronousReader(clientChannel);
@@ -41,19 +44,17 @@ public class BidiJucxStreamChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(
-            final JucxStreamSynchronousChannel channel) {
-        return new JucxStreamSynchronousReader(channel);
+    protected ISynchronousReader<IByteBufferProvider> newJucxSynchronousReader(final JucxSynchronousChannel channel) {
+        return new JucxSynchronousReader(channel);
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(
-            final JucxStreamSynchronousChannel channel) {
-        return new JucxStreamSynchronousWriter(channel);
+    protected ISynchronousWriter<IByteBufferProvider> newJucxSynchronousWriter(final JucxSynchronousChannel channel) {
+        return new JucxSynchronousWriter(channel);
     }
 
-    protected JucxStreamSynchronousChannel newJucxSynchronousChannel(final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new JucxStreamSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+    protected JucxSynchronousChannel newJucxSynchronousChannel(final IJucxTransportType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        return new JucxSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

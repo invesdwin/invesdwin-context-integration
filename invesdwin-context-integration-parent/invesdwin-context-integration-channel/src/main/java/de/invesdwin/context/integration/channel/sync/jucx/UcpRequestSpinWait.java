@@ -12,10 +12,10 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class UcpRequestSpinWait extends ASpinWait {
 
-    private final IJucxSynchronousChannel channel;
+    private final JucxSynchronousChannel channel;
     private UcpRequest request;
 
-    public UcpRequestSpinWait(final IJucxSynchronousChannel channel) {
+    public UcpRequestSpinWait(final JucxSynchronousChannel channel) {
         this.channel = channel;
     }
 
@@ -36,7 +36,7 @@ public class UcpRequestSpinWait extends ASpinWait {
 
     @Override
     public boolean isConditionFulfilled() throws Exception {
-        channel.getUcpWorker().progress();
+        //        channel.getUcpWorker().progress();
         channel.getUcpWorker().progressRequest(request);
         channel.getErrorUcxCallback().maybeThrow();
         return request.isCompleted();

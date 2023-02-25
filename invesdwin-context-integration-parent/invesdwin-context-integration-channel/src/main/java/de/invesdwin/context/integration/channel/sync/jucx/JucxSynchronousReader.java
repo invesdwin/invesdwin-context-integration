@@ -1,10 +1,9 @@
-package de.invesdwin.context.integration.channel.sync.jucx.stream;
+package de.invesdwin.context.integration.channel.sync.jucx;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.openucx.jucx.ucp.UcpConstants;
 import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucp.UcpRequest;
 
@@ -17,9 +16,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
-public class JucxStreamSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+public class JucxSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private JucxStreamSynchronousChannel channel;
+    private JucxSynchronousChannel channel;
     private UcpMemory memory;
     private IByteBuffer buffer;
     private int position = 0;
@@ -27,7 +26,7 @@ public class JucxStreamSynchronousReader implements ISynchronousReader<IByteBuff
     private int messageTargetPosition = 0;
     private UcpRequest request;
 
-    public JucxStreamSynchronousReader(final JucxStreamSynchronousChannel channel) {
+    public JucxSynchronousReader(final JucxSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
     }
@@ -89,12 +88,13 @@ public class JucxStreamSynchronousReader implements ISynchronousReader<IByteBuff
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
             if (request == null) {
-                request = channel.getUcpEndpoint()
-                        .recvStreamNonBlocking(buffer.addressOffset() + position, readLength,
-                                UcpConstants.UCP_STREAM_RECV_FLAG_WAITALL, channel.getErrorUcxCallback().reset());
+                request = channel.getType()
+                        .recvNonBlocking(channel, buffer.addressOffset() + position, readLength,
+                                channel.getErrorUcxCallback().reset());
             }
             try {
                 channel.getUcpWorker().progressRequest(request);
+                //                channel.getUcpWorker().progress();
             } catch (final Exception e) {
                 throw new IOException(e);
             }
