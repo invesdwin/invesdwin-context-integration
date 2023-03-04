@@ -31,4 +31,6 @@ public interface IJucxTransportType {
 
     void progress(JucxSynchronousChannel channel, UcpRequest request) throws Exception;
 
+    boolean shouldCloseUcpListenerAfterAccept();
+
 }

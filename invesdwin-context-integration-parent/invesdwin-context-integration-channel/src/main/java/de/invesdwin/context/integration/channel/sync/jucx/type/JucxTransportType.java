@@ -106,8 +106,62 @@ public enum JucxTransportType implements IJucxTransportType {
             //somehow tag send/receive does not work without progressRequest blocking loop
             channel.getUcpWorker().progressRequest(request);
         }
+    },
+    HADRONIO {
+        @Override
+        public UcpRequest establishConnectionSendNonBlocking(final JucxSynchronousChannel channel, final long address,
+                final int length, final ErrorUcxCallback callback) {
+            return STREAM.establishConnectionSendNonBlocking(channel, address, length, callback);
+        }
+
+        @Override
+        public UcpRequest establishConnectionRecvNonBlocking(final JucxSynchronousChannel channel, final long address,
+                final int length, final ErrorUcxCallback callback) {
+            return STREAM.establishConnectionRecvNonBlocking(channel, address, length, callback);
+        }
+
+        @Override
+        public UcpRequest sendNonBlocking(final JucxSynchronousChannel channel, final long address, final int length,
+                final ErrorUcxCallback callback) {
+            return TAG.sendNonBlocking(channel, address, length, callback);
+        }
+
+        @Override
+        public UcpRequest recvNonBlocking(final JucxSynchronousChannel channel, final long address, final int length,
+                final ErrorUcxCallback callback) {
+            return TAG.recvNonBlocking(channel, address, length, callback);
+        }
+
+        @Override
+        public void configureContextParams(final UcpParams params) {
+            params.requestWakeupFeature().requestTagFeature().requestStreamFeature().setMtWorkersShared(true);
+        }
+
+        @Override
+        public void configureWorkerParams(final UcpWorkerParams params) {
+            params.requestWakeupTagSend().requestWakeupTagRecv();
+        }
+
+        @Override
+        public void configureMemMapParams(final UcpMemMapParams params) {}
+
+        @Override
+        public void configureEndpointParams(final UcpEndpointParams params) {
+            params.setPeerErrorHandlingMode();
+        }
+
+        @Override
+        public void progress(final JucxSynchronousChannel channel, final UcpRequest request) throws Exception {
+            TAG.progress(channel, request);
+        }
     };
 
     public static final JucxTransportType DEFAULT = STREAM;
+
+    @Override
+    public boolean shouldCloseUcpListenerAfterAccept() {
+        //Soft-RoCe does not work when closing listener after accepting a client endpoint, the close just hangs
+        return false;
+    }
 
 }

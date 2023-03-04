@@ -240,8 +240,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                     }
                 }
                 //only allow one connection
-                finalizer.ucpListener.close();
-                finalizer.ucpListener = null;
+                if (type.shouldCloseUcpListenerAfterAccept()) {
+                    finalizer.ucpListener.close();
+                    finalizer.ucpListener = null;
+                }
                 finalizer.ucpEndpoint = finalizer.ucpWorker
                         .newEndpoint(newUcpEndpointParams().setConnectionRequest(connRequest.get()));
                 establishConnection();
