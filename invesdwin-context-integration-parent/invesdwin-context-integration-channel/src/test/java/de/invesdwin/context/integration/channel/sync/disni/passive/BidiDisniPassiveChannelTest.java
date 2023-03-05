@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.disni;
+package de.invesdwin.context.integration.channel.sync.disni.passive;
 
 import java.net.InetSocketAddress;
 
@@ -15,7 +15,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiDisniChannelTest extends AChannelTest {
+public class BidiDisniPassiveChannelTest extends AChannelTest {
 
     @Test
     public void testBidiDisniPerformance() throws InterruptedException {
@@ -25,8 +25,10 @@ public class BidiDisniChannelTest extends AChannelTest {
     }
 
     protected void runDisniPerformanceTest(final InetSocketAddress address) throws InterruptedException {
-        final DisniSynchronousChannel serverChannel = newDisniSynchronousChannel(address, true, getMaxMessageSize());
-        final DisniSynchronousChannel clientChannel = newDisniSynchronousChannel(address, false, getMaxMessageSize());
+        final DisniPassiveSynchronousChannel serverChannel = newDisniSynchronousChannel(address, true,
+                getMaxMessageSize());
+        final DisniPassiveSynchronousChannel clientChannel = newDisniSynchronousChannel(address, false,
+                getMaxMessageSize());
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newDisniSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = newDisniSynchronousReader(serverChannel);
@@ -39,17 +41,19 @@ public class BidiDisniChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newDisniSynchronousReader(final DisniSynchronousChannel channel) {
-        return new DisniSynchronousReader(channel);
+    protected ISynchronousReader<IByteBufferProvider> newDisniSynchronousReader(
+            final DisniPassiveSynchronousChannel channel) {
+        return new DisniPassiveSynchronousReader(channel);
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newDisniSynchronousWriter(final DisniSynchronousChannel channel) {
-        return new DisniSynchronousWriter(channel);
+    protected ISynchronousWriter<IByteBufferProvider> newDisniSynchronousWriter(
+            final DisniPassiveSynchronousChannel channel) {
+        return new DisniPassiveSynchronousWriter(channel);
     }
 
-    protected DisniSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
+    protected DisniPassiveSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new DisniSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new DisniPassiveSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

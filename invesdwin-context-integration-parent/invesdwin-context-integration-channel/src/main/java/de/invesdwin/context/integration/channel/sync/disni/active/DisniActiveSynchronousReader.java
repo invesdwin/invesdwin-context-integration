@@ -1,18 +1,11 @@
-package de.invesdwin.context.integration.channel.sync.disni;
+package de.invesdwin.context.integration.channel.sync.disni.active;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.IbvCQ;
-import com.ibm.disni.verbs.IbvMr;
-import com.ibm.disni.verbs.IbvRecvWR;
-import com.ibm.disni.verbs.IbvSge;
 import com.ibm.disni.verbs.IbvWC;
-import com.ibm.disni.verbs.SVCPollCq;
+import com.ibm.disni.verbs.IbvWC.IbvWcOpcode;
 import com.ibm.disni.verbs.SVCPostRecv;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -23,19 +16,18 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class DisniSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private DisniSynchronousChannel channel;
+    private DisniActiveSynchronousChannel channel;
     private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
-    private IbvWC[] wcList;
-    private SVCPollCq poll;
+    private boolean request;
 
-    public DisniSynchronousReader(final DisniSynchronousChannel channel) {
+    public DisniActiveSynchronousReader(final DisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
@@ -44,42 +36,10 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
     @Override
     public void open() throws IOException {
         channel.open();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirect(socketSize);
-        nioBuffer = buffer.nioByteBuffer();
+        nioBuffer = channel.getEndpoint().getRecvBuf();
+        buffer = ByteBuffers.wrap(nioBuffer);
 
-        final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
-        //        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
-        this.wcList = new IbvWC[channel.getEndpoint().getCqProvider().getCqSize()];
-        for (int i = 0; i < wcList.length; i++) {
-            wcList[i] = new IbvWC();
-        }
-        this.poll = cq.poll(wcList, wcList.length);
-
-        recvTask = setupRecvTask(nioBuffer, 0);
-        //when there is no pending read, writes on the other side will never arrive
-        recvTask.execute();
-    }
-
-    private SVCPostRecv setupRecvTask(final java.nio.ByteBuffer recvBuf, final int wrid) throws IOException {
-        final List<IbvRecvWR> recvWRs = new ArrayList<IbvRecvWR>(1);
-        final LinkedList<IbvSge> sgeList = new LinkedList<IbvSge>();
-
-        final IbvMr mr = channel.getEndpoint().registerMemory(recvBuf).execute().free().getMr();
-        channel.getMemoryRegions().push(mr);
-        final IbvSge sge = new IbvSge();
-        sge.setAddr(mr.getAddr());
-        sge.setLength(mr.getLength());
-        final int lkey = mr.getLkey();
-        sge.setLkey(lkey);
-        sgeList.add(sge);
-
-        final IbvRecvWR recvWR = new IbvRecvWR();
-        recvWR.setWr_id(wrid);
-        recvWR.setSg_list(sgeList);
-        recvWRs.add(recvWR);
-
-        return channel.getEndpoint().postRecv(recvWRs);
+        recvTask = channel.getEndpoint().postRecv(channel.getEndpoint().getWrList_recv());
     }
 
     @Override
@@ -87,9 +47,6 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
         if (buffer != null) {
             recvTask.free();
             recvTask = null;
-            wcList = null;
-            poll.free();
-            poll = null;
 
             buffer = null;
             nioBuffer = null;
@@ -113,12 +70,12 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(nioBuffer.position()))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + DisniSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -135,16 +92,17 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (nioBuffer.position() < targetPosition) {
-            if (poll.execute().getPolls() > 0) {
+            final IbvWC wc = channel.getEndpoint().getWcEvents().poll();
+            if (wc != null && wc.getOpcode() == IbvWcOpcode.IBV_WC_RECV.getOpcode()) {
                 //when there is no pending read, writes on the other side will never arrive
-                recvTask.execute();
                 //disni does not provide a way to give the received size, instead message are always received fully
-                final int size = buffer.getInt(bufferOffset + DisniSynchronousChannel.SIZE_INDEX);
+                final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
                     close();
                     throw FastEOFException.getInstance("non positive size");
                 }
-                ByteBuffers.position(nioBuffer, bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX + size);
+                ByteBuffers.position(nioBuffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX + size);
+                request = false;
             }
         }
         return nioBuffer.position() >= targetPosition;
@@ -152,14 +110,14 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - DisniSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - DisniActiveSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = DisniSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = DisniActiveSynchronousChannel.MESSAGE_INDEX + size;
         if (nioBuffer.position() > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in

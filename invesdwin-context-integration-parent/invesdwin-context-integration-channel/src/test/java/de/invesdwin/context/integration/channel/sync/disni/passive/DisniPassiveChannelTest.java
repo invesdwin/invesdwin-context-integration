@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.disni;
+package de.invesdwin.context.integration.channel.sync.disni.passive;
 
 import java.net.InetSocketAddress;
 
@@ -15,13 +15,13 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class DisniChannelTest extends AChannelTest {
+public class DisniPassiveChannelTest extends AChannelTest {
 
     @Test
     public void testNioSocketPerformance() throws InterruptedException {
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
+        final InetSocketAddress responseAddress = new InetSocketAddress("192.168.0.20", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("192.168.0.20", ports[1]);
         runNioDisniPerformanceTest(responseAddress, requestAddress);
     }
 
@@ -42,17 +42,19 @@ public class DisniChannelTest extends AChannelTest {
         executor.awaitTermination();
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newDisniSynchronousReader(final DisniSynchronousChannel channel) {
-        return new DisniSynchronousReader(channel);
+    protected ISynchronousReader<IByteBufferProvider> newDisniSynchronousReader(
+            final DisniPassiveSynchronousChannel channel) {
+        return new DisniPassiveSynchronousReader(channel);
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newDisniSynchronousWriter(final DisniSynchronousChannel channel) {
-        return new DisniSynchronousWriter(channel);
+    protected ISynchronousWriter<IByteBufferProvider> newDisniSynchronousWriter(
+            final DisniPassiveSynchronousChannel channel) {
+        return new DisniPassiveSynchronousWriter(channel);
     }
 
-    protected DisniSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
+    protected DisniPassiveSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new DisniSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new DisniPassiveSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.disni;
+package de.invesdwin.context.integration.channel.sync.disni.passive;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -18,8 +18,8 @@ import com.ibm.disni.verbs.IbvMr;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.disni.endpoint.CloseableRdmaEndpoint;
-import de.invesdwin.context.integration.channel.sync.disni.endpoint.CloseableRdmaEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniPassiveRdmaEndpoint;
+import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniPassiveRdmaEndpointFactory;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
@@ -28,7 +28,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class DisniSynchronousChannel implements ISynchronousChannel {
+public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -47,7 +47,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
 
-    public DisniSynchronousChannel(final SocketAddress socketAddress, final boolean server,
+    public DisniPassiveSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.server = server;
@@ -69,15 +69,15 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         return socketSize;
     }
 
-    public RdmaEndpointGroup<CloseableRdmaEndpoint> getEndpointGroup() {
+    public RdmaEndpointGroup<DisniPassiveRdmaEndpoint> getEndpointGroup() {
         return finalizer.endpointGroup;
     }
 
-    public CloseableRdmaEndpoint getEndpoint() {
+    public DisniPassiveRdmaEndpoint getEndpoint() {
         return finalizer.endpoint;
     }
 
-    public RdmaServerEndpoint<CloseableRdmaEndpoint> getServerEndpoint() {
+    public RdmaServerEndpoint<DisniPassiveRdmaEndpoint> getServerEndpoint() {
         return finalizer.serverEndpoint;
     }
 
@@ -116,7 +116,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         socketChannelOpening = true;
         finalizer.endpointGroup = new RdmaPassiveEndpointGroup<>(getConnectTimeout().intValue(FTimeUnit.MILLISECONDS),
                 1, 1, 2);
-        final CloseableRdmaEndpointFactory factory = new CloseableRdmaEndpointFactory(finalizer.endpointGroup);
+        final DisniPassiveRdmaEndpointFactory factory = new DisniPassiveRdmaEndpointFactory(finalizer.endpointGroup);
         finalizer.endpointGroup.init(factory);
         try {
 
@@ -211,9 +211,9 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
     private static final class DisniSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
-        private volatile RdmaEndpointGroup<CloseableRdmaEndpoint> endpointGroup;
-        private volatile CloseableRdmaEndpoint endpoint;
-        private volatile RdmaServerEndpoint<CloseableRdmaEndpoint> serverEndpoint;
+        private volatile RdmaEndpointGroup<DisniPassiveRdmaEndpoint> endpointGroup;
+        private volatile DisniPassiveRdmaEndpoint endpoint;
+        private volatile RdmaServerEndpoint<DisniPassiveRdmaEndpoint> serverEndpoint;
         private final Stack<IbvMr> memoryRegions = new Stack<>();
 
         protected DisniSynchronousChannelFinalizer() {
@@ -234,17 +234,17 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
                     //ignore
                 }
             }
-            final CloseableRdmaEndpoint endpointCopy = endpoint;
+            final DisniPassiveRdmaEndpoint endpointCopy = endpoint;
             if (endpointCopy != null) {
                 endpoint = null;
                 Closeables.closeQuietly(endpointCopy);
             }
-            final RdmaServerEndpoint<CloseableRdmaEndpoint> serverEndpointCopy = serverEndpoint;
+            final RdmaServerEndpoint<DisniPassiveRdmaEndpoint> serverEndpointCopy = serverEndpoint;
             if (serverEndpointCopy != null) {
                 serverEndpoint = null;
                 Closeables.closeQuietly(serverEndpointCopy);
             }
-            final RdmaEndpointGroup<CloseableRdmaEndpoint> endpointGroupCopy = endpointGroup;
+            final RdmaEndpointGroup<DisniPassiveRdmaEndpoint> endpointGroupCopy = endpointGroup;
             if (endpointGroupCopy != null) {
                 endpointGroup = null;
                 Closeables.closeQuietly(endpointGroupCopy);
@@ -253,7 +253,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void onRun() {
-            String warning = "Finalizing unclosed " + DisniSynchronousChannel.class.getSimpleName();
+            String warning = "Finalizing unclosed " + DisniPassiveSynchronousChannel.class.getSimpleName();
             if (Throwables.isDebugStackTraceEnabled()) {
                 final Exception stackTrace = initStackTrace;
                 if (stackTrace != null) {
