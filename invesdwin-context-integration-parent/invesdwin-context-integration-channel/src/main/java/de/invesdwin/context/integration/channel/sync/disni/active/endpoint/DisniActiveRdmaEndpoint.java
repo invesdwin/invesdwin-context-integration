@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.sync.disni.active.endpoint;
 
 import java.io.IOException;
 import java.util.LinkedList;
-import java.util.concurrent.ArrayBlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -14,6 +13,10 @@ import com.ibm.disni.verbs.IbvSendWR;
 import com.ibm.disni.verbs.IbvSge;
 import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.RdmaCmId;
+import com.ibm.disni.verbs.SVCPostRecv;
+import com.ibm.disni.verbs.SVCPostSend;
+
+import de.invesdwin.util.error.UnknownArgumentException;
 
 @NotThreadSafe
 public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
@@ -34,7 +37,11 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
     private final LinkedList<IbvSge> sgeListRecv;
     private final IbvRecvWR recvWR;
 
-    private final ArrayBlockingQueue<IbvWC> wcEvents;
+    private volatile boolean recvFinished;
+    private volatile boolean sendFinished;
+
+    private SVCPostRecv recvTask;
+    private SVCPostSend sendTask;
 
     public DisniActiveRdmaEndpoint(final RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup,
             final RdmaCmId idPriv, final boolean serverSide, final int socketSize) throws IOException {
@@ -51,8 +58,6 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
         this.sgeRecv = new IbvSge();
         this.sgeListRecv = new LinkedList<IbvSge>();
         this.recvWR = new IbvRecvWR();
-
-        this.wcEvents = new ArrayBlockingQueue<IbvWC>(10);
     }
 
     //important: we override the init method to prepare some buffers (memory registration, post recv, etc).
@@ -85,16 +90,37 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
         recvWR.setWr_id(2001);
         wrList_recv.add(recvWR);
 
-        this.postRecv(wrList_recv).execute().free();
+        recvTask = postRecv(wrList_recv).execute();
+        sendTask = postSend(wrList_send);
     }
 
     @Override
     public void dispatchCqEvent(final IbvWC wc) throws IOException {
-        wcEvents.add(wc);
+        final int opcode = wc.getOpcode();
+        if (opcode == IbvWC.IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
+            sendFinished = true;
+        } else if (opcode == IbvWC.IbvWcOpcode.IBV_WC_RECV.getOpcode()) {
+            recvTask.execute();
+            recvFinished = true;
+        } else {
+            throw UnknownArgumentException.newInstance(Integer.class, opcode);
+        }
     }
 
-    public ArrayBlockingQueue<IbvWC> getWcEvents() {
-        return wcEvents;
+    public boolean isSendFinished() {
+        return sendFinished;
+    }
+
+    public void setRecvFinished(final boolean recvFinished) {
+        this.recvFinished = recvFinished;
+    }
+
+    public boolean isRecvFinished() {
+        return recvFinished;
+    }
+
+    public void setSendFinished(final boolean sendFinished) {
+        this.sendFinished = sendFinished;
     }
 
     public LinkedList<IbvSendWR> getWrList_send() {
@@ -119,6 +145,29 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
 
     public IbvRecvWR getRecvWR() {
         return recvWR;
+    }
+
+    public SVCPostRecv getRecvTask() {
+        return recvTask;
+    }
+
+    public SVCPostSend getSendTask() {
+        return sendTask;
+    }
+
+    @Override
+    public synchronized void close() throws IOException, InterruptedException {
+        recvTask.free();
+        recvTask = null;
+        sendTask.free();
+        sendTask = null;
+        deregisterMemory(recvMr);
+        recvMr = null;
+        recvBuf = null;
+        deregisterMemory(sendMr);
+        sendMr = null;
+        sendBuf = null;
+        super.close();
     }
 
 }

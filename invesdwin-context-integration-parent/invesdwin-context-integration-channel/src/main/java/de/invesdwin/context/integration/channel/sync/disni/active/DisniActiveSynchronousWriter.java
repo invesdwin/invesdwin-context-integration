@@ -4,8 +4,6 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.IbvWC;
-import com.ibm.disni.verbs.IbvWC.IbvWcOpcode;
 import com.ibm.disni.verbs.SVCPostSend;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -101,10 +99,10 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
             sendTask.execute();
             request = true;
         }
-        final IbvWC wc = channel.getEndpoint().getWcEvents().poll();
-        if (wc == null || wc.getOpcode() != IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
+        if (!channel.getEndpoint().isSendFinished()) {
             return true;
         }
+        channel.getEndpoint().setSendFinished(false);
         System.out.println((channel.isServer() ? "server" : "client") + ": send: " + buffer.toString());
         request = false;
         return false;

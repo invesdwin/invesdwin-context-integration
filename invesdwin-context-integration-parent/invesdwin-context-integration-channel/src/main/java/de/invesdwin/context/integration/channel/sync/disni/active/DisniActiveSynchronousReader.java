@@ -4,10 +4,6 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.IbvWC;
-import com.ibm.disni.verbs.IbvWC.IbvWcOpcode;
-import com.ibm.disni.verbs.SVCPostRecv;
-
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -19,18 +15,14 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private DisniActiveSynchronousChannel channel;
-    private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
-    private SVCPostRecv recvTask;
-    private boolean request;
 
     public DisniActiveSynchronousReader(final DisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        this.socketSize = channel.getSocketSize();
     }
 
     @Override
@@ -38,16 +30,11 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
         channel.open();
         nioBuffer = channel.getEndpoint().getRecvBuf();
         buffer = ByteBuffers.wrap(nioBuffer);
-
-        recvTask = channel.getEndpoint().postRecv(channel.getEndpoint().getWrList_recv());
     }
 
     @Override
     public void close() {
         if (buffer != null) {
-            recvTask.free();
-            recvTask = null;
-
             buffer = null;
             nioBuffer = null;
             bufferOffset = 0;
@@ -92,12 +79,8 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (nioBuffer.position() < targetPosition) {
-            if (!request) {
-                recvTask.execute();
-                request = true;
-            }
-            final IbvWC wc = channel.getEndpoint().getWcEvents().poll();
-            if (wc != null && wc.getOpcode() == IbvWcOpcode.IBV_WC_RECV.getOpcode()) {
+            if (channel.getEndpoint().isRecvFinished()) {
+                channel.getEndpoint().setRecvFinished(false);
                 System.out.println((channel.isServer() ? "server" : "client") + ": recv: " + buffer.toString());
                 //when there is no pending read, writes on the other side will never arrive
                 //disni does not provide a way to give the received size, instead message are always received fully
@@ -107,7 +90,6 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
                     throw FastEOFException.getInstance("non positive size");
                 }
                 ByteBuffers.position(nioBuffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX + size);
-                request = false;
             }
         }
         return nioBuffer.position() >= targetPosition;
