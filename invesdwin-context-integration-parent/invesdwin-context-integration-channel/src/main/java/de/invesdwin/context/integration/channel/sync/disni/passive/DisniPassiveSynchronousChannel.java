@@ -5,7 +5,6 @@ import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -14,7 +13,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.ibm.disni.RdmaEndpointGroup;
 import com.ibm.disni.RdmaPassiveEndpointGroup;
 import com.ibm.disni.RdmaServerEndpoint;
-import com.ibm.disni.verbs.IbvMr;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -101,10 +99,6 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
             throw new IllegalStateException("writer already registered");
         }
         this.writerRegistered = true;
-    }
-
-    public Stack<IbvMr> getMemoryRegions() {
-        return finalizer.memoryRegions;
     }
 
     @Override
@@ -215,7 +209,6 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
         private volatile RdmaEndpointGroup<DisniPassiveRdmaEndpoint> endpointGroup;
         private volatile DisniPassiveRdmaEndpoint endpoint;
         private volatile RdmaServerEndpoint<DisniPassiveRdmaEndpoint> serverEndpoint;
-        private final Stack<IbvMr> memoryRegions = new Stack<>();
 
         protected DisniSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -228,13 +221,6 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            while (!memoryRegions.isEmpty()) {
-                try {
-                    endpoint.deregisterMemory(memoryRegions.pop());
-                } catch (final IOException e) {
-                    //ignore
-                }
-            }
             final DisniPassiveRdmaEndpoint endpointCopy = endpoint;
             if (endpointCopy != null) {
                 endpoint = null;
