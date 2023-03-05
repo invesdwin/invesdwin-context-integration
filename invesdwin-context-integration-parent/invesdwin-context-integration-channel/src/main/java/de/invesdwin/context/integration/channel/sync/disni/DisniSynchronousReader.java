@@ -1,33 +1,43 @@
 package de.invesdwin.context.integration.channel.sync.disni;
 
-import java.io.FileDescriptor;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.ibm.disni.verbs.IbvCQ;
+import com.ibm.disni.verbs.IbvMr;
+import com.ibm.disni.verbs.IbvRecvWR;
+import com.ibm.disni.verbs.IbvSge;
+import com.ibm.disni.verbs.IbvWC;
+import com.ibm.disni.verbs.SVCPollCq;
+import com.ibm.disni.verbs.SVCPostRecv;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class DisniSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private SocketSynchronousChannel channel;
+    private DisniSynchronousChannel channel;
     private final int socketSize;
     private IByteBuffer buffer;
-    private FileDescriptor fd;
-    private int position = 0;
+    private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
+    private SVCPostRecv recvTask;
+    private boolean request;
+    private IbvWC[] wcList;
+    private SVCPollCq poll;
 
-    public DisniSynchronousReader(final SocketSynchronousChannel channel) {
+    public DisniSynchronousReader(final DisniSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
@@ -36,25 +46,58 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
     @Override
     public void open() throws IOException {
         channel.open();
-        if (!channel.isWriterRegistered()) {
-            if (channel.getSocket() != null) {
-                channel.getSocket().shutdownOutput();
-            }
-        }
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        buffer = ByteBuffers.allocateDirect(socketSize);
+        nioBuffer = buffer.nioByteBuffer();
+
+        recvTask = setupRecvTask(nioBuffer, 0);
+
+        final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
+        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
+        this.wcList = new IbvWC[1];
+        for (int i = 0; i < wcList.length; i++) {
+            wcList[i] = new IbvWC();
+        }
+        this.poll = cq.poll(wcList, wcList.length);
+    }
+
+    private SVCPostRecv setupRecvTask(final java.nio.ByteBuffer recvBuf, final int wrid) throws IOException {
+        final List<IbvRecvWR> recvWRs = new ArrayList<IbvRecvWR>(1);
+        final LinkedList<IbvSge> sgeList = new LinkedList<IbvSge>();
+
+        final IbvMr mr = channel.getEndpoint().registerMemory(recvBuf).execute().free().getMr();
+        channel.getMemoryRegions().push(mr);
+        final IbvSge sge = new IbvSge();
+        sge.setAddr(mr.getAddr());
+        sge.setLength(mr.getLength());
+        final int lkey = mr.getLkey();
+        sge.setLkey(lkey);
+        sgeList.add(sge);
+
+        final IbvRecvWR recvWR = new IbvRecvWR();
+        recvWR.setWr_id(wrid);
+        recvWR.setSg_list(sgeList);
+        recvWRs.add(recvWR);
+
+        return channel.getEndpoint().postRecv(recvWRs);
     }
 
     @Override
     public void close() {
         if (buffer != null) {
+            recvTask.free();
+            recvTask = null;
+            request = false;
+            wcList = null;
+            poll.free();
+            poll = null;
+
             buffer = null;
-            fd = null;
-            position = 0;
+            nioBuffer = null;
             bufferOffset = 0;
             messageTargetPosition = 0;
         }
+
         if (channel != null) {
             channel.close();
             channel = null;
@@ -71,12 +114,12 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
-            if (!readFurther(sizeTargetPosition, buffer.remaining(position))) {
+            if (!readFurther(sizeTargetPosition, buffer.remaining(nioBuffer.position()))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + SocketSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + DisniSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size");
@@ -88,27 +131,33 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
          * only read as much further as required, so that we have a message where we can reset the position to 0 so the
          * expandable buffer does not grow endlessly due to fragmented messages piling up at the end each time.
          */
-        return readFurther(messageTargetPosition, messageTargetPosition - position);
+        return readFurther(messageTargetPosition, messageTargetPosition - nioBuffer.position());
     }
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
-        if (position < targetPosition) {
-            position += read0(fd, buffer.addressOffset(), position, readLength);
+        if (nioBuffer.position() < targetPosition) {
+            if (!request) {
+                recvTask.execute();
+                request = true;
+            }
+            if (poll.getPolls() > 0) {
+                request = false;
+            }
         }
-        return position >= targetPosition;
+        return nioBuffer.position() >= targetPosition;
     }
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - SocketSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - DisniSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + SocketSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = SocketSynchronousChannel.MESSAGE_INDEX + size;
-        if (position > (bufferOffset + offset)) {
+        final IByteBuffer message = buffer.slice(bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = DisniSynchronousChannel.MESSAGE_INDEX + size;
+        if (nioBuffer.position() > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in
              * hasNext will be done with position 0
@@ -116,7 +165,7 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
             bufferOffset += offset;
         } else {
             bufferOffset = 0;
-            position = 0;
+            ByteBuffers.position(nioBuffer, 0);
         }
         messageTargetPosition = 0;
         return message;
@@ -125,20 +174,6 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
     @Override
     public void readFinished() {
         //noop
-    }
-
-    public static int read0(final FileDescriptor src, final long address, final int position, final int length)
-            throws IOException {
-        final int res = OS.read0(src, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
-            return 0;
-        } else {
-            final int count = IOTools.normaliseIOStatus(res);
-            if (count < 0) {
-                throw FastEOFException.getInstance("socket closed");
-            }
-            return count;
-        }
     }
 
 }

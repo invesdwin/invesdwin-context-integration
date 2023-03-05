@@ -2,23 +2,29 @@ package de.invesdwin.context.integration.channel.sync.disni;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.ibm.disni.RdmaEndpointGroup;
+import com.ibm.disni.RdmaPassiveEndpointGroup;
+import com.ibm.disni.RdmaServerEndpoint;
+import com.ibm.disni.verbs.IbvMr;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.disni.endpoint.CloseableRdmaEndpoint;
+import de.invesdwin.context.integration.channel.sync.disni.endpoint.CloseableRdmaEndpointFactory;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -34,7 +40,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketChannelOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
-    private final SocketSynchronousChannelFinalizer finalizer;
+    private final DisniSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -47,7 +53,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
-        this.finalizer = new SocketSynchronousChannelFinalizer();
+        this.finalizer = new DisniSynchronousChannelFinalizer();
         finalizer.register(this);
     }
 
@@ -63,16 +69,16 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         return socketSize;
     }
 
-    public Socket getSocket() {
-        return finalizer.socket;
+    public RdmaEndpointGroup<CloseableRdmaEndpoint> getEndpointGroup() {
+        return finalizer.endpointGroup;
     }
 
-    public SocketChannel getSocketChannel() {
-        return finalizer.socketChannel;
+    public CloseableRdmaEndpoint getEndpoint() {
+        return finalizer.endpoint;
     }
 
-    public ServerSocketChannel getServerSocketChannel() {
-        return finalizer.serverSocketChannel;
+    public RdmaServerEndpoint<CloseableRdmaEndpoint> getServerEndpoint() {
+        return finalizer.serverEndpoint;
     }
 
     public boolean isReaderRegistered() {
@@ -97,6 +103,10 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         this.writerRegistered = true;
     }
 
+    public Stack<IbvMr> getMemoryRegions() {
+        return finalizer.memoryRegions;
+    }
+
     @Override
     public void open() throws IOException {
         if (!shouldOpen()) {
@@ -104,36 +114,31 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
             return;
         }
         socketChannelOpening = true;
+        finalizer.endpointGroup = new RdmaPassiveEndpointGroup<>(getConnectTimeout().intValue(FTimeUnit.MILLISECONDS),
+                1, 1, 1);
+        final CloseableRdmaEndpointFactory factory = new CloseableRdmaEndpointFactory(finalizer.endpointGroup);
+        finalizer.endpointGroup.init(factory);
         try {
+
             if (server) {
-                finalizer.serverSocketChannel = newServerSocketChannel();
-                finalizer.serverSocketChannel.bind(socketAddress);
-                finalizer.socketChannel = finalizer.serverSocketChannel.accept();
+                finalizer.serverEndpoint = finalizer.endpointGroup.createServerEndpoint();
                 try {
-                    finalizer.socket = finalizer.socketChannel.socket();
+                    finalizer.serverEndpoint.bind(socketAddress, 1);
+                    finalizer.endpoint = finalizer.serverEndpoint.accept();
                 } catch (final Throwable t) {
-                    //unix domain sockets throw an error here
+                    throw new IOException(t);
                 }
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
-                    finalizer.socketChannel = newSocketChannel();
+                    finalizer.endpoint = finalizer.endpointGroup.createEndpoint();
                     try {
-                        finalizer.socketChannel.connect(socketAddress);
-                        try {
-                            finalizer.socket = finalizer.socketChannel.socket();
-                        } catch (final Throwable t) {
-                            //unix domain sockets throw an error here
-                        }
+                        finalizer.endpoint.connect(socketAddress, getConnectTimeout().intValue(FTimeUnit.MILLISECONDS));
                         break;
-                    } catch (final IOException e) {
-                        finalizer.socketChannel.close();
-                        finalizer.socketChannel = null;
-                        if (finalizer.socket != null) {
-                            finalizer.socket.close();
-                            finalizer.socket = null;
-                        }
+                    } catch (final Throwable e) {
+                        Closeables.closeQuietly(finalizer.endpoint);
+                        finalizer.endpoint = null;
                         if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
@@ -141,23 +146,14 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
                                 throw new IOException(e1);
                             }
                         } else {
-                            throw e;
+                            throw new IOException(e);
                         }
                     }
                 }
             }
-            //non-blocking sockets are a bit faster than blocking ones
-            finalizer.socketChannel.configureBlocking(false);
-            if (finalizer.socket != null) {
-                configureSocket(finalizer.socket);
-            }
         } finally {
             socketChannelOpening = false;
         }
-    }
-
-    protected void configureSocket(final Socket socket) throws SocketException {
-        BlockingSocketSynchronousChannel.configureSocketStatic(socket, socketSize);
     }
 
     private void awaitSocketChannel() throws IOException {
@@ -165,7 +161,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
+            while ((finalizer.endpoint == null || socketChannelOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -212,14 +208,15 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         finalizer.close();
     }
 
-    private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+    private static final class DisniSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
-        private volatile Socket socket;
-        private volatile SocketChannel socketChannel;
-        private volatile ServerSocketChannel serverSocketChannel;
+        private volatile RdmaEndpointGroup<CloseableRdmaEndpoint> endpointGroup;
+        private volatile CloseableRdmaEndpoint endpoint;
+        private volatile RdmaServerEndpoint<CloseableRdmaEndpoint> serverEndpoint;
+        private final Stack<IbvMr> memoryRegions = new Stack<>();
 
-        protected SocketSynchronousChannelFinalizer() {
+        protected DisniSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();
@@ -230,20 +227,27 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            final SocketChannel socketChannelCopy = socketChannel;
-            if (socketChannelCopy != null) {
-                socketChannel = null;
-                Closeables.closeQuietly(socketChannelCopy);
+            while (!memoryRegions.isEmpty()) {
+                try {
+                    endpoint.deregisterMemory(memoryRegions.pop());
+                } catch (final IOException e) {
+                    //ignore
+                }
             }
-            final Socket socketCopy = socket;
-            if (socketCopy != null) {
-                socket = null;
-                Closeables.closeQuietly(socketCopy);
+            final CloseableRdmaEndpoint endpointCopy = endpoint;
+            if (endpointCopy != null) {
+                endpoint = null;
+                Closeables.closeQuietly(endpointCopy);
             }
-            final ServerSocketChannel serverSocketChannelCopy = serverSocketChannel;
-            if (serverSocketChannelCopy != null) {
-                serverSocketChannel = null;
-                Closeables.closeQuietly(serverSocketChannelCopy);
+            final RdmaServerEndpoint<CloseableRdmaEndpoint> serverEndpointCopy = serverEndpoint;
+            if (serverEndpointCopy != null) {
+                serverEndpoint = null;
+                Closeables.closeQuietly(serverEndpointCopy);
+            }
+            final RdmaEndpointGroup<CloseableRdmaEndpoint> endpointGroupCopy = endpointGroup;
+            if (endpointGroupCopy != null) {
+                endpointGroup = null;
+                Closeables.closeQuietly(endpointGroupCopy);
             }
         }
 
@@ -261,7 +265,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected boolean isCleaned() {
-            return socketChannel == null;
+            return endpoint == null;
         }
 
         @Override

@@ -21,7 +21,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     private IByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private long messageToWrite;
-    private int position;
     private int remaining;
     private UcpRequest request;
 
@@ -44,7 +43,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             buffer = null;
             messageBuffer = null;
             messageToWrite = 0;
-            position = 0;
             remaining = 0;
             request = null;
         }
@@ -65,7 +63,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(SocketSynchronousChannel.SIZE_INDEX, size);
             messageToWrite = buffer.addressOffset();
-            position = 0;
             remaining = SocketSynchronousChannel.MESSAGE_INDEX + size;
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
@@ -78,7 +75,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             return true;
         } else if (!writeFurther()) {
             messageToWrite = 0;
-            position = 0;
             remaining = 0;
             return true;
         } else {
@@ -89,8 +85,7 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     private boolean writeFurther() throws IOException {
         if (request == null) {
             request = channel.getType()
-                    .sendNonBlocking(channel, buffer.addressOffset() + position, remaining,
-                            channel.getErrorUcxCallback().reset());
+                    .sendNonBlocking(channel, buffer.addressOffset(), remaining, channel.getErrorUcxCallback().reset());
         }
         try {
             channel.getType().progress(channel, request);
@@ -104,7 +99,6 @@ public class JucxSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             return true;
         }
         remaining = 0;
-        position += remaining;
         request = null;
         return false;
     }
