@@ -13,6 +13,7 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -34,7 +35,7 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void open() throws IOException {
         channel.open();
         nioBuffer = channel.getEndpoint().getRecvBuf();
-        buffer = ByteBuffers.wrap(nioBuffer);
+        buffer = new UnsafeByteBuffer(nioBuffer);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DisniActiveSynchronousChannel.MESSAGE_INDEX);
 
         sendTask = channel.getEndpoint().postSend(channel.getEndpoint().getWrList_send());

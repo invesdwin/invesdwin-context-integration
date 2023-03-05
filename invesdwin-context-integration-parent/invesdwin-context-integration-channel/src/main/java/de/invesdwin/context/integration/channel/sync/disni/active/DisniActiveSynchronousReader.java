@@ -4,12 +4,15 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.ibm.disni.verbs.SVCPostRecv;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 
 @NotThreadSafe
 public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -19,6 +22,7 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
+    private SVCPostRecv recvTask;
 
     public DisniActiveSynchronousReader(final DisniActiveSynchronousChannel channel) {
         this.channel = channel;
@@ -29,7 +33,9 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
     public void open() throws IOException {
         channel.open();
         nioBuffer = channel.getEndpoint().getRecvBuf();
-        buffer = ByteBuffers.wrap(nioBuffer);
+        buffer = new UnsafeByteBuffer(nioBuffer);
+        recvTask = channel.getEndpoint().getRecvTask();
+        recvTask.execute();
     }
 
     @Override
@@ -81,6 +87,7 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
         if (nioBuffer.position() < targetPosition) {
             if (channel.getEndpoint().isRecvFinished()) {
                 channel.getEndpoint().setRecvFinished(false);
+                recvTask.execute();
                 System.out.println((channel.isServer() ? "server" : "client") + ": recv: " + buffer.toString());
                 //when there is no pending read, writes on the other side will never arrive
                 //disni does not provide a way to give the received size, instead message are always received fully

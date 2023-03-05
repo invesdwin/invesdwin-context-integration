@@ -117,7 +117,7 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
         socketChannelOpening = true;
         final boolean blocking = true;
         finalizer.endpointGroup = new RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint>(
-                getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 1, 1, 2);
+                getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 128, 4, 128);
         final DisniActiveRdmaEndpointFactory factory = new DisniActiveRdmaEndpointFactory(finalizer.endpointGroup,
                 socketSize);
         finalizer.endpointGroup.init(factory);

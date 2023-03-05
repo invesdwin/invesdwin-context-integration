@@ -100,7 +100,6 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
         if (opcode == IbvWC.IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
             sendFinished = true;
         } else if (opcode == IbvWC.IbvWcOpcode.IBV_WC_RECV.getOpcode()) {
-            recvTask.execute();
             recvFinished = true;
         } else {
             throw UnknownArgumentException.newInstance(Integer.class, opcode);
