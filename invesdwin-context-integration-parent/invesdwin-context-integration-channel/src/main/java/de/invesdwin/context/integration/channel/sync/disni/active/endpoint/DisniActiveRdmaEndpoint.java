@@ -15,16 +15,10 @@ import com.ibm.disni.verbs.IbvSge;
 import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.RdmaCmId;
 
-import de.invesdwin.util.math.Integers;
-
 @NotThreadSafe
 public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
-    private final java.nio.ByteBuffer[] buffers;
-    private final IbvMr[] mrlist;
-    private int buffercount = 3;
+    private final int socketSize;
 
-    private java.nio.ByteBuffer dataBuf;
-    private IbvMr dataMr;
     private java.nio.ByteBuffer sendBuf;
     private IbvMr sendMr;
     private java.nio.ByteBuffer recvBuf;
@@ -45,14 +39,8 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
     public DisniActiveRdmaEndpoint(final RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup,
             final RdmaCmId idPriv, final boolean serverSide, final int socketSize) throws IOException {
         super(endpointGroup, idPriv, serverSide);
-        this.buffercount = 3;
-        buffers = new java.nio.ByteBuffer[buffercount];
-        this.mrlist = new IbvMr[buffercount];
 
-        final int bufferSize = Integers.max(socketSize, Long.BYTES + Integer.BYTES + Integer.BYTES);
-        for (int i = 0; i < buffercount; i++) {
-            buffers[i] = java.nio.ByteBuffer.allocateDirect(bufferSize);
-        }
+        this.socketSize = socketSize;
 
         this.wrList_send = new LinkedList<IbvSendWR>();
         this.sgeSend = new IbvSge();
@@ -73,23 +61,10 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
     public void init() throws IOException {
         super.init();
 
-        for (int i = 0; i < buffercount; i++) {
-            mrlist[i] = registerMemory(buffers[i]).execute().free().getMr();
-        }
-
-        this.dataBuf = buffers[0];
-        this.dataMr = mrlist[0];
-        this.sendBuf = buffers[1];
-        this.sendMr = mrlist[1];
-        this.recvBuf = buffers[2];
-        this.recvMr = mrlist[2];
-
-        dataBuf.clear();
-
-        sendBuf.putLong(dataMr.getAddr());
-        sendBuf.putInt(dataMr.getLength());
-        sendBuf.putInt(dataMr.getLkey());
-        sendBuf.clear();
+        this.sendBuf = java.nio.ByteBuffer.allocateDirect(socketSize);
+        this.sendMr = registerMemory(sendBuf).execute().free().getMr();
+        this.recvBuf = java.nio.ByteBuffer.allocateDirect(socketSize);
+        this.recvMr = registerMemory(recvBuf).execute().free().getMr();
 
         sgeSend.setAddr(sendMr.getAddr());
         sgeSend.setLength(sendMr.getLength());
@@ -128,10 +103,6 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
 
     public LinkedList<IbvRecvWR> getWrList_recv() {
         return wrList_recv;
-    }
-
-    public java.nio.ByteBuffer getDataBuf() {
-        return dataBuf;
     }
 
     public java.nio.ByteBuffer getSendBuf() {

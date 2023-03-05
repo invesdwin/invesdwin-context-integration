@@ -102,9 +102,10 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
             request = true;
         }
         final IbvWC wc = channel.getEndpoint().getWcEvents().poll();
-        if (wc != null && wc.getOpcode() == IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
+        if (wc == null || wc.getOpcode() != IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
             return true;
         }
+        System.out.println((channel.isServer() ? "server" : "client") + ": send: " + buffer.toString());
         request = false;
         return false;
     }

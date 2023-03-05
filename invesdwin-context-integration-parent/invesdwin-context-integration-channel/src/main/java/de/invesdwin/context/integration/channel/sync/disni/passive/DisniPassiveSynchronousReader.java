@@ -1,17 +1,9 @@
 package de.invesdwin.context.integration.channel.sync.disni.passive;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.IbvCQ;
-import com.ibm.disni.verbs.IbvMr;
-import com.ibm.disni.verbs.IbvRecvWR;
-import com.ibm.disni.verbs.IbvSge;
-import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostRecv;
 
@@ -26,60 +18,26 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     private DisniPassiveSynchronousChannel channel;
-    private final int socketSize;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
-    private IbvWC[] wcList;
     private SVCPollCq poll;
 
     public DisniPassiveSynchronousReader(final DisniPassiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
-        this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirect(socketSize);
-        nioBuffer = buffer.nioByteBuffer();
+        nioBuffer = channel.getEndpoint().getRecvBuf();
+        buffer = ByteBuffers.wrap(nioBuffer);
 
-        final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
-        //        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
-        this.wcList = new IbvWC[channel.getEndpoint().getCqProvider().getCqSize()];
-        for (int i = 0; i < wcList.length; i++) {
-            wcList[i] = new IbvWC();
-        }
-        this.poll = cq.poll(wcList, wcList.length);
-
-        recvTask = setupRecvTask(nioBuffer, 0);
-        //when there is no pending read, writes on the other side will never arrive
-        recvTask.execute();
-    }
-
-    private SVCPostRecv setupRecvTask(final java.nio.ByteBuffer recvBuf, final int wrid) throws IOException {
-        final List<IbvRecvWR> recvWRs = new ArrayList<IbvRecvWR>(1);
-        final LinkedList<IbvSge> sgeList = new LinkedList<IbvSge>();
-
-        final IbvMr mr = channel.getEndpoint().registerMemory(recvBuf).execute().free().getMr();
-        channel.getMemoryRegions().push(mr);
-        final IbvSge sge = new IbvSge();
-        sge.setAddr(mr.getAddr());
-        sge.setLength(mr.getLength());
-        final int lkey = mr.getLkey();
-        sge.setLkey(lkey);
-        sgeList.add(sge);
-
-        final IbvRecvWR recvWR = new IbvRecvWR();
-        recvWR.setWr_id(wrid);
-        recvWR.setSg_list(sgeList);
-        recvWRs.add(recvWR);
-
-        return channel.getEndpoint().postRecv(recvWRs);
+        poll = channel.getEndpoint().getPoll();
+        recvTask = channel.getEndpoint().postRecv(channel.getEndpoint().getWrList_recv());
     }
 
     @Override
@@ -87,9 +45,6 @@ public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBu
         if (buffer != null) {
             recvTask.free();
             recvTask = null;
-            wcList = null;
-            poll.free();
-            poll = null;
 
             buffer = null;
             nioBuffer = null;

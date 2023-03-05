@@ -1,16 +1,9 @@
 package de.invesdwin.context.integration.channel.sync.disni.passive;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.LinkedList;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.IbvCQ;
-import com.ibm.disni.verbs.IbvMr;
-import com.ibm.disni.verbs.IbvSendWR;
-import com.ibm.disni.verbs.IbvSge;
-import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostSend;
 
@@ -32,7 +25,6 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
     private long messageToWrite;
     private SVCPostSend sendTask;
     private boolean request;
-    private IbvWC[] wcList;
     private SVCPollCq poll;
 
     public DisniPassiveSynchronousWriter(final DisniPassiveSynchronousChannel channel) {
@@ -43,43 +35,12 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
     @Override
     public void open() throws IOException {
         channel.open();
-        //use direct buffer to prevent another copy from byte[] to native
-        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        nioBuffer = channel.getEndpoint().getSendBuf();
+        buffer = ByteBuffers.wrap(nioBuffer);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DisniPassiveSynchronousChannel.MESSAGE_INDEX);
-        nioBuffer = buffer.nioByteBuffer();
 
-        sendTask = setupSendTask(nioBuffer, 0);
-
-        final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
-        //        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
-        this.wcList = new IbvWC[channel.getEndpoint().getCqProvider().getCqSize()];
-        for (int i = 0; i < wcList.length; i++) {
-            wcList[i] = new IbvWC();
-        }
-        this.poll = cq.poll(wcList, wcList.length);
-    }
-
-    private SVCPostSend setupSendTask(final java.nio.ByteBuffer sendBuf, final int wrid) throws IOException {
-        final ArrayList<IbvSendWR> sendWRs = new ArrayList<IbvSendWR>(1);
-        final LinkedList<IbvSge> sgeList = new LinkedList<IbvSge>();
-
-        final IbvMr mr = channel.getEndpoint().registerMemory(sendBuf).execute().free().getMr();
-        channel.getMemoryRegions().push(mr);
-        final IbvSge sge = new IbvSge();
-        sge.setAddr(mr.getAddr());
-        sge.setLength(mr.getLength());
-        final int lkey = mr.getLkey();
-        sge.setLkey(lkey);
-        sgeList.add(sge);
-
-        final IbvSendWR sendWR = new IbvSendWR();
-        sendWR.setSg_list(sgeList);
-        sendWR.setWr_id(wrid);
-        sendWRs.add(sendWR);
-        sendWR.setSend_flags(IbvSendWR.IBV_SEND_SIGNALED);
-        sendWR.setOpcode(IbvSendWR.IbvWrOcode.IBV_WR_SEND.ordinal());
-
-        return channel.getEndpoint().postSend(sendWRs);
+        poll = channel.getEndpoint().getPoll();
+        sendTask = channel.getEndpoint().postSend(channel.getEndpoint().getWrList_send());
     }
 
     @Override
@@ -88,9 +49,6 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
             sendTask.free();
             sendTask = null;
             request = false;
-            wcList = null;
-            poll.free();
-            poll = null;
 
             try {
                 writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
