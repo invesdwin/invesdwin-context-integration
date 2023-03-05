@@ -15,7 +15,6 @@ import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostSend;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -52,8 +51,8 @@ public class DisniSynchronousWriter implements ISynchronousWriter<IByteBufferPro
         sendTask = setupSendTask(nioBuffer, 0);
 
         final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
-        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
-        this.wcList = new IbvWC[1];
+        //        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
+        this.wcList = new IbvWC[channel.getEndpoint().getCqProvider().getCqSize()];
         for (int i = 0; i < wcList.length; i++) {
             wcList[i] = new IbvWC();
         }
@@ -145,7 +144,7 @@ public class DisniSynchronousWriter implements ISynchronousWriter<IByteBufferPro
             sendTask.execute();
             request = true;
         }
-        if (poll.getPolls() == 0) {
+        if (poll.execute().getPolls() == 0) {
             return true;
         }
         request = false;

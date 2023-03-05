@@ -115,7 +115,7 @@ public class DisniSynchronousChannel implements ISynchronousChannel {
         }
         socketChannelOpening = true;
         finalizer.endpointGroup = new RdmaPassiveEndpointGroup<>(getConnectTimeout().intValue(FTimeUnit.MILLISECONDS),
-                1, 1, 1);
+                1, 1, 2);
         final CloseableRdmaEndpointFactory factory = new CloseableRdmaEndpointFactory(finalizer.endpointGroup);
         finalizer.endpointGroup.init(factory);
         try {

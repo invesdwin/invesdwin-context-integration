@@ -16,7 +16,6 @@ import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostRecv;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -33,7 +32,6 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
-    private boolean request;
     private IbvWC[] wcList;
     private SVCPollCq poll;
 
@@ -50,15 +48,17 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
         buffer = ByteBuffers.allocateDirect(socketSize);
         nioBuffer = buffer.nioByteBuffer();
 
-        recvTask = setupRecvTask(nioBuffer, 0);
-
         final IbvCQ cq = channel.getEndpoint().getCqProvider().getCQ();
-        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
-        this.wcList = new IbvWC[1];
+        //        Assertions.checkEquals(1, channel.getEndpoint().getCqProvider().getCqSize());
+        this.wcList = new IbvWC[channel.getEndpoint().getCqProvider().getCqSize()];
         for (int i = 0; i < wcList.length; i++) {
             wcList[i] = new IbvWC();
         }
         this.poll = cq.poll(wcList, wcList.length);
+
+        recvTask = setupRecvTask(nioBuffer, 0);
+        //when there is no pending read, writes on the other side will never arrive
+        recvTask.execute();
     }
 
     private SVCPostRecv setupRecvTask(final java.nio.ByteBuffer recvBuf, final int wrid) throws IOException {
@@ -87,7 +87,6 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
         if (buffer != null) {
             recvTask.free();
             recvTask = null;
-            request = false;
             wcList = null;
             poll.free();
             poll = null;
@@ -136,12 +135,16 @@ public class DisniSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (nioBuffer.position() < targetPosition) {
-            if (!request) {
+            if (poll.execute().getPolls() > 0) {
+                //when there is no pending read, writes on the other side will never arrive
                 recvTask.execute();
-                request = true;
-            }
-            if (poll.getPolls() > 0) {
-                request = false;
+                //disni does not provide a way to give the received size, instead message are always received fully
+                final int size = buffer.getInt(bufferOffset + DisniSynchronousChannel.SIZE_INDEX);
+                if (size <= 0) {
+                    close();
+                    throw FastEOFException.getInstance("non positive size");
+                }
+                ByteBuffers.position(nioBuffer, bufferOffset + DisniSynchronousChannel.MESSAGE_INDEX + size);
             }
         }
         return nioBuffer.position() >= targetPosition;
