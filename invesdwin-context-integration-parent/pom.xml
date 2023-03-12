@@ -45,7 +45,7 @@
 		<module>invesdwin-context-integration-docker</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
-		<module>invesdwin-context-integration-channel-hadronio</module>
+		<module>invesdwin-context-integration-channel-gpl</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
@@ -286,7 +286,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-channel-hadronio</artifactId>
+				<artifactId>invesdwin-context-integration-channel-gpl</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>

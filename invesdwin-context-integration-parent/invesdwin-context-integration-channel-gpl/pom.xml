@@ -5,7 +5,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-channel-hadronio</artifactId>
+	<artifactId>invesdwin-context-integration-channel-gpl</artifactId>
 	<packaging>jar</packaging>
 
 	<licenses>
