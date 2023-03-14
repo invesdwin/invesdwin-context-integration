@@ -336,6 +336,22 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
+    public synchronized void download(final File destination) {
+        try {
+            try (InputStream in = downloadInputStream()) {
+                if (in != null) {
+                    Files.forceMkdirParent(destination);
+                    try (FileOutputStream out = new FileOutputStream(destination)) {
+                        IOUtils.copy(in, out);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public synchronized byte[] download() {
         try {
             try (InputStream in = downloadInputStream()) {
@@ -349,7 +365,6 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override

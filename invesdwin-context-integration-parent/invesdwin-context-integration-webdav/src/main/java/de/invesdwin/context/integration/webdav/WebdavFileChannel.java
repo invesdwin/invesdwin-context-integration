@@ -42,7 +42,7 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     private final String serverUrl;
-    private final String directory;
+    private String directory;
     @GuardedBy("this")
     private String filename;
     @GuardedBy("this")
@@ -56,8 +56,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             throw new NullPointerException("serverUri should not be null");
         }
         this.serverUrl = Strings.removeEnd(serverUri.toString(), "/");
-        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
-                "/");
+        setDirectory(directory);
     }
 
     public URI getServerUri() {
@@ -65,16 +64,24 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    public String getDirectory() {
+    public synchronized String getDirectory() {
+        if (directory == null) {
+            throw new NullPointerException("please call setDirectory(...) first");
+        }
         return directory;
     }
 
+    public synchronized void setDirectory(final String directory) {
+        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
+                "/");
+    }
+
     public String getDirectoryUrl() {
-        return serverUrl + directory;
+        return serverUrl + getDirectory();
     }
 
     public synchronized String getFileUrl() {
-        return serverUrl + directory + filename;
+        return serverUrl + getDirectory() + getFilename();
     }
 
     @Override
@@ -147,7 +154,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
      * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
      */
     private synchronized void createAndChangeDirectory() {
-        final String[] pathElements = directory.split("/");
+        final String[] pathElements = getDirectory().split("/");
         final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
@@ -313,6 +320,22 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             throw new RuntimeException(e);
         } finally {
             Closeables.close(input);
+        }
+    }
+
+    @Override
+    public synchronized void download(final File destination) {
+        try {
+            try (InputStream in = downloadInputStream()) {
+                if (in != null) {
+                    Files.forceMkdirParent(destination);
+                    try (FileOutputStream out = new FileOutputStream(destination)) {
+                        IOUtils.copy(in, out);
+                    }
+                }
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
