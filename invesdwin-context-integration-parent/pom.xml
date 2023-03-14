@@ -75,7 +75,7 @@
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
-		<version.sardine>5.8</version.sardine>
+		<version.sardine>5.11-inv</version.sardine>
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.affinity>3.21ea5</version.affinity>
