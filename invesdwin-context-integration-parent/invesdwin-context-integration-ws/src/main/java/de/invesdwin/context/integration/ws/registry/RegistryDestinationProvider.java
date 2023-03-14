@@ -146,7 +146,8 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
                     isOk = true;
                 } else {
                     //check rest service aswell
-                    isOk = RemoteRegistryService.gateway(maybeWithBasicAuth(URIs.connect(accessUri.toString() + "/")))
+                    isOk = RemoteRegistryService
+                            .gateway(maybeWithBasicAuth(URIs.connect(Strings.putSuffix(accessUri.toString(), "/"))))
                             .isDownloadPossible();
                 }
             } else {
