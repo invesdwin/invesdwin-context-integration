@@ -5,12 +5,15 @@ import java.util.Iterator;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOCase;
 import org.apache.commons.io.filefilter.AgeFileFilter;
-import org.apache.commons.io.filefilter.TrueFileFilter;
+import org.apache.commons.io.filefilter.NameFileFilter;
+import org.apache.commons.io.filefilter.NotFileFilter;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
+import de.invesdwin.context.integration.webdav.WebdavClientProperties;
 import de.invesdwin.context.integration.webdav.server.WebdavServerProperties;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.time.date.FDate;
@@ -29,7 +32,8 @@ public class PurgeOldFilesScheduler implements IStartupHook {
         }
         final FDate threshold = new FDate().subtract(WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
         final Iterator<File> filesToDelete = Files.iterateFiles(WebdavServerProperties.WORKING_DIRECTORY,
-                new AgeFileFilter(threshold.dateValue(), true), TrueFileFilter.INSTANCE);
+                new AgeFileFilter(threshold.dateValue(), true), new NotFileFilter(
+                        new NameFileFilter(WebdavClientProperties.PROTECTED_FOLDER_NAME, IOCase.INSENSITIVE)));
         while (filesToDelete.hasNext()) {
             final File fileToDelete = filesToDelete.next();
             fileToDelete.delete();

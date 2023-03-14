@@ -19,13 +19,17 @@ public final class WebdavClientProperties {
     public static final String USERNAME;
     public static final String PASSWORD;
 
+    /**
+     * Files stored under this folder will be not be deleted by purge old files check.
+     */
+    public static final String PROTECTED_FOLDER_NAME = "PROTECTED";
+
     static {
         final SystemProperties systemProperties = new SystemProperties(WebdavClientProperties.class);
         USERNAME = systemProperties.getString("USERNAME");
         PASSWORD = systemProperties.getStringWithSecurityWarning("PASSWORD", IProperties.INVESDWIN_DEFAULT_PASSWORD);
     }
 
-    private WebdavClientProperties() {
-    }
+    private WebdavClientProperties() {}
 
 }
