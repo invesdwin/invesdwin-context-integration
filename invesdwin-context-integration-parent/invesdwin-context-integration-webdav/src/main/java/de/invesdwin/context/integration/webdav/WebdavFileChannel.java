@@ -51,11 +51,15 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @GuardedBy("this")
     private transient WebdavFileChannelFinalizer finalizer;
 
-    public WebdavFileChannel(final URI serverUri, final String directory) {
+    public WebdavFileChannel(final URI serverUri) {
         if (serverUri == null) {
             throw new NullPointerException("serverUri should not be null");
         }
         this.serverUrl = Strings.removeEnd(serverUri.toString(), "/");
+    }
+
+    public WebdavFileChannel(final URI serverUri, final String directory) {
+        this(serverUri);
         setDirectory(directory);
     }
 
@@ -72,8 +76,12 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     public synchronized void setDirectory(final String directory) {
-        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
-                "/");
+        if (directory == null) {
+            this.directory = null;
+        } else {
+            this.directory = Strings
+                    .putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
+        }
     }
 
     public String getDirectoryUrl() {
