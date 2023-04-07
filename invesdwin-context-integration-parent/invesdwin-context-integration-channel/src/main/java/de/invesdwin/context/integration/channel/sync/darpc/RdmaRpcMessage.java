@@ -22,6 +22,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import com.ibm.darpc.DaRPCMessage;
 
+import de.invesdwin.context.integration.channel.sync.darpc.client.DarpcClientSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -29,7 +30,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 public class RdmaRpcMessage implements DaRPCMessage {
 
     private final IByteBuffer message;
-    private int size;
 
     public RdmaRpcMessage(final int socketSize) {
         this.message = ByteBuffers.allocateDirect(socketSize);
@@ -39,32 +39,34 @@ public class RdmaRpcMessage implements DaRPCMessage {
         return message;
     }
 
-    public int getSize() {
-        return size;
-    }
-
-    public void setSize(final int size) {
-        this.size = size;
-    }
-
     @Override
     public int size() {
         return message.capacity();
     }
 
+    /**
+     * Read
+     */
     @Override
     public void update(final java.nio.ByteBuffer buffer) {
-        message.putBytes(0, buffer, buffer.position(), buffer.remaining());
-        size = buffer.remaining();
-        ByteBuffers.position(buffer, buffer.limit());
+        final int size = buffer.getInt();
+        if (size > 0) {
+            final int length = DarpcClientSynchronousChannel.MESSAGE_INDEX + size;
+            message.putBytes(0, buffer, buffer.position(), length);
+            ByteBuffers.position(buffer, buffer.position() + length);
+        }
     }
 
+    /**
+     * Write
+     */
     @Override
     public int write(final java.nio.ByteBuffer buffer) {
-        final int length = buffer.remaining();
-        message.getBytes(0, buffer);
-        ByteBuffers.position(buffer, buffer.limit());
-        return length;
+        final int size = message.getInt(0);
+        final int length = DarpcClientSynchronousChannel.MESSAGE_INDEX + size;
+        message.getBytes(0, buffer, buffer.position(), length);
+        ByteBuffers.position(buffer, buffer.position() + length);
+        return size;
     }
 
 }

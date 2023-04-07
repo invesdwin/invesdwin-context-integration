@@ -11,12 +11,11 @@ import com.ibm.darpc.DaRPCService;
 @NotThreadSafe
 public class RdmaRpcService extends RdmaRpcProtocol implements DaRPCService<RdmaRpcMessage, RdmaRpcMessage> {
 
+    private DaRPCServerEvent<RdmaRpcMessage, RdmaRpcMessage> event;
+
     @Override
     public void processServerEvent(final DaRPCServerEvent<RdmaRpcMessage, RdmaRpcMessage> event) throws IOException {
-        final RdmaRpcMessage request = event.getReceiveMessage();
-        final RdmaRpcMessage response = event.getSendMessage();
-        response.setName(request.getParam() + 1);
-        event.triggerResponse();
+        this.event = event;
     }
 
     @Override

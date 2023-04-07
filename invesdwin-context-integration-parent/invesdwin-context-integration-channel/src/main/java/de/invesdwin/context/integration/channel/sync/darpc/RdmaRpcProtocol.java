@@ -25,13 +25,19 @@ import com.ibm.darpc.DaRPCProtocol;
 @NotThreadSafe
 public class RdmaRpcProtocol implements DaRPCProtocol<RdmaRpcMessage, RdmaRpcMessage> {
 
+    private final int socketSize;
+
+    public RdmaRpcProtocol(final int socketSize) {
+        this.socketSize = socketSize;
+    }
+
     @Override
     public RdmaRpcMessage createRequest() {
-        return new RdmaRpcMessage();
+        return new RdmaRpcMessage(socketSize);
     }
 
     @Override
     public RdmaRpcMessage createResponse() {
-        return new RdmaRpcMessage();
+        return new RdmaRpcMessage(socketSize);
     }
 }

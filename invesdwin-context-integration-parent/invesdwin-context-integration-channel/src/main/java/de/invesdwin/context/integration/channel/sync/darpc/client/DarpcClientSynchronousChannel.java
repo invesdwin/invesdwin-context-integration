@@ -12,6 +12,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import com.ibm.darpc.DaRPCClientEndpoint;
 import com.ibm.darpc.DaRPCClientGroup;
+import com.ibm.darpc.DaRPCStream;
 import com.ibm.disni.RdmaEndpointGroup;
 import com.ibm.disni.RdmaServerEndpoint;
 
@@ -76,6 +77,18 @@ public class DarpcClientSynchronousChannel implements ISynchronousChannel {
         return finalizer.endpoint;
     }
 
+    public DaRPCStream<RdmaRpcMessage, RdmaRpcMessage> getStream() {
+        return finalizer.stream;
+    }
+
+    public RdmaRpcMessage getRequest() {
+        return finalizer.request;
+    }
+
+    public RdmaRpcMessage getResponse() {
+        return finalizer.response;
+    }
+
     public RdmaServerEndpoint<DaRPCClientEndpoint<RdmaRpcMessage, RdmaRpcMessage>> getServerEndpoint() {
         return finalizer.serverEndpoint;
     }
@@ -109,7 +122,7 @@ public class DarpcClientSynchronousChannel implements ISynchronousChannel {
             return;
         }
         socketChannelOpening = true;
-        final RdmaRpcProtocol rpcProtocol = new RdmaRpcProtocol();
+        final RdmaRpcProtocol rpcProtocol = new RdmaRpcProtocol(socketSize);
         try {
             finalizer.endpointGroup = DaRPCClientGroup.createClientGroup(rpcProtocol, 100, 0, 16, 16);
         } catch (final Throwable t) {
@@ -148,6 +161,9 @@ public class DarpcClientSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
+            finalizer.stream = finalizer.endpoint.createStream();
+            finalizer.request = new RdmaRpcMessage(socketSize);
+            finalizer.response = new RdmaRpcMessage(socketSize);
         } finally {
             socketChannelOpening = false;
         }
@@ -211,6 +227,9 @@ public class DarpcClientSynchronousChannel implements ISynchronousChannel {
         private volatile RdmaEndpointGroup<DaRPCClientEndpoint<RdmaRpcMessage, RdmaRpcMessage>> endpointGroup;
         private volatile DaRPCClientEndpoint<RdmaRpcMessage, RdmaRpcMessage> endpoint;
         private volatile RdmaServerEndpoint<DaRPCClientEndpoint<RdmaRpcMessage, RdmaRpcMessage>> serverEndpoint;
+        private volatile DaRPCStream<RdmaRpcMessage, RdmaRpcMessage> stream;
+        private volatile RdmaRpcMessage request;
+        private volatile RdmaRpcMessage response;
 
         protected DisniSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -223,6 +242,14 @@ public class DarpcClientSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
+            request = null;
+            response = null;
+            final DaRPCStream<RdmaRpcMessage, RdmaRpcMessage> streamCopy = stream;
+            if (streamCopy != null) {
+                streamCopy.clear();
+                stream = null;
+            }
+
             final DaRPCClientEndpoint<RdmaRpcMessage, RdmaRpcMessage> endpointCopy = endpoint;
             if (endpointCopy != null) {
                 endpoint = null;

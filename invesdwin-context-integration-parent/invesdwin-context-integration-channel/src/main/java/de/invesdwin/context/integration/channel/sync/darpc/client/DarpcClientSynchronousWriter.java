@@ -4,28 +4,24 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.SVCPollCq;
-import com.ibm.disni.verbs.SVCPostSend;
+import com.ibm.darpc.DaRPCFuture;
+import com.ibm.darpc.DaRPCStream;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.context.integration.channel.sync.darpc.RdmaRpcMessage;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 
 @NotThreadSafe
 public class DarpcClientSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private DarpcClientSynchronousChannel channel;
-    private IByteBuffer buffer;
-    private java.nio.ByteBuffer nioBuffer;
-    private SlicedFromDelegateByteBuffer messageBuffer;
-    private long messageToWrite;
-    private SVCPostSend sendTask;
-    private boolean request;
-    private SVCPollCq poll;
+    private DaRPCStream<RdmaRpcMessage, RdmaRpcMessage> stream;
+    private DaRPCFuture<RdmaRpcMessage, RdmaRpcMessage> future;
+    private RdmaRpcMessage request;
+    private IByteBuffer requestMessage;
+    private RdmaRpcMessage response;
 
     public DarpcClientSynchronousWriter(final DarpcClientSynchronousChannel channel) {
         this.channel = channel;
@@ -35,31 +31,28 @@ public class DarpcClientSynchronousWriter implements ISynchronousWriter<IByteBuf
     @Override
     public void open() throws IOException {
         channel.open();
-        buffer = ByteBuffers.allocateDirect(channel.getSocketSize());
-        nioBuffer = buffer.nioByteBuffer();
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DarpcClientSynchronousChannel.MESSAGE_INDEX);
-
-        poll = channel.getEndpoint().getPoll();
-        sendTask = channel.getEndpoint().postSend(channel.getEndpoint().getWrList_send());
+        stream = channel.getStream();
+        request = channel.getRequest();
+        response = channel.getResponse();
+        requestMessage = request.getMessage().sliceFrom(DarpcClientSynchronousChannel.MESSAGE_INDEX);
     }
 
     @Override
     public void close() {
-        if (buffer != null) {
-            sendTask.free();
-            sendTask = null;
-            request = false;
-
+        if (stream != null) {
             try {
                 writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
             } catch (final Throwable t) {
                 //ignore
             }
-            buffer = null;
-            nioBuffer = null;
-            messageBuffer = null;
-            messageToWrite = 0;
+            stream.clear();
+            stream = null;
+            future = null;
+            request = null;
+            requestMessage = null;
+            response = null;
         }
+
         if (channel != null) {
             channel.close();
             channel = null;
@@ -73,40 +66,21 @@ public class DarpcClientSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        try {
-            final int size = message.getBuffer(messageBuffer);
-            buffer.putInt(DarpcClientSynchronousChannel.SIZE_INDEX, size);
-            messageToWrite = buffer.addressOffset();
-            ByteBuffers.position(nioBuffer, 0);
-            ByteBuffers.limit(nioBuffer, DarpcClientSynchronousChannel.MESSAGE_INDEX + size);
-        } catch (final IOException e) {
-            throw FastEOFException.getInstance(e);
-        }
+        final int size = message.getBuffer(requestMessage);
+        request.getMessage().putInt(DarpcClientSynchronousChannel.SIZE_INDEX, size);
+        future = stream.request(request, response, true);
     }
 
     @Override
     public boolean writeFlushed() throws IOException {
-        if (messageToWrite == 0) {
+        if (future == null) {
             return true;
-        } else if (!writeFurther()) {
-            messageToWrite = 0;
-            nioBuffer.clear();
+        } else if (future.isDone()) {
+            future = null;
             return true;
         } else {
             return false;
         }
-    }
-
-    private boolean writeFurther() throws IOException {
-        if (!request) {
-            sendTask.execute();
-            request = true;
-        }
-        if (poll.execute().getPolls() == 0) {
-            return true;
-        }
-        request = false;
-        return false;
     }
 
 }
