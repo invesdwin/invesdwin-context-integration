@@ -5,7 +5,6 @@ import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -15,7 +14,6 @@ import com.ibm.disni.RdmaActiveEndpointGroup;
 import com.ibm.disni.RdmaEndpoint;
 import com.ibm.disni.RdmaEndpointGroup;
 import com.ibm.disni.RdmaServerEndpoint;
-import com.ibm.disni.verbs.IbvMr;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -104,10 +102,6 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
         this.writerRegistered = true;
     }
 
-    public Stack<IbvMr> getMemoryRegions() {
-        return finalizer.memoryRegions;
-    }
-
     @Override
     public void open() throws IOException {
         if (!shouldOpen()) {
@@ -115,9 +109,9 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
             return;
         }
         socketChannelOpening = true;
-        final boolean blocking = true;
+        final boolean blocking = false;
         finalizer.endpointGroup = new RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint>(
-                getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 128, 4, 128);
+                getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 2, 1, 2);
         final DisniActiveRdmaEndpointFactory factory = new DisniActiveRdmaEndpointFactory(finalizer.endpointGroup,
                 socketSize);
         finalizer.endpointGroup.init(factory);
@@ -217,7 +211,6 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
         private volatile RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup;
         private volatile DisniActiveRdmaEndpoint endpoint;
         private volatile RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverEndpoint;
-        private final Stack<IbvMr> memoryRegions = new Stack<>();
 
         protected DisniSynchronousChannelFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
@@ -230,13 +223,6 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
 
         @Override
         protected void clean() {
-            while (!memoryRegions.isEmpty()) {
-                try {
-                    endpoint.deregisterMemory(memoryRegions.pop());
-                } catch (final IOException e) {
-                    //ignore
-                }
-            }
             final RdmaEndpoint endpointCopy = endpoint;
             if (endpointCopy != null) {
                 endpoint = null;
