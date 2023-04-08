@@ -34,7 +34,7 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
     @Override
     public void open() throws IOException {
         channel.open();
-        nioBuffer = channel.getEndpoint().getRecvBuf();
+        nioBuffer = channel.getEndpoint().getSendBuf();
         buffer = new UnsafeByteBuffer(nioBuffer);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DisniActiveSynchronousChannel.MESSAGE_INDEX);
 
@@ -104,7 +104,6 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
             return true;
         }
         channel.getEndpoint().setSendFinished(false);
-        System.out.println((channel.isServer() ? "server" : "client") + ": send: " + buffer.toString());
         request = false;
         return false;
     }

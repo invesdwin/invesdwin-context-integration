@@ -88,7 +88,6 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
             if (channel.getEndpoint().isRecvFinished()) {
                 channel.getEndpoint().setRecvFinished(false);
                 recvTask.execute();
-                System.out.println((channel.isServer() ? "server" : "client") + ": recv: " + buffer.toString());
                 //when there is no pending read, writes on the other side will never arrive
                 //disni does not provide a way to give the received size, instead message are always received fully
                 final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
