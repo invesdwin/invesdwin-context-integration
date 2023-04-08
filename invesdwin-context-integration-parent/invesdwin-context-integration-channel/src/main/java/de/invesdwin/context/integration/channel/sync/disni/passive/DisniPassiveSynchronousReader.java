@@ -4,10 +4,10 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostRecv;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniStatefulPoll;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -23,7 +23,7 @@ public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBu
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
-    private SVCPollCq poll;
+    private DisniStatefulPoll poll;
 
     public DisniPassiveSynchronousReader(final DisniPassiveSynchronousChannel channel) {
         this.channel = channel;
@@ -38,6 +38,7 @@ public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBu
 
         poll = channel.getEndpoint().getPoll();
         recvTask = channel.getEndpoint().postRecv(channel.getEndpoint().getWrList_recv());
+        recvTask.execute();
     }
 
     @Override
@@ -90,9 +91,11 @@ public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBu
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (nioBuffer.position() < targetPosition) {
-            if (poll.execute().getPolls() > 0) {
+            if (poll.hasPendingTask()) {
                 //when there is no pending read, writes on the other side will never arrive
-                recvTask.execute();
+                //                recvTask.free();
+                //                recvTask = channel.getEndpoint().postRecv(channel.getEndpoint().getWrList_recv());
+                //                FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
                 //disni does not provide a way to give the received size, instead message are always received fully
                 final int size = buffer.getInt(bufferOffset + DisniPassiveSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
@@ -132,6 +135,12 @@ public class DisniPassiveSynchronousReader implements ISynchronousReader<IByteBu
     @Override
     public void readFinished() {
         //noop
+        try {
+            poll.finishTask();
+            recvTask.execute();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 }

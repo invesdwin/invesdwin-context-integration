@@ -14,7 +14,6 @@ import com.ibm.disni.verbs.IbvSendWR;
 import com.ibm.disni.verbs.IbvSge;
 import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.RdmaCmId;
-import com.ibm.disni.verbs.SVCPollCq;
 
 @NotThreadSafe
 public class DisniPassiveRdmaEndpoint extends RdmaEndpoint {
@@ -38,7 +37,7 @@ public class DisniPassiveRdmaEndpoint extends RdmaEndpoint {
 
     private IbvWC[] wcList;
 
-    private SVCPollCq poll;
+    private DisniStatefulPoll poll;
 
     public DisniPassiveRdmaEndpoint(final RdmaEndpointGroup<DisniPassiveRdmaEndpoint> endpointGroup,
             final RdmaCmId idPriv, final boolean serverSide, final int socketSize) throws IOException {
@@ -68,8 +67,9 @@ public class DisniPassiveRdmaEndpoint extends RdmaEndpoint {
         this.wcList = new IbvWC[getCqProvider().getCqSize()];
         for (int i = 0; i < wcList.length; i++) {
             wcList[i] = new IbvWC();
+            wcList[i].setStatus(-1);
         }
-        this.poll = cq.poll(wcList, wcList.length);
+        this.poll = new DisniStatefulPoll(cq.poll(wcList, wcList.length));
 
         this.sendBuf = java.nio.ByteBuffer.allocateDirect(socketSize);
         this.sendMr = registerMemory(sendBuf).execute().free().getMr();
@@ -98,6 +98,10 @@ public class DisniPassiveRdmaEndpoint extends RdmaEndpoint {
         this.postRecv(wrList_recv).execute().free();
     }
 
+    public IbvWC[] getWcList() {
+        return wcList;
+    }
+
     public LinkedList<IbvSendWR> getWrList_send() {
         return wrList_send;
     }
@@ -122,13 +126,13 @@ public class DisniPassiveRdmaEndpoint extends RdmaEndpoint {
         return recvWR;
     }
 
-    public SVCPollCq getPoll() {
+    public DisniStatefulPoll getPoll() {
         return poll;
     }
 
     @Override
     public synchronized void close() throws IOException, InterruptedException {
-        poll.free();
+        poll.close();
         poll = null;
         deregisterMemory(recvMr);
         recvMr = null;

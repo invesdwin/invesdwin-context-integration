@@ -4,10 +4,10 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.ibm.disni.verbs.SVCPollCq;
 import com.ibm.disni.verbs.SVCPostSend;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniStatefulPoll;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -25,7 +25,7 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
     private long messageToWrite;
     private SVCPostSend sendTask;
     private boolean request;
-    private SVCPollCq poll;
+    private DisniStatefulPoll poll;
 
     public DisniPassiveSynchronousWriter(final DisniPassiveSynchronousChannel channel) {
         this.channel = channel;
@@ -91,6 +91,7 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
         } else if (!writeFurther()) {
             messageToWrite = 0;
             nioBuffer.clear();
+            poll.finishTask();
             return true;
         } else {
             return false;
@@ -102,7 +103,7 @@ public class DisniPassiveSynchronousWriter implements ISynchronousWriter<IByteBu
             sendTask.execute();
             request = true;
         }
-        if (poll.execute().getPolls() == 0) {
+        if (!poll.hasPendingTask()) {
             return true;
         }
         request = false;
