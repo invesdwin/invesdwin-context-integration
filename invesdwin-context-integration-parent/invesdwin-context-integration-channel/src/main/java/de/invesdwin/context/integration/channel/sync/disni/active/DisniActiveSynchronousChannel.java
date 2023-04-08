@@ -109,7 +109,7 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
             return;
         }
         socketChannelOpening = true;
-        final boolean blocking = false;
+        final boolean blocking = isBlocking();
         finalizer.endpointGroup = new RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint>(
                 getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 2, 1, 2);
         final DisniActiveRdmaEndpointFactory factory = new DisniActiveRdmaEndpointFactory(finalizer.endpointGroup,
@@ -151,6 +151,13 @@ public class DisniActiveSynchronousChannel implements ISynchronousChannel {
         } finally {
             socketChannelOpening = false;
         }
+    }
+
+    /**
+     * Waste a few more cpu cycles for reduced latency with non-blocking.
+     */
+    protected boolean isBlocking() {
+        return false;
     }
 
     private void awaitSocketChannel() throws IOException {
