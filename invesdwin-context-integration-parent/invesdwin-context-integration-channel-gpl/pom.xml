@@ -55,5 +55,9 @@
 			<groupId>org.openucx</groupId>
 			<artifactId>jucx</artifactId>
 		</dependency>
+		<dependency>
+		    <groupId>de.hhu.bsinfo</groupId>
+		    <artifactId>neutrino</artifactId>
+		</dependency>
 	</dependencies>
 </project>
