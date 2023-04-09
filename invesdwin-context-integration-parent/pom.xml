@@ -104,7 +104,6 @@
 		<version.disni>2.1</version.disni>
 		<version.jucx>1.14.100</version.jucx>
 		<version.hadronio>0.3.3-inv</version.hadronio>
-		<version.infinileap>0.1.0-inv</version.infinileap>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -794,16 +793,6 @@
 				<groupId>de.hhu.bsinfo</groupId>
 				<artifactId>hadronio</artifactId>
 				<version>${version.hadronio}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.hhu.bsinfo</groupId>
-				<artifactId>hadronio-infinileap</artifactId>
-				<version>${version.hadronio}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.hhu.bsinfo</groupId>
-				<artifactId>infinileap</artifactId>
-				<version>${version.infinileap}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.ibm.disni</groupId>

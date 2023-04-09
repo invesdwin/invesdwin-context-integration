@@ -52,14 +52,6 @@
 			<artifactId>hadronio</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>de.hhu.bsinfo</groupId>
-			<artifactId>hadronio-infinileap</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>de.hhu.bsinfo</groupId>
-			<artifactId>infinileap</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.openucx</groupId>
 			<artifactId>jucx</artifactId>
 		</dependency>
