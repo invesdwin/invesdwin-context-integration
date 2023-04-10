@@ -37,6 +37,7 @@ import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -65,8 +66,7 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
                 .borrowObject(handshakeReader);
         final SynchronousWriterSpinWait<IByteBufferProvider> handshakeWriterSpinWait = SynchronousWriterSpinWaitPool
                 .borrowObject(handshakeWriter);
-        final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
-        try {
+        try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
             handshakeReader.open();
             try {
                 final JPAKEParticipant ourParticipant = new JPAKEParticipant(newParticipantIdentifier(),
@@ -90,7 +90,6 @@ public class JPakeHandshakeProvider extends AKeyExchangeHandshakeProvider {
             }
         } finally {
             Closeables.closeQuietly(handshakeWriter);
-            ByteBuffers.EXPANDABLE_POOL.returnObject(buffer);
             SynchronousWriterSpinWaitPool.returnObject(handshakeWriterSpinWait);
             SynchronousReaderSpinWaitPool.returnObject(handshakeReaderSpinWait);
         }

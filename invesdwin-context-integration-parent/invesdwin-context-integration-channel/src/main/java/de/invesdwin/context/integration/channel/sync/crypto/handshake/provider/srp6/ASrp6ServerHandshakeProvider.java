@@ -31,6 +31,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -55,8 +56,7 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
                 .borrowObject(handshakeReader);
         final SynchronousWriterSpinWait<IByteBufferProvider> handshakeWriterSpinWait = SynchronousWriterSpinWaitPool
                 .borrowObject(handshakeWriter);
-        final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
-        try {
+        try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
             handshakeReader.open();
             try {
                 //Create new server SRP-6a auth session.
@@ -77,7 +77,6 @@ public abstract class ASrp6ServerHandshakeProvider extends ASrp6HandshakeProvide
             }
         } finally {
             Closeables.closeQuietly(handshakeWriter);
-            ByteBuffers.EXPANDABLE_POOL.returnObject(buffer);
             SynchronousWriterSpinWaitPool.returnObject(handshakeWriterSpinWait);
             SynchronousReaderSpinWaitPool.returnObject(handshakeReaderSpinWait);
         }

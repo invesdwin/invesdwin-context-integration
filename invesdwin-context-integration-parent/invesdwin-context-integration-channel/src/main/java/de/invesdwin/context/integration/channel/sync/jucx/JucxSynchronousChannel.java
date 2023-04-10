@@ -42,7 +42,7 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.math.random.PseudoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -283,57 +283,57 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         // Send worker and memory address and Rkey to receiver.
         final java.nio.ByteBuffer rkeyBuffer = finalizer.ucpMemory.getRemoteKeyBuffer();
 
-        final IByteBuffer expandableBuffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject();
-        final int sendLength = Long.BYTES + Long.BYTES + Integer.BYTES + Integer.BYTES + rkeyBuffer.capacity()
-                + Long.BYTES;
-        expandableBuffer.ensureCapacity(sendLength);
-        final java.nio.ByteBuffer buffer = expandableBuffer.nioByteBuffer();
-        try {
-            localTag = nextTag();
-            buffer.putLong(localTag);
-            final long localAddress = finalizer.ucpMemory.getAddress();
-            buffer.putLong(localAddress);
-            buffer.putInt(socketSize);
-            buffer.putInt(rkeyBuffer.capacity());
-            buffer.put(rkeyBuffer);
-            final long localChecksum = checksum(buffer, 0, buffer.position());
-            buffer.putLong(localChecksum);
-            buffer.clear();
+        try (ICloseableByteBuffer expandableBuffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
+            final int sendLength = Long.BYTES + Long.BYTES + Integer.BYTES + Integer.BYTES + rkeyBuffer.capacity()
+                    + Long.BYTES;
+            expandableBuffer.ensureCapacity(sendLength);
+            final java.nio.ByteBuffer buffer = expandableBuffer.nioByteBuffer();
+            try {
+                localTag = nextTag();
+                buffer.putLong(localTag);
+                final long localAddress = finalizer.ucpMemory.getAddress();
+                buffer.putLong(localAddress);
+                buffer.putInt(socketSize);
+                buffer.putInt(rkeyBuffer.capacity());
+                buffer.put(rkeyBuffer);
+                final long localChecksum = checksum(buffer, 0, buffer.position());
+                buffer.putLong(localChecksum);
+                buffer.clear();
 
-            //Exchanging tags and memory information to establish connection
-            final UcpRequest sendRequest = type.establishConnectionSendNonBlocking(this,
-                    expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
-            requestSpinWait.waitForRequest(sendRequest, getConnectTimeout());
-            final UcpRequest recvRequest = type.establishConnectionRecvNonBlocking(this,
-                    expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
-            requestSpinWait.waitForRequest(recvRequest, getConnectTimeout());
+                //Exchanging tags and memory information to establish connection
+                final UcpRequest sendRequest = type.establishConnectionSendNonBlocking(this,
+                        expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
+                requestSpinWait.waitForRequest(sendRequest, getConnectTimeout());
+                final UcpRequest recvRequest = type.establishConnectionRecvNonBlocking(this,
+                        expandableBuffer.addressOffset(), sendLength, errorUcxCallback.maybeThrowAndReset());
+                requestSpinWait.waitForRequest(recvRequest, getConnectTimeout());
 
-            Assertions.checkEquals(0, buffer.position());
-            ByteBuffers.limit(buffer, Integers.checkedCast(recvRequest.getRecvSize()));
+                Assertions.checkEquals(0, buffer.position());
+                ByteBuffers.limit(buffer, Integers.checkedCast(recvRequest.getRecvSize()));
 
-            remoteTag = buffer.getLong();
-            remoteAddress = buffer.getLong();
-            remoteSocketSize = buffer.getInt();
-            if (remoteSocketSize != socketSize) {
-                throw new IllegalStateException(
-                        "Remote socketSize mismatch: " + remoteSocketSize + " != " + socketSize);
+                remoteTag = buffer.getLong();
+                remoteAddress = buffer.getLong();
+                remoteSocketSize = buffer.getInt();
+                if (remoteSocketSize != socketSize) {
+                    throw new IllegalStateException(
+                            "Remote socketSize mismatch: " + remoteSocketSize + " != " + socketSize);
+                }
+                final int remoteKeySize = buffer.getInt();
+                final int checksumIndex = buffer.position() + remoteKeySize;
+                final long remoteChecksum = buffer.getLong(checksumIndex);
+                final long expectedChecksum = checksum(buffer, 0, checksumIndex);
+
+                if (remoteChecksum != expectedChecksum) {
+                    throw new IllegalStateException(
+                            "Remote checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
+                }
+
+                ByteBuffers.limit(buffer, checksumIndex);
+                finalizer.ucpRemoteKey = finalizer.ucpEndpoint.unpackRemoteKey(buffer);
+                finalizer.closeables.push(finalizer.ucpRemoteKey);
+            } finally {
+                buffer.clear();
             }
-            final int remoteKeySize = buffer.getInt();
-            final int checksumIndex = buffer.position() + remoteKeySize;
-            final long remoteChecksum = buffer.getLong(checksumIndex);
-            final long expectedChecksum = checksum(buffer, 0, checksumIndex);
-
-            if (remoteChecksum != expectedChecksum) {
-                throw new IllegalStateException(
-                        "Remote checksum mismatch: " + remoteChecksum + " != " + expectedChecksum);
-            }
-
-            ByteBuffers.limit(buffer, checksumIndex);
-            finalizer.ucpRemoteKey = finalizer.ucpEndpoint.unpackRemoteKey(buffer);
-            finalizer.closeables.push(finalizer.ucpRemoteKey);
-        } finally {
-            buffer.clear();
-            ByteBuffers.EXPANDABLE_POOL.returnObject(expandableBuffer);
         }
     }
 

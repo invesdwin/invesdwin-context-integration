@@ -37,6 +37,7 @@ import de.invesdwin.util.streams.BroadcastingOutputStream;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
@@ -94,13 +95,11 @@ public class MpiJobMain extends AMain {
                 bcastWriter.open();
                 final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
                         .borrowObject(bcastWriter);
-                final IByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject();
-                try {
+                try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                     buffer.putInt(0, bcastValue);
                     bcastWriterSpinWait.waitForWrite(buffer.slice(0, Integer.BYTES),
                             ContextProperties.DEFAULT_NETWORK_TIMEOUT);
                 } finally {
-                    ByteBuffers.EXPANDABLE_POOL.returnObject(buffer);
                     SynchronousWriterSpinWaitPool.returnObject(bcastWriterSpinWait);
                 }
             } catch (final IOException e) {
