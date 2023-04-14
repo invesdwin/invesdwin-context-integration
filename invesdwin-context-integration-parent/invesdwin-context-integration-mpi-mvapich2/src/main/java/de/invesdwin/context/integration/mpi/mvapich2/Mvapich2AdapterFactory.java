@@ -18,7 +18,6 @@ public class Mvapich2AdapterFactory implements IMpiAdapterFactory {
             final Method nativeFinishMethod = Reflections.findMethod(mpiClass, "nativeFinish");
             return nativeFinishMethod != null;
         } catch (final Throwable t) {
-            t.printStackTrace();
             return false;
         }
     }
