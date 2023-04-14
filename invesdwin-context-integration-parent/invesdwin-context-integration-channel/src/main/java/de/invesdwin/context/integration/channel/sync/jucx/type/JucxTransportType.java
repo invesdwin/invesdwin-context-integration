@@ -134,7 +134,7 @@ public enum JucxTransportType implements IJucxTransportType {
 
         @Override
         public void configureContextParams(final UcpParams params) {
-            params.requestWakeupFeature().requestTagFeature().requestStreamFeature().setMtWorkersShared(true);
+            params.requestWakeupFeature().requestTagFeature().requestStreamFeature();
         }
 
         @Override
