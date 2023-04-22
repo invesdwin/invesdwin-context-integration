@@ -56,11 +56,12 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = server.socketAddress;
         this.server = false;
         this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
-        this.socketSize = server.getSocketSize();
+        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.socketChannel = socketChannel;
         finalizer.socket = extractSocket(socketChannel);
         finalizer.register(this);
+        activeCount.incrementAndGet();
         configure();
     }
 
