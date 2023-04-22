@@ -49,6 +49,7 @@
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
+		<module>invesdwin-context-integration-mpi-mvapich2</module>
 		<module>invesdwin-context-integration-mpi-mpjexpress</module>
 		<module>invesdwin-context-integration-mpi-fastmpj</module>
 		<module>invesdwin-context-integration-mpi-test</module>
@@ -100,6 +101,7 @@
 		<version.fastmpj>1.0_7</version.fastmpj>
 		<version.openmpi>4.1.4</version.openmpi>
 		<version.mpjexpress>0.44</version.mpjexpress>
+		<version.mvapich2-j>2.3.7</version.mvapich2-j>
 		<version.testcontainers>1.17.6</version.testcontainers>
 		<version.disni>2.1</version.disni>
 		<version.jucx>1.14.100</version.jucx>
@@ -302,6 +304,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-mpi-mvapich2</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -773,6 +780,11 @@
 				<groupId>org.openmpi</groupId>
 				<artifactId>mpi</artifactId>
 				<version>${version.openmpi}</version>
+			</dependency>
+			<dependency>
+			  <groupId>edu.ohio-state.cse.mvapich</groupId>
+			  <artifactId>mvapich2-j</artifactId>
+			  <version>${version.mvapich2-j}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.testcontainers</groupId>

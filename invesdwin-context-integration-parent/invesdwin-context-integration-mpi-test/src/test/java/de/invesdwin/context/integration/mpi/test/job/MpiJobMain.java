@@ -68,6 +68,7 @@ public class MpiJobMain extends AMain {
     }
 
     private void test() {
+        log.info("Provider: %s", MPI.getClass().getSimpleName());
         final int size = MPI.size();
         Assertions.checkEquals(2, size);
         final int rank = MPI.rank();

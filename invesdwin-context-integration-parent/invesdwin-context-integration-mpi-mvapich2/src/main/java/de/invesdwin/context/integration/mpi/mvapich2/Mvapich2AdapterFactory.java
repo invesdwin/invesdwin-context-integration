@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.mpi.openmpi;
+package de.invesdwin.context.integration.mpi.mvapich2;
 
 import java.lang.reflect.Method;
 
@@ -9,14 +9,14 @@ import de.invesdwin.context.integration.mpi.IMpiAdapterFactory;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @Immutable
-public class OpenMpiAdapterFactory implements IMpiAdapterFactory {
+public class Mvapich2AdapterFactory implements IMpiAdapterFactory {
 
     @Override
     public boolean isAvailable() {
         try {
             final Class<Object> mpiClass = Reflections.classForName("mpi.MPI");
-            final Method finalizeJniMethod = Reflections.findMethod(mpiClass, "Finalize_jni");
-            return finalizeJniMethod != null;
+            final Method nativeFinishMethod = Reflections.findMethod(mpiClass, "nativeFinish");
+            return nativeFinishMethod != null;
         } catch (final Throwable t) {
             return false;
         }
@@ -24,7 +24,7 @@ public class OpenMpiAdapterFactory implements IMpiAdapterFactory {
 
     @Override
     public IMpiAdapter newInstance() {
-        return new de.invesdwin.context.integration.mpi.openmpi.OpenMpiAdapter();
+        return new de.invesdwin.context.integration.mpi.mvapich2.Mvapich2Adapter();
     }
 
 }
