@@ -60,9 +60,14 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.socketChannel = socketChannel;
         finalizer.socket = extractSocket(socketChannel);
-        finalizer.register(this);
-        activeCount.incrementAndGet();
-        configure();
+        try {
+            configure();
+            activeCount.incrementAndGet();
+            finalizer.register(this);
+        } catch (final IOException e) {
+            close();
+            throw e;
+        }
     }
 
     public SocketAddress getSocketAddress() {

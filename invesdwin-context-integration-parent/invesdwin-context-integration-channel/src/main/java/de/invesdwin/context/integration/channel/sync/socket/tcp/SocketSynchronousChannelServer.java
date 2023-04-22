@@ -122,14 +122,15 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
 
     @Override
     public SocketSynchronousChannel readMessage() throws IOException {
-        final SocketSynchronousChannel channel = newSocketSynchronousChannel(finalizer.pendingSocketChannel);
+        final SocketChannel socketChannel = finalizer.pendingSocketChannel;
         finalizer.pendingSocketChannel = null;
+        final SocketSynchronousChannel channel = newSocketSynchronousChannel(socketChannel);
         return channel;
     }
 
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketChannel pendingSocketChannel)
+    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketChannel socketChannel)
             throws IOException {
-        return new SocketSynchronousChannel(this, pendingSocketChannel);
+        return new SocketSynchronousChannel(this, socketChannel);
     }
 
     @Override
