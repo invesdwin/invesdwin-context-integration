@@ -51,12 +51,29 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         finalizer.register(this);
     }
 
+    SocketSynchronousChannel(final SocketSynchronousChannelServer server, final SocketChannel socketChannel)
+            throws IOException {
+        this.socketAddress = server.socketAddress;
+        this.server = false;
+        this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
+        this.socketSize = server.getSocketSize();
+        this.finalizer = new SocketSynchronousChannelFinalizer();
+        finalizer.socketChannel = socketChannel;
+        finalizer.socket = extractSocket(socketChannel);
+        finalizer.register(this);
+        configure();
+    }
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
 
     public boolean isServer() {
         return server;
+    }
+
+    public int getEstimatedMaxMessageSize() {
+        return estimatedMaxMessageSize;
     }
 
     public int getSocketSize() {
@@ -121,11 +138,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                     finalizer.socketChannel = newSocketChannel();
                     try {
                         finalizer.socketChannel.connect(socketAddress);
-                        try {
-                            finalizer.socket = finalizer.socketChannel.socket();
-                        } catch (final Throwable t) {
-                            //unix domain sockets throw an error here
-                        }
+                        finalizer.socket = extractSocket(finalizer.socketChannel);
                         break;
                     } catch (final IOException e) {
                         finalizer.socketChannel.close();
@@ -146,13 +159,30 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
-            //non-blocking sockets are a bit faster than blocking ones
-            finalizer.socketChannel.configureBlocking(false);
-            if (finalizer.socket != null) {
-                configureSocket(finalizer.socket);
-            }
+            configure();
         } finally {
             socketChannelOpening = false;
+        }
+    }
+
+    private void configure() throws IOException {
+        configureSocketChannel();
+        if (finalizer.socket != null) {
+            configureSocket(finalizer.socket);
+        }
+    }
+
+    protected void configureSocketChannel() throws IOException {
+        //non-blocking sockets are a bit faster than blocking ones
+        finalizer.socketChannel.configureBlocking(false);
+    }
+
+    private static Socket extractSocket(final SocketChannel socketChannel) {
+        try {
+            return socketChannel.socket();
+        } catch (final Throwable t) {
+            //unix domain sockets throw an error here
+            return null;
         }
     }
 
