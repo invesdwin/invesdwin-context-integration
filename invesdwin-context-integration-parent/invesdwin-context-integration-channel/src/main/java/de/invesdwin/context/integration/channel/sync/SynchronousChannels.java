@@ -295,7 +295,7 @@ public final class SynchronousChannels {
     public static synchronized File getTmpfsFolderOrFallback() {
         if (tmpfsFolderOrFallback == null) {
             if (TMPFS_FOLDER.exists()) {
-                tmpfsFolderOrFallback = DynamicInstrumentationProperties.newTempDirectory(TMPFS_FOLDER);
+                tmpfsFolderOrFallback = DynamicInstrumentationProperties.newProcessTempDirectory(TMPFS_FOLDER);
             } else {
                 tmpfsFolderOrFallback = ContextProperties.TEMP_DIRECTORY;
             }
