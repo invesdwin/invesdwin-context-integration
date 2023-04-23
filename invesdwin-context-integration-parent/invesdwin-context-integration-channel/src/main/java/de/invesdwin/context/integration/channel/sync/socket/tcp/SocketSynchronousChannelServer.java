@@ -9,6 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
@@ -116,7 +117,11 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
         if (finalizer.pendingSocketChannel != null) {
             return true;
         }
-        finalizer.pendingSocketChannel = finalizer.serverSocketChannel.accept();
+        final ServerSocketChannel serverSocketChannelCopy = finalizer.serverSocketChannel;
+        if (serverSocketChannelCopy == null) {
+            throw FastEOFException.getInstance("closed");
+        }
+        finalizer.pendingSocketChannel = serverSocketChannelCopy.accept();
         return finalizer.pendingSocketChannel != null;
     }
 
