@@ -1,7 +1,5 @@
 package de.invesdwin.context.integration.channel.ipc;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -15,8 +13,8 @@ import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterS
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.UnknownArgumentException;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -25,7 +23,7 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public final class SynchronousChannelEndpointClient<T> implements Closeable {
+public final class SynchronousChannelEndpointClient<T> {
 
     public static final int METHOD_INDEX = 0;
     public static final int METHOD_SIZE = Integer.BYTES;
@@ -47,37 +45,27 @@ public final class SynchronousChannelEndpointClient<T> implements Closeable {
         return service;
     }
 
-    @Override
-    public void close() throws IOException {
-        handler.close();
-    }
-
     @SuppressWarnings("unchecked")
     public static <T> SynchronousChannelEndpointClient<T> newInstance(final Class<T> interfaceType,
-            final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint,
+            final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
             final ISerde<Object> genericSerde, final Duration requestTimeout) {
-        try {
-            endpoint.open();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        final Handler handler = new Handler(interfaceType, endpoint, genericSerde, requestTimeout);
+        final Handler handler = new Handler(interfaceType, endpointPool, genericSerde, requestTimeout);
         final T service = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(), new Class[] { interfaceType },
                 handler);
         return new SynchronousChannelEndpointClient<T>(service, handler);
     }
 
-    private static final class Handler implements InvocationHandler, Closeable {
+    private static final class Handler implements InvocationHandler {
 
-        private final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint;
+        private final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool;
         private final ISerde<Object> genericSerde;
         private final Duration requestTimeout;
         private final IdentityHashMap<Method, Integer> method_index;
 
         private Handler(final Class<?> interfaceType,
-                final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint,
+                final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
                 final ISerde<Object> genericSerde, final Duration requestTimeout) {
-            this.endpoint = endpoint;
+            this.endpointPool = endpointPool;
             this.genericSerde = genericSerde;
             this.requestTimeout = requestTimeout;
             final Method[] methods = Reflections.getUniqueDeclaredMethods(interfaceType);
@@ -102,6 +90,8 @@ public final class SynchronousChannelEndpointClient<T> implements Closeable {
             if (methodIndex == null) {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
+            final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = endpointPool
+                    .borrowObject();
             final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
                     .borrowObject(endpoint.getWriter());
             final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
@@ -118,12 +108,8 @@ public final class SynchronousChannelEndpointClient<T> implements Closeable {
             } finally {
                 SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
                 SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
+                endpointPool.returnObject(endpoint);
             }
-        }
-
-        @Override
-        public void close() throws IOException {
-            Closeables.closeQuietly(endpoint);
         }
 
     }
