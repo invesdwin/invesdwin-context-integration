@@ -33,26 +33,16 @@ public final class SynchronousChannelEndpointClient<T> {
 
     public static final int ARGS_INDEX = ARGSSIZE_INDEX + ARGSSIZE_SIZE;
 
-    private final T service;
-    private final Handler handler;
-
-    private SynchronousChannelEndpointClient(final T service, final Handler handler) {
-        this.service = service;
-        this.handler = handler;
-    }
-
-    public T getService() {
-        return service;
-    }
+    private SynchronousChannelEndpointClient() {}
 
     @SuppressWarnings("unchecked")
-    public static <T> SynchronousChannelEndpointClient<T> newInstance(final Class<T> interfaceType,
+    public static <T> T newInstance(final Class<T> interfaceType, final ISerde<Object> genericSerde,
             final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
-            final ISerde<Object> genericSerde, final Duration requestTimeout) {
+            final Duration requestTimeout) {
         final Handler handler = new Handler(interfaceType, endpointPool, genericSerde, requestTimeout);
         final T service = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(), new Class[] { interfaceType },
                 handler);
-        return new SynchronousChannelEndpointClient<T>(service, handler);
+        return service;
     }
 
     private static final class Handler implements InvocationHandler {
