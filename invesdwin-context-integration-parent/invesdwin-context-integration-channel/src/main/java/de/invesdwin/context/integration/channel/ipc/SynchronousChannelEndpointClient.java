@@ -7,14 +7,11 @@ import java.util.IdentityHashMap;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWaitPool;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWaitPool;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.math.Shorts;
@@ -24,85 +21,82 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public final class SynchronousChannelEndpointClient<T> {
+public final class SynchronousChannelEndpointClient implements InvocationHandler {
 
-    public static final int METHOD_INDEX = 0;
-    public static final int METHOD_SIZE = Short.BYTES;
+    private final Class<?> interfaceType;
+    private final int interfaceTypeId;
+    private final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool;
+    private final ISerde<Object> genericSerde;
+    private final Duration requestTimeout;
+    private final IdentityHashMap<Method, Short> method_index;
 
-    public static final int ARGSSIZE_INDEX = METHOD_INDEX + METHOD_SIZE;
-    public static final int ARGSSIZE_SIZE = Integer.BYTES;
+    private SynchronousChannelEndpointClient(final Class<?> interfaceType,
+            final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
+            final ISerde<Object> genericSerde, final Duration requestTimeout) {
+        this.interfaceType = interfaceType;
+        this.interfaceTypeId = SynchronousChannelEndpointService.newInterfaceTypeId(interfaceType);
+        this.endpointPool = endpointPool;
+        this.genericSerde = genericSerde;
+        this.requestTimeout = requestTimeout;
+        final Method[] methods = Reflections.getUniqueDeclaredMethods(interfaceType);
+        this.method_index = new IdentityHashMap<>(methods.length);
+        Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
+        int ignoredMethods = 0;
+        for (int i = 0; i < methods.length; i++) {
+            final Method method = methods[i];
+            final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
+            if (indexOf < 0) {
+                final short methodIndex = Shorts.checkedCast(i - ignoredMethods);
+                method_index.put(method, methodIndex);
+            } else {
+                ignoredMethods++;
+            }
+        }
+    }
 
-    public static final int ARGS_INDEX = ARGSSIZE_INDEX + ARGSSIZE_SIZE;
+    @Override
+    public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
+        final Short methodIndex = method_index.get(method);
+        if (methodIndex == null) {
+            throw UnknownArgumentException.newInstance(Method.class, method);
+        }
+        final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = endpointPool
+                .borrowObject();
+        try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
+            buffer.putInt(SynchronousChannelEndpointService.TYPE_INDEX, interfaceTypeId);
+            buffer.putShort(SynchronousChannelEndpointService.METHOD_INDEX, methodIndex);
+            final int argsSize = genericSerde.toBuffer(buffer.sliceFrom(SynchronousChannelEndpointService.ARGS_INDEX),
+                    args);
+            buffer.putInt(SynchronousChannelEndpointService.ARGSSIZE_INDEX, argsSize);
+            endpoint.getWriterSpinWait()
+                    .waitForWrite(buffer.sliceTo(SynchronousChannelEndpointService.ARGS_INDEX + argsSize),
+                            requestTimeout);
 
-    private SynchronousChannelEndpointClient() {}
+            final int responseSize = endpoint.getReaderSpinWait().waitForRead(requestTimeout).getBuffer(buffer);
+            final Object response = genericSerde.fromBuffer(buffer.sliceTo(responseSize));
+            return response;
+        } finally {
+            endpointPool.returnObject(endpoint);
+        }
+    }
 
     @SuppressWarnings("unchecked")
-    public static <T> T newInstance(final Class<T> interfaceType, final ISerde<Object> genericSerde,
+    public static <T> T newInstance(
             final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
-            final Duration requestTimeout) {
-        final Handler handler = new Handler(interfaceType, endpointPool, genericSerde, requestTimeout);
+            final ISerde<Object> genericSerde, final Duration requestTimeout, final Class<T> interfaceType) {
+        final SynchronousChannelEndpointClient handler = new SynchronousChannelEndpointClient(interfaceType,
+                endpointPool, genericSerde, requestTimeout);
         final T service = (T) Proxy.newProxyInstance(interfaceType.getClassLoader(), new Class[] { interfaceType },
                 handler);
         return service;
     }
 
-    private static final class Handler implements InvocationHandler {
-
-        private final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool;
-        private final ISerde<Object> genericSerde;
-        private final Duration requestTimeout;
-        private final IdentityHashMap<Method, Short> method_index;
-
-        private Handler(final Class<?> interfaceType,
-                final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
-                final ISerde<Object> genericSerde, final Duration requestTimeout) {
-            this.endpointPool = endpointPool;
-            this.genericSerde = genericSerde;
-            this.requestTimeout = requestTimeout;
-            final Method[] methods = Reflections.getUniqueDeclaredMethods(interfaceType);
-            this.method_index = new IdentityHashMap<>(methods.length);
-            Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
-            int ignoredMethods = 0;
-            for (int i = 0; i < methods.length; i++) {
-                final Method method = methods[i];
-                final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
-                if (indexOf < 0) {
-                    final short methodIndex = Shorts.checkedCast(i - ignoredMethods);
-                    method_index.put(method, methodIndex);
-                } else {
-                    ignoredMethods++;
-                }
-            }
-        }
-
-        @Override
-        public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            final Short methodIndex = method_index.get(method);
-            if (methodIndex == null) {
-                throw UnknownArgumentException.newInstance(Method.class, method);
-            }
-            final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = endpointPool
-                    .borrowObject();
-            final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
-                    .borrowObject(endpoint.getWriter());
-            final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
-                    .borrowObject(endpoint.getReader());
-            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-                buffer.putShort(METHOD_INDEX, methodIndex);
-                final int argsSize = genericSerde.toBuffer(buffer.sliceFrom(ARGS_INDEX), args);
-                buffer.putInt(ARGSSIZE_INDEX, argsSize);
-                writerSpinWait.waitForWrite(buffer.sliceTo(ARGS_INDEX + argsSize), requestTimeout);
-
-                final int responseSize = readerSpinWait.waitForRead(requestTimeout).getBuffer(buffer);
-                final Object response = genericSerde.fromBuffer(buffer.sliceTo(responseSize));
-                return response;
-            } finally {
-                SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
-                SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
-                endpointPool.returnObject(endpoint);
-            }
-        }
-
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this)
+                .add("interfaceTypeId", interfaceTypeId)
+                .add("interfaceType", interfaceType.getName())
+                .toString();
     }
 
 }

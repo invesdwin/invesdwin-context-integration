@@ -3,25 +3,25 @@ package de.invesdwin.context.integration.channel.ipc;
 import java.io.IOException;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 
 public interface ISynchronousChannelEndpoint<R, W> extends ISynchronousChannel {
 
-    ISynchronousReader<R> getReader();
+    SynchronousReaderSpinWait<R> getReaderSpinWait();
 
-    ISynchronousWriter<W> getWriter();
+    SynchronousWriterSpinWait<W> getWriterSpinWait();
 
     @Override
     default void open() throws IOException {
-        getReader().open();
-        getWriter().open();
+        getReaderSpinWait().getReader().open();
+        getWriterSpinWait().getWriter().open();
     }
 
     @Override
     default void close() throws IOException {
-        getWriter().close();
-        getReader().close();
+        getWriterSpinWait().getWriter().close();
+        getReaderSpinWait().getReader().close();
     }
 
 }
