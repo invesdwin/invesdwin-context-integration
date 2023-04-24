@@ -17,6 +17,7 @@ import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.math.Shorts;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
@@ -26,7 +27,7 @@ import de.invesdwin.util.time.duration.Duration;
 public final class SynchronousChannelEndpointClient<T> {
 
     public static final int METHOD_INDEX = 0;
-    public static final int METHOD_SIZE = Integer.BYTES;
+    public static final int METHOD_SIZE = Short.BYTES;
 
     public static final int ARGSSIZE_INDEX = METHOD_INDEX + METHOD_SIZE;
     public static final int ARGSSIZE_SIZE = Integer.BYTES;
@@ -50,7 +51,7 @@ public final class SynchronousChannelEndpointClient<T> {
         private final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool;
         private final ISerde<Object> genericSerde;
         private final Duration requestTimeout;
-        private final IdentityHashMap<Method, Integer> method_index;
+        private final IdentityHashMap<Method, Short> method_index;
 
         private Handler(final Class<?> interfaceType,
                 final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
@@ -66,7 +67,7 @@ public final class SynchronousChannelEndpointClient<T> {
                 final Method method = methods[i];
                 final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
                 if (indexOf < 0) {
-                    final int methodIndex = i - ignoredMethods;
+                    final short methodIndex = Shorts.checkedCast(i - ignoredMethods);
                     method_index.put(method, methodIndex);
                 } else {
                     ignoredMethods++;
@@ -76,7 +77,7 @@ public final class SynchronousChannelEndpointClient<T> {
 
         @Override
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            final Integer methodIndex = method_index.get(method);
+            final Short methodIndex = method_index.get(method);
             if (methodIndex == null) {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
@@ -87,7 +88,7 @@ public final class SynchronousChannelEndpointClient<T> {
             final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
                     .borrowObject(endpoint.getReader());
             try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-                buffer.putInt(METHOD_INDEX, methodIndex);
+                buffer.putShort(METHOD_INDEX, methodIndex);
                 final int argsSize = genericSerde.toBuffer(buffer.sliceFrom(ARGS_INDEX), args);
                 buffer.putInt(ARGSSIZE_INDEX, argsSize);
                 writerSpinWait.waitForWrite(buffer.sliceTo(ARGS_INDEX + argsSize), requestTimeout);
