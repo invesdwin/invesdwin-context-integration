@@ -40,10 +40,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 @ThreadSafe
 public class SynchronousEndpointServer implements ISynchronousChannel {
 
-    private static final WrappedExecutorService IO_EXECUTOR = Executors
-            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO");
-    private static final WrappedExecutorService WORKER_EXECUTOR = Executors.newFixedThreadPool(
-            SynchronousEndpointServer.class.getSimpleName() + "_WORKER", Executors.getCpuThreadPoolCount());
+    private static final WrappedExecutorService REQUEST_EXECUTOR = Executors
+            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUERST");
+    private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
+            SynchronousEndpointServer.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
 
     private final ISynchronousReader<ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider>> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
@@ -53,7 +53,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
     @GuardedBy("this")
-    private Future<?> ioFuture;
+    private Future<?> requestFuture;
 
     public SynchronousEndpointServer(
             final ISynchronousReader<ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider>> serverAcceptor,
@@ -84,18 +84,18 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     @Override
     public synchronized void open() throws IOException {
-        if (ioFuture != null) {
+        if (requestFuture != null) {
             throw new IllegalStateException("already opened");
         }
         serverAcceptor.open();
-        ioFuture = IO_EXECUTOR.submit(new IoRunnable());
+        requestFuture = REQUEST_EXECUTOR.submit(new IoRunnable());
     }
 
     @Override
     public synchronized void close() throws IOException {
-        if (ioFuture != null) {
-            ioFuture.cancel(true);
-            ioFuture = null;
+        if (requestFuture != null) {
+            requestFuture.cancel(true);
+            requestFuture = null;
             serverAcceptor.close();
         }
     }
