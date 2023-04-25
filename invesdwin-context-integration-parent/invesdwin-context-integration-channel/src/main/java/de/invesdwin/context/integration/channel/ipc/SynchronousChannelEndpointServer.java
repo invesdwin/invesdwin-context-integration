@@ -17,8 +17,8 @@ public class SynchronousChannelEndpointServer {
     private final ISerde<Object> genericSerde;
     private final Duration requestTimeout;
     @GuardedBy("this")
-    private final Int2ObjectMap<SynchronousChannelEndpointService> interfaceTypeId_service_sync = new Int2ObjectOpenHashMap<>();
-    private volatile Int2ObjectMap<SynchronousChannelEndpointService> interfaceTypeId_service_copy = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<SynchronousChannelEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
+    private volatile Int2ObjectMap<SynchronousChannelEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
 
     public SynchronousChannelEndpointServer(
             final ISynchronousReader<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> serverAcceptor,
@@ -28,22 +28,22 @@ public class SynchronousChannelEndpointServer {
         this.requestTimeout = requestTimeout;
     }
 
-    public synchronized <T> void register(final Class<? super T> interfaceType, final T implementation) {
-        final SynchronousChannelEndpointService service = SynchronousChannelEndpointService.newInstance(interfaceType,
-                implementation, genericSerde);
-        final SynchronousChannelEndpointService existing = interfaceTypeId_service_sync
-                .putIfAbsent(service.getInterfaceTypeId(), service);
+    public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
+        final SynchronousChannelEndpointService service = SynchronousChannelEndpointService.newInstance(serviceInterface,
+                serviceImplementation, genericSerde);
+        final SynchronousChannelEndpointService existing = serviceId_service_sync
+                .putIfAbsent(service.getServiceId(), service);
         if (existing != null) {
             throw new IllegalStateException("Already registered [" + service + "] as [" + existing + "]");
         }
 
         //create a new copy of the map so that server thread does not require synchronization
-        this.interfaceTypeId_service_copy = new Int2ObjectOpenHashMap<>(interfaceTypeId_service_sync);
+        this.serviceId_service_copy = new Int2ObjectOpenHashMap<>(serviceId_service_sync);
     }
 
-    public synchronized <T> boolean unregister(final Class<? super T> interfaceType) {
-        final int interfaceTypeId = SynchronousChannelEndpointService.newInterfaceTypeId(interfaceType);
-        final SynchronousChannelEndpointService removed = interfaceTypeId_service_sync.remove(interfaceTypeId);
+    public synchronized <T> boolean unregister(final Class<? super T> serviceInterface) {
+        final int serviceId = SynchronousChannelEndpointService.newServiceId(serviceInterface);
+        final SynchronousChannelEndpointService removed = serviceId_service_sync.remove(serviceId);
         return removed != null;
     }
 

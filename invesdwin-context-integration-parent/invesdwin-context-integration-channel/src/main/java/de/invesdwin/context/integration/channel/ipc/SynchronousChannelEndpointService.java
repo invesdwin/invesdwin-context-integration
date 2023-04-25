@@ -22,10 +22,10 @@ import it.unimi.dsi.fastutil.shorts.Short2ObjectOpenHashMap;
 @ThreadSafe
 public final class SynchronousChannelEndpointService {
 
-    public static final int TYPE_INDEX = 0;
-    public static final int TYPE_SIZE = Integer.BYTES;
+    public static final int SERVICE_INDEX = 0;
+    public static final int SERVICE_SIZE = Integer.BYTES;
 
-    public static final int METHOD_INDEX = TYPE_INDEX + TYPE_SIZE;
+    public static final int METHOD_INDEX = SERVICE_INDEX + SERVICE_SIZE;
     public static final int METHOD_SIZE = Short.BYTES;
 
     public static final int ARGSSIZE_INDEX = METHOD_INDEX + METHOD_SIZE;
@@ -33,19 +33,19 @@ public final class SynchronousChannelEndpointService {
 
     public static final int ARGS_INDEX = ARGSSIZE_INDEX + ARGSSIZE_SIZE;
 
-    private final Class<?> interfaceType;
-    private final int interfaceTypeId;
-    private final Object implementation;
+    private final Class<?> serviceInterface;
+    private final int serviceId;
+    private final Object serviceImplementation;
     private final ISerde<Object> genericSerde;
     private final Short2ObjectMap<MethodHandle> index_method;
 
-    private SynchronousChannelEndpointService(final Class<?> interfaceType, final Object implementation,
+    private SynchronousChannelEndpointService(final Class<?> serviceInterface, final Object serviceImplementation,
             final ISerde<Object> genericSerde) {
-        this.interfaceType = interfaceType;
-        this.interfaceTypeId = newInterfaceTypeId(interfaceType);
-        this.implementation = implementation;
+        this.serviceInterface = serviceInterface;
+        this.serviceId = newServiceId(serviceInterface);
+        this.serviceImplementation = serviceImplementation;
         this.genericSerde = genericSerde;
-        final Method[] methods = Reflections.getUniqueDeclaredMethods(interfaceType);
+        final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
         this.index_method = new Short2ObjectOpenHashMap<>(methods.length);
         Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
         int ignoredMethods = 0;
@@ -66,16 +66,16 @@ public final class SynchronousChannelEndpointService {
         }
     }
 
-    public static int newInterfaceTypeId(final Class<?> interfaceType) {
-        return interfaceType.getName().hashCode();
+    public static int newServiceId(final Class<?> serviceInterface) {
+        return serviceInterface.getName().hashCode();
     }
 
-    public int getInterfaceTypeId() {
-        return interfaceTypeId;
+    public int getServiceId() {
+        return serviceId;
     }
 
-    public Class<?> getInterfaceType() {
-        return interfaceType;
+    public Class<?> getServiceInterface() {
+        return serviceInterface;
     }
 
     public int invoke(final IByteBuffer request, final IByteBuffer response) {
@@ -93,7 +93,7 @@ public final class SynchronousChannelEndpointService {
             throw UnknownArgumentException.newInstance(Short.class, methodIndex);
         }
         try {
-            final Object result = method.invoke(implementation, args);
+            final Object result = method.invoke(serviceImplementation, args);
             return result;
         } catch (final Throwable e) {
             throw Throwables.propagate(e);
@@ -108,8 +108,8 @@ public final class SynchronousChannelEndpointService {
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("interfaceTypeId", interfaceTypeId)
-                .add("interfaceType", interfaceType.getName())
+                .add("serviceId", serviceId)
+                .add("serviceInterface", serviceInterface.getName())
                 .toString();
     }
 

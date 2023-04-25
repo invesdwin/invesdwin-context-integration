@@ -23,8 +23,8 @@ import de.invesdwin.util.time.duration.Duration;
 @ThreadSafe
 public final class SynchronousChannelEndpointClient implements InvocationHandler {
 
-    private final Class<?> interfaceType;
-    private final int interfaceTypeId;
+    private final Class<?> serviceInterface;
+    private final int serviceId;
     private final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool;
     private final ISerde<Object> genericSerde;
     private final Duration requestTimeout;
@@ -33,8 +33,8 @@ public final class SynchronousChannelEndpointClient implements InvocationHandler
     private SynchronousChannelEndpointClient(final Class<?> interfaceType,
             final IObjectPool<ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider>> endpointPool,
             final ISerde<Object> genericSerde, final Duration requestTimeout) {
-        this.interfaceType = interfaceType;
-        this.interfaceTypeId = SynchronousChannelEndpointService.newInterfaceTypeId(interfaceType);
+        this.serviceInterface = interfaceType;
+        this.serviceId = SynchronousChannelEndpointService.newServiceId(interfaceType);
         this.endpointPool = endpointPool;
         this.genericSerde = genericSerde;
         this.requestTimeout = requestTimeout;
@@ -63,7 +63,7 @@ public final class SynchronousChannelEndpointClient implements InvocationHandler
         final ISynchronousChannelEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = endpointPool
                 .borrowObject();
         try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-            buffer.putInt(SynchronousChannelEndpointService.TYPE_INDEX, interfaceTypeId);
+            buffer.putInt(SynchronousChannelEndpointService.SERVICE_INDEX, serviceId);
             buffer.putShort(SynchronousChannelEndpointService.METHOD_INDEX, methodIndex);
             final int argsSize = genericSerde.toBuffer(buffer.sliceFrom(SynchronousChannelEndpointService.ARGS_INDEX),
                     args);
@@ -94,8 +94,8 @@ public final class SynchronousChannelEndpointClient implements InvocationHandler
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("interfaceTypeId", interfaceTypeId)
-                .add("interfaceType", interfaceType.getName())
+                .add("interfaceTypeId", serviceId)
+                .add("interfaceType", serviceInterface.getName())
                 .toString();
     }
 
