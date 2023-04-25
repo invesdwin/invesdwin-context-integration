@@ -107,7 +107,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         public void run() {
             try {
                 while (true) {
-                    //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker, return client for request monitoring after completion
+                    //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
                     return;
                 }
             } finally {
