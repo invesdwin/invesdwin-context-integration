@@ -1,0 +1,218 @@
+package de.invesdwin.context.integration.channel.sync.service.client.pool;
+
+import java.io.Closeable;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
+
+import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.service.client.registry.ISynchronousEndpointClientSessionInfo;
+import de.invesdwin.context.integration.channel.sync.service.client.registry.ISynchronousEndpointClientSessionRegistry;
+import de.invesdwin.context.integration.channel.sync.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.sync.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.log.error.Err;
+import de.invesdwin.context.system.Processes;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
+import de.invesdwin.util.concurrent.lock.ILock;
+import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.Instant;
+
+@ThreadSafe
+public class SynchronousEndpointClientSession implements Closeable {
+
+    private static final WrappedScheduledExecutorService EXECUTOR = Executors
+            .newScheduledThreadPool(SynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
+
+    private final ISynchronousEndpointClientSessionRegistry registry;
+    @GuardedBy("lock")
+    private ISynchronousEndpointClientSessionInfo info;
+    @GuardedBy("lock")
+    private ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint;
+    @GuardedBy("lock")
+    private SynchronousWriterSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> requestWriterSpinWait;
+    @GuardedBy("lock")
+    private final MutableServiceSynchronousCommand<IByteBufferProvider> holder = new MutableServiceSynchronousCommand<IByteBufferProvider>();
+    @GuardedBy("lock")
+    private SynchronousReaderSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> responseReaderSpinWait;
+    @GuardedBy("lock")
+    private Instant lastHeartbeat = new Instant();
+    @GuardedBy("lock")
+    private int sequenceCounter = 0;
+    private final ILock lock;
+    @GuardedBy("lock")
+    private final ScheduledFuture<?> heartbeatFuture;
+
+    private final SynchronousEndpointClientSessionResponse response;
+
+    public SynchronousEndpointClientSession(final SynchronousEndpointClientSessionPool pool,
+            final ISynchronousEndpointClientSessionRegistry registry, final long id,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> endpointFactory) {
+        this.registry = registry;
+        this.info = registry.register(Processes.getProcessId() + "_" + id);
+        this.lock = ILockCollectionFactory.getInstance(true)
+                .newLock(SynchronousEndpointClientSession.class.getSimpleName() + "_lock");
+        this.endpoint = endpointFactory.newEndpoint();
+        this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(info.newRequestWriter(endpoint));
+        this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(info.newResponseReader(endpoint));
+        try {
+            requestWriterSpinWait.getWriter().open();
+            responseReaderSpinWait.getReader().open();
+        } catch (final Throwable t) {
+            close();
+            throw new RuntimeException(t);
+        }
+        maybeSendHeartbeat();
+        this.heartbeatFuture = EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
+                info.getHeartbeatInterval().longValue(), info.getHeartbeatInterval().longValue(),
+                info.getHeartbeatInterval().getTimeUnit().timeUnitValue());
+
+        this.response = new SynchronousEndpointClientSessionResponse(pool, this, lock,
+                responseReaderSpinWait.getReader());
+    }
+
+    public void maybeSendHeartbeat() {
+        if (lock.tryLock()) {
+            try {
+                if (lastHeartbeat.isGreaterThan(info.getHeartbeatInterval())) {
+                    try {
+                        writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
+                                System.nanoTime());
+                    } catch (final Exception e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
+    @Override
+    public void close() {
+        lock.lock();
+        try {
+            //no need to interrupt because we have the lock
+            heartbeatFuture.cancel(false);
+            try {
+                requestWriterSpinWait.getWriter().close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
+            }
+            requestWriterSpinWait = ClosedSynchronousWriter.getSpinWait();
+            try {
+                responseReaderSpinWait.getReader().close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
+            }
+            responseReaderSpinWait = ClosedSynchronousReader.getSpinWait();
+            if (info != null) {
+                try {
+                    registry.unregister(info.getSessionId());
+                } catch (final Throwable t) {
+                    Err.process(new RuntimeException("Ignoring", t));
+                }
+                info.close();
+                info = null;
+            }
+            if (endpoint != null) {
+                try {
+                    endpoint.close();
+                } catch (final Throwable t) {
+                    Err.process(new RuntimeException("Ignoring", t));
+                }
+                endpoint = null;
+            }
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    public SynchronousEndpointClientSessionResponse request(final int requestService, final int requestMethod,
+            final IByteBufferProvider request) {
+        lock.lock();
+        try {
+            final int requestSequence = sequenceCounter++;
+            final long waitingSinceNanos = System.nanoTime();
+            writeLocked(requestService, requestMethod, requestSequence, request, waitingSinceNanos);
+            while (true) {
+                while (!responseReaderSpinWait.hasNext()
+                        .awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
+                    if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                        throw new TimeoutException("Request timeout exceeded for [" + requestService + ":"
+                                + requestMethod + "]: " + info.getRequestTimeout());
+                    }
+                }
+                final IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait
+                        .getReader()
+                        .readMessage();
+                try {
+                    final int responseService = responseHolder.getService();
+                    final int responseMethod = responseHolder.getMethod();
+                    final int responseSequence = responseHolder.getSequence();
+                    if (responseSequence != requestSequence) {
+                        //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
+                        continue;
+                    }
+                    if (responseService != requestService || responseMethod != requestMethod) {
+                        throw new RetryLaterRuntimeException("Unexpected response [" + responseService + ":"
+                                + responseMethod + "] for request [" + requestService + ":" + requestMethod + "]");
+                    }
+                    final IByteBufferProvider responseMessage = responseHolder.getMessage();
+                    responseHolder.close(); //free memory
+                    lastHeartbeat = new Instant();
+
+                    response.setMessage(responseMessage);
+                    return response;
+                } catch (final Throwable e) {
+                    responseReaderSpinWait.getReader().readFinished();
+                    Throwables.propagate(e);
+                }
+            }
+        } catch (final Throwable e) {
+            lock.unlock();
+            throw new RetryLaterRuntimeException(e);
+        }
+    }
+
+    private void writeLocked(final int requestService, final int requestMethod, final int requestSequence,
+            final IByteBufferProvider request, final long waitingSinceNanos) throws TimeoutException, Exception {
+        holder.setService(requestService);
+        holder.setMethod(requestMethod);
+        holder.setSequence(requestSequence);
+        holder.setMessage(request);
+        while (!requestWriterSpinWait.writeReady().awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
+            if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                throw new TimeoutException("Request write ready timeout exceeded for [" + requestService + ":"
+                        + requestMethod + "]: " + info.getRequestTimeout());
+            }
+        }
+        requestWriterSpinWait.getWriter().write(holder);
+        while (!requestWriterSpinWait.writeFlushed().awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
+            if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                throw new TimeoutException("Request write flush timeout exceeded for [" + requestService + ":"
+                        + requestMethod + "]: " + info.getRequestTimeout());
+            }
+        }
+        holder.setMessage(null); //free memory
+    }
+
+    /**
+     * Needs to be closed to finish the reuquest and return objects back to the pool
+     */
+    public SynchronousEndpointClientSessionResponse getResponse() {
+        return response;
+    }
+
+}

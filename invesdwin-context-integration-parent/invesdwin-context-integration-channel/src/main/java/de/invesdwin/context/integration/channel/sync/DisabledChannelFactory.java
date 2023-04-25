@@ -8,6 +8,8 @@ public final class DisabledChannelFactory<R, W> implements ISynchronousChannelFa
     @SuppressWarnings("rawtypes")
     private static final DisabledChannelFactory INSTANCE = new DisabledChannelFactory<>();
 
+    private DisabledChannelFactory() {}
+
     @Override
     public ISynchronousReader<R> newReader(final ISynchronousReader<R> reader) {
         return reader;
