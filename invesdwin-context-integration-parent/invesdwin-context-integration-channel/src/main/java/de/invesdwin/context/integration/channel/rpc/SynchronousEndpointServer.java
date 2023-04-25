@@ -108,6 +108,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             try {
                 while (true) {
                     //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
+                    //reject executions if too many pending count for worker pool
+                    //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
+                    //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
+                    //handle writeFinished in io thread (maybe the better idea?)
                     return;
                 }
             } finally {
