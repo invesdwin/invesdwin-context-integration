@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service;
+package de.invesdwin.context.integration.channel.rpc;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -8,6 +8,8 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.Executors;

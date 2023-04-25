@@ -1,11 +1,11 @@
-package de.invesdwin.context.integration.channel.sync.service.client.pool;
+package de.invesdwin.context.integration.channel.rpc.session;
 
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.sync.service.client.registry.ISynchronousEndpointClientSessionRegistry;
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.session.registry.ISynchronousEndpointClientSessionRegistry;
 import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;

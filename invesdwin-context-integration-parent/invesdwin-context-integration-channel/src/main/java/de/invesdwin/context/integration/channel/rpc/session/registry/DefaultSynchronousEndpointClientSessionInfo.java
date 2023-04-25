@@ -1,13 +1,13 @@
-package de.invesdwin.context.integration.channel.sync.service.client.registry;
+package de.invesdwin.context.integration.channel.rpc.session.registry;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.service.command.ServiceCommandSynchronousReader;
+import de.invesdwin.context.integration.channel.rpc.service.command.ServiceCommandSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.sync.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.sync.service.command.ServiceCommandSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.service.command.ServiceCommandSynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

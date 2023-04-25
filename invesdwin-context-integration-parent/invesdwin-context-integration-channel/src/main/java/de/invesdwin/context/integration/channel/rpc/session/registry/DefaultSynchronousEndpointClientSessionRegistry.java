@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service.client.registry;
+package de.invesdwin.context.integration.channel.rpc.session.registry;
 
 import javax.annotation.concurrent.Immutable;
 

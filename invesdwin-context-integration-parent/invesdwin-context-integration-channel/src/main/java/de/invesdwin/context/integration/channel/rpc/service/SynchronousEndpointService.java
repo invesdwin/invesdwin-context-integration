@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service;
+package de.invesdwin.context.integration.channel.rpc.service;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -9,8 +9,8 @@ import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.sync.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;

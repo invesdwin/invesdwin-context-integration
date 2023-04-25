@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service;
+package de.invesdwin.context.integration.channel.rpc.endpoint;
 
 import java.io.IOException;
 

@@ -1,11 +1,11 @@
-package de.invesdwin.context.integration.channel.sync.service.client.pool;
+package de.invesdwin.context.integration.channel.rpc.session;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.service.command.IServiceSynchronousCommand;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

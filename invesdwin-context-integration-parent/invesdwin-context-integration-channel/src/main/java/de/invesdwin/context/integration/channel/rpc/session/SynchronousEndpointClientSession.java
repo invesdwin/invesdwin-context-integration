@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service.client.pool;
+package de.invesdwin.context.integration.channel.rpc.session;
 
 import java.io.Closeable;
 import java.util.concurrent.ScheduledFuture;
@@ -7,14 +7,14 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.session.registry.ISynchronousEndpointClientSessionInfo;
+import de.invesdwin.context.integration.channel.rpc.session.registry.ISynchronousEndpointClientSessionRegistry;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.sync.service.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.sync.service.client.registry.ISynchronousEndpointClientSessionInfo;
-import de.invesdwin.context.integration.channel.sync.service.client.registry.ISynchronousEndpointClientSessionRegistry;
-import de.invesdwin.context.integration.channel.sync.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.sync.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.service.client.registry;
+package de.invesdwin.context.integration.channel.rpc.session.registry;
 
 /**
  * Can be used to register/unregister additional resources (e.g. files that need to be deleted afterwards) for the given
