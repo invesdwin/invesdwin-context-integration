@@ -32,6 +32,7 @@ public final class SynchronousEndpointService {
         this.serviceId = newServiceId(serviceInterface);
         this.serviceImplementation = serviceImplementation;
         final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
+        //TODO: should also use hashes for methods so that the order of methods (adding or removing a method) does not cause too many incompatibilities between versions
         this.methodId_method = new ArrayList<>(methods.length);
         Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
         int ignoredMethods = 0;
