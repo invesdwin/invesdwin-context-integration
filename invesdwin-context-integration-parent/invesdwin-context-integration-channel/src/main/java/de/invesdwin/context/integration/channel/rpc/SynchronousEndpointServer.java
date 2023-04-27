@@ -12,8 +12,11 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
@@ -106,17 +109,107 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         @Override
         public void run() {
             try {
-                while (true) {
-                    //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
-                    //reject executions if too many pending count for worker pool
-                    //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
-                    //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
-                    //handle writeFinished in io thread (maybe the better idea?)
+                return;
+                //                while (true) {
+                //                    final boolean hasNext;
+                //                    try {
+                //                        hasNext = serverAcceptor.hasNext();
+                //                    } catch (final EOFException e) {
+                //                        //closed
+                //                        return;
+                //                    }
+                //                    if (hasNext) {
+                //                        final SocketSynchronousChannel channel;
+                //                        try {
+                //                            channel = serverAcceptor.readMessage();
+                //                        } finally {
+                //                            serverAcceptor.readFinished();
+                //                        }
+                //
+                //                        final ISynchronousWriter<IByteBufferProvider> writer = FinancialdataHistoricalResolverRegistryClient
+                //                                .newWriter(channel);
+                //                        final ISynchronousReader<IByteBufferProvider> reader = FinancialdataHistoricalResolverRegistryClient
+                //                                .newReader(channel);
+                //                        try {
+                //                            writer.open();
+                //                            reader.open();
+                //                            final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
+                //                                    .borrowObject(writer);
+                //                            final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
+                //                                    .borrowObject(reader);
+                //                            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
+                //                                final int requestSize = readerSpinWait
+                //                                        .waitForRead(SynchronousChannelInfo.REQUEST_TIMEOUT)
+                //                                        .getBuffer(buffer);
+                //                                final String request = StringUtf8Serde.GET.fromBuffer(buffer.sliceTo(requestSize));
+                //
+                //                                final String[] requestSplit = Strings.splitPreserveAllTokens(request,
+                //                                        SynchronousChannelInfo.SEPARATOR);
+                //                                if (requestSplit.length != 2) {
+                //                                    throw new IllegalArgumentException("Expected format [<register|unregister>"
+                //                                            + SynchronousChannelInfo.SEPARATOR + "<pid>] but got: [" + request + "]");
+                //                                }
+                //                                final String command = requestSplit[0];
+                //                                final String pid = requestSplit[1];
+                //                                final String response;
+                //                                if ("register".equals(command)) {
+                //                                    response = register(pid).toString();
+                //                                } else if ("unregister".equals(command)) {
+                //                                    unregister(pid);
+                //                                    response = FinancialdataHistoricalResolverRegistryClient.UNREGISTER_RESPONSE_OK;
+                //                                } else {
+                //                                    throw UnknownArgumentException.newInstance(String.class, command);
+                //                                }
+                //                                final int responseSize = StringUtf8Serde.GET.toBuffer(buffer, response);
+                //                                writerSpinWait.waitForWrite(buffer.sliceTo(responseSize),
+                //                                        SynchronousChannelInfo.REQUEST_TIMEOUT);
+                //                            } finally {
+                //                                SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
+                //                                SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
+                //                            }
+                //                        } catch (final EOFException e) {
+                //                            //closed on the other side
+                //                        } catch (final IOException e) {
+                //                            throw new RuntimeException(e);
+                //                        } finally {
+                //                            Closeables.closeQuietly(reader);
+                //                            Closeables.closeQuietly(writer);
+                //                        }
+                //                    }
+                //                    FTimeUnit.MILLISECONDS.sleep(100);
+                //                }
+            } catch (final Throwable t) {
+                if (Throwables.isCausedByInterrupt(t)) {
+                    //end
                     return;
+                } else {
+                    Err.process(new RuntimeException("ignoring", t));
                 }
             } finally {
                 cancelRemainingWorkerFutures();
+                Closeables.closeQuietly(serverAcceptor);
             }
+
+            //            try {
+            //                while (true) {
+            //                    //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
+            //                    if (serverAcceptor.hasNext()) {
+            //                        try {
+            //                            final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = serverAcceptor
+            //                                    .readMessage();
+            //                        } finally {
+            //                            serverAcceptor.readFinished();
+            //                        }
+            //                    }
+            //                    //reject executions if too many pending count for worker pool
+            //                    //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
+            //                    //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
+            //                    //handle writeFinished in io thread (maybe the better idea?)
+            //                    return;
+            //                }
+            //            } finally {
+            //                cancelRemainingWorkerFutures();
+            //            }
         }
 
         private void cancelRemainingWorkerFutures() {
