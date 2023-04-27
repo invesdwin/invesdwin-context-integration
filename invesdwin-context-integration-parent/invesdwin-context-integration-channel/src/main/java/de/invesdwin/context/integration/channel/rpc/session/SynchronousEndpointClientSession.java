@@ -26,8 +26,8 @@ import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.Instant;
 
 @ThreadSafe
 public class SynchronousEndpointClientSession implements Closeable {
@@ -47,7 +47,7 @@ public class SynchronousEndpointClientSession implements Closeable {
     @GuardedBy("lock")
     private SynchronousReaderSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> responseReaderSpinWait;
     @GuardedBy("lock")
-    private Instant lastHeartbeat = new Instant();
+    private long lastHeartbeatNanos = System.nanoTime();
     @GuardedBy("lock")
     private int sequenceCounter = 0;
     private final ILock lock;
@@ -85,7 +85,7 @@ public class SynchronousEndpointClientSession implements Closeable {
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
-                if (lastHeartbeat.isGreaterThan(info.getHeartbeatInterval())) {
+                if (info.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
                     try {
                         writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
                                 System.nanoTime());
@@ -154,10 +154,8 @@ public class SynchronousEndpointClientSession implements Closeable {
                                 + requestMethod + "]: " + info.getRequestTimeout());
                     }
                 }
-                final IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait
-                        .getReader()
-                        .readMessage();
-                try {
+                try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
+                        .readMessage()) {
                     final int responseService = responseHolder.getService();
                     final int responseMethod = responseHolder.getMethod();
                     final int responseSequence = responseHolder.getSequence();
@@ -165,14 +163,26 @@ public class SynchronousEndpointClientSession implements Closeable {
                         //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
                         continue;
                     }
-                    if (responseService != requestService || responseMethod != requestMethod) {
-                        throw new RetryLaterRuntimeException("Unexpected response [" + responseService + ":"
-                                + responseMethod + "] for request [" + requestService + ":" + requestMethod + "]");
+                    if (responseService != requestService) {
+                        throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService
+                                + "] for request [" + requestService + "]");
+                    }
+                    lastHeartbeatNanos = System.nanoTime();
+                    if (responseMethod != requestMethod) {
+                        if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
+                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                            throw new RetryLaterRuntimeException(new RemoteExecutionException(message));
+                        } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
+                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                            throw new RemoteExecutionException(message);
+                        } else {
+                            throw new RetryLaterRuntimeException("Unexpected methodId in response [" + +responseMethod
+                                    + "] for request [" + requestMethod + "]");
+                        }
                     }
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
-                    responseHolder.close(); //free memory
-                    lastHeartbeat = new Instant();
-
                     response.setMessage(responseMessage);
                     return response;
                 } catch (final Throwable e) {
@@ -187,7 +197,7 @@ public class SynchronousEndpointClientSession implements Closeable {
     }
 
     private void writeLocked(final int requestService, final int requestMethod, final int requestSequence,
-            final IByteBufferProvider request, final long waitingSinceNanos) throws TimeoutException, Exception {
+            final IByteBufferProvider request, final long waitingSinceNanos) throws Exception {
         holder.setService(requestService);
         holder.setMethod(requestMethod);
         holder.setSequence(requestSequence);

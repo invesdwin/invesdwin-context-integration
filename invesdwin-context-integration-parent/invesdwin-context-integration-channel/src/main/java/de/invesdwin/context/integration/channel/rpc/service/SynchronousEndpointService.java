@@ -7,8 +7,12 @@ import java.lang.reflect.Method;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.session.RemoteExecutionException;
+import de.invesdwin.context.integration.retry.Retries;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
@@ -73,13 +77,31 @@ public final class SynchronousEndpointService {
         return serviceInterface;
     }
 
-    public void invoke(final IServiceSynchronousCommand<Object[]> request,
+    public void invoke(final String sessionId, final IServiceSynchronousCommand<Object[]> request,
             final MutableServiceSynchronousCommand<Object> response) {
-        final Object result = invoke(request.getMethod(), request.getMessage());
         response.setService(request.getService());
-        response.setMethod(request.getMethod());
         response.setSequence(request.getSequence());
-        response.setMessage(result);
+        try {
+            final Object result = invoke(request.getMethod(), request.getMessage());
+            response.setMethod(request.getMethod());
+            response.setMessage(result);
+        } catch (final Throwable t) {
+            final boolean shouldRetry = Retries.shouldRetry(t);
+            Err.process(new RemoteExecutionException("Sending back to client: sessionId=" + sessionId + " serviceId="
+                    + request.getService() + " methodId=" + request.getMethod() + " sequence=" + request.getSequence()
+                    + " shouldRetry=" + shouldRetry, t));
+            if (shouldRetry) {
+                response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+            } else {
+                response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            }
+            if (ContextProperties.IS_TEST_ENVIRONMENT || Throwables.isDebugStackTraceEnabled()) {
+                response.setMessage(Throwables.getFullStackTrace(t));
+            } else {
+                //keep full FQDN of exception types so that string matching can at least be done by clients
+                response.setMessage(Throwables.concatMessages(t));
+            }
+        }
     }
 
     private Object invoke(final int methodId, final Object... args) {
