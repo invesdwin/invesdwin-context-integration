@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.service.command.MutableServi
 import de.invesdwin.context.integration.channel.rpc.session.RemoteExecutionException;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.context.log.error.LoggedRuntimeException;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
@@ -87,19 +88,19 @@ public final class SynchronousEndpointService {
             response.setMessage(result);
         } catch (final Throwable t) {
             final boolean shouldRetry = Retries.shouldRetry(t);
-            Err.process(new RemoteExecutionException("Sending back to client: sessionId=" + sessionId + " serviceId="
-                    + request.getService() + " methodId=" + request.getMethod() + " sequence=" + request.getSequence()
-                    + " shouldRetry=" + shouldRetry, t));
+            final LoggedRuntimeException loggedException = Err.process(new RemoteExecutionException("sessionId="
+                    + sessionId + ", serviceId=" + request.getService() + ", methodId=" + request.getMethod()
+                    + ", sequence=" + request.getSequence() + ", shouldRetry=" + shouldRetry, t));
             if (shouldRetry) {
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
             } else {
                 response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
             }
             if (ContextProperties.IS_TEST_ENVIRONMENT || Throwables.isDebugStackTraceEnabled()) {
-                response.setMessage(Throwables.getFullStackTrace(t));
+                response.setMessage(Throwables.getFullStackTrace(loggedException));
             } else {
                 //keep full FQDN of exception types so that string matching can at least be done by clients
-                response.setMessage(Throwables.concatMessages(t));
+                response.setMessage(Throwables.concatMessages(loggedException));
             }
         }
     }
