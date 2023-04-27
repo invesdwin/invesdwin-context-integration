@@ -17,7 +17,6 @@ import de.invesdwin.context.log.error.LoggedRuntimeException;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.reflection.Reflections;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -82,15 +81,24 @@ public final class SynchronousEndpointService {
             final MutableServiceSynchronousCommand<Object> response) {
         response.setService(request.getService());
         response.setSequence(request.getSequence());
+        final int methodId = request.getMethod();
+        final MethodHandle method = methodId_method.get(methodId);
         try {
-            final Object result = invoke(request.getMethod(), request.getMessage());
-            response.setMethod(request.getMethod());
+            if (method == null) {
+                throw new IllegalArgumentException("Unknown methodId: " + methodId);
+            }
+            final Object[] args = request.getMessage();
+            final Object result = method.invoke(serviceImplementation, args);
+            response.setMethod(methodId);
             response.setMessage(result);
         } catch (final Throwable t) {
             final boolean shouldRetry = Retries.shouldRetry(t);
-            final LoggedRuntimeException loggedException = Err.process(new RemoteExecutionException("sessionId="
-                    + sessionId + ", serviceId=" + request.getService() + ", methodId=" + request.getMethod()
-                    + ", sequence=" + request.getSequence() + ", shouldRetry=" + shouldRetry, t));
+            final LoggedRuntimeException loggedException = Err
+                    .process(new RemoteExecutionException(
+                            "sessionId=[" + sessionId + "], serviceId=[" + request.getService() + ":"
+                                    + serviceInterface.getName() + "]" + ", methodId=[" + methodId + ":" + method
+                                    + "], sequence=[" + request.getSequence() + "], shouldRetry=[" + shouldRetry + "]",
+                            t));
             if (shouldRetry) {
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
             } else {
@@ -102,19 +110,6 @@ public final class SynchronousEndpointService {
                 //keep full FQDN of exception types so that string matching can at least be done by clients
                 response.setMessage(Throwables.concatMessages(loggedException));
             }
-        }
-    }
-
-    private Object invoke(final int methodId, final Object... args) {
-        final MethodHandle method = methodId_method.get(methodId);
-        if (method == null) {
-            throw UnknownArgumentException.newInstance(Integer.class, methodId);
-        }
-        try {
-            final Object result = method.invoke(serviceImplementation, args);
-            return result;
-        } catch (final Throwable e) {
-            throw Throwables.propagate(e);
         }
     }
 
