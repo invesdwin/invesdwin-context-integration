@@ -4,20 +4,19 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.reflection.Reflections;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
 public final class SynchronousEndpointService {
@@ -25,37 +24,45 @@ public final class SynchronousEndpointService {
     private final Class<?> serviceInterface;
     private final int serviceId;
     private final Object serviceImplementation;
-    private final List<MethodHandle> methodId_method;
+    private final Int2ObjectMap<MethodHandle> methodId_method;
 
     private SynchronousEndpointService(final Class<?> serviceInterface, final Object serviceImplementation) {
         this.serviceInterface = serviceInterface;
         this.serviceId = newServiceId(serviceInterface);
         this.serviceImplementation = serviceImplementation;
         final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
-        //TODO: should also use hashes for methods so that the order of methods (adding or removing a method) does not cause too many incompatibilities between versions
-        this.methodId_method = new ArrayList<>(methods.length);
-        Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
-        int ignoredMethods = 0;
+        /*
+         * We sacrifice a bit of speed here by using a hashmap instead of an indexed array in order to not break
+         * compatibility when adding methods that change the order of other methods indexes. That way older versions of
+         * service interfaces will work with newer versions as long as the indivual methods signatures stay the same.
+         */
+        this.methodId_method = new Int2ObjectOpenHashMap<>(methods.length);
         final Lookup lookup = MethodHandles.lookup();
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
             final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
             if (indexOf < 0) {
-                final int methodId = i - ignoredMethods;
+                final int methodId = newMethodId(method);
                 try {
-                    Assertions.checkEquals(methodId, methodId_method.size());
-                    methodId_method.add(lookup.unreflect(method));
+                    final MethodHandle methodHandle = lookup.unreflect(method);
+                    final MethodHandle existing = methodId_method.put(methodId, methodHandle);
+                    if (existing != null) {
+                        throw new IllegalStateException(
+                                "Already registered [" + methodHandle + "] as [" + existing + "]");
+                    }
                 } catch (final IllegalAccessException e) {
                     throw new RuntimeException(e);
                 }
-            } else {
-                ignoredMethods++;
             }
         }
     }
 
     public static int newServiceId(final Class<?> serviceInterface) {
         return serviceInterface.getName().hashCode();
+    }
+
+    public static int newMethodId(final Method serviceMethod) {
+        return serviceMethod.toString().hashCode();
     }
 
     public int getServiceId() {

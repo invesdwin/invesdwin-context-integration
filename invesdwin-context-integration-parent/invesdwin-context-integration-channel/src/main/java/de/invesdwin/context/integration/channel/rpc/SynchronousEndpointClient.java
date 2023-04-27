@@ -41,16 +41,12 @@ public final class SynchronousEndpointClient implements InvocationHandler {
         this.responseSerde = responseSerde;
         final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
         this.method_methodId = new IdentityHashMap<>(methods.length);
-        Arrays.sort(methods, Reflections.METHOD_COMPARATOR);
-        int ignoredMethods = 0;
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
             final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
             if (indexOf < 0) {
-                final int methodId = i - ignoredMethods;
-                method_methodId.put(method, methodId);
-            } else {
-                ignoredMethods++;
+                final int methodId = SynchronousEndpointService.newMethodId(method);
+                method_methodId.putIfAbsent(method, methodId);
             }
         }
     }
