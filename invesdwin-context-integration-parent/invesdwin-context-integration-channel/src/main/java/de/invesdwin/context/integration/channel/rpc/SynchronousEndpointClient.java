@@ -10,6 +10,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.session.SynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.session.SynchronousEndpointClientSessionPool;
+import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
@@ -43,6 +44,9 @@ public final class SynchronousEndpointClient implements InvocationHandler {
         this.method_methodId = new IdentityHashMap<>(methods.length);
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
+            if (Reflections.getAnnotation(method, Hidden.class) != null) {
+                continue;
+            }
             final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
             if (indexOf < 0) {
                 final int methodId = SynchronousEndpointService.newMethodId(method);

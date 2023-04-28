@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.rpc.session.RemoteExecutionExcep
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
+import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.error.Throwables;
@@ -44,6 +45,9 @@ public final class SynchronousEndpointService {
         final Lookup lookup = MethodHandles.lookup();
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
+            if (Reflections.getAnnotation(method, Hidden.class) != null) {
+                continue;
+            }
             final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
             if (indexOf < 0) {
                 final int methodId = newMethodId(method);
