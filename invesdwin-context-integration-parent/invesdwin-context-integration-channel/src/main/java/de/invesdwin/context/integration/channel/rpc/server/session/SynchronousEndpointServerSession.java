@@ -6,6 +6,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
@@ -25,6 +26,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
             SynchronousEndpointServerSession.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
 
+    private final SynchronousEndpointServer parent;
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
     @GuardedBy("lock")
@@ -39,7 +41,9 @@ public class SynchronousEndpointServerSession implements Closeable {
     private final int sequenceCounter = 0;
     private final ILock lock;
 
-    public SynchronousEndpointServerSession(final ISynchronousEndpointSession endpointSession) {
+    public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
+            final ISynchronousEndpointSession endpointSession) {
+        this.parent = parent;
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(SynchronousEndpointServerSession.class.getSimpleName() + "_lock");
         this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(endpointSession.newRequestWriter());

@@ -101,6 +101,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
     }
 
+    public SynchronousEndpointService getService(final int serviceId) {
+        return serviceId_service_copy.get(serviceId);
+    }
+
     private final class IoRunnable implements Runnable {
         private final List<SynchronousEndpointServerSession> serverSessions = new ArrayList<>();
         private final ASpinWait throttle = new ASpinWait() {
@@ -168,7 +172,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             if (hasNext) {
                 try {
                     final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
-                    serverSessions.add(new SynchronousEndpointServerSession(endpointSession));
+                    serverSessions
+                            .add(new SynchronousEndpointServerSession(SynchronousEndpointServer.this, endpointSession));
                 } finally {
                     serverAcceptor.readFinished();
                 }
