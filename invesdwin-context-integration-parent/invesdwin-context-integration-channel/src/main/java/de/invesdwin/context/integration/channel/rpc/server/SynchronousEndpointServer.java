@@ -10,20 +10,16 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.server.session.SynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
-import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -107,12 +103,13 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     }
 
     private final class IoRunnable implements Runnable {
-        private final List<Future<ICloseableByteBuffer>> workerFutures = new ArrayList<>();
+        private final List<SynchronousEndpointServerSession> serverSessions = new ArrayList<>();
 
         @Override
         public void run() {
             try {
                 while (true) {
+                    //accept new clients
                     final boolean hasNext;
                     try {
                         hasNext = serverAcceptor.hasNext();
@@ -121,64 +118,13 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                         return;
                     }
                     if (hasNext) {
-                        final ISynchronousEndpointSession endpointSession;
                         try {
-                            endpointSession = serverAcceptor.readMessage();
+                            final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
+                            serverSessions.add(new SynchronousEndpointServerSession(endpointSession));
                         } finally {
                             serverAcceptor.readFinished();
                         }
-
-                        final ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> writer = endpointSession
-                                .newResponseWriter();
-                        final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader = endpointSession
-                                .newRequestReader();
-                        try {
-                            writer.open();
-                            reader.open();
-                            //                            final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
-                            //                                    .borrowObject(writer);
-                            //                            final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
-                            //                                    .borrowObject(reader);
-                            //                            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-                            //                                final int requestSize = readerSpinWait
-                            //                                        .waitForRead(SynchronousChannelInfo.REQUEST_TIMEOUT)
-                            //                                        .getBuffer(buffer);
-                            //                                final String request = StringUtf8Serde.GET.fromBuffer(buffer.sliceTo(requestSize));
-                            //
-                            //                                final String[] requestSplit = Strings.splitPreserveAllTokens(request,
-                            //                                        SynchronousChannelInfo.SEPARATOR);
-                            //                                if (requestSplit.length != 2) {
-                            //                                    throw new IllegalArgumentException("Expected format [<register|unregister>"
-                            //                                            + SynchronousChannelInfo.SEPARATOR + "<pid>] but got: [" + request + "]");
-                            //                                }
-                            //                                final String command = requestSplit[0];
-                            //                                final String pid = requestSplit[1];
-                            //                                final String response;
-                            //                                if ("register".equals(command)) {
-                            //                                    response = register(pid).toString();
-                            //                                } else if ("unregister".equals(command)) {
-                            //                                    unregister(pid);
-                            //                                    response = FinancialdataHistoricalResolverRegistryClient.UNREGISTER_RESPONSE_OK;
-                            //                                } else {
-                            //                                    throw UnknownArgumentException.newInstance(String.class, command);
-                            //                                }
-                            //                                final int responseSize = StringUtf8Serde.GET.toBuffer(buffer, response);
-                            //                                writerSpinWait.waitForWrite(buffer.sliceTo(responseSize),
-                            //                                        SynchronousChannelInfo.REQUEST_TIMEOUT);
-                            //                            } finally {
-                            //                                SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
-                            //                                SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
-                            //                            }
-                        } catch (final EOFException e) {
-                            //closed on the other side
-                        } catch (final IOException e) {
-                            throw new RuntimeException(e);
-                        } finally {
-                            Closeables.closeQuietly(reader);
-                            Closeables.closeQuietly(writer);
-                        }
                     }
-                    FTimeUnit.MILLISECONDS.sleep(100);
                 }
             } catch (final Throwable t) {
                 if (Throwables.isCausedByInterrupt(t)) {
@@ -188,21 +134,18 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     Err.process(new RuntimeException("ignoring", t));
                 }
             } finally {
-                cancelRemainingWorkerFutures();
+                if (!serverSessions.isEmpty()) {
+                    for (int i = 0; i < serverSessions.size(); i++) {
+                        Closeables.closeQuietly(serverSessions.get(i));
+                    }
+                    serverSessions.clear();
+                }
                 Closeables.closeQuietly(serverAcceptor);
             }
 
             //            try {
             //                while (true) {
-            //                    //TODO accept new clients, look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
-            //                    if (serverAcceptor.hasNext()) {
-            //                        try {
-            //                            final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = serverAcceptor
-            //                                    .readMessage();
-            //                        } finally {
-            //                            serverAcceptor.readFinished();
-            //                        }
-            //                    }
+            //                    //TODO look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
             //                    //reject executions if too many pending count for worker pool
             //                    //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
             //                    //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
@@ -212,15 +155,6 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             //            } finally {
             //                cancelRemainingWorkerFutures();
             //            }
-        }
-
-        private void cancelRemainingWorkerFutures() {
-            if (!workerFutures.isEmpty()) {
-                for (int i = 0; i < workerFutures.size(); i++) {
-                    workerFutures.get(i).cancel(true);
-                }
-                workerFutures.clear();
-            }
         }
     }
 

@@ -33,7 +33,7 @@ public class SynchronousEndpointClientSession implements Closeable {
             .newScheduledThreadPool(SynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
 
     @GuardedBy("lock")
-    private ISynchronousEndpointSession info;
+    private ISynchronousEndpointSession endpointSession;
     @GuardedBy("lock")
     private SynchronousWriterSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> requestWriterSpinWait;
     @GuardedBy("lock")
@@ -75,7 +75,7 @@ public class SynchronousEndpointClientSession implements Closeable {
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
-                if (info.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
+                if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
                     try {
                         writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
                                 System.nanoTime());
@@ -107,13 +107,13 @@ public class SynchronousEndpointClientSession implements Closeable {
                 Err.process(new RuntimeException("Ignoring", t));
             }
             responseReaderSpinWait = ClosedSynchronousReader.getSpinWait();
-            if (info != null) {
+            if (endpointSession != null) {
                 try {
-                    info.close();
+                    endpointSession.close();
                 } catch (final Throwable t) {
                     Err.process(new RuntimeException("Ignoring", t));
                 }
-                info = null;
+                endpointSession = null;
             }
         } finally {
             lock.unlock();
@@ -129,10 +129,11 @@ public class SynchronousEndpointClientSession implements Closeable {
             writeLocked(requestService, requestMethod, requestSequence, request, waitingSinceNanos);
             while (true) {
                 while (!responseReaderSpinWait.hasNext()
-                        .awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
-                    if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                    if (endpointSession.getRequestTimeout()
+                            .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                         throw new TimeoutException("Request timeout exceeded for [" + requestService + ":"
-                                + requestMethod + "]: " + info.getRequestTimeout());
+                                + requestMethod + "]: " + endpointSession.getRequestTimeout());
                     }
                 }
                 try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
@@ -183,27 +184,22 @@ public class SynchronousEndpointClientSession implements Closeable {
         holder.setMethod(requestMethod);
         holder.setSequence(requestSequence);
         holder.setMessage(request);
-        while (!requestWriterSpinWait.writeReady().awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
-            if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+        while (!requestWriterSpinWait.writeReady()
+                .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+            if (endpointSession.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                 throw new TimeoutException("Request write ready timeout exceeded for [" + requestService + ":"
-                        + requestMethod + "]: " + info.getRequestTimeout());
+                        + requestMethod + "]: " + endpointSession.getRequestTimeout());
             }
         }
         requestWriterSpinWait.getWriter().write(holder);
-        while (!requestWriterSpinWait.writeFlushed().awaitFulfill(waitingSinceNanos, info.getRequestWaitInterval())) {
-            if (info.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+        while (!requestWriterSpinWait.writeFlushed()
+                .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+            if (endpointSession.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                 throw new TimeoutException("Request write flush timeout exceeded for [" + requestService + ":"
-                        + requestMethod + "]: " + info.getRequestTimeout());
+                        + requestMethod + "]: " + endpointSession.getRequestTimeout());
             }
         }
         holder.setMessage(null); //free memory
-    }
-
-    /**
-     * Needs to be closed to finish the reuquest and return objects back to the pool
-     */
-    public SynchronousEndpointClientSessionResponse getResponse() {
-        return response;
     }
 
 }
