@@ -1,5 +1,6 @@
-package de.invesdwin.context.integration.channel.rpc;
+package de.invesdwin.context.integration.channel.rpc.server;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -8,10 +9,12 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -20,6 +23,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -48,7 +52,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
             SynchronousEndpointServer.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
 
-    private final ISynchronousReader<ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider>> serverAcceptor;
+    private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
     private final ISerde<Object> responseSerde;
     private final Duration requestTimeout;
@@ -58,8 +62,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     @GuardedBy("this")
     private Future<?> requestFuture;
 
-    public SynchronousEndpointServer(
-            final ISynchronousReader<ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider>> serverAcceptor,
+    public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde, final Duration requestTimeout) {
         this.serverAcceptor = serverAcceptor;
         this.requestSerde = requestSerde;
@@ -109,75 +112,74 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         @Override
         public void run() {
             try {
-                return;
-                //                while (true) {
-                //                    final boolean hasNext;
-                //                    try {
-                //                        hasNext = serverAcceptor.hasNext();
-                //                    } catch (final EOFException e) {
-                //                        //closed
-                //                        return;
-                //                    }
-                //                    if (hasNext) {
-                //                        final SocketSynchronousChannel channel;
-                //                        try {
-                //                            channel = serverAcceptor.readMessage();
-                //                        } finally {
-                //                            serverAcceptor.readFinished();
-                //                        }
-                //
-                //                        final ISynchronousWriter<IByteBufferProvider> writer = FinancialdataHistoricalResolverRegistryClient
-                //                                .newWriter(channel);
-                //                        final ISynchronousReader<IByteBufferProvider> reader = FinancialdataHistoricalResolverRegistryClient
-                //                                .newReader(channel);
-                //                        try {
-                //                            writer.open();
-                //                            reader.open();
-                //                            final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
-                //                                    .borrowObject(writer);
-                //                            final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
-                //                                    .borrowObject(reader);
-                //                            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-                //                                final int requestSize = readerSpinWait
-                //                                        .waitForRead(SynchronousChannelInfo.REQUEST_TIMEOUT)
-                //                                        .getBuffer(buffer);
-                //                                final String request = StringUtf8Serde.GET.fromBuffer(buffer.sliceTo(requestSize));
-                //
-                //                                final String[] requestSplit = Strings.splitPreserveAllTokens(request,
-                //                                        SynchronousChannelInfo.SEPARATOR);
-                //                                if (requestSplit.length != 2) {
-                //                                    throw new IllegalArgumentException("Expected format [<register|unregister>"
-                //                                            + SynchronousChannelInfo.SEPARATOR + "<pid>] but got: [" + request + "]");
-                //                                }
-                //                                final String command = requestSplit[0];
-                //                                final String pid = requestSplit[1];
-                //                                final String response;
-                //                                if ("register".equals(command)) {
-                //                                    response = register(pid).toString();
-                //                                } else if ("unregister".equals(command)) {
-                //                                    unregister(pid);
-                //                                    response = FinancialdataHistoricalResolverRegistryClient.UNREGISTER_RESPONSE_OK;
-                //                                } else {
-                //                                    throw UnknownArgumentException.newInstance(String.class, command);
-                //                                }
-                //                                final int responseSize = StringUtf8Serde.GET.toBuffer(buffer, response);
-                //                                writerSpinWait.waitForWrite(buffer.sliceTo(responseSize),
-                //                                        SynchronousChannelInfo.REQUEST_TIMEOUT);
-                //                            } finally {
-                //                                SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
-                //                                SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
-                //                            }
-                //                        } catch (final EOFException e) {
-                //                            //closed on the other side
-                //                        } catch (final IOException e) {
-                //                            throw new RuntimeException(e);
-                //                        } finally {
-                //                            Closeables.closeQuietly(reader);
-                //                            Closeables.closeQuietly(writer);
-                //                        }
-                //                    }
-                //                    FTimeUnit.MILLISECONDS.sleep(100);
-                //                }
+                while (true) {
+                    final boolean hasNext;
+                    try {
+                        hasNext = serverAcceptor.hasNext();
+                    } catch (final EOFException e) {
+                        //closed
+                        return;
+                    }
+                    if (hasNext) {
+                        final ISynchronousEndpointSession endpointSession;
+                        try {
+                            endpointSession = serverAcceptor.readMessage();
+                        } finally {
+                            serverAcceptor.readFinished();
+                        }
+
+                        final ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> writer = endpointSession
+                                .newResponseWriter();
+                        final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader = endpointSession
+                                .newRequestReader();
+                        try {
+                            writer.open();
+                            reader.open();
+                            //                            final SynchronousWriterSpinWait<IByteBufferProvider> writerSpinWait = SynchronousWriterSpinWaitPool
+                            //                                    .borrowObject(writer);
+                            //                            final SynchronousReaderSpinWait<IByteBufferProvider> readerSpinWait = SynchronousReaderSpinWaitPool
+                            //                                    .borrowObject(reader);
+                            //                            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
+                            //                                final int requestSize = readerSpinWait
+                            //                                        .waitForRead(SynchronousChannelInfo.REQUEST_TIMEOUT)
+                            //                                        .getBuffer(buffer);
+                            //                                final String request = StringUtf8Serde.GET.fromBuffer(buffer.sliceTo(requestSize));
+                            //
+                            //                                final String[] requestSplit = Strings.splitPreserveAllTokens(request,
+                            //                                        SynchronousChannelInfo.SEPARATOR);
+                            //                                if (requestSplit.length != 2) {
+                            //                                    throw new IllegalArgumentException("Expected format [<register|unregister>"
+                            //                                            + SynchronousChannelInfo.SEPARATOR + "<pid>] but got: [" + request + "]");
+                            //                                }
+                            //                                final String command = requestSplit[0];
+                            //                                final String pid = requestSplit[1];
+                            //                                final String response;
+                            //                                if ("register".equals(command)) {
+                            //                                    response = register(pid).toString();
+                            //                                } else if ("unregister".equals(command)) {
+                            //                                    unregister(pid);
+                            //                                    response = FinancialdataHistoricalResolverRegistryClient.UNREGISTER_RESPONSE_OK;
+                            //                                } else {
+                            //                                    throw UnknownArgumentException.newInstance(String.class, command);
+                            //                                }
+                            //                                final int responseSize = StringUtf8Serde.GET.toBuffer(buffer, response);
+                            //                                writerSpinWait.waitForWrite(buffer.sliceTo(responseSize),
+                            //                                        SynchronousChannelInfo.REQUEST_TIMEOUT);
+                            //                            } finally {
+                            //                                SynchronousReaderSpinWaitPool.returnObject(readerSpinWait);
+                            //                                SynchronousWriterSpinWaitPool.returnObject(writerSpinWait);
+                            //                            }
+                        } catch (final EOFException e) {
+                            //closed on the other side
+                        } catch (final IOException e) {
+                            throw new RuntimeException(e);
+                        } finally {
+                            Closeables.closeQuietly(reader);
+                            Closeables.closeQuietly(writer);
+                        }
+                    }
+                    FTimeUnit.MILLISECONDS.sleep(100);
+                }
             } catch (final Throwable t) {
                 if (Throwables.isCausedByInterrupt(t)) {
                     //end

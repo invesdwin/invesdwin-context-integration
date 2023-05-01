@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc;
+package de.invesdwin.context.integration.channel.rpc.client;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -7,9 +7,9 @@ import java.util.IdentityHashMap;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.session.SynchronousEndpointClientSession;
-import de.invesdwin.context.integration.channel.rpc.session.SynchronousEndpointClientSessionPool;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;

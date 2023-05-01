@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.session;
+package de.invesdwin.context.integration.channel.rpc.client;
 
 import javax.annotation.concurrent.NotThreadSafe;
 

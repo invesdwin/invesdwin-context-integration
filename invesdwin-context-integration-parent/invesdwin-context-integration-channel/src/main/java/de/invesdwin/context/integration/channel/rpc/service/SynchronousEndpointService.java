@@ -8,9 +8,9 @@ import java.lang.reflect.Method;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.session.RemoteExecutionException;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;

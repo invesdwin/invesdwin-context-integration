@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.session.registry;
+package de.invesdwin.context.integration.channel.rpc.endpoint.session;
 
 import java.io.Closeable;
 
@@ -13,7 +13,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public interface ISynchronousEndpointClientSessionInfo extends Closeable {
+public interface ISynchronousEndpointSession extends Closeable {
 
     Duration DEFAULT_REQUEST_TIMEOUT = new Duration(3, FTimeUnit.MINUTES);
     Duration DEFAULT_REQUEST_WAIT_INTERVAL = new Duration(1, FTimeUnit.SECONDS);
@@ -21,6 +21,8 @@ public interface ISynchronousEndpointClientSessionInfo extends Closeable {
     Duration DEFAULT_HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
 
     String getSessionId();
+
+    ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> getEndpoint();
 
     default Duration getRequestTimeout() {
         return DEFAULT_REQUEST_TIMEOUT;
@@ -38,19 +40,12 @@ public interface ISynchronousEndpointClientSessionInfo extends Closeable {
         return DEFAULT_HEARTBEAT_TIMEOUT;
     }
 
-    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newRequestWriter(
-            ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint);
+    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newRequestWriter();
 
-    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newResponseReader(
-            ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint);
+    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newResponseReader();
 
-    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newResponseWriter(
-            ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint);
+    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newResponseWriter();
 
-    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newRequestReader(
-            ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint);
-
-    @Override
-    void close();
+    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newRequestReader();
 
 }
