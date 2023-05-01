@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.server.session;
 
 import java.io.Closeable;
+import java.io.IOException;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -86,7 +87,7 @@ public class SynchronousEndpointServerSession implements Closeable {
         }
     }
 
-    public boolean handle() {
+    public boolean handle() throws IOException {
         //            try {
         //                while (true) {
         //                    //TODO look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion

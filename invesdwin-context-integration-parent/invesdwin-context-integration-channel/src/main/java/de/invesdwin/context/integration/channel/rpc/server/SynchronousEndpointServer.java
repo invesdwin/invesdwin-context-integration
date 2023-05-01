@@ -116,7 +116,13 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     handled = false;
                     for (int i = 0; i < serverSessions.size(); i++) {
                         final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
-                        handled |= serverSession.handle();
+                        try {
+                            handled |= serverSession.handle();
+                        } catch (final EOFException e) {
+                            //session closed
+                            serverSessions.remove(i);
+                            i--;
+                        }
                     }
                 } while (handled);
                 return handled;
