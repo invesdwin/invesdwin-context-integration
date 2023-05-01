@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -45,8 +46,6 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     private static final WrappedExecutorService REQUEST_EXECUTOR = Executors
             .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUERST");
-    private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
-            SynchronousEndpointServer.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
@@ -104,27 +103,27 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     private final class IoRunnable implements Runnable {
         private final List<SynchronousEndpointServerSession> serverSessions = new ArrayList<>();
+        private final ASpinWait throttle = new ASpinWait() {
+            @Override
+            public boolean isConditionFulfilled() throws Exception {
+                //throttle while nothing to do, spin quickly while work is available
+                boolean handled;
+                do {
+                    handled = false;
+                    for (int i = 0; i < serverSessions.size(); i++) {
+                        final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
+                        handled |= serverSession.handle();
+                    }
+                } while (handled);
+                return handled;
+            }
+        };
 
         @Override
         public void run() {
             try {
-                while (true) {
-                    //accept new clients
-                    final boolean hasNext;
-                    try {
-                        hasNext = serverAcceptor.hasNext();
-                    } catch (final EOFException e) {
-                        //closed
-                        return;
-                    }
-                    if (hasNext) {
-                        try {
-                            final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
-                            serverSessions.add(new SynchronousEndpointServerSession(endpointSession));
-                        } finally {
-                            serverAcceptor.readFinished();
-                        }
-                    }
+                while (accept()) {
+                    throttle.awaitFulfill(System.nanoTime());
                 }
             } catch (final Throwable t) {
                 if (Throwables.isCausedByInterrupt(t)) {
@@ -155,6 +154,26 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             //            } finally {
             //                cancelRemainingWorkerFutures();
             //            }
+        }
+
+        private boolean accept() throws IOException {
+            //accept new clients
+            final boolean hasNext;
+            try {
+                hasNext = serverAcceptor.hasNext();
+            } catch (final EOFException e) {
+                //server closed
+                return false;
+            }
+            if (hasNext) {
+                try {
+                    final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
+                    serverSessions.add(new SynchronousEndpointServerSession(endpointSession));
+                } finally {
+                    serverAcceptor.readFinished();
+                }
+            }
+            return true;
         }
     }
 

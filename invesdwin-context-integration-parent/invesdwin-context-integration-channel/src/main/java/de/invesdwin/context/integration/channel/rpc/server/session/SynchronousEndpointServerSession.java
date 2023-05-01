@@ -14,11 +14,16 @@ import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderS
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
 public class SynchronousEndpointServerSession implements Closeable {
+
+    private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
+            SynchronousEndpointServerSession.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
 
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
@@ -75,6 +80,10 @@ public class SynchronousEndpointServerSession implements Closeable {
         } finally {
             lock.unlock();
         }
+    }
+
+    public boolean handle() {
+        return false;
     }
 
 }
