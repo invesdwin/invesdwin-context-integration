@@ -5,9 +5,9 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.service.command.ServiceCommandSynchronousReader;
-import de.invesdwin.context.integration.channel.rpc.service.command.ServiceCommandSynchronousWriter;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousReader;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;

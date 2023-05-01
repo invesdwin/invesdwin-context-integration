@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.service;
+package de.invesdwin.context.integration.channel.rpc.server.service;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -9,8 +9,8 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;

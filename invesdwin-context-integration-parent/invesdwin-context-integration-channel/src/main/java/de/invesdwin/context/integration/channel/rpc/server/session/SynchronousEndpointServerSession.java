@@ -8,8 +8,8 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;

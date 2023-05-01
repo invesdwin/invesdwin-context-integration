@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
