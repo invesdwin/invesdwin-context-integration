@@ -10,13 +10,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
+import net.openhft.chronicle.core.OS;
+import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativePipeSynchronousWriter extends APipeSynchronousChannel
@@ -98,10 +99,24 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     }
 
     private boolean writeFurther() throws IOException {
-        final int count = NativeSocketSynchronousWriter.write0(fd, messageToWrite, position, remaining);
+        final int count = write0(fd, messageToWrite, position, remaining);
         remaining -= count;
         position += count;
         return remaining > 0;
+    }
+
+    public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
+            throws IOException {
+        final int res = OS.write0(dst, address + position, length);
+        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+            return 0;
+        } else {
+            final int count = IOTools.normaliseIOStatus(res);
+            if (count < 0) { // EOF
+                throw ByteBuffers.newEOF();
+            }
+            return count;
+        }
     }
 
 }

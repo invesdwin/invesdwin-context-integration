@@ -2,22 +2,38 @@ package de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
+
+    private static final MethodHandle READ0_MH;
+
+    static {
+        try {
+            final Class<?> fdi = Class.forName("sun.nio.ch.SocketDispatcher");
+            final Method read0 = Reflections.findMethod(fdi, "read0", FileDescriptor.class, long.class, int.class);
+            Reflections.makeAccessible(read0);
+            READ0_MH = MethodHandles.lookup().unreflect(read0);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private SocketSynchronousChannel channel;
     private final int socketSize;
@@ -129,7 +145,12 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
 
     public static int read0(final FileDescriptor src, final long address, final int position, final int length)
             throws IOException {
-        final int res = OS.read0(src, address + position, length);
+        final int res;
+        try {
+            res = (int) READ0_MH.invokeExact(src, address + position, length);
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
+        }
         if (res == IOTools.IOSTATUS_INTERRUPTED) {
             return 0;
         } else {

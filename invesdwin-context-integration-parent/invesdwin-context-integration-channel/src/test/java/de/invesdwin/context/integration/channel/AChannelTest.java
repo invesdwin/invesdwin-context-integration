@@ -55,6 +55,7 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
@@ -168,7 +169,15 @@ public abstract class AChannelTest extends ATest {
             return file;
         } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING
                 || type == FileChannelType.PIPE_NATIVE) {
-            Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
+            if (SynchronousChannels.isNamedPipeSupported() && !OperatingSystem.isWindows()) {
+                Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
+            } else {
+                try {
+                    Files.touch(file);
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         } else if (type == FileChannelType.MAPPED || type == FileChannelType.BLOCKING_MAPPED) {
             try {
                 Files.touch(file);

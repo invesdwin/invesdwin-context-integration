@@ -2,23 +2,39 @@ package de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe;
 
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
 import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
+
+    private static final MethodHandle WRITE0_MH;
+
+    static {
+        try {
+            final Class<?> fdi = Class.forName("sun.nio.ch.SocketDispatcher");
+            final Method write0 = Reflections.findMethod(fdi, "write0", FileDescriptor.class, long.class, int.class);
+            Reflections.makeAccessible(write0);
+            WRITE0_MH = MethodHandles.lookup().unreflect(write0);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private SocketSynchronousChannel channel;
     private IByteBuffer buffer;
@@ -109,7 +125,12 @@ public class NativeSocketSynchronousWriter implements ISynchronousWriter<IByteBu
 
     public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
             throws IOException {
-        final int res = OS.write0(dst, address + position, length);
+        final int res;
+        try {
+            res = (int) WRITE0_MH.invokeExact(dst, address + position, length);
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
+        }
         if (res == IOTools.IOSTATUS_INTERRUPTED) {
             return 0;
         } else {

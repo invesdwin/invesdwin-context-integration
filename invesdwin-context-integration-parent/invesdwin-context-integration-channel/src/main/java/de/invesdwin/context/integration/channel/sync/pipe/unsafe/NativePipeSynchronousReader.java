@@ -10,7 +10,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -18,6 +17,8 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.core.Jvm;
+import net.openhft.chronicle.core.OS;
+import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativePipeSynchronousReader extends APipeSynchronousChannel
@@ -94,7 +95,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
             if (availableReadLength == 0) {
                 return false;
             }
-            position += NativeSocketSynchronousReader.read0(fd, buffer.addressOffset(), position, availableReadLength);
+            position += read0(fd, buffer.addressOffset(), position, availableReadLength);
         }
         return position >= targetPosition;
     }
@@ -136,6 +137,20 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
     @Override
     public void readFinished() {
         //noop
+    }
+
+    public static int read0(final FileDescriptor src, final long address, final int position, final int length)
+            throws IOException {
+        final int res = OS.read0(src, address + position, length);
+        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+            return 0;
+        } else {
+            final int count = IOTools.normaliseIOStatus(res);
+            if (count < 0) {
+                throw FastEOFException.getInstance("socket closed");
+            }
+            return count;
+        }
     }
 
 }
