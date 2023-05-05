@@ -21,6 +21,7 @@ import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
@@ -51,7 +52,7 @@ public class SynchronousEndpointClientSession implements Closeable {
 
     private final SynchronousEndpointClientSessionResponse response;
 
-    public SynchronousEndpointClientSession(final SynchronousEndpointClientSessionPool pool,
+    public SynchronousEndpointClientSession(final IObjectPool<SynchronousEndpointClientSession> pool,
             final ISynchronousEndpointSession endpointSession) {
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(SynchronousEndpointClientSession.class.getSimpleName() + "_lock");

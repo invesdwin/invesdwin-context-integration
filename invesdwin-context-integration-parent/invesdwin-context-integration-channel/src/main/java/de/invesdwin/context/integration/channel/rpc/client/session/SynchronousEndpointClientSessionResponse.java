@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.lock.ILock;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
@@ -15,12 +16,12 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 public class SynchronousEndpointClientSessionResponse implements ICloseableByteBufferProvider {
 
     private final SynchronousEndpointClientSession session;
-    private final SynchronousEndpointClientSessionPool pool;
+    private final IObjectPool<SynchronousEndpointClientSession> pool;
     private final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader;
     private final ILock lock;
     private IByteBufferProvider message;
 
-    public SynchronousEndpointClientSessionResponse(final SynchronousEndpointClientSessionPool pool,
+    public SynchronousEndpointClientSessionResponse(final IObjectPool<SynchronousEndpointClientSession> pool,
             final SynchronousEndpointClientSession session, final ILock lock,
             final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader) {
         this.pool = pool;
