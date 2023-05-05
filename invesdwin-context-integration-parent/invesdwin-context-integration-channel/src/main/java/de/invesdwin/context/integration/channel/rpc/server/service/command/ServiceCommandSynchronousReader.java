@@ -15,7 +15,7 @@ public class ServiceCommandSynchronousReader<M> implements ISynchronousReader<IS
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
 
-    private final MutableServiceSynchronousCommand<M> command = new MutableServiceSynchronousCommand<>();
+    private final SerdeMutableServiceSynchronousCommand<M> command = new SerdeMutableServiceSynchronousCommand<>();
 
     public ServiceCommandSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ISerde<M> messageSerde) {
@@ -49,12 +49,10 @@ public class ServiceCommandSynchronousReader<M> implements ISynchronousReader<IS
         final int method = buffer.getInt(ServiceSynchronousCommandSerde.METHOD_INDEX);
         final int sequence = buffer.getInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX);
         final int messageLength = buffer.capacity() - ServiceSynchronousCommandSerde.MESSAGE_INDEX;
-        final M message = messageSerde
-                .fromBuffer(buffer.slice(ServiceSynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         command.setService(service);
         command.setMethod(method);
         command.setSequence(sequence);
-        command.setMessage(message);
+        command.setMessage(messageSerde, buffer.slice(ServiceSynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         return command;
     }
 

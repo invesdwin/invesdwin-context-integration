@@ -38,7 +38,7 @@ public class SynchronousEndpointClientSession implements Closeable {
     @GuardedBy("lock")
     private SynchronousWriterSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> requestWriterSpinWait;
     @GuardedBy("lock")
-    private final MutableServiceSynchronousCommand<IByteBufferProvider> holder = new MutableServiceSynchronousCommand<IByteBufferProvider>();
+    private final MutableServiceSynchronousCommand<IByteBufferProvider> requestHolder = new MutableServiceSynchronousCommand<IByteBufferProvider>();
     @GuardedBy("lock")
     private SynchronousReaderSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> responseReaderSpinWait;
     @GuardedBy("lock")
@@ -183,10 +183,10 @@ public class SynchronousEndpointClientSession implements Closeable {
 
     private void writeLocked(final int requestService, final int requestMethod, final int requestSequence,
             final IByteBufferProvider request, final long waitingSinceNanos) throws Exception {
-        holder.setService(requestService);
-        holder.setMethod(requestMethod);
-        holder.setSequence(requestSequence);
-        holder.setMessage(request);
+        requestHolder.setService(requestService);
+        requestHolder.setMethod(requestMethod);
+        requestHolder.setSequence(requestSequence);
+        requestHolder.setMessage(request);
         while (!requestWriterSpinWait.writeReady()
                 .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
             if (endpointSession.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
@@ -194,7 +194,7 @@ public class SynchronousEndpointClientSession implements Closeable {
                         + requestMethod + "]: " + endpointSession.getRequestTimeout());
             }
         }
-        requestWriterSpinWait.getWriter().write(holder);
+        requestWriterSpinWait.getWriter().write(requestHolder);
         while (!requestWriterSpinWait.writeFlushed()
                 .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
             if (endpointSession.getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
@@ -202,7 +202,7 @@ public class SynchronousEndpointClientSession implements Closeable {
                         + requestMethod + "]: " + endpointSession.getRequestTimeout());
             }
         }
-        holder.setMessage(null); //free memory
+        requestHolder.setMessage(null); //free memory
     }
 
 }

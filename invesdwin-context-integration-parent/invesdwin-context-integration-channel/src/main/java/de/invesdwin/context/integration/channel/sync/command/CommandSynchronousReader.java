@@ -15,7 +15,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
 
-    private final MutableSynchronousCommand<M> command = new MutableSynchronousCommand<>();
+    private final SerdeMutableSynchronousCommand<M> command = new SerdeMutableSynchronousCommand<>();
 
     public CommandSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ISerde<M> messageSerde) {
@@ -48,10 +48,9 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
         final int type = buffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = buffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);
         final int messageLength = buffer.capacity() - SynchronousCommandSerde.MESSAGE_INDEX;
-        final M message = messageSerde.fromBuffer(buffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         command.setType(type);
         command.setSequence(sequence);
-        command.setMessage(message);
+        command.setMessage(messageSerde, buffer.slice(SynchronousCommandSerde.MESSAGE_INDEX, messageLength));
         return command;
     }
 
