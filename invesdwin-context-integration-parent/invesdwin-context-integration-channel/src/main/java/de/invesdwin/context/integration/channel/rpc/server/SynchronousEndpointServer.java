@@ -51,7 +51,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
     private final ISerde<Object> responseSerde;
-    private final Duration requestWaitInterval;
+    private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
     @GuardedBy("this")
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
@@ -59,12 +59,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private Future<?> requestFuture;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde, final Duration requestTimeout,
-            final Duration requestWaitInterval) {
+            final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde) {
         this.serverAcceptor = serverAcceptor;
         this.requestSerde = requestSerde;
         this.responseSerde = responseSerde;
-        this.requestWaitInterval = requestWaitInterval;
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
@@ -191,6 +189,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             if (hasNext) {
                 try {
                     final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
+                    //use latest request wait interval so that we don't need this in the constructor of the server
+                    requestWaitInterval = endpointSession.getRequestWaitInterval();
                     serverSessions
                             .add(new SynchronousEndpointServerSession(SynchronousEndpointServer.this, endpointSession));
                 } finally {
