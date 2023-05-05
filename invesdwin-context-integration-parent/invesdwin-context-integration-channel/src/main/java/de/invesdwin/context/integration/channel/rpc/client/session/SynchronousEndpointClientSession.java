@@ -22,6 +22,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -54,8 +55,10 @@ public class SynchronousEndpointClientSession implements Closeable {
             final ISynchronousEndpointSession endpointSession) {
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(SynchronousEndpointClientSession.class.getSimpleName() + "_lock");
-        this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(endpointSession.newRequestWriter());
-        this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(endpointSession.newResponseReader());
+        this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
+                endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
+        this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(
+                endpointSession.newResponseReader(ByteBufferProviderSerde.GET));
         try {
             requestWriterSpinWait.getWriter().open();
             responseReaderSpinWait.getReader().open();

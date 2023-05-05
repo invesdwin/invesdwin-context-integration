@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
@@ -40,12 +41,12 @@ public interface ISynchronousEndpointSession extends Closeable {
         return DEFAULT_HEARTBEAT_TIMEOUT;
     }
 
-    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newRequestWriter();
+    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newRequestWriter(ISerde<T> requestSerde);
 
-    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newResponseReader();
+    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newResponseReader(ISerde<T> responseSerde);
 
-    ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> newResponseWriter();
+    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newResponseWriter(ISerde<T> requestSerde);
 
-    ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> newRequestReader();
+    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newRequestReader(ISerde<T> responseSerde);
 
 }

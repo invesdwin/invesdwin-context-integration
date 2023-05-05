@@ -18,6 +18,7 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -45,12 +46,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class SynchronousEndpointServer implements ISynchronousChannel {
 
     private static final WrappedExecutorService REQUEST_EXECUTOR = Executors
-            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUERST");
+            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUEST");
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
     private final ISerde<Object> responseSerde;
-    private final Duration requestTimeout;
+    private final Duration requestWaitInterval;
     @GuardedBy("this")
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
@@ -58,11 +59,12 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private Future<?> requestFuture;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde, final Duration requestTimeout) {
+            final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde, final Duration requestTimeout,
+            final Duration requestWaitInterval) {
         this.serverAcceptor = serverAcceptor;
         this.requestSerde = requestSerde;
         this.responseSerde = responseSerde;
-        this.requestTimeout = requestTimeout;
+        this.requestWaitInterval = requestWaitInterval;
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
@@ -101,12 +103,22 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
     }
 
+    public ISerde<Object[]> getRequestSerde() {
+        return requestSerde;
+    }
+
+    public ISerde<Object> getResponseSerde() {
+        return responseSerde;
+    }
+
     public SynchronousEndpointService getService(final int serviceId) {
         return serviceId_service_copy.get(serviceId);
     }
 
     private final class IoRunnable implements Runnable {
         private final List<SynchronousEndpointServerSession> serverSessions = new ArrayList<>();
+        private final LoopInterruptedCheck heartbeatLoopInterruptedCheck = new LoopInterruptedCheck(
+                requestWaitInterval);
         private final ASpinWait throttle = new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
@@ -124,6 +136,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                             i--;
                         }
                     }
+                    if (heartbeatLoopInterruptedCheck.check()) {
+                        //force heartbeat check now
+                        return false;
+                    }
                 } while (handled);
                 return handled;
             }
@@ -133,7 +149,17 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         public void run() {
             try {
                 while (accept()) {
-                    throttle.awaitFulfill(System.nanoTime());
+                    if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+                        //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+                        for (int i = 0; i < serverSessions.size(); i++) {
+                            final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
+                            if (serverSession.isHeartbeatTimeout()) {
+                                //session closed
+                                serverSessions.remove(i);
+                                i--;
+                            }
+                        }
+                    }
                 }
             } catch (final Throwable t) {
                 if (Throwables.isCausedByInterrupt(t)) {

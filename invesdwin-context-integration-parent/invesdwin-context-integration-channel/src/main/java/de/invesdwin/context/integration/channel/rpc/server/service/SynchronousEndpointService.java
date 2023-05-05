@@ -89,7 +89,9 @@ public final class SynchronousEndpointService {
         final MethodHandle method = methodId_method.get(methodId);
         try {
             if (method == null) {
-                throw new IllegalArgumentException("Unknown methodId: " + methodId);
+                response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+                response.setMessage("method not found: " + request.getMethod());
+                return;
             }
             final Object[] args = request.getMessage();
             final Object result = method.invoke(serviceImplementation, args);
