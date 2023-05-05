@@ -10,6 +10,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.server.service.IServiceResponseSerdeProviderLookup;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.session.SynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
@@ -50,7 +51,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final ISerde<Object[]> requestSerde;
-    private final ISerde<Object> responseSerde;
+    private final IServiceResponseSerdeProviderLookup responseSerdeProviderLookup;
     private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
     @GuardedBy("this")
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
@@ -59,14 +60,15 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private Future<?> requestFuture;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final ISerde<Object[]> requestSerde, final ISerde<Object> responseSerde) {
+            final ISerde<Object[]> requestSerde,
+            final IServiceResponseSerdeProviderLookup responseSerdeProviderLookup) {
         this.serverAcceptor = serverAcceptor;
         this.requestSerde = requestSerde;
-        this.responseSerde = responseSerde;
+        this.responseSerdeProviderLookup = responseSerdeProviderLookup;
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
-        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(serviceInterface,
+        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(this, serviceInterface,
                 serviceImplementation);
         final SynchronousEndpointService existing = serviceId_service_sync.putIfAbsent(service.getServiceId(), service);
         if (existing != null) {
@@ -105,8 +107,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         return requestSerde;
     }
 
-    public ISerde<Object> getResponseSerde() {
-        return responseSerde;
+    public IServiceResponseSerdeProviderLookup getResponseSerdeProviderLookup() {
+        return responseSerdeProviderLookup;
     }
 
     public SynchronousEndpointService getService(final int serviceId) {

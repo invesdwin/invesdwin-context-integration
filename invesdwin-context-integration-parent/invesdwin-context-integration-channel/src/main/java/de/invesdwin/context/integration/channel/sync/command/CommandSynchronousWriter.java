@@ -81,8 +81,8 @@ public class CommandSynchronousWriter<M> implements ISynchronousWriter<ISynchron
     public int getBuffer(final IByteBuffer dst) {
         dst.putInt(SynchronousCommandSerde.TYPE_INDEX, message.getType());
         dst.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, message.getSequence());
-        final int messageLength = messageSerde.toBuffer(dst.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
-                message.getMessage());
+        final int messageLength = message.messageToBuffer(messageSerde,
+                dst.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX));
         final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageLength;
         return length;
     }

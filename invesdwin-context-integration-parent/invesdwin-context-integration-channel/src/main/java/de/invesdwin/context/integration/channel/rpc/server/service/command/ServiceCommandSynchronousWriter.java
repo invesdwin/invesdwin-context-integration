@@ -83,8 +83,8 @@ public class ServiceCommandSynchronousWriter<M>
         dst.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, message.getService());
         dst.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, message.getMethod());
         dst.putInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX, message.getSequence());
-        final int messageLength = messageSerde.toBuffer(dst.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX),
-                message.getMessage());
+        final int messageLength = message.messageToBuffer(messageSerde,
+                dst.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX));
         final int length = ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageLength;
         return length;
     }

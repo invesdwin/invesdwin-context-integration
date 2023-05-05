@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronou
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -20,6 +20,8 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
 public class SynchronousEndpointServerSession implements Closeable {
@@ -35,9 +37,9 @@ public class SynchronousEndpointServerSession implements Closeable {
     @GuardedBy("lock")
     private ISynchronousReader<IServiceSynchronousCommand<Object[]>> requestReader;
     @GuardedBy("lock")
-    private final MutableServiceSynchronousCommand<Object> responseHolder = new MutableServiceSynchronousCommand<Object>();
+    private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
     @GuardedBy("lock")
-    private ISynchronousWriter<IServiceSynchronousCommand<Object>> responseWriter;
+    private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
     @GuardedBy("lock")
@@ -48,7 +50,7 @@ public class SynchronousEndpointServerSession implements Closeable {
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.requestReader = endpointSession.newRequestReader(parent.getRequestSerde());
-        this.responseWriter = endpointSession.newResponseWriter(parent.getResponseSerde());
+        this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
         try {
             requestReader.open();
             responseWriter.open();
@@ -71,7 +73,7 @@ public class SynchronousEndpointServerSession implements Closeable {
         } catch (final Throwable t) {
             Err.process(new RuntimeException("Ignoring", t));
         }
-        final ISynchronousWriter<IServiceSynchronousCommand<Object>> responseWriterCopy = responseWriter;
+        final ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriterCopy = responseWriter;
         responseWriter = ClosedSynchronousWriter.getInstance();
         try {
             responseWriterCopy.close();
@@ -99,7 +101,7 @@ public class SynchronousEndpointServerSession implements Closeable {
             if (processResponseFuture.isDone()) {
                 //keep flushing until finished and ready for next write
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
-                    responseHolder.setMessage(null); //free memory
+                    responseHolder.close(); //free memory
                     processResponseFuture = null;
                     //directly check for next request
                 } else {
@@ -123,8 +125,8 @@ public class SynchronousEndpointServerSession implements Closeable {
                         responseHolder.setService(serviceId);
                         responseHolder.setSequence(request.getSequence());
                         responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                        responseHolder
-                                .setMessage("too many requests pending [" + pendingCount + "], please try again later");
+                        responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                "too many requests pending [" + pendingCount + "], please try again later");
                     }
                     responseWriter.write(responseHolder);
                     processResponseFuture = NullFuture.getInstance();
@@ -160,7 +162,8 @@ public class SynchronousEndpointServerSession implements Closeable {
                     responseHolder.setService(serviceId);
                     responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
-                    responseHolder.setMessage("service not found: " + serviceId);
+                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                            "service not found: " + serviceId);
                     responseWriter.write(responseHolder);
                     return;
                 }
@@ -168,8 +171,8 @@ public class SynchronousEndpointServerSession implements Closeable {
                     responseHolder.setService(serviceId);
                     responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
-                    responseHolder.setMessage("request timeout [" + endpointSession.getRequestTimeout()
-                            + "] exceeded, please try again later");
+                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
+                            + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
                     responseWriter.write(responseHolder);
                     return;
                 }

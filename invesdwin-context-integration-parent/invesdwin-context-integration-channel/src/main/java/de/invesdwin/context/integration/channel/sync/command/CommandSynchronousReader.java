@@ -15,7 +15,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
 
-    private final SerdeMutableSynchronousCommand<M> command = new SerdeMutableSynchronousCommand<>();
+    private final DeserializingSynchronousCommand<M> command = new DeserializingSynchronousCommand<>();
 
     public CommandSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ISerde<M> messageSerde) {

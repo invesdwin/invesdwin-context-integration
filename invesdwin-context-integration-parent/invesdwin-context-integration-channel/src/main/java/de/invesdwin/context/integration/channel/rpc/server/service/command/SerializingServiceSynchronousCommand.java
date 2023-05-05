@@ -7,15 +7,16 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class SerdeMutableServiceSynchronousCommand<M> implements IServiceSynchronousCommand<M> {
+public class SerializingServiceSynchronousCommand<M> implements IServiceSynchronousCommand<IByteBufferProvider> {
 
     protected int service;
     protected int method;
     protected int sequence;
     protected ISerde<M> messageSerde = NullSerde.get();
-    protected IByteBuffer message;
+    protected M message;
 
     @Override
     public int getService() {
@@ -45,13 +46,18 @@ public class SerdeMutableServiceSynchronousCommand<M> implements IServiceSynchro
     }
 
     @Override
-    public M getMessage() {
-        return messageSerde.fromBuffer(message);
+    public IByteBufferProvider getMessage() {
+        throw new UnsupportedOperationException();
     }
 
-    public void setMessage(final ISerde<M> messageSerde, final IByteBuffer message) {
+    public void setMessage(final ISerde<M> messageSerde, final M message) {
         this.messageSerde = messageSerde;
         this.message = message;
+    }
+
+    @Override
+    public int messageToBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        return this.messageSerde.toBuffer(buffer, message);
     }
 
     @Override
