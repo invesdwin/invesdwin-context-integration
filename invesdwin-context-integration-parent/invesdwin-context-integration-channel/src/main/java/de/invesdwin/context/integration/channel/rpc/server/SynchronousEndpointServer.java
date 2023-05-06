@@ -11,7 +11,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.server.service.serde.ServiceSerdeLookupConfig;
 import de.invesdwin.context.integration.channel.rpc.server.session.SynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -22,6 +21,7 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -49,7 +49,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUEST");
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
-    private final ServiceSerdeLookupConfig serdeLookupConfig;
+    private final SerdeLookupConfig serdeLookupConfig;
     private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
     @GuardedBy("this")
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
@@ -58,11 +58,11 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private Future<?> requestFuture;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
-        this(serverAcceptor, ServiceSerdeLookupConfig.DEFAULT);
+        this(serverAcceptor, SerdeLookupConfig.DEFAULT);
     }
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final ServiceSerdeLookupConfig serdeLookupConfig) {
+            final SerdeLookupConfig serdeLookupConfig) {
         this.serverAcceptor = serverAcceptor;
         this.serdeLookupConfig = serdeLookupConfig;
     }
@@ -103,7 +103,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
     }
 
-    public ServiceSerdeLookupConfig getSerdeLookupConfig() {
+    public SerdeLookupConfig getSerdeLookupConfig() {
         return serdeLookupConfig;
     }
 
