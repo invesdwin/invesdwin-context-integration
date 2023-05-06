@@ -35,7 +35,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
     @GuardedBy("lock")
-    private ISynchronousReader<IServiceSynchronousCommand<Object[]>> requestReader;
+    private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     @GuardedBy("lock")
     private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
     @GuardedBy("lock")
@@ -49,7 +49,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
-        this.requestReader = endpointSession.newRequestReader(parent.getRequestSerde());
+        this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
         this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
         try {
             requestReader.open();
@@ -66,7 +66,7 @@ public class SynchronousEndpointServerSession implements Closeable {
             processResponseFuture.cancel(true);
             processResponseFuture = null;
         }
-        final ISynchronousReader<IServiceSynchronousCommand<Object[]>> requestReaderCopy = requestReader;
+        final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReaderCopy = requestReader;
         requestReader = ClosedSynchronousReader.getInstance();
         try {
             requestReaderCopy.close();
@@ -117,7 +117,7 @@ public class SynchronousEndpointServerSession implements Closeable {
             lastHeartbeatNanos = System.nanoTime();
             final int pendingCount = RESPONSE_EXECUTOR.getPendingCount();
             if (pendingCount > MAX_PENDING_COUNT) {
-                try (IServiceSynchronousCommand<Object[]> request = requestReader.readMessage()) {
+                try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
                     final int serviceId = request.getService();
                     if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                         return true;
@@ -152,7 +152,7 @@ public class SynchronousEndpointServerSession implements Closeable {
 
     private void processResponse() {
         try {
-            try (IServiceSynchronousCommand<Object[]> request = requestReader.readMessage()) {
+            try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
                 final int serviceId = request.getService();
                 if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                     return;

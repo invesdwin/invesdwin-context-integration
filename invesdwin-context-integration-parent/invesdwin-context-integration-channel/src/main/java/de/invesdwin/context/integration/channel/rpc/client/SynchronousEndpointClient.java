@@ -11,10 +11,9 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.session.ClosedSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSession;
-import de.invesdwin.context.integration.channel.rpc.server.service.IServiceRequestSerdeLookup;
-import de.invesdwin.context.integration.channel.rpc.server.service.IServiceResponseSerdeProvider;
-import de.invesdwin.context.integration.channel.rpc.server.service.IServiceResponseSerdeProviderLookup;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.serde.ServiceSerdeLookupConfig;
+import de.invesdwin.context.integration.channel.rpc.server.service.serde.response.IServiceResponseSerdeProvider;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
@@ -44,13 +43,16 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         return service;
     }
 
+    public static <T> SynchronousEndpointClient<T> newInstance(
+            final IObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface) {
+        return newInstance(sessionPool, serviceInterface, ServiceSerdeLookupConfig.DEFAULT);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T> SynchronousEndpointClient<T> newInstance(
-            final IObjectPool<SynchronousEndpointClientSession> sessionPool,
-            final IServiceRequestSerdeLookup requestSerdeProvider,
-            final IServiceResponseSerdeProviderLookup responseSerdeProviderLookup, final Class<T> serviceInterface) {
-        final Handler handler = new Handler(sessionPool, requestSerdeProvider, responseSerdeProviderLookup,
-                serviceInterface);
+            final IObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
+            final ServiceSerdeLookupConfig serdeLookupConfig) {
+        final Handler handler = new Handler(sessionPool, serviceInterface, serdeLookupConfig);
         final T service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),
                 new Class[] { serviceInterface }, handler);
         final SynchronousEndpointClient<T> client = new SynchronousEndpointClient<T>(handler, service);
@@ -80,9 +82,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         private final IdentityHashMap<Method, MethodInfo> method_methodInfo;
 
         private Handler(final IObjectPool<SynchronousEndpointClientSession> sessionPool,
-                final IServiceRequestSerdeLookup requestSerdeLookup,
-                final IServiceResponseSerdeProviderLookup responseSerdeProviderLookup,
-                final Class<?> serviceInterface) {
+                final Class<?> serviceInterface, final ServiceSerdeLookupConfig serdeLookupConfig) {
             this.serviceInterface = serviceInterface;
             this.serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
             this.sessionPool = sessionPool;
@@ -95,8 +95,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
                 }
                 final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
                 if (indexOf < 0) {
-                    method_methodInfo.putIfAbsent(method,
-                            new MethodInfo(method, requestSerdeLookup, responseSerdeProviderLookup));
+                    method_methodInfo.putIfAbsent(method, new MethodInfo(method, serdeLookupConfig));
                 }
             }
         }
@@ -135,11 +134,10 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         private final ISerde<Object[]> requestSerde;
         private final IServiceResponseSerdeProvider responseSerdeProvider;
 
-        private MethodInfo(final Method method, final IServiceRequestSerdeLookup requestSerdeLookup,
-                final IServiceResponseSerdeProviderLookup responseSerdeProviderLookup) {
+        private MethodInfo(final Method method, final ServiceSerdeLookupConfig serdeLookupConfig) {
             this.methodId = SynchronousEndpointService.newMethodId(method);
-            this.requestSerde = requestSerdeLookup.lookup(method);
-            this.responseSerdeProvider = responseSerdeProviderLookup.lookup(method);
+            this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
+            this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
         }
 
     }

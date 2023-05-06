@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.service;
+package de.invesdwin.context.integration.channel.rpc.server.service.serde.request;
 
 import java.lang.reflect.Method;
 

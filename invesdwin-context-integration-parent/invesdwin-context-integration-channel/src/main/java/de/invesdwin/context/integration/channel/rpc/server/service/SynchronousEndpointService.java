@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionExcept
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.serde.response.IServiceResponseSerdeProvider;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
@@ -22,6 +23,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -56,8 +58,14 @@ public final class SynchronousEndpointService {
                 final int methodId = newMethodId(method);
                 try {
                     final MethodHandle methodHandle = lookup.unreflect(method);
+                    final ISerde<Object[]> requestSerde = parent.getSerdeLookupConfig()
+                            .getRequestLookup()
+                            .lookup(method);
+                    final IServiceResponseSerdeProvider responseSerdeProvider = parent.getSerdeLookupConfig()
+                            .getResponseLookup()
+                            .lookup(method);
                     final MethodInfo existing = methodId_methodInfo.put(methodId,
-                            new MethodInfo(methodHandle, parent.getResponseSerdeProviderLookup().lookup(method)));
+                            new MethodInfo(methodHandle, requestSerde, responseSerdeProvider));
                     if (existing != null) {
                         throw new IllegalStateException(
                                 "Already registered [" + methodHandle + "] as [" + existing.methodHandle + "]");
@@ -85,7 +93,7 @@ public final class SynchronousEndpointService {
         return serviceInterface;
     }
 
-    public void invoke(final String sessionId, final IServiceSynchronousCommand<Object[]> request,
+    public void invoke(final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
             final SerializingServiceSynchronousCommand<Object> response) {
         response.setService(request.getService());
         response.setSequence(request.getSequence());
@@ -98,7 +106,7 @@ public final class SynchronousEndpointService {
                         "method not found: " + request.getMethod());
                 return;
             }
-            final Object[] args = request.getMessage();
+            final Object[] args = methodInfo.requestSerde.fromBuffer(request.getMessage());
             final Object result = methodInfo.methodHandle.invoke(serviceImplementation, args);
             response.setMethod(methodId);
             final ISerde<Object> resultSerde = methodInfo.responseSerdeProvider.getSerde(args);
@@ -144,10 +152,13 @@ public final class SynchronousEndpointService {
     private static final class MethodInfo {
 
         private final MethodHandle methodHandle;
+        private final ISerde<Object[]> requestSerde;
         private final IServiceResponseSerdeProvider responseSerdeProvider;
 
-        private MethodInfo(final MethodHandle methodHandle, final IServiceResponseSerdeProvider responseSerdeProvider) {
+        private MethodInfo(final MethodHandle methodHandle, final ISerde<Object[]> requestSerde,
+                final IServiceResponseSerdeProvider responseSerdeProvider) {
             this.methodHandle = methodHandle;
+            this.requestSerde = requestSerde;
             this.responseSerdeProvider = responseSerdeProvider;
         }
 
