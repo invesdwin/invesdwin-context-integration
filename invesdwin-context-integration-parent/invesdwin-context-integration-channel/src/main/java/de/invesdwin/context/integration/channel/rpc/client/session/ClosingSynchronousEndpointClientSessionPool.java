@@ -4,13 +4,14 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
+import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 
 @ThreadSafe
 public final class ClosingSynchronousEndpointClientSessionPool
-        implements IObjectPool<SynchronousEndpointClientSession> {
+        implements ICloseableObjectPool<SynchronousEndpointClientSession> {
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
+    private volatile boolean closed;
 
     public ClosingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
@@ -24,6 +25,9 @@ public final class ClosingSynchronousEndpointClientSessionPool
 
     @Override
     public SynchronousEndpointClientSession borrowObject() {
+        if (closed) {
+            throw new IllegalStateException("closed");
+        }
         final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
         return new SynchronousEndpointClientSession(this, endpointSession);
     }
@@ -35,5 +39,10 @@ public final class ClosingSynchronousEndpointClientSessionPool
 
     @Override
     public void clear() {}
+
+    @Override
+    public void close() {
+        closed = true;
+    }
 
 }

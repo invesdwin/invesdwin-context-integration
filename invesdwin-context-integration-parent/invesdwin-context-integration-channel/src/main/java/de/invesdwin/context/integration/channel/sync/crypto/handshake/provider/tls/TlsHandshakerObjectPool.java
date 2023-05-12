@@ -26,8 +26,9 @@ public final class TlsHandshakerObjectPool extends ATimeoutObjectPool<TlsHandsha
     }
 
     @Override
-    protected void passivateObject(final TlsHandshaker element) {
+    protected boolean passivateObject(final TlsHandshaker element) {
         element.reset();
+        return true;
     }
 
 }

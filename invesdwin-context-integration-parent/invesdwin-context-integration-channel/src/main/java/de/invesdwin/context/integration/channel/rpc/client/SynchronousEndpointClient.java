@@ -9,13 +9,12 @@ import java.util.IdentityHashMap;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.client.session.ClosedSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
+import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Objects;
@@ -31,12 +30,22 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 @ThreadSafe
 public final class SynchronousEndpointClient<T> implements Closeable {
 
+    private final Class<T> serviceInterface;
     private final Handler handler;
     private final T service;
 
-    private SynchronousEndpointClient(final Handler handler, final T service) {
+    private SynchronousEndpointClient(final Class<T> serviceInterface, final Handler handler, final T service) {
+        this.serviceInterface = serviceInterface;
         this.handler = handler;
         this.service = service;
+    }
+
+    public ICloseableObjectPool<SynchronousEndpointClientSession> getSessionPool() {
+        return handler.sessionPool;
+    }
+
+    public Class<T> getServiceInterface() {
+        return serviceInterface;
     }
 
     public T getService() {
@@ -44,46 +53,43 @@ public final class SynchronousEndpointClient<T> implements Closeable {
     }
 
     public static <T> SynchronousEndpointClient<T> newInstance(
-            final IObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface) {
+            final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface) {
         return newInstance(sessionPool, serviceInterface, SerdeLookupConfig.DEFAULT);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> SynchronousEndpointClient<T> newInstance(
-            final IObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
+            final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
             final SerdeLookupConfig serdeLookupConfig) {
         final Handler handler = new Handler(sessionPool, serviceInterface, serdeLookupConfig);
         final T service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),
                 new Class[] { serviceInterface }, handler);
-        final SynchronousEndpointClient<T> client = new SynchronousEndpointClient<T>(handler, service);
+        final SynchronousEndpointClient<T> client = new SynchronousEndpointClient<T>(serviceInterface, handler,
+                service);
         return client;
     }
 
     @Override
     public void close() throws IOException {
-        final IObjectPool<SynchronousEndpointClientSession> sessionPoolCopy = handler.sessionPool;
-        sessionPoolCopy.clear();
-        handler.sessionPool = ClosedSynchronousEndpointClientSessionPool.INSTANCE;
+        getSessionPool().close();
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
                 .add("serviceId", handler.serviceId)
-                .add("serviceInterface", handler.serviceInterface.getName())
+                .add("serviceInterface", serviceInterface.getName())
                 .toString();
     }
 
     private static final class Handler implements InvocationHandler {
 
-        private final Class<?> serviceInterface;
         private final int serviceId;
-        private IObjectPool<SynchronousEndpointClientSession> sessionPool;
+        private final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool;
         private final IdentityHashMap<Method, MethodInfo> method_methodInfo;
 
-        private Handler(final IObjectPool<SynchronousEndpointClientSession> sessionPool,
+        private Handler(final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool,
                 final Class<?> serviceInterface, final SerdeLookupConfig serdeLookupConfig) {
-            this.serviceInterface = serviceInterface;
             this.serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
             this.sessionPool = sessionPool;
             final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
