@@ -7,11 +7,10 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronou
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 
 @ThreadSafe
-public final class ClosingSynchronousEndpointClientSessionPool
+public class ClosingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<SynchronousEndpointClientSession> {
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
-    private volatile boolean closed;
 
     public ClosingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
@@ -25,9 +24,6 @@ public final class ClosingSynchronousEndpointClientSessionPool
 
     @Override
     public SynchronousEndpointClientSession borrowObject() {
-        if (closed) {
-            throw new IllegalStateException("closed");
-        }
         final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
         return new SynchronousEndpointClientSession(this, endpointSession);
     }
@@ -41,8 +37,6 @@ public final class ClosingSynchronousEndpointClientSessionPool
     public void clear() {}
 
     @Override
-    public void close() {
-        closed = true;
-    }
+    public void close() {}
 
 }

@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.client;
 
 import java.io.Closeable;
-import java.io.IOException;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -70,7 +69,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         getSessionPool().close();
     }
 

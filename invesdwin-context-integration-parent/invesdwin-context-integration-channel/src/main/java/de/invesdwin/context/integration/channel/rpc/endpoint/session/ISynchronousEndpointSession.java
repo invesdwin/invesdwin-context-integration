@@ -4,12 +4,10 @@ import java.io.Closeable;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -22,8 +20,6 @@ public interface ISynchronousEndpointSession extends Closeable {
     Duration DEFAULT_HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
 
     String getSessionId();
-
-    ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> getEndpoint();
 
     default Duration getRequestTimeout() {
         return DEFAULT_REQUEST_TIMEOUT;

@@ -10,7 +10,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public final class SynchronousEndpointClientSessionPool extends ATimeoutObjectPool<SynchronousEndpointClientSession>
+public class SynchronousEndpointClientSessionPool extends ATimeoutObjectPool<SynchronousEndpointClientSession>
         implements ICloseableObjectPool<SynchronousEndpointClientSession> {
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;

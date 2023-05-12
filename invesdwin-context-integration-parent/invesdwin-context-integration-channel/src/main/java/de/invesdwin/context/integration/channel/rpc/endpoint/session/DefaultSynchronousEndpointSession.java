@@ -35,11 +35,6 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
     }
 
     @Override
-    public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> getEndpoint() {
-        return endpoint;
-    }
-
-    @Override
     public String toString() {
         return sessionId;
     }
