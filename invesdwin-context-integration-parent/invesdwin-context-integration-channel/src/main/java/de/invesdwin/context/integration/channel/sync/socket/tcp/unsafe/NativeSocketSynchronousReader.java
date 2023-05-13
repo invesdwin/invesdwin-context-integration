@@ -28,8 +28,14 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         try {
             final Class<?> fdi = Class.forName("sun.nio.ch.SocketDispatcher");
             final Method read0 = Reflections.findMethod(fdi, "read0", FileDescriptor.class, long.class, int.class);
-            Reflections.makeAccessible(read0);
-            READ0_MH = MethodHandles.lookup().unreflect(read0);
+            if (read0 != null) {
+                Reflections.makeAccessible(read0);
+                READ0_MH = MethodHandles.lookup().unreflect(read0);
+            } else {
+                final Method write0Fallback = Reflections.findMethod(net.openhft.chronicle.core.OS.class, "read0",
+                        FileDescriptor.class, long.class, int.class);
+                READ0_MH = MethodHandles.lookup().unreflect(write0Fallback);
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

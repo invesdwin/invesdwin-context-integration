@@ -32,8 +32,14 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         try {
             final Class<?> fdi = Class.forName("sun.nio.ch.DatagramDispatcher");
             final Method write0 = Reflections.findMethod(fdi, "write0", FileDescriptor.class, long.class, int.class);
-            Reflections.makeAccessible(write0);
-            WRITE0_MH = MethodHandles.lookup().unreflect(write0);
+            if (write0 != null) {
+                Reflections.makeAccessible(write0);
+                WRITE0_MH = MethodHandles.lookup().unreflect(write0);
+            } else {
+                final Method write0Fallback = Reflections.findMethod(net.openhft.chronicle.core.OS.class, "write0",
+                        FileDescriptor.class, long.class, int.class);
+                WRITE0_MH = MethodHandles.lookup().unreflect(write0Fallback);
+            }
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
