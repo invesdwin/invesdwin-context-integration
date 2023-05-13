@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -129,6 +130,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                         } catch (final EOFException e) {
                             //session closed
                             serverSessions.remove(i);
+                            Closeables.closeQuietly(serverSession);
                             i--;
                         }
                     }
@@ -151,7 +153,11 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                             final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
                             if (serverSession.isHeartbeatTimeout()) {
                                 //session closed
+                                Err.process(new TimeoutException(
+                                        "Heartbeat timeout [" + serverSession.getEndpointSession().getHeartbeatTimeout()
+                                                + "] exceeded: " + serverSession.getEndpointSession().getSessionId()));
                                 serverSessions.remove(i);
+                                Closeables.closeQuietly(serverSession);
                                 i--;
                             }
                         }

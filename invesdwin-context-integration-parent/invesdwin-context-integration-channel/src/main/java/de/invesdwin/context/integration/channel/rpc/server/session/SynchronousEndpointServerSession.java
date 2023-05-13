@@ -49,6 +49,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
+        this.endpointSession = endpointSession;
         this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
         this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
         try {
@@ -58,6 +59,10 @@ public class SynchronousEndpointServerSession implements Closeable {
             close();
             throw new RuntimeException(t);
         }
+    }
+
+    public ISynchronousEndpointSession getEndpointSession() {
+        return endpointSession;
     }
 
     @Override
