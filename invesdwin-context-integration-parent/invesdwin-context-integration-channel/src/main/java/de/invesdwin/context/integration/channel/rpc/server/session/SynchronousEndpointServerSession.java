@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.server.session;
 
 import java.io.Closeable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
@@ -42,8 +43,6 @@ public class SynchronousEndpointServerSession implements Closeable {
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
-    @GuardedBy("lock")
-    private final int sequenceCounter = 0;
     private Future<?> processResponseFuture;
 
     public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
@@ -186,6 +185,8 @@ public class SynchronousEndpointServerSession implements Closeable {
             } finally {
                 requestReader.readFinished();
             }
+        } catch (final EOFException e) {
+            close();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
