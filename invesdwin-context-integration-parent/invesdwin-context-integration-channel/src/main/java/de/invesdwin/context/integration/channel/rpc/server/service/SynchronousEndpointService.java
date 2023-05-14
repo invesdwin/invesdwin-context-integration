@@ -78,11 +78,22 @@ public final class SynchronousEndpointService {
     }
 
     public static int newServiceId(final Class<?> serviceInterface) {
-        return serviceInterface.getName().hashCode();
+        final int hash = serviceInterface.getName().hashCode();
+        if (hash == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+            return -hash;
+        } else {
+            return hash;
+        }
     }
 
     public static int newMethodId(final Method serviceMethod) {
-        return serviceMethod.toString().hashCode();
+        final int hash = serviceMethod.toString().hashCode();
+        if (hash == IServiceSynchronousCommand.ERROR_METHOD_ID
+                || hash == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
+            return -hash;
+        } else {
+            return hash;
+        }
     }
 
     public int getServiceId() {
