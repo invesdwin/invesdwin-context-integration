@@ -69,8 +69,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
-        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(this, serviceInterface,
-                serviceImplementation);
+        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(serdeLookupConfig,
+                serviceInterface, serviceImplementation);
         final SynchronousEndpointService existing = serviceId_service_sync.putIfAbsent(service.getServiceId(), service);
         if (existing != null) {
             throw new IllegalStateException("Already registered [" + service + "] as [" + existing + "]");
@@ -101,6 +101,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             requestFuture.cancel(true);
             requestFuture = null;
             serverAcceptor.close();
+            serviceId_service_sync.clear();
+            serviceId_service_copy = new Int2ObjectOpenHashMap<>();
         }
     }
 

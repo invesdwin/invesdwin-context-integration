@@ -29,9 +29,9 @@ public class NettyUdtHandlerTest extends AChannelTest {
         final NettyUdtSynchronousChannel clientChannel = new NettyUdtSynchronousChannel(type, address, false,
                 getMaxMessageSize());
         final NettyUdtAsynchronousChannel serverHandler = new NettyUdtAsynchronousChannel(serverChannel,
-                newCommandHandler(new WriterHandler()));
+                newCommandHandlerFactory(new WriterHandlerFactory()), false);
         final NettyUdtAsynchronousChannel clientHandler = new NettyUdtAsynchronousChannel(clientChannel,
-                newCommandHandler(new ReaderHandler()));
+                newCommandHandlerFactory(new ReaderHandlerFactory()), false);
         runHandlerPerformanceTest(serverHandler, clientHandler);
     }
 

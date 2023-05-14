@@ -29,9 +29,9 @@ public class HadronioNettySocketHandlerTest extends AChannelTest {
         final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
                 getMaxMessageSize());
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
-                newCommandHandler(new WriterHandler()));
+                newCommandHandlerFactory(new WriterHandlerFactory()), false);
         final NettySocketAsynchronousChannel clientHandler = new NettySocketAsynchronousChannel(clientChannel,
-                newCommandHandler(new ReaderHandler()));
+                newCommandHandlerFactory(new ReaderHandlerFactory()), false);
         runHandlerPerformanceTest(serverHandler, clientHandler);
     }
 

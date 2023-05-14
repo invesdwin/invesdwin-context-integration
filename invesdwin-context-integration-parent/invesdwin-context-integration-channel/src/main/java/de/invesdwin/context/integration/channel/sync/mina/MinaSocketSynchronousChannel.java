@@ -56,6 +56,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
+    private volatile boolean multipleClientsAllowed;
 
     private final IBufferingIterator<Consumer<IoSession>> sessionListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
@@ -97,6 +98,15 @@ public class MinaSocketSynchronousChannel implements Closeable {
         this.writerRegistered = true;
     }
 
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
+    }
+
     public IMinaSocketType getType() {
         return type;
     }
@@ -121,7 +131,6 @@ public class MinaSocketSynchronousChannel implements Closeable {
 
     public void open(final Consumer<IoSession> sessionListener, final boolean validateNative) throws IOException {
         if (!shouldOpen(sessionListener)) {
-            awaitIoSession();
             return;
         }
         addChannelListener(sessionListener);
@@ -132,16 +141,20 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 acceptor.setHandler(new IoHandlerAdapter() {
                     @Override
                     public void sessionCreated(final IoSession session) throws Exception {
-                        if (finalizer.session == null) {
+                        if (multipleClientsAllowed) {
                             onSession(session);
-                            finalizer.session = session;
-                            //only allow one client
-                            if (type.isUnbindAcceptor()) {
-                                acceptor.unbind();
-                            }
                         } else {
-                            //only allow one client
-                            session.closeNow();
+                            if (finalizer.session == null) {
+                                onSession(session);
+                                finalizer.session = session;
+                                //only allow one client
+                                if (type.isUnbindAcceptor()) {
+                                    acceptor.unbind();
+                                }
+                            } else {
+                                //only allow one client
+                                session.closeNow();
+                            }
                         }
                     }
                 });
@@ -222,8 +235,13 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    private synchronized boolean shouldOpen(final Consumer<IoSession> channelListener) {
+    private synchronized boolean shouldOpen(final Consumer<IoSession> channelListener) throws IOException {
         if (activeCount.incrementAndGet() > 1) {
+            if (multipleClientsAllowed) {
+                throw new IllegalStateException(
+                        "multiple opens when multiple clients are allowed are not supported, use an asynchronous handler for that purpose");
+            }
+            awaitIoSession();
             if (channelListener != null) {
                 channelListener.accept(finalizer.session);
             }
@@ -298,7 +316,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
             //wait for channel
-            while ((finalizer.session == null || sessionOpening) && activeCount.get() > 0) {
+            while (!multipleClientsAllowed && (finalizer.session == null || sessionOpening) && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -332,6 +350,10 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
         internalClose();
         finalizer.close();
+    }
+
+    public boolean isClosed() {
+        return finalizer.isCleaned();
     }
 
     private void internalClose() {
@@ -409,7 +431,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
 
         @Override
         protected boolean isCleaned() {
-            return session == null;
+            return session == null && serverAcceptor == null;
         }
 
         @Override

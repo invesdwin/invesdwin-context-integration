@@ -12,7 +12,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
 public class SerdeAsynchronousHandler<I, O>
-        implements IAsynchronousHandler<IByteBuffer, IByteBufferProvider>, IByteBufferProvider {
+        implements IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider>, IByteBufferProvider {
 
     private final IAsynchronousHandler<I, O> delegate;
     private final ISerde<I> inputSerde;
@@ -41,7 +41,17 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferProvider handle(final IByteBuffer inputBuffer) throws IOException {
+    public IByteBufferProvider idle() throws IOException {
+        output = delegate.idle();
+        if (output != null) {
+            return this;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
+    public IByteBufferProvider handle(final IByteBufferProvider inputBuffer) throws IOException {
         final I input = inputSerde.fromBuffer(inputBuffer);
         output = delegate.handle(input);
         if (output != null) {
@@ -49,6 +59,12 @@ public class SerdeAsynchronousHandler<I, O>
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void outputFinished() throws IOException {
+        delegate.outputFinished();
+        output = null;
     }
 
     @Override

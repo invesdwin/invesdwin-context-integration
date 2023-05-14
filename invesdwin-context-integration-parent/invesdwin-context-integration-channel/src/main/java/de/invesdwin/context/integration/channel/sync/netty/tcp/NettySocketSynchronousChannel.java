@@ -16,6 +16,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.future.Futures;
@@ -50,6 +51,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
     private volatile boolean keepBootstrapRunningAfterOpen;
+    private volatile boolean multipleClientsAllowed;
 
     private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
     private final AtomicInteger activeCount = new AtomicInteger();
@@ -99,6 +101,16 @@ public class NettySocketSynchronousChannel implements Closeable {
         return keepBootstrapRunningAfterOpen;
     }
 
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        setKeepBootstrapRunningAfterOpen();
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
+    }
+
     public INettySocketChannelType getType() {
         return type;
     }
@@ -123,7 +135,6 @@ public class NettySocketSynchronousChannel implements Closeable {
 
     public void open(final Consumer<SocketChannel> channelListener) throws IOException {
         if (!shouldOpen(channelListener)) {
-            awaitSocketChannel();
             return;
         }
         addChannelListener(channelListener);
@@ -138,17 +149,22 @@ public class NettySocketSynchronousChannel implements Closeable {
                 finalizer.serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {
-                        if (finalizer.socketChannel == null) {
+                        if (multipleClientsAllowed) {
                             type.initChannel(ch, true);
                             onSocketChannel(ch);
-                            finalizer.socketChannel = ch;
-                            if (parentGroup != childGroup) {
-                                //only allow one client
-                                parentGroup.shutdownGracefully();
-                            }
                         } else {
-                            //only allow one client
-                            ch.close();
+                            if (finalizer.socketChannel == null) {
+                                type.initChannel(ch, true);
+                                onSocketChannel(ch);
+                                finalizer.socketChannel = ch;
+                                if (parentGroup != childGroup) {
+                                    //only allow one client
+                                    parentGroup.shutdownGracefully();
+                                }
+                            } else {
+                                //only allow one client
+                                ch.close();
+                            }
                         }
                     }
                 });
@@ -179,8 +195,13 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
     }
 
-    private synchronized boolean shouldOpen(final Consumer<SocketChannel> channelListener) {
+    private synchronized boolean shouldOpen(final Consumer<SocketChannel> channelListener) throws IOException {
         if (activeCount.incrementAndGet() > 1) {
+            if (multipleClientsAllowed) {
+                throw new IllegalStateException(
+                        "multiple opens when multiple clients are allowed are not supported, use an asynchronous handler for that purpose");
+            }
+            awaitSocketChannel();
             if (channelListener != null) {
                 channelListener.accept(finalizer.socketChannel);
             }
@@ -252,7 +273,8 @@ public class NettySocketSynchronousChannel implements Closeable {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
             //wait for channel
-            while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
+            while (!multipleClientsAllowed && (finalizer.socketChannel == null || socketChannelOpening)
+                    && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -286,6 +308,10 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
         internalClose();
         finalizer.close();
+    }
+
+    public boolean isClosed() {
+        return finalizer.isCleaned();
     }
 
     private void internalClose() {
@@ -377,7 +403,7 @@ public class NettySocketSynchronousChannel implements Closeable {
 
         @Override
         protected boolean isCleaned() {
-            return socketChannel == null;
+            return socketChannel == null && serverBootstrap == null;
         }
 
         @Override

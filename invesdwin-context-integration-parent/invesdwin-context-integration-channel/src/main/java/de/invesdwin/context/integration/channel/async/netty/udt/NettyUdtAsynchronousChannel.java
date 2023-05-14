@@ -1,50 +1,70 @@
 package de.invesdwin.context.integration.channel.async.netty.udt;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
+import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.duration.Duration;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
 import io.netty.channel.udt.UdtMessage;
+import io.netty.handler.timeout.IdleStateEvent;
+import io.netty.handler.timeout.IdleStateHandler;
 
 @NotThreadSafe
 public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
 
     private NettyUdtSynchronousChannel channel;
-    private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
-    private Reader reader;
+    private final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory;
 
     public NettyUdtAsynchronousChannel(final NettyUdtSynchronousChannel channel,
-            final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler) {
+            final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory,
+            final boolean multipleClientsAllowed) {
         channel.setReaderRegistered();
         channel.setWriterRegistered();
         channel.setKeepBootstrapRunningAfterOpen();
+        if (channel.isServer() && multipleClientsAllowed) {
+            channel.setMultipleClientsAllowed();
+        }
         this.channel = channel;
-        this.handler = handler;
+        this.handlerFactory = handlerFactory;
     }
 
     @Override
     public void open() throws IOException {
-        this.reader = new Reader(handler, channel.getSocketAddress(), channel.getSocketSize());
+        final Runnable closeAsync;
+        if (channel.isMultipleClientsAllowed()) {
+            closeAsync = () -> {
+            };
+        } else {
+            closeAsync = NettyUdtAsynchronousChannel.this::closeAsync;
+        }
         channel.open(bootstrap -> {
-            bootstrap.handler(reader);
-        }, channel -> {
-            final ChannelPipeline pipeline = channel.pipeline();
-            pipeline.addLast(reader);
+            bootstrap.handler(new Reader(handlerFactory.newHandler("server"), channel.getSocketAddress(),
+                    channel.getSocketSize(), closeAsync));
+        }, ch -> {
+            final ChannelPipeline pipeline = ch.pipeline();
+            final Duration heartbeatInterval = handlerFactory.getHeartbeatInterval();
+            final long heartbeatIntervalMillis = heartbeatInterval.longValue(FTimeUnit.MILLISECONDS);
+            pipeline.addLast(new IdleStateHandler(heartbeatIntervalMillis, heartbeatIntervalMillis,
+                    heartbeatIntervalMillis, TimeUnit.MILLISECONDS));
+            pipeline.addLast(new Reader(handlerFactory.newHandler(ch.toString()), channel.getSocketAddress(),
+                    channel.getSocketSize(), closeAsync));
         });
     }
 
@@ -54,12 +74,8 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             channel.close();
             channel = null;
         }
-        if (reader != null) {
-            reader.close();
-            reader = null;
-        }
         try {
-            handler.close();
+            handlerFactory.close();
         } catch (final IOException e) {
             //ignore
         }
@@ -70,12 +86,8 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             channel.closeAsync();
             channel = null;
         }
-        if (reader != null) {
-            reader.close();
-            reader = null;
-        }
         try {
-            handler.close();
+            handlerFactory.close();
         } catch (final IOException e) {
             //ignore
         }
@@ -83,23 +95,24 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public boolean isClosed() {
-        return channel == null || channel.getUdtChannel() == null;
+        return channel == null || channel.isClosed();
     }
 
-    private final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
-        private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
+    private static final class Reader extends ChannelInboundHandlerAdapter {
+        private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
         private final InetSocketAddress recipient;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
         private final IByteBuffer messageBuffer;
+        private final Runnable closeAsync;
         private int targetPosition = NettySocketSynchronousChannel.MESSAGE_INDEX;
         private int remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
 
-        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler,
-                final InetSocketAddress recipient, final int socketSize) {
+        private Reader(final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
+                final InetSocketAddress recipient, final int socketSize, final Runnable closeAsync) {
             this.handler = handler;
             this.recipient = recipient;
             //netty uses direct buffers per default
@@ -107,21 +120,22 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
             this.messageBuffer = buffer.newSliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
+            this.closeAsync = closeAsync;
         }
 
-        @Override
-        public void close() {
+        private void close(final ChannelHandlerContext ctx) {
             if (!closed) {
                 closed = true;
                 this.buf.release();
-                closeAsync();
+                ctx.close();
+                closeAsync.run();
             }
         }
 
         @Override
         public void exceptionCaught(final ChannelHandlerContext ctx, final Throwable cause) throws Exception {
             //connection must have been closed by the other side
-            close();
+            close(ctx);
             super.exceptionCaught(ctx, cause);
         }
 
@@ -129,9 +143,41 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
             try {
                 final IByteBufferProvider output = handler.open();
-                writeOutput(ctx, output);
+                try {
+                    writeOutput(ctx, output);
+                } finally {
+                    handler.outputFinished();
+                }
             } catch (final IOException e) {
-                close();
+                close(ctx);
+            }
+        }
+
+        @Override
+        public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
+            close(ctx);
+        }
+
+        @Override
+        public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
+            if (evt instanceof IdleStateEvent) {
+                try {
+                    final IByteBufferProvider output = handler.idle();
+                    try {
+                        writeOutput(ctx, output);
+                    } finally {
+                        handler.outputFinished();
+                    }
+                } catch (final IOException e) {
+                    try {
+                        writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                    } catch (final IOException e1) {
+                        //ignore
+                    }
+                    close(ctx);
+                }
+            } else {
+                super.userEventTriggered(ctx, evt);
             }
         }
 
@@ -168,7 +214,7 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
                 //read size and adjust target and remaining
                 size = buffer.getInt(NettySocketSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
-                    NettyUdtAsynchronousChannel.this.closeAsync();
+                    close(ctx);
                     return false;
                 }
                 targetPosition = size;
@@ -182,14 +228,18 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             }
             //message complete
             if (ClosedByteBuffer.isClosed(buffer, 0, size)) {
-                NettyUdtAsynchronousChannel.this.closeAsync();
+                close(ctx);
                 return false;
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(input);
-                    writeOutput(ctx, output);
+                    try {
+                        writeOutput(ctx, output);
+                    } finally {
+                        handler.outputFinished();
+                    }
                     return repeat;
                 } catch (final IOException e) {
                     try {
@@ -197,7 +247,7 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
                     } catch (final IOException e1) {
                         //ignore
                     }
-                    NettyUdtAsynchronousChannel.this.closeAsync();
+                    close(ctx);
                     return false;
                 }
             }

@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
@@ -50,6 +51,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
     private volatile boolean keepBootstrapRunningAfterOpen;
+    private volatile boolean multipleClientsAllowed;
 
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
@@ -97,6 +99,16 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     public boolean isKeepBootstrapRunningAfterOpen() {
         return keepBootstrapRunningAfterOpen;
+    }
+
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        setKeepBootstrapRunningAfterOpen();
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
     }
 
     public INettyDatagramChannelType getType() {
@@ -147,8 +159,13 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
     }
 
-    private synchronized boolean shouldOpen(final Consumer<DatagramChannel> channelListener) {
+    private synchronized boolean shouldOpen(final Consumer<DatagramChannel> channelListener) throws IOException {
         if (activeCount.incrementAndGet() > 1) {
+            if (multipleClientsAllowed) {
+                throw new IllegalStateException(
+                        "multiple opens when multiple clients are allowed are not supported, use an asynchronous handler for that purpose");
+            }
+            awaitDatagramChannel();
             if (channelListener != null) {
                 channelListener.accept(finalizer.datagramChannel);
             }
@@ -169,7 +186,9 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                     final ChannelFuture sync = channelFactory.get().sync();
                     type.initChannel(finalizer.datagramChannel, server);
                     onDatagramChannel(finalizer.datagramChannel);
-                    finalizer.datagramChannel = (DatagramChannel) sync.channel();
+                    if (!multipleClientsAllowed) {
+                        finalizer.datagramChannel = (DatagramChannel) sync.channel();
+                    }
                     sync.get();
                     break;
                 } catch (final Throwable t) {
@@ -202,7 +221,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         try {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((finalizer.datagramChannel == null || datagramChannelOpening) && activeCount.get() > 0) {
+            while (!multipleClientsAllowed && (finalizer.datagramChannel == null || datagramChannelOpening)
+                    && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -245,6 +265,10 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
         internalClose();
         finalizer.close();
+    }
+
+    public boolean isClosed() {
+        return finalizer.isCleaned();
     }
 
     private void internalClose() {
@@ -314,7 +338,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
         @Override
         protected boolean isCleaned() {
-            return datagramChannel == null;
+            return datagramChannel == null && bootstrap == null;
         }
 
         @Override

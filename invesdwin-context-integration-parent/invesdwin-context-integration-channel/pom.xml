@@ -154,5 +154,10 @@
 			<artifactId>disni</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>org.jgroups</groupId>
+			<artifactId>jgroups</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>

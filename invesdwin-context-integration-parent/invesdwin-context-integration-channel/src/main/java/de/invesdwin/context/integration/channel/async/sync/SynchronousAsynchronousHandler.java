@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -20,6 +21,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     private final ISynchronousWriter<I> inputWriter;
     private final SynchronousWriterSpinWait<I> writerSpinWait;
     private final Duration timeout;
+    private long lastHeartbeatNanos = System.nanoTime();
 
     /**
      * Wrap inputReader in a BlockingSynchronousReader if a response should be guaranteed.
@@ -37,12 +39,22 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
         outputReader.open();
         inputWriter.open();
         if (outputReader.hasNext()) {
-            final O message = outputReader.readMessage();
-            outputReader.readFinished();
-            return message;
+            return outputReader.readMessage();
         } else {
             return null;
         }
+    }
+
+    @Override
+    public O idle() throws IOException {
+        if (isHeartbeatTimeout()) {
+            throw FastEOFException.getInstance("heartbeat timeout [%s] exceeded", timeout);
+        }
+        return null;
+    }
+
+    public boolean isHeartbeatTimeout() {
+        return timeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     @Override
@@ -50,12 +62,16 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
         //maybe block here
         writerSpinWait.waitForWrite(input, timeout);
         if (outputReader.hasNext()) {
-            final O message = outputReader.readMessage();
-            outputReader.readFinished();
-            return message;
+            lastHeartbeatNanos = System.nanoTime();
+            return outputReader.readMessage();
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void outputFinished() throws IOException {
+        outputReader.readFinished();
     }
 
     @Override

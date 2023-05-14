@@ -9,7 +9,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.retry.Retries;
@@ -22,6 +21,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 import de.invesdwin.util.marshallers.serde.lookup.response.IResponseSerdeProvider;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -35,7 +35,7 @@ public final class SynchronousEndpointService {
     private final Object serviceImplementation;
     private final Int2ObjectMap<MethodInfo> methodId_methodInfo;
 
-    private SynchronousEndpointService(final SynchronousEndpointServer parent, final Class<?> serviceInterface,
+    private SynchronousEndpointService(final SerdeLookupConfig serdeLookupConfig, final Class<?> serviceInterface,
             final Object serviceImplementation) {
         this.serviceInterface = serviceInterface;
         this.serviceId = newServiceId(serviceInterface);
@@ -58,11 +58,8 @@ public final class SynchronousEndpointService {
                 final int methodId = newMethodId(method);
                 try {
                     final MethodHandle methodHandle = lookup.unreflect(method);
-                    final ISerde<Object[]> requestSerde = parent.getSerdeLookupConfig()
-                            .getRequestLookup()
-                            .lookup(method);
-                    final IResponseSerdeProvider responseSerdeProvider = parent.getSerdeLookupConfig()
-                            .getResponseLookup()
+                    final ISerde<Object[]> requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
+                    final IResponseSerdeProvider responseSerdeProvider = serdeLookupConfig.getResponseLookup()
                             .lookup(method);
                     final MethodInfo existing = methodId_methodInfo.put(methodId,
                             new MethodInfo(methodHandle, requestSerde, responseSerdeProvider));
@@ -144,13 +141,12 @@ public final class SynchronousEndpointService {
                 response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                         Throwables.concatMessages(loggedException));
             }
-            return;
         }
     }
 
-    public static <T> SynchronousEndpointService newInstance(final SynchronousEndpointServer parent,
+    public static <T> SynchronousEndpointService newInstance(final SerdeLookupConfig serdeLookupConfig,
             final Class<? super T> interfaceType, final T implementation) {
-        return new SynchronousEndpointService(parent, interfaceType, implementation);
+        return new SynchronousEndpointService(serdeLookupConfig, interfaceType, implementation);
     }
 
     @Override

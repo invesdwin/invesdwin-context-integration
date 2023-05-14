@@ -29,9 +29,9 @@ public class MinaSocketHandlerTest extends AChannelTest {
         final MinaSocketSynchronousChannel clientChannel = newMinaSocketChannel(type, address, false,
                 getMaxMessageSize());
         final MinaSocketAsynchronousChannel serverHandler = new MinaSocketAsynchronousChannel(serverChannel,
-                newCommandHandler(new WriterHandler()));
+                newCommandHandlerFactory(new WriterHandlerFactory()), false);
         final MinaSocketAsynchronousChannel clientHandler = new MinaSocketAsynchronousChannel(clientChannel,
-                newCommandHandler(new ReaderHandler()));
+                newCommandHandlerFactory(new ReaderHandlerFactory()), false);
         runHandlerPerformanceTest(serverHandler, clientHandler);
     }
 

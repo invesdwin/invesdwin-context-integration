@@ -5,7 +5,6 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
@@ -33,15 +32,10 @@ public class SynchronousEndpointServerSession implements Closeable {
     private static final int MAX_PENDING_COUNT = 10_000;
 
     private final SynchronousEndpointServer parent;
-    @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
-    @GuardedBy("lock")
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
-    @GuardedBy("lock")
     private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
-    @GuardedBy("lock")
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
-    @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<?> processResponseFuture;
 

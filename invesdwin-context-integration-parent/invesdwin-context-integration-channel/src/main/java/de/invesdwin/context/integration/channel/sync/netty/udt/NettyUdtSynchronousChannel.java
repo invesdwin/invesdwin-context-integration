@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.error.Throwables;
@@ -56,6 +57,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
     private volatile boolean keepBootstrapRunningAfterOpen;
+    private volatile boolean multipleClientsAllowed;
 
     private final IBufferingIterator<Consumer<UdtChannel>> channelListeners = new BufferingIterator<>();
     @GuardedBy("this for modification")
@@ -106,6 +108,16 @@ public class NettyUdtSynchronousChannel implements Closeable {
         return keepBootstrapRunningAfterOpen;
     }
 
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        setKeepBootstrapRunningAfterOpen();
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
+    }
+
     public INettyUdtChannelType getType() {
         return type;
     }
@@ -131,7 +143,6 @@ public class NettyUdtSynchronousChannel implements Closeable {
     public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<UdtChannel> channelListener)
             throws IOException {
         if (!shouldOpen(channelListener)) {
-            awaitUdtChannel();
             return;
         }
         addChannelListener(channelListener);
@@ -146,17 +157,22 @@ public class NettyUdtSynchronousChannel implements Closeable {
                 finalizer.serverBootstrap.childHandler(new ChannelInitializer<UdtChannel>() {
                     @Override
                     public void initChannel(final UdtChannel ch) throws Exception {
-                        if (finalizer.udtChannel == null) {
+                        if (multipleClientsAllowed) {
                             type.initChannel(ch, true);
                             onUdtChannel(ch);
-                            finalizer.udtChannel = ch;
-                            if (parentGroup != childGroup) {
-                                //only allow one client
-                                parentGroup.shutdownGracefully();
-                            }
                         } else {
-                            //only allow one client
-                            ch.close();
+                            if (finalizer.udtChannel == null) {
+                                type.initChannel(ch, true);
+                                onUdtChannel(ch);
+                                finalizer.udtChannel = ch;
+                                if (parentGroup != childGroup) {
+                                    //only allow one client
+                                    parentGroup.shutdownGracefully();
+                                }
+                            } else {
+                                //only allow one client
+                                ch.close();
+                            }
                         }
                     }
                 });
@@ -187,8 +203,13 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
     }
 
-    private synchronized boolean shouldOpen(final Consumer<UdtChannel> channelListener) {
+    private synchronized boolean shouldOpen(final Consumer<UdtChannel> channelListener) throws IOException {
         if (activeCount.incrementAndGet() > 1) {
+            if (multipleClientsAllowed) {
+                throw new IllegalStateException(
+                        "multiple opens when multiple clients are allowed are not supported, use an asynchronous handler for that purpose");
+            }
+            awaitUdtChannel();
             if (channelListener != null) {
                 channelListener.accept(finalizer.udtChannel);
             }
@@ -259,7 +280,8 @@ public class NettyUdtSynchronousChannel implements Closeable {
         try {
             final Duration connectTimeout = getConnectTimeout();
             final long startNanos = System.nanoTime();
-            while ((finalizer.udtChannel == null || udtChannelOpening) && activeCount.get() > 0) {
+            while (!multipleClientsAllowed && (finalizer.udtChannel == null || udtChannelOpening)
+                    && activeCount.get() > 0) {
                 if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
@@ -293,6 +315,10 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
         internalClose();
         finalizer.close();
+    }
+
+    public boolean isClosed() {
+        return finalizer.isCleaned();
     }
 
     private void internalClose() {
@@ -374,7 +400,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
 
         @Override
         protected boolean isCleaned() {
-            return udtChannel == null;
+            return udtChannel == null && serverBootstrap == null;
         }
 
         @Override

@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.async.mina;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -9,10 +8,12 @@ import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.filterchain.IoFilterChain;
+import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -23,27 +24,38 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
     private MinaSocketSynchronousChannel channel;
-    private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
-    private Reader reader;
+    private final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory;
 
     public MinaSocketAsynchronousChannel(final MinaSocketSynchronousChannel channel,
-            final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler) {
+            final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory,
+            final boolean multipleClientsAllowed) {
         channel.setReaderRegistered();
         channel.setWriterRegistered();
+        if (channel.isServer() && multipleClientsAllowed) {
+            channel.setMultipleClientsAllowed();
+        }
         this.channel = channel;
-        this.handler = handler;
+        this.handlerFactory = handlerFactory;
     }
 
     @Override
     public void open() throws IOException {
-        this.reader = new Reader(handler, channel.getSocketSize());
-        channel.open(channel -> {
-            final IoFilterChain pipeline = channel.getFilterChain();
+        channel.open(ch -> {
+            final IoFilterChain pipeline = ch.getFilterChain();
+            final Runnable closeAsync;
+            if (channel.isMultipleClientsAllowed()) {
+                closeAsync = () -> {
+                };
+            } else {
+                closeAsync = MinaSocketAsynchronousChannel.this::closeAsync;
+            }
+            final Reader reader = new Reader(handlerFactory.newHandler(ch.toString()), channel.getSocketSize(),
+                    closeAsync);
             pipeline.addLast("reader", reader);
-            if (!channel.isServer()) {
+            if (!ch.isServer()) {
                 try {
                     //need to call this manually for clients
-                    reader.sessionOpened(null, channel);
+                    reader.sessionOpened(null, ch);
                 } catch (final Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -57,12 +69,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             channel.close();
             channel = null;
         }
-        if (reader != null) {
-            reader.close();
-            reader = null;
-        }
         try {
-            handler.close();
+            handlerFactory.close();
         } catch (final IOException e) {
             //ignore
         }
@@ -73,12 +81,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             channel.closeAsync();
             channel = null;
         }
-        if (reader != null) {
-            reader.close();
-            reader = null;
-        }
         try {
-            handler.close();
+            handlerFactory.close();
         } catch (final IOException e) {
             //ignore
         }
@@ -86,34 +90,37 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public boolean isClosed() {
-        return channel == null || channel.getIoSession() == null;
+        return channel == null || channel.isClosed();
     }
 
-    private final class Reader extends IoFilterAdapter implements Closeable {
-        private final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler;
+    private static final class Reader extends IoFilterAdapter {
+        private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
         private final IoBuffer buf;
         private final UnsafeByteBuffer buffer;
         private final IByteBuffer messageBuffer;
+        private final Runnable closeAsync;
         private int targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
         private int remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
 
-        private Reader(final IAsynchronousHandler<IByteBuffer, IByteBufferProvider> handler, final int socketSize) {
+        private Reader(final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
+                final int socketSize, final Runnable closeAsync) {
             this.handler = handler;
             //netty uses direct buffers per default
             this.buf = new SimpleBufferAllocator().allocate(socketSize, true);
             this.buffer = new UnsafeByteBuffer(buf.buf());
             this.messageBuffer = buffer.newSliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
+            this.closeAsync = closeAsync;
         }
 
-        @Override
-        public void close() {
+        private void close(final IoSession session) {
             if (!closed) {
                 closed = true;
                 this.buf.free();
-                closeAsync();
+                session.closeNow();
+                closeAsync.run();
             }
         }
 
@@ -121,7 +128,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         public void exceptionCaught(final NextFilter nextFilter, final IoSession session, final Throwable cause)
                 throws Exception {
             //connection must have been closed by the other side
-            close();
+            close(session);
             super.exceptionCaught(nextFilter, session, cause);
         }
 
@@ -129,9 +136,38 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         public void sessionOpened(final NextFilter nextFilter, final IoSession session) throws Exception {
             try {
                 final IByteBufferProvider output = handler.open();
-                writeOutput(session, output);
+                try {
+                    writeOutput(session, output);
+                } finally {
+                    handler.outputFinished();
+                }
             } catch (final IOException e) {
-                close();
+                close(session);
+            }
+        }
+
+        @Override
+        public void sessionClosed(final NextFilter nextFilter, final IoSession session) throws Exception {
+            close(session);
+        }
+
+        @Override
+        public void sessionIdle(final NextFilter nextFilter, final IoSession session, final IdleStatus status)
+                throws Exception {
+            try {
+                final IByteBufferProvider output = handler.idle();
+                try {
+                    writeOutput(session, output);
+                } finally {
+                    handler.outputFinished();
+                }
+            } catch (final IOException e) {
+                try {
+                    writeOutput(session, ClosedByteBuffer.INSTANCE);
+                } catch (final IOException e1) {
+                    //ignore
+                }
+                close(session);
             }
         }
 
@@ -173,7 +209,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                 //read size and adjust target and remaining
                 size = buffer.getInt(MinaSocketSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
-                    MinaSocketAsynchronousChannel.this.closeAsync();
+                    close(session);
                     return false;
                 }
                 targetPosition = size;
@@ -187,14 +223,18 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             }
             //message complete
             if (ClosedByteBuffer.isClosed((IByteBuffer) buffer, 0, size)) {
-                MinaSocketAsynchronousChannel.this.closeAsync();
+                close(session);
                 return false;
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(input);
-                    writeOutput(session, output);
+                    try {
+                        writeOutput(session, output);
+                    } finally {
+                        handler.outputFinished();
+                    }
                     return repeat;
                 } catch (final IOException e) {
                     try {
@@ -202,7 +242,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                     } catch (final IOException e1) {
                         //ignore
                     }
-                    MinaSocketAsynchronousChannel.this.closeAsync();
+                    close(session);
                     return false;
                 }
             }

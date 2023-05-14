@@ -17,9 +17,11 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.channel.async.AsynchronousHandlerFactorySupport;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -61,7 +63,6 @@ import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
@@ -281,9 +282,10 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected IAsynchronousHandler<IByteBuffer, IByteBufferProvider> newCommandHandler(
-            final IAsynchronousHandler<FDate, FDate> handler) {
-        return new SerdeAsynchronousHandler<>(handler, FDateSerde.GET, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
+    protected IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> newCommandHandlerFactory(
+            final IAsynchronousHandlerFactory<FDate, FDate> handler) {
+        return new SerdeAsynchronousHandlerFactory<FDate, FDate>(handler, FDateSerde.GET, FDateSerde.GET,
+                FDateSerde.FIXED_LENGTH);
     }
 
     public static ISynchronousReader<FDate> newCommandReader(final ISynchronousReader<IByteBufferProvider> reader) {
@@ -459,6 +461,15 @@ public abstract class AChannelTest extends ATest {
 
     }
 
+    public static class ReaderHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
+
+        @Override
+        public IAsynchronousHandler<FDate, FDate> newHandler(final String sessionId) {
+            return new ReaderHandler();
+        }
+
+    }
+
     public static class ReaderHandler implements IAsynchronousHandler<FDate, FDate> {
 
         private final OutputStream log;
@@ -487,6 +498,11 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
+        public FDate idle() throws IOException {
+            throw FastEOFException.getInstance("should not become idle");
+        }
+
+        @Override
         public FDate handle(final FDate readMessage) throws IOException {
             if (DEBUG) {
                 log.write("client request out\n".getBytes());
@@ -504,12 +520,26 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
+        public void outputFinished() throws IOException {
+            //noop
+        }
+
+        @Override
         public void close() throws IOException {
             Assertions.checkEquals(count, VALUES);
             if (DEBUG) {
                 log.write("client close handler\n".getBytes());
             }
             printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
+        }
+
+    }
+
+    public static class WriterHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
+
+        @Override
+        public IAsynchronousHandler<FDate, FDate> newHandler(final String sessionId) {
+            return new WriterHandler();
         }
 
     }
@@ -545,6 +575,11 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
+        public FDate idle() throws IOException {
+            throw FastEOFException.getInstance("should not become idle");
+        }
+
+        @Override
         public FDate handle(final FDate readMessage) throws IOException {
             if (DEBUG) {
                 log.write("server request in\n".getBytes());
@@ -563,6 +598,11 @@ public abstract class AChannelTest extends ATest {
             } catch (final NoSuchElementException e) {
                 throw FastEOFException.getInstance(e);
             }
+        }
+
+        @Override
+        public void outputFinished() throws IOException {
+            //noop
         }
 
         @Override

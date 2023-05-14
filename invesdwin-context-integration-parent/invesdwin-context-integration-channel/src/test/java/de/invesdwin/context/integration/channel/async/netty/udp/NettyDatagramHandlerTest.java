@@ -29,9 +29,9 @@ public class NettyDatagramHandlerTest extends AChannelTest {
         final NettyDatagramSynchronousChannel clientChannel = new NettyDatagramSynchronousChannel(type, address, false,
                 getMaxMessageSize());
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
-                newCommandHandler(new WriterHandler()));
+                newCommandHandlerFactory(new WriterHandlerFactory()), false);
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,
-                newCommandHandler(new ReaderHandler()));
+                newCommandHandlerFactory(new ReaderHandlerFactory()), false);
         runHandlerPerformanceTest(serverHandler, clientHandler);
     }
 

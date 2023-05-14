@@ -46,6 +46,16 @@ public class CommandAsynchronousHandler<I, O>
     }
 
     @Override
+    public IByteBufferProvider idle() throws IOException {
+        output = delegate.idle();
+        if (output != null) {
+            return this;
+        } else {
+            return null;
+        }
+    }
+
+    @Override
     public IByteBufferProvider handle(final IByteBuffer inputBuffer) throws IOException {
         final int type = inputBuffer.getInt(SynchronousCommandSerde.TYPE_INDEX);
         final int sequence = inputBuffer.getInt(SynchronousCommandSerde.SEQUENCE_INDEX);
@@ -60,6 +70,12 @@ public class CommandAsynchronousHandler<I, O>
         } else {
             return null;
         }
+    }
+
+    @Override
+    public void outputFinished() throws IOException {
+        delegate.outputFinished();
+        output = null;
     }
 
     @Override
