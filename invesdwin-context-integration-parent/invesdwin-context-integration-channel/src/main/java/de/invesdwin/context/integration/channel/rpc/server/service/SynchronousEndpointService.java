@@ -180,7 +180,7 @@ public final class SynchronousEndpointService {
                 final Object[] args = new Object[params.length + 1];
                 System.arraycopy(params, 0, args, 1, params.length);
                 args[0] = targetObject;
-                return methodHandle.invoke(args);
+                return methodHandle.invokeWithArguments(args);
             }
         }
 
