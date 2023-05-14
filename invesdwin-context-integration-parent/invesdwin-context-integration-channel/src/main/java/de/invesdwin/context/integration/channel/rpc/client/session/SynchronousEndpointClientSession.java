@@ -54,6 +54,7 @@ public class SynchronousEndpointClientSession implements Closeable {
 
     public SynchronousEndpointClientSession(final IObjectPool<SynchronousEndpointClientSession> pool,
             final ISynchronousEndpointSession endpointSession) {
+        this.endpointSession = endpointSession;
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(SynchronousEndpointClientSession.class.getSimpleName() + "_lock");
         this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(

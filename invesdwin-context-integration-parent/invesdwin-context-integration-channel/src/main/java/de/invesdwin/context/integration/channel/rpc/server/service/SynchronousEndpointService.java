@@ -107,7 +107,8 @@ public final class SynchronousEndpointService {
                 return;
             }
             final Object[] args = methodInfo.requestSerde.fromBuffer(request.getMessage());
-            final Object result = methodInfo.methodHandle.invoke(serviceImplementation, args);
+
+            final Object result = methodInfo.invoke(serviceImplementation, args);
             response.setMethod(methodId);
             final ISerde<Object> resultSerde = methodInfo.responseSerdeProvider.getSerde(args);
             response.setMessage(resultSerde, result);
@@ -160,6 +161,27 @@ public final class SynchronousEndpointService {
             this.methodHandle = methodHandle;
             this.requestSerde = requestSerde;
             this.responseSerdeProvider = responseSerdeProvider;
+        }
+
+        private Object invoke(final Object targetObject, final Object... params) throws Throwable {
+            if (params == null) {
+                return methodHandle.invoke(targetObject);
+            }
+            switch (params.length) {
+            case 0:
+                return methodHandle.invoke(targetObject);
+            case 1:
+                return methodHandle.invoke(targetObject, params[0]);
+            case 2:
+                return methodHandle.invoke(targetObject, params[0], params[1]);
+            case 3:
+                return methodHandle.invoke(targetObject, params[0], params[1], params[2]);
+            default:
+                final Object[] args = new Object[params.length + 1];
+                System.arraycopy(params, 0, args, 1, params.length);
+                args[0] = targetObject;
+                return methodHandle.invoke(args);
+            }
         }
 
     }

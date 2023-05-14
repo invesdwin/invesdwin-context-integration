@@ -4,7 +4,8 @@ import java.io.Closeable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.IdentityHashMap;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -85,14 +86,14 @@ public final class SynchronousEndpointClient<T> implements Closeable {
 
         private final int serviceId;
         private final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool;
-        private final IdentityHashMap<Method, MethodInfo> method_methodInfo;
+        private final Map<Method, MethodInfo> method_methodInfo;
 
         private Handler(final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool,
                 final Class<?> serviceInterface, final SerdeLookupConfig serdeLookupConfig) {
             this.serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
             this.sessionPool = sessionPool;
             final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
-            this.method_methodInfo = new IdentityHashMap<>(methods.length);
+            this.method_methodInfo = new HashMap<>(methods.length);
             for (int i = 0; i < methods.length; i++) {
                 final Method method = methods[i];
                 if (Reflections.getAnnotation(method, Hidden.class) != null) {
