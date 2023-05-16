@@ -60,8 +60,9 @@ public class SynchronousEndpointServerSession implements Closeable {
 
     @Override
     public void close() {
-        if (processResponseFuture != null) {
-            processResponseFuture.cancel(true);
+        final Future<?> processResponseFutureCopy = processResponseFuture;
+        if (processResponseFutureCopy != null) {
+            processResponseFutureCopy.cancel(true);
             processResponseFuture = null;
         }
         final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReaderCopy = requestReader;
@@ -78,9 +79,10 @@ public class SynchronousEndpointServerSession implements Closeable {
         } catch (final Throwable t) {
             Err.process(new RuntimeException("Ignoring", t));
         }
-        if (endpointSession != null) {
+        final ISynchronousEndpointSession endpointSessionCopy = endpointSession;
+        if (endpointSessionCopy != null) {
             try {
-                endpointSession.close();
+                endpointSessionCopy.close();
             } catch (final Throwable t) {
                 Err.process(new RuntimeException("Ignoring", t));
             }
