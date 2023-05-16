@@ -22,6 +22,7 @@ import de.invesdwin.context.integration.jppf.client.JPPFServerDestinationProvide
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FDates;
 import de.invesdwin.util.time.duration.Duration;
 
 // http://www.jppf.org/doc/4.2/index.php?title=Defining_the_node_connection_strategy
@@ -32,7 +33,7 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
 
     private JPPFServerDestinationProvider destinationProvider;
 
-    private FDate lastRefresh = FDate.MIN_DATE;
+    private FDate lastRefresh = FDates.MIN_DATE;
 
     private final Queue<DriverConnectionInfo> queue = new LinkedBlockingQueue<>();
 

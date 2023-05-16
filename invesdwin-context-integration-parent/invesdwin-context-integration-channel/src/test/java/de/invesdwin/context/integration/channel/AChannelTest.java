@@ -73,7 +73,7 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public abstract class AChannelTest extends ATest {
 
-    public static final FDate REQUEST_MESSAGE = FDate.MAX_DATE;
+    public static final FDate REQUEST_MESSAGE = FDates.MAX_DATE;
     public static final boolean DEBUG = false;
     public static final int MAX_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int VALUES = DEBUG ? 10 : 1_000;
@@ -308,7 +308,7 @@ public abstract class AChannelTest extends ATest {
     }
 
     protected static ICloseableIterable<FDate> newValues() {
-        return FDates.iterable(FDate.MIN_DATE, FDate.MIN_DATE.addMilliseconds(VALUES - 1), FTimeUnit.MILLISECONDS, 1);
+        return FDates.iterable(FDates.MIN_DATE, FDates.MIN_DATE.addMilliseconds(VALUES - 1), FTimeUnit.MILLISECONDS, 1);
     }
 
     public static class ClientTask implements Runnable {

@@ -38,6 +38,7 @@ import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FDates;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -71,7 +72,7 @@ public class JPPFProcessingThreadsCounter {
     @GuardedBy("this")
     private final List<Integer> medianProcessingThreadsCounts = new ArrayList<>();
     @GuardedBy("this")
-    private FDate lastRefresh = FDate.MIN_DATE;
+    private FDate lastRefresh = FDates.MIN_DATE;
     @GuardedBy("this")
     private boolean warmupFinished = false;
 
@@ -85,8 +86,7 @@ public class JPPFProcessingThreadsCounter {
                 1);
         topologyManager.addTopologyListener(new TopologyListener() {
             @Override
-            public void nodeUpdated(final TopologyEvent event) {
-            }
+            public void nodeUpdated(final TopologyEvent event) {}
 
             @Override
             public void nodeRemoved(final TopologyEvent event) {
@@ -99,8 +99,7 @@ public class JPPFProcessingThreadsCounter {
             }
 
             @Override
-            public void driverUpdated(final TopologyEvent event) {
-            }
+            public void driverUpdated(final TopologyEvent event) {}
 
             @Override
             public void driverRemoved(final TopologyEvent event) {
@@ -114,7 +113,7 @@ public class JPPFProcessingThreadsCounter {
         });
         refresh();
         //don't count the first refresh
-        lastRefresh = FDate.MIN_DATE;
+        lastRefresh = FDates.MIN_DATE;
     }
 
     public synchronized void maybeRefresh() {
