@@ -52,7 +52,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
  * This is a weak server implementation that does not use a selector or native polling mechanism. Instead each channel
  * is checked individually for requests. This is useful for channels where selector or a native polling mechanism is not
  * available (e.g. memory mapped files). It can also be used when latency is not so important (though it can cause
- * excessive amounts of slow syscalls).
+ * excessive amounts of slow syscalls). For all other cases it might be better to use a netty async handler or disni
+ * (active) handler for the server.
  */
 @ThreadSafe
 public class SynchronousEndpointServer implements ISynchronousChannel {
