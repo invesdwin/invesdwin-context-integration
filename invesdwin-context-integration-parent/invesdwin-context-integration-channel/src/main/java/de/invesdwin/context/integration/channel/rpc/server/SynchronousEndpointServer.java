@@ -1,14 +1,15 @@
 package de.invesdwin.context.integration.channel.rpc.server;
 
+import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
@@ -16,6 +17,8 @@ import de.invesdwin.context.integration.channel.rpc.server.session.SynchronousEn
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import de.invesdwin.util.collections.fast.IFastIterableList;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
@@ -23,6 +26,7 @@ import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -30,33 +34,51 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 /**
  * Possible server types:
  * 
- * - each client a separate thread for IO and work
+ * - each client a separate thread for IO and work (unlimited is not a good idea, thus limited by maxIoThreadCount and
+ * use null worker executor)
  * 
- * - all clients share one thread for IO and work
+ * - all clients share one thread for IO and work (use maxIoThreadCount=1 and null worker executor)
  * 
- * - one io thread, multiple worker threads, marshalling in IO
+ * - one io thread, multiple worker threads, marshalling in IO (not implemented, marshalling is always done by worker)
  * 
- * - one io thread, multiple worker threads, marshalling in worker
+ * - one io thread, multiple worker threads, marshalling in worker (use maxIoThreadCount=1 and a fixed worker executor)
  * 
- * - multiple io threads (sharding?), multiple worker threads, marshalling in IO
+ * - multiple io threads (sharding?), multiple worker threads, marshalling in IO (not implemented, marshalling is always
+ * done by worker)
  * 
- * - multiple io threads (sharding?), multiple worker threads, marshalling in worker
+ * - multiple io threads (sharding?), multiple worker threads, marshalling in worker (IO threads limited by
+ * maxIoThreadCount and use a fixed worker executor)
  * 
+ * This is a weak server implementation that does not use a selector or native polling mechanism. Instead each channel
+ * is checked individually for requests. This is useful for channels where selector or a native polling mechanism is not
+ * available (e.g. memory mapped files). It can also be used when latency is not so important (though it can cause
+ * excessive amounts of slow syscalls).
  */
 @ThreadSafe
 public class SynchronousEndpointServer implements ISynchronousChannel {
 
-    private static final WrappedExecutorService REQUEST_EXECUTOR = Executors
-            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_REQUEST");
+    public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
+    public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
+            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO");
+    public static final WrappedExecutorService LIMITED_WORK_EXECUTOR = Executors.newFixedThreadPool(
+            SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = null;
+    private static final IoRunnable[] REQUEST_RUNNABLE_EMPTY_ARRAY = new IoRunnable[0];
+    private static final int ROOT_IO_RUNNABLE_ID = 0;
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private final SerdeLookupConfig serdeLookupConfig;
     private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
+    private Duration heartbeatTimeout = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_TIMEOUT;
+    private final Duration heartbeatInterval = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_INTERVAL;
     @GuardedBy("this")
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
     @GuardedBy("this")
-    private Future<?> requestFuture;
+    private IFastIterableList<IoRunnable> ioRunnables;
+    private final int maxIoThreadCount;
+    private final WrappedExecutorService ioExecutor;
+    private final WrappedExecutorService workExecutor;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
         this(serverAcceptor, SerdeLookupConfig.DEFAULT);
@@ -66,6 +88,43 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             final SerdeLookupConfig serdeLookupConfig) {
         this.serverAcceptor = serverAcceptor;
         this.serdeLookupConfig = serdeLookupConfig;
+        this.maxIoThreadCount = newMaxIoThreadCount();
+        if (maxIoThreadCount <= 0) {
+            throw new IllegalArgumentException("requestThreadCount should be greater than 0: " + maxIoThreadCount);
+        }
+        this.ioExecutor = newIoExecutor();
+        this.workExecutor = newResponseExecutor();
+    }
+
+    /**
+     * Using multiple IO threads can be benefitial for throughput. More IO threads are added when more clients connect.
+     * After heartbeat timeout and an IO threads being empty the IO thread is scaled down again.
+     */
+    protected int newMaxIoThreadCount() {
+        return DEFAULT_MAX_IO_THREAD_COUNT;
+    }
+
+    /**
+     * Should always be a CachedExecutorService (default) or another implementation that has a maximum size >=
+     * newMaxIoThreadCount(). Otherwise IO threads will starve to death and requests will not be processed on those IO
+     * runnables that are beyond the capacity of the IO executor.
+     */
+    protected WrappedExecutorService newIoExecutor() {
+        return DEFAULT_IO_EXECUTOR;
+    }
+
+    /**
+     * Can return null here (default) to not use an executor for work handling, instead the IO thread will handle it
+     * directly. This is preferred when request execution is very fast does not involve complex calculations.
+     * 
+     * Use LIMITED_WORK_EXECUTOR when cpu intensive or long running tasks are performed that should not block the IO of
+     * the request thread. In Java 21 it might be a good choice to use a virtual thread executor here so that IO and
+     * sleeps don't block work on other threads (maybe use a higher threshold than 10k for pending tasks then?).
+     * Otherwise a thread pool with a higher size than cpu count should be used that allows IO/sleep between response
+     * work processing.
+     */
+    protected WrappedExecutorService newResponseExecutor() {
+        return DEFAULT_WORK_EXECUTOR;
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
@@ -88,18 +147,34 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     @Override
     public synchronized void open() throws IOException {
-        if (requestFuture != null) {
+        if (ioRunnables != null) {
             throw new IllegalStateException("already opened");
         }
         serverAcceptor.open();
-        requestFuture = REQUEST_EXECUTOR.submit(new IoRunnable());
+        ioRunnables = ILockCollectionFactory.getInstance(false).newFastIterableArrayList(maxIoThreadCount);
+        //main runnable adds more threads on demand
+        final IoRunnable rootioRunnable = new IoRunnable(ROOT_IO_RUNNABLE_ID);
+        final ListenableFuture<?> future = getIoExecutor().submit(rootioRunnable);
+        rootioRunnable.setFuture(future);
+        ioRunnables.add(rootioRunnable);
+    }
+
+    public final WrappedExecutorService getIoExecutor() {
+        return ioExecutor;
+    }
+
+    public final WrappedExecutorService getWorkExecutor() {
+        return workExecutor;
     }
 
     @Override
     public synchronized void close() throws IOException {
-        if (requestFuture != null) {
-            requestFuture.cancel(true);
-            requestFuture = null;
+        if (ioRunnables != null) {
+            for (int i = 0; i < ioRunnables.size(); i++) {
+                final IoRunnable ioRunnable = ioRunnables.get(i);
+                ioRunnable.close();
+            }
+            ioRunnables = null;
             serverAcceptor.close();
             serviceId_service_sync.clear();
             serviceId_service_copy = new Int2ObjectOpenHashMap<>();
@@ -114,55 +189,93 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         return serviceId_service_copy.get(serviceId);
     }
 
-    private final class IoRunnable implements Runnable {
-        private final List<SynchronousEndpointServerSession> serverSessions = new ArrayList<>();
-        private final LoopInterruptedCheck heartbeatLoopInterruptedCheck = new LoopInterruptedCheck(
+    private final class IoRunnable implements Runnable, Closeable {
+        private final IFastIterableList<SynchronousEndpointServerSession> serverSessions = ILockCollectionFactory
+                .getInstance(maxIoThreadCount > 1)
+                .newFastIterableArrayList();
+        private final LoopInterruptedCheck requestWaitLoopInterruptedCheck = new LoopInterruptedCheck(
                 requestWaitInterval);
+        private final LoopInterruptedCheck heartbeatLoopInterruptedCheck = new LoopInterruptedCheck(heartbeatInterval);
         private final ASpinWait throttle = new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
                 //throttle while nothing to do, spin quickly while work is available
-                boolean handled;
+                boolean handledOverall = false;
+                boolean handledNow;
                 do {
-                    handled = false;
-                    for (int i = 0; i < serverSessions.size(); i++) {
-                        final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
+                    handledNow = false;
+                    final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                            .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+                    int removedServerSessions = 0;
+                    for (int i = 0; i < serverSessionsArray.length; i++) {
+                        final SynchronousEndpointServerSession serverSession = serverSessionsArray[i];
                         try {
-                            handled |= serverSession.handle();
+                            handledNow |= serverSession.handle();
+                            handledOverall |= handledNow;
                         } catch (final EOFException e) {
                             //session closed
-                            serverSessions.remove(i);
+                            serverSessions.remove(i - removedServerSessions);
                             Closeables.closeQuietly(serverSession);
-                            i--;
+                            removedServerSessions++;
                         }
                     }
-                    if (heartbeatLoopInterruptedCheck.check()) {
-                        //force heartbeat check now
+                    if (requestWaitLoopInterruptedCheck.check()) {
+                        if (handledOverall) {
+                            //update server thread heartbeat timestamp
+                            lastHeartbeatNanos = System.nanoTime();
+                        }
+                        //maybe check heartbeat and maybe accept more clients
                         return false;
                     }
-                } while (handled);
-                return handled;
+                } while (handledNow);
+                return handledOverall;
             }
         };
+        private final int ioRunnableId;
+        private volatile Future<?> future;
+        private final IFastIterableList<IoRunnable> ioRunnablesCopy;
+        @GuardedBy("volatile because primary runnable checks the heartbeat of the other runnables")
+        private volatile long lastHeartbeatNanos = System.nanoTime();
+
+        private IoRunnable(final int ioRunnableId) {
+            this.ioRunnableId = ioRunnableId;
+            if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                ioRunnablesCopy = ioRunnables;
+            } else {
+                ioRunnablesCopy = null;
+            }
+        }
+
+        public void setFuture(final Future<?> future) {
+            this.future = future;
+        }
+
+        public Future<?> getFuture() {
+            return future;
+        }
+
+        @Override
+        public synchronized void close() {
+            if (future != null) {
+                future.cancel(true);
+                future = null;
+            }
+        }
+
+        public boolean isEmptyAndHeartbeatTimeout() {
+            return serverSessions.isEmpty() && heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        }
 
         @Override
         public void run() {
             try {
-                while (accept()) {
-                    if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
-                        //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
-                        for (int i = 0; i < serverSessions.size(); i++) {
-                            final SynchronousEndpointServerSession serverSession = serverSessions.get(i);
-                            if (serverSession.isHeartbeatTimeout()) {
-                                //session closed
-                                Err.process(new TimeoutException(
-                                        "Heartbeat timeout [" + serverSession.getEndpointSession().getHeartbeatTimeout()
-                                                + "] exceeded: " + serverSession.getEndpointSession().getSessionId()));
-                                serverSessions.remove(i);
-                                Closeables.closeQuietly(serverSession);
-                                i--;
-                            }
-                        }
+                if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                    while (accept()) {
+                        process();
+                    }
+                } else {
+                    while (true) {
+                        process();
                     }
                 }
             } catch (final Throwable t) {
@@ -173,13 +286,64 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     Err.process(new RuntimeException("ignoring", t));
                 }
             } finally {
-                if (!serverSessions.isEmpty()) {
-                    for (int i = 0; i < serverSessions.size(); i++) {
-                        Closeables.closeQuietly(serverSessions.get(i));
-                    }
-                    serverSessions.clear();
+                final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                        .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+                for (int i = 0; i < serverSessionsArray.length; i++) {
+                    Closeables.closeQuietly(serverSessionsArray[i]);
                 }
-                Closeables.closeQuietly(serverAcceptor);
+                serverSessions.clear();
+                if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                    Closeables.closeQuietly(serverAcceptor);
+                    final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
+                    for (int i = 0; i < ioRunnablesArray.length; i++) {
+                        ioRunnablesArray[i].close();
+                    }
+                }
+                future = null;
+            }
+        }
+
+        private void process() throws Exception {
+            if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+                //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+                if (heartbeatLoopInterruptedCheck.check()) {
+                    checkServerSessionsHeartbeat();
+                    if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                        checkioRunnablesHeartbeat();
+                    }
+                }
+            }
+        }
+
+        private void checkServerSessionsHeartbeat() {
+            final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                    .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+            int removedSessions = 0;
+            for (int i = 0; i < serverSessionsArray.length; i++) {
+                final SynchronousEndpointServerSession serverSession = serverSessionsArray[i];
+                if (serverSession.isHeartbeatTimeout()) {
+                    //session closed
+                    Err.process(new TimeoutException(
+                            "Heartbeat timeout [" + serverSession.getEndpointSession().getHeartbeatTimeout()
+                                    + "] exceeded: " + serverSession.getEndpointSession().getSessionId()));
+                    serverSessions.remove(i - removedSessions);
+                    removedSessions++;
+                    Closeables.closeQuietly(serverSession);
+                }
+            }
+        }
+
+        private void checkioRunnablesHeartbeat() throws IOException {
+            final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
+            int removedioRunnables = 0;
+            //don't check heartbeat of root IO runnable (otherwise new clients cannot be accepted)
+            for (int i = 1; i < ioRunnablesArray.length; i++) {
+                final IoRunnable ioRunnable = ioRunnablesArray[i];
+                if (ioRunnable.isEmptyAndHeartbeatTimeout()) {
+                    ioRunnable.close();
+                    ioRunnablesCopy.remove(i - removedioRunnables);
+                    removedioRunnables++;
+                }
             }
         }
 
@@ -197,13 +361,56 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     final ISynchronousEndpointSession endpointSession = serverAcceptor.readMessage();
                     //use latest request wait interval so that we don't need this in the constructor of the server
                     requestWaitInterval = endpointSession.getRequestWaitInterval();
-                    serverSessions
-                            .add(new SynchronousEndpointServerSession(SynchronousEndpointServer.this, endpointSession));
+                    heartbeatTimeout = endpointSession.getHeartbeatTimeout();
+                    maybeIncreaseIoRunnableCount();
+                    assignServerSessionToioRunnable(endpointSession);
                 } finally {
                     serverAcceptor.readFinished();
                 }
             }
             return true;
+        }
+
+        private void maybeIncreaseIoRunnableCount() {
+            if (ioRunnablesCopy.size() < maxIoThreadCount) {
+                int maxioRunnableId = 0;
+                final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
+                for (int i = 0; i < ioRunnablesArray.length; i++) {
+                    maxioRunnableId = Integers.max(maxioRunnableId, ioRunnablesArray[i].ioRunnableId);
+                }
+                final IoRunnable newioRunnable = new IoRunnable(maxioRunnableId + 1);
+                final ListenableFuture<?> future = getIoExecutor().submit(newioRunnable);
+                newioRunnable.setFuture(future);
+                ioRunnablesCopy.add(newioRunnable);
+            }
+        }
+
+        private void assignServerSessionToioRunnable(final ISynchronousEndpointSession endpointSession) {
+            //assign session to the request runnable thread that hsa the least amount of sessions
+            int minSessions = Integer.MAX_VALUE;
+            int minSessionsIndex = -1;
+            final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
+            for (int i = 0; i < ioRunnablesArray.length; i++) {
+                final IoRunnable ioRunnable = ioRunnablesCopy.get(i);
+                if (ioRunnable.getFuture() == null) {
+                    //already closed
+                    continue;
+                }
+                final int sessions = ioRunnable.serverSessions.size();
+                if (sessions == 0) {
+                    minSessions = 0;
+                    minSessionsIndex = i;
+                    break;
+                }
+                if (sessions < minSessions) {
+                    minSessions = sessions;
+                    minSessionsIndex = i;
+                }
+            }
+            ioRunnablesArray[minSessionsIndex].serverSessions
+                    .add(new SynchronousEndpointServerSession(SynchronousEndpointServer.this, endpointSession));
+            //update heartbeat because a new session got created
+            ioRunnablesArray[minSessionsIndex].lastHeartbeatNanos = System.nanoTime();
         }
     }
 

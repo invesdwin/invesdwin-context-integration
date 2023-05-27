@@ -5,6 +5,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Future;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
@@ -17,7 +18,6 @@ import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
@@ -26,9 +26,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @ThreadSafe
 public class SynchronousEndpointServerSession implements Closeable {
 
-    private static final WrappedExecutorService RESPONSE_EXECUTOR = Executors.newFixedThreadPool(
-            SynchronousEndpointServerSession.class.getSimpleName() + "_RESPONSE", Executors.getCpuThreadPoolCount());
-
+    public static final SynchronousEndpointServerSession[] EMPTY_ARRAY = new SynchronousEndpointServerSession[0];
     private static final int MAX_PENDING_COUNT = 10_000;
 
     private final SynchronousEndpointServer parent;
@@ -36,8 +34,10 @@ public class SynchronousEndpointServerSession implements Closeable {
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
+    @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<?> processResponseFuture;
+    private final WrappedExecutorService responseExecutor;
 
     public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -52,6 +52,7 @@ public class SynchronousEndpointServerSession implements Closeable {
             close();
             throw new RuntimeException(t);
         }
+        this.responseExecutor = parent.getWorkExecutor();
     }
 
     public ISynchronousEndpointSession getEndpointSession() {
@@ -115,26 +116,31 @@ public class SynchronousEndpointServerSession implements Closeable {
         }
         if (requestReader.hasNext()) {
             lastHeartbeatNanos = System.nanoTime();
-            final int pendingCount = RESPONSE_EXECUTOR.getPendingCount();
-            if (pendingCount > MAX_PENDING_COUNT) {
-                try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
-                    final int serviceId = request.getService();
-                    if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
-                        return true;
-                    } else {
-                        responseHolder.setService(serviceId);
-                        responseHolder.setSequence(request.getSequence());
-                        responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                        responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                                "too many requests pending [" + pendingCount + "], please try again later");
-                    }
-                    responseWriter.write(responseHolder);
-                    processResponseFuture = NullFuture.getInstance();
-                } finally {
-                    requestReader.readFinished();
-                }
+            if (responseExecutor == null) {
+                processResponse();
+                processResponseFuture = NullFuture.getInstance();
             } else {
-                processResponseFuture = RESPONSE_EXECUTOR.submit(this::processResponse);
+                final int pendingCount = responseExecutor.getPendingCount();
+                if (pendingCount > MAX_PENDING_COUNT) {
+                    try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
+                        final int serviceId = request.getService();
+                        if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+                            return true;
+                        } else {
+                            responseHolder.setService(serviceId);
+                            responseHolder.setSequence(request.getSequence());
+                            responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                    "too many requests pending [" + pendingCount + "], please try again later");
+                        }
+                        responseWriter.write(responseHolder);
+                        processResponseFuture = NullFuture.getInstance();
+                    } finally {
+                        requestReader.readFinished();
+                    }
+                } else {
+                    processResponseFuture = responseExecutor.submit(this::processResponse);
+                }
             }
             return true;
         } else {
