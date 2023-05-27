@@ -119,7 +119,7 @@ public abstract class AChannelTest extends ATest {
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < RPC_CLIENT_COUNT; i++) {
-                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client)));
+                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1))));
                 }
                 while (clientFutures.hasNext()) {
                     Futures.getNoInterrupt(clientFutures.next());

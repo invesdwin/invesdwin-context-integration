@@ -22,18 +22,22 @@ public class RpcClientTask implements Runnable {
 
     private final OutputStream log;
     private final SynchronousEndpointClient<IRpcTestService> client;
+    private final String clientId;
 
-    public RpcClientTask(final SynchronousEndpointClient<IRpcTestService> client) {
-        this(new Log(ClientTask.class), client);
+    public RpcClientTask(final SynchronousEndpointClient<IRpcTestService> client, final String clientId) {
+        this(new Log(ClientTask.class), client, clientId);
     }
 
-    public RpcClientTask(final Log log, final SynchronousEndpointClient<IRpcTestService> client) {
-        this(Slf4jStream.of(log).asInfo(), client);
+    public RpcClientTask(final Log log, final SynchronousEndpointClient<IRpcTestService> client,
+            final String clientId) {
+        this(Slf4jStream.of(log).asInfo(), client, clientId);
     }
 
-    public RpcClientTask(final OutputStream log, final SynchronousEndpointClient<IRpcTestService> client) {
+    public RpcClientTask(final OutputStream log, final SynchronousEndpointClient<IRpcTestService> client,
+            final String clientId) {
         this.log = log;
         this.client = client;
+        this.clientId = clientId;
     }
 
     @Override
@@ -46,12 +50,12 @@ public class RpcClientTask implements Runnable {
             try (ICloseableIterator<FDate> values = AChannelTest.newValues().iterator()) {
                 while (count < AChannelTest.VALUES) {
                     if (AChannelTest.DEBUG) {
-                        log.write("client request out\n".getBytes());
+                        log.write((clientId + ": client request out\n").getBytes());
                     }
                     final FDate request = values.next();
                     final FDate response = client.getService().request(request);
                     if (AChannelTest.DEBUG) {
-                        log.write(("client response in [" + response + "]\n").getBytes());
+                        log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }
                     Assertions.checkNotNull(response);
                     Assertions.checkEquals(request.addMilliseconds(1), response);
@@ -69,7 +73,8 @@ public class RpcClientTask implements Runnable {
         }
         Assertions.checkEquals(AChannelTest.VALUES, count);
         try {
-            AChannelTest.printProgress(log, "ReadsFinished", readsStart, AChannelTest.VALUES, AChannelTest.VALUES);
+            AChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, AChannelTest.VALUES,
+                    AChannelTest.VALUES);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
