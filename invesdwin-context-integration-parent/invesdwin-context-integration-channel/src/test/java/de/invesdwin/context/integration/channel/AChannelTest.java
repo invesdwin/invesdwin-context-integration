@@ -8,6 +8,7 @@ import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -22,6 +23,15 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.IRpcTestService;
+import de.invesdwin.context.integration.channel.rpc.RpcClientTask;
+import de.invesdwin.context.integration.channel.rpc.RpcTestService;
+import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSessionPool;
+import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
+import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -50,8 +60,11 @@ import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
+import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
+import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -79,6 +92,7 @@ public abstract class AChannelTest extends ATest {
     public static final int VALUES = DEBUG ? 10 : 1_000;
     public static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
+    public static final int RPC_CLIENT_COUNT = DEBUG ? 1 : 10;
 
     public enum FileChannelType {
         PIPE_STREAMING,
@@ -87,6 +101,35 @@ public abstract class AChannelTest extends ATest {
         MAPPED,
         BLOCKING_MAPPED,
         UNIX_SOCKET;
+    }
+
+    protected void runRpcPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
+            throws InterruptedException {
+        final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor);
+        serverChannel.register(IRpcTestService.class, new RpcTestService());
+
+        try {
+            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
+                    RPC_CLIENT_COUNT);
+            serverChannel.open();
+            try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
+                final SynchronousEndpointClient<IRpcTestService> client = SynchronousEndpointClient.newInstance(
+                        new SynchronousEndpointClientSessionPool(
+                                new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
+                        IRpcTestService.class);
+                for (int i = 0; i < RPC_CLIENT_COUNT; i++) {
+                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client)));
+                }
+                while (clientFutures.hasNext()) {
+                    Futures.getNoInterrupt(clientFutures.next());
+                }
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Closeables.closeQuietly(serverChannel);
+        }
     }
 
     protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,
@@ -296,8 +339,8 @@ public abstract class AChannelTest extends ATest {
         return new SerdeSynchronousWriter<FDate>(writer, FDateSerde.GET, FDateSerde.FIXED_LENGTH);
     }
 
-    protected static void printProgress(final OutputStream log, final String action, final Instant start,
-            final int count, final int maxCount) throws IOException {
+    public static void printProgress(final OutputStream log, final String action, final Instant start, final int count,
+            final int maxCount) throws IOException {
         final Duration duration = start.toDuration();
         log.write(
                 TextDescription
@@ -307,7 +350,7 @@ public abstract class AChannelTest extends ATest {
                         .getBytes());
     }
 
-    protected static ICloseableIterable<FDate> newValues() {
+    public static ICloseableIterable<FDate> newValues() {
         return FDates.iterable(FDates.MIN_DATE, FDates.MIN_DATE.addMilliseconds(VALUES - 1), FTimeUnit.MILLISECONDS, 1);
     }
 
