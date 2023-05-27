@@ -4,6 +4,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -15,6 +17,7 @@ import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
+@NotThreadSafe
 public class RpcClientTask implements Runnable {
 
     private final OutputStream log;
@@ -66,10 +69,6 @@ public class RpcClientTask implements Runnable {
         }
         Assertions.checkEquals(AChannelTest.VALUES, count);
         try {
-            if (AChannelTest.DEBUG) {
-                log.write("client close\n".getBytes());
-            }
-            client.close();
             AChannelTest.printProgress(log, "ReadsFinished", readsStart, AChannelTest.VALUES, AChannelTest.VALUES);
         } catch (final IOException e) {
             throw new RuntimeException(e);

@@ -108,16 +108,16 @@ public abstract class AChannelTest extends ATest {
             throws InterruptedException {
         final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor);
         serverChannel.register(IRpcTestService.class, new RpcTestService());
-
+        final SynchronousEndpointClient<IRpcTestService> client = SynchronousEndpointClient
+                .newInstance(
+                        new SynchronousEndpointClientSessionPool(
+                                new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
+                        IRpcTestService.class);
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
                     RPC_CLIENT_COUNT);
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
-                final SynchronousEndpointClient<IRpcTestService> client = SynchronousEndpointClient.newInstance(
-                        new SynchronousEndpointClientSessionPool(
-                                new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
-                        IRpcTestService.class);
                 for (int i = 0; i < RPC_CLIENT_COUNT; i++) {
                     clientFutures.add(clientExecutor.submit(new RpcClientTask(client)));
                 }
@@ -128,6 +128,7 @@ public abstract class AChannelTest extends ATest {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
         }
     }
