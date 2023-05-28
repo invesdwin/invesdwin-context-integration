@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.command;
+package de.invesdwin.context.integration.channel.sync.command.deserializing;
 
 import java.io.IOException;
 
@@ -9,7 +9,7 @@ import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class DeserializingSynchronousCommand<M> implements ISynchronousCommand<M> {
+public class LazyDeserializingSynchronousCommand<M> implements IDeserializingSynchronousCommand<M> {
 
     protected int type;
     protected int sequence;
@@ -21,8 +21,9 @@ public class DeserializingSynchronousCommand<M> implements ISynchronousCommand<M
         return type;
     }
 
-    public void setType(final int method) {
-        this.type = method;
+    @Override
+    public void setType(final int type) {
+        this.type = type;
     }
 
     @Override
@@ -30,6 +31,7 @@ public class DeserializingSynchronousCommand<M> implements ISynchronousCommand<M
         return sequence;
     }
 
+    @Override
     public void setSequence(final int sequence) {
         this.sequence = sequence;
     }
@@ -39,6 +41,7 @@ public class DeserializingSynchronousCommand<M> implements ISynchronousCommand<M
         return messageSerde.fromBuffer(message);
     }
 
+    @Override
     public void setMessage(final ISerde<M> messageSerde, final IByteBuffer message) {
         this.messageSerde = messageSerde;
         this.message = message;

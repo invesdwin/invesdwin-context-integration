@@ -6,10 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.DeserializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -22,11 +22,11 @@ public class AsynchronousEndpointServerHandler
 
     private final AsynchronousEndpointServerHandlerFactory parent;
     private final String sessionId;
-    private final DeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new DeserializingServiceSynchronousCommand<>();
-    private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
+    private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
+    private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private final ServiceSynchronousCommandSerde<IByteBufferProvider> outputSerde = new ServiceSynchronousCommandSerde<>(
             ByteBufferProviderSerde.GET, null);
-    private SerializingServiceSynchronousCommand<Object> output;
+    private LazySerializingServiceSynchronousCommand<Object> output;
     private IByteBuffer outputBuffer;
     private long lastHeartbeatNanos = System.nanoTime();
 
@@ -87,7 +87,7 @@ public class AsynchronousEndpointServerHandler
         }
     }
 
-    private SerializingServiceSynchronousCommand<Object> processResponse() {
+    private LazySerializingServiceSynchronousCommand<Object> processResponse() {
         lastHeartbeatNanos = System.nanoTime();
         final int serviceId = requestHolder.getService();
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {

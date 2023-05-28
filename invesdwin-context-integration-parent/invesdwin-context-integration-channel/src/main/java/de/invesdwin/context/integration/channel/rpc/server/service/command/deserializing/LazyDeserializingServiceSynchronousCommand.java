@@ -1,6 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.service.command;
-
-import java.io.IOException;
+package de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -9,7 +7,7 @@ import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @NotThreadSafe
-public class DeserializingServiceSynchronousCommand<M> implements IServiceSynchronousCommand<M> {
+public class LazyDeserializingServiceSynchronousCommand<M> implements IDeserializingServiceSynchronousCommand<M> {
 
     protected int service;
     protected int method;
@@ -22,6 +20,7 @@ public class DeserializingServiceSynchronousCommand<M> implements IServiceSynchr
         return service;
     }
 
+    @Override
     public void setService(final int service) {
         this.service = service;
     }
@@ -31,6 +30,7 @@ public class DeserializingServiceSynchronousCommand<M> implements IServiceSynchr
         return method;
     }
 
+    @Override
     public void setMethod(final int method) {
         this.method = method;
     }
@@ -40,6 +40,7 @@ public class DeserializingServiceSynchronousCommand<M> implements IServiceSynchr
         return sequence;
     }
 
+    @Override
     public void setSequence(final int sequence) {
         this.sequence = sequence;
     }
@@ -49,13 +50,14 @@ public class DeserializingServiceSynchronousCommand<M> implements IServiceSynchr
         return messageSerde.fromBuffer(message);
     }
 
+    @Override
     public void setMessage(final ISerde<M> messageSerde, final IByteBuffer message) {
         this.messageSerde = messageSerde;
         this.message = message;
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         messageSerde = NullSerde.get();
         message = null; //free memory
     }

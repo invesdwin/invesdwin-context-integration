@@ -89,7 +89,7 @@ public abstract class AChannelTest extends ATest {
     public static final FDate REQUEST_MESSAGE = FDates.MAX_DATE;
     public static final boolean DEBUG = false;
     public static final int MAX_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
-    public static final int VALUES = DEBUG ? 10 : 1_000;
+    public static final int VALUES = DEBUG ? 10 : 1_0_000;
     public static final int FLUSH_INTERVAL = Math.max(10, VALUES / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final int RPC_CLIENT_COUNT = DEBUG ? 1 : 10;

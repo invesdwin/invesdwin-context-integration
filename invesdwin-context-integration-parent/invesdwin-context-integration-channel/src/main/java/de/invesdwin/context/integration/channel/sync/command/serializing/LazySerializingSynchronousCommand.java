@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.command;
+package de.invesdwin.context.integration.channel.sync.command.serializing;
 
 import java.io.IOException;
 
@@ -10,7 +10,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class SerializingSynchronousCommand<M> implements ISynchronousCommand<IByteBufferProvider> {
+public class LazySerializingSynchronousCommand<M> implements ISerializingSynchronousCommand<M> {
 
     protected int type;
     protected int sequence;
@@ -22,8 +22,9 @@ public class SerializingSynchronousCommand<M> implements ISynchronousCommand<IBy
         return type;
     }
 
-    public void setType(final int service) {
-        this.type = service;
+    @Override
+    public void setType(final int type) {
+        this.type = type;
     }
 
     @Override
@@ -31,6 +32,7 @@ public class SerializingSynchronousCommand<M> implements ISynchronousCommand<IBy
         return sequence;
     }
 
+    @Override
     public void setSequence(final int sequence) {
         this.sequence = sequence;
     }
@@ -40,6 +42,7 @@ public class SerializingSynchronousCommand<M> implements ISynchronousCommand<IBy
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public void setMessage(final ISerde<M> messageSerde, final M message) {
         this.messageSerde = messageSerde;
         this.message = message;

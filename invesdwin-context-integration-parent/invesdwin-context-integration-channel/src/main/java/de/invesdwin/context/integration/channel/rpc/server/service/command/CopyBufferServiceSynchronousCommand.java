@@ -4,19 +4,18 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.basic.NullSerde;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class SerializingServiceSynchronousCommand<M> implements IServiceSynchronousCommand<IByteBufferProvider> {
+public class CopyBufferServiceSynchronousCommand implements IServiceSynchronousCommand<IByteBufferProvider> {
 
     protected int service;
     protected int method;
     protected int sequence;
-    protected ISerde<M> messageSerde = NullSerde.get();
-    protected M message;
+    protected final IByteBuffer messageHolder = ByteBuffers.allocateDirectExpandable();
+    protected int messageSize;
 
     @Override
     public int getService() {
@@ -47,23 +46,23 @@ public class SerializingServiceSynchronousCommand<M> implements IServiceSynchron
 
     @Override
     public IByteBufferProvider getMessage() {
-        throw new UnsupportedOperationException();
+        return messageHolder.sliceTo(messageSize);
     }
 
-    public void setMessage(final ISerde<M> messageSerde, final M message) {
-        this.messageSerde = messageSerde;
-        this.message = message;
-    }
-
-    @Override
-    public int messageToBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
-        return this.messageSerde.toBuffer(buffer, message);
+    public void setMessage(final IByteBufferProvider message) throws IOException {
+        messageSize = message.getBuffer(messageHolder);
     }
 
     @Override
-    public void close() throws IOException {
-        messageSerde = NullSerde.get();
-        message = null; //free memory
+    public void close() {
+        messageSize = 0;
+    }
+
+    public void copy(final IServiceSynchronousCommand<IByteBufferProvider> command) throws IOException {
+        setService(command.getService());
+        setMethod(command.getMethod());
+        setSequence(command.getSequence());
+        setMessage(command.getMessage());
     }
 
 }
