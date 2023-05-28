@@ -195,6 +195,7 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
                 delayedWriteResponse = true;
                 processResponseFuture = future;
             } else {
+                responseWriter.write(responseHolder);
                 processResponseFuture = NullFuture.getInstance();
             }
         } else {
