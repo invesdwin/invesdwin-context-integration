@@ -5,6 +5,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -63,10 +64,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
             .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO");
-    public static final WrappedExecutorService LIMITED_WORK_EXECUTOR = Executors.newFixedThreadPool(
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors.newFixedThreadPool(
             SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
-    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = null;
-    public static final int DEFAULT_MAX_PENDING_WORK_COUNT = 10_000;
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = 10_000;
+    public static final int DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION = -50;
 
     private static final IoRunnable[] REQUEST_RUNNABLE_EMPTY_ARRAY = new IoRunnable[0];
     private static final int ROOT_IO_RUNNABLE_ID = 0;
@@ -84,7 +85,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private final int maxIoThreadCount;
     private final WrappedExecutorService ioExecutor;
     private final WrappedExecutorService workExecutor;
-    private final int maxPendingWorkCount;
+    private final int maxPendingWorkCountOverall;
+    private final int initialMaxPendingWorkCountPerSession;
+    private int maxPendingWorkCountPerSession;
+    private final AtomicInteger activeSessionsOverall = new AtomicInteger();
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
         this(serverAcceptor, SerdeLookupConfig.DEFAULT);
@@ -95,20 +99,47 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         this.serverAcceptor = serverAcceptor;
         this.serdeLookupConfig = serdeLookupConfig;
         this.maxIoThreadCount = newMaxIoThreadCount();
-        if (maxIoThreadCount <= 0) {
-            throw new IllegalArgumentException("requestThreadCount should be greater than 0: " + maxIoThreadCount);
+        if (maxIoThreadCount < 0) {
+            throw new IllegalArgumentException(
+                    "requestThreadCount should be greater than or equal to 0: " + maxIoThreadCount);
         }
         this.ioExecutor = newIoExecutor();
         this.workExecutor = newWorkExecutor();
-        this.maxPendingWorkCount = newMaxPendingWorkCount();
+        this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
+        this.initialMaxPendingWorkCountPerSession = newInitialMaxPendingWorkCountPerSession();
+        updateMaxPendingCountPerSession(0);
+    }
+
+    private void updateMaxPendingCountPerSession(final int activeSessions) {
+        if (initialMaxPendingWorkCountPerSession == 0) {
+            maxPendingWorkCountPerSession = 0;
+        } else if (initialMaxPendingWorkCountPerSession > 0) {
+            maxPendingWorkCountPerSession = initialMaxPendingWorkCountPerSession;
+        } else {
+            maxPendingWorkCountPerSession = Integers.max(Integers.divide(maxPendingWorkCountOverall, activeSessions),
+                    -initialMaxPendingWorkCountPerSession);
+        }
     }
 
     /**
      * Further requests will be rejected if the workExecutor has more than that amount of requests pending. Only applies
      * when workExecutor is not null.
+     * 
+     * return 0 here for unlimited pending work count overall.
      */
-    protected int newMaxPendingWorkCount() {
-        return DEFAULT_MAX_PENDING_WORK_COUNT;
+    protected int newMaxPendingWorkCountOverall() {
+        return DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+    }
+
+    /**
+     * Return 0 here for unlimited pending work count per session, will be limited by overall pending work count only
+     * which means that one rogue client can take all resources for himself (not advisable unless clients can be
+     * trusted).
+     * 
+     * Return a positive value here to limit the pending requests
+     */
+    protected int newInitialMaxPendingWorkCountPerSession() {
+        return DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION;
     }
 
     /**
@@ -129,8 +160,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     }
 
     /**
-     * Can return null here (default) to not use an executor for work handling, instead the IO thread will handle it
-     * directly. This is preferred when request execution is very fast does not involve complex calculations.
+     * Can return null here to not use an executor for work handling, instead the IO thread will handle it directly.
+     * This is preferred when request execution is very fast does not involve complex calculations.
      * 
      * Use LIMITED_WORK_EXECUTOR when cpu intensive or long running tasks are performed that should not block the IO of
      * the request thread. In Java 21 it might be a good choice to use a virtual thread executor here so that IO and
@@ -150,8 +181,12 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         return workExecutor;
     }
 
-    public int getMaxPendingWorkCount() {
-        return maxPendingWorkCount;
+    public int getMaxPendingWorkCountOverall() {
+        return maxPendingWorkCountOverall;
+    }
+
+    public int getMaxPendingWorkCountPerSession() {
+        return maxPendingWorkCountPerSession;
     }
 
     protected ISynchronousEndpointServerSession newServerSession(final ISynchronousEndpointSession endpointSession) {
@@ -250,6 +285,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                         } catch (final EOFException e) {
                             //session closed
                             serverSessions.remove(i - removedServerSessions);
+                            activeSessionsOverall.decrementAndGet();
                             Closeables.closeQuietly(serverSession);
                             removedServerSessions++;
                         }
@@ -327,6 +363,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     Closeables.closeQuietly(serverSessionsArray[i]);
                 }
                 serverSessions.clear();
+                activeSessionsOverall.addAndGet(-serverSessionsArray.length);
                 if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
                     Closeables.closeQuietly(serverAcceptor);
                     final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
@@ -362,6 +399,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                             "Heartbeat timeout [" + serverSession.getEndpointSession().getHeartbeatTimeout()
                                     + "] exceeded: " + serverSession.getEndpointSession().getSessionId()));
                     serverSessions.remove(i - removedSessions);
+                    activeSessionsOverall.decrementAndGet();
                     removedSessions++;
                     Closeables.closeQuietly(serverSession);
                 }
@@ -398,7 +436,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     requestWaitInterval = endpointSession.getRequestWaitInterval();
                     heartbeatTimeout = endpointSession.getHeartbeatTimeout();
                     maybeIncreaseIoRunnableCount();
-                    assignServerSessionToioRunnable(endpointSession);
+                    assignServerSessionToIoRunnable(endpointSession);
                 } finally {
                     serverAcceptor.readFinished();
                 }
@@ -420,7 +458,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             }
         }
 
-        private void assignServerSessionToioRunnable(final ISynchronousEndpointSession endpointSession) {
+        private void assignServerSessionToIoRunnable(final ISynchronousEndpointSession endpointSession) {
             //assign session to the request runnable thread that hsa the least amount of sessions
             int minSessions = Integer.MAX_VALUE;
             int minSessionsIndex = -1;
@@ -445,6 +483,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             ioRunnablesArray[minSessionsIndex].serverSessions.add(newServerSession(endpointSession));
             //update heartbeat because a new session got created
             ioRunnablesArray[minSessionsIndex].lastHeartbeatNanos = System.nanoTime();
+            final int activeSessions = activeSessionsOverall.incrementAndGet();
+            if (initialMaxPendingWorkCountPerSession < 0) {
+                updateMaxPendingCountPerSession(activeSessions);
+            }
         }
     }
 

@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.IDeserializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -15,7 +17,7 @@ public class ServiceCommandSynchronousReader<M> implements ISynchronousReader<IS
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
 
-    private final DeserializingServiceSynchronousCommand<M> command = new DeserializingServiceSynchronousCommand<>();
+    private final IDeserializingServiceSynchronousCommand<M> command = new LazyDeserializingServiceSynchronousCommand<>();
 
     public ServiceCommandSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ISerde<M> messageSerde) {

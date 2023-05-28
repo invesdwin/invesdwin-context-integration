@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.agrona.concurrent.AtomicBuffer;
 import org.agrona.concurrent.ManyToManyConcurrentArrayQueue;
 import org.agrona.concurrent.ManyToOneConcurrentArrayQueue;
+import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import org.agrona.concurrent.OneToOneConcurrentArrayQueue;
 import org.agrona.concurrent.UnsafeBuffer;
 import org.agrona.concurrent.broadcast.BroadcastBufferDescriptor;
@@ -50,6 +51,13 @@ public class AgronaChannelTest extends AChannelTest {
     public void testAgronaManyToManyConcurrentArrayQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
         final Queue<IReference<FDate>> requestQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
+        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+    }
+
+    @Test
+    public void testAgronaManyToOneConcurrentLinkedQueuePerformance() throws InterruptedException {
+        final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentLinkedQueue<IReference<FDate>>();
+        final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentLinkedQueue<IReference<FDate>>();
         runQueuePerformanceTest(responseQueue, requestQueue, null, null);
     }
 

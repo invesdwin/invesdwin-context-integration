@@ -10,7 +10,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.ISerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
@@ -102,7 +102,7 @@ public final class SynchronousEndpointService {
     }
 
     public void invoke(final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
-            final SerializingServiceSynchronousCommand<Object> response) {
+            final ISerializingServiceSynchronousCommand<Object> response) {
         response.setService(request.getService());
         response.setSequence(request.getSequence());
         final int methodId = request.getMethod();
@@ -115,7 +115,6 @@ public final class SynchronousEndpointService {
                 return;
             }
             final Object[] args = methodInfo.requestSerde.fromBuffer(request.getMessage());
-
             final Object result = methodInfo.invoke(serviceImplementation, args);
             response.setMethod(methodId);
             final ISerde<Object> resultSerde = methodInfo.responseSerdeProvider.getSerde(args);

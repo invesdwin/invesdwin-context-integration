@@ -5,6 +5,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.command.deserializing.IDeserializingSynchronousCommand;
+import de.invesdwin.context.integration.channel.sync.command.deserializing.LazyDeserializingSynchronousCommand;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -15,7 +17,7 @@ public class CommandSynchronousReader<M> implements ISynchronousReader<ISynchron
     private final ISynchronousReader<IByteBufferProvider> delegate;
     private final ISerde<M> messageSerde;
 
-    private final DeserializingSynchronousCommand<M> command = new DeserializingSynchronousCommand<>();
+    private final IDeserializingSynchronousCommand<M> command = new LazyDeserializingSynchronousCommand<>();
 
     public CommandSynchronousReader(final ISynchronousReader<IByteBufferProvider> delegate,
             final ISerde<M> messageSerde) {

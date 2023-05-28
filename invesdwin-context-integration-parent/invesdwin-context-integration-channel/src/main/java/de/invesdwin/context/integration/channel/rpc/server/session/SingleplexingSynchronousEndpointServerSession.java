@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronou
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -22,13 +22,16 @@ import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
+/**
+ * Allows only one active request per
+ */
 @ThreadSafe
 public class SingleplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
 
     private final SynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
-    private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
+    private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
@@ -119,18 +122,17 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
                 processResponseFuture = NullFuture.getInstance();
             } else {
                 final int pendingCount = responseExecutor.getPendingCount();
-                if (pendingCount > parent.getMaxPendingWorkCount()) {
+                if (pendingCount > parent.getMaxPendingWorkCountOverall()) {
                     try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
                         final int serviceId = request.getService();
                         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                             return true;
-                        } else {
-                            responseHolder.setService(serviceId);
-                            responseHolder.setSequence(request.getSequence());
-                            responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                                    "too many requests pending [" + pendingCount + "], please try again later");
                         }
+                        responseHolder.setService(serviceId);
+                        responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                        responseHolder.setSequence(request.getSequence());
+                        responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                "too many requests pending [" + pendingCount + "], please try again later");
                         responseWriter.write(responseHolder);
                         processResponseFuture = NullFuture.getInstance();
                     } finally {
