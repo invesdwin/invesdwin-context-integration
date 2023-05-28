@@ -13,7 +13,9 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.server.session.SynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.rpc.server.session.ISynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.rpc.server.session.MultiplexingSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.rpc.server.session.SingleplexingSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
@@ -64,6 +66,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     public static final WrappedExecutorService LIMITED_WORK_EXECUTOR = Executors.newFixedThreadPool(
             SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
     public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = null;
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT = 10_000;
+
     private static final IoRunnable[] REQUEST_RUNNABLE_EMPTY_ARRAY = new IoRunnable[0];
     private static final int ROOT_IO_RUNNABLE_ID = 0;
 
@@ -80,6 +84,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private final int maxIoThreadCount;
     private final WrappedExecutorService ioExecutor;
     private final WrappedExecutorService workExecutor;
+    private final int maxPendingWorkCount;
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
         this(serverAcceptor, SerdeLookupConfig.DEFAULT);
@@ -94,7 +99,16 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             throw new IllegalArgumentException("requestThreadCount should be greater than 0: " + maxIoThreadCount);
         }
         this.ioExecutor = newIoExecutor();
-        this.workExecutor = newResponseExecutor();
+        this.workExecutor = newWorkExecutor();
+        this.maxPendingWorkCount = newMaxPendingWorkCount();
+    }
+
+    /**
+     * Further requests will be rejected if the workExecutor has more than that amount of requests pending. Only applies
+     * when workExecutor is not null.
+     */
+    protected int newMaxPendingWorkCount() {
+        return DEFAULT_MAX_PENDING_WORK_COUNT;
     }
 
     /**
@@ -124,8 +138,36 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
      * Otherwise a thread pool with a higher size than cpu count should be used that allows IO/sleep between response
      * work processing.
      */
-    protected WrappedExecutorService newResponseExecutor() {
+    protected WrappedExecutorService newWorkExecutor() {
         return DEFAULT_WORK_EXECUTOR;
+    }
+
+    public final WrappedExecutorService getIoExecutor() {
+        return ioExecutor;
+    }
+
+    public final WrappedExecutorService getWorkExecutor() {
+        return workExecutor;
+    }
+
+    public int getMaxPendingWorkCount() {
+        return maxPendingWorkCount;
+    }
+
+    protected ISynchronousEndpointServerSession newServerSession(final ISynchronousEndpointSession endpointSession) {
+        if (workExecutor == null) {
+            /*
+             * Singlexplexing can not handle more than 1 request at a time, so this is the most efficient. Though could
+             * also be used with workExecutor to limit concurrent requests different to IO threads. But IO threads are
+             * normally good enough when requests are not expensive. Though if there is a mix between expensive and fast
+             * requests, then a work executor with Singleplexing might be preferable. In all other cases I guess
+             * multiplexing should be favored.
+             */
+            return new SingleplexingSynchronousEndpointServerSession(this, endpointSession);
+        } else {
+            //we want to be able to handle multiple
+            return new MultiplexingSynchronousEndpointServerSession(this, endpointSession);
+        }
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
@@ -160,14 +202,6 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         ioRunnables.add(rootioRunnable);
     }
 
-    public final WrappedExecutorService getIoExecutor() {
-        return ioExecutor;
-    }
-
-    public final WrappedExecutorService getWorkExecutor() {
-        return workExecutor;
-    }
-
     @Override
     public synchronized void close() throws IOException {
         if (ioRunnables != null) {
@@ -191,7 +225,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     }
 
     private final class IoRunnable implements Runnable, Closeable {
-        private final IFastIterableList<SynchronousEndpointServerSession> serverSessions = ILockCollectionFactory
+        private final IFastIterableList<ISynchronousEndpointServerSession> serverSessions = ILockCollectionFactory
                 .getInstance(maxIoThreadCount > 1)
                 .newFastIterableArrayList();
         private final LoopInterruptedCheck requestWaitLoopInterruptedCheck = new LoopInterruptedCheck(
@@ -205,11 +239,11 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                 boolean handledNow;
                 do {
                     handledNow = false;
-                    final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
-                            .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+                    final ISynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                            .asArray(ISynchronousEndpointServerSession.EMPTY_ARRAY);
                     int removedServerSessions = 0;
                     for (int i = 0; i < serverSessionsArray.length; i++) {
-                        final SynchronousEndpointServerSession serverSession = serverSessionsArray[i];
+                        final ISynchronousEndpointServerSession serverSession = serverSessionsArray[i];
                         try {
                             handledNow |= serverSession.handle();
                             handledOverall |= handledNow;
@@ -287,8 +321,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     Err.process(new RuntimeException("ignoring", t));
                 }
             } finally {
-                final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
-                        .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+                final ISynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                        .asArray(ISynchronousEndpointServerSession.EMPTY_ARRAY);
                 for (int i = 0; i < serverSessionsArray.length; i++) {
                     Closeables.closeQuietly(serverSessionsArray[i]);
                 }
@@ -317,11 +351,11 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
 
         private void checkServerSessionsHeartbeat() {
-            final SynchronousEndpointServerSession[] serverSessionsArray = serverSessions
-                    .asArray(SynchronousEndpointServerSession.EMPTY_ARRAY);
+            final ISynchronousEndpointServerSession[] serverSessionsArray = serverSessions
+                    .asArray(ISynchronousEndpointServerSession.EMPTY_ARRAY);
             int removedSessions = 0;
             for (int i = 0; i < serverSessionsArray.length; i++) {
-                final SynchronousEndpointServerSession serverSession = serverSessionsArray[i];
+                final ISynchronousEndpointServerSession serverSession = serverSessionsArray[i];
                 if (serverSession.isHeartbeatTimeout()) {
                     //session closed
                     Err.process(new TimeoutException(
@@ -408,8 +442,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     minSessionsIndex = i;
                 }
             }
-            ioRunnablesArray[minSessionsIndex].serverSessions
-                    .add(new SynchronousEndpointServerSession(SynchronousEndpointServer.this, endpointSession));
+            ioRunnablesArray[minSessionsIndex].serverSessions.add(newServerSession(endpointSession));
             //update heartbeat because a new session got created
             ioRunnablesArray[minSessionsIndex].lastHeartbeatNanos = System.nanoTime();
         }

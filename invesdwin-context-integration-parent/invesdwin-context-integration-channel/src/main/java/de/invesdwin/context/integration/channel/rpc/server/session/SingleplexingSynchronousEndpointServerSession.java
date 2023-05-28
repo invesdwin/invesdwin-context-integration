@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.rpc.server.session;
 
-import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Future;
@@ -24,10 +23,7 @@ import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
-public class SynchronousEndpointServerSession implements Closeable {
-
-    public static final SynchronousEndpointServerSession[] EMPTY_ARRAY = new SynchronousEndpointServerSession[0];
-    private static final int MAX_PENDING_COUNT = 10_000;
+public class SingleplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
 
     private final SynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -39,7 +35,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     private Future<?> processResponseFuture;
     private final WrappedExecutorService responseExecutor;
 
-    public SynchronousEndpointServerSession(final SynchronousEndpointServer parent,
+    public SingleplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
@@ -55,6 +51,7 @@ public class SynchronousEndpointServerSession implements Closeable {
         this.responseExecutor = parent.getWorkExecutor();
     }
 
+    @Override
     public ISynchronousEndpointSession getEndpointSession() {
         return endpointSession;
     }
@@ -97,6 +94,7 @@ public class SynchronousEndpointServerSession implements Closeable {
     //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
     //handle writeFinished in io thread (maybe the better idea?)
     //return true if work was done
+    @Override
     public boolean handle() throws IOException {
         if (processResponseFuture != null) {
             if (processResponseFuture.isDone()) {
@@ -121,7 +119,7 @@ public class SynchronousEndpointServerSession implements Closeable {
                 processResponseFuture = NullFuture.getInstance();
             } else {
                 final int pendingCount = responseExecutor.getPendingCount();
-                if (pendingCount > MAX_PENDING_COUNT) {
+                if (pendingCount > parent.getMaxPendingWorkCount()) {
                     try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
                         final int serviceId = request.getService();
                         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
@@ -148,6 +146,7 @@ public class SynchronousEndpointServerSession implements Closeable {
         }
     }
 
+    @Override
     public boolean isHeartbeatTimeout() {
         return endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }

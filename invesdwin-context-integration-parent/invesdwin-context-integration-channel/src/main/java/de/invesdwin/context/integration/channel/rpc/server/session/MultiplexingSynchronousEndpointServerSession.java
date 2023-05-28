@@ -1,0 +1,196 @@
+package de.invesdwin.context.integration.channel.rpc.server.session;
+
+import java.io.EOFException;
+import java.io.IOException;
+import java.util.concurrent.Future;
+
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
+
+import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.SerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+
+@ThreadSafe
+public class MultiplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+
+    private final SynchronousEndpointServer parent;
+    private ISynchronousEndpointSession endpointSession;
+    private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
+    private final SerializingServiceSynchronousCommand<Object> responseHolder = new SerializingServiceSynchronousCommand<Object>();
+    private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
+    @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
+    private long lastHeartbeatNanos = System.nanoTime();
+    private Future<?> processResponseFuture;
+    private final WrappedExecutorService responseExecutor;
+
+    public MultiplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
+            final ISynchronousEndpointSession endpointSession) {
+        this.parent = parent;
+        this.endpointSession = endpointSession;
+        this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
+        this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
+        try {
+            requestReader.open();
+            responseWriter.open();
+        } catch (final Throwable t) {
+            close();
+            throw new RuntimeException(t);
+        }
+        this.responseExecutor = parent.getWorkExecutor();
+    }
+
+    @Override
+    public ISynchronousEndpointSession getEndpointSession() {
+        return endpointSession;
+    }
+
+    @Override
+    public void close() {
+        final Future<?> processResponseFutureCopy = processResponseFuture;
+        if (processResponseFutureCopy != null) {
+            processResponseFutureCopy.cancel(true);
+            processResponseFuture = null;
+        }
+        final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReaderCopy = requestReader;
+        requestReader = ClosedSynchronousReader.getInstance();
+        try {
+            requestReaderCopy.close();
+        } catch (final Throwable t) {
+            Err.process(new RuntimeException("Ignoring", t));
+        }
+        final ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriterCopy = responseWriter;
+        responseWriter = ClosedSynchronousWriter.getInstance();
+        try {
+            responseWriterCopy.close();
+        } catch (final Throwable t) {
+            Err.process(new RuntimeException("Ignoring", t));
+        }
+        final ISynchronousEndpointSession endpointSessionCopy = endpointSession;
+        if (endpointSessionCopy != null) {
+            try {
+                endpointSessionCopy.close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
+            }
+            endpointSession = null;
+        }
+    }
+
+    //look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
+    //reject executions if too many pending count for worker pool
+    //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
+    //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
+    //handle writeFinished in io thread (maybe the better idea?)
+    //return true if work was done
+    @Override
+    public boolean handle() throws IOException {
+        if (processResponseFuture != null) {
+            if (processResponseFuture.isDone()) {
+                //keep flushing until finished and ready for next write
+                if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
+                    responseHolder.close(); //free memory
+                    processResponseFuture = null;
+                    //directly check for next request
+                } else {
+                    //tell we are busy with writing or next write is not ready
+                    return true;
+                }
+            } else {
+                //throttle while waiting for response processing to finish
+                return false;
+            }
+        }
+        if (requestReader.hasNext()) {
+            lastHeartbeatNanos = System.nanoTime();
+            if (responseExecutor == null) {
+                processResponse();
+                processResponseFuture = NullFuture.getInstance();
+            } else {
+                final int pendingCount = responseExecutor.getPendingCount();
+                if (pendingCount > parent.getMaxPendingWorkCount()) {
+                    try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
+                        final int serviceId = request.getService();
+                        if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+                            return true;
+                        } else {
+                            responseHolder.setService(serviceId);
+                            responseHolder.setSequence(request.getSequence());
+                            responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                    "too many requests pending [" + pendingCount + "], please try again later");
+                        }
+                        responseWriter.write(responseHolder);
+                        processResponseFuture = NullFuture.getInstance();
+                    } finally {
+                        requestReader.readFinished();
+                    }
+                } else {
+                    processResponseFuture = responseExecutor.submit(this::processResponse);
+                }
+            }
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean isHeartbeatTimeout() {
+        return endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+    }
+
+    private boolean isRequestTimeout() {
+        return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+    }
+
+    private void processResponse() {
+        try {
+            try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
+                final int serviceId = request.getService();
+                if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+                    return;
+                }
+                final SynchronousEndpointService service = parent.getService(serviceId);
+                if (service == null) {
+                    responseHolder.setService(serviceId);
+                    responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+                    responseHolder.setSequence(request.getSequence());
+                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                            "service not found: " + serviceId);
+                    responseWriter.write(responseHolder);
+                    return;
+                }
+                if (isRequestTimeout()) {
+                    responseHolder.setService(serviceId);
+                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    responseHolder.setSequence(request.getSequence());
+                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
+                            + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
+                    responseWriter.write(responseHolder);
+                    return;
+                }
+                service.invoke(endpointSession.getSessionId(), request, responseHolder);
+                responseWriter.write(responseHolder);
+            } finally {
+                requestReader.readFinished();
+            }
+        } catch (final EOFException e) {
+            close();
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}
