@@ -6,6 +6,7 @@ import de.invesdwin.util.time.date.FDate;
 
 public interface IRpcTestService {
 
+    //TODO: test with future as soon as client supports it
     FDate request(FDate date) throws IOException;
 
 }

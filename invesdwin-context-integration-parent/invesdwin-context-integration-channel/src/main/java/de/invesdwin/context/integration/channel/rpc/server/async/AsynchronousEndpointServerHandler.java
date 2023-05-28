@@ -116,8 +116,10 @@ public class AsynchronousEndpointServerHandler
             return responseHolder;
         }
 
+        //TODO: only execute in current thread when @Fast annotation is present, otherwise still use a different worker executor
         final Future<?> future = methodInfo.invoke(sessionId, requestHolder, responseHolder);
         if (future != null) {
+            //TODO: don't block here, instead make accessible some form of async writer context
             Futures.waitNoInterrupt(future);
         }
         return responseHolder;
