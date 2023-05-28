@@ -86,7 +86,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
 
         private final int serviceId;
         private final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool;
-        private final Map<Method, MethodInfo> method_methodInfo;
+        private final Map<Method, ClientMethodInfo> method_methodInfo;
 
         private Handler(final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool,
                 final Class<?> serviceInterface, final SerdeLookupConfig serdeLookupConfig) {
@@ -101,14 +101,14 @@ public final class SynchronousEndpointClient<T> implements Closeable {
                 }
                 final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
                 if (indexOf < 0) {
-                    method_methodInfo.putIfAbsent(method, new MethodInfo(method, serdeLookupConfig));
+                    method_methodInfo.putIfAbsent(method, new ClientMethodInfo(method, serdeLookupConfig));
                 }
             }
         }
 
         @Override
         public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-            final MethodInfo methodInfo = method_methodInfo.get(method);
+            final ClientMethodInfo methodInfo = method_methodInfo.get(method);
             if (methodInfo == null) {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
@@ -134,13 +134,13 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         }
     }
 
-    private static final class MethodInfo {
+    private static final class ClientMethodInfo {
 
         private final int methodId;
         private final ISerde<Object[]> requestSerde;
         private final IResponseSerdeProvider responseSerdeProvider;
 
-        private MethodInfo(final Method method, final SerdeLookupConfig serdeLookupConfig) {
+        private ClientMethodInfo(final Method method, final SerdeLookupConfig serdeLookupConfig) {
             this.methodId = SynchronousEndpointService.newMethodId(method);
             this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
             this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);

@@ -1,15 +1,18 @@
 package de.invesdwin.context.integration.channel.rpc.server.async;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -102,7 +105,21 @@ public class AsynchronousEndpointServerHandler
                     "service not found: " + serviceId);
             return responseHolder;
         }
-        service.invoke(sessionId, requestHolder, responseHolder);
+        final int methodId = requestHolder.getMethod();
+        final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+        if (methodInfo == null) {
+            responseHolder.setService(serviceId);
+            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            responseHolder.setSequence(requestHolder.getSequence());
+            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                    "method not found: " + methodId);
+            return responseHolder;
+        }
+
+        final Future<?> future = methodInfo.invoke(sessionId, requestHolder, responseHolder);
+        if (future != null) {
+            Futures.waitNoInterrupt(future);
+        }
         return responseHolder;
     }
 

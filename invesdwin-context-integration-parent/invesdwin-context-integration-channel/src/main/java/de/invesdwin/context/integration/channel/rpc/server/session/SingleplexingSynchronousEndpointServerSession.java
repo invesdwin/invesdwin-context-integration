@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.server.session;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -10,6 +11,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
@@ -18,6 +20,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.APostProcessingFuture;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -33,9 +37,10 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
+    private boolean delayedWriteResponse = false;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
-    private Future<?> processResponseFuture;
+    private Future<Object> processResponseFuture;
     private final WrappedExecutorService responseExecutor;
 
     public SingleplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
@@ -100,7 +105,11 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
     @Override
     public boolean handle() throws IOException {
         if (processResponseFuture != null) {
-            if (processResponseFuture.isDone()) {
+            if (isProcessResponseFutureDone()) {
+                if (delayedWriteResponse) {
+                    responseWriter.write(responseHolder);
+                    delayedWriteResponse = false;
+                }
                 //keep flushing until finished and ready for next write
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
                     responseHolder.close(); //free memory
@@ -117,32 +126,25 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         }
         if (requestReader.hasNext()) {
             lastHeartbeatNanos = System.nanoTime();
-            if (responseExecutor == null) {
-                processResponse();
-                processResponseFuture = NullFuture.getInstance();
-            } else {
-                final int pendingCount = responseExecutor.getPendingCount();
-                if (pendingCount > parent.getMaxPendingWorkCountOverall()) {
-                    try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
-                        final int serviceId = request.getService();
-                        if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
-                            return true;
-                        }
-                        responseHolder.setService(serviceId);
-                        responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                        responseHolder.setSequence(request.getSequence());
-                        responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                                "too many requests pending [" + pendingCount + "], please try again later");
-                        responseWriter.write(responseHolder);
-                        processResponseFuture = NullFuture.getInstance();
-                    } finally {
-                        requestReader.readFinished();
-                    }
-                } else {
-                    processResponseFuture = responseExecutor.submit(this::processResponse);
-                }
-            }
+            dispatchProcessResponse();
             return true;
+        } else {
+            return false;
+        }
+    }
+
+    private boolean isProcessResponseFutureDone() {
+        if (processResponseFuture.isDone()) {
+            if (processResponseFuture.isCancelled()) {
+                delayedWriteResponse = false;
+                return true;
+            }
+            final Future<?> future = (Future<?>) Futures.getNoInterrupt(processResponseFuture);
+            if (future != null) {
+                return future.isDone();
+            } else {
+                return true;
+            }
         } else {
             return false;
         }
@@ -157,39 +159,118 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
-    private void processResponse() {
-        try {
-            try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
-                final int serviceId = request.getService();
-                if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
-                    return;
-                }
-                final SynchronousEndpointService service = parent.getService(serviceId);
-                if (service == null) {
+    private void dispatchProcessResponse() throws IOException {
+        final IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage();
+        final int serviceId = request.getService();
+        if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+            return;
+        }
+        final SynchronousEndpointService service = parent.getService(serviceId);
+        if (service == null) {
+            responseHolder.setService(serviceId);
+            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            responseHolder.setSequence(request.getSequence());
+            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                    "service not found: " + serviceId);
+            responseWriter.write(responseHolder);
+            processResponseFuture = NullFuture.getInstance();
+            return;
+        }
+        final int methodId = request.getMethod();
+        final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+        if (methodInfo == null) {
+            responseHolder.setService(serviceId);
+            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            responseHolder.setSequence(request.getSequence());
+            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                    "method not found: " + methodId);
+            responseWriter.write(responseHolder);
+            processResponseFuture = NullFuture.getInstance();
+            return;
+        }
+
+        if (responseExecutor == null || methodInfo.isFast()) {
+            final Future<Object> future = processResponse(request, methodInfo);
+            if (future != null) {
+                delayedWriteResponse = true;
+                processResponseFuture = future;
+            } else {
+                processResponseFuture = NullFuture.getInstance();
+            }
+        } else {
+            final int pendingCount = responseExecutor.getPendingCount();
+            if (pendingCount > parent.getMaxPendingWorkCountOverall()) {
+                try {
                     responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
                     responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                            "service not found: " + serviceId);
+                            "too many requests pending [" + pendingCount + "], please try again later");
                     responseWriter.write(responseHolder);
-                    return;
+                    processResponseFuture = NullFuture.getInstance();
+                } finally {
+                    requestReader.readFinished();
                 }
+            } else {
+                processResponseFuture = responseExecutor.submit(() -> {
+                    try {
+                        final Future<Object> future = processResponse(request, methodInfo);
+                        if (future != null) {
+                            return new APostProcessingFuture<Object>(future) {
+                                @Override
+                                protected Object onSuccess(final Object value) throws ExecutionException {
+                                    try {
+                                        responseWriter.write(responseHolder);
+                                    } catch (final EOFException e) {
+                                        close();
+                                    } catch (final IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
+                                    return null;
+                                }
+
+                                @Override
+                                protected ExecutionException onError(final ExecutionException exc) {
+                                    throw new UnsupportedOperationException(
+                                            "should not be invoked here because exceptions should be handled by the service post processing",
+                                            exc);
+                                }
+                            };
+                        } else {
+                            responseWriter.write(responseHolder);
+                            return null;
+                        }
+                    } catch (final EOFException e) {
+                        close();
+                        return null;
+                    } catch (final IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            }
+        }
+    }
+
+    private Future<Object> processResponse(final IServiceSynchronousCommand<IByteBufferProvider> request,
+            final ServerMethodInfo methodInfo) {
+        try {
+            try {
                 if (isRequestTimeout()) {
-                    responseHolder.setService(serviceId);
+                    responseHolder.setService(methodInfo.getService().getServiceId());
                     responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
                     responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
                             + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
                     responseWriter.write(responseHolder);
-                    return;
+                    return null;
                 }
-                service.invoke(endpointSession.getSessionId(), request, responseHolder);
-                responseWriter.write(responseHolder);
+                return methodInfo.invoke(endpointSession.getSessionId(), request, responseHolder);
             } finally {
                 requestReader.readFinished();
             }
         } catch (final EOFException e) {
             close();
+            return null;
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

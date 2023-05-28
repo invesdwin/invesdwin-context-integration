@@ -28,6 +28,7 @@ public class BufferingIteratorChannelTest extends AChannelTest {
             implements INode<MutableReferenceNode> {
 
         private MutableReferenceNode next;
+        private MutableReferenceNode prev;
 
         private MutableReferenceNode(final FDate value) {
             super(value);
@@ -41,6 +42,16 @@ public class BufferingIteratorChannelTest extends AChannelTest {
         @Override
         public void setNext(final MutableReferenceNode next) {
             this.next = next;
+        }
+
+        @Override
+        public MutableReferenceNode getPrev() {
+            return prev;
+        }
+
+        @Override
+        public void setPrev(final MutableReferenceNode prev) {
+            this.prev = prev;
         }
 
     }
