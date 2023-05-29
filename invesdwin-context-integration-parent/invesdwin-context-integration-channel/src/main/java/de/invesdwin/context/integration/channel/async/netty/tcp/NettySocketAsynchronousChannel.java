@@ -7,8 +7,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
+import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -16,12 +18,16 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
+import io.netty.buffer.ByteBufAllocator;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOutboundInvoker;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
+import io.netty.util.Attribute;
+import io.netty.util.AttributeKey;
 
 @NotThreadSafe
 public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
@@ -58,7 +64,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 closeAsync = NettySocketAsynchronousChannel.this::closeAsync;
             }
-            pipeline.addLast(new Reader(handlerFactory.newHandler(ch.toString()), channel.getSocketSize(), closeAsync));
+            pipeline.addLast(new Handler(ch.alloc(), handlerFactory.newHandler(), channel.getSocketSize(), closeAsync));
         });
     }
 
@@ -92,8 +98,86 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         return channel == null || channel.isClosed();
     }
 
-    private static final class Reader extends ChannelInboundHandlerAdapter {
+    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
+
+        private static final AttributeKey<Context> CONTEXT_KEY = AttributeKey
+                .newInstance(NettySocketAsynchronousChannel.class.getSimpleName() + "_context");
+        private final Channel ch;
+        private final String sessionId;
+        private final int socketSize;
+        private AttributesMap attributes;
+
+        private Context(final Channel ch, final int socketSize) {
+            this.ch = ch;
+            this.sessionId = ch.toString();
+            this.socketSize = socketSize;
+        }
+
+        @Override
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        @Override
+        public AttributesMap getAttributes() {
+            if (attributes == null) {
+                synchronized (this) {
+                    if (attributes == null) {
+                        attributes = new AttributesMap();
+                    }
+                }
+            }
+            return attributes;
+        }
+
+        @Override
+        public void write(final IByteBufferProvider output) {
+            try {
+                writeOutput(output);
+            } catch (final IOException e) {
+                close();
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                writeOutput(ClosedByteBuffer.INSTANCE);
+            } catch (final IOException e1) {
+                //ignore
+            }
+            ch.close();
+        }
+
+        private void writeOutput(final IByteBufferProvider output) throws IOException {
+            if (output != null) {
+                final ByteBuf buf = ch.alloc().buffer(socketSize);
+                final NettyDelegateByteBuffer buffer = new NettyDelegateByteBuffer(buf);
+                final IByteBuffer messageBuffer = buffer.sliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
+                final int size = output.getBuffer(messageBuffer);
+                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+                buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+                ch.writeAndFlush(buf);
+            }
+        }
+
+        public static Context getOrCreate(final Channel ch, final int socketSize) {
+            final Attribute<Context> attr = ch.attr(CONTEXT_KEY);
+            final Context existing = attr.get();
+            if (existing != null) {
+                return existing;
+            } else {
+                final Context created = new Context(ch, socketSize);
+                attr.set(created);
+                return created;
+            }
+        }
+    }
+
+    private static final class Handler extends ChannelInboundHandlerAdapter {
+
         private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
+        private final int socketSize;
         private final ByteBuf buf;
         private final NettyDelegateByteBuffer buffer;
         private final IByteBuffer messageBuffer;
@@ -104,11 +188,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         private int size = -1;
         private boolean closed = false;
 
-        private Reader(final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
-                final int socketSize, final Runnable closeAsync) {
+        private Handler(final ByteBufAllocator alloc,
+                final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler, final int socketSize,
+                final Runnable closeAsync) {
             this.handler = handler;
+            this.socketSize = socketSize;
             //netty uses direct buffers per default
-            this.buf = Unpooled.directBuffer(socketSize);
+            this.buf = alloc.buffer(socketSize);
             this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
             this.messageBuffer = buffer.newSliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
@@ -133,12 +219,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
+            final Context context = Context.getOrCreate(ctx.channel(), socketSize);
             try {
-                final IByteBufferProvider output = handler.open();
+                final IByteBufferProvider output = handler.open(context);
                 try {
                     writeOutput(ctx, output);
                 } finally {
-                    handler.outputFinished();
+                    handler.outputFinished(context);
                 }
             } catch (final IOException e) {
                 close(ctx);
@@ -153,12 +240,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
+                final Context context = Context.getOrCreate(ctx.channel(), socketSize);
                 try {
-                    final IByteBufferProvider output = handler.idle();
+                    final IByteBufferProvider output = handler.idle(context);
                     try {
                         writeOutput(ctx, output);
                     } finally {
-                        handler.outputFinished();
+                        handler.outputFinished(context);
                     }
                 } catch (final IOException e) {
                     try {
@@ -226,11 +314,12 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
                     reset();
-                    final IByteBufferProvider output = handler.handle(input);
+                    final Context context = Context.getOrCreate(ctx.channel(), socketSize);
+                    final IByteBufferProvider output = handler.handle(context, input);
                     try {
                         writeOutput(ctx, output);
                     } finally {
-                        handler.outputFinished();
+                        handler.outputFinished(context);
                     }
                     return repeat;
                 } catch (final IOException e) {
@@ -252,7 +341,8 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             size = -1;
         }
 
-        private void writeOutput(final ChannelHandlerContext ctx, final IByteBufferProvider output) throws IOException {
+        private void writeOutput(final ChannelOutboundInvoker ctx, final IByteBufferProvider output)
+                throws IOException {
             if (output != null) {
                 buf.setIndex(0, 0); //reset indexes
                 final int size = output.getBuffer(messageBuffer);

@@ -37,9 +37,8 @@ public class SerdeAsynchronousHandlerFactory<I, O>
     }
 
     @Override
-    public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler(final String sessionId) {
-        return new SerdeAsynchronousHandler<>(delegate.newHandler(sessionId), inputSerde, outputSerde,
-                outputFixedLength);
+    public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler() {
+        return new SerdeAsynchronousHandler<>(delegate.newHandler(), inputSerde, outputSerde, outputFixedLength);
     }
 
 }

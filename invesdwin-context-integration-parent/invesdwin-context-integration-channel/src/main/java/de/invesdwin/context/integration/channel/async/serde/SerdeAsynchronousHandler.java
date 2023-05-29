@@ -5,10 +5,13 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
+import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 
 @NotThreadSafe
 public class SerdeAsynchronousHandler<I, O>
@@ -30,9 +33,14 @@ public class SerdeAsynchronousHandler<I, O>
         this.outputFixedLength = ByteBuffers.newAllocateFixedLength(outputFixedLength);
     }
 
+    private SerdeAsynchronousContext<O> serdeContext(final IAsynchronousHandlerContext<IByteBufferProvider> context) {
+        return context.getAttributes()
+                .getOrCreate(SerdeAsynchronousContext.class.getSimpleName(), () -> new SerdeAsynchronousContext<>(context, outputSerde));
+    }
+
     @Override
-    public IByteBufferProvider open() throws IOException {
-        output = delegate.open();
+    public IByteBufferProvider open(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
+        output = delegate.open(serdeContext(context));
         if (output != null) {
             return this;
         } else {
@@ -41,8 +49,8 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferProvider idle() throws IOException {
-        output = delegate.idle();
+    public IByteBufferProvider idle(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
+        output = delegate.idle(serdeContext(context));
         if (output != null) {
             return this;
         } else {
@@ -51,9 +59,10 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public IByteBufferProvider handle(final IByteBufferProvider inputBuffer) throws IOException {
+    public IByteBufferProvider handle(final IAsynchronousHandlerContext<IByteBufferProvider> context,
+            final IByteBufferProvider inputBuffer) throws IOException {
         final I input = inputSerde.fromBuffer(inputBuffer);
-        output = delegate.handle(input);
+        output = delegate.handle(serdeContext(context), input);
         if (output != null) {
             return this;
         } else {
@@ -62,8 +71,8 @@ public class SerdeAsynchronousHandler<I, O>
     }
 
     @Override
-    public void outputFinished() throws IOException {
-        delegate.outputFinished();
+    public void outputFinished(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
+        delegate.outputFinished(serdeContext(context));
         output = null;
     }
 
@@ -93,6 +102,42 @@ public class SerdeAsynchronousHandler<I, O>
         }
         final int length = getBuffer(outputBuffer);
         return outputBuffer.slice(0, length);
+    }
+
+    private static final class SerdeAsynchronousContext<O> implements IAsynchronousHandlerContext<O> {
+
+        private final IAsynchronousHandlerContext<IByteBufferProvider> delegate;
+        private final ISerde<O> outputSerde;
+
+        private SerdeAsynchronousContext(final IAsynchronousHandlerContext<IByteBufferProvider> delegate,
+                final ISerde<O> outputSerde) {
+            this.delegate = delegate;
+            this.outputSerde = outputSerde;
+        }
+
+        @Override
+        public String getSessionId() {
+            return delegate.getSessionId();
+        }
+
+        @Override
+        public AttributesMap getAttributes() {
+            return delegate.getAttributes();
+        }
+
+        @Override
+        public void write(final O output) throws IOException {
+            try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
+                final int length = outputSerde.toBuffer(buffer, output);
+                delegate.write(buffer.sliceTo(length));
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            delegate.close();
+        }
+
     }
 
 }

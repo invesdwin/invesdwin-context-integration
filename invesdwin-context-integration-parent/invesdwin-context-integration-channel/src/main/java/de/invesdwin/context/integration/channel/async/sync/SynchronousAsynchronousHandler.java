@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
@@ -35,7 +36,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     }
 
     @Override
-    public O open() throws IOException {
+    public O open(final IAsynchronousHandlerContext<O> context) throws IOException {
         outputReader.open();
         inputWriter.open();
         if (outputReader.hasNext()) {
@@ -46,7 +47,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     }
 
     @Override
-    public O idle() throws IOException {
+    public O idle(final IAsynchronousHandlerContext<O> context) throws IOException {
         if (isHeartbeatTimeout()) {
             throw FastEOFException.getInstance("heartbeat timeout [%s] exceeded", timeout);
         }
@@ -58,7 +59,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     }
 
     @Override
-    public O handle(final I input) throws IOException {
+    public O handle(final IAsynchronousHandlerContext<O> context, final I input) throws IOException {
         //maybe block here
         writerSpinWait.waitForWrite(input, timeout);
         if (outputReader.hasNext()) {
@@ -70,7 +71,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     }
 
     @Override
-    public void outputFinished() throws IOException {
+    public void outputFinished(final IAsynchronousHandlerContext<O> context) throws IOException {
         outputReader.readFinished();
     }
 

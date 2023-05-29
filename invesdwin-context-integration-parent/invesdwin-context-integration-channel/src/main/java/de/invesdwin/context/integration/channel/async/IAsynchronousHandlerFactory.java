@@ -10,7 +10,7 @@ public interface IAsynchronousHandlerFactory<I, O> extends Closeable {
 
     void open() throws IOException;
 
-    IAsynchronousHandler<I, O> newHandler(String sessionId);
+    IAsynchronousHandler<I, O> newHandler();
 
     default Duration getHeartbeatInterval() {
         return ISynchronousEndpointSession.DEFAULT_HEARTBEAT_INTERVAL;

@@ -14,7 +14,7 @@ public class AsynchronousHandlerFactorySupport<I, O> implements IAsynchronousHan
     public void close() throws IOException {}
 
     @Override
-    public IAsynchronousHandler<I, O> newHandler(final String sessionId) {
+    public IAsynchronousHandler<I, O> newHandler() {
         return null;
     }
 

@@ -64,8 +64,8 @@ public class AsynchronousEndpointServerHandlerFactory
     }
 
     @Override
-    public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler(final String sessionId) {
-        return new AsynchronousEndpointServerHandler(this, sessionId);
+    public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler() {
+        return new AsynchronousEndpointServerHandler(this);
     }
 
 }

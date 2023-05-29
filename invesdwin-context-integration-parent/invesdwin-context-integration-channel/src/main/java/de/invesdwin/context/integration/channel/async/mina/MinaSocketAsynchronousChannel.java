@@ -5,16 +5,22 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.mina.core.buffer.IoBuffer;
+import org.apache.mina.core.buffer.IoBufferAllocator;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.filterchain.IoFilterChain;
+import org.apache.mina.core.session.AttributeKey;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
+import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -49,8 +55,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 closeAsync = MinaSocketAsynchronousChannel.this::closeAsync;
             }
-            final Reader reader = new Reader(handlerFactory.newHandler(ch.toString()), channel.getSocketSize(),
-                    closeAsync);
+            final Reader reader = new Reader(handlerFactory.newHandler(), channel.getSocketSize(), closeAsync);
             pipeline.addLast("reader", reader);
             if (!ch.isServer()) {
                 try {
@@ -93,8 +98,87 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         return channel == null || channel.isClosed();
     }
 
+    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
+        private static final AttributeKey CONTEXT_KEY = new AttributeKey(NettySocketAsynchronousChannel.class,
+                "context");
+        private final IoSession session;
+        private final String sessionId;
+        private final int socketSize;
+        private final IoBufferAllocator alloc;
+        private AttributesMap attributes;
+
+        private Context(final IoSession session, final int socketSize, final IoBufferAllocator alloc) {
+            this.session = session;
+            this.sessionId = session.toString();
+            this.socketSize = socketSize;
+            this.alloc = alloc;
+        }
+
+        @Override
+        public String getSessionId() {
+            return sessionId;
+        }
+
+        @Override
+        public AttributesMap getAttributes() {
+            if (attributes == null) {
+                synchronized (this) {
+                    if (attributes == null) {
+                        attributes = new AttributesMap();
+                    }
+                }
+            }
+            return attributes;
+        }
+
+        @Override
+        public void write(final IByteBufferProvider output) {
+            try {
+                writeOutput(output);
+            } catch (final IOException e) {
+                close();
+            }
+        }
+
+        @Override
+        public void close() {
+            try {
+                writeOutput(ClosedByteBuffer.INSTANCE);
+            } catch (final IOException e1) {
+                //ignore
+            }
+            session.closeNow();
+        }
+
+        private void writeOutput(final IByteBufferProvider output) throws IOException {
+            if (output != null) {
+                final IoBuffer buf = alloc.allocate(socketSize, true);
+                final UnsafeByteBuffer buffer = new UnsafeByteBuffer(buf.buf());
+                final IByteBuffer messageBuffer = buffer.sliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
+                final int size = output.getBuffer(messageBuffer);
+                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+                buf.position(0);
+                buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+                session.write(buf);
+            }
+        }
+
+        public static Context getOrCreate(final IoSession ch, final int socketSize, final IoBufferAllocator alloc) {
+            final Context existing = (Context) ch.getAttribute(CONTEXT_KEY);
+            if (existing != null) {
+                return existing;
+            } else {
+                final Context created = new Context(ch, socketSize, alloc);
+                ch.setAttribute(CONTEXT_KEY, created);
+                return created;
+            }
+        }
+    }
+
     private static final class Reader extends IoFilterAdapter {
         private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
+        private final int socketSize;
+        private final IoBufferAllocator alloc;
         private final IoBuffer buf;
         private final UnsafeByteBuffer buffer;
         private final IByteBuffer messageBuffer;
@@ -108,8 +192,10 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         private Reader(final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
                 final int socketSize, final Runnable closeAsync) {
             this.handler = handler;
+            this.socketSize = socketSize;
             //netty uses direct buffers per default
-            this.buf = new SimpleBufferAllocator().allocate(socketSize, true);
+            this.alloc = new SimpleBufferAllocator();
+            this.buf = alloc.allocate(socketSize, true);
             this.buffer = new UnsafeByteBuffer(buf.buf());
             this.messageBuffer = buffer.newSliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
             this.closeAsync = closeAsync;
@@ -134,12 +220,13 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void sessionOpened(final NextFilter nextFilter, final IoSession session) throws Exception {
+            final Context context = Context.getOrCreate(session, socketSize, alloc);
             try {
-                final IByteBufferProvider output = handler.open();
+                final IByteBufferProvider output = handler.open(context);
                 try {
                     writeOutput(session, output);
                 } finally {
-                    handler.outputFinished();
+                    handler.outputFinished(context);
                 }
             } catch (final IOException e) {
                 close(session);
@@ -154,12 +241,13 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void sessionIdle(final NextFilter nextFilter, final IoSession session, final IdleStatus status)
                 throws Exception {
+            final Context context = Context.getOrCreate(session, socketSize, alloc);
             try {
-                final IByteBufferProvider output = handler.idle();
+                final IByteBufferProvider output = handler.idle(context);
                 try {
                     writeOutput(session, output);
                 } finally {
-                    handler.outputFinished();
+                    handler.outputFinished(context);
                 }
             } catch (final IOException e) {
                 try {
@@ -229,11 +317,12 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                 final IByteBuffer input = buffer.slice(0, size);
                 try {
                     reset();
-                    final IByteBufferProvider output = handler.handle(input);
+                    final Context context = Context.getOrCreate(session, socketSize, alloc);
+                    final IByteBufferProvider output = handler.handle(context, input);
                     try {
                         writeOutput(session, output);
                     } finally {
-                        handler.outputFinished();
+                        handler.outputFinished(context);
                     }
                     return repeat;
                 } catch (final IOException e) {

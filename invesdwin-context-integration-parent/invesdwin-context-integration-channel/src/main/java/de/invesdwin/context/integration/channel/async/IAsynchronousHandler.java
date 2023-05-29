@@ -5,19 +5,19 @@ import java.io.IOException;
 
 public interface IAsynchronousHandler<I, O> extends Closeable {
 
-    O open() throws IOException;
+    O open(IAsynchronousHandlerContext<O> context) throws IOException;
 
     /**
      * Can throw IOException/EOFException here if the connection should be closed due to a heartbeat timeout.
      */
-    O idle() throws IOException;
+    O idle(IAsynchronousHandlerContext<O> context) throws IOException;
 
-    O handle(I input) throws IOException;
+    O handle(IAsynchronousHandlerContext<O> context, I input) throws IOException;
 
     /**
-     * Needs to be called after open or handle to indicate the output is not needed anymore and can be freed up (even if
-     * the output was null).
+     * Needs to be called after open/idle/handle to indicate the output is not needed anymore and can be freed up (even
+     * if the output was null).
      */
-    void outputFinished() throws IOException;
+    void outputFinished(IAsynchronousHandlerContext<O> context) throws IOException;
 
 }

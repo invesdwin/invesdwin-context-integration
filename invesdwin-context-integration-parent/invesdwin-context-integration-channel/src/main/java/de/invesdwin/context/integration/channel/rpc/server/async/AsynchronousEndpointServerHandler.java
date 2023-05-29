@@ -6,6 +6,7 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
@@ -24,23 +25,20 @@ public class AsynchronousEndpointServerHandler
         implements IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider>, IByteBufferProvider {
 
     private final AsynchronousEndpointServerHandlerFactory parent;
-    private final String sessionId;
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
     private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private final ServiceSynchronousCommandSerde<IByteBufferProvider> outputSerde = new ServiceSynchronousCommandSerde<>(
             ByteBufferProviderSerde.GET, null);
-    private LazySerializingServiceSynchronousCommand<Object> output;
+    private volatile LazySerializingServiceSynchronousCommand<Object> output;
     private IByteBuffer outputBuffer;
     private long lastHeartbeatNanos = System.nanoTime();
 
-    public AsynchronousEndpointServerHandler(final AsynchronousEndpointServerHandlerFactory parent,
-            final String sessionId) {
+    public AsynchronousEndpointServerHandler(final AsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
-        this.sessionId = sessionId;
     }
 
     @Override
-    public IByteBufferProvider open() throws IOException {
+    public IByteBufferProvider open(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
         //noop
         return null;
     }
@@ -54,7 +52,7 @@ public class AsynchronousEndpointServerHandler
     }
 
     @Override
-    public IByteBufferProvider idle() throws IOException {
+    public IByteBufferProvider idle(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
         if (isHeartbeatTimeout()) {
             throw FastEOFException.getInstance("heartbeat timeout [%s] exceeded", parent.getHeartbeatTimeout());
         }
@@ -66,7 +64,8 @@ public class AsynchronousEndpointServerHandler
     }
 
     @Override
-    public IByteBufferProvider handle(final IByteBufferProvider input) throws IOException {
+    public IByteBufferProvider handle(final IAsynchronousHandlerContext<IByteBufferProvider> context,
+            final IByteBufferProvider input) throws IOException {
         final IByteBuffer buffer = input.asBuffer();
         final int service = buffer.getInt(ServiceSynchronousCommandSerde.SERVICE_INDEX);
         final int method = buffer.getInt(ServiceSynchronousCommandSerde.METHOD_INDEX);
@@ -79,7 +78,7 @@ public class AsynchronousEndpointServerHandler
             requestHolder.setMessage(ByteBufferProviderSerde.GET,
                     buffer.slice(ServiceSynchronousCommandSerde.MESSAGE_INDEX, messageLength));
             //we expect async handlers to already be running inside of a worker pool, thus just execute in current thread
-            output = processResponse();
+            output = processResponse(context);
             if (output != null) {
                 return this;
             } else {
@@ -90,7 +89,8 @@ public class AsynchronousEndpointServerHandler
         }
     }
 
-    private LazySerializingServiceSynchronousCommand<Object> processResponse() {
+    private LazySerializingServiceSynchronousCommand<Object> processResponse(
+            final IAsynchronousHandlerContext<IByteBufferProvider> context) {
         lastHeartbeatNanos = System.nanoTime();
         final int serviceId = requestHolder.getService();
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
@@ -117,7 +117,7 @@ public class AsynchronousEndpointServerHandler
         }
 
         //TODO: only execute in current thread when @Fast annotation is present, otherwise still use a different worker executor
-        final Future<?> future = methodInfo.invoke(sessionId, requestHolder, responseHolder);
+        final Future<?> future = methodInfo.invoke(context.getSessionId(), requestHolder, responseHolder);
         if (future != null) {
             //TODO: don't block here, instead make accessible some form of async writer context
             Futures.waitNoInterrupt(future);
@@ -126,7 +126,7 @@ public class AsynchronousEndpointServerHandler
     }
 
     @Override
-    public void outputFinished() throws IOException {
+    public void outputFinished(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
         output = null;
         responseHolder.close();
     }

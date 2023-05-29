@@ -21,6 +21,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.async.AsynchronousHandlerFactorySupport;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.IRpcTestService;
@@ -508,7 +509,7 @@ public abstract class AChannelTest extends ATest {
     public static class ReaderHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
         @Override
-        public IAsynchronousHandler<FDate, FDate> newHandler(final String sessionId) {
+        public IAsynchronousHandler<FDate, FDate> newHandler() {
             return new ReaderHandler();
         }
 
@@ -534,7 +535,7 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public FDate open() throws IOException {
+        public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             readsStart = new Instant();
             prevValue = null;
             count = 0;
@@ -542,12 +543,13 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public FDate idle() throws IOException {
+        public FDate idle(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             throw FastEOFException.getInstance("should not become idle");
         }
 
         @Override
-        public FDate handle(final FDate readMessage) throws IOException {
+        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate readMessage)
+                throws IOException {
             if (DEBUG) {
                 log.write("client request out\n".getBytes());
             }
@@ -564,7 +566,7 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public void outputFinished() throws IOException {
+        public void outputFinished(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             //noop
         }
 
@@ -582,7 +584,7 @@ public abstract class AChannelTest extends ATest {
     public static class WriterHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
         @Override
-        public IAsynchronousHandler<FDate, FDate> newHandler(final String sessionId) {
+        public IAsynchronousHandler<FDate, FDate> newHandler() {
             return new WriterHandler();
         }
 
@@ -608,7 +610,7 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public FDate open() throws IOException {
+        public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             writesStart = new Instant();
             i = 0;
             this.values = newValues().iterator();
@@ -619,12 +621,13 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public FDate idle() throws IOException {
+        public FDate idle(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             throw FastEOFException.getInstance("should not become idle");
         }
 
         @Override
-        public FDate handle(final FDate readMessage) throws IOException {
+        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate readMessage)
+                throws IOException {
             if (DEBUG) {
                 log.write("server request in\n".getBytes());
             }
@@ -645,7 +648,7 @@ public abstract class AChannelTest extends ATest {
         }
 
         @Override
-        public void outputFinished() throws IOException {
+        public void outputFinished(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             //noop
         }
 
