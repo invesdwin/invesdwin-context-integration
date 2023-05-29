@@ -2,6 +2,8 @@ package de.invesdwin.context.integration.channel.rpc.server.service.command.seri
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -10,41 +12,38 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class EagerSerializingServiceSynchronousCommand<M> implements ISerializingServiceSynchronousCommand<M> {
 
-    protected int service;
-    protected int method;
-    protected int sequence;
     //direct buffer for outgoing information into a transport
-    protected final IByteBuffer messageHolder = ByteBuffers.allocateDirectExpandable();
+    protected final IByteBuffer buffer = ByteBuffers.allocateDirectExpandable();
     protected int messageSize;
 
     @Override
     public int getService() {
-        return service;
+        return buffer.getInt(ServiceSynchronousCommandSerde.SERVICE_INDEX);
     }
 
     @Override
     public void setService(final int service) {
-        this.service = service;
+        buffer.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, service);
     }
 
     @Override
     public int getMethod() {
-        return method;
+        return buffer.getInt(ServiceSynchronousCommandSerde.METHOD_INDEX);
     }
 
     @Override
     public void setMethod(final int method) {
-        this.method = method;
+        buffer.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, method);
     }
 
     @Override
     public int getSequence() {
-        return sequence;
+        return buffer.getInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX);
     }
 
     @Override
     public void setSequence(final int sequence) {
-        this.sequence = sequence;
+        buffer.putInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX, sequence);
     }
 
     @Override
@@ -54,18 +53,23 @@ public class EagerSerializingServiceSynchronousCommand<M> implements ISerializin
 
     @Override
     public void setMessage(final ISerde<M> messageSerde, final M message) {
-        messageSize = messageSerde.toBuffer(messageHolder, message);
+        messageSize = messageSerde.toBuffer(buffer.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX), message);
     }
 
     @Override
-    public int messageToBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
-        buffer.putBytesTo(0, messageHolder, messageSize);
-        return messageSize;
+    public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageSize;
+        buffer.putBytesTo(0, buffer, length);
+        return length;
     }
 
     @Override
     public void close() {
         messageSize = 0;
+    }
+
+    public IByteBuffer asBuffer() {
+        return buffer.sliceTo(ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageSize);
     }
 
 }

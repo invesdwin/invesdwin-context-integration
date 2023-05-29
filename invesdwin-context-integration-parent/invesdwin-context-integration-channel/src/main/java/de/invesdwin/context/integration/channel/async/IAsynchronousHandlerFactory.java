@@ -20,4 +20,8 @@ public interface IAsynchronousHandlerFactory<I, O> extends Closeable {
         return ISynchronousEndpointSession.DEFAULT_HEARTBEAT_TIMEOUT;
     }
 
+    default Duration getRequestTimeout() {
+        return ISynchronousEndpointSession.DEFAULT_REQUEST_TIMEOUT;
+    }
+
 }

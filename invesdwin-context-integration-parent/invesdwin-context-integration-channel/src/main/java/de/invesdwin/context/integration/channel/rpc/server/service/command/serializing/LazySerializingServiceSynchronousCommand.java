@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.server.service.command.seri
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -58,8 +59,13 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     }
 
     @Override
-    public int messageToBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
-        return this.messageSerde.toBuffer(buffer, message);
+    public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        buffer.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, getService());
+        buffer.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, getMethod());
+        buffer.putInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX, getSequence());
+        final int messageLength = this.messageSerde
+                .toBuffer(buffer.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX), message);
+        return ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageLength;
     }
 
     @Override

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -49,8 +50,12 @@ public class LazySerializingSynchronousCommand<M> implements ISerializingSynchro
     }
 
     @Override
-    public int messageToBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
-        return this.messageSerde.toBuffer(buffer, message);
+    public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, getType());
+        buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, getSequence());
+        final int messageLength = this.messageSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
+                message);
+        return SynchronousCommandSerde.MESSAGE_INDEX + messageLength;
     }
 
     @Override

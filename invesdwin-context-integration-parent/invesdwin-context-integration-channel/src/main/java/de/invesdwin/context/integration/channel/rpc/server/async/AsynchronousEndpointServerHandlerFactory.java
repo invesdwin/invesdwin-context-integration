@@ -38,7 +38,15 @@ public class AsynchronousEndpointServerHandlerFactory
         this.serdeLookupConfig = serdeLookupConfig;
         this.workExecutor = newWorkExecutor();
         this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
+        if (maxPendingWorkCountOverall < 0) {
+            throw new IllegalArgumentException(
+                    "maxPendingWorkCountOverall should not be negative: " + maxPendingWorkCountOverall);
+        }
         this.maxPendingWorkCountPerSession = newMaxPendingWorkCountPerSession();
+        if (maxPendingWorkCountPerSession < 0) {
+            throw new IllegalArgumentException(
+                    "maxPendingWorkCountPerSession should not be negative: " + maxPendingWorkCountPerSession);
+        }
     }
 
     /**

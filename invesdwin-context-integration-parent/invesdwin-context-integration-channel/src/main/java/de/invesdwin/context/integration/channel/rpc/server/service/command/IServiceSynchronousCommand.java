@@ -35,8 +35,13 @@ public interface IServiceSynchronousCommand<M> extends Closeable {
 
     M getMessage();
 
-    default int messageToBuffer(final ISerde<M> messageSerde, final IByteBuffer buffer) {
-        return messageSerde.toBuffer(buffer, getMessage());
+    default int toBuffer(final ISerde<M> messageSerde, final IByteBuffer buffer) {
+        buffer.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, getService());
+        buffer.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, getMethod());
+        buffer.putInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX, getSequence());
+        final int messageLength = messageSerde.toBuffer(buffer.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX),
+                getMessage());
+        return ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageLength;
     }
 
 }

@@ -8,16 +8,15 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
-import org.agrona.concurrent.OneToOneConcurrentArrayQueue;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.CopyBufferServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.ISerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -27,12 +26,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableSet;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
-import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
-import de.invesdwin.util.concurrent.pool.AQueueObjectPool;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -41,8 +35,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
  */
 @ThreadSafe
 public class MultiplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
-
-    private static final ProcessResponseResult[] PROCESS_RESPONSE_RESULT_EMPTY_ARRAY = new ProcessResponseResult[0];
 
     private final SynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -61,21 +53,6 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
     @GuardedBy("only the io thread should access the result pool")
     private final IFastIterableSet<ProcessResponseResult> activeRequests = ILockCollectionFactory.getInstance(false)
             .newFastIterableIdentitySet();
-    @GuardedBy("only the io thread should access the result pool")
-    private final IObjectPool<ProcessResponseResult> resultPool = new AQueueObjectPool<ProcessResponseResult>(
-            new OneToOneConcurrentArrayQueue<>(AAgronaObjectPool.DEFAULT_MAX_POOL_SIZE)) {
-        @Override
-        protected ProcessResponseResult newObject() {
-            return new ProcessResponseResult();
-        }
-
-        @Override
-        protected boolean passivateObject(final ProcessResponseResult element) {
-            element.close();
-            return true;
-        }
-    };
-    private final WrappedExecutorService responseExecutor;
 
     public MultiplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -90,17 +67,6 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             close();
             throw new RuntimeException(t);
         }
-        this.responseExecutor = parent.getWorkExecutor();
-        if (responseExecutor == null) {
-            throw new NullPointerException("responseExecutor should not be null");
-        }
-    }
-
-    protected ISerializingServiceSynchronousCommand<Object> newResponseHolder() {
-        //ensures that the worker thread does the serialization at the cost of an additional copy (useful when serialization/marshalling can be expensive)
-        return new EagerSerializingServiceSynchronousCommand<Object>();
-        //lets the IO thread do the serialization, might not be a good idea unless this guaranteed to be fast
-        //        return new LazySerializingServiceSynchronousCommand<Object>();
     }
 
     @Override
@@ -111,12 +77,12 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
     @Override
     public void close() {
         //only the IO thread will access the active requests array, also only IO thread will call close of the server session, thus we are fine here
-        final ProcessResponseResult[] activeRequestsArray = activeRequests.asArray(PROCESS_RESPONSE_RESULT_EMPTY_ARRAY);
+        final ProcessResponseResult[] activeRequestsArray = activeRequests.asArray(ProcessResponseResult.EMPTY_ARRAY);
         for (int i = 0; i < activeRequestsArray.length; i++) {
             final ProcessResponseResult activeRequest = activeRequestsArray[i];
-            final Future<?> futureCopy = activeRequest.future;
+            final Future<?> futureCopy = activeRequest.getFuture();
             if (futureCopy != null) {
-                activeRequest.future = null;
+                activeRequest.setFuture(null);
                 futureCopy.cancel(true);
             }
         }
@@ -158,19 +124,19 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
              */
             writing = true;
             if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
-                if (writeTask.writing) {
+                if (writeTask.isWriting()) {
                     final ProcessResponseResult removedTask = writeQueue.remove();
                     final ProcessResponseResult nextWriteTask = writeQueue.peek();
                     if (nextWriteTask != null) {
-                        responseWriter.write(nextWriteTask.responseHolder);
-                        nextWriteTask.writing = true;
+                        responseWriter.write(nextWriteTask.getResponse());
+                        nextWriteTask.setWriting(true);
                     }
                     activeRequests.remove(writeTask);
-                    resultPool.returnObject(writeTask);
+                    ProcessResponseResultPool.INSTANCE.returnObject(writeTask);
                     Assertions.checkSame(writeTask, removedTask);
                 } else {
-                    responseWriter.write(writeTask.responseHolder);
-                    writeTask.writing = true;
+                    responseWriter.write(writeTask.getResponse());
+                    writeTask.setWriting(true);
                 }
             }
         } else {
@@ -180,37 +146,17 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         if (requestReader.hasNext()) {
             lastHeartbeatNanos = System.nanoTime();
 
-            final int thisPendingCount = activeRequests.size();
-            if (thisPendingCount > parent.getMaxPendingWorkCountPerSession()) {
-                rejectPendingCount("too many requests pending for this session [" + thisPendingCount
-                        + "], please try again later");
-            }
-            final int overallPendingCount = responseExecutor.getPendingCount();
-            if (overallPendingCount > parent.getMaxPendingWorkCountOverall()) {
-                rejectPendingCount(
-                        "too many requests pending overall [" + overallPendingCount + "], please try again later");
-                return true;
-            }
-            final ProcessResponseResult result = resultPool.borrowObject();
+            final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
             try {
-                /*
-                 * Keep actual request in read as shortly as possible so that the maybe blocking transport can send the
-                 * message as soon as possible. Sadly we need to make a copy of the request buffer here, since we don't
-                 * want to do an expensive deserialization of the args in the IO thread and because we want to read the
-                 * next message while processing for other requests is still active.
-                 */
-                try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
-                    result.requestHolder.copy(request);
-                } finally {
-                    requestReader.readFinished();
-                }
-                dispatchProcessResponse(result);
                 activeRequests.add(result);
+                dispatchProcessResponse(result);
             } catch (final EOFException e) {
-                resultPool.returnObject(result);
+                activeRequests.remove(result);
+                ProcessResponseResultPool.INSTANCE.returnObject(result);
                 close();
             } catch (final IOException e) {
-                resultPool.returnObject(result);
+                activeRequests.remove(result);
+                ProcessResponseResultPool.INSTANCE.returnObject(result);
                 throw new RuntimeException(e);
             }
             return true;
@@ -232,7 +178,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             while (pollingResult != null) {
                 final ProcessResponseResult nextPollingResult = pollingResult.getNext();
                 if (pollingResult.isDone()) {
-                    if (pollingResult.delayedWriteResponse) {
+                    if (pollingResult.isDelayedWriteResponse()) {
                         writeQueue.add(pollingResult);
                     }
                     pollingQueue.remove(pollingResult);
@@ -240,27 +186,6 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 pollingResult = nextPollingResult;
             }
         }
-    }
-
-    private void rejectPendingCount(final String message) throws IOException {
-        final int serviceId;
-        final int sequence;
-        try (IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage()) {
-            serviceId = request.getService();
-            if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
-                return;
-            }
-            sequence = request.getSequence();
-        } finally {
-            requestReader.readFinished();
-        }
-        //we need to use the pooled result here because another write might be currently active
-        final ProcessResponseResult result = resultPool.borrowObject();
-        result.responseHolder.setService(serviceId);
-        result.responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-        result.responseHolder.setSequence(sequence);
-        result.responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, message);
-        writeQueue.add(result);
     }
 
     @Override
@@ -272,143 +197,122 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
+    @SuppressWarnings("unchecked")
     private void dispatchProcessResponse(final ProcessResponseResult result) throws IOException {
         final IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage();
-        final int serviceId = request.getService();
-        if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
-            return;
-        }
-        final SynchronousEndpointService service = parent.getService(serviceId);
-        if (service == null) {
-            result.responseHolder.setService(serviceId);
-            result.responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            result.responseHolder.setSequence(request.getSequence());
-            result.responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "service not found: " + serviceId);
-            writeQueue.add(result);
-            return;
-        }
-        final int methodId = request.getMethod();
-        final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
-        if (methodInfo == null) {
-            result.responseHolder.setService(serviceId);
-            result.responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            result.responseHolder.setSequence(request.getSequence());
-            result.responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "method not found: " + methodId);
-            writeQueue.add(result);
-            return;
-        }
-
-        if (responseExecutor == null || methodInfo.isFast()) {
-            final Future<Object> future = processResponse(result, methodInfo);
-            if (future != null) {
-                result.future = future;
-                result.delayedWriteResponse = true;
-                pollingQueue.add(result);
-            } else {
-                writeQueue.add(result);
-            }
-        } else {
-            final int pendingCount = responseExecutor.getPendingCount();
-            if (pendingCount > parent.getMaxPendingWorkCountOverall()) {
-                result.responseHolder.setService(serviceId);
-                result.responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                result.responseHolder.setSequence(request.getSequence());
-                result.responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                        "too many requests pending [" + pendingCount + "], please try again later");
-                writeQueue.add(result);
-            } else {
-                result.future = responseExecutor.submit(() -> {
-                    final Future<Object> future = processResponse(result, methodInfo);
-                    if (future != null) {
-                        pollingQueueAsyncAdds.add(result);
-                        return null;
-                    } else {
-                        writeQueue.add(result);
-                        return null;
-                    }
-                });
-            }
-        }
-    }
-
-    private Future<Object> processResponse(final ProcessResponseResult result, final ServerMethodInfo methodInfo) {
         try {
-            if (isRequestTimeout()) {
-                result.responseHolder.setService(methodInfo.getService().getServiceId());
-                result.responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                result.responseHolder.setSequence(result.requestHolder.getSequence());
-                result.responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                        "request timeout [" + endpointSession.getRequestTimeout()
-                                + "] exceeded, please try again later");
-                responseWriter.write(result.responseHolder);
-                return null;
+            final int serviceId = request.getService();
+            if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+                return;
             }
-            return methodInfo.invoke(endpointSession.getSessionId(), result.requestHolder, result.responseHolder);
-        } catch (final EOFException e) {
-            close();
-            return null;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+            final SynchronousEndpointService service = parent.getService(serviceId);
+            if (service == null) {
+                final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                response.setService(serviceId);
+                response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+                response.setSequence(request.getSequence());
+                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                        "service not found: " + serviceId);
+                writeQueue.add(result);
+                return;
+            }
+            final int methodId = request.getMethod();
+            final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+            if (methodInfo == null) {
+                final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                response.setService(serviceId);
+                response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+                response.setSequence(request.getSequence());
+                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                        "method not found: " + methodId);
+                writeQueue.add(result);
+                return;
+            }
+
+            final WrappedExecutorService workExecutor = parent.getWorkExecutor();
+            if (workExecutor == null || methodInfo.isFast()) {
+                final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), request,
+                        result.getResponse());
+                if (future != null) {
+                    result.setFuture(future);
+                    result.setDelayedWriteResponse(true);
+                    pollingQueue.add(result);
+                } else {
+                    writeQueue.add(result);
+                }
+            } else {
+                final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
+                if (maxPendingWorkCountPerSession > 0) {
+                    final int thisPendingCount = activeRequests.size();
+                    if (thisPendingCount > maxPendingWorkCountPerSession) {
+                        final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                        response.setService(serviceId);
+                        response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                        response.setSequence(request.getSequence());
+                        response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                "too many requests pending for this session [" + thisPendingCount
+                                        + "], please try again later");
+                        writeQueue.add(result);
+                        return;
+                    }
+                }
+                final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
+                if (maxPendingWorkCountOverall > 0) {
+                    final int overallPendingCount = workExecutor.getPendingCount();
+                    if (overallPendingCount > maxPendingWorkCountOverall) {
+                        final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                        response.setService(serviceId);
+                        response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                        response.setSequence(request.getSequence());
+                        response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                "too many requests pending overall [" + overallPendingCount
+                                        + "], please try again later");
+                        writeQueue.add(result);
+                        return;
+                    }
+                }
+                //copy request for the async processing
+                result.getRequestCopy().copy(request);
+                result.setFuture((Future<Object>) workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
+            }
+        } finally {
+            requestReader.readFinished();
         }
     }
 
-    private class ProcessResponseResult implements INode<ProcessResponseResult> {
-        private final CopyBufferServiceSynchronousCommand requestHolder = new CopyBufferServiceSynchronousCommand();
-        private final ISerializingServiceSynchronousCommand<Object> responseHolder = newResponseHolder();
-        @GuardedBy("only the IO thread has access to the future")
-        private Future<Object> future;
-        @GuardedBy("only the IO thread has access to this flag")
-        private boolean writing;
-        private ProcessResponseResult next;
-        private ProcessResponseResult prev;
-        private boolean delayedWriteResponse;
+    private final class ProcessResponseRunnable implements Runnable {
+        private final ServerMethodInfo methodInfo;
+        private final ProcessResponseResult result;
 
-        @Override
-        public ProcessResponseResult getNext() {
-            return next;
+        private ProcessResponseRunnable(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+            this.methodInfo = methodInfo;
+            this.result = result;
         }
 
         @Override
-        public void setNext(final ProcessResponseResult next) {
-            this.next = next;
-        }
-
-        @Override
-        public ProcessResponseResult getPrev() {
-            return prev;
-        }
-
-        @Override
-        public void setPrev(final ProcessResponseResult prev) {
-            this.prev = prev;
-        }
-
-        public void close() {
-            future = null;
-            writing = false;
-            requestHolder.close();
-            responseHolder.close();
-            delayedWriteResponse = false;
-            prev = null;
-            next = null;
-        }
-
-        private boolean isDone() {
-            if (future.isDone()) {
-                if (future.isCancelled()) {
-                    delayedWriteResponse = false;
-                    return true;
+        public void run() {
+            try {
+                final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                if (isRequestTimeout()) {
+                    response.setService(methodInfo.getService().getServiceId());
+                    response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    response.setSequence(result.getRequestCopy().getSequence());
+                    response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
+                            + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
+                    responseWriter.write(response);
+                    return;
                 }
-                final Future<?> nextFuture = (Future<?>) Futures.getNoInterrupt(future);
-                if (nextFuture != null) {
-                    return nextFuture.isDone();
+                final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), result.getRequestCopy(),
+                        response);
+                if (future != null) {
+                    pollingQueueAsyncAdds.add(result);
                 } else {
-                    return true;
+                    writeQueue.add(result);
                 }
-            } else {
-                return false;
+            } catch (final EOFException e) {
+                close();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
         }
     }

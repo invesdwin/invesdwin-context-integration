@@ -41,7 +41,6 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
-    private final WrappedExecutorService responseExecutor;
 
     public SingleplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -56,7 +55,6 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
             close();
             throw new RuntimeException(t);
         }
-        this.responseExecutor = parent.getWorkExecutor();
     }
 
     @Override
@@ -189,7 +187,8 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
             return;
         }
 
-        if (responseExecutor == null || methodInfo.isFast()) {
+        final WrappedExecutorService workExecutor = parent.getWorkExecutor();
+        if (workExecutor == null || methodInfo.isFast()) {
             final Future<Object> future = processResponse(request, methodInfo);
             if (future != null) {
                 delayedWriteResponse = true;
@@ -199,56 +198,60 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
                 processResponseFuture = NullFuture.getInstance();
             }
         } else {
-            final int pendingCount = responseExecutor.getPendingCount();
-            if (pendingCount > parent.getMaxPendingWorkCountOverall()) {
-                try {
-                    responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    responseHolder.setSequence(request.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                            "too many requests pending [" + pendingCount + "], please try again later");
-                    responseWriter.write(responseHolder);
-                    processResponseFuture = NullFuture.getInstance();
-                } finally {
-                    requestReader.readFinished();
-                }
-            } else {
-                processResponseFuture = responseExecutor.submit(() -> {
+            final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
+            if (maxPendingWorkCountOverall > 0) {
+                final int pendingCountOverall = workExecutor.getPendingCount();
+                if (pendingCountOverall > maxPendingWorkCountOverall) {
                     try {
-                        final Future<Object> future = processResponse(request, methodInfo);
-                        if (future != null) {
-                            return new APostProcessingFuture<Object>(future) {
-                                @Override
-                                protected Object onSuccess(final Object value) throws ExecutionException {
-                                    try {
-                                        responseWriter.write(responseHolder);
-                                    } catch (final EOFException e) {
-                                        close();
-                                    } catch (final IOException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                    return null;
-                                }
-
-                                @Override
-                                protected ExecutionException onError(final ExecutionException exc) {
-                                    throw new UnsupportedOperationException(
-                                            "should not be invoked here because exceptions should be handled by the service post processing",
-                                            exc);
-                                }
-                            };
-                        } else {
-                            responseWriter.write(responseHolder);
-                            return null;
-                        }
-                    } catch (final EOFException e) {
-                        close();
-                        return null;
-                    } catch (final IOException e) {
-                        throw new RuntimeException(e);
+                        responseHolder.setService(serviceId);
+                        responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                        responseHolder.setSequence(request.getSequence());
+                        responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                "too many requests pending overall [" + pendingCountOverall
+                                        + "], please try again later");
+                        responseWriter.write(responseHolder);
+                        processResponseFuture = NullFuture.getInstance();
+                        return;
+                    } finally {
+                        requestReader.readFinished();
                     }
-                });
+                }
             }
+            processResponseFuture = workExecutor.submit(() -> {
+                try {
+                    final Future<Object> future = processResponse(request, methodInfo);
+                    if (future != null) {
+                        return new APostProcessingFuture<Object>(future) {
+                            @Override
+                            protected Object onSuccess(final Object value) throws ExecutionException {
+                                try {
+                                    responseWriter.write(responseHolder);
+                                } catch (final EOFException e) {
+                                    close();
+                                } catch (final IOException e) {
+                                    throw new RuntimeException(e);
+                                }
+                                return null;
+                            }
+
+                            @Override
+                            protected ExecutionException onError(final ExecutionException exc) {
+                                throw new UnsupportedOperationException(
+                                        "should not be invoked here because exceptions should be handled by the service post processing",
+                                        exc);
+                            }
+                        };
+                    } else {
+                        responseWriter.write(responseHolder);
+                        return null;
+                    }
+                } catch (final EOFException e) {
+                    close();
+                    return null;
+                } catch (final IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
         }
     }
 

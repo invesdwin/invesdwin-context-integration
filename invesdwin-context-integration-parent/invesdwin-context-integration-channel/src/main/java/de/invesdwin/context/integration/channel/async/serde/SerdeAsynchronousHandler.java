@@ -35,7 +35,8 @@ public class SerdeAsynchronousHandler<I, O>
 
     private SerdeAsynchronousContext<O> serdeContext(final IAsynchronousHandlerContext<IByteBufferProvider> context) {
         return context.getAttributes()
-                .getOrCreate(SerdeAsynchronousContext.class.getSimpleName(), () -> new SerdeAsynchronousContext<>(context, outputSerde));
+                .getOrCreate(SerdeAsynchronousContext.class.getSimpleName(),
+                        () -> new SerdeAsynchronousContext<>(context, outputSerde));
     }
 
     @Override
@@ -126,7 +127,7 @@ public class SerdeAsynchronousHandler<I, O>
         }
 
         @Override
-        public void write(final O output) throws IOException {
+        public void write(final O output) {
             try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                 final int length = outputSerde.toBuffer(buffer, output);
                 delegate.write(buffer.sliceTo(length));

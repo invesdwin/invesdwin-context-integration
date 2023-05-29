@@ -143,7 +143,7 @@ public class CommandAsynchronousHandler<I, O>
         }
 
         @Override
-        public void write(final ISynchronousCommand<O> output) throws IOException {
+        public void write(final ISynchronousCommand<O> output) {
             try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                 buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
                 buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());

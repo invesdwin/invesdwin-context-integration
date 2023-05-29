@@ -64,8 +64,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
             .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO");
-    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors.newFixedThreadPool(
-            SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
+    //TODO: fix multiplexing
+    //    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors.newFixedThreadPool(
+    //            SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = null;
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = 10_000;
     public static final int DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION = -50;
 
@@ -106,6 +108,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         this.ioExecutor = newIoExecutor();
         this.workExecutor = newWorkExecutor();
         this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
+        if (maxPendingWorkCountOverall < 0) {
+            throw new IllegalArgumentException(
+                    "maxPendingWorkCountOverall should not be negative: " + maxPendingWorkCountOverall);
+        }
         this.initialMaxPendingWorkCountPerSession = newInitialMaxPendingWorkCountPerSession();
         updateMaxPendingCountPerSession(0);
     }

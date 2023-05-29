@@ -13,8 +13,12 @@ public interface ISynchronousCommand<M> extends Closeable {
 
     M getMessage();
 
-    default int messageToBuffer(final ISerde<M> messageSerde, final IByteBuffer buffer) {
-        return messageSerde.toBuffer(buffer, getMessage());
+    default int toBuffer(final ISerde<M> messageSerde, final IByteBuffer buffer) {
+        buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, getType());
+        buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, getSequence());
+        final int messageLength = messageSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
+                getMessage());
+        return SynchronousCommandSerde.MESSAGE_INDEX + messageLength;
     }
 
 }
