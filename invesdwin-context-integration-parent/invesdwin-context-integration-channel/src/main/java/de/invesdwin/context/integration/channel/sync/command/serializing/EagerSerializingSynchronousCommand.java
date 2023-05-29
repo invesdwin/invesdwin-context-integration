@@ -48,7 +48,7 @@ public class EagerSerializingSynchronousCommand<M> implements ISerializingSynchr
     @Override
     public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
         final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageSize;
-        buffer.putBytesTo(0, buffer, length);
+        buffer.putBytesTo(0, this.buffer, length);
         return length;
     }
 

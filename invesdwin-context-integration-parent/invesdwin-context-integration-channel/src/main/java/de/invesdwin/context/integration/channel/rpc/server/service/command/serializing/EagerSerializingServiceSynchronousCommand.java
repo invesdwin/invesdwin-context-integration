@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.rpc.server.service.command.seri
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -58,8 +57,8 @@ public class EagerSerializingServiceSynchronousCommand<M> implements ISerializin
 
     @Override
     public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
-        final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageSize;
-        buffer.putBytesTo(0, buffer, length);
+        final int length = ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageSize;
+        buffer.putBytesTo(0, this.buffer, length);
         return length;
     }
 
