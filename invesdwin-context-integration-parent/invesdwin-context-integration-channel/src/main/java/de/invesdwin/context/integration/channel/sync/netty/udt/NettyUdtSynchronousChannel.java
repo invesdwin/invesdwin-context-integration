@@ -140,8 +140,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
     }
 
-    public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<UdtChannel> channelListener)
-            throws IOException {
+    public void open(final Consumer<UdtChannel> channelListener) throws IOException {
         if (!shouldOpen(channelListener)) {
             return;
         }

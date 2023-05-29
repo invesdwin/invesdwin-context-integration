@@ -44,9 +44,7 @@ public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBuffer
     @Override
     public void open() throws IOException {
         this.reader = new Reader(channel.getSocketSize());
-        channel.open(bootstrap -> {
-            bootstrap.handler(reader);
-        }, channel -> {
+        channel.open(channel -> {
             final ChannelPipeline pipeline = channel.pipeline();
             pipeline.addLast(reader);
         });

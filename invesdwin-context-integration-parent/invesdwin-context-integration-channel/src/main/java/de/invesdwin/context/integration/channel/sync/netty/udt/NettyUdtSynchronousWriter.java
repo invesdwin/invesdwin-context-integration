@@ -15,7 +15,6 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
-import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.udt.UdtMessage;
 
 @NotThreadSafe
@@ -44,9 +43,7 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public void open() throws IOException {
-        channel.open(bootstrap -> {
-            bootstrap.handler(new ChannelInboundHandlerAdapter());
-        }, null);
+        channel.open(null);
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = () -> {

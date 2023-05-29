@@ -58,10 +58,7 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         } else {
             closeAsync = NettyUdtAsynchronousChannel.this::closeAsync;
         }
-        channel.open(bootstrap -> {
-            bootstrap.handler(new Handler(ByteBufAllocator.DEFAULT, handlerFactory.newHandler(),
-                    channel.getSocketSize(), closeAsync));
-        }, ch -> {
+        channel.open(ch -> {
             final ChannelPipeline pipeline = ch.pipeline();
             final Duration heartbeatInterval = handlerFactory.getHeartbeatInterval();
             final long heartbeatIntervalMillis = heartbeatInterval.longValue(FTimeUnit.MILLISECONDS);

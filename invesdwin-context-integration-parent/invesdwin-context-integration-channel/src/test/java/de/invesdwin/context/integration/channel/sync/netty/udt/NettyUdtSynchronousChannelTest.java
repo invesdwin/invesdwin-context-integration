@@ -17,7 +17,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
-@Disabled
+@Disabled("somehow transports 1 message too short")
 @NotThreadSafe
 public class NettyUdtSynchronousChannelTest extends AChannelTest {
 
