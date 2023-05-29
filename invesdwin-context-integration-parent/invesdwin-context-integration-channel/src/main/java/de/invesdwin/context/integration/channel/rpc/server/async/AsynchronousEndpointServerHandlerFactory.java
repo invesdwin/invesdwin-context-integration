@@ -6,8 +6,11 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -16,9 +19,16 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class AsynchronousEndpointServerHandlerFactory
         implements IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> {
 
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION = Integers
+            .abs(SynchronousEndpointServer.DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION);
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = SynchronousEndpointServer.DEFAULT_WORK_EXECUTOR;
     private final SerdeLookupConfig serdeLookupConfig;
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
+    private final WrappedExecutorService workExecutor;
+    private final int maxPendingWorkCountOverall;
+    private final int maxPendingWorkCountPerSession;
 
     public AsynchronousEndpointServerHandlerFactory() {
         this(SerdeLookupConfig.DEFAULT);
@@ -26,6 +36,56 @@ public class AsynchronousEndpointServerHandlerFactory
 
     public AsynchronousEndpointServerHandlerFactory(final SerdeLookupConfig serdeLookupConfig) {
         this.serdeLookupConfig = serdeLookupConfig;
+        this.workExecutor = newWorkExecutor();
+        this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
+        this.maxPendingWorkCountPerSession = newMaxPendingWorkCountPerSession();
+    }
+
+    /**
+     * Further requests will be rejected if the workExecutor has more than that amount of requests pending. Only applies
+     * when workExecutor is not null.
+     * 
+     * return 0 here for unlimited pending work count overall.
+     */
+    protected int newMaxPendingWorkCountOverall() {
+        return DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+    }
+
+    /**
+     * Return 0 here for unlimited pending work count per session, will be limited by overall pending work count only
+     * which means that one rogue client can take all resources for himself (not advisable unless clients can be
+     * trusted).
+     * 
+     * Return a positive value here to limit the pending requests
+     */
+    protected int newMaxPendingWorkCountPerSession() {
+        return DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
+    }
+
+    /**
+     * Can return null here to not use an executor for work handling, instead the IO thread will handle it directly.
+     * This is preferred when request execution is very fast does not involve complex calculations.
+     * 
+     * Use LIMITED_WORK_EXECUTOR when cpu intensive or long running tasks are performed that should not block the IO of
+     * the request thread. In Java 21 it might be a good choice to use a virtual thread executor here so that IO and
+     * sleeps don't block work on other threads (maybe use a higher threshold than 10k for pending tasks then?).
+     * Otherwise a thread pool with a higher size than cpu count should be used that allows IO/sleep between response
+     * work processing.
+     */
+    protected WrappedExecutorService newWorkExecutor() {
+        return DEFAULT_WORK_EXECUTOR;
+    }
+
+    public final WrappedExecutorService getWorkExecutor() {
+        return workExecutor;
+    }
+
+    public int getMaxPendingWorkCountOverall() {
+        return maxPendingWorkCountOverall;
+    }
+
+    public int getMaxPendingWorkCountPerSession() {
+        return maxPendingWorkCountPerSession;
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
