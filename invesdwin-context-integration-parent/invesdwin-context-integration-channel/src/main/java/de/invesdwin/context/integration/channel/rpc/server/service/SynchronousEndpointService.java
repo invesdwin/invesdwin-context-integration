@@ -125,7 +125,7 @@ public final class SynchronousEndpointService {
         private final MethodHandle methodHandle;
         private final ISerde<Object[]> requestSerde;
         private final IResponseSerdeProvider responseSerdeProvider;
-        private final boolean fast;
+        private final boolean blocking;
         private final boolean future;
 
         public ServerMethodInfo(final SynchronousEndpointService service, final int methodId, final Method method,
@@ -135,8 +135,7 @@ public final class SynchronousEndpointService {
             this.methodHandle = mhLookup.unreflect(method);
             this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
             this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
-            this.fast = Reflections.getAnnotation(method, Fast.class) != null
-                    || Reflections.getAnnotation(method.getDeclaringClass(), Fast.class) != null;
+            this.blocking = SynchronousEndpointService.isBlocking(method, false);
             this.future = Future.class.isAssignableFrom(method.getReturnType());
         }
 
@@ -148,8 +147,8 @@ public final class SynchronousEndpointService {
             return methodId;
         }
 
-        public boolean isFast() {
-            return fast;
+        public boolean isBlocking() {
+            return blocking;
         }
 
         public boolean isFuture() {
@@ -170,8 +169,9 @@ public final class SynchronousEndpointService {
                         final Future<Object> futureResult = (Future<Object>) result;
                         return new APostProcessingFuture<Object>(futureResult) {
                             @Override
-                            protected Object onSuccess(final Object value) throws ExecutionException {
-                                handleResult(response, args, futureResult);
+                            protected Object onSuccess(final Object value)
+                                    throws ExecutionException, InterruptedException {
+                                handleResult(response, args, futureResult.get());
                                 return null;
                             }
 
@@ -243,6 +243,21 @@ public final class SynchronousEndpointService {
             }
         }
 
+    }
+
+    public static boolean isBlocking(final Method method, final boolean client) {
+        Blocking blockingAnnotation = Reflections.getAnnotation(method, Blocking.class);
+        if (blockingAnnotation == null) {
+            blockingAnnotation = Reflections.getAnnotation(method.getDeclaringClass(), Blocking.class);
+        }
+        if (blockingAnnotation == null) {
+            return false;
+        }
+        if (client) {
+            return blockingAnnotation.client();
+        } else {
+            return blockingAnnotation.server();
+        }
     }
 
 }

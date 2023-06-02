@@ -171,7 +171,7 @@ public class AsynchronousEndpointServerHandler
 
         final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
-        if (workExecutor == null || methodInfo.isFast()) {
+        if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder, responseHolder);
             if (future != null) {
                 result.setFuture(future);

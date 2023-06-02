@@ -13,7 +13,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.server.service.Fast;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
@@ -137,14 +136,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
             if (methodInfo.isFuture()) {
-                /*
-                 * We don't care if this is a fast method or and always execute the method in the future executor. Fast
-                 * only tells the server that the method can be invoked directly and the future can be processed
-                 * asynchronously (maybe in a separate thread inside the service). Though at the client we always have
-                 * to wait for the full response which might take quite some time even inside the service. Fast only
-                 * tells the server that creating the future inside the server is fast.
-                 */
-                if (client.futureExecutor == null) {
+                if (client.futureExecutor == null || methodInfo.isBlocking()) {
                     try {
                         return ImmutableFuture.of(methodInfo.invoke(args));
                     } catch (final Throwable t) {
@@ -167,7 +159,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         private final int methodId;
         private final ISerde<Object[]> requestSerde;
         private final IResponseSerdeProvider responseSerdeProvider;
-        private final boolean fast;
+        private final boolean blocking;
         private final boolean future;
 
         private ClientMethodInfo(final Handler handler, final Method method,
@@ -176,8 +168,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
             this.methodId = SynchronousEndpointService.newMethodId(method);
             this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
             this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
-            this.fast = Reflections.getAnnotation(method, Fast.class) != null
-                    || Reflections.getAnnotation(method.getDeclaringClass(), Fast.class) != null;
+            this.blocking = SynchronousEndpointService.isBlocking(method, true);
             this.future = Future.class.isAssignableFrom(method.getReturnType());
         }
 
@@ -189,8 +180,8 @@ public final class SynchronousEndpointClient<T> implements Closeable {
             return methodId;
         }
 
-        public boolean isFast() {
-            return fast;
+        public boolean isBlocking() {
+            return blocking;
         }
 
         public boolean isFuture() {

@@ -24,15 +24,16 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.IRpcTestService;
-import de.invesdwin.context.integration.channel.rpc.RpcClientTask;
-import de.invesdwin.context.integration.channel.rpc.RpcTestService;
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.client.session.single.SinglexplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.service.IRpcTestService;
+import de.invesdwin.context.integration.channel.rpc.server.service.RpcClientTask;
+import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestService;
+import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -105,8 +106,8 @@ public abstract class AChannelTest extends ATest {
     }
 
     protected void runRpcPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
-            throws InterruptedException {
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
+            final RpcTestServiceMode mode) throws InterruptedException {
         final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor);
         serverChannel.register(IRpcTestService.class, new RpcTestService());
         final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
@@ -119,7 +120,7 @@ public abstract class AChannelTest extends ATest {
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < RPC_CLIENT_COUNT; i++) {
-                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1))));
+                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
                     Futures.getNoInterrupt(clientFutures.next());

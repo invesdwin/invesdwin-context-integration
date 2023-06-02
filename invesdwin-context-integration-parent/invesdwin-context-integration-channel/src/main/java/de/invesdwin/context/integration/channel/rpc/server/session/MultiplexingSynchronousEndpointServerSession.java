@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.server.session;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -230,7 +231,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             }
 
             final WrappedExecutorService workExecutor = parent.getWorkExecutor();
-            if (workExecutor == null || methodInfo.isFast()) {
+            if (workExecutor == null || methodInfo.isBlocking()) {
                 final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), request,
                         result.getResponse());
                 if (future != null) {
@@ -273,14 +274,14 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 }
                 //copy request for the async processing
                 result.getRequestCopy().copy(request);
-                result.setFuture((Future<Object>) workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
+                result.setFuture(workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
             }
         } finally {
             requestReader.readFinished();
         }
     }
 
-    private final class ProcessResponseRunnable implements Runnable {
+    private final class ProcessResponseRunnable implements Callable<Object> {
         private final ServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
@@ -290,7 +291,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         }
 
         @Override
-        public void run() {
+        public Object call() {
             try {
                 final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
                 if (isRequestTimeout()) {
@@ -300,17 +301,21 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                     response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
                             + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
                     responseWriter.write(response);
-                    return;
+                    return null;
                 }
                 final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), result.getRequestCopy(),
                         response);
-                if (future != null) {
+                if (future != null && !future.isDone()) {
+                    result.setDelayedWriteResponse(true);
                     pollingQueueAsyncAdds.add(result);
+                    return future;
                 } else {
                     writeQueue.add(result);
+                    return null;
                 }
             } catch (final EOFException e) {
                 close();
+                return null;
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }

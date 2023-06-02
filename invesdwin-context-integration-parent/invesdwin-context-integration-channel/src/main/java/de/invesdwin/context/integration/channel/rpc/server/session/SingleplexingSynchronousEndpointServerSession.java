@@ -188,7 +188,7 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         }
 
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
-        if (workExecutor == null || methodInfo.isFast()) {
+        if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = processResponse(request, methodInfo);
             if (future != null) {
                 delayedWriteResponse = true;
@@ -220,7 +220,7 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
             processResponseFuture = workExecutor.submit(() -> {
                 try {
                     final Future<Object> future = processResponse(request, methodInfo);
-                    if (future != null) {
+                    if (future != null && !future.isDone()) {
                         return new APostProcessingFuture<Object>(future) {
                             @Override
                             protected Object onSuccess(final Object value) throws ExecutionException {

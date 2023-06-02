@@ -5,6 +5,7 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+import de.invesdwin.context.integration.channel.rpc.RpcChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
@@ -34,7 +35,7 @@ import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSui
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         CompressionChannelTest.class, StreamCompressionChannelTest.class, CryptoChannelTestSuite.class,
         SocketChannelTestSuite.class, NettyChannelTestSuite.class, MinaChannelTestSuite.class,
-        ChronicleChannelTestSuite.class })
+        ChronicleChannelTestSuite.class, RpcChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {
     //CHECKSTYLE:ON

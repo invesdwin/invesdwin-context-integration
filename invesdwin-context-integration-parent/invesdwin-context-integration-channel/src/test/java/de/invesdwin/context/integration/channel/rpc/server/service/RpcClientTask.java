@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc;
+package de.invesdwin.context.integration.channel.rpc.server.service;
 
 import java.io.EOFException;
 import java.io.IOException;
@@ -23,21 +23,24 @@ public class RpcClientTask implements Runnable {
     private final OutputStream log;
     private final SynchronousEndpointClient<IRpcTestService> client;
     private final String clientId;
+    private final RpcTestServiceMode mode;
 
-    public RpcClientTask(final SynchronousEndpointClient<IRpcTestService> client, final String clientId) {
-        this(new Log(ClientTask.class), client, clientId);
+    public RpcClientTask(final SynchronousEndpointClient<IRpcTestService> client, final String clientId,
+            final RpcTestServiceMode mode) {
+        this(new Log(ClientTask.class), client, clientId, mode);
     }
 
-    public RpcClientTask(final Log log, final SynchronousEndpointClient<IRpcTestService> client,
-            final String clientId) {
-        this(Slf4jStream.of(log).asInfo(), client, clientId);
+    public RpcClientTask(final Log log, final SynchronousEndpointClient<IRpcTestService> client, final String clientId,
+            final RpcTestServiceMode mode) {
+        this(Slf4jStream.of(log).asInfo(), client, clientId, mode);
     }
 
     public RpcClientTask(final OutputStream log, final SynchronousEndpointClient<IRpcTestService> client,
-            final String clientId) {
+            final String clientId, final RpcTestServiceMode mode) {
         this.log = log;
         this.client = client;
         this.clientId = clientId;
+        this.mode = mode;
     }
 
     @Override
@@ -46,14 +49,17 @@ public class RpcClientTask implements Runnable {
         FDate prevValue = null;
         int count = 0;
         try {
-            readsStart = new Instant();
             try (ICloseableIterator<FDate> values = AChannelTest.newValues().iterator()) {
                 while (count < AChannelTest.VALUES) {
                     if (AChannelTest.DEBUG) {
                         log.write((clientId + ": client request out\n").getBytes());
                     }
                     final FDate request = values.next();
-                    final FDate response = client.getService().request(request);
+                    final FDate response = mode.request(client.getService(), request);
+                    if (count == 0) {
+                        //don't count in connection establishment
+                        readsStart = new Instant();
+                    }
                     if (AChannelTest.DEBUG) {
                         log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }

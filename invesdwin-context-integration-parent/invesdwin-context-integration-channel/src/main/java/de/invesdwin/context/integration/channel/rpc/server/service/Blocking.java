@@ -17,11 +17,24 @@ import java.lang.annotation.Target;
  * executor or start some other async task without having to block a worker thread. This is also helpful to treat
  * specific requests with a higher priority than others.
  * 
- * At the client side this annotation has no influence. When a method return a future it is invoked asynchronously, if
- * it does not return a future it is invoked synchronously.
  */
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Fast {
+public @interface Blocking {
+
+    /**
+     * At the client side this annotation has no influence per default. When a method returns a future it is invoked
+     * asynchronously, if it does not return a future it is invoked synchronously. Though if this flag is turned true,
+     * then the client will synchronously wait for the future to be resolved, thus make a blocking call. That way only
+     * the server is non-blocking while the client stays blocking.
+     */
+    boolean client() default false;
+
+    /**
+     * With this flag one could in make the client invoke a future blocking while keeping the server non-blocking
+     * (client=true and server=false). Though this rarely makes sense so the default is to make the server blocking
+     * here.
+     */
+    boolean server() default true;
 
 }
