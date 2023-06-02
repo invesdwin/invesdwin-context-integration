@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  * executor or start some other async task without having to block a worker thread. This is also helpful to treat
  * specific requests with a higher priority than others.
  */
-@Target({ ElementType.METHOD })
+@Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Fast {
 

@@ -6,10 +6,12 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.server.service.Fast;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
@@ -102,7 +104,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
                 }
                 final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
                 if (indexOf < 0) {
-                    method_methodInfo.putIfAbsent(method, new ClientMethodInfo(method, serdeLookupConfig));
+                    method_methodInfo.putIfAbsent(method, new ClientMethodInfo(this, method, serdeLookupConfig));
                 }
             }
         }
@@ -113,38 +115,65 @@ public final class SynchronousEndpointClient<T> implements Closeable {
             if (methodInfo == null) {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
+            return methodInfo.invoke(args);
+        }
+    }
 
+    public static final class ClientMethodInfo {
+
+        private final Handler handler;
+        private final int methodId;
+        private final ISerde<Object[]> requestSerde;
+        private final IResponseSerdeProvider responseSerdeProvider;
+        private final boolean fast;
+        private final boolean future;
+
+        private ClientMethodInfo(final Handler handler, final Method method,
+                final SerdeLookupConfig serdeLookupConfig) {
+            this.handler = handler;
+            this.methodId = SynchronousEndpointService.newMethodId(method);
+            this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
+            this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
+            this.fast = Reflections.getAnnotation(method, Fast.class) != null
+                    || Reflections.getAnnotation(method.getDeclaringClass(), Fast.class) != null;
+            this.future = Future.class.isAssignableFrom(method.getReturnType());
+        }
+
+        public int getServiceId() {
+            return handler.serviceId;
+        }
+
+        public int getMethodId() {
+            return methodId;
+        }
+
+        public boolean isFast() {
+            return fast;
+        }
+
+        public boolean isFuture() {
+            return future;
+        }
+
+        public Object invoke(final Object[] args) {
             try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
-                final int argsSize = methodInfo.requestSerde.toBuffer(buffer, args);
-                try (ICloseableByteBufferProvider response = request(methodInfo.methodId, buffer.sliceTo(argsSize))) {
-                    final ISerde<Object> responseSerde = methodInfo.responseSerdeProvider.getSerde(args);
+                final int argsSize = requestSerde.toBuffer(buffer, args);
+                try (ICloseableByteBufferProvider response = request(buffer.sliceTo(argsSize))) {
+                    final ISerde<Object> responseSerde = responseSerdeProvider.getSerde(args);
                     final Object result = responseSerde.fromBuffer(response);
                     return result;
                 }
             }
         }
 
-        private ICloseableByteBufferProvider request(final int methodId, final IByteBufferProvider request) {
-            final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
+        private ICloseableByteBufferProvider request(final IByteBufferProvider request) {
+            final ISynchronousEndpointClientSession session = handler.sessionPool.borrowObject();
             try {
-                return session.request(serviceId, methodId, request);
+                return session.request(this, request);
             } catch (final Throwable t) {
-                sessionPool.invalidateObject(session);
+                handler.sessionPool.invalidateObject(session);
                 throw Throwables.propagate(t);
             }
-        }
-    }
-
-    private static final class ClientMethodInfo {
-
-        private final int methodId;
-        private final ISerde<Object[]> requestSerde;
-        private final IResponseSerdeProvider responseSerdeProvider;
-
-        private ClientMethodInfo(final Method method, final SerdeLookupConfig serdeLookupConfig) {
-            this.methodId = SynchronousEndpointService.newMethodId(method);
-            this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
-            this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
         }
 
     }

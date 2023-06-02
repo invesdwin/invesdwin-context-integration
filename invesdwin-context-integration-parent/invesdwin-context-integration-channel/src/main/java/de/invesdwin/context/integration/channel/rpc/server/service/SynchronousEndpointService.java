@@ -135,7 +135,8 @@ public final class SynchronousEndpointService {
             this.methodHandle = mhLookup.unreflect(method);
             this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
             this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
-            this.fast = Reflections.getAnnotation(method, Fast.class) != null;
+            this.fast = Reflections.getAnnotation(method, Fast.class) != null
+                    || Reflections.getAnnotation(method.getDeclaringClass(), Fast.class) != null;
             this.future = Future.class.isAssignableFrom(method.getReturnType());
         }
 
