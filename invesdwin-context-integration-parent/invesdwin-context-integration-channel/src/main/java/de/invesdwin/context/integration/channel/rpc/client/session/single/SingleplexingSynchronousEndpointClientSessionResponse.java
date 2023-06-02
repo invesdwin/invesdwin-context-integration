@@ -1,9 +1,10 @@
-package de.invesdwin.context.integration.channel.rpc.client.session;
+package de.invesdwin.context.integration.channel.rpc.client.session.single;
 
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.lock.ILock;
@@ -13,17 +14,17 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
-public class SynchronousEndpointClientSessionResponse implements ICloseableByteBufferProvider {
+public class SingleplexingSynchronousEndpointClientSessionResponse implements ICloseableByteBufferProvider {
 
-    private final SynchronousEndpointClientSession session;
-    private final IObjectPool<SynchronousEndpointClientSession> pool;
+    private final ISynchronousEndpointClientSession session;
+    private final IObjectPool<ISynchronousEndpointClientSession> pool;
     private final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader;
     private final ILock lock;
     private IByteBufferProvider message;
 
-    public SynchronousEndpointClientSessionResponse(final IObjectPool<SynchronousEndpointClientSession> pool,
-            final SynchronousEndpointClientSession session, final ILock lock,
-            final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader) {
+    public SingleplexingSynchronousEndpointClientSessionResponse(
+            final IObjectPool<ISynchronousEndpointClientSession> pool, final ISynchronousEndpointClientSession session,
+            final ILock lock, final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> reader) {
         this.pool = pool;
         this.session = session;
         this.lock = lock;

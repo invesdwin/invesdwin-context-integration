@@ -1,6 +1,5 @@
-package de.invesdwin.context.integration.channel.rpc.client.session;
+package de.invesdwin.context.integration.channel.rpc.client.session.single;
 
-import java.io.Closeable;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 
@@ -8,6 +7,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
+import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
@@ -27,12 +27,13 @@ import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @ThreadSafe
-public class SynchronousEndpointClientSession implements Closeable {
+public class SingleplexingSynchronousEndpointClientSession implements ISynchronousEndpointClientSession {
 
-    private static final WrappedScheduledExecutorService EXECUTOR = Executors
-            .newScheduledThreadPool(SynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
+    private static final WrappedScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(
+            SingleplexingSynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
 
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
@@ -50,13 +51,13 @@ public class SynchronousEndpointClientSession implements Closeable {
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
 
-    private final SynchronousEndpointClientSessionResponse response;
+    private final SingleplexingSynchronousEndpointClientSessionResponse response;
 
-    public SynchronousEndpointClientSession(final IObjectPool<SynchronousEndpointClientSession> pool,
+    public SingleplexingSynchronousEndpointClientSession(final IObjectPool<ISynchronousEndpointClientSession> pool,
             final ISynchronousEndpointSession endpointSession) {
         this.endpointSession = endpointSession;
         this.lock = ILockCollectionFactory.getInstance(true)
-                .newLock(SynchronousEndpointClientSession.class.getSimpleName() + "_lock");
+                .newLock(SingleplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
         this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
                 endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
         this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(
@@ -73,7 +74,7 @@ public class SynchronousEndpointClientSession implements Closeable {
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
 
-        this.response = new SynchronousEndpointClientSessionResponse(pool, this, lock,
+        this.response = new SingleplexingSynchronousEndpointClientSessionResponse(pool, this, lock,
                 responseReaderSpinWait.getReader());
     }
 
@@ -125,7 +126,8 @@ public class SynchronousEndpointClientSession implements Closeable {
         }
     }
 
-    public SynchronousEndpointClientSessionResponse request(final int requestService, final int requestMethod,
+    @Override
+    public ICloseableByteBufferProvider request(final int requestService, final int requestMethod,
             final IByteBufferProvider request) {
         lock.lock();
         try {

@@ -9,7 +9,7 @@ import java.util.Map;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
@@ -40,7 +40,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         this.service = service;
     }
 
-    public ICloseableObjectPool<SynchronousEndpointClientSession> getSessionPool() {
+    public ICloseableObjectPool<ISynchronousEndpointClientSession> getSessionPool() {
         return handler.sessionPool;
     }
 
@@ -53,13 +53,14 @@ public final class SynchronousEndpointClient<T> implements Closeable {
     }
 
     public static <T> SynchronousEndpointClient<T> newInstance(
-            final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface) {
+            final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
+            final Class<T> serviceInterface) {
         return newInstance(sessionPool, serviceInterface, SerdeLookupConfig.DEFAULT);
     }
 
     @SuppressWarnings("unchecked")
     public static <T> SynchronousEndpointClient<T> newInstance(
-            final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
+            final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
             final SerdeLookupConfig serdeLookupConfig) {
         final Handler handler = new Handler(sessionPool, serviceInterface, serdeLookupConfig);
         final T service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),
@@ -85,10 +86,10 @@ public final class SynchronousEndpointClient<T> implements Closeable {
     private static final class Handler implements InvocationHandler {
 
         private final int serviceId;
-        private final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool;
+        private final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool;
         private final Map<Method, ClientMethodInfo> method_methodInfo;
 
-        private Handler(final ICloseableObjectPool<SynchronousEndpointClientSession> sessionPool,
+        private Handler(final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
                 final Class<?> serviceInterface, final SerdeLookupConfig serdeLookupConfig) {
             this.serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
             this.sessionPool = sessionPool;
@@ -124,7 +125,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         }
 
         private ICloseableByteBufferProvider request(final int methodId, final IByteBufferProvider request) {
-            final SynchronousEndpointClientSession session = sessionPool.borrowObject();
+            final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
             try {
                 return session.request(serviceId, methodId, request);
             } catch (final Throwable t) {

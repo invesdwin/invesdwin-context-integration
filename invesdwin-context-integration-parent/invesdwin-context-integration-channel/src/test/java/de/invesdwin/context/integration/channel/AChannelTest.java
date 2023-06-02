@@ -28,7 +28,7 @@ import de.invesdwin.context.integration.channel.rpc.IRpcTestService;
 import de.invesdwin.context.integration.channel.rpc.RpcClientTask;
 import de.invesdwin.context.integration.channel.rpc.RpcTestService;
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
-import de.invesdwin.context.integration.channel.rpc.client.session.SynchronousEndpointClientSessionPool;
+import de.invesdwin.context.integration.channel.rpc.client.session.single.SinglexplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
@@ -111,7 +111,7 @@ public abstract class AChannelTest extends ATest {
         serverChannel.register(IRpcTestService.class, new RpcTestService());
         final SynchronousEndpointClient<IRpcTestService> client = SynchronousEndpointClient
                 .newInstance(
-                        new SynchronousEndpointClientSessionPool(
+                        new SinglexplexingSynchronousEndpointClientSessionPool(
                                 new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                         IRpcTestService.class);
         try {
