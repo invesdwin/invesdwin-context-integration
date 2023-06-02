@@ -68,6 +68,36 @@ public enum RpcTestServiceMode {
         public FDate request(final IRpcTestService service, final FDate date) throws IOException {
             return Futures.getNoInterrupt(service.requestFutureFalseFalse(date));
         }
+    },
+    requestAsyncDefault {
+        @Override
+        public FDate request(final IRpcTestService service, final FDate date) throws IOException {
+            return Futures.getNoInterrupt(service.requestAsyncDefault(date));
+        }
+    },
+    requestAsyncTrueTrue {
+        @Override
+        public FDate request(final IRpcTestService service, final FDate date) throws IOException {
+            return Futures.getNoInterrupt(service.requestAsyncTrueTrue(date));
+        }
+    },
+    requestAsyncFalseTrue {
+        @Override
+        public FDate request(final IRpcTestService service, final FDate date) throws IOException {
+            return Futures.getNoInterrupt(service.requestAsyncFalseTrue(date));
+        }
+    },
+    requestAsyncTrueFalse {
+        @Override
+        public FDate request(final IRpcTestService service, final FDate date) throws IOException {
+            return Futures.getNoInterrupt(service.requestAsyncTrueFalse(date));
+        }
+    },
+    requestAsyncFalseFalse {
+        @Override
+        public FDate request(final IRpcTestService service, final FDate date) throws IOException {
+            return Futures.getNoInterrupt(service.requestAsyncFalseFalse(date));
+        }
     };
 
     public abstract FDate request(IRpcTestService service, FDate date) throws IOException;

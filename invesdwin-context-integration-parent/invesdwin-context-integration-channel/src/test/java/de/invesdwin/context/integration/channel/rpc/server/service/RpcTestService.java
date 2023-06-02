@@ -11,6 +11,8 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.ImmutableFuture;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
@@ -18,6 +20,13 @@ import de.invesdwin.util.time.date.FDate;
 @Immutable
 public class RpcTestService implements IRpcTestService {
 
+    /*
+     * Use only 1 thread to make the future response actually get delayed and not return isDone=true immediately.
+     * Simulating a scarce resource.
+     */
+    private static final WrappedExecutorService ASYNC_EXECUTOR = Executors
+            .newFixedThreadPool(RpcTestService.class.getSimpleName() + "_ASYNC", 1)
+            .setDynamicThreadName(false);
     private static final int FLUSH_INTERVAL = AChannelTest.FLUSH_INTERVAL * AChannelTest.RPC_CLIENT_COUNT;
     private final OutputStream log;
     private final AtomicInteger countHolder = new AtomicInteger();
@@ -103,6 +112,31 @@ public class RpcTestService implements IRpcTestService {
     @Override
     public Future<FDate> requestFutureFalseFalse(final FDate date) throws IOException {
         return requestFutureDefault(date);
+    }
+
+    @Override
+    public Future<FDate> requestAsyncDefault(final FDate date) throws IOException {
+        return ASYNC_EXECUTOR.submit(() -> requestDefault(date));
+    }
+
+    @Override
+    public Future<FDate> requestAsyncTrueTrue(final FDate date) throws IOException {
+        return requestAsyncDefault(date);
+    }
+
+    @Override
+    public Future<FDate> requestAsyncFalseTrue(final FDate date) throws IOException {
+        return requestAsyncDefault(date);
+    }
+
+    @Override
+    public Future<FDate> requestAsyncTrueFalse(final FDate date) throws IOException {
+        return requestAsyncDefault(date);
+    }
+
+    @Override
+    public Future<FDate> requestAsyncFalseFalse(final FDate date) throws IOException {
+        return requestAsyncDefault(date);
     }
 
 }

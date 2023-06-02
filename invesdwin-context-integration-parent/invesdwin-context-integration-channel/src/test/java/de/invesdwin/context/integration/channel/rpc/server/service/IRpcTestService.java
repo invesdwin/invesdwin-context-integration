@@ -35,4 +35,18 @@ public interface IRpcTestService {
     @Blocking(client = false, server = false)
     Future<FDate> requestFutureFalseFalse(FDate date) throws IOException;
 
+    Future<FDate> requestAsyncDefault(FDate date) throws IOException;
+
+    @Blocking(client = true, server = true)
+    Future<FDate> requestAsyncTrueTrue(FDate date) throws IOException;
+
+    @Blocking(client = false, server = true)
+    Future<FDate> requestAsyncFalseTrue(FDate date) throws IOException;
+
+    @Blocking(client = true, server = false)
+    Future<FDate> requestAsyncTrueFalse(FDate date) throws IOException;
+
+    @Blocking(client = false, server = false)
+    Future<FDate> requestAsyncFalseFalse(FDate date) throws IOException;
+
 }
