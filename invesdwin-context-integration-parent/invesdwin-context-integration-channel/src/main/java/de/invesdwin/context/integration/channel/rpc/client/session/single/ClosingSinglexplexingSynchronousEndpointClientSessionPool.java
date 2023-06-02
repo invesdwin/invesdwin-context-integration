@@ -7,6 +7,11 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronou
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 
+/**
+ * Holds the session active only for a single call and closes it afterwards. This is useful for services where only
+ * sporadic requests are made without the need to keep a connection alive for a longer time. For example in order to
+ * negotiate a different (more secure or faster) transport.
+ */
 @ThreadSafe
 public class ClosingSinglexplexingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {
