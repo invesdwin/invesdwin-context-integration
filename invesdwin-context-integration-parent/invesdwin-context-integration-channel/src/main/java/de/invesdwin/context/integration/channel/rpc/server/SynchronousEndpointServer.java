@@ -63,9 +63,12 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
-            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO");
-    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors.newFixedThreadPool(
-            SynchronousEndpointServer.class.getSimpleName() + "_WORK", Executors.getCpuThreadPoolCount());
+            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO")
+            .setDynamicThreadName(false);
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors
+            .newFixedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_WORK",
+                    Executors.getCpuThreadPoolCount())
+            .setDynamicThreadName(false);
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = 10_000;
     public static final int DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION = -50;
 
@@ -91,13 +94,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private final AtomicInteger activeSessionsOverall = new AtomicInteger();
 
     public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
-        this(serverAcceptor, SerdeLookupConfig.DEFAULT);
-    }
-
-    public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final SerdeLookupConfig serdeLookupConfig) {
         this.serverAcceptor = serverAcceptor;
-        this.serdeLookupConfig = serdeLookupConfig;
+        this.serdeLookupConfig = newSerdeLookupConfig();
         this.maxIoThreadCount = newMaxIoThreadCount();
         if (maxIoThreadCount < 0) {
             throw new IllegalArgumentException(
@@ -112,6 +110,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
         this.initialMaxPendingWorkCountPerSession = newInitialMaxPendingWorkCountPerSession();
         updateMaxPendingCountPerSession(0);
+    }
+
+    protected SerdeLookupConfig newSerdeLookupConfig() {
+        return SerdeLookupConfig.DEFAULT;
     }
 
     private void updateMaxPendingCountPerSession(final int activeSessions) {

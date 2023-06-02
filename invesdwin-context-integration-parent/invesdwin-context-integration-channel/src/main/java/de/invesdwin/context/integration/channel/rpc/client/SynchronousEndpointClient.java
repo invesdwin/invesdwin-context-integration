@@ -11,11 +11,17 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.Fast;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.ImmutableFuture;
+import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -32,18 +38,52 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 @ThreadSafe
 public final class SynchronousEndpointClient<T> implements Closeable {
 
+    public static final WrappedExecutorService DEFAULT_FUTURE_EXECUTOR = Executors
+            .newFixedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_FUTURE",
+                    AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION)
+            .setDynamicThreadName(false);
+
     private final Class<T> serviceInterface;
+    private final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool;
+    private final SerdeLookupConfig serdeLookupConfig;
+    private final WrappedExecutorService futureExecutor;
     private final Handler handler;
     private final T service;
 
-    private SynchronousEndpointClient(final Class<T> serviceInterface, final Handler handler, final T service) {
+    @SuppressWarnings("unchecked")
+    public SynchronousEndpointClient(final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
+            final Class<T> serviceInterface) {
         this.serviceInterface = serviceInterface;
-        this.handler = handler;
-        this.service = service;
+        this.sessionPool = sessionPool;
+        this.serdeLookupConfig = newSerdeLookupConfig();
+        this.futureExecutor = newFutureExecutor();
+        this.handler = new Handler(this);
+        this.service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },
+                handler);
+    }
+
+    protected SerdeLookupConfig newSerdeLookupConfig() {
+        return SerdeLookupConfig.DEFAULT;
+    }
+
+    /**
+     * Return null here to disable async execution of futures. The calling thread will block for as long as the future
+     * is not finished and return an ImmutableFuture once finished.
+     */
+    protected WrappedExecutorService newFutureExecutor() {
+        return DEFAULT_FUTURE_EXECUTOR;
+    }
+
+    public SerdeLookupConfig getSerdeLookupConfig() {
+        return serdeLookupConfig;
     }
 
     public ICloseableObjectPool<ISynchronousEndpointClientSession> getSessionPool() {
-        return handler.sessionPool;
+        return sessionPool;
+    }
+
+    public int getServiceId() {
+        return handler.serviceId;
     }
 
     public Class<T> getServiceInterface() {
@@ -54,33 +94,15 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         return service;
     }
 
-    public static <T> SynchronousEndpointClient<T> newInstance(
-            final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
-            final Class<T> serviceInterface) {
-        return newInstance(sessionPool, serviceInterface, SerdeLookupConfig.DEFAULT);
-    }
-
-    @SuppressWarnings("unchecked")
-    public static <T> SynchronousEndpointClient<T> newInstance(
-            final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool, final Class<T> serviceInterface,
-            final SerdeLookupConfig serdeLookupConfig) {
-        final Handler handler = new Handler(sessionPool, serviceInterface, serdeLookupConfig);
-        final T service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(),
-                new Class[] { serviceInterface }, handler);
-        final SynchronousEndpointClient<T> client = new SynchronousEndpointClient<T>(serviceInterface, handler,
-                service);
-        return client;
-    }
-
     @Override
     public void close() {
-        getSessionPool().close();
+        sessionPool.close();
     }
 
     @Override
     public String toString() {
         return Objects.toStringHelper(this)
-                .add("serviceId", handler.serviceId)
+                .add("serviceId", getServiceId())
                 .add("serviceInterface", serviceInterface.getName())
                 .toString();
     }
@@ -88,14 +110,13 @@ public final class SynchronousEndpointClient<T> implements Closeable {
     private static final class Handler implements InvocationHandler {
 
         private final int serviceId;
-        private final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool;
+        private final SynchronousEndpointClient<?> client;
         private final Map<Method, ClientMethodInfo> method_methodInfo;
 
-        private Handler(final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
-                final Class<?> serviceInterface, final SerdeLookupConfig serdeLookupConfig) {
-            this.serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
-            this.sessionPool = sessionPool;
-            final Method[] methods = Reflections.getUniqueDeclaredMethods(serviceInterface);
+        private Handler(final SynchronousEndpointClient<?> client) {
+            this.client = client;
+            this.serviceId = SynchronousEndpointService.newServiceId(client.serviceInterface);
+            final Method[] methods = Reflections.getUniqueDeclaredMethods(client.serviceInterface);
             this.method_methodInfo = new HashMap<>(methods.length);
             for (int i = 0; i < methods.length; i++) {
                 final Method method = methods[i];
@@ -104,7 +125,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
                 }
                 final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
                 if (indexOf < 0) {
-                    method_methodInfo.putIfAbsent(method, new ClientMethodInfo(this, method, serdeLookupConfig));
+                    method_methodInfo.putIfAbsent(method, new ClientMethodInfo(this, method, client.serdeLookupConfig));
                 }
             }
         }
@@ -115,7 +136,28 @@ public final class SynchronousEndpointClient<T> implements Closeable {
             if (methodInfo == null) {
                 throw UnknownArgumentException.newInstance(Method.class, method);
             }
-            return methodInfo.invoke(args);
+            if (methodInfo.isFuture()) {
+                /*
+                 * We don't care if this is a fast method or and always execute the method in the future executor. Fast
+                 * only tells the server that the method can be invoked directly and the future can be processed
+                 * asynchronously (maybe in a separate thread inside the service). Though at the client we always have
+                 * to wait for the full response which might take quite some time even inside the service. Fast only
+                 * tells the server that creating the future inside the server is fast.
+                 */
+                if (client.futureExecutor == null) {
+                    try {
+                        return ImmutableFuture.of(methodInfo.invoke(args));
+                    } catch (final Throwable t) {
+                        return ThrowableFuture.of(t);
+                    }
+                } else {
+                    return client.futureExecutor.submit(() -> {
+                        return methodInfo.invoke(args);
+                    });
+                }
+            } else {
+                return methodInfo.invoke(args);
+            }
         }
     }
 
@@ -167,11 +209,11 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         }
 
         private ICloseableByteBufferProvider request(final IByteBufferProvider request) {
-            final ISynchronousEndpointClientSession session = handler.sessionPool.borrowObject();
+            final ISynchronousEndpointClientSession session = handler.client.sessionPool.borrowObject();
             try {
                 return session.request(this, request);
             } catch (final Throwable t) {
-                handler.sessionPool.invalidateObject(session);
+                handler.client.sessionPool.invalidateObject(session);
                 throw Throwables.propagate(t);
             }
         }

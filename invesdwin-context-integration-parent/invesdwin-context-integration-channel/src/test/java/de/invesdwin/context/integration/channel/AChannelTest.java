@@ -109,11 +109,10 @@ public abstract class AChannelTest extends ATest {
             throws InterruptedException {
         final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor);
         serverChannel.register(IRpcTestService.class, new RpcTestService());
-        final SynchronousEndpointClient<IRpcTestService> client = SynchronousEndpointClient
-                .newInstance(
-                        new SinglexplexingSynchronousEndpointClientSessionPool(
-                                new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
-                        IRpcTestService.class);
+        final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
+                new SinglexplexingSynchronousEndpointClientSessionPool(
+                        new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
+                IRpcTestService.class);
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
                     RPC_CLIENT_COUNT);

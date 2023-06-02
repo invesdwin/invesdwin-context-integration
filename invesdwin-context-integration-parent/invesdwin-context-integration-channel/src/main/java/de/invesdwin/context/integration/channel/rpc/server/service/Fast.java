@@ -16,6 +16,9 @@ import java.lang.annotation.Target;
  * return anyhow (should never block, instead throw exceptions). In that case the method can delegate into its own
  * executor or start some other async task without having to block a worker thread. This is also helpful to treat
  * specific requests with a higher priority than others.
+ * 
+ * At the client side this annotation has no influence. When a method return a future it is invoked asynchronously, if
+ * it does not return a future it is invoked synchronously.
  */
 @Target({ ElementType.METHOD, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
