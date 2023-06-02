@@ -25,7 +25,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContex
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
-import de.invesdwin.context.integration.channel.rpc.client.session.single.SinglexplexingSynchronousEndpointClientSessionPool;
+import de.invesdwin.context.integration.channel.rpc.client.session.single.SingleplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
@@ -111,7 +111,7 @@ public abstract class AChannelTest extends ATest {
         final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor);
         serverChannel.register(IRpcTestService.class, new RpcTestService());
         final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
-                new SinglexplexingSynchronousEndpointClientSessionPool(
+                new SingleplexingSynchronousEndpointClientSessionPool(
                         new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                 IRpcTestService.class);
         try {

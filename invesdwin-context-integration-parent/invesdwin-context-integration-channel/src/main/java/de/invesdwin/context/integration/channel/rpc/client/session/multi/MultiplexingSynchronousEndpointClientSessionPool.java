@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.client.session.single;
+package de.invesdwin.context.integration.channel.rpc.client.session.multi;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -17,14 +17,15 @@ import de.invesdwin.util.time.duration.Duration;
  * multiplexing client should be preferred.
  */
 @ThreadSafe
-public class SinglexplexingSynchronousEndpointClientSessionPool
+public class MultiplexingSynchronousEndpointClientSessionPool
         extends ATimeoutObjectPool<ISynchronousEndpointClientSession>
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
     private volatile boolean closed;
+    private MultiplexingSynchronousEndpointClientSession singleSession;
 
-    public SinglexplexingSynchronousEndpointClientSessionPool(
+    public MultiplexingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
         super(new Duration(10, FTimeUnit.MINUTES), Duration.ONE_MINUTE);
         this.endpointSessionFactory = endpointSessionFactory;
@@ -36,12 +37,19 @@ public class SinglexplexingSynchronousEndpointClientSessionPool
     }
 
     @Override
-    protected SingleplexingSynchronousEndpointClientSession newObject() {
+    protected MultiplexingSynchronousEndpointClientSession newObject() {
         if (closed) {
             throw new IllegalStateException("closed");
         }
-        final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
-        return new SingleplexingSynchronousEndpointClientSession(this, endpointSession);
+        if (singleSession == null) {
+            synchronized (this) {
+                if (singleSession == null) {
+                    final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
+                    singleSession = new MultiplexingSynchronousEndpointClientSession(this, endpointSession);
+                }
+            }
+        }
+        return singleSession;
     }
 
     @Override
@@ -53,6 +61,7 @@ public class SinglexplexingSynchronousEndpointClientSessionPool
     public void close() {
         super.close();
         closed = true;
+        singleSession = null;
     }
 
 }

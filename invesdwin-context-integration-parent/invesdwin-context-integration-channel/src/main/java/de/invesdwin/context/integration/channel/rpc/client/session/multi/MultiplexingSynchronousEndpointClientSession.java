@@ -1,7 +1,7 @@
-package de.invesdwin.context.integration.channel.rpc.client.session.single;
+package de.invesdwin.context.integration.channel.rpc.client.session.multi;
 
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -14,8 +14,8 @@ import de.invesdwin.context.integration.channel.rpc.server.service.command.IServ
 import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
@@ -31,41 +31,38 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @ThreadSafe
-public class SingleplexingSynchronousEndpointClientSession implements ISynchronousEndpointClientSession {
+public class MultiplexingSynchronousEndpointClientSession implements ISynchronousEndpointClientSession {
 
     private static final WrappedScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(
-            SingleplexingSynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
+            MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
 
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
     @GuardedBy("lock")
-    private SynchronousWriterSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> requestWriterSpinWait;
+    private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> requestWriter;
     @GuardedBy("lock")
     private final MutableServiceSynchronousCommand<IByteBufferProvider> requestHolder = new MutableServiceSynchronousCommand<IByteBufferProvider>();
     @GuardedBy("lock")
-    private SynchronousReaderSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> responseReaderSpinWait;
+    private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> responseReader;
     @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
-    @GuardedBy("lock")
-    private int sequenceCounter = 0;
+    private final AtomicInteger sequenceCounter = new AtomicInteger();
     private final ILock lock;
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
 
-    private final SingleplexingSynchronousEndpointClientSessionResponse response;
+    private final MultiplexingSynchronousEndpointClientSessionResponse response;
 
-    public SingleplexingSynchronousEndpointClientSession(final IObjectPool<ISynchronousEndpointClientSession> pool,
+    public MultiplexingSynchronousEndpointClientSession(final IObjectPool<ISynchronousEndpointClientSession> pool,
             final ISynchronousEndpointSession endpointSession) {
         this.endpointSession = endpointSession;
         this.lock = ILockCollectionFactory.getInstance(true)
-                .newLock(SingleplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
-        this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
-                endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
-        this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(
-                endpointSession.newResponseReader(ByteBufferProviderSerde.GET));
+                .newLock(MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
+        this.requestWriter = endpointSession.newRequestWriter(ByteBufferProviderSerde.GET);
+        this.responseReader = endpointSession.newResponseReader(ByteBufferProviderSerde.GET);
         try {
-            requestWriterSpinWait.getWriter().open();
-            responseReaderSpinWait.getReader().open();
+            requestWriter.open();
+            responseReader.open();
         } catch (final Throwable t) {
             close();
             throw new RuntimeException(t);
@@ -75,8 +72,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
 
-        this.response = new SingleplexingSynchronousEndpointClientSessionResponse(pool, this, lock,
-                responseReaderSpinWait.getReader());
+        this.response = new MultiplexingSynchronousEndpointClientSessionResponse(pool, this, lock, responseReader);
     }
 
     public void maybeSendHeartbeat() {
@@ -103,17 +99,17 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             //no need to interrupt because we have the lock
             heartbeatFuture.cancel(false);
             try {
-                requestWriterSpinWait.getWriter().close();
+                requestWriter.close();
             } catch (final Throwable t) {
                 Err.process(new RuntimeException("Ignoring", t));
             }
-            requestWriterSpinWait = ClosedSynchronousWriter.getSpinWait();
+            requestWriter = ClosedSynchronousWriter.getInstance();
             try {
-                responseReaderSpinWait.getReader().close();
+                responseReader.close();
             } catch (final Throwable t) {
                 Err.process(new RuntimeException("Ignoring", t));
             }
-            responseReaderSpinWait = ClosedSynchronousReader.getSpinWait();
+            responseReader = ClosedSynchronousReader.getInstance();
             if (endpointSession != null) {
                 try {
                     endpointSession.close();
@@ -131,21 +127,20 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     public ICloseableByteBufferProvider request(final ClientMethodInfo methodInfo, final IByteBufferProvider request) {
         lock.lock();
         try {
-            final int requestSequence = sequenceCounter++;
+            final int requestSequence = sequenceCounter.incrementAndGet();
             final long waitingSinceNanos = System.nanoTime();
             writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, request,
                     waitingSinceNanos);
             while (true) {
-                while (!responseReaderSpinWait.hasNext()
-                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-                    if (endpointSession.getRequestTimeout()
-                            .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-                        throw new TimeoutException("Request timeout exceeded for [" + methodInfo.getServiceId() + ":"
-                                + methodInfo.getMethodId() + "]: " + endpointSession.getRequestTimeout());
-                    }
-                }
-                try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
-                        .readMessage()) {
+                //                while (!responseReader.hasNext()
+                //                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                //                    if (endpointSession.getRequestTimeout()
+                //                            .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                //                        throw new TimeoutException("Request timeout exceeded for [" + methodInfo.getServiceId() + ":"
+                //                                + methodInfo.getMethodId() + "]: " + endpointSession.getRequestTimeout());
+                //                    }
+                //                }
+                try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReader.readMessage()) {
                     final int responseService = responseHolder.getService();
                     final int responseMethod = responseHolder.getMethod();
                     final int responseSequence = responseHolder.getSequence();
@@ -176,7 +171,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     response.setMessage(responseMessage);
                     return response;
                 } catch (final Throwable e) {
-                    responseReaderSpinWait.getReader().readFinished();
+                    responseReader.readFinished();
                     Throwables.propagate(e);
                 }
             }
@@ -188,31 +183,31 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider request, final long waitingSinceNanos) throws Exception {
-        try {
-            requestHolder.setService(serviceId);
-            requestHolder.setMethod(methodId);
-            requestHolder.setSequence(requestSequence);
-            requestHolder.setMessage(request);
-            while (!requestWriterSpinWait.writeReady()
-                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-                if (endpointSession.getRequestTimeout()
-                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-                    throw new TimeoutException("Request write ready timeout exceeded for [" + serviceId + ":" + methodId
-                            + "]: " + endpointSession.getRequestTimeout());
-                }
-            }
-            requestWriterSpinWait.getWriter().write(requestHolder);
-            while (!requestWriterSpinWait.writeFlushed()
-                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-                if (endpointSession.getRequestTimeout()
-                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-                    throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId
-                            + "]: " + endpointSession.getRequestTimeout());
-                }
-            }
-        } finally {
-            requestHolder.close(); //free memory
-        }
+        //        try {
+        //            requestHolder.setService(serviceId);
+        //            requestHolder.setMethod(methodId);
+        //            requestHolder.setSequence(requestSequence);
+        //            requestHolder.setMessage(request);
+        //            while (!requestWriter.writeReady()
+        //                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+        //                if (endpointSession.getRequestTimeout()
+        //                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+        //                    throw new TimeoutException("Request write ready timeout exceeded for [" + serviceId + ":" + methodId
+        //                            + "]: " + endpointSession.getRequestTimeout());
+        //                }
+        //            }
+        //            requestWriter.getWriter().write(requestHolder);
+        //            while (!requestWriter.writeFlushed()
+        //                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+        //                if (endpointSession.getRequestTimeout()
+        //                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+        //                    throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId
+        //                            + "]: " + endpointSession.getRequestTimeout());
+        //                }
+        //            }
+        //        } finally {
+        //            requestHolder.close(); //free memory
+        //        }
     }
 
 }
