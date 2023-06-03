@@ -1,6 +1,9 @@
 package de.invesdwin.context.integration.channel.rpc.client.session.multi;
 
+import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -20,12 +23,16 @@ import de.invesdwin.context.integration.channel.rpc.server.service.command.Mutab
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
+import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.lock.ILock;
-import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -39,7 +46,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
     @GuardedBy("lock")
-    private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> requestWriter;
+    private SynchronousWriterSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> requestWriterSpinWait;
     @GuardedBy("lock")
     private final MutableServiceSynchronousCommand<IByteBufferProvider> requestHolder = new MutableServiceSynchronousCommand<IByteBufferProvider>();
     @GuardedBy("lock")
@@ -51,23 +58,31 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
     private volatile AtomicBoolean activePolling = new AtomicBoolean();
-    private final ManyToOneConcurrentLinkedQueue<MultiplexingSynchronousEndpointClientSessionResponse> addPollingRequests = new ManyToOneConcurrentLinkedQueue<>();
+    private final ManyToOneConcurrentLinkedQueue<MultiplexingSynchronousEndpointClientSessionResponse> writeRequests = new ManyToOneConcurrentLinkedQueue<>();
     @GuardedBy("only the activePolling thread should have access to this map")
-    private final Int2ObjectOpenHashMap<MultiplexingSynchronousEndpointClientSessionResponse> pollingRequests = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectOpenHashMap<MultiplexingSynchronousEndpointClientSessionResponse> writtenRequests = new Int2ObjectOpenHashMap<>();
+    private final LoopInterruptedCheck requestWaitIntervalLoopInterruptedCheck;
+    private final LoopInterruptedCheck requestTimeoutLoopInterruptedCheck;
+    private final ThrottleSpinWait throttle;
 
     public MultiplexingSynchronousEndpointClientSession(final ISynchronousEndpointSession endpointSession) {
         this.endpointSession = endpointSession;
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
-        this.requestWriter = endpointSession.newRequestWriter(ByteBufferProviderSerde.GET);
+        this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
+                endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
         this.responseReader = endpointSession.newResponseReader(ByteBufferProviderSerde.GET);
         try {
-            requestWriter.open();
+            requestWriterSpinWait.getWriter().open();
             responseReader.open();
         } catch (final Throwable t) {
             close();
             throw new RuntimeException(t);
         }
+        this.requestWaitIntervalLoopInterruptedCheck = new LoopInterruptedCheck(
+                endpointSession.getRequestWaitInterval());
+        this.requestTimeoutLoopInterruptedCheck = new LoopInterruptedCheck(endpointSession.getRequestWaitInterval());
+        this.throttle = new ThrottleSpinWait();
         this.heartbeatFuture = HEARTBEAT_EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
@@ -76,13 +91,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
-                if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
-                    try {
-                        writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
-                                System.nanoTime());
-                    } catch (final Exception e) {
-                        throw new RuntimeException(e);
+                try {
+                    if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)
+                            && requestWriterSpinWait.getWriter().writeFlushed()
+                            && requestWriterSpinWait.getWriter().writeReady()) {
+                        writeAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1,
+                                EmptyByteBuffer.INSTANCE);
                     }
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
                 }
             } finally {
                 lock.unlock();
@@ -97,11 +114,11 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             //no need to interrupt because we have the lock
             heartbeatFuture.cancel(false);
             try {
-                requestWriter.close();
+                requestWriterSpinWait.getWriter().close();
             } catch (final Throwable t) {
                 Err.process(new RuntimeException("Ignoring", t));
             }
-            requestWriter = ClosedSynchronousWriter.getInstance();
+            requestWriterSpinWait = ClosedSynchronousWriter.getSpinWait();
             try {
                 responseReader.close();
             } catch (final Throwable t) {
@@ -125,129 +142,268 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     public ICloseableByteBufferProvider request(final ClientMethodInfo methodInfo, final IByteBufferProvider request) {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
-        final int requestSequence = sequenceCounter.incrementAndGet();
-        response.init(methodInfo, request, requestSequence, activePolling);
-        if (activePolling.compareAndSet(false, true)) {
-            //take over the job of the activePolling thread and handle other requests while polling
-            try {
-                return requestActivePolling(response);
-            } finally {
-                activePolling.set(false);
-            }
-        } else {
-            addPollingRequests.add(response);
-            try {
+        try {
+            final int requestSequence = sequenceCounter.incrementAndGet();
+            response.init(methodInfo, request, requestSequence, activePolling);
+            if (activePolling.compareAndSet(false, true)) {
+                //take over the job of the activePolling thread and handle other requests while polling
+                try {
+                    return requestActivePolling(response, response);
+                } finally {
+                    activePolling.set(false);
+                }
+            } else {
+                writeRequests.add(response);
                 while (true) {
                     if (response.getCompletedSpinWait()
                             .awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
                         if (response.isCompleted()) {
                             //the other thread finished our work for us
                             return response;
-                        } else if (activePolling.compareAndSet(false, true)) {
+                        }
+                        throwIfRequestTimeout(response);
+                        if (activePolling.compareAndSet(false, true)) {
                             //take over the job of the other activePolling thread that just go finished
                             try {
-                                return requestActivePolling(response);
+                                return requestActivePolling(response, null);
                             } finally {
                                 activePolling.set(false);
                             }
                         }
                     }
                 }
-            } catch (final Throwable t) {
-                throw new RetryLaterRuntimeException(t);
             }
+        } catch (final Throwable t) {
+            response.close();
+            throw new RetryLaterRuntimeException(t);
         }
     }
 
     private MultiplexingSynchronousEndpointClientSessionResponse requestActivePolling(
-            final MultiplexingSynchronousEndpointClientSessionResponse response) {
+            final MultiplexingSynchronousEndpointClientSessionResponse outer,
+            final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
         lock.lock();
         try {
-            final long waitingSinceNanos = System.nanoTime();
-            final ClientMethodInfo methodInfo = response.getMethodInfo();
-            final int requestSequence = response.getRequestSequence();
-            if (response.getRequest() != null) {
-                writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, response.getRequest(),
-                        waitingSinceNanos);
-                response.requestWritten();
-            }
+            throttle.outer = outer;
+            throttle.pollingOuter = pollingOuter;
             while (true) {
-                //                while (!responseReader.hasNext()
-                //                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-                //                    if (endpointSession.getRequestTimeout()
-                //                            .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-                //                        throw new TimeoutException("Request timeout exceeded for [" + methodInfo.getServiceId() + ":"
-                //                                + methodInfo.getMethodId() + "]: " + endpointSession.getRequestTimeout());
-                //                    }
-                //                }
-                try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReader.readMessage()) {
-                    final int responseService = responseHolder.getService();
-                    final int responseMethod = responseHolder.getMethod();
-                    final int responseSequence = responseHolder.getSequence();
-                    if (responseSequence != requestSequence) {
-                        //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
-                        continue;
+                if (!throttle.awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
+                    //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+                    if (requestTimeoutLoopInterruptedCheck.check()) {
+                        checkRequestTimeouts(outer);
                     }
-                    if (responseService != methodInfo.getServiceId()) {
-                        throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService
-                                + "] for request [" + methodInfo.getServiceId() + "]");
-                    }
-                    lastHeartbeatNanos = System.nanoTime();
-                    if (responseMethod != methodInfo.getMethodId()) {
-                        if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
-                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
-                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
-                            throw new RetryLaterRuntimeException(new RemoteExecutionException(message));
-                        } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
-                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
-                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
-                            throw new RemoteExecutionException(message);
-                        } else {
-                            throw new RetryLaterRuntimeException("Unexpected methodId in response [" + +responseMethod
-                                    + "] for request [" + methodInfo.getMethodId() + "]");
-                        }
-                    }
-                    final IByteBufferProvider responseMessage = responseHolder.getMessage();
-                    response.responseCompleted(responseMessage);
-                    return response;
-                } catch (final Throwable e) {
-                    responseReader.readFinished();
-                    Throwables.propagate(e);
+                } else if (outer.isCompleted()) {
+                    return outer;
                 }
             }
-        } catch (final Throwable e) {
+        } finally {
+            throttle.pollingOuter = null;
+            throttle.outer = null;
             lock.unlock();
-            throw new RetryLaterRuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("resource")
+    private void checkRequestTimeouts(final MultiplexingSynchronousEndpointClientSessionResponse outer)
+            throws TimeoutException {
+        throwIfRequestTimeout(outer);
+        if (!writeRequests.isEmpty()) {
+            MultiplexingSynchronousEndpointClientSessionResponse writeRequest = writeRequests.peek();
+            while (writeRequest != null) {
+                if (isRequestTimeout(writeRequest)) {
+                    final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
+                    Assertions.checkSame(writeRequest, removed);
+                    writeRequest = writeRequests.peek();
+                } else {
+                    writeRequest = null;
+                }
+            }
+        }
+        if (!writtenRequests.isEmpty()) {
+            IBufferingIterator<MultiplexingSynchronousEndpointClientSessionResponse> toBeRemoved = null;
+            for (final MultiplexingSynchronousEndpointClientSessionResponse writtenRequest : writtenRequests.values()) {
+                if (isRequestTimeout(writtenRequest)) {
+                    if (toBeRemoved == null) {
+                        toBeRemoved = new BufferingIterator<>();
+                    }
+                    toBeRemoved.add(writtenRequest);
+                }
+            }
+            if (toBeRemoved != null) {
+                try {
+                    while (true) {
+                        final MultiplexingSynchronousEndpointClientSessionResponse next = toBeRemoved.next();
+                        writtenRequests.remove(next.getRequestSequence());
+                    }
+                } catch (final NoSuchElementException e) {
+                    //end reached
+                }
+            }
+        }
+    }
+
+    private boolean handleLocked(final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter)
+            throws IOException, Exception {
+        final boolean writing;
+        if ((pollingOuter != null && pollingOuter.getRequest() != null || !writeRequests.isEmpty())
+                && requestWriterSpinWait.getWriter().writeFlushed() && requestWriterSpinWait.getWriter().writeReady()) {
+            /*
+             * even if we finish writing the current task and no other task follows, we still handled something and
+             * continue eagerly looking for more work (client might immediately give us a new task)
+             */
+            writing = true;
+            if (pollingOuter != null && pollingOuter.getRequest() != null) {
+                if (pollingOuter.isWriting()) {
+                    pollingOuter.requestWritten();
+                } else {
+                    writeLocked(pollingOuter);
+                    pollingOuter.setWriting(true);
+                }
+            } else {
+                writePollingRequest();
+            }
+        } else {
+            //reading could still indicate that we are busy handling work
+            writing = false;
+        }
+        if (responseReader.hasNext()) {
+            try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReader.readMessage()) {
+                final int responseService = responseHolder.getService();
+                final int responseMethod = responseHolder.getMethod();
+                final int responseSequence = responseHolder.getSequence();
+                final MultiplexingSynchronousEndpointClientSessionResponse response;
+                if (pollingOuter != null && responseSequence == pollingOuter.getRequestSequence()) {
+                    response = pollingOuter;
+                } else {
+                    response = writtenRequests.remove(responseSequence);
+                    if (response == null) {
+                        //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
+                        return true;
+                    }
+                }
+                if (responseService != response.getMethodInfo().getServiceId()) {
+                    response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
+                            + responseService + "] for request [" + response.getMethodInfo().getServiceId() + "]"));
+                    return true;
+                }
+                if (responseMethod != response.getMethodInfo().getMethodId()) {
+                    if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
+                        final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                        final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                        response.responseCompleted(
+                                new RetryLaterRuntimeException(new RemoteExecutionException(message)));
+                        return true;
+                    } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
+                        final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                        final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                        response.responseCompleted(new RemoteExecutionException(message));
+                        return true;
+                    } else {
+                        response.responseCompleted(new RetryLaterRuntimeException("Unexpected methodId in response ["
+                                + +responseMethod + "] for request [" + response.getMethodInfo().getMethodId() + "]"));
+                        return true;
+                    }
+                }
+                final IByteBufferProvider responseMessage = responseHolder.getMessage();
+                response.responseCompleted(responseMessage);
+                return true;
+            } finally {
+                responseReader.readFinished();
+            }
+        }
+        return writing;
+    }
+
+    private void writePollingRequest() throws Exception {
+        final MultiplexingSynchronousEndpointClientSessionResponse writeTask = writeRequests.peek();
+        if (writeTask != null) {
+            if (writeTask.isWriting()) {
+                final MultiplexingSynchronousEndpointClientSessionResponse removedTask = writeRequests.remove();
+                final MultiplexingSynchronousEndpointClientSessionResponse nextWriteTask = writeRequests.peek();
+                if (nextWriteTask != null) {
+                    writeLocked(nextWriteTask);
+                    nextWriteTask.setWriting(true);
+                }
+                writtenRequests.put(removedTask.getRequestSequence(), removedTask);
+                Assertions.checkSame(writeTask, removedTask);
+            } else {
+                writeLocked(writeTask);
+                writeTask.setWriting(true);
+            }
+        }
+    }
+
+    private void writeLocked(final MultiplexingSynchronousEndpointClientSessionResponse task) throws Exception {
+        try {
+            final ClientMethodInfo methodInfo = task.getMethodInfo();
+            final int serviceId = methodInfo.getServiceId();
+            final int methodId = methodInfo.getMethodId();
+            final int requestSequence = task.getRequestSequence();
+            final IByteBufferProvider request = task.getRequest();
+            writeLocked(serviceId, methodId, requestSequence, request);
+        } finally {
+            requestHolder.close(); //free memory
         }
     }
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
-            final IByteBufferProvider request, final long waitingSinceNanos) throws Exception {
-        //        try {
-        //            requestHolder.setService(serviceId);
-        //            requestHolder.setMethod(methodId);
-        //            requestHolder.setSequence(requestSequence);
-        //            requestHolder.setMessage(request);
-        //            while (!requestWriter.writeReady()
-        //                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-        //                if (endpointSession.getRequestTimeout()
-        //                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-        //                    throw new TimeoutException("Request write ready timeout exceeded for [" + serviceId + ":" + methodId
-        //                            + "]: " + endpointSession.getRequestTimeout());
-        //                }
-        //            }
-        //            requestWriter.getWriter().write(requestHolder);
-        //            while (!requestWriter.writeFlushed()
-        //                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-        //                if (endpointSession.getRequestTimeout()
-        //                        .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-        //                    throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId
-        //                            + "]: " + endpointSession.getRequestTimeout());
-        //                }
-        //            }
-        //        } finally {
-        //            requestHolder.close(); //free memory
-        //        }
+            final IByteBufferProvider request) throws IOException, TimeoutException {
+        requestHolder.setService(serviceId);
+        requestHolder.setMethod(methodId);
+        requestHolder.setSequence(requestSequence);
+        requestHolder.setMessage(request);
+        requestWriterSpinWait.getWriter().write(requestHolder);
+        lastHeartbeatNanos = System.nanoTime();
+    }
+
+    private void writeAndFlushLocked(final int serviceId, final int methodId, final int requestSequence,
+            final IByteBufferProvider request) throws Exception {
+        writeLocked(serviceId, methodId, requestSequence, request);
+        if (!requestWriterSpinWait.writeFlushed()
+                .awaitFulfill(System.nanoTime(), endpointSession.getRequestTimeout())) {
+            throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId + "]: "
+                    + endpointSession.getRequestTimeout());
+        }
+    }
+
+    private void throwIfRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request)
+            throws TimeoutException {
+        if (isRequestTimeout(request)) {
+            throw new TimeoutException(
+                    "Request write ready timeout exceeded for [" + request.getMethodInfo().getServiceId() + ":"
+                            + request.getMethodInfo().getMethodId() + "]: " + endpointSession.getRequestTimeout());
+        }
+    }
+
+    private boolean isRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request) {
+        return endpointSession.getRequestTimeout()
+                .isLessThanOrEqualToNanos(System.nanoTime() - request.getWaitingSinceNanos());
+    }
+
+    private class ThrottleSpinWait extends ASpinWait {
+
+        private MultiplexingSynchronousEndpointClientSessionResponse outer;
+        private MultiplexingSynchronousEndpointClientSessionResponse pollingOuter;
+
+        @Override
+        public boolean isConditionFulfilled() throws Exception {
+            //throttle while nothing to do, spin quickly while work is available
+            boolean handledOverall = false;
+            boolean handledNow;
+            do {
+                handledNow = handleLocked(pollingOuter);
+                handledOverall |= handledNow;
+                if (outer.isCompleted()) {
+                    return true;
+                }
+                if (requestWaitIntervalLoopInterruptedCheck.check()) {
+                    //maybe check request timeout
+                    return false;
+                }
+            } while (handledNow);
+            return handledOverall;
+        }
+
     }
 
 }

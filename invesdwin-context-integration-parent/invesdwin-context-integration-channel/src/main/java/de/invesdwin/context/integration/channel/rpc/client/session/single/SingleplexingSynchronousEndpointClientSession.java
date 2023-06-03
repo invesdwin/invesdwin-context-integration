@@ -150,7 +150,6 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                         throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService
                                 + "] for request [" + methodInfo.getServiceId() + "]");
                     }
-                    lastHeartbeatNanos = System.nanoTime();
                     if (responseMethod != methodInfo.getMethodId()) {
                         if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
                             final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
@@ -195,6 +194,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 }
             }
             requestWriterSpinWait.getWriter().write(requestHolder);
+            lastHeartbeatNanos = System.nanoTime();
             while (!requestWriterSpinWait.writeFlushed()
                     .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
                 if (endpointSession.getRequestTimeout()
