@@ -292,32 +292,25 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
 
         @Override
         public Object call() {
-            try {
-                final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
-                if (isRequestTimeout()) {
-                    response.setService(methodInfo.getService().getServiceId());
-                    response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    response.setSequence(result.getRequestCopy().getSequence());
-                    response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
-                            + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
-                    responseWriter.write(response);
-                    return null;
-                }
-                final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), result.getRequestCopy(),
-                        response);
-                if (future != null && !future.isDone()) {
-                    result.setDelayedWriteResponse(true);
-                    pollingQueueAsyncAdds.add(result);
-                    return future;
-                } else {
-                    writeQueue.add(result);
-                    return null;
-                }
-            } catch (final EOFException e) {
-                close();
+            final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
+            if (isRequestTimeout()) {
+                response.setService(methodInfo.getService().getServiceId());
+                response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                response.setSequence(result.getRequestCopy().getSequence());
+                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
+                        + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
+                writeQueue.add(result);
                 return null;
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            }
+            final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), result.getRequestCopy(),
+                    response);
+            if (future != null && !future.isDone()) {
+                result.setDelayedWriteResponse(true);
+                pollingQueueAsyncAdds.add(result);
+                return future;
+            } else {
+                writeQueue.add(result);
+                return null;
             }
         }
     }

@@ -360,12 +360,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 final MultiplexingSynchronousEndpointClientSessionResponse removedTask = writeRequests.remove();
                 final MultiplexingSynchronousEndpointClientSessionResponse nextWriteTask = writeRequests.peek();
                 if (nextWriteTask != null) {
+                    //make sure this is marked as written before a response could be received
+                    writtenRequests.put(nextWriteTask.getRequestSequence(), nextWriteTask);
                     writeLocked(nextWriteTask);
                     nextWriteTask.setWriting(true);
                 }
-                writtenRequests.put(removedTask.getRequestSequence(), removedTask);
                 Assertions.checkSame(writeTask, removedTask);
             } else {
+                //make sure this is marked as written before a response could be received
+                writtenRequests.put(writeTask.getRequestSequence(), writeTask);
                 writeLocked(writeTask);
                 writeTask.setWriting(true);
             }
