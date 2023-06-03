@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.client.session.single;
 
+import java.io.IOException;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeoutException;
 
@@ -21,6 +22,7 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
+import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
@@ -46,6 +48,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     private final ILock lock;
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
+    private volatile boolean closed;
 
     private final SingleplexingSynchronousEndpointClientSessionResponse response;
 
@@ -91,8 +94,25 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     @Override
     public void close() {
-        lock.lock();
-        try {
+        if (lock.tryLock()) {
+            try {
+                closeLocked();
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            closed = true;
+            /*
+             * wait for close to finish or at least the lock to be released so that we can close the session
+             */
+            lock.lock();
+            closeLocked();
+            lock.unlock();
+        }
+    }
+
+    private void closeLocked() {
+        if (endpointSession != null) {
             //no need to interrupt because we have the lock
             heartbeatFuture.cancel(false);
             try {
@@ -107,17 +127,19 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 Err.process(new RuntimeException("Ignoring", t));
             }
             responseReaderSpinWait = ClosedSynchronousReader.getSpinWait();
-            if (endpointSession != null) {
-                try {
-                    endpointSession.close();
-                } catch (final Throwable t) {
-                    Err.process(new RuntimeException("Ignoring", t));
-                }
-                endpointSession = null;
+            try {
+                endpointSession.close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
             }
-        } finally {
-            lock.unlock();
+            endpointSession = null;
         }
+        closed = true;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override
@@ -131,6 +153,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             while (true) {
                 while (!responseReaderSpinWait.hasNext()
                         .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                    if (isClosed()) {
+                        throw FastEOFException.getInstance("closed");
+                    }
                     if (endpointSession.getRequestTimeout()
                             .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                         throw new TimeoutException("Request timeout exceeded for [" + methodInfo.getServiceId() + ":"
@@ -173,6 +198,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 }
             }
         } catch (final Throwable e) {
+            if (Throwables.isCausedByType(e, IOException.class)) {
+                closeLocked();
+            }
             lock.unlock();
             throw new RetryLaterRuntimeException(e);
         }
@@ -187,6 +215,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             requestHolder.setMessage(request);
             while (!requestWriterSpinWait.writeReady()
                     .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                if (isClosed()) {
+                    throw FastEOFException.getInstance("closed");
+                }
                 if (endpointSession.getRequestTimeout()
                         .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw new TimeoutException("Request write ready timeout exceeded for [" + serviceId + ":" + methodId
@@ -197,6 +228,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             lastHeartbeatNanos = System.nanoTime();
             while (!requestWriterSpinWait.writeFlushed()
                     .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                if (isClosed()) {
+                    throw FastEOFException.getInstance("closed");
+                }
                 if (endpointSession.getRequestTimeout()
                         .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId

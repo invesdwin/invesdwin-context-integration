@@ -33,6 +33,8 @@ import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
+import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -64,6 +66,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private final LoopInterruptedCheck requestWaitIntervalLoopInterruptedCheck;
     private final LoopInterruptedCheck requestTimeoutLoopInterruptedCheck;
     private final ThrottleSpinWait throttle;
+    private volatile boolean closed;
 
     public MultiplexingSynchronousEndpointClientSession(final ISynchronousEndpointSession endpointSession) {
         this.endpointSession = endpointSession;
@@ -76,8 +79,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             requestWriterSpinWait.getWriter().open();
             responseReader.open();
         } catch (final Throwable t) {
-            close();
-            throw new RuntimeException(t);
+            closeLocked();
+            throw Throwables.propagate(t);
         }
         this.requestWaitIntervalLoopInterruptedCheck = new LoopInterruptedCheck(
                 endpointSession.getRequestWaitInterval());
@@ -109,8 +112,25 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
     @Override
     public void close() {
-        lock.lock();
-        try {
+        if (lock.tryLock()) {
+            try {
+                closeLocked();
+            } finally {
+                lock.unlock();
+            }
+        } else {
+            closed = true;
+            /*
+             * wait for close to finish or at least the lock to be released so that we can close the session
+             */
+            lock.lock();
+            closeLocked();
+            lock.unlock();
+        }
+    }
+
+    private void closeLocked() {
+        if (endpointSession != null) {
             //no need to interrupt because we have the lock
             heartbeatFuture.cancel(false);
             try {
@@ -125,17 +145,23 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 Err.process(new RuntimeException("Ignoring", t));
             }
             responseReader = ClosedSynchronousReader.getInstance();
-            if (endpointSession != null) {
-                try {
-                    endpointSession.close();
-                } catch (final Throwable t) {
-                    Err.process(new RuntimeException("Ignoring", t));
-                }
-                endpointSession = null;
+            try {
+                endpointSession.close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
             }
-        } finally {
-            lock.unlock();
+            endpointSession = null;
         }
+        closed = true;
+    }
+
+    @Override
+    public boolean isClosed() {
+        return closed;
+    }
+
+    public boolean isHeartbeatTimeout() {
+        return closed || endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     @Override
@@ -160,6 +186,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         if (response.isCompleted()) {
                             //the other thread finished our work for us
                             return response;
+                        }
+                        if (isClosed()) {
+                            throw FastEOFException.getInstance("closed");
                         }
                         throwIfRequestTimeout(response);
                         if (activePolling.compareAndSet(false, true)) {
@@ -190,12 +219,22 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 if (!throttle.awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
                     //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
                     if (requestTimeoutLoopInterruptedCheck.check()) {
+                        if (isClosed()) {
+                            closeLocked();
+                            throw FastEOFException.getInstance("closed");
+                        }
                         checkRequestTimeouts(outer);
                     }
                 } else if (outer.isCompleted()) {
                     return outer;
                 }
             }
+        } catch (final Throwable t) {
+            if (Throwables.isCausedByType(t, IOException.class)) {
+                //signal the pool that we want to reconnect
+                closeLocked();
+            }
+            throw Throwables.propagate(t);
         } finally {
             throttle.pollingOuter = null;
             throttle.outer = null;
@@ -403,7 +442,6 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             } while (handledNow);
             return handledOverall;
         }
-
     }
 
 }

@@ -16,6 +16,8 @@ public interface ISynchronousEndpointClientSession extends Closeable {
     @Override
     void close();
 
+    boolean isClosed();
+
     ICloseableByteBufferProvider request(ClientMethodInfo methodInfo, IByteBufferProvider request);
 
 }

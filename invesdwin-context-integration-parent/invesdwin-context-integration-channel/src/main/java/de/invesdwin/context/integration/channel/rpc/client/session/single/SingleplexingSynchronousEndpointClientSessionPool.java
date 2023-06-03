@@ -46,7 +46,7 @@ public class SingleplexingSynchronousEndpointClientSessionPool
 
     @Override
     protected boolean passivateObject(final ISynchronousEndpointClientSession element) {
-        return !closed;
+        return !closed && !element.isClosed();
     }
 
     @Override
