@@ -24,8 +24,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
@@ -37,9 +35,6 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
 public class MultiplexingSynchronousEndpointClientSession implements ISynchronousEndpointClientSession {
-
-    private static final WrappedScheduledExecutorService EXECUTOR = Executors.newScheduledThreadPool(
-            MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_HEARTBEAT", 1);
 
     @GuardedBy("lock")
     private ISynchronousEndpointSession endpointSession;
@@ -73,8 +68,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             close();
             throw new RuntimeException(t);
         }
-        maybeSendHeartbeat();
-        this.heartbeatFuture = EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
+        this.heartbeatFuture = HEARTBEAT_EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
     }
