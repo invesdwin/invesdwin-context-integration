@@ -53,8 +53,8 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         return request;
     }
 
-    public void setRequest(final IByteBufferProvider request) {
-        this.request = request;
+    public void requestWritten() {
+        this.request = null;
     }
 
     public int getRequestSequence() {
@@ -69,7 +69,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         return completedSpinWait;
     }
 
-    public void complete(final IByteBufferProvider response) throws IOException {
+    public void responseCompleted(final IByteBufferProvider response) throws IOException {
         responseSize = response.getBuffer(this.response);
         completed = true;
     }

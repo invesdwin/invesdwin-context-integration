@@ -134,16 +134,49 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         final int requestSequence = sequenceCounter.incrementAndGet();
         response.init(methodInfo, request, requestSequence, activePolling);
         if (activePolling.compareAndSet(false, true)) {
-            requestActivePollingFromStart(methodInfo, request, requestSequence);
+            //take over the job of the activePolling thread and handle other requests while polling
+            try {
+                return requestActivePolling(response);
+            } finally {
+                activePolling.set(false);
+            }
         } else {
             addPollingRequests.add(response);
+            try {
+                while (true) {
+                    if (response.getCompletedSpinWait()
+                            .awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
+                        if (response.isCompleted()) {
+                            //the other thread finished our work for us
+                            return response;
+                        } else if (activePolling.compareAndSet(false, true)) {
+                            //take over the job of the other activePolling thread that just go finished
+                            try {
+                                return requestActivePolling(response);
+                            } finally {
+                                activePolling.set(false);
+                            }
+                        }
+                    }
+                }
+            } catch (final Throwable t) {
+                throw new RetryLaterRuntimeException(t);
+            }
         }
+    }
 
+    private MultiplexingSynchronousEndpointClientSessionResponse requestActivePolling(
+            final MultiplexingSynchronousEndpointClientSessionResponse response) {
         lock.lock();
         try {
             final long waitingSinceNanos = System.nanoTime();
-            writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, request,
-                    waitingSinceNanos);
+            final ClientMethodInfo methodInfo = response.getMethodInfo();
+            final int requestSequence = response.getRequestSequence();
+            if (response.getRequest() != null) {
+                writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, response.getRequest(),
+                        waitingSinceNanos);
+                response.requestWritten();
+            }
             while (true) {
                 //                while (!responseReader.hasNext()
                 //                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
@@ -181,7 +214,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         }
                     }
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
-                    response.complete(responseMessage);
+                    response.responseCompleted(responseMessage);
                     return response;
                 } catch (final Throwable e) {
                     responseReader.readFinished();
@@ -191,15 +224,6 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         } catch (final Throwable e) {
             lock.unlock();
             throw new RetryLaterRuntimeException(e);
-        }
-    }
-
-    private void requestActivePollingFromStart(final ClientMethodInfo methodInfo, final IByteBufferProvider request,
-            final int requestSequence) {
-        try {
-
-        } finally {
-            activePolling.set(false);
         }
     }
 

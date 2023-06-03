@@ -177,7 +177,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     return response;
                 } catch (final Throwable e) {
                     responseReaderSpinWait.getReader().readFinished();
-                    Throwables.propagate(e);
+                    throw Throwables.propagate(e);
                 }
             }
         } catch (final Throwable e) {
