@@ -1,14 +1,19 @@
 package de.invesdwin.context.integration.channel.rpc.client.session.multi;
 
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
+
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient.ClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
+import de.invesdwin.context.integration.channel.rpc.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.MutableServiceSynchronousCommand;
@@ -22,13 +27,13 @@ import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
-import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
 public class MultiplexingSynchronousEndpointClientSession implements ISynchronousEndpointClientSession {
@@ -50,11 +55,12 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private final ILock lock;
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
+    private volatile AtomicBoolean activePolling = new AtomicBoolean();
+    private final ManyToOneConcurrentLinkedQueue<MultiplexingSynchronousEndpointClientSessionResponse> addPollingRequests = new ManyToOneConcurrentLinkedQueue<>();
+    @GuardedBy("only the activePolling thread should have access to this map")
+    private final Int2ObjectOpenHashMap<MultiplexingSynchronousEndpointClientSessionResponse> pollingRequests = new Int2ObjectOpenHashMap<>();
 
-    private final MultiplexingSynchronousEndpointClientSessionResponse response;
-
-    public MultiplexingSynchronousEndpointClientSession(final IObjectPool<ISynchronousEndpointClientSession> pool,
-            final ISynchronousEndpointSession endpointSession) {
+    public MultiplexingSynchronousEndpointClientSession(final ISynchronousEndpointSession endpointSession) {
         this.endpointSession = endpointSession;
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
@@ -71,8 +77,6 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         this.heartbeatFuture = EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
-
-        this.response = new MultiplexingSynchronousEndpointClientSessionResponse(pool, this, lock, responseReader);
     }
 
     public void maybeSendHeartbeat() {
@@ -125,9 +129,18 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
     @Override
     public ICloseableByteBufferProvider request(final ClientMethodInfo methodInfo, final IByteBufferProvider request) {
+        final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
+                .borrowObject();
+        final int requestSequence = sequenceCounter.incrementAndGet();
+        response.init(methodInfo, request, requestSequence, activePolling);
+        if (activePolling.compareAndSet(false, true)) {
+            requestActivePollingFromStart(methodInfo, request, requestSequence);
+        } else {
+            addPollingRequests.add(response);
+        }
+
         lock.lock();
         try {
-            final int requestSequence = sequenceCounter.incrementAndGet();
             final long waitingSinceNanos = System.nanoTime();
             writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, request,
                     waitingSinceNanos);
@@ -168,7 +181,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         }
                     }
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
-                    response.setMessage(responseMessage);
+                    response.complete(responseMessage);
                     return response;
                 } catch (final Throwable e) {
                     responseReader.readFinished();
@@ -178,6 +191,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         } catch (final Throwable e) {
             lock.unlock();
             throw new RetryLaterRuntimeException(e);
+        }
+    }
+
+    private void requestActivePollingFromStart(final ClientMethodInfo methodInfo, final IByteBufferProvider request,
+            final int requestSequence) {
+        try {
+
+        } finally {
+            activePolling.set(false);
         }
     }
 

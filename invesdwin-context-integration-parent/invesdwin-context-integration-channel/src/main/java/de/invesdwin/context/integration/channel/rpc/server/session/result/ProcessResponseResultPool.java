@@ -32,4 +32,9 @@ public final class ProcessResponseResultPool extends AAgronaObjectPool<ProcessRe
         return true;
     }
 
+    @Override
+    public void invalidateObject(final ProcessResponseResult element) {
+        element.close();
+    }
+
 }

@@ -45,7 +45,7 @@ public class MultiplexingSynchronousEndpointClientSessionPool
             synchronized (this) {
                 if (singleSession == null) {
                     final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
-                    singleSession = new MultiplexingSynchronousEndpointClientSession(this, endpointSession);
+                    singleSession = new MultiplexingSynchronousEndpointClientSession(endpointSession);
                 }
             }
         }

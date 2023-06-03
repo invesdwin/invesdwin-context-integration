@@ -37,9 +37,11 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 @ThreadSafe
 public final class SynchronousEndpointClient<T> implements Closeable {
 
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT = AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
+
     public static final WrappedExecutorService DEFAULT_FUTURE_EXECUTOR = Executors
             .newFixedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_FUTURE",
-                    AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION)
+                    DEFAULT_MAX_PENDING_WORK_COUNT)
             .setDynamicThreadName(false);
 
     private final Class<T> serviceInterface;
