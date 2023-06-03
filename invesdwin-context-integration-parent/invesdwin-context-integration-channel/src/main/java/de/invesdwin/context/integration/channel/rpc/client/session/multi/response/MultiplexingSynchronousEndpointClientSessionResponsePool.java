@@ -29,6 +29,7 @@ public final class MultiplexingSynchronousEndpointClientSessionResponsePool
 
     @Override
     protected boolean passivateObject(final MultiplexingSynchronousEndpointClientSessionResponse element) {
+        //TODO: handle reconnect?!?
         element.clean();
         return true;
     }
