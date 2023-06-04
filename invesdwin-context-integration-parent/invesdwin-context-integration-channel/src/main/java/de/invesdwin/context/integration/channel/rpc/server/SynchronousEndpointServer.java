@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.rpc.server;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,7 +26,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
-import de.invesdwin.util.error.FastNoSuchElementException;
+import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
@@ -305,7 +304,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                             lastHeartbeatNanos = System.nanoTime();
                         }
                         //maybe check heartbeat and maybe accept more clients
-                        throw FastNoSuchElementException.getInstance("check heartbeat");
+                        throw MaintenanceIntervalException.getInstance("check heartbeat");
                     }
                 } while (handledNow);
                 return handledOverall;
@@ -393,7 +392,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                     if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
                         maybeCheckHeartbeat();
                     }
-                } catch (final NoSuchElementException e) {
+                } catch (final MaintenanceIntervalException e) {
                     maybeCheckHeartbeat();
                 }
             }

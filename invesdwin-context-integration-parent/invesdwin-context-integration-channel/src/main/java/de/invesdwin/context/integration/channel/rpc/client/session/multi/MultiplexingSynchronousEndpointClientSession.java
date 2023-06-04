@@ -33,7 +33,7 @@ import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.error.FastNoSuchElementException;
+import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
@@ -224,7 +224,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     } else if (outer.isCompleted()) {
                         return outer;
                     }
-                } catch (final NoSuchElementException e) {
+                } catch (final MaintenanceIntervalException e) {
                     maybeCheckRequestTimeouts(outer);
                 }
             }
@@ -483,7 +483,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 }
                 if (requestWaitIntervalLoopInterruptedCheck.check()) {
                     //maybe check request timeout
-                    throw FastNoSuchElementException.getInstance("check request timeout");
+                    throw MaintenanceIntervalException.getInstance("check request timeout");
                 }
             } while (handledNow);
             return handledOverall;
