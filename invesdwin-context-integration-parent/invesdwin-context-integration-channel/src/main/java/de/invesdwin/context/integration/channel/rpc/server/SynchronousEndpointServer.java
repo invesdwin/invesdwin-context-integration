@@ -237,10 +237,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         serverAcceptor.open();
         ioRunnables = ILockCollectionFactory.getInstance(false).newFastIterableArrayList(maxIoThreadCount);
         //main runnable adds more threads on demand
-        final IoRunnable rootioRunnable = new IoRunnable(ROOT_IO_RUNNABLE_ID);
-        final ListenableFuture<?> future = getIoExecutor().submit(rootioRunnable);
-        rootioRunnable.setFuture(future);
-        ioRunnables.add(rootioRunnable);
+        final IoRunnable rootIoRunnable = new IoRunnable(ROOT_IO_RUNNABLE_ID);
+        final ListenableFuture<?> future = getIoExecutor().submit(rootIoRunnable);
+        rootIoRunnable.setFuture(future);
+        ioRunnables.add(rootIoRunnable);
     }
 
     @Override
@@ -387,7 +387,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                 if (heartbeatLoopInterruptedCheck.check()) {
                     checkServerSessionsHeartbeat();
                     if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
-                        checkioRunnablesHeartbeat();
+                        checkIoRunnablesHeartbeat();
                     }
                 }
             }
@@ -412,16 +412,16 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             }
         }
 
-        private void checkioRunnablesHeartbeat() throws IOException {
+        private void checkIoRunnablesHeartbeat() throws IOException {
             final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
-            int removedioRunnables = 0;
+            int removedIoRunnables = 0;
             //don't check heartbeat of root IO runnable (otherwise new clients cannot be accepted)
             for (int i = 1; i < ioRunnablesArray.length; i++) {
                 final IoRunnable ioRunnable = ioRunnablesArray[i];
                 if (ioRunnable.isEmptyAndHeartbeatTimeout()) {
                     ioRunnable.close();
-                    ioRunnablesCopy.remove(i - removedioRunnables);
-                    removedioRunnables++;
+                    ioRunnablesCopy.remove(i - removedIoRunnables);
+                    removedIoRunnables++;
                 }
             }
         }
@@ -452,15 +452,20 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
         private void maybeIncreaseIoRunnableCount() {
             if (ioRunnablesCopy.size() < maxIoThreadCount) {
-                int maxioRunnableId = 0;
+                int maxIoRunnableId = 0;
                 final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
                 for (int i = 0; i < ioRunnablesArray.length; i++) {
-                    maxioRunnableId = Integers.max(maxioRunnableId, ioRunnablesArray[i].ioRunnableId);
+                    final IoRunnable ioRunnable = ioRunnablesArray[i];
+                    if (ioRunnable.serverSessions.isEmpty()) {
+                        //no need to increase io runnables
+                        return;
+                    }
+                    maxIoRunnableId = Integers.max(maxIoRunnableId, ioRunnable.ioRunnableId);
                 }
-                final IoRunnable newioRunnable = new IoRunnable(maxioRunnableId + 1);
-                final ListenableFuture<?> future = getIoExecutor().submit(newioRunnable);
-                newioRunnable.setFuture(future);
-                ioRunnablesCopy.add(newioRunnable);
+                final IoRunnable newIoRunnable = new IoRunnable(maxIoRunnableId + 1);
+                final ListenableFuture<?> future = getIoExecutor().submit(newIoRunnable);
+                newIoRunnable.setFuture(future);
+                ioRunnablesCopy.add(newIoRunnable);
             }
         }
 
