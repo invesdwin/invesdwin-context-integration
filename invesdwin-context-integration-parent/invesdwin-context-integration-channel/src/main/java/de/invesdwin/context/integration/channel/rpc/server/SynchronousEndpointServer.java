@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.rpc.server;
 import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -26,6 +27,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
@@ -303,7 +305,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                             lastHeartbeatNanos = System.nanoTime();
                         }
                         //maybe check heartbeat and maybe accept more clients
-                        return false;
+                        throw FastNoSuchElementException.getInstance("check heartbeat");
                     }
                 } while (handledNow);
                 return handledOverall;
@@ -387,14 +389,22 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                 //reduce cpu cycles aggressively when no sessions are connected
                 FTimeUnit.MILLISECONDS.sleep(1);
             } else {
-                if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
-                    //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
-                    if (heartbeatLoopInterruptedCheck.check()) {
-                        checkServerSessionsHeartbeat();
-                        if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
-                            checkIoRunnablesHeartbeat();
-                        }
+                try {
+                    if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+                        maybeCheckHeartbeat();
                     }
+                } catch (final NoSuchElementException e) {
+                    maybeCheckHeartbeat();
+                }
+            }
+        }
+
+        private void maybeCheckHeartbeat() throws InterruptedException, IOException {
+            //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+            if (heartbeatLoopInterruptedCheck.check()) {
+                checkServerSessionsHeartbeat();
+                if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                    checkIoRunnablesHeartbeat();
                 }
             }
         }
@@ -462,7 +472,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                 final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
                 for (int i = 0; i < ioRunnablesArray.length; i++) {
                     final IoRunnable ioRunnable = ioRunnablesArray[i];
-                    if (ioRunnable.serverSessions.isEmpty()) {
+                    if (ioRunnable.serverSessions.size() <= 2) {
                         //no need to increase io runnables
                         return;
                     }

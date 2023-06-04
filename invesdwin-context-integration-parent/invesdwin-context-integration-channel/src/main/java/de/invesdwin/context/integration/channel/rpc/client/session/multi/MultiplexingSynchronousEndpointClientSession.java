@@ -33,6 +33,7 @@ import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
@@ -217,17 +218,14 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             throttle.outer = outer;
             throttle.pollingOuter = pollingOuter;
             while (true) {
-                if (!throttle.awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
-                    //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
-                    if (requestTimeoutLoopInterruptedCheck.check()) {
-                        if (isClosed()) {
-                            closeLocked();
-                            throw FastEOFException.getInstance("closed");
-                        }
-                        checkRequestTimeouts(outer);
+                try {
+                    if (!throttle.awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
+                        maybeCheckRequestTimeouts(outer);
+                    } else if (outer.isCompleted()) {
+                        return outer;
                     }
-                } else if (outer.isCompleted()) {
-                    return outer;
+                } catch (final NoSuchElementException e) {
+                    maybeCheckRequestTimeouts(outer);
                 }
             }
         } catch (final Throwable t) {
@@ -240,6 +238,18 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             throttle.pollingOuter = null;
             throttle.outer = null;
             lock.unlock();
+        }
+    }
+
+    private void maybeCheckRequestTimeouts(final MultiplexingSynchronousEndpointClientSessionResponse outer)
+            throws InterruptedException, FastEOFException, TimeoutException {
+        //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+        if (requestTimeoutLoopInterruptedCheck.check()) {
+            if (isClosed()) {
+                closeLocked();
+                throw FastEOFException.getInstance("closed");
+            }
+            checkRequestTimeouts(outer);
         }
     }
 
@@ -473,7 +483,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 }
                 if (requestWaitIntervalLoopInterruptedCheck.check()) {
                     //maybe check request timeout
-                    return false;
+                    throw FastNoSuchElementException.getInstance("check request timeout");
                 }
             } while (handledNow);
             return handledOverall;
