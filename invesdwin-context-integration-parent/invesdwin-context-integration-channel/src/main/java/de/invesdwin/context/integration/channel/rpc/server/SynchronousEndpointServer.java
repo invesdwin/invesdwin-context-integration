@@ -64,6 +64,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class SynchronousEndpointServer implements ISynchronousChannel {
 
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
+    public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 2;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
             .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO")
             .setDynamicThreadName(false);
@@ -88,6 +89,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     @GuardedBy("this")
     private IFastIterableList<IoRunnable> ioRunnables;
     private final int maxIoThreadCount;
+    private final int createIoThreadSessionThreshold;
     private final WrappedExecutorService ioExecutor;
     private final WrappedExecutorService workExecutor;
     private final int maxPendingWorkCountOverall;
@@ -101,7 +103,12 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         this.maxIoThreadCount = newMaxIoThreadCount();
         if (maxIoThreadCount < 0) {
             throw new IllegalArgumentException(
-                    "requestThreadCount should be greater than or equal to 0: " + maxIoThreadCount);
+                    "maxIoThreadCount should be greater than or equal to 0: " + maxIoThreadCount);
+        }
+        this.createIoThreadSessionThreshold = newCreateIoThreadSessionThreshold();
+        if (createIoThreadSessionThreshold < 1) {
+            throw new IllegalArgumentException("createIoThreadSessionThreshold should be greater than or equal to 1: "
+                    + createIoThreadSessionThreshold);
         }
         this.ioExecutor = newIoExecutor();
         this.workExecutor = newWorkExecutor();
@@ -112,6 +119,10 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
         this.initialMaxPendingWorkCountPerSession = newInitialMaxPendingWorkCountPerSession();
         updateMaxPendingCountPerSession(0);
+    }
+
+    private int newCreateIoThreadSessionThreshold() {
+        return DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
     }
 
     protected SerdeLookupConfig newSerdeLookupConfig() {
@@ -471,7 +482,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
                 final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(REQUEST_RUNNABLE_EMPTY_ARRAY);
                 for (int i = 0; i < ioRunnablesArray.length; i++) {
                     final IoRunnable ioRunnable = ioRunnablesArray[i];
-                    if (ioRunnable.serverSessions.size() <= 2) {
+                    if (ioRunnable.serverSessions.size() <= createIoThreadSessionThreshold) {
                         //no need to increase io runnables
                         return;
                     }

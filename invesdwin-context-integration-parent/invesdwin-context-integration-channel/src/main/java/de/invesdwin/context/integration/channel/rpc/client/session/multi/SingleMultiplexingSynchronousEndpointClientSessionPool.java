@@ -34,18 +34,6 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
         ATimeoutObjectPool.ACTIVE_POOLS.incrementAndGet();
     }
 
-    private void maybeReconnect(final ISynchronousEndpointClientSession element) {
-        final MultiplexingSynchronousEndpointClientSession cElement = (MultiplexingSynchronousEndpointClientSession) element;
-        if (cElement.isClosed()) {
-            cElement.close();
-            synchronized (this) {
-                if (cElement == singleSession) {
-                    singleSession = null;
-                }
-            }
-        }
-    }
-
     public boolean isActive() {
         return scheduledFuture != null;
     }
@@ -83,13 +71,9 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
                     singleSession = new MultiplexingSynchronousEndpointClientSession(endpointSession);
                     final Duration heartbeatInterval = endpointSession.getHeartbeatInterval();
                     if (scheduledFuture == null) {
-                        scheduledFuture = ATimeoutObjectPool.getScheduledExecutor().scheduleAtFixedRate(() -> {
-                            final MultiplexingSynchronousEndpointClientSession singleSessionCopy = singleSession;
-                            if (singleSessionCopy != null && singleSessionCopy.isHeartbeatTimeout()) {
-                                clear();
-                            }
-                        }, heartbeatInterval.longValue(), heartbeatInterval.longValue(),
-                                heartbeatInterval.getTimeUnit().timeUnitValue());
+                        scheduledFuture = ATimeoutObjectPool.getScheduledExecutor()
+                                .scheduleAtFixedRate(new CheckHeartbeatRunnable(), heartbeatInterval.longValue(),
+                                        heartbeatInterval.longValue(), heartbeatInterval.getTimeUnit().timeUnitValue());
                     }
                 }
             }
@@ -99,7 +83,15 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
 
     @Override
     public void invalidateObject(final ISynchronousEndpointClientSession element) {
-        maybeReconnect(element);
+        final MultiplexingSynchronousEndpointClientSession cElement = (MultiplexingSynchronousEndpointClientSession) element;
+        if (cElement.isClosed()) {
+            cElement.close();
+            synchronized (this) {
+                if (cElement == singleSession) {
+                    singleSession = null;
+                }
+            }
+        }
     }
 
     @Override
@@ -115,6 +107,16 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
                 clear();
                 ATimeoutObjectPool.ACTIVE_POOLS.decrementAndGet();
                 ATimeoutObjectPool.maybeCloseScheduledExecutor();
+            }
+        }
+    }
+
+    private final class CheckHeartbeatRunnable implements Runnable {
+        @Override
+        public void run() {
+            final MultiplexingSynchronousEndpointClientSession singleSessionCopy = singleSession;
+            if (singleSessionCopy != null && singleSessionCopy.isHeartbeatTimeout()) {
+                clear();
             }
         }
     }
