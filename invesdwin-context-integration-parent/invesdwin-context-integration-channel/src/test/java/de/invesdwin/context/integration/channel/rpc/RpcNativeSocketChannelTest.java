@@ -31,13 +31,11 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class RpcNativeSocketChannelTest extends AChannelTest {
 
-    private static final boolean CONNECT_LAZY = true;
-
     @Test
     public void testRpcPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runRpcTest(address, RpcTestServiceMode.requestFalseTrue, CONNECT_LAZY);
+        runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
 
     @Test
@@ -47,7 +45,7 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
-            runRpcTest(address, mode, CONNECT_LAZY);
+            runRpcTest(address, mode);
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
@@ -55,8 +53,7 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
         }
     }
 
-    protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode, final boolean lazy)
-            throws InterruptedException {
+    protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode) throws InterruptedException {
         final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
                 new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
             private final AtomicInteger index = new AtomicInteger();
@@ -83,7 +80,7 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
                 return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
             }
         };
-        runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode, lazy);
+        runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,

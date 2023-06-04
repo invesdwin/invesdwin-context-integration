@@ -97,6 +97,7 @@ public abstract class AChannelTest extends ATest {
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final int RPC_CLIENT_THREADS = DEBUG ? 1 : 10;
     public static final int RPC_CLIENT_TRANSPORTS = DEBUG ? 1 : 2;
+    public static final boolean RPC_CLIENT_LAZY = true;
 
     public enum FileChannelType {
         PIPE_STREAMING,
@@ -109,8 +110,8 @@ public abstract class AChannelTest extends ATest {
 
     protected void runRpcPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
-            final RpcTestServiceMode mode, final boolean lazy) throws InterruptedException {
-        if (lazy) {
+            final RpcTestServiceMode mode) throws InterruptedException {
+        if (RPC_CLIENT_LAZY) {
             runRpcPerformanceTestLazy(serverAcceptor, clientEndpointFactory, mode);
         } else {
             runRpcPerformanceTestEager(serverAcceptor, clientEndpointFactory, mode);
