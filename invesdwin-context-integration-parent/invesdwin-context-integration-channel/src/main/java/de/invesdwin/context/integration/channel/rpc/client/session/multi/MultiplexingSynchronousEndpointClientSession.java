@@ -168,6 +168,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     public ICloseableByteBufferProvider request(final ClientMethodInfo methodInfo, final IByteBufferProvider request) {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
+        response.setOuterActive();
         try {
             final int requestSequence = sequenceCounter.incrementAndGet();
             response.init(methodInfo, request, requestSequence, activePolling);
@@ -179,6 +180,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     activePolling.set(false);
                 }
             } else {
+                response.setPollingActive();
                 writeRequests.add(response);
                 while (true) {
                     if (response.getCompletedSpinWait()
@@ -249,9 +251,10 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (!writeRequests.isEmpty()) {
             MultiplexingSynchronousEndpointClientSessionResponse writeRequest = writeRequests.peek();
             while (writeRequest != null) {
-                if (isRequestTimeout(writeRequest)) {
+                if (isRequestTimeout(writeRequest) || !writeRequest.isOuterActive()) {
                     final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
                     Assertions.checkSame(writeRequest, removed);
+                    removed.releasePollingActive();
                     writeRequest = writeRequests.peek();
                 } else {
                     writeRequest = null;
@@ -261,7 +264,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (!writtenRequests.isEmpty()) {
             IBufferingIterator<MultiplexingSynchronousEndpointClientSessionResponse> toBeRemoved = null;
             for (final MultiplexingSynchronousEndpointClientSessionResponse writtenRequest : writtenRequests.values()) {
-                if (isRequestTimeout(writtenRequest)) {
+                if (isRequestTimeout(writtenRequest) || !writtenRequest.isOuterActive()) {
                     if (toBeRemoved == null) {
                         toBeRemoved = new BufferingIterator<>();
                     }
@@ -273,6 +276,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     while (true) {
                         final MultiplexingSynchronousEndpointClientSessionResponse next = toBeRemoved.next();
                         writtenRequests.remove(next.getRequestSequence());
+                        next.releasePollingActive();
                     }
                 } catch (final NoSuchElementException e) {
                     //end reached
@@ -281,8 +285,10 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
+    //CHECKSTYLE:OFF
     private boolean handleLocked(final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter)
-            throws IOException, Exception {
+            throws Exception {
+        //CHECKSTYLE:ON
         final boolean writing;
         if ((pollingOuter != null && pollingOuter.getRequest() != null || !writeRequests.isEmpty())
                 && requestWriterSpinWait.getWriter().writeFlushed() && requestWriterSpinWait.getWriter().writeReady()) {
@@ -292,11 +298,11 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
              */
             writing = true;
             if (pollingOuter != null && pollingOuter.getRequest() != null) {
-                if (pollingOuter.isWriting()) {
-                    pollingOuter.requestWritten();
+                if (pollingOuter.isWritingActive()) {
+                    pollingOuter.releaseWritingActive();
                 } else {
+                    pollingOuter.setWritingActive();
                     writeLocked(pollingOuter);
-                    pollingOuter.setWriting(true);
                 }
             } else {
                 writePollingRequest();
@@ -323,6 +329,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 if (responseService != response.getMethodInfo().getServiceId()) {
                     response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
                             + responseService + "] for request [" + response.getMethodInfo().getServiceId() + "]"));
+                    if (response != pollingOuter) {
+                        response.releasePollingActive();
+                    }
                     return true;
                 }
                 if (responseMethod != response.getMethodInfo().getMethodId()) {
@@ -331,20 +340,32 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
                         response.responseCompleted(
                                 new RetryLaterRuntimeException(new RemoteExecutionException(message)));
+                        if (response != pollingOuter) {
+                            response.releasePollingActive();
+                        }
                         return true;
                     } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
                         final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
                         final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
                         response.responseCompleted(new RemoteExecutionException(message));
+                        if (response != pollingOuter) {
+                            response.releasePollingActive();
+                        }
                         return true;
                     } else {
                         response.responseCompleted(new RetryLaterRuntimeException("Unexpected methodId in response ["
                                 + +responseMethod + "] for request [" + response.getMethodInfo().getMethodId() + "]"));
+                        if (response != pollingOuter) {
+                            response.releasePollingActive();
+                        }
                         return true;
                     }
                 }
                 final IByteBufferProvider responseMessage = responseHolder.getMessage();
                 response.responseCompleted(responseMessage);
+                if (response != pollingOuter) {
+                    response.releasePollingActive();
+                }
                 return true;
             } finally {
                 responseReader.readFinished();
@@ -356,21 +377,34 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private void writePollingRequest() throws Exception {
         final MultiplexingSynchronousEndpointClientSessionResponse writeTask = writeRequests.peek();
         if (writeTask != null) {
-            if (writeTask.isWriting()) {
+            if (writeTask.isWritingActive()) {
                 final MultiplexingSynchronousEndpointClientSessionResponse removedTask = writeRequests.remove();
+                Assertions.checkSame(writeTask, removedTask);
+                writeTask.releaseWritingActive();
                 final MultiplexingSynchronousEndpointClientSessionResponse nextWriteTask = writeRequests.peek();
                 if (nextWriteTask != null) {
-                    //make sure this is marked as written before a response could be received
-                    writtenRequests.put(nextWriteTask.getRequestSequence(), nextWriteTask);
-                    writeLocked(nextWriteTask);
-                    nextWriteTask.setWriting(true);
+                    if (!nextWriteTask.isOuterActive()) {
+                        final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
+                        Assertions.checkSame(nextWriteTask, removed);
+                        nextWriteTask.releasePollingActive();
+                    } else {
+                        //make sure this is marked as written before a response could be received
+                        nextWriteTask.setWritingActive();
+                        writtenRequests.put(nextWriteTask.getRequestSequence(), nextWriteTask);
+                        writeLocked(nextWriteTask);
+                    }
                 }
-                Assertions.checkSame(writeTask, removedTask);
             } else {
-                //make sure this is marked as written before a response could be received
-                writtenRequests.put(writeTask.getRequestSequence(), writeTask);
-                writeLocked(writeTask);
-                writeTask.setWriting(true);
+                if (!writeTask.isOuterActive()) {
+                    final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
+                    Assertions.checkSame(writeTask, removed);
+                    writeTask.releasePollingActive();
+                } else {
+                    //make sure this is marked as written before a response could be received
+                    writeTask.setWritingActive();
+                    writtenRequests.put(writeTask.getRequestSequence(), writeTask);
+                    writeLocked(writeTask);
+                }
             }
         }
     }
@@ -389,7 +423,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
-            final IByteBufferProvider request) throws IOException, TimeoutException {
+            final IByteBufferProvider request) throws IOException {
         requestHolder.setService(serviceId);
         requestHolder.setMethod(methodId);
         requestHolder.setSequence(requestSequence);

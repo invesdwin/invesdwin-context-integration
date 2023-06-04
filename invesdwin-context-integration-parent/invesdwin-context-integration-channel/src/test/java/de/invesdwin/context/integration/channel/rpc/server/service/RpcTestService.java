@@ -27,7 +27,7 @@ public class RpcTestService implements IRpcTestService {
     private static final WrappedExecutorService ASYNC_EXECUTOR = Executors
             .newFixedThreadPool(RpcTestService.class.getSimpleName() + "_ASYNC", 1)
             .setDynamicThreadName(false);
-    private static final int FLUSH_INTERVAL = AChannelTest.FLUSH_INTERVAL * AChannelTest.RPC_CLIENT_COUNT;
+    private static final int FLUSH_INTERVAL = AChannelTest.FLUSH_INTERVAL * AChannelTest.RPC_CLIENT_THREADS;
     private final OutputStream log;
     private final AtomicInteger countHolder = new AtomicInteger();
     private Instant writesStart;
@@ -64,7 +64,7 @@ public class RpcTestService implements IRpcTestService {
         final int count = countHolder.incrementAndGet();
         if (count % FLUSH_INTERVAL == 0) {
             AChannelTest.printProgress(log, "Writes", writesStart, count,
-                    AChannelTest.VALUES * AChannelTest.RPC_CLIENT_COUNT);
+                    AChannelTest.VALUES * AChannelTest.RPC_CLIENT_THREADS);
         }
         return response;
     }

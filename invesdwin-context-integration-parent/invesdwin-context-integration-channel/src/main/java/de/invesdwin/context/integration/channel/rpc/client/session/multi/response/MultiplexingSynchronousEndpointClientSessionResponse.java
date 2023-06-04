@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.rpc.client.session.multi.respon
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient.ClientMethodInfo;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
@@ -13,14 +13,13 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
-@NotThreadSafe
+@ThreadSafe
 public class MultiplexingSynchronousEndpointClientSessionResponse implements ICloseableByteBufferProvider {
 
     private final IObjectPool<MultiplexingSynchronousEndpointClientSessionResponse> pool;
     private final ASpinWait completedSpinWait;
     private ClientMethodInfo methodInfo;
     private IByteBufferProvider request;
-    private boolean writing;
     private int requestSequence;
     private AtomicBoolean activePolling;
     private volatile boolean completed;
@@ -28,6 +27,9 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
     private int responseSize;
     private long waitingSinceNanos;
     private RuntimeException exceptionResponse;
+    private volatile boolean outerActive;
+    private volatile boolean pollingActive;
+    private volatile boolean writingActive;
 
     public MultiplexingSynchronousEndpointClientSessionResponse(
             final IObjectPool<MultiplexingSynchronousEndpointClientSessionResponse> pool) {
@@ -38,6 +40,35 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
                 return completed || !activePolling.get();
             }
         };
+    }
+
+    public synchronized void setOuterActive() {
+        assert !this.outerActive : "outerActive should be false";
+        this.outerActive = true;
+    }
+
+    public boolean isOuterActive() {
+        return outerActive;
+    }
+
+    public synchronized void setPollingActive() {
+        assert !this.pollingActive : "pollingActive should be false";
+        assert this.outerActive : "outerActive should be true";
+        this.pollingActive = true;
+    }
+
+    public boolean isPollingActive() {
+        return pollingActive;
+    }
+
+    public synchronized void setWritingActive() {
+        assert !this.writingActive : "writingActive should be false";
+        assert this.outerActive : "outerActive should be true";
+        this.writingActive = true;
+    }
+
+    public boolean isWritingActive() {
+        return writingActive;
     }
 
     public void init(final ClientMethodInfo methodInfo, final IByteBufferProvider request, final int requestSequence,
@@ -55,19 +86,6 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
 
     public IByteBufferProvider getRequest() {
         return request;
-    }
-
-    public void setWriting(final boolean writing) {
-        this.writing = writing;
-    }
-
-    public boolean isWriting() {
-        return writing;
-    }
-
-    public void requestWritten() {
-        this.request = null;
-        this.writing = false;
     }
 
     public int getRequestSequence() {
@@ -98,7 +116,37 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
 
     @Override
     public void close() {
-        pool.returnObject(this);
+        synchronized (this) {
+            if (outerActive) {
+                outerActive = false;
+                if (!pollingActive && !writingActive) {
+                    pool.returnObject(this);
+                }
+            }
+        }
+    }
+
+    public void releasePollingActive() {
+        synchronized (this) {
+            if (pollingActive) {
+                pollingActive = false;
+                if (!outerActive && !writingActive) {
+                    pool.returnObject(this);
+                }
+            }
+        }
+    }
+
+    public void releaseWritingActive() {
+        synchronized (this) {
+            if (writingActive) {
+                request = null;
+                writingActive = false;
+                if (!outerActive && !pollingActive) {
+                    pool.returnObject(this);
+                }
+            }
+        }
     }
 
     public void clean() {
@@ -109,8 +157,10 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         responseSize = 0;
         activePolling = null;
         waitingSinceNanos = 0;
-        writing = false;
         exceptionResponse = null;
+        outerActive = false;
+        pollingActive = false;
+        writingActive = false;
     }
 
     @Override
