@@ -198,7 +198,6 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
-    @SuppressWarnings("unchecked")
     private void dispatchProcessResponse(final ProcessResponseResult result) throws IOException {
         final IServiceSynchronousCommand<IByteBufferProvider> request = requestReader.readMessage();
         try {
