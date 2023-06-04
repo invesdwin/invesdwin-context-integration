@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronou
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableList;
+import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.lang.Closeables;
@@ -35,6 +36,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
     @GuardedBy("sessions")
     private volatile Future<?> scheduledFuture;
     private volatile boolean closed;
+    private final ILock createSessionLock;
 
     public MultipleMultiplexingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
@@ -50,6 +52,9 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
                     + createSessionRequestThreshold);
         }
         this.sessions = ILockCollectionFactory.getInstance(true).newFastIterableArrayList(maxSessionsCount);
+        this.createSessionLock = ILockCollectionFactory.getInstance(true)
+                .newLock(MultipleMultiplexingSynchronousEndpointClientSessionPool.class.getSimpleName()
+                        + "_CREATE_SESSION_LOCK");
         ATimeoutObjectPool.ACTIVE_POOLS.incrementAndGet();
     }
 
@@ -74,7 +79,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         if (closed) {
             throw new IllegalStateException("closed");
         }
-        maybeIncreaseIoRunnableCount();
+        maybeIncreaseSessionCount();
         return getSessionWithLeastRequests();
     }
 
@@ -104,31 +109,48 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         return session;
     }
 
-    private void maybeIncreaseIoRunnableCount() {
+    private void maybeIncreaseSessionCount() {
         if (sessions.size() < maxSessionsCount) {
-            synchronized (sessions) {
-                if (closed) {
-                    throw new IllegalStateException("closed");
+            if (sessions.size() == 0) {
+                createSessionLock.lock();
+                try {
+                    increaseSessionCount();
+                } finally {
+                    createSessionLock.unlock();
                 }
-                if (sessions.size() < maxSessionsCount) {
-                    final Session[] sessionsArray = sessions.asArray(Session.EMPTY_ARRAY);
-                    for (int i = 0; i < sessionsArray.length; i++) {
-                        final Session session = sessionsArray[i];
-                        if (session.requestsCount.get() <= createSessionRequestThreshold) {
-                            //no need to increase io runnables
-                            return;
-                        }
-                    }
-                    final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
-                    final Session newSession = new Session(endpointSession);
-                    if (scheduledFuture == null) {
-                        final Duration heartbeatInterval = endpointSession.getHeartbeatInterval();
-                        scheduledFuture = ATimeoutObjectPool.getScheduledExecutor()
-                                .scheduleAtFixedRate(new CheckHeartbeatRunnable(), heartbeatInterval.longValue(),
-                                        heartbeatInterval.longValue(), heartbeatInterval.getTimeUnit().timeUnitValue());
-                    }
-                    sessions.add(newSession);
+            } else if (createSessionLock.tryLock()) {
+                try {
+                    increaseSessionCount();
+                } finally {
+                    createSessionLock.unlock();
                 }
+            }
+        }
+    }
+
+    private void increaseSessionCount() {
+        synchronized (this) {
+            if (closed) {
+                throw new IllegalStateException("closed");
+            }
+            if (sessions.size() < maxSessionsCount) {
+                final Session[] sessionsArray = sessions.asArray(Session.EMPTY_ARRAY);
+                for (int i = 0; i < sessionsArray.length; i++) {
+                    final Session session = sessionsArray[i];
+                    if (session.requestsCount.get() <= createSessionRequestThreshold) {
+                        //no need to increase io runnables
+                        return;
+                    }
+                }
+                final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
+                final Session newSession = new Session(endpointSession);
+                if (scheduledFuture == null) {
+                    final Duration heartbeatInterval = endpointSession.getHeartbeatInterval();
+                    scheduledFuture = ATimeoutObjectPool.getScheduledExecutor()
+                            .scheduleAtFixedRate(new CheckHeartbeatRunnable(), heartbeatInterval.longValue(),
+                                    heartbeatInterval.longValue(), heartbeatInterval.getTimeUnit().timeUnitValue());
+                }
+                sessions.add(newSession);
             }
         }
     }
@@ -141,7 +163,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
 
     @Override
     public void clear() {
-        synchronized (sessions) {
+        synchronized (this) {
             if (scheduledFuture != null) {
                 scheduledFuture.cancel(true);
                 scheduledFuture = null;
@@ -166,7 +188,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
     @Override
     public void close() {
         if (!closed) {
-            synchronized (sessions) {
+            synchronized (this) {
                 closed = true;
                 clear();
                 ATimeoutObjectPool.ACTIVE_POOLS.decrementAndGet();
@@ -182,7 +204,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
             for (int i = 0; i < sessionsArray.length; i++) {
                 final Session session = sessionsArray[i];
                 if (session.isHeartbeatTimeout()) {
-                    synchronized (sessions) {
+                    synchronized (this) {
                         if (sessions.size() == 1) {
                             clear();
                         } else {
