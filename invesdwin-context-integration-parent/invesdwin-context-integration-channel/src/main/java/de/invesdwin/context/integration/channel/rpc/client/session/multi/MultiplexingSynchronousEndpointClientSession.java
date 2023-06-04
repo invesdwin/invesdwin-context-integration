@@ -26,7 +26,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
@@ -253,7 +252,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             while (writeRequest != null) {
                 if (isRequestTimeout(writeRequest) || !writeRequest.isOuterActive()) {
                     final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
-                    Assertions.checkSame(writeRequest, removed);
+                    assert writeRequest == removed;
                     removed.releasePollingActive();
                     writeRequest = writeRequests.peek();
                 } else {
@@ -379,13 +378,13 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (writeTask != null) {
             if (writeTask.isWritingActive()) {
                 final MultiplexingSynchronousEndpointClientSessionResponse removedTask = writeRequests.remove();
-                Assertions.checkSame(writeTask, removedTask);
+                assert writeTask == removedTask;
                 writeTask.releaseWritingActive();
                 final MultiplexingSynchronousEndpointClientSessionResponse nextWriteTask = writeRequests.peek();
                 if (nextWriteTask != null) {
                     if (!nextWriteTask.isOuterActive()) {
                         final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
-                        Assertions.checkSame(nextWriteTask, removed);
+                        assert nextWriteTask == removed;
                         nextWriteTask.releasePollingActive();
                     } else {
                         //make sure this is marked as written before a response could be received
@@ -397,7 +396,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             } else {
                 if (!writeTask.isOuterActive()) {
                     final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
-                    Assertions.checkSame(writeTask, removed);
+                    assert writeTask == removed;
                     writeTask.releasePollingActive();
                 } else {
                     //make sure this is marked as written before a response could be received
