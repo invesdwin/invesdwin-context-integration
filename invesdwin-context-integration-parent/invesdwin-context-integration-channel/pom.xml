@@ -159,5 +159,10 @@
 			<artifactId>jgroups</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<dependency>
+			<groupId>com.ibm.darpc</groupId>
+			<artifactId>darpc</artifactId>
+			<scope>provided</scope>
+		</dependency>
 	</dependencies>
 </project>
