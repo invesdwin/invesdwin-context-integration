@@ -276,11 +276,6 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         private final ASpinWait throttle = new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
-                if (serverSessions.isEmpty()) {
-                    //reduce cpu cycles aggressively when no sessions are connected
-                    FTimeUnit.MILLISECONDS.sleep(1);
-                    return false;
-                }
                 //throttle while nothing to do, spin quickly while work is available
                 boolean handledOverall = false;
                 boolean handledNow;
@@ -388,12 +383,17 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
 
         private void process() throws Exception {
-            if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
-                //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
-                if (heartbeatLoopInterruptedCheck.check()) {
-                    checkServerSessionsHeartbeat();
-                    if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
-                        checkIoRunnablesHeartbeat();
+            if (serverSessions.isEmpty()) {
+                //reduce cpu cycles aggressively when no sessions are connected
+                FTimeUnit.MILLISECONDS.sleep(1);
+            } else {
+                if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+                    //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+                    if (heartbeatLoopInterruptedCheck.check()) {
+                        checkServerSessionsHeartbeat();
+                        if (ioRunnableId == ROOT_IO_RUNNABLE_ID) {
+                            checkIoRunnablesHeartbeat();
+                        }
                     }
                 }
             }
