@@ -217,9 +217,9 @@ public abstract class AChannelTest extends ATest {
             while (!clientChannel.isClosed()) {
                 FTimeUnit.MILLISECONDS.sleep(1);
             }
-            while (!serverChannel.isClosed()) {
-                FTimeUnit.MILLISECONDS.sleep(1);
-            }
+            //            while (!serverChannel.isClosed()) {
+            //                FTimeUnit.MILLISECONDS.sleep(1);
+            //            }
             openFuture.get(MAX_WAIT_DURATION.longValue(), MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
         } catch (ExecutionException | TimeoutException | IOException e) {
             throw new RuntimeException(e);
