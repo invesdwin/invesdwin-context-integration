@@ -13,22 +13,22 @@ import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
- * This uses use a given session only for one request at a time, opening more parallel connections when multiple
- * requests happen in parallel. This can be wasteful because an individual connection is not used to its fullest
- * bandwidth but can provide the lowest latency and overhead possible for single requests. Though for all other cases a
- * multiplexing client should be preferred.
+ * This uses a given session only for one request at a time, opening more parallel connections when multiple requests
+ * happen in parallel. This can be wasteful because an individual connection is not used to its fullest bandwidth but
+ * can provide the lowest latency and overhead possible for single requests. Though for all other cases a multiplexing
+ * client should be preferred.
  */
 @ThreadSafe
-public class MultiplexingSynchronousEndpointClientSessionPool
+public class SingleMultiplexingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
     private volatile boolean closed;
     private MultiplexingSynchronousEndpointClientSession singleSession;
     @GuardedBy("this")
-    private Future<?> scheduledFuture;
+    private volatile Future<?> scheduledFuture;
 
-    public MultiplexingSynchronousEndpointClientSessionPool(
+    public SingleMultiplexingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
         this.endpointSessionFactory = endpointSessionFactory;
         ATimeoutObjectPool.ACTIVE_POOLS.incrementAndGet();
@@ -44,6 +44,14 @@ public class MultiplexingSynchronousEndpointClientSessionPool
                 }
             }
         }
+    }
+
+    public boolean isActive() {
+        return scheduledFuture != null;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override
