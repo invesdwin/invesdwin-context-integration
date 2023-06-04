@@ -30,6 +30,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -275,6 +276,11 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         private final ASpinWait throttle = new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
+                if (serverSessions.isEmpty()) {
+                    //reduce cpu cycles aggressively when no sessions are connected
+                    FTimeUnit.MILLISECONDS.sleep(1);
+                    return false;
+                }
                 //throttle while nothing to do, spin quickly while work is available
                 boolean handledOverall = false;
                 boolean handledNow;
