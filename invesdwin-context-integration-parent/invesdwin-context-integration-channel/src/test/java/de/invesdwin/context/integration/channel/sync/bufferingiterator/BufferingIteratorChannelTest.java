@@ -19,10 +19,8 @@ import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.time.date.FDate;
 
-// CHECKSTYLE:OFF
 @NotThreadSafe
 public class BufferingIteratorChannelTest extends AChannelTest {
-    //CHECKSTYLE:ON
 
     private static final class MutableReferenceNode extends MutableReference<FDate>
             implements INode<MutableReferenceNode> {

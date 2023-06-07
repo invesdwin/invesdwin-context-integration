@@ -20,10 +20,8 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.time.date.FDate;
 
-// CHECKSTYLE:OFF
 @NotThreadSafe
 public class QueueChannelTest extends AChannelTest {
-    //CHECKSTYLE:ON
 
     @Test
     public void testConcurrentLinkedDequePerformance() throws InterruptedException {

@@ -48,9 +48,7 @@ public final class JPPFClientProperties {
                 props.setString(key, value);
             }
         }
-        //CHECKSTYLE:OFF
         for (final Object property : SystemProperties.SYSTEM_PROPERTIES.keySet()) {
-            //CHECKSTYLE:ON
             final String key = property.toString();
             if (key.startsWith("jppf.") && !visitedProperties.contains(key)) {
                 final String value = systemProperties.getString(key);
@@ -63,8 +61,7 @@ public final class JPPFClientProperties {
         INITIALIZED = true;
     }
 
-    private JPPFClientProperties() {
-    }
+    private JPPFClientProperties() {}
 
     private static void maybeValidatePort(final SystemProperties systemProperties, final String portKey) {
         if (systemProperties.containsKey(portKey)) {

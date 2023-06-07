@@ -27,7 +27,6 @@ import de.invesdwin.context.integration.channel.sync.queue.QueueChannelTest;
 import de.invesdwin.context.integration.channel.sync.reference.ReferenceChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSuite;
 
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
         ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
@@ -38,6 +37,5 @@ import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSui
         ChronicleChannelTestSuite.class, RpcChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {
-    //CHECKSTYLE:ON
 
 }

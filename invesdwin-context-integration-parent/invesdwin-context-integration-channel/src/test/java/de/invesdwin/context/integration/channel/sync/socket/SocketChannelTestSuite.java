@@ -41,7 +41,6 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtDtlsHands
 import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtTlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
 
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ SocketChannelTest.class, BidiSocketChannelTest.class, BlockingSocketChannelTest.class,
         BidiBlockingSocketChannelTest.class, TlsBlockingSocketChannelTest.class, TlsBidiBlockingSocketChannelTest.class,
@@ -60,6 +59,5 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
         NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
-    //CHECKSTYLE:ON
 
 }

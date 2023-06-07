@@ -294,10 +294,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
-    //CHECKSTYLE:OFF
     private boolean handleLocked(final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter)
             throws Exception {
-        //CHECKSTYLE:ON
         final boolean writing;
         if ((pollingOuter != null && pollingOuter.getRequest() != null || !writeRequests.isEmpty())
                 && requestWriterSpinWait.getWriter().writeFlushed() && requestWriterSpinWait.getWriter().writeReady()) {

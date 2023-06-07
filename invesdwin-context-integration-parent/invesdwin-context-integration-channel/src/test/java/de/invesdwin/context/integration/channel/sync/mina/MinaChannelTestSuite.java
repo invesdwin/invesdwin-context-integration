@@ -10,13 +10,11 @@ import de.invesdwin.context.integration.channel.async.mina.TlsMinaSocketHandlerT
 import de.invesdwin.context.integration.channel.sync.mina.apr.MinaNativeDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.mina.unsafe.BidiMinaNativeSocketChannelTest;
 
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ MinaSocketHandlerTest.class, MinaSocketChannelTest.class, BidiMinaSocketChannelTest.class,
         TlsMinaSocketHandlerTest.class, TlsBidiMinaSocketChannelTest.class, BidiMinaNativeSocketChannelTest.class,
         MinaNativeDatagramChannelTest.class })
 @Immutable
 public class MinaChannelTestSuite {
-    //CHECKSTYLE:ON
 
 }

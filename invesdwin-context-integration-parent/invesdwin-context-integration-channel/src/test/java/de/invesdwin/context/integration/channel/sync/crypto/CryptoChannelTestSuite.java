@@ -18,7 +18,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.TlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.crypto.verification.VerificationChannelTest;
 
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ EncryptionChannelTest.class, StreamEncryptionChannelTest.class, VerificationChannelTest.class,
         VerifiedEncryptionChannelTest.class, StreamVerifiedEncryptionChannelTest.class, DhHandshakeProviderTest.class,
@@ -26,6 +25,5 @@ import de.invesdwin.context.integration.channel.sync.crypto.verification.Verific
         JPakeHandshakeProviderTest.class, Srp6HandshakeProviderTest.class, DTLSOverDatagramTest.class })
 @Immutable
 public class CryptoChannelTestSuite {
-    //CHECKSTYLE:ON
 
 }

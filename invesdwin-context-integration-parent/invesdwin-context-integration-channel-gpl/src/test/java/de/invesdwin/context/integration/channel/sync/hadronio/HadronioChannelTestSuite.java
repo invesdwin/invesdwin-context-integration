@@ -8,12 +8,10 @@ import org.junit.platform.suite.api.Suite;
 import de.invesdwin.context.integration.channel.sync.hadronio.blocking.BidiBlockingHadronioSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.hadronio.blocking.BlockingHadronioSocketChannelTest;
 
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ BidiBlockingHadronioSocketChannelTest.class, BlockingHadronioSocketChannelTest.class,
         BidiHadronioSocketChannelTest.class, HadronioSocketChannelTest.class })
 @Immutable
 public class HadronioChannelTestSuite {
-    //CHECKSTYLE:ON
 
 }
