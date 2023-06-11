@@ -6,13 +6,17 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
+import org.apache.mina.core.service.SimpleIoProcessorPool;
 import org.apache.mina.transport.socket.apr.AprSctpAcceptor;
 import org.apache.mina.transport.socket.apr.AprSctpConnector;
+import org.apache.mina.transport.socket.apr.AprSession;
 import org.apache.mina.transport.socket.apr.AprSocketAcceptor;
 import org.apache.mina.transport.socket.apr.AprSocketConnector;
 import org.apache.mina.transport.socket.apr.FixedAprIoProcessor;
 import org.apache.mina.transport.socket.nio.NioDatagramAcceptor;
 import org.apache.mina.transport.socket.nio.NioDatagramConnector;
+import org.apache.mina.transport.socket.nio.NioProcessor;
+import org.apache.mina.transport.socket.nio.NioSession;
 import org.apache.mina.transport.socket.nio.NioSocketAcceptor;
 import org.apache.mina.transport.socket.nio.NioSocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
@@ -22,13 +26,13 @@ import org.apache.mina.transport.vmpipe.VmPipeConnector;
 public enum MinaSocketType implements IMinaSocketType {
     VmPipe {
         @Override
-        public IoAcceptor newAcceptor() {
-            return new VmPipeAcceptor();
+        public IoAcceptor newAcceptor(final Executor executor, final int processorCount) {
+            return new VmPipeAcceptor(executor);
         }
 
         @Override
-        public IoConnector newConnector() {
-            return new VmPipeConnector();
+        public IoConnector newConnector(final Executor executor, final int processorCount) {
+            return new VmPipeConnector(executor);
         }
 
         @Override
@@ -48,13 +52,15 @@ public enum MinaSocketType implements IMinaSocketType {
     },
     NioTcp {
         @Override
-        public IoAcceptor newAcceptor() {
-            return new NioSocketAcceptor();
+        public IoAcceptor newAcceptor(final Executor executor, final int processorCount) {
+            return new NioSocketAcceptor(executor,
+                    new SimpleIoProcessorPool<NioSession>(NioProcessor.class, processorCount));
         }
 
         @Override
-        public IoConnector newConnector() {
-            return new NioSocketConnector();
+        public IoConnector newConnector(final Executor executor, final int processorCount) {
+            return new NioSocketConnector(executor,
+                    new SimpleIoProcessorPool<NioSession>(NioProcessor.class, processorCount));
         }
 
         @Override
@@ -74,13 +80,13 @@ public enum MinaSocketType implements IMinaSocketType {
     },
     NioUdp {
         @Override
-        public IoAcceptor newAcceptor() {
-            return new NioDatagramAcceptor();
+        public IoAcceptor newAcceptor(final Executor executor, final int processorCount) {
+            return new NioDatagramAcceptor(executor);
         }
 
         @Override
-        public IoConnector newConnector() {
-            return new NioDatagramConnector();
+        public IoConnector newConnector(final Executor executor, final int processorCount) {
+            return new NioDatagramConnector(new SimpleIoProcessorPool<NioSession>(NioProcessor.class, processorCount));
         }
 
         @Override
@@ -105,13 +111,15 @@ public enum MinaSocketType implements IMinaSocketType {
      */
     AprTcp {
         @Override
-        public IoAcceptor newAcceptor() {
-            return new AprSocketAcceptor(new FixedAprIoProcessor(newDefaultExecutor()));
+        public IoAcceptor newAcceptor(final Executor executor, final int processorCount) {
+            return new AprSocketAcceptor(executor,
+                    new SimpleIoProcessorPool<AprSession>(FixedAprIoProcessor.class, processorCount));
         }
 
         @Override
-        public IoConnector newConnector() {
-            return new AprSocketConnector(new FixedAprIoProcessor(newDefaultExecutor()));
+        public IoConnector newConnector(final Executor executor, final int processorCount) {
+            return new AprSocketConnector(executor,
+                    new SimpleIoProcessorPool<AprSession>(FixedAprIoProcessor.class, processorCount));
         }
 
         @Override
@@ -131,13 +139,15 @@ public enum MinaSocketType implements IMinaSocketType {
     },
     AprSctp {
         @Override
-        public IoAcceptor newAcceptor() {
-            return new AprSctpAcceptor(new FixedAprIoProcessor(newDefaultExecutor()));
+        public IoAcceptor newAcceptor(final Executor executor, final int processorCount) {
+            return new AprSctpAcceptor(executor,
+                    new SimpleIoProcessorPool<AprSession>(FixedAprIoProcessor.class, processorCount));
         }
 
         @Override
-        public IoConnector newConnector() {
-            return new AprSctpConnector(new FixedAprIoProcessor(newDefaultExecutor()));
+        public IoConnector newConnector(final Executor executor, final int processorCount) {
+            return new AprSctpConnector(executor,
+                    new SimpleIoProcessorPool<AprSession>(FixedAprIoProcessor.class, processorCount));
         }
 
         @Override
@@ -156,11 +166,4 @@ public enum MinaSocketType implements IMinaSocketType {
         }
     };
 
-    private static Executor newDefaultExecutor() {
-        final Executor executor = java.util.concurrent.Executors.newCachedThreadPool();
-        // Set a default reject handler
-        ((java.util.concurrent.ThreadPoolExecutor) executor)
-                .setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
-        return executor;
-    }
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.util.NoSuchElementException;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -135,8 +136,9 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
         addChannelListener(sessionListener);
         if (server) {
+            finalizer.executor = newAcceptorExecutor();
             awaitSession(() -> {
-                final IoAcceptor acceptor = type.newAcceptor();
+                final IoAcceptor acceptor = type.newAcceptor(finalizer.executor, newAcceptorProcessorCount());
                 acceptor.setCloseOnDeactivation(false);
                 acceptor.setHandler(new IoHandlerAdapter() {
                     @Override
@@ -177,9 +179,10 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 }
             });
         } else {
+            finalizer.executor = newConnectorExecutor();
             final AtomicBoolean validatingConnect = new AtomicBoolean();
             awaitSession(() -> {
-                final IoConnector connector = type.newConnector();
+                final IoConnector connector = type.newConnector(finalizer.executor, newConnectorProcessorCount());
                 connector.setHandler(new IoHandlerAdapter() {
 
                     @Override
@@ -233,6 +236,24 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 }
             });
         }
+    }
+
+    protected int newConnectorProcessorCount() {
+        return 1;
+    }
+
+    protected int newAcceptorProcessorCount() {
+        return 1;
+    }
+
+    protected ExecutorService newConnectorExecutor() {
+        //keep default of mina
+        return null;
+    }
+
+    protected ExecutorService newAcceptorExecutor() {
+        //keep default of mina
+        return null;
     }
 
     private synchronized boolean shouldOpen(final Consumer<IoSession> channelListener) throws IOException {
@@ -398,6 +419,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
     private static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
+        private volatile ExecutorService executor;
         private volatile IoSession session;
         private volatile IoAcceptor serverAcceptor;
         private volatile IoConnector clientConnector;
@@ -415,6 +437,10 @@ public class MinaSocketSynchronousChannel implements Closeable {
         protected void clean() {
             closeIoSession();
             closeBootstrapAsync();
+            if (executor != null) {
+                executor.shutdownNow();
+                executor = null;
+            }
         }
 
         @Override
