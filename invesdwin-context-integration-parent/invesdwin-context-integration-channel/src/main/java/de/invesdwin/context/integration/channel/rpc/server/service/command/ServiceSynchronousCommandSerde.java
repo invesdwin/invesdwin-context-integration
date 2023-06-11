@@ -77,11 +77,7 @@ public class ServiceSynchronousCommandSerde<M> implements ISerde<IServiceSynchro
 
     @Override
     public int toBuffer(final IByteBuffer buffer, final IServiceSynchronousCommand<M> obj) {
-        buffer.putInt(SERVICE_INDEX, obj.getService());
-        buffer.putInt(METHOD_INDEX, obj.getMethod());
-        buffer.putInt(SEQUENCE_INDEX, obj.getSequence());
-        final int messageLength = messageSerde.toBuffer(buffer.sliceFrom(MESSAGE_INDEX), obj.getMessage());
-        return MESSAGE_INDEX + messageLength;
+        return obj.toBuffer(messageSerde, buffer);
     }
 
 }

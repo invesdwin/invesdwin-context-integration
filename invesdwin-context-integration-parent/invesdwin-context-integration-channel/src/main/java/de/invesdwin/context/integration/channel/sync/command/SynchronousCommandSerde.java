@@ -73,10 +73,7 @@ public class SynchronousCommandSerde<M> implements ISerde<ISynchronousCommand<M>
 
     @Override
     public int toBuffer(final IByteBuffer buffer, final ISynchronousCommand<M> obj) {
-        buffer.putInt(TYPE_INDEX, obj.getType());
-        buffer.putInt(SEQUENCE_INDEX, obj.getSequence());
-        final int messageLength = messageSerde.toBuffer(buffer.sliceFrom(MESSAGE_INDEX), obj.getMessage());
-        return MESSAGE_INDEX + messageLength;
+        return obj.toBuffer(messageSerde, buffer);
     }
 
 }
