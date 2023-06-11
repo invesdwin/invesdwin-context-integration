@@ -12,6 +12,7 @@ import org.apache.tomcat.jni.Poll;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
+import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -37,17 +38,17 @@ public final class MinaNativeDatagramClientOpener {
 
                 int result = Socket.optSet(handle, Socket.APR_SO_NONBLOCK, 1);
                 if (result != Status.APR_SUCCESS) {
-                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+                    throw MinaSocketSynchronousChannel.newTomcatException(result);
                 }
                 result = Socket.timeoutSet(handle, 0);
                 if (result != Status.APR_SUCCESS) {
-                    throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+                    throw MinaSocketSynchronousChannel.newTomcatException(result);
                 }
 
                 if (!connect(channel, handle)) {
                     result = Poll.add(pollset, handle, Poll.APR_POLLOUT);
                     if (result != Status.APR_SUCCESS) {
-                        throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+                        throw MinaSocketSynchronousChannel.newTomcatException(result);
                     }
                     selectRetry(channel, pollset);
                 }
@@ -55,7 +56,7 @@ public final class MinaNativeDatagramClientOpener {
                 //validate connection
                 final int count = Socket.recv(handle, Bytes.EMPTY_ARRAY, 0, 1);
                 if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count) && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
-                    throw new RuntimeException(MinaNativeDatagramSynchronousChannel.newTomcatException(count));
+                    throw new RuntimeException(MinaSocketSynchronousChannel.newTomcatException(count));
                 }
                 success = true;
                 channel.getFinalizer().setFd(handle);
@@ -118,7 +119,7 @@ public final class MinaNativeDatagramClientOpener {
             return false;
         }
 
-        throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
+        throw MinaSocketSynchronousChannel.newTomcatException(rv);
     }
 
     private static LongList selectRetry(final MinaNativeDatagramSynchronousChannel channel, final long pollset)
@@ -158,7 +159,7 @@ public final class MinaNativeDatagramClientOpener {
                 false);
         if (rv <= 0) {
             if (rv != MinaNativeDatagramServerOpener.APR_TIMEUP_ERROR) {
-                throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
+                throw MinaSocketSynchronousChannel.newTomcatException(rv);
             }
 
             rv = Poll.maintain(pollset, polledSockets, true);
@@ -167,7 +168,7 @@ public final class MinaNativeDatagramClientOpener {
                     Poll.add(pollset, polledSockets[i], Poll.APR_POLLOUT);
                 }
             } else if (rv < 0) {
-                throw MinaNativeDatagramSynchronousChannel.newTomcatException(rv);
+                throw MinaSocketSynchronousChannel.newTomcatException(rv);
             }
 
             return 0;

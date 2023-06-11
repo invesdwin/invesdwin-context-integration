@@ -10,6 +10,7 @@ import org.apache.tomcat.jni.Error;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
+import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -41,23 +42,23 @@ public final class MinaNativeDatagramServerOpener {
             throws IOException, Exception, Error {
         int result = Socket.optSet(acceptorHandle, Socket.APR_SO_NONBLOCK, 1);
         if (result != Status.APR_SUCCESS) {
-            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaSocketSynchronousChannel.newTomcatException(result);
         }
         result = Socket.timeoutSet(acceptorHandle, 0);
         if (result != Status.APR_SUCCESS) {
-            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaSocketSynchronousChannel.newTomcatException(result);
         }
 
         // Configure the server socket,
         result = Socket.optSet(acceptorHandle, Socket.APR_SO_REUSEADDR, 0);
         if (result != Status.APR_SUCCESS) {
-            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaSocketSynchronousChannel.newTomcatException(result);
         }
         result = Socket.optSet(acceptorHandle, Socket.APR_SO_RCVBUF,
                 Integers.max(Socket.optGet(acceptorHandle, Socket.APR_SO_RCVBUF), ByteBuffers.calculateExpansion(
                         channel.getSocketSize() * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
         if (result != Status.APR_SUCCESS) {
-            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaSocketSynchronousChannel.newTomcatException(result);
         }
 
         // and bind.
@@ -77,7 +78,7 @@ public final class MinaNativeDatagramServerOpener {
 
         result = Socket.bind(acceptorHandle, sa);
         if (result != Status.APR_SUCCESS) {
-            throw MinaNativeDatagramSynchronousChannel.newTomcatException(result);
+            throw MinaSocketSynchronousChannel.newTomcatException(result);
         }
     }
 
