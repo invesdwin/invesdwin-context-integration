@@ -335,7 +335,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 }
                 if (responseService != response.getMethodInfo().getServiceId()) {
                     response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
-                            + responseService + "] for request [" + response.getMethodInfo().getServiceId() + "]"));
+                            + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
+                            + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
+                            + ":" + response.getRequestSequence() + "]"));
                     if (response != pollingOuter) {
                         response.releasePollingActive();
                     }
@@ -361,7 +363,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         return true;
                     } else {
                         response.responseCompleted(new RetryLaterRuntimeException("Unexpected methodId in response ["
-                                + +responseMethod + "] for request [" + response.getMethodInfo().getMethodId() + "]"));
+                                + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
+                                + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
+                                + ":" + response.getRequestSequence() + "]"));
                         if (response != pollingOuter) {
                             response.releasePollingActive();
                         }
@@ -444,8 +448,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         writeLocked(serviceId, methodId, requestSequence, request);
         if (!requestWriterSpinWait.writeFlushed()
                 .awaitFulfill(System.nanoTime(), endpointSession.getRequestTimeout())) {
-            throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId + "]: "
-                    + endpointSession.getRequestTimeout());
+            throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId + ":"
+                    + requestSequence + "]: " + endpointSession.getRequestTimeout());
         }
     }
 
@@ -453,7 +457,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             throws TimeoutException {
         if (isRequestTimeout(request)) {
             throw new TimeoutException("Request timeout exceeded for [" + request.getMethodInfo().getServiceId() + ":"
-                    + request.getMethodInfo().getMethodId() + "]: " + endpointSession.getRequestTimeout());
+                    + request.getMethodInfo().getMethodId() + ":" + request.getRequestSequence() + "]: "
+                    + endpointSession.getRequestTimeout());
         }
     }
 

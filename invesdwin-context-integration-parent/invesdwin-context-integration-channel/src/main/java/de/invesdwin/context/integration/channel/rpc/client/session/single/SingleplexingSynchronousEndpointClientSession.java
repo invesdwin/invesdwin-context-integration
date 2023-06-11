@@ -159,7 +159,8 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     if (endpointSession.getRequestTimeout()
                             .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                         throw new TimeoutException("Request timeout exceeded for [" + methodInfo.getServiceId() + ":"
-                                + methodInfo.getMethodId() + "]: " + endpointSession.getRequestTimeout());
+                                + methodInfo.getMethodId() + ":" + requestSequence + "]: "
+                                + endpointSession.getRequestTimeout());
                     }
                 }
                 try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
@@ -172,8 +173,10 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                         continue;
                     }
                     if (responseService != methodInfo.getServiceId()) {
-                        throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService
-                                + "] for request [" + methodInfo.getServiceId() + "]");
+                        throw new RetryLaterRuntimeException(
+                                "Unexpected serviceId in response [" + responseService + ":" + responseMethod + ":"
+                                        + responseSequence + "] for request [" + methodInfo.getServiceId() + ":"
+                                        + methodInfo.getMethodId() + ":" + requestSequence + "]");
                     }
                     if (responseMethod != methodInfo.getMethodId()) {
                         if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
@@ -185,8 +188,10 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                             final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
                             throw new RemoteExecutionException(message);
                         } else {
-                            throw new RetryLaterRuntimeException("Unexpected methodId in response [" + +responseMethod
-                                    + "] for request [" + methodInfo.getMethodId() + "]");
+                            throw new RetryLaterRuntimeException(
+                                    "Unexpected methodId in response [" + responseService + ":" + responseMethod + ":"
+                                            + responseSequence + "] for request [" + methodInfo.getServiceId() + ":"
+                                            + methodInfo.getMethodId() + ":" + requestSequence + "]");
                         }
                     }
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
@@ -221,7 +226,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 if (endpointSession.getRequestTimeout()
                         .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw new TimeoutException("Request write ready timeout exceeded for [" + serviceId + ":" + methodId
-                            + "]: " + endpointSession.getRequestTimeout());
+                            + ":" + requestSequence + "]: " + endpointSession.getRequestTimeout());
                 }
             }
             requestWriterSpinWait.getWriter().write(requestHolder);
@@ -234,7 +239,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 if (endpointSession.getRequestTimeout()
                         .isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId
-                            + "]: " + endpointSession.getRequestTimeout());
+                            + ":" + requestSequence + "]: " + endpointSession.getRequestTimeout());
                 }
             }
         } finally {
