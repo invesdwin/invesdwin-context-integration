@@ -19,18 +19,18 @@ public class KQueueNettySocketChannelType implements INettySocketChannelType {
     public static final KQueueNettySocketChannelType INSTANCE = new KQueueNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerAcceptorGroup() {
-        return new KQueueEventLoopGroup(1);
+    public EventLoopGroup newServerAcceptorGroup(final int threadCount) {
+        return new KQueueEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new KQueueEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup bossGroup) {
+        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new KQueueEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override

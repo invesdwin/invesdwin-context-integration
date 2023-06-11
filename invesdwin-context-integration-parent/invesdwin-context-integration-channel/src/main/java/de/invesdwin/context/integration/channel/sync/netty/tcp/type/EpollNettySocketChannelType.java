@@ -19,18 +19,18 @@ public class EpollNettySocketChannelType implements INettySocketChannelType {
     public static final EpollNettySocketChannelType INSTANCE = new EpollNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerAcceptorGroup() {
-        return new EpollEventLoopGroup(1);
+    public EventLoopGroup newServerAcceptorGroup(final int threadCount) {
+        return new EpollEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup parentGroup) {
+        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override

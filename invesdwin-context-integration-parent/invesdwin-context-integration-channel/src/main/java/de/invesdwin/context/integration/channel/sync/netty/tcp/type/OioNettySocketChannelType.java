@@ -17,18 +17,18 @@ public class OioNettySocketChannelType implements INettySocketChannelType {
     public static final OioNettySocketChannelType INSTANCE = new OioNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerAcceptorGroup() {
-        return new OioEventLoopGroup(1);
+    public EventLoopGroup newServerAcceptorGroup(final int threadCount) {
+        return new OioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new OioEventLoopGroup(1);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup bossGroup) {
+        return new OioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new OioEventLoopGroup(1);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new OioEventLoopGroup(threadCount);
     }
 
     @Override

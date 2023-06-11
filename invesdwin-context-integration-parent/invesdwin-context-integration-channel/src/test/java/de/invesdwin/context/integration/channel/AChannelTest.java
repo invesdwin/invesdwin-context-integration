@@ -10,6 +10,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -31,6 +32,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.IRpcTestService;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcClientTask;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestService;
@@ -167,6 +169,95 @@ public abstract class AChannelTest extends ATest {
             }
         };
         serverChannel.register(IRpcTestService.class, new RpcTestService());
+        final SynchronousEndpointClient<IRpcTestService>[] clients = new SynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
+        for (int i = 0; i < clients.length; i++) {
+            clients[i] = new SynchronousEndpointClient<>(
+                    new SingleMultiplexingSynchronousEndpointClientSessionPool(
+                            new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
+                    IRpcTestService.class);
+        }
+        try {
+            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
+                    RPC_CLIENT_THREADS);
+            serverChannel.open();
+            int curClient = 0;
+            try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
+                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                    clientFutures.add(
+                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    curClient++;
+                    if (curClient >= clients.length) {
+                        curClient = 0;
+                    }
+                }
+                while (clientFutures.hasNext()) {
+                    Futures.getNoInterrupt(clientFutures.next());
+                }
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            for (int i = 0; i < clients.length; i++) {
+                Closeables.closeQuietly(clients[i]);
+            }
+            Closeables.closeQuietly(serverChannel);
+        }
+    }
+
+    protected void runRpcHandlerPerformanceTest(
+            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
+            final RpcTestServiceMode mode) throws InterruptedException {
+        if (RPC_CLIENT_LAZY) {
+            runRpcHandlerPerformanceTestLazy(serverFactory, clientEndpointFactory, mode);
+        } else {
+            runRpcHandlerPerformanceTestEager(serverFactory, clientEndpointFactory, mode);
+        }
+    }
+
+    private void runRpcHandlerPerformanceTestLazy(
+            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
+            final RpcTestServiceMode mode) throws InterruptedException {
+        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
+        final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
+                new MultipleMultiplexingSynchronousEndpointClientSessionPool(
+                        new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)) {
+                    @Override
+                    protected int newMaxSessionsCount() {
+                        return RPC_CLIENT_TRANSPORTS;
+                    }
+                }, IRpcTestService.class);
+        try {
+            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
+                    RPC_CLIENT_THREADS);
+            serverChannel.open();
+            try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
+                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
+                }
+                while (clientFutures.hasNext()) {
+                    Futures.getNoInterrupt(clientFutures.next());
+                }
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            Closeables.closeQuietly(client);
+            Closeables.closeQuietly(serverChannel);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void runRpcHandlerPerformanceTestEager(
+            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
+            final RpcTestServiceMode mode) throws InterruptedException {
+        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final SynchronousEndpointClient<IRpcTestService>[] clients = new SynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
             clients[i] = new SynchronousEndpointClient<>(

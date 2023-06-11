@@ -19,18 +19,18 @@ public class IOUringNettySocketChannelType implements INettySocketChannelType {
     public static final IOUringNettySocketChannelType INSTANCE = new IOUringNettySocketChannelType();
 
     @Override
-    public EventLoopGroup newServerAcceptorGroup() {
-        return new IOUringEventLoopGroup(1);
+    public EventLoopGroup newServerAcceptorGroup(final int threadCount) {
+        return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup bossGroup) {
-        return new IOUringEventLoopGroup(1);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup bossGroup) {
+        return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new IOUringEventLoopGroup(1);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override

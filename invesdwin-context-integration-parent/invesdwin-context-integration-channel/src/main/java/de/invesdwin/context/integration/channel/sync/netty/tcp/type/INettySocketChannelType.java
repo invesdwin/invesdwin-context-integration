@@ -21,11 +21,11 @@ public interface INettySocketChannelType {
         }
     }
 
-    EventLoopGroup newServerAcceptorGroup();
+    EventLoopGroup newServerAcceptorGroup(int threadCount);
 
-    EventLoopGroup newServerWorkerGroup(EventLoopGroup bossGroup);
+    EventLoopGroup newServerWorkerGroup(int threadCount, EventLoopGroup bossGroup);
 
-    EventLoopGroup newClientWorkerGroup();
+    EventLoopGroup newClientWorkerGroup(int threadCount);
 
     Class<? extends ServerSocketChannel> getServerChannelType();
 
