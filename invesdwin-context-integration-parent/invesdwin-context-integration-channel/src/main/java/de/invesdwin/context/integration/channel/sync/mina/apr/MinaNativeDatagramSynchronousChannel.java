@@ -15,6 +15,7 @@ import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
+import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
@@ -129,7 +130,7 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
     public static void closeHandle(final long handle) throws IOException {
         final int rv = Socket.close(handle);
         if (rv != Status.APR_SUCCESS) {
-            throw newTomcatException(rv);
+            throw MinaSocketSynchronousChannel.newTomcatException(rv);
         }
     }
 
@@ -311,10 +312,6 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
             return false;
         }
 
-    }
-
-    public static IOException newTomcatException(final int code) {
-        return new IOException(org.apache.tomcat.jni.Error.strerror(-code) + " (code: " + code + ")");
     }
 
 }
