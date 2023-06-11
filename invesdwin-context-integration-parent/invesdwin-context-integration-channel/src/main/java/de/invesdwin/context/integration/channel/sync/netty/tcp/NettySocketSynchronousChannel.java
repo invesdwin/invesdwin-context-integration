@@ -4,7 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -17,8 +18,6 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
-import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
@@ -53,7 +52,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     private volatile boolean keepBootstrapRunningAfterOpen;
     private volatile boolean multipleClientsAllowed;
 
-    private final IBufferingIterator<Consumer<SocketChannel>> channelListeners = new BufferingIterator<>();
+    private final List<Consumer<SocketChannel>> channelListeners = new ArrayList<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public NettySocketSynchronousChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
@@ -235,13 +234,9 @@ public class NettySocketSynchronousChannel implements Closeable {
     }
 
     private void triggerChannelListeners(final SocketChannel channel) {
-        try {
-            while (true) {
-                final Consumer<SocketChannel> next = channelListeners.next();
-                next.accept(channel);
-            }
-        } catch (final NoSuchElementException e) {
-            //end reached
+        for (int i = 0; i < channelListeners.size(); i++) {
+            final Consumer<SocketChannel> channelListener = channelListeners.get(i);
+            channelListener.accept(channel);
         }
     }
 

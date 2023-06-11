@@ -4,7 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketAddress;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -30,8 +31,6 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
-import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
@@ -59,7 +58,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
     private volatile boolean writerRegistered;
     private volatile boolean multipleClientsAllowed;
 
-    private final IBufferingIterator<Consumer<IoSession>> sessionListeners = new BufferingIterator<>();
+    private final List<Consumer<IoSession>> sessionListeners = new ArrayList<>();
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public MinaSocketSynchronousChannel(final IMinaSocketType type, final SocketAddress socketAddress,
@@ -286,13 +285,9 @@ public class MinaSocketSynchronousChannel implements Closeable {
     }
 
     private void triggerSessionListeners(final IoSession channel) {
-        try {
-            while (true) {
-                final Consumer<IoSession> next = sessionListeners.next();
-                next.accept(channel);
-            }
-        } catch (final NoSuchElementException e) {
-            //end reached
+        for (int i = 0; i < sessionListeners.size(); i++) {
+            final Consumer<IoSession> sessionListener = sessionListeners.get(i);
+            sessionListener.accept(channel);
         }
     }
 

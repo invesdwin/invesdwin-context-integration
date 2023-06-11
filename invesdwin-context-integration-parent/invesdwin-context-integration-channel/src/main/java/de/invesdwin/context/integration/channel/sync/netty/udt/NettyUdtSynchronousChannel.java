@@ -4,7 +4,8 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.NoSuchElementException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -18,8 +19,6 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchr
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
-import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
@@ -59,7 +58,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
     private volatile boolean keepBootstrapRunningAfterOpen;
     private volatile boolean multipleClientsAllowed;
 
-    private final IBufferingIterator<Consumer<UdtChannel>> channelListeners = new BufferingIterator<>();
+    private final List<Consumer<UdtChannel>> channelListeners = new ArrayList<>();
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
 
@@ -229,13 +228,9 @@ public class NettyUdtSynchronousChannel implements Closeable {
     }
 
     private void triggerChannelListeners(final UdtChannel udtChannel) {
-        try {
-            while (true) {
-                final Consumer<UdtChannel> next = channelListeners.next();
-                next.accept(udtChannel);
-            }
-        } catch (final NoSuchElementException e) {
-            //end reached
+        for (int i = 0; i < channelListeners.size(); i++) {
+            final Consumer<UdtChannel> channelListener = channelListeners.get(i);
+            channelListener.accept(udtChannel);
         }
     }
 
