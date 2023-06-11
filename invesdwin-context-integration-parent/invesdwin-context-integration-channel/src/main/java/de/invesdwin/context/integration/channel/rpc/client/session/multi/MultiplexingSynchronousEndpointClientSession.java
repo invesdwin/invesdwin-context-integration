@@ -452,9 +452,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private void throwIfRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request)
             throws TimeoutException {
         if (isRequestTimeout(request)) {
-            throw new TimeoutException(
-                    "Request write ready timeout exceeded for [" + request.getMethodInfo().getServiceId() + ":"
-                            + request.getMethodInfo().getMethodId() + "]: " + endpointSession.getRequestTimeout());
+            throw new TimeoutException("Request timeout exceeded for [" + request.getMethodInfo().getServiceId() + ":"
+                    + request.getMethodInfo().getMethodId() + "]: " + endpointSession.getRequestTimeout());
         }
     }
 
