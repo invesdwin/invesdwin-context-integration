@@ -279,6 +279,9 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public synchronized List<DavResource> listFiles() {
         final List<DavResource> list = list();
+        if (list == null) {
+            return null;
+        }
         final List<DavResource> files = new ArrayList<>();
         for (final DavResource file : list) {
             if (!file.isDirectory()) {
@@ -291,6 +294,9 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public synchronized List<DavResource> listDirectories() {
         final List<DavResource> list = list();
+        if (list == null) {
+            return null;
+        }
         final List<DavResource> directories = new ArrayList<>();
         for (final DavResource directory : list) {
             if (directory.isDirectory()) {

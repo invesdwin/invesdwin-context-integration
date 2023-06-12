@@ -219,8 +219,12 @@ public class JPPFProcessingThreadsCounter {
             for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
                 try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
                     channel.connect();
-                    for (final DavResource file : channel.listFiles()) {
-                        processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
+                    final List<DavResource> listFiles = channel.listFiles();
+                    if (listFiles != null && !listFiles.isEmpty()) {
+                        for (int i = 0; i < listFiles.size(); i++) {
+                            final DavResource file = listFiles.get(i);
+                            processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
+                        }
                     }
                 }
             }
