@@ -31,7 +31,6 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
@@ -163,18 +162,6 @@ public class MinaSocketSynchronousChannel implements Closeable {
                     acceptor.bind(socketAddress);
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
-                }
-                final long startNanos = System.nanoTime();
-                while (finalizer.session == null) {
-                    if (Threads.isInterrupted()
-                            || getConnectTimeout().isLessThanNanos(System.nanoTime() - startNanos)) {
-                        throw new RuntimeException("timeout exceeded");
-                    }
-                    try {
-                        getMaxConnectRetryDelay().sleepRandom();
-                    } catch (final InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
                 }
             });
         } else {
