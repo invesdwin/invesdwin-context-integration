@@ -209,6 +209,7 @@ public class AsynchronousEndpointServerHandler
             }
             //copy request for the async processing
             result.getRequestCopy().copy(requestHolder);
+            result.setContext(context);
             result.setFuture((Future<Object>) workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
             return null;
         }
