@@ -136,9 +136,9 @@ public class MinaSocketSynchronousChannel implements Closeable {
         if (server) {
             finalizer.executor = newAcceptorExecutor();
             awaitSession(() -> {
-                final IoAcceptor acceptor = type.newAcceptor(finalizer.executor, newAcceptorProcessorCount());
-                acceptor.setCloseOnDeactivation(false);
-                acceptor.setHandler(new IoHandlerAdapter() {
+                finalizer.serverAcceptor = type.newAcceptor(finalizer.executor, newAcceptorProcessorCount());
+                finalizer.serverAcceptor.setCloseOnDeactivation(false);
+                finalizer.serverAcceptor.setHandler(new IoHandlerAdapter() {
                     @Override
                     public void sessionCreated(final IoSession session) throws Exception {
                         if (multipleClientsAllowed) {
@@ -149,7 +149,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                                 finalizer.session = session;
                                 //only allow one client
                                 if (type.isUnbindAcceptor()) {
-                                    acceptor.unbind();
+                                    finalizer.serverAcceptor.unbind();
                                 }
                             } else {
                                 //only allow one client
@@ -159,7 +159,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                     }
                 });
                 try {
-                    acceptor.bind(socketAddress);
+                    finalizer.serverAcceptor.bind(socketAddress);
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -168,8 +168,8 @@ public class MinaSocketSynchronousChannel implements Closeable {
             finalizer.executor = newConnectorExecutor();
             final AtomicBoolean validatingConnect = new AtomicBoolean();
             awaitSession(() -> {
-                final IoConnector connector = type.newConnector(finalizer.executor, newConnectorProcessorCount());
-                connector.setHandler(new IoHandlerAdapter() {
+                finalizer.clientConnector = type.newConnector(finalizer.executor, newConnectorProcessorCount());
+                finalizer.clientConnector.setHandler(new IoHandlerAdapter() {
 
                     @Override
                     public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
@@ -184,7 +184,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                         finalizer.session = session;
                     }
                 });
-                final ConnectFuture future = connector.connect(socketAddress);
+                final ConnectFuture future = finalizer.clientConnector.connect(socketAddress);
                 try {
                     future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);
                 } catch (final InterruptedException e) {
@@ -209,7 +209,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                             readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
                             final Object message = readFuture.getMessage();
                             if (message != null) {
-                                final Entry filter = connector.getFilterChain().getAll().get(0);
+                                final Entry filter = finalizer.clientConnector.getFilterChain().getAll().get(0);
                                 filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
                             }
                         }
