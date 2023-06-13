@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.server.async;
 
 import java.io.IOException;
+import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -173,9 +174,10 @@ public class AsynchronousEndpointServerHandler
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder, responseHolder);
-            if (future != null) {
+            if (future != null && !future.isDone()) {
                 result.setFuture(future);
                 result.setDelayedWriteResponse(true);
+                result.setContext(context);
                 addToPollingQueue(result);
                 return null;
             } else {
@@ -210,22 +212,22 @@ public class AsynchronousEndpointServerHandler
             //copy request for the async processing
             result.getRequestCopy().copy(requestHolder);
             result.setContext(context);
-            result.setFuture((Future<Object>) workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
+            result.setFuture(workExecutor.submit(new ProcessResponseTask(methodInfo, result)));
             return null;
         }
     }
 
-    private final class ProcessResponseRunnable implements Runnable {
+    private final class ProcessResponseTask implements Callable<Object> {
         private final ServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseRunnable(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+        private ProcessResponseTask(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
             this.methodInfo = methodInfo;
             this.result = result;
         }
 
         @Override
-        public void run() {
+        public Object call() {
             final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
             if (isRequestTimeout()) {
                 response.setService(methodInfo.getService().getServiceId());
@@ -235,15 +237,18 @@ public class AsynchronousEndpointServerHandler
                         "request timeout [" + parent.getRequestTimeout() + "] exceeded, please try again later");
                 result.getContext().write(response.asBuffer());
                 ProcessResponseResultPool.INSTANCE.returnObject(result);
-                return;
+                return null;
             }
             final Future<Object> future = methodInfo.invoke(result.getContext().getSessionId(), result.getRequestCopy(),
                     response);
-            if (future != null) {
+            if (future != null && !future.isDone()) {
+                result.setDelayedWriteResponse(true);
                 addToPollingQueue(result);
+                return future;
             } else {
                 result.getContext().write(response.asBuffer());
                 ProcessResponseResultPool.INSTANCE.returnObject(result);
+                return null;
             }
         }
     }
@@ -253,7 +258,7 @@ public class AsynchronousEndpointServerHandler
         private final ASpinWait spinWait = new ASpinWait() {
             @Override
             public boolean isConditionFulfilled() throws Exception {
-                return handle();
+                return maybePollResults();
             }
         };
         private long lastChangeNanos = System.nanoTime();
@@ -292,7 +297,7 @@ public class AsynchronousEndpointServerHandler
                     && Duration.TEN_MINUTES.isLessThanNanos(System.nanoTime() - lastChangeNanos);
         }
 
-        private boolean handle() {
+        private boolean maybePollResults() {
             boolean changed = false;
             if (!POLLING_QUEUE_ADDS.isEmpty()) {
                 ProcessResponseResult addPollingResult = POLLING_QUEUE_ADDS.poll();

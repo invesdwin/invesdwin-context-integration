@@ -233,7 +233,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             if (workExecutor == null || methodInfo.isBlocking()) {
                 final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), request,
                         result.getResponse());
-                if (future != null) {
+                if (future != null && !future.isDone()) {
                     result.setFuture(future);
                     result.setDelayedWriteResponse(true);
                     pollingQueue.add(result);
@@ -273,18 +273,18 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 }
                 //copy request for the async processing
                 result.getRequestCopy().copy(request);
-                result.setFuture(workExecutor.submit(new ProcessResponseRunnable(methodInfo, result)));
+                result.setFuture(workExecutor.submit(new ProcessResponseTask(methodInfo, result)));
             }
         } finally {
             requestReader.readFinished();
         }
     }
 
-    private final class ProcessResponseRunnable implements Callable<Object> {
+    private final class ProcessResponseTask implements Callable<Object> {
         private final ServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseRunnable(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+        private ProcessResponseTask(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
             this.methodInfo = methodInfo;
             this.result = result;
         }
