@@ -173,7 +173,8 @@ public class AsynchronousEndpointServerHandler
         final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
-            final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder, responseHolder);
+            final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder,
+                    result.getResponse());
             if (future != null && !future.isDone()) {
                 result.setFuture(future);
                 result.setDelayedWriteResponse(true);
@@ -181,7 +182,7 @@ public class AsynchronousEndpointServerHandler
                 addToPollingQueue(result);
                 return null;
             } else {
-                return responseHolder;
+                return result.getResponse();
             }
         } else {
             final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
@@ -274,6 +275,8 @@ public class AsynchronousEndpointServerHandler
                         }
                     }
                 }
+            } catch (final InterruptedException e) {
+                //ignore
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }

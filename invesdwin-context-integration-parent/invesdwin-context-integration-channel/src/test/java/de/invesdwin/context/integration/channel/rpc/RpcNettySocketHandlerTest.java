@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
@@ -87,6 +88,11 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+    }
+
+    @Override
+    protected int getMaxMessageSize() {
+        return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
     }
 
 }
