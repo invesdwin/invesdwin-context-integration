@@ -9,6 +9,7 @@ import org.apache.mina.core.buffer.IoBufferAllocator;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
 import org.apache.mina.core.filterchain.IoFilterChain;
+import org.apache.mina.core.future.WriteFuture;
 import org.apache.mina.core.session.AttributeKey;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
@@ -152,15 +153,19 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final IByteBufferProvider output) throws IOException {
             if (output != null) {
-                final IoBuffer buf = alloc.allocate(socketSize, true);
-                final UnsafeByteBuffer buffer = new UnsafeByteBuffer(buf.buf());
-                final IByteBuffer messageBuffer = buffer.sliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
-                final int size = output.getBuffer(messageBuffer);
-                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-                buf.position(0);
-                buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-                session.write(buf);
+                writeOutputNotNullSafe(output);
             }
+        }
+
+        private void writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
+            final IoBuffer buf = alloc.allocate(socketSize, true);
+            final UnsafeByteBuffer buffer = new UnsafeByteBuffer(buf.buf());
+            final IByteBuffer messageBuffer = buffer.sliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
+            final int size = output.getBuffer(messageBuffer);
+            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            buf.position(0);
+            buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+            session.write(buf);
         }
 
         public static Context getOrCreate(final IoSession ch, final int socketSize, final IoBufferAllocator alloc) {
@@ -188,6 +193,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
+        private WriteFuture future;
 
         private Reader(final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
                 final int socketSize, final Runnable closeAsync) {
@@ -224,7 +230,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             try {
                 final IByteBufferProvider output = handler.open(context);
                 try {
-                    writeOutput(session, output);
+                    writeOutput(session, context, output);
                 } finally {
                     handler.outputFinished(context);
                 }
@@ -245,13 +251,13 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             try {
                 final IByteBufferProvider output = handler.idle(context);
                 try {
-                    writeOutput(session, output);
+                    writeOutput(session, context, output);
                 } finally {
                     handler.outputFinished(context);
                 }
             } catch (final IOException e) {
                 try {
-                    writeOutput(session, ClosedByteBuffer.INSTANCE);
+                    writeOutput(session, context, ClosedByteBuffer.INSTANCE);
                 } catch (final IOException e1) {
                     //ignore
                 }
@@ -315,19 +321,19 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                 return false;
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
+                final Context context = Context.getOrCreate(session, socketSize, alloc);
                 try {
                     reset();
-                    final Context context = Context.getOrCreate(session, socketSize, alloc);
                     final IByteBufferProvider output = handler.handle(context, input);
                     try {
-                        writeOutput(session, output);
+                        writeOutput(session, context, output);
                     } finally {
                         handler.outputFinished(context);
                     }
                     return repeat;
                 } catch (final IOException e) {
                     try {
-                        writeOutput(session, ClosedByteBuffer.INSTANCE);
+                        writeOutput(session, context, ClosedByteBuffer.INSTANCE);
                     } catch (final IOException e1) {
                         //ignore
                     }
@@ -344,13 +350,20 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             size = -1;
         }
 
-        private void writeOutput(final IoSession session, final IByteBufferProvider output) throws IOException {
+        private void writeOutput(final IoSession session, final Context context, final IByteBufferProvider output)
+                throws IOException {
             if (output != null) {
-                buf.position(0); //reset indexes
-                final int size = output.getBuffer(messageBuffer);
-                buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
-                buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-                session.write(buf);
+                if (future != null && !future.isDone()) {
+                    //use a fresh buffer to not overwrite previous message
+                    context.writeOutputNotNullSafe(output);
+                } else {
+                    //reuse buffer
+                    buf.position(0); //reset indexes
+                    final int size = output.getBuffer(messageBuffer);
+                    buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
+                    buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+                    future = session.write(buf);
+                }
             }
         }
     }
