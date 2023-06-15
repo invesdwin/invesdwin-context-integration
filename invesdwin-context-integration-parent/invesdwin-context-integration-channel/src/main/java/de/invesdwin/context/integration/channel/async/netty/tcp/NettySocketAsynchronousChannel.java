@@ -20,6 +20,7 @@ import de.invesdwin.util.time.duration.Duration;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelOutboundInvoker;
@@ -151,14 +152,18 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final IByteBufferProvider output) throws IOException {
             if (output != null) {
-                final ByteBuf buf = ch.alloc().buffer(socketSize);
-                final NettyDelegateByteBuffer buffer = new NettyDelegateByteBuffer(buf);
-                final IByteBuffer messageBuffer = buffer.sliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
-                final int size = output.getBuffer(messageBuffer);
-                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-                buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
-                ch.writeAndFlush(buf);
+                writeOutputNotNullSafe(output);
             }
+        }
+
+        private void writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
+            final ByteBuf buf = ch.alloc().buffer(socketSize);
+            final NettyDelegateByteBuffer buffer = new NettyDelegateByteBuffer(buf);
+            final IByteBuffer messageBuffer = buffer.sliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
+            final int size = output.getBuffer(messageBuffer);
+            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+            ch.writeAndFlush(buf);
         }
 
         public static Context getOrCreate(final Channel ch, final int socketSize) {
@@ -187,6 +192,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
         private int position = 0;
         private int size = -1;
         private boolean closed = false;
+        private ChannelFuture future;
 
         private Handler(final ByteBufAllocator alloc,
                 final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler, final int socketSize,
@@ -223,7 +229,7 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             try {
                 final IByteBufferProvider output = handler.open(context);
                 try {
-                    writeOutput(ctx, output);
+                    writeOutput(ctx, context, output);
                 } finally {
                     handler.outputFinished(context);
                 }
@@ -244,13 +250,13 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 try {
                     final IByteBufferProvider output = handler.idle(context);
                     try {
-                        writeOutput(ctx, output);
+                        writeOutput(ctx, context, output);
                     } finally {
                         handler.outputFinished(context);
                     }
                 } catch (final IOException e) {
                     try {
-                        writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                        writeOutput(ctx, context, ClosedByteBuffer.INSTANCE);
                     } catch (final IOException e1) {
                         //ignore
                     }
@@ -312,19 +318,19 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
                 return false;
             } else {
                 final IByteBuffer input = buffer.slice(0, size);
+                final Context context = Context.getOrCreate(ctx.channel(), socketSize);
                 try {
                     reset();
-                    final Context context = Context.getOrCreate(ctx.channel(), socketSize);
                     final IByteBufferProvider output = handler.handle(context, input);
                     try {
-                        writeOutput(ctx, output);
+                        writeOutput(ctx, context, output);
                     } finally {
                         handler.outputFinished(context);
                     }
                     return repeat;
                 } catch (final IOException e) {
                     try {
-                        writeOutput(ctx, ClosedByteBuffer.INSTANCE);
+                        writeOutput(ctx, context, ClosedByteBuffer.INSTANCE);
                     } catch (final IOException e1) {
                         //ignore
                     }
@@ -341,15 +347,19 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             size = -1;
         }
 
-        private void writeOutput(final ChannelOutboundInvoker ctx, final IByteBufferProvider output)
-                throws IOException {
+        private void writeOutput(final ChannelOutboundInvoker ctx, final Context context,
+                final IByteBufferProvider output) throws IOException {
             if (output != null) {
-                buf.setIndex(0, 0); //reset indexes
-                final int size = output.getBuffer(messageBuffer);
-                buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-                buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
-                buf.retain();
-                ctx.writeAndFlush(buf);
+                if (future != null && !future.isDone()) {
+                    context.writeOutputNotNullSafe(output);
+                } else {
+                    buf.setIndex(0, 0); //reset indexes
+                    final int size = output.getBuffer(messageBuffer);
+                    buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+                    buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+                    buf.retain();
+                    future = ctx.writeAndFlush(buf);
+                }
             }
         }
     }
