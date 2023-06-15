@@ -71,7 +71,7 @@ public class PipeSynchronousReader extends APipeSynchronousChannel implements IS
             final int size = buffer.getInt(bufferOffset + SIZE_INDEX);
             if (size <= 0) {
                 close();
-                throw FastEOFException.getInstance("non positive size");
+                throw FastEOFException.getInstance("non positive size: %s", size);
             }
             this.messageTargetPosition = sizeTargetPosition + size;
             if (buffer.capacity() < messageTargetPosition) {

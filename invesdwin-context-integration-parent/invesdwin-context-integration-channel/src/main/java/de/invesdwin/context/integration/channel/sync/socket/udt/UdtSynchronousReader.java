@@ -74,7 +74,7 @@ public class UdtSynchronousReader implements ISynchronousReader<IByteBufferProvi
             final int size = buffer.getInt(bufferOffset + UdtSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
-                throw FastEOFException.getInstance("non positive size");
+                throw FastEOFException.getInstance("non positive size: %s", size);
             }
             this.messageTargetPosition = sizeTargetPosition + size;
             if (buffer.capacity() < messageTargetPosition) {

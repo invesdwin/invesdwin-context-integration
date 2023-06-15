@@ -75,7 +75,7 @@ public class MinaNativeDatagramSynchronousReader implements ISynchronousReader<I
             final int size = buffer.getInt(bufferOffset + MinaNativeDatagramSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
-                throw FastEOFException.getInstance("non positive size");
+                throw FastEOFException.getInstance("non positive size: %s", size);
             }
             this.messageTargetPosition = sizeTargetPosition + size;
             if (buffer.capacity() < messageTargetPosition) {

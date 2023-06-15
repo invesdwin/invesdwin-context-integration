@@ -71,7 +71,7 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
             final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
-                throw FastEOFException.getInstance("non positive size");
+                throw FastEOFException.getInstance("non positive size: %s", size);
             }
             this.messageTargetPosition = sizeTargetPosition + size;
             buffer.ensureCapacity(messageTargetPosition);
@@ -92,7 +92,7 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
                 final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
                     close();
-                    throw FastEOFException.getInstance("non positive size");
+                    throw FastEOFException.getInstance("non positive size: %s", size);
                 }
                 ByteBuffers.position(nioBuffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX + size);
             }

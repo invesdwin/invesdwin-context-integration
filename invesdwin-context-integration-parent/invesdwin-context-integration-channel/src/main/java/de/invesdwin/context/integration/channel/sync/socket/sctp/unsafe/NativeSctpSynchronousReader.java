@@ -111,7 +111,7 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
             final int size = buffer.getInt(bufferOffset + SctpSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
-                throw FastEOFException.getInstance("non positive size");
+                throw FastEOFException.getInstance("non positive size: %s", size);
             }
             this.messageTargetPosition = sizeTargetPosition + size;
             buffer.ensureCapacity(messageTargetPosition);
