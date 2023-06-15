@@ -18,9 +18,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
-import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -100,7 +98,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
     }
 
     private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
-        private static final AttributeKey CONTEXT_KEY = new AttributeKey(NettySocketAsynchronousChannel.class,
+        private static final AttributeKey CONTEXT_KEY = new AttributeKey(MinaSocketAsynchronousChannel.class,
                 "context");
         private final IoSession session;
         private final String sessionId;
@@ -162,7 +160,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             final UnsafeByteBuffer buffer = new UnsafeByteBuffer(buf.buf());
             final IByteBuffer messageBuffer = buffer.sliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
             final int size = output.getBuffer(messageBuffer);
-            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
             buf.position(0);
             buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
             session.write(buf);
