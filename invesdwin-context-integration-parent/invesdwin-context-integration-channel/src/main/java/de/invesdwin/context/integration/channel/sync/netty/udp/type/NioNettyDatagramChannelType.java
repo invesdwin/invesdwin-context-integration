@@ -17,13 +17,13 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     public static final NioNettyDatagramChannelType INSTANCE = new NioNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
-        return new NioEventLoopGroup(1);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+        return new NioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new NioEventLoopGroup(1);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new NioEventLoopGroup(threadCount);
     }
 
     @Override

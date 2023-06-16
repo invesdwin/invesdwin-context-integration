@@ -17,13 +17,13 @@ public class IOUringNettyDatagramChannelType implements INettyDatagramChannelTyp
     public static final IOUringNettyDatagramChannelType INSTANCE = new IOUringNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
-        return new IOUringEventLoopGroup(1);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+        return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new IOUringEventLoopGroup(1);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override

@@ -135,7 +135,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         if (server) {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newServerWorkerGroup()).channel(type.getServerChannelType());
+                finalizer.bootstrap.group(type.newServerWorkerGroup(newServerWorkerGroupThreadCount()))
+                        .channel(type.getServerChannelType());
                 type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
@@ -147,7 +148,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         } else {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newClientWorkerGroup()).channel(type.getClientChannelType());
+                finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()))
+                        .channel(type.getClientChannelType());
                 type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
@@ -157,6 +159,14 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                 }
             });
         }
+    }
+
+    protected int newClientWorkerGroupThreadCount() {
+        return 1;
+    }
+
+    protected int newServerWorkerGroupThreadCount() {
+        return 1;
     }
 
     private synchronized boolean shouldOpen(final Consumer<DatagramChannel> channelListener) throws IOException {

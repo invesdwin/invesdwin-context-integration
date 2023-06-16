@@ -17,9 +17,9 @@ public interface INettyDatagramChannelType {
         }
     }
 
-    EventLoopGroup newServerWorkerGroup();
+    EventLoopGroup newServerWorkerGroup(int threadCount);
 
-    EventLoopGroup newClientWorkerGroup();
+    EventLoopGroup newClientWorkerGroup(int threadCount);
 
     Class<? extends DatagramChannel> getClientChannelType();
 

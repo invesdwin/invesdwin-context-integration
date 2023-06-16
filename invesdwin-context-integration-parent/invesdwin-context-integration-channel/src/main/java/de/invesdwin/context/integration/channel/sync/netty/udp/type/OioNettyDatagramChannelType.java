@@ -18,13 +18,13 @@ public class OioNettyDatagramChannelType implements INettyDatagramChannelType {
     public static final OioNettyDatagramChannelType INSTANCE = new OioNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
-        return new OioEventLoopGroup(1);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+        return new OioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new OioEventLoopGroup(1);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new OioEventLoopGroup(threadCount);
     }
 
     @Override

@@ -18,13 +18,13 @@ public class KQueueNettyDatagramChannelType implements INettyDatagramChannelType
     public static final KQueueNettyDatagramChannelType INSTANCE = new KQueueNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
-        return new KQueueEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new KQueueEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override

@@ -18,13 +18,13 @@ public class EpollNettyDatagramChannelType implements INettyDatagramChannelType 
     public static final EpollNettyDatagramChannelType INSTANCE = new EpollNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup() {
-        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new EpollEventLoopGroup(1, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
     }
 
     @Override
