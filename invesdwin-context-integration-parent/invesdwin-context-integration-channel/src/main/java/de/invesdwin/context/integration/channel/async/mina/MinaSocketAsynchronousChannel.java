@@ -291,6 +291,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             }
             final int oldLimit = msgBuf.limit();
             msgBuf.limit(msgBuf.position() + read);
+            inputBuf.position(position);
             inputBuf.put(msgBuf);
             inputBuf.clear();
             msgBuf.limit(oldLimit);
