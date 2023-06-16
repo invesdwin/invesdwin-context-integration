@@ -100,6 +100,10 @@ public class ProcessResponseResult implements INode<ProcessResponseResult> {
     }
 
     public boolean isDone() {
+        if (future == null) {
+            //task could complete while the outer thread did not yet set the task future itself, so wait for that
+            return false;
+        }
         if (future.isDone()) {
             if (future.isCancelled()) {
                 delayedWriteResponse = false;
