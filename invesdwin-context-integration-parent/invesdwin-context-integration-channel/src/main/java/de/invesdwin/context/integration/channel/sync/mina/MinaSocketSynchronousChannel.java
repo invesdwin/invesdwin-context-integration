@@ -35,6 +35,7 @@ import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Bytes;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -451,7 +452,11 @@ public class MinaSocketSynchronousChannel implements Closeable {
             final IoSession sessionCopy = session;
             if (sessionCopy != null) {
                 session = null;
-                sessionCopy.closeOnFlush();
+                try {
+                    sessionCopy.closeOnFlush().await(FTimeUnit.MILLISECONDS_IN_SECOND);
+                } catch (final InterruptedException e) {
+                    //ignore
+                }
             }
         }
 
