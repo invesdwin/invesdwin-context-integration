@@ -3,8 +3,8 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.type;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.kqueue.KQueueDatagramChannel;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
@@ -18,13 +18,15 @@ public class KQueueNettyDatagramChannelType implements INettyDatagramChannelType
     public static final KQueueNettyDatagramChannelType INSTANCE = new KQueueNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
-        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
+        return new KQueueEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
-        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
+        return new KQueueEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override

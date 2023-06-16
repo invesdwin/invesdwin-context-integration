@@ -4,6 +4,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.epoll.EpollEventLoopGroup;
 import io.netty.channel.epoll.EpollServerSocketChannel;
 import io.netty.channel.epoll.EpollSocketChannel;
@@ -24,13 +25,15 @@ public class EpollNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup parentGroup) {
-        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final SelectStrategyFactory selectStrategyFactory,
+            final EventLoopGroup parentGroup) {
+        return new EpollEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
-        return new EpollEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
+        return new EpollEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override

@@ -7,6 +7,7 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.Blockin
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.nio.NioDatagramChannel;
@@ -17,12 +18,14 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     public static final NioNettyDatagramChannelType INSTANCE = new NioNettyDatagramChannelType();
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount) {
+    public EventLoopGroup newServerWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
         return new NioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
         return new NioEventLoopGroup(threadCount);
     }
 

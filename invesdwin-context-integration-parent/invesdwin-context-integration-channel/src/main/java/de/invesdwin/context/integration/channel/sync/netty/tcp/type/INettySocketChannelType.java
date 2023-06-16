@@ -1,15 +1,13 @@
 package de.invesdwin.context.integration.channel.sync.netty.tcp.type;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
-import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.util.lang.OperatingSystem;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
 public interface INettySocketChannelType {
-
-    SelectStrategyFactories DEFAULT_SELECT_STRATEGY = SelectStrategyFactories.BUSY_WAIT;
 
     static INettySocketChannelType getDefault() {
         if (OperatingSystem.isMac()) {
@@ -23,9 +21,10 @@ public interface INettySocketChannelType {
 
     EventLoopGroup newServerAcceptorGroup(int threadCount);
 
-    EventLoopGroup newServerWorkerGroup(int threadCount, EventLoopGroup bossGroup);
+    EventLoopGroup newServerWorkerGroup(int threadCount, SelectStrategyFactory selectStrategyFactory,
+            EventLoopGroup bossGroup);
 
-    EventLoopGroup newClientWorkerGroup(int threadCount);
+    EventLoopGroup newClientWorkerGroup(int threadCount, SelectStrategyFactory selectStrategyFactory);
 
     Class<? extends ServerSocketChannel> getServerChannelType();
 

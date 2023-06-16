@@ -4,6 +4,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.kqueue.KQueueEventLoopGroup;
 import io.netty.channel.kqueue.KQueueServerSocketChannel;
 import io.netty.channel.kqueue.KQueueSocketChannel;
@@ -24,13 +25,15 @@ public class KQueueNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup bossGroup) {
-        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final SelectStrategyFactory selectStrategyFactory,
+            final EventLoopGroup bossGroup) {
+        return new KQueueEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
-        return new KQueueEventLoopGroup(threadCount, INettySocketChannelType.DEFAULT_SELECT_STRATEGY);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
+        return new KQueueEventLoopGroup(threadCount, selectStrategyFactory);
     }
 
     @Override

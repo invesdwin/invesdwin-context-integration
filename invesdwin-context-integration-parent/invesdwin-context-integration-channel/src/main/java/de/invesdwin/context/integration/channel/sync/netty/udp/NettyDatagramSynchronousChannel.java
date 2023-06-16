@@ -13,6 +13,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
+import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.log.Log;
@@ -24,6 +25,7 @@ import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.DatagramChannel;
 
 /**
@@ -135,8 +137,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         if (server) {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newServerWorkerGroup(newServerWorkerGroupThreadCount()))
-                        .channel(type.getServerChannelType());
+                finalizer.bootstrap.group(type.newServerWorkerGroup(newServerWorkerGroupThreadCount(),
+                        newServerWorkerGroupSelectStrategyFactory())).channel(type.getServerChannelType());
                 type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
@@ -148,8 +150,8 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         } else {
             awaitDatagramChannel(() -> {
                 finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()))
-                        .channel(type.getClientChannelType());
+                finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
+                        newClientWorkerGroupSelectStrategyFactory())).channel(type.getClientChannelType());
                 type.channelOptions(finalizer.bootstrap::option, socketSize, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
@@ -158,6 +160,18 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                     throw new RuntimeException(e);
                 }
             });
+        }
+    }
+
+    protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
+        return newServerWorkerGroupSelectStrategyFactory();
+    }
+
+    protected SelectStrategyFactory newServerWorkerGroupSelectStrategyFactory() {
+        if (multipleClientsAllowed) {
+            return SelectStrategyFactories.DEFAULT;
+        } else {
+            return SelectStrategyFactories.BUSY_WAIT;
         }
     }
 

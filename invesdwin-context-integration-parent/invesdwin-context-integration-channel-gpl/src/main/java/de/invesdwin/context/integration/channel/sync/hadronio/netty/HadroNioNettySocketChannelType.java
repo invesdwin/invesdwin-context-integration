@@ -6,6 +6,7 @@ import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsume
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 
@@ -20,12 +21,14 @@ public class HadroNioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup parentGroup) {
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final SelectStrategyFactory selectStrategyFactory,
+            final EventLoopGroup parentGroup) {
         return new HadroNioEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
         return new HadroNioEventLoopGroup(threadCount);
     }
 

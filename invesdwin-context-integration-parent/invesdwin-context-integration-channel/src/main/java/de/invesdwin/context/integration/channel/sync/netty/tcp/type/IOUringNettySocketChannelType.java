@@ -4,6 +4,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.ServerSocketChannel;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.incubator.channel.uring.IOUringEventLoopGroup;
@@ -24,12 +25,14 @@ public class IOUringNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup bossGroup) {
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final SelectStrategyFactory selectStrategyFactory,
+            final EventLoopGroup bossGroup) {
         return new IOUringEventLoopGroup(threadCount);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+    public EventLoopGroup newClientWorkerGroup(final int threadCount,
+            final SelectStrategyFactory selectStrategyFactory) {
         return new IOUringEventLoopGroup(threadCount);
     }
 

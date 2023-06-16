@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.udp.type;
 import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsumer;
 import de.invesdwin.util.lang.OperatingSystem;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.DatagramChannel;
 
 public interface INettyDatagramChannelType {
@@ -17,9 +18,9 @@ public interface INettyDatagramChannelType {
         }
     }
 
-    EventLoopGroup newServerWorkerGroup(int threadCount);
+    EventLoopGroup newServerWorkerGroup(int threadCount, SelectStrategyFactory selectStrategyFactory);
 
-    EventLoopGroup newClientWorkerGroup(int threadCount);
+    EventLoopGroup newClientWorkerGroup(int threadCount, SelectStrategyFactory selectStrategyFactory);
 
     Class<? extends DatagramChannel> getClientChannelType();
 

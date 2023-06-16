@@ -21,18 +21,18 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
     public static final NioNettyUdtChannelType INSTANCE = new NioNettyUdtChannelType();
 
     @Override
-    public EventLoopGroup newServerAcceptorGroup() {
-        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
+    public EventLoopGroup newServerAcceptorGroup(final int threadCount) {
+        return new NioEventLoopGroup(threadCount, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
     @Override
-    public EventLoopGroup newServerWorkerGroup(final EventLoopGroup parentGroup) {
-        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
+    public EventLoopGroup newServerWorkerGroup(final int threadCount, final EventLoopGroup parentGroup) {
+        return new NioEventLoopGroup(threadCount, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
     @Override
-    public EventLoopGroup newClientWorkerGroup() {
-        return new NioEventLoopGroup(1, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
+    public EventLoopGroup newClientWorkerGroup(final int threadCount) {
+        return new NioEventLoopGroup(threadCount, (Executor) null, NioUdtProvider.MESSAGE_PROVIDER);
     }
 
     @Override

@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
+import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -29,6 +30,7 @@ import io.netty.bootstrap.ServerBootstrapConfig;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
+import io.netty.channel.SelectStrategyFactory;
 import io.netty.channel.socket.SocketChannel;
 
 @ThreadSafe
@@ -141,7 +143,7 @@ public class NettySocketSynchronousChannel implements Closeable {
             awaitSocketChannel(() -> {
                 final EventLoopGroup parentGroup = type.newServerAcceptorGroup(newServerAcceptorGroupThreadCount());
                 final EventLoopGroup childGroup = type.newServerWorkerGroup(newServerWorkerGroupThreadCount(),
-                        parentGroup);
+                        newServerWorkerGroupSelectStrategyFactory(), parentGroup);
                 finalizer.serverBootstrap = new ServerBootstrap();
                 finalizer.serverBootstrap.group(parentGroup, childGroup);
                 finalizer.serverBootstrap.channel(type.getServerChannelType());
@@ -173,7 +175,8 @@ public class NettySocketSynchronousChannel implements Closeable {
         } else {
             awaitSocketChannel(() -> {
                 finalizer.clientBootstrap = new Bootstrap();
-                finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
+                finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
+                        newClientWorkerGroupSelectStrategyFactory()));
                 finalizer.clientBootstrap.channel(type.getClientChannelType());
                 type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
                 finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
@@ -192,6 +195,18 @@ public class NettySocketSynchronousChannel implements Closeable {
                 });
                 return finalizer.clientBootstrap.connect(socketAddress);
             });
+        }
+    }
+
+    protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
+        return newServerWorkerGroupSelectStrategyFactory();
+    }
+
+    protected SelectStrategyFactory newServerWorkerGroupSelectStrategyFactory() {
+        if (multipleClientsAllowed) {
+            return SelectStrategyFactories.DEFAULT;
+        } else {
+            return SelectStrategyFactories.BUSY_WAIT;
         }
     }
 

@@ -146,8 +146,9 @@ public class NettyUdtSynchronousChannel implements Closeable {
         addChannelListener(channelListener);
         if (server) {
             awaitUdtChannel(() -> {
-                final EventLoopGroup parentGroup = type.newServerAcceptorGroup();
-                final EventLoopGroup childGroup = type.newServerWorkerGroup(parentGroup);
+                final EventLoopGroup parentGroup = type.newServerAcceptorGroup(newServerAcceptorGroupThreadCount());
+                final EventLoopGroup childGroup = type.newServerWorkerGroup(newServerWorkerGroupThreadCount(),
+                        parentGroup);
                 finalizer.serverBootstrap = new ServerBootstrap();
                 finalizer.serverBootstrap.group(parentGroup, childGroup);
                 finalizer.serverBootstrap.channelFactory(type.getServerChannelFactory());
@@ -179,7 +180,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
         } else {
             awaitUdtChannel(() -> {
                 finalizer.clientBootstrap = new Bootstrap();
-                finalizer.clientBootstrap.group(type.newClientWorkerGroup());
+                finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
                 finalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
                 type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
                 finalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
@@ -199,6 +200,18 @@ public class NettyUdtSynchronousChannel implements Closeable {
                 return finalizer.clientBootstrap.connect(socketAddress);
             });
         }
+    }
+
+    protected int newClientWorkerGroupThreadCount() {
+        return 1;
+    }
+
+    protected int newServerWorkerGroupThreadCount() {
+        return 1;
+    }
+
+    protected int newServerAcceptorGroupThreadCount() {
+        return 1;
     }
 
     private synchronized boolean shouldOpen(final Consumer<UdtChannel> channelListener) throws IOException {

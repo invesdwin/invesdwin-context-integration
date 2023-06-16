@@ -8,11 +8,11 @@ import io.netty.channel.udt.UdtServerChannel;
 
 public interface INettyUdtChannelType {
 
-    EventLoopGroup newServerAcceptorGroup();
+    EventLoopGroup newServerAcceptorGroup(int threadCount);
 
-    EventLoopGroup newServerWorkerGroup(EventLoopGroup parentGroup);
+    EventLoopGroup newServerWorkerGroup(int threadCount, EventLoopGroup parentGroup);
 
-    EventLoopGroup newClientWorkerGroup();
+    EventLoopGroup newClientWorkerGroup(int threadCount);
 
     ChannelFactory<? extends UdtChannel> getClientChannelFactory();
 
