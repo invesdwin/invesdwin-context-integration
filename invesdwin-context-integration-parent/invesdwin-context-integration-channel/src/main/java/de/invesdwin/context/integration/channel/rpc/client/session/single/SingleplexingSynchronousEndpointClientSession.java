@@ -172,12 +172,6 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                         //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
                         continue;
                     }
-                    if (responseService != methodInfo.getServiceId()) {
-                        throw new RetryLaterRuntimeException(
-                                "Unexpected serviceId in response [" + responseService + ":" + responseMethod + ":"
-                                        + responseSequence + "] for request [" + methodInfo.getServiceId() + ":"
-                                        + methodInfo.getMethodId() + ":" + requestSequence + "]");
-                    }
                     if (responseMethod != methodInfo.getMethodId()) {
                         if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
                             final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
@@ -193,6 +187,12 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                                             + responseSequence + "] for request [" + methodInfo.getServiceId() + ":"
                                             + methodInfo.getMethodId() + ":" + requestSequence + "]");
                         }
+                    }
+                    if (responseService != methodInfo.getServiceId()) {
+                        throw new RetryLaterRuntimeException(
+                                "Unexpected serviceId in response [" + responseService + ":" + responseMethod + ":"
+                                        + responseSequence + "] for request [" + methodInfo.getServiceId() + ":"
+                                        + methodInfo.getMethodId() + ":" + requestSequence + "]");
                     }
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
                     response.setMessage(responseMessage);

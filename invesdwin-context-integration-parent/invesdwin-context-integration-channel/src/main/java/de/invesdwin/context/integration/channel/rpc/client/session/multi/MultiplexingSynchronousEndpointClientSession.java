@@ -333,16 +333,6 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         return true;
                     }
                 }
-                if (responseService != response.getMethodInfo().getServiceId()) {
-                    response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
-                            + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
-                            + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
-                            + ":" + response.getRequestSequence() + "]"));
-                    if (response != pollingOuter) {
-                        response.releasePollingActive();
-                    }
-                    return true;
-                }
                 if (responseMethod != response.getMethodInfo().getMethodId()) {
                     if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
                         final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
@@ -371,6 +361,16 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         }
                         return true;
                     }
+                }
+                if (responseService != response.getMethodInfo().getServiceId()) {
+                    response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
+                            + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
+                            + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
+                            + ":" + response.getRequestSequence() + "]"));
+                    if (response != pollingOuter) {
+                        response.releasePollingActive();
+                    }
+                    return true;
                 }
                 final IByteBufferProvider responseMessage = responseHolder.getMessage();
                 response.responseCompleted(responseMessage);
