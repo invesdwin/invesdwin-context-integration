@@ -15,6 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.socket.DatagramPacket;
 
@@ -28,6 +29,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private SlicedFromDelegateByteBuffer messageBuffer;
     private DatagramPacket datagramPacket;
     private Runnable writer;
+    private ChannelFuture future;
 
     public NettyDatagramSynchronousWriter(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
@@ -50,7 +52,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = () -> {
-                channel.getDatagramChannel().writeAndFlush(datagramPacket);
+                future = channel.getDatagramChannel().writeAndFlush(datagramPacket);
             };
         } else {
             channel.getDatagramChannel().deregister();
@@ -103,7 +105,15 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public boolean writeReady() throws IOException {
-        return true;
+        if (future == null) {
+            return true;
+        }
+        if (future.isDone()) {
+            future = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

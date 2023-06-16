@@ -14,6 +14,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 
 @NotThreadSafe
@@ -24,6 +25,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private Consumer<IByteBufferProvider> writer;
+    private ChannelFuture future;
 
     public NettySocketSynchronousWriter(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
@@ -44,7 +46,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
                 });
             }
             writer = (message) -> {
-                channel.getSocketChannel().writeAndFlush(buf);
+                future = channel.getSocketChannel().writeAndFlush(buf);
             };
         } else {
             channel.open(null);
@@ -92,7 +94,15 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public boolean writeReady() throws IOException {
-        return true;
+        if (future == null) {
+            return true;
+        }
+        if (future.isDone()) {
+            future = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

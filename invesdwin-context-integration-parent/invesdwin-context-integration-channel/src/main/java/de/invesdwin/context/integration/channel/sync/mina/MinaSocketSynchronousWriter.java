@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
+import org.apache.mina.core.future.WriteFuture;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -20,6 +21,7 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
     private IoBuffer buf;
     private UnsafeByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
+    private WriteFuture future;
 
     public MinaSocketSynchronousWriter(final MinaSocketSynchronousChannel channel) {
         this.channel = channel;
@@ -56,7 +58,15 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
 
     @Override
     public boolean writeReady() throws IOException {
-        return true;
+        if (future == null) {
+            return true;
+        }
+        if (future.isDone()) {
+            future = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -74,7 +84,7 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
         buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-        channel.getIoSession().write(buf);
+        future = channel.getIoSession().write(buf);
     }
 
 }

@@ -15,6 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.udt.UdtMessage;
 
 @NotThreadSafe
@@ -27,6 +28,7 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private SlicedFromDelegateByteBuffer messageBuffer;
     private UdtMessage udtMessage;
     private Runnable writer;
+    private ChannelFuture future;
 
     public NettyUdtSynchronousWriter(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
@@ -47,7 +49,7 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = () -> {
-                channel.getUdtChannel().writeAndFlush(udtMessage);
+                future = channel.getUdtChannel().writeAndFlush(udtMessage);
             };
         } else {
             channel.getUdtChannel().deregister();
@@ -100,7 +102,15 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public boolean writeReady() throws IOException {
-        return true;
+        if (future == null) {
+            return true;
+        }
+        if (future.isDone()) {
+            future = null;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override

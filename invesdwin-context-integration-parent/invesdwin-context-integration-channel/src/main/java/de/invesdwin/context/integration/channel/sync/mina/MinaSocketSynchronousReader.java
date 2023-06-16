@@ -128,6 +128,7 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
             }
             final int oldLimit = msgBuf.limit();
             msgBuf.limit(msgBuf.position() + read);
+            buf.position(position);
             buf.put(msgBuf);
             buf.clear();
             msgBuf.limit(oldLimit);
