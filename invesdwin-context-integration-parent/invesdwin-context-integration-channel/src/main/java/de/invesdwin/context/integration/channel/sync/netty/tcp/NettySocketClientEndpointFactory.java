@@ -35,7 +35,7 @@ public class NettySocketClientEndpointFactory
         return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
     }
 
-    protected NettySocketSynchronousChannel newNettySocketSynchronousChannel(final INettySocketChannelType type2,
+    protected NettySocketSynchronousChannel newNettySocketSynchronousChannel(final INettySocketChannelType type,
             final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
         return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
