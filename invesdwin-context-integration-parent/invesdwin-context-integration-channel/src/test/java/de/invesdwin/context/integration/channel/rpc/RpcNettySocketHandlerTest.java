@@ -11,19 +11,14 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -57,11 +52,12 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
 
     protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
             throws InterruptedException {
+        final INettySocketChannelType type = INettySocketChannelType.getDefault();
         final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
             @Override
             public IAsynchronousChannel apply(final AsynchronousEndpointServerHandlerFactory t) {
-                final NettySocketSynchronousChannel channel = new NettySocketSynchronousChannel(
-                        INettySocketChannelType.getDefault(), address, true, getMaxMessageSize()) {
+                final NettySocketSynchronousChannel channel = new NettySocketSynchronousChannel(type, address, true,
+                        getMaxMessageSize()) {
                     @Override
                     protected int newServerWorkerGroupThreadCount() {
                         return RPC_CLIENT_TRANSPORTS;
@@ -70,18 +66,10 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
                 return new NettySocketAsynchronousChannel(channel, t, true);
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
-            @Override
-            public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-                final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false,
-                        getMaxMessageSize());
-                final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSocketSynchronousReader(
-                        clientChannel);
-                final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeSocketSynchronousWriter(
-                        clientChannel);
-                return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
-            }
-        };
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySocketClientEndpointFactory(
+        //                type, address, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
+                address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
     }
 

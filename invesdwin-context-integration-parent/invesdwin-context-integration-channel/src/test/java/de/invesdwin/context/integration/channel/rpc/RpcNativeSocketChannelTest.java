@@ -9,7 +9,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSession;
@@ -20,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannelServer;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -68,18 +68,8 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
-            @Override
-            public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-                final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false,
-                        getMaxMessageSize());
-                final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSocketSynchronousReader(
-                        clientChannel);
-                final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeSocketSynchronousWriter(
-                        clientChannel);
-                return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
-            }
-        };
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
+                address, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 

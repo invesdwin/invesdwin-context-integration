@@ -46,8 +46,8 @@ public class NettySocketSynchronousChannel implements Closeable {
     protected final int socketSize;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
+    protected final NettySocketSynchronousChannelFinalizer finalizer;
     private volatile boolean socketChannelOpening;
-    private final NettySocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -173,29 +173,33 @@ public class NettySocketSynchronousChannel implements Closeable {
                 return finalizer.serverBootstrap.bind(socketAddress);
             });
         } else {
-            awaitSocketChannel(() -> {
-                finalizer.clientBootstrap = new Bootstrap();
-                finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
-                        newClientWorkerGroupSelectStrategyFactory()));
-                finalizer.clientBootstrap.channel(type.getClientChannelType());
-                type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
-                finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
-                    @Override
-                    public void initChannel(final SocketChannel ch) throws Exception {
-                        if (finalizer.socketChannel == null) {
-                            type.initChannel(ch, false);
-                            onSocketChannel(ch);
-                            finalizer.socketChannel = ch;
-                        } else {
-                            //only allow one client
-                            ch.close();
-                        }
-                    }
-
-                });
-                return finalizer.clientBootstrap.connect(socketAddress);
-            });
+            connect();
         }
+    }
+
+    protected void connect() throws IOException {
+        awaitSocketChannel(() -> {
+            finalizer.clientBootstrap = new Bootstrap();
+            finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
+                    newClientWorkerGroupSelectStrategyFactory()));
+            finalizer.clientBootstrap.channel(type.getClientChannelType());
+            type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
+            finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
+                @Override
+                public void initChannel(final SocketChannel ch) throws Exception {
+                    if (finalizer.socketChannel == null) {
+                        type.initChannel(ch, false);
+                        onSocketChannel(ch);
+                        finalizer.socketChannel = ch;
+                    } else {
+                        //only allow one client
+                        ch.close();
+                    }
+                }
+
+            });
+            return finalizer.clientBootstrap.connect(socketAddress);
+        });
     }
 
     protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
@@ -255,7 +259,7 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
+    protected void awaitSocketChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         socketChannelOpening = true;
         try {
             //init bootstrap
@@ -390,10 +394,10 @@ public class NettySocketSynchronousChannel implements Closeable {
         }
     }
 
-    private static final class NettySocketSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class NettySocketSynchronousChannelFinalizer extends AFinalizer {
 
+        protected volatile SocketChannel socketChannel;
         private final Exception initStackTrace;
-        private volatile SocketChannel socketChannel;
         private volatile ServerBootstrap serverBootstrap;
         private volatile Bootstrap clientBootstrap;
 

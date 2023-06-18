@@ -63,7 +63,7 @@ public class NioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void initChannel(final SocketChannel channel, final boolean server) throws Exception {
+    public void initChannel(final SocketChannel channel, final boolean server) {
         //noop
     }
 }

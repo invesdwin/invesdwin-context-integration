@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -11,19 +10,13 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.mina.MinaSocketAsynchronousChannel;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -70,24 +63,9 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
                 return new MinaSocketAsynchronousChannel(channel, t, true);
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
-            @Override
-            public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-                final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false,
-                        getMaxMessageSize());
-                final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSocketSynchronousReader(
-                        clientChannel);
-                final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeSocketSynchronousWriter(
-                        clientChannel);
-                return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
-            }
-        };
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
+                address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
