@@ -96,7 +96,6 @@ public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBuffer
         private Reader(final int socketSize) {
             //netty uses direct buffers per default
             this.buf = Unpooled.directBuffer(socketSize);
-            this.buf.retain();
             this.buffer = new NettyDelegateByteBuffer(buf);
         }
 

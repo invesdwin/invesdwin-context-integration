@@ -10,7 +10,6 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.NioNettySocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -23,7 +22,7 @@ public class BidiNettySocketChannelTest extends AChannelTest {
     public void testBidiNettySocketChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runBidiNettySocketChannelPerformanceTest(NioNettySocketChannelType.INSTANCE, address);
+        runBidiNettySocketChannelPerformanceTest(INettySocketChannelType.getDefault(), address);
     }
 
     private void runBidiNettySocketChannelPerformanceTest(final INettySocketChannelType type,

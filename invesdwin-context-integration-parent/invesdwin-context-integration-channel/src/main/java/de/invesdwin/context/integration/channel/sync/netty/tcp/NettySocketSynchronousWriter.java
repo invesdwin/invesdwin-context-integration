@@ -58,7 +58,6 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
                 channel.getSocketChannel().unsafe().flush();
             };
         }
-        this.buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
     }

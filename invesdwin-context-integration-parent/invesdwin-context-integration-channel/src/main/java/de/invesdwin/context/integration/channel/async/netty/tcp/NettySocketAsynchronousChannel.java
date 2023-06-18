@@ -203,10 +203,8 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             this.socketSize = socketSize;
             //netty uses direct buffers per default
             this.inputBuf = alloc.buffer(socketSize);
-            this.inputBuf.retain();
             this.inputBuffer = new NettyDelegateByteBuffer(inputBuf);
             this.outputBuf = alloc.buffer(socketSize);
-            this.outputBuf.retain();
             this.outputBuffer = new NettyDelegateByteBuffer(outputBuf);
             this.outputMessageBuffer = outputBuffer.newSliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
             this.closeAsync = closeAsync;
@@ -216,8 +214,10 @@ public class NettySocketAsynchronousChannel implements IAsynchronousChannel {
             if (!closed) {
                 closed = true;
                 this.inputBuf.release();
+                this.outputBuf.release();
                 ctx.close();
                 closeAsync.run();
+                future = null;
             }
         }
 

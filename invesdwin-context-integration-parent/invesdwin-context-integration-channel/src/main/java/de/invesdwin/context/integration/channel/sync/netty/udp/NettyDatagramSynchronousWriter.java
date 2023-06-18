@@ -65,11 +65,9 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }
         //netty uses direct buffer per default
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
-        buf.retain();
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramSynchronousChannel.MESSAGE_INDEX);
         this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
-        this.datagramPacket.retain();
     }
 
     protected boolean isSafeWriter(final NettyDatagramSynchronousChannel channel) {
@@ -131,8 +129,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
         buf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
-        buf.retain(); //keep retain count up
-        datagramPacket.retain();
+        datagramPacket.retain(); //keep retain count up
         writer.run();
     }
 

@@ -213,8 +213,10 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             if (!closed) {
                 closed = true;
                 this.inputBuf.free();
+                this.outputBuf.free();
                 session.closeNow();
                 closeAsync.run();
+                future = null;
             }
         }
 
