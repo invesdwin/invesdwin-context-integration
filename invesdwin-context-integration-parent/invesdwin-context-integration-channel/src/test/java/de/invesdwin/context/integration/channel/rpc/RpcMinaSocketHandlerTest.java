@@ -14,9 +14,9 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.context.integration.channel.sync.mina.MinaSharedSocketClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -65,19 +65,19 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
             }
         };
         //mina shared clientConnector
-        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSharedSocketClientEndpointFactory(
-        //                type, address, getMaxMessageSize()) {
-        //            @Override
-        //            protected int newConnectorProcessorCount() {
-        //                return RPC_CLIENT_TRANSPORTS;
-        //            }
-        //        };
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSharedSocketClientEndpointFactory(
+                type, address, getMaxMessageSize()) {
+            @Override
+            protected int newConnectorProcessorCount() {
+                return RPC_CLIENT_TRANSPORTS;
+            }
+        };
         //mina no shared clientConnector
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSocketClientEndpointFactory(
         //                type, address, getMaxMessageSize());
         //fastest
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
-                address, getMaxMessageSize());
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
+        //                address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
     }
 
