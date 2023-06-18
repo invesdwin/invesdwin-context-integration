@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -302,7 +301,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
             finalizer.bootstrap = null;
             final BootstrapConfig config = bootstrapCopy.config();
             final EventLoopGroup group = config.group();
-            awaitShutdown(shutdownGracefully(group));
+            NettySocketSynchronousChannel.awaitShutdown(NettySocketSynchronousChannel.shutdownGracefully(group));
         }
     }
 
@@ -317,14 +316,6 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     public void closeBootstrapAsync() {
         finalizer.closeBootstrapAsync();
-    }
-
-    private static Future<?> shutdownGracefully(final EventLoopGroup group) {
-        return NettySocketSynchronousChannel.shutdownGracefully(group);
-    }
-
-    private static void awaitShutdown(final Future<?> future) {
-        NettySocketSynchronousChannel.awaitShutdown(future);
     }
 
     private static final class NettyDatagramSynchronousChannelFinalizer extends AFinalizer {
@@ -384,7 +375,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                 bootstrap = null;
                 final BootstrapConfig config = bootstrapCopy.config();
                 final EventLoopGroup group = config.group();
-                shutdownGracefully(group);
+                NettySocketSynchronousChannel.shutdownGracefully(group);
             }
         }
 

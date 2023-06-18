@@ -178,28 +178,32 @@ public class NettyUdtSynchronousChannel implements Closeable {
                 return finalizer.serverBootstrap.bind(socketAddress);
             });
         } else {
-            awaitUdtChannel(() -> {
-                finalizer.clientBootstrap = new Bootstrap();
-                finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
-                finalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
-                type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
-                finalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
-                    @Override
-                    public void initChannel(final UdtChannel ch) throws Exception {
-                        if (finalizer.udtChannel == null) {
-                            type.initChannel(ch, false);
-                            onUdtChannel(ch);
-                            finalizer.udtChannel = ch;
-                        } else {
-                            //only allow one client
-                            ch.close();
-                        }
-                    }
-
-                });
-                return finalizer.clientBootstrap.connect(socketAddress);
-            });
+            connect();
         }
+    }
+
+    protected void connect() throws IOException {
+        awaitUdtChannel(() -> {
+            finalizer.clientBootstrap = new Bootstrap();
+            finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
+            finalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
+            type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
+            finalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
+                @Override
+                public void initChannel(final UdtChannel ch) throws Exception {
+                    if (finalizer.udtChannel == null) {
+                        type.initChannel(ch, false);
+                        onUdtChannel(ch);
+                        finalizer.udtChannel = ch;
+                    } else {
+                        //only allow one client
+                        ch.close();
+                    }
+                }
+
+            });
+            return finalizer.clientBootstrap.connect(socketAddress);
+        });
     }
 
     protected int newClientWorkerGroupThreadCount() {
@@ -247,7 +251,7 @@ public class NettyUdtSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitUdtChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
+    protected void awaitUdtChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         udtChannelOpening = true;
         try {
             //init bootstrap
@@ -335,18 +339,18 @@ public class NettyUdtSynchronousChannel implements Closeable {
             finalizer.serverBootstrap = null;
             final ServerBootstrapConfig config = serverBootstrapCopy.config();
             final EventLoopGroup childGroup = config.childGroup();
-            final Future<?> childGroupShutdown = shutdownGracefully(childGroup);
+            final Future<?> childGroupShutdown = NettySocketSynchronousChannel.shutdownGracefully(childGroup);
             final EventLoopGroup group = config.group();
-            final Future<?> groupShutdown = shutdownGracefully(group);
-            awaitShutdown(childGroupShutdown);
-            awaitShutdown(groupShutdown);
+            final Future<?> groupShutdown = NettySocketSynchronousChannel.shutdownGracefully(group);
+            NettySocketSynchronousChannel.awaitShutdown(childGroupShutdown);
+            NettySocketSynchronousChannel.awaitShutdown(groupShutdown);
         }
         final Bootstrap clientBootstrapCopy = finalizer.clientBootstrap;
         if (clientBootstrapCopy != null) {
             finalizer.clientBootstrap = null;
             final BootstrapConfig config = clientBootstrapCopy.config();
             final EventLoopGroup group = config.group();
-            awaitShutdown(shutdownGracefully(group));
+            NettySocketSynchronousChannel.awaitShutdown(NettySocketSynchronousChannel.shutdownGracefully(group));
         }
     }
 
@@ -363,18 +367,10 @@ public class NettyUdtSynchronousChannel implements Closeable {
         finalizer.closeBootstrapAsync();
     }
 
-    private static Future<?> shutdownGracefully(final EventLoopGroup group) {
-        return NettySocketSynchronousChannel.shutdownGracefully(group);
-    }
+    protected static final class NettyUdtSynchronousChannelFinalizer extends AFinalizer {
 
-    private static void awaitShutdown(final Future<?> future) {
-        NettySocketSynchronousChannel.awaitShutdown(future);
-    }
-
-    private static final class NettyUdtSynchronousChannelFinalizer extends AFinalizer {
-
+        protected volatile UdtChannel udtChannel;
         private final Exception initStackTrace;
-        private volatile UdtChannel udtChannel;
         private volatile ServerBootstrap serverBootstrap;
         private volatile Bootstrap clientBootstrap;
 
@@ -428,15 +424,15 @@ public class NettyUdtSynchronousChannel implements Closeable {
                 final ServerBootstrapConfig config = serverBootstrap.config();
                 serverBootstrap = null;
                 final EventLoopGroup childGroup = config.childGroup();
-                shutdownGracefully(childGroup);
+                NettySocketSynchronousChannel.shutdownGracefully(childGroup);
                 final EventLoopGroup group = config.group();
-                shutdownGracefully(group);
+                NettySocketSynchronousChannel.shutdownGracefully(group);
             }
             if (clientBootstrap != null) {
                 final BootstrapConfig config = clientBootstrap.config();
                 clientBootstrap = null;
                 final EventLoopGroup group = config.group();
-                shutdownGracefully(group);
+                NettySocketSynchronousChannel.shutdownGracefully(group);
             }
         }
 

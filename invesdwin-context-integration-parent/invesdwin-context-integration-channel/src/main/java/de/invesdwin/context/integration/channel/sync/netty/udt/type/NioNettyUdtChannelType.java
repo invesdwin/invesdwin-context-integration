@@ -53,7 +53,7 @@ public class NioNettyUdtChannelType implements INettyUdtChannelType {
     }
 
     @Override
-    public void initChannel(final UdtChannel channel, final boolean server) throws Exception {
+    public void initChannel(final UdtChannel channel, final boolean server) {
         //noop
     }
 }

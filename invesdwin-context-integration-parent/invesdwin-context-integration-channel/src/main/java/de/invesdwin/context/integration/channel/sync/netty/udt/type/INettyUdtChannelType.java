@@ -20,6 +20,6 @@ public interface INettyUdtChannelType {
 
     void channelOptions(IChannelOptionConsumer consumer, int socketSize, boolean server);
 
-    void initChannel(UdtChannel channel, boolean server) throws Exception;
+    void initChannel(UdtChannel channel, boolean server);
 
 }
