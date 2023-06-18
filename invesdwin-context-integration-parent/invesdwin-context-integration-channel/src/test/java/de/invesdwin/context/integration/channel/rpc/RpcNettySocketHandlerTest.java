@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -15,10 +14,9 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySharedSocketClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -66,21 +64,21 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
                 return new NettySocketAsynchronousChannel(channel, t, true);
             }
         };
+        //netty shared bootstrap
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedSocketClientEndpointFactory(
+                type, address, getMaxMessageSize()) {
+            @Override
+            protected int newClientWorkerGroupThreadCount() {
+                return RPC_CLIENT_TRANSPORTS;
+            }
+        };
+        //netty no shared bootstrap
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySocketClientEndpointFactory(
-        //                type, address, getMaxMessageSize()) {
-        //            @Override
-        //            protected int newClientWorkerGroupThreadCount() {
-        //                return RPC_CLIENT_TRANSPORTS;
-        //            }
-        //        };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
-                address, getMaxMessageSize());
+        //                type, address, getMaxMessageSize());
+        //fastest
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
+        //                address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
