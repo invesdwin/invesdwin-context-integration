@@ -51,8 +51,8 @@ public class MinaSocketSynchronousChannel implements Closeable {
     protected final int socketSize;
     protected final SocketAddress socketAddress;
     protected final boolean server;
+    protected final MinaSocketSynchronousChannelFinalizer finalizer;
     private volatile boolean sessionOpening;
-    private final MinaSocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
     private volatile boolean writerRegistered;
@@ -166,62 +166,73 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 }
             });
         } else {
-            finalizer.executor = newConnectorExecutor();
-            final AtomicBoolean validatingConnect = new AtomicBoolean();
-            awaitSession(() -> {
-                finalizer.clientConnector = type.newConnector(finalizer.executor, newConnectorProcessorCount());
-                finalizer.clientConnector.setHandler(new IoHandlerAdapter() {
+            connect(validateNative);
+        }
+    }
 
-                    @Override
-                    public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
-                        if (!validatingConnect.get()) {
-                            super.exceptionCaught(session, cause);
-                        }
+    protected void connect(final boolean validateNative) throws IOException {
+        finalizer.executor = newConnectorExecutor();
+        final AtomicBoolean validatingConnect = new AtomicBoolean();
+        awaitSession(() -> {
+            finalizer.clientConnector = type.newConnector(finalizer.executor, newConnectorProcessorCount());
+            finalizer.clientConnector.setHandler(new IoHandlerAdapter() {
+                @Override
+                public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
+                    if (!validatingConnect.get()) {
+                        super.exceptionCaught(session, cause);
                     }
+                }
 
-                    @Override
-                    public void sessionOpened(final IoSession session) throws Exception {
+                @Override
+                public void sessionOpened(final IoSession session) throws Exception {
+                    if (finalizer.session == null) {
                         onSession(session);
                         finalizer.session = session;
-                    }
-                });
-                final ConnectFuture future = finalizer.clientConnector.connect(socketAddress);
-                try {
-                    future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);
-                } catch (final InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                Assertions.checkSame(finalizer.session, future.getSession());
-                if (type.isValidateConnect()) {
-                    validatingConnect.set(true);
-                    finalizer.session.getConfig().setUseReadOperation(true);
-                    try {
-                        if (validateNative) {
-                            final AprSession session = (AprSession) finalizer.session;
-                            final long fd = AprSessionAccessor.getDescriptor(session);
-                            //validate connection
-                            final int count = Socket.recv(fd, Bytes.EMPTY_ARRAY, 0, 1);
-                            if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count)
-                                    && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
-                                throw new RuntimeException(newTomcatException(count));
-                            }
-                        } else {
-                            final ReadFuture readFuture = finalizer.session.read();
-                            readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
-                            final Object message = readFuture.getMessage();
-                            if (message != null) {
-                                final Entry filter = finalizer.clientConnector.getFilterChain().getAll().get(0);
-                                filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
-                            }
-                        }
-                    } catch (final Exception e) {
-                        throw new RuntimeException(e);
-                    } finally {
-                        finalizer.session.getConfig().setUseReadOperation(false);
-                        validatingConnect.set(false);
+                    } else {
+                        //only allow one client
+                        session.closeNow();
                     }
                 }
             });
+            final ConnectFuture future = finalizer.clientConnector.connect(socketAddress);
+            try {
+                future.await(getConnectTimeout().nanosValue(), TimeUnit.NANOSECONDS);
+            } catch (final InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            Assertions.checkSame(finalizer.session, future.getSession());
+            if (type.isValidateConnect()) {
+                validatingConnect.set(true);
+                finalizer.session.getConfig().setUseReadOperation(true);
+                try {
+                    validateConnect(validateNative);
+                } catch (final Exception e) {
+                    throw new RuntimeException(e);
+                } finally {
+                    finalizer.session.getConfig().setUseReadOperation(false);
+                    validatingConnect.set(false);
+                }
+            }
+        });
+    }
+
+    protected void validateConnect(final boolean validateNative) throws InterruptedException, Exception {
+        if (validateNative) {
+            final AprSession session = (AprSession) finalizer.session;
+            final long fd = AprSessionAccessor.getDescriptor(session);
+            //validate connection
+            final int count = Socket.recv(fd, Bytes.EMPTY_ARRAY, 0, 1);
+            if (count < 0 && !Status.APR_STATUS_IS_EAGAIN(-count) && !Status.APR_STATUS_IS_EOF(-count)) { // EOF
+                throw new RuntimeException(newTomcatException(count));
+            }
+        } else {
+            final ReadFuture readFuture = finalizer.session.read();
+            readFuture.await(getMaxConnectRetryDelay().nanosValue(), TimeUnit.NANOSECONDS);
+            final Object message = readFuture.getMessage();
+            if (message != null) {
+                final Entry filter = finalizer.clientConnector.getFilterChain().getAll().get(0);
+                filter.getFilter().messageReceived(filter.getNextFilter(), finalizer.session, message);
+            }
         }
     }
 
@@ -279,7 +290,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitSession(final Runnable sessionFactory) throws IOException {
+    protected void awaitSession(final Runnable sessionFactory) throws IOException {
         sessionOpening = true;
         try {
             //init bootstrap
@@ -399,11 +410,11 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    private static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
 
+        protected volatile IoSession session;
         private final Exception initStackTrace;
         private volatile ExecutorService executor;
-        private volatile IoSession session;
         private volatile IoAcceptor serverAcceptor;
         private volatile IoConnector clientConnector;
 

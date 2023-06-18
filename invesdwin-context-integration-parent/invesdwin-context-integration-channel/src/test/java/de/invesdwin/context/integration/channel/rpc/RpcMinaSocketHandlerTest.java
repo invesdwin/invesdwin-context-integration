@@ -50,11 +50,12 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
 
     protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
             throws InterruptedException {
+        final MinaSocketType type = MinaSocketType.NioTcp;
         final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
             @Override
             public IAsynchronousChannel apply(final AsynchronousEndpointServerHandlerFactory t) {
-                final MinaSocketSynchronousChannel channel = new MinaSocketSynchronousChannel(MinaSocketType.NioTcp,
-                        address, true, getMaxMessageSize()) {
+                final MinaSocketSynchronousChannel channel = new MinaSocketSynchronousChannel(type, address, true,
+                        getMaxMessageSize()) {
                     @Override
                     protected int newAcceptorProcessorCount() {
                         return RPC_CLIENT_TRANSPORTS;
@@ -63,6 +64,8 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
                 return new MinaSocketAsynchronousChannel(channel, t, true);
             }
         };
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSocketClientEndpointFactory(
+        //                type, address, getMaxMessageSize());
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
                 address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);

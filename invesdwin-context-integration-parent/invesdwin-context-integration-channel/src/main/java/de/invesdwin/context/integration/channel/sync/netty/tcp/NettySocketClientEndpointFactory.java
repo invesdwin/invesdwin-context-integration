@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.netty.tcp;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -139,7 +140,7 @@ public class NettySocketClientEndpointFactory
         }
 
         @Override
-        public void open(final java.util.function.Consumer<SocketChannel> channelListener) throws IOException {
+        public void open(final Consumer<SocketChannel> channelListener) throws IOException {
             super.open(channelListener);
             synchronized (this) {
                 if (!opened) {
@@ -190,6 +191,7 @@ public class NettySocketClientEndpointFactory
         @Override
         protected void onSocketChannel(final SocketChannel socketChannel) {
             NettySocketClientEndpointFactory.this.onSocketChannel(socketChannel);
+            super.onSocketChannel(socketChannel);
         }
 
     }
