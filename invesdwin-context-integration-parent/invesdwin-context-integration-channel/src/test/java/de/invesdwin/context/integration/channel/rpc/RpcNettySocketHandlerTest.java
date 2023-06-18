@@ -67,7 +67,12 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
             }
         };
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySocketClientEndpointFactory(
-        //                type, address, getMaxMessageSize());
+        //                type, address, getMaxMessageSize()) {
+        //            @Override
+        //            protected int newClientWorkerGroupThreadCount() {
+        //                return RPC_CLIENT_TRANSPORTS;
+        //            }
+        //        };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
                 address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);

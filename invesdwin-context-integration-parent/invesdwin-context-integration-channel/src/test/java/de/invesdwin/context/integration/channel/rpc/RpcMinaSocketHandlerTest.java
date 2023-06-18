@@ -65,7 +65,12 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
             }
         };
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSocketClientEndpointFactory(
-        //                type, address, getMaxMessageSize());
+        //                type, address, getMaxMessageSize()) {
+        //            @Override
+        //            protected int newConnectorProcessorCount() {
+        //                return RPC_CLIENT_TRANSPORTS;
+        //            }
+        //        };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
                 address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);

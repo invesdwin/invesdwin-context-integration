@@ -94,8 +94,8 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         private int remaining = NettySocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
-        private volatile ManyToOneConcurrentLinkedQueue<ByteBuf> polledValues = new ManyToOneConcurrentLinkedQueue<>();
-        private IByteBuffer polledValue;
+        private final ManyToOneConcurrentLinkedQueue<ByteBuf> polledValues = new ManyToOneConcurrentLinkedQueue<>();
+        private volatile IByteBuffer polledValue;
         private final NettyDelegateByteBuffer polledValueBuffer;
         private boolean closed = false;
 
@@ -114,7 +114,11 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
                 buf.release();
             }
             polledValue = ClosedByteBuffer.INSTANCE;
-            polledValueBuffer.setDelegate(null);
+            final ByteBuf delegate = polledValueBuffer.getDelegate();
+            if (delegate != null) {
+                delegate.release();
+                polledValueBuffer.setDelegate(null);
+            }
             ByteBuf polledValueBuf = polledValues.poll();
             while (polledValueBuf != null) {
                 polledValueBuf.release();

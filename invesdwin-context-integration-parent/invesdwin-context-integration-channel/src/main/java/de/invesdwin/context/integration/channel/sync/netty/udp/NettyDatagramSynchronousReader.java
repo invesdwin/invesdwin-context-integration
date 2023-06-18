@@ -6,6 +6,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
@@ -14,7 +16,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -66,7 +67,17 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     @Override
     public boolean hasNext() throws IOException {
-        return reader.polledValue != null;
+        if (reader.polledValue != null) {
+            return true;
+        }
+        final ByteBuf polledValueBuf = reader.polledValues.poll();
+        if (polledValueBuf != null) {
+            reader.polledValueBuffer.setDelegate(polledValueBuf);
+            reader.polledValue = reader.polledValueBuffer.slice(0, polledValueBuf.writerIndex());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -82,32 +93,51 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     @Override
     public void readFinished() {
-        //noop
+        final ByteBuf delegate = reader.polledValueBuffer.getDelegate();
+        if (delegate != null) {
+            delegate.release();
+            reader.polledValueBuffer.setDelegate(null);
+        }
     }
 
     private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
-        private final ByteBuf buf;
+        private final int socketSize;
         private final NettyDelegateByteBuffer buffer;
+        private ByteBuf buf;
         private int targetPosition = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
         private int remaining = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
+        private final ManyToOneConcurrentLinkedQueue<ByteBuf> polledValues = new ManyToOneConcurrentLinkedQueue<>();
         private volatile IByteBuffer polledValue;
+        private final NettyDelegateByteBuffer polledValueBuffer;
         private boolean closed = false;
 
         private Reader(final int socketSize) {
-            //netty uses direct buffers per default
-            this.buf = Unpooled.directBuffer(socketSize);
-            this.buffer = new NettyDelegateByteBuffer(buf);
+            this.socketSize = socketSize;
+            this.polledValueBuffer = new NettyDelegateByteBuffer();
+            this.buffer = new NettyDelegateByteBuffer();
         }
 
         @Override
         public void close() {
             if (!closed) {
                 closed = true;
+            }
+            if (buf != null) {
                 buf.release();
             }
             polledValue = ClosedByteBuffer.INSTANCE;
+            final ByteBuf delegate = polledValueBuffer.getDelegate();
+            if (delegate != null) {
+                delegate.release();
+                polledValueBuffer.setDelegate(null);
+            }
+            ByteBuf polledValueBuf = polledValues.poll();
+            while (polledValueBuf != null) {
+                polledValueBuf.release();
+                polledValueBuf = polledValues.poll();
+            }
         }
 
         @Override
@@ -138,6 +168,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
                 read = readable;
                 repeat = false;
             }
+            if (buf == null) {
+                buf = ctx.alloc().buffer(socketSize);
+                buffer.setDelegate(buf);
+            }
             msgBuf.readBytes(buf, position, read);
             remaining -= read;
             position += read;
@@ -167,7 +201,11 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
                 polledValue = ClosedByteBuffer.INSTANCE;
                 return false;
             } else {
-                polledValue = buffer.slice(0, size);
+                buf.readerIndex(0);
+                buf.writerIndex(size);
+                polledValues.add(buf);
+                buf = null;
+                buffer.setDelegate(null);
             }
             targetPosition = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
             remaining = NettyDatagramSynchronousChannel.MESSAGE_INDEX;

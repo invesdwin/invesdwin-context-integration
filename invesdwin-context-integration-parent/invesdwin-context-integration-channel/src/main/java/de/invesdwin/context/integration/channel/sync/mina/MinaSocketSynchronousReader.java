@@ -5,6 +5,7 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.filterchain.IoFilterAdapter;
@@ -52,7 +53,18 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
 
     @Override
     public boolean hasNext() throws IOException {
-        return reader.polledValue != null;
+        if (reader.polledValue != null) {
+            return true;
+        }
+        final IoBuffer polledValueBuf = reader.polledValues.poll();
+        if (polledValueBuf != null) {
+            reader.polledValueBuffer.wrap(polledValueBuf.buf());
+            reader.polledValueBuf = polledValueBuf;
+            reader.polledValue = reader.polledValueBuffer.slice(0, polledValueBuf.limit());
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -68,32 +80,52 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
 
     @Override
     public void readFinished() {
-        //noop
+        if (reader.polledValueBuf != null) {
+            reader.polledValueBuf.free();
+            reader.polledValueBuf = null;
+            reader.polledValueBuffer.wrap(ClosedByteBuffer.CLOSED_ARRAY);
+        }
     }
 
     private final class Reader extends IoFilterAdapter implements Closeable {
-        private final IoBuffer buf;
+        private final int socketSize;
         private final UnsafeByteBuffer buffer;
+        private IoBuffer buf;
         private int targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
         private int remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX;
         private int position = 0;
         private int size = -1;
+        private final ManyToOneConcurrentLinkedQueue<IoBuffer> polledValues = new ManyToOneConcurrentLinkedQueue<>();
         private volatile IByteBuffer polledValue;
+        private final UnsafeByteBuffer polledValueBuffer;
+        private IoBuffer polledValueBuf;
         private boolean closed = false;
 
         private Reader(final int socketSize) {
-            //netty uses direct buffers per default
-            this.buf = new SimpleBufferAllocator().allocate(socketSize, true);
-            this.buffer = new UnsafeByteBuffer(buf.buf());
+            this.socketSize = socketSize;
+            this.polledValueBuffer = new UnsafeByteBuffer();
+            this.buffer = new UnsafeByteBuffer();
         }
 
         @Override
         public void close() {
             if (!closed) {
                 closed = true;
+            }
+            if (buf != null) {
                 this.buf.free();
             }
             polledValue = ClosedByteBuffer.INSTANCE;
+            if (polledValueBuf != null) {
+                polledValueBuf.free();
+                polledValueBuf = null;
+                polledValueBuffer.wrap(ClosedByteBuffer.CLOSED_ARRAY);
+            }
+            IoBuffer polledValueBuf = polledValues.poll();
+            while (polledValueBuf != null) {
+                polledValueBuf.free();
+                polledValueBuf = polledValues.poll();
+            }
         }
 
         @Override
@@ -125,6 +157,10 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
             } else {
                 read = readable;
                 repeat = false;
+            }
+            if (buf == null) {
+                buf = new SimpleBufferAllocator().allocate(socketSize, true);
+                buffer.wrap(buf.buf());
             }
             final int oldLimit = msgBuf.limit();
             msgBuf.limit(msgBuf.position() + read);
@@ -160,7 +196,11 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
                 polledValue = ClosedByteBuffer.INSTANCE;
                 return false;
             } else {
-                polledValue = buffer.slice(0, size);
+                buf.position(0);
+                buf.limit(size);
+                polledValues.add(buf);
+                buf = null;
+                buffer.wrap(ClosedByteBuffer.CLOSED_ARRAY);
             }
             targetPosition = MinaSocketSynchronousChannel.MESSAGE_INDEX;
             remaining = MinaSocketSynchronousChannel.MESSAGE_INDEX;
