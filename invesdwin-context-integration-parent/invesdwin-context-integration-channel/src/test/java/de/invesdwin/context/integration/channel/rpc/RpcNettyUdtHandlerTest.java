@@ -31,7 +31,6 @@ public class RpcNettyUdtHandlerTest extends AChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
-        System.out.println("TODO: bidi not supported");
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
