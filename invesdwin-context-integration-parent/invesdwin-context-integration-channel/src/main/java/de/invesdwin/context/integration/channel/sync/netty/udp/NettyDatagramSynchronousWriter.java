@@ -91,7 +91,6 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             buf = null;
             buffer = null;
             messageBuffer = null;
-            datagramPacket.release();
             datagramPacket = null;
             writer = null;
         }

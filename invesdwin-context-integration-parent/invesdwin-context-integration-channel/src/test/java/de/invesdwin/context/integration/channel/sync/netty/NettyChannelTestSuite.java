@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsNettySocketCha
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.unsafe.NettyNativeDatagramChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.udt.BidiNettyUdtSynchronousChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannelTest;
 
 @Suite
@@ -23,7 +24,7 @@ import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchrono
         TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class,
         NettyDatagramSynchronousChannelTest.class, NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class,
         NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class, NettyDatagramHandlerTest.class,
-        NettyUdtHandlerTest.class, NettyUdtSynchronousChannelTest.class })
+        NettyUdtHandlerTest.class, NettyUdtSynchronousChannelTest.class, BidiNettyUdtSynchronousChannelTest.class })
 @Immutable
 public class NettyChannelTestSuite {
 

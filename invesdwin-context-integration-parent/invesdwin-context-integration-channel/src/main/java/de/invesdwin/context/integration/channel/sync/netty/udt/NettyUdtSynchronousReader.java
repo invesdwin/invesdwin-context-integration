@@ -24,20 +24,16 @@ import io.netty.channel.udt.UdtMessage;
 @NotThreadSafe
 public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final boolean SERVER = true;
     private NettyUdtSynchronousChannel channel;
     private Reader reader;
 
     public NettyUdtSynchronousReader(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
-        this(new NettyUdtSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
+            final boolean server, final int estimatedMaxMessageSize) {
+        this(new NettyUdtSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize));
     }
 
     public NettyUdtSynchronousReader(final NettyUdtSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("udt reader has to be the server");
-        }
         this.channel.setReaderRegistered();
         this.channel.setKeepBootstrapRunningAfterOpen();
     }

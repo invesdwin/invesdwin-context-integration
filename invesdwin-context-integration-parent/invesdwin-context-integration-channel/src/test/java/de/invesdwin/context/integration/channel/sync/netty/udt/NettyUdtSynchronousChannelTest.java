@@ -4,7 +4,6 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -17,7 +16,6 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
-@Disabled("somehow transports 1 message too short")
 @NotThreadSafe
 public class NettyUdtSynchronousChannelTest extends AChannelTest {
 
@@ -33,16 +31,16 @@ public class NettyUdtSynchronousChannelTest extends AChannelTest {
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyUdtSynchronousWriter(type,
-                responseAddress, getMaxMessageSize());
+                responseAddress, false, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyUdtSynchronousReader(type,
-                requestAddress, getMaxMessageSize());
+                requestAddress, true, getMaxMessageSize());
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
                 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(type,
-                requestAddress, getMaxMessageSize());
+                requestAddress, false, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(type,
-                responseAddress, getMaxMessageSize());
+                responseAddress, true, getMaxMessageSize());
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
