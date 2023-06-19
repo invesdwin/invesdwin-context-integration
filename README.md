@@ -134,6 +134,7 @@ Network    NettyUdt (loopback)                    Records:     51.83/s     => ~9
 Network    JNetRobust (loopback)                  Records:    480.42/s     => ~99.54% slower
 Network    BarchartUdt (loopback)                 Records:    808.25/s     => ~99.24% slower
 Network    AsyncNettyUdt (loopback)               Records:    859.93/s     => ~99.19% slower
+Network    BidiNettyUdt (loopback)                Records:      5.27/ms    => ~95% slower
 Network    NngTcp (loopback)                      Records:     13.33/ms    => ~87% slower
 Network    BidiMinaSctpApr (loopback)             Records:     22.54/ms    => ~79% slower
 Thread     NngInproc                              Records:     28.93/ms    => ~73% slower
