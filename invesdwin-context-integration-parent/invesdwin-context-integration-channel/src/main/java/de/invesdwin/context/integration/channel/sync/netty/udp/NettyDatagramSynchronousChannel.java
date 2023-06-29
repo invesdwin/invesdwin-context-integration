@@ -56,6 +56,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
+    private InetSocketAddress otherSocketAddress;
 
     public NettyDatagramSynchronousChannel(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
@@ -126,6 +127,17 @@ public class NettyDatagramSynchronousChannel implements Closeable {
 
     public InetSocketAddress getSocketAddress() {
         return socketAddress;
+    }
+
+    public void setOtherSocketAddress(final InetSocketAddress otherSocketAddress) {
+        if (this.otherSocketAddress != null) {
+            throw new IllegalStateException("otherSocketAddress already set");
+        }
+        this.otherSocketAddress = otherSocketAddress;
+    }
+
+    public InetSocketAddress getOtherSocketAddress() {
+        return otherSocketAddress;
     }
 
     public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener)
@@ -288,6 +300,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
         internalClose();
         finalizer.close();
+        otherSocketAddress = null;
     }
 
     public boolean isClosed() {

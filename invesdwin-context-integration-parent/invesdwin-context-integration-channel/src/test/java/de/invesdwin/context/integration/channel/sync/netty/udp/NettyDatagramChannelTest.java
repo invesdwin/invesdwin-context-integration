@@ -17,7 +17,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class NettyDatagramSynchronousChannelTest extends AChannelTest {
+public class NettyDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testNettyDatagramChannelPerformance() throws InterruptedException {
@@ -30,20 +30,25 @@ public class NettyDatagramSynchronousChannelTest extends AChannelTest {
     private void runNettyDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyDatagramSynchronousWriter(type,
-                responseAddress, getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyDatagramSynchronousReader(type,
-                requestAddress, getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyDatagramSynchronousWriter(
+                newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyDatagramSynchronousReader(
+                newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
                 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyDatagramSynchronousWriter(type,
-                requestAddress, getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyDatagramSynchronousReader(type,
-                responseAddress, getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyDatagramSynchronousWriter(
+                newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyDatagramSynchronousReader(
+                newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize()));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

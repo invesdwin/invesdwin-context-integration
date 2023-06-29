@@ -2,14 +2,12 @@ package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -24,27 +22,18 @@ import io.netty.channel.socket.DatagramPacket;
 @NotThreadSafe
 public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final boolean SERVER = true;
     private NettyDatagramSynchronousChannel channel;
     private Reader reader;
 
-    public NettyDatagramSynchronousReader(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
-        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public NettyDatagramSynchronousReader(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram reader has to be the server");
-        }
         this.channel.setReaderRegistered();
         this.channel.setKeepBootstrapRunningAfterOpen();
     }
 
     @Override
     public void open() throws IOException {
-        this.reader = new Reader(channel.getSocketSize());
+        this.reader = new Reader(channel);
         channel.open(bootstrap -> {
             bootstrap.handler(reader);
         }, channel -> {
@@ -101,7 +90,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
     }
 
     private static final class Reader extends ChannelInboundHandlerAdapter implements Closeable {
-        private final int socketSize;
+        private final NettyDatagramSynchronousChannel channel;
         private final NettyDelegateByteBuffer buffer;
         private ByteBuf buf;
         private int targetPosition = NettyDatagramSynchronousChannel.MESSAGE_INDEX;
@@ -112,9 +101,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         private volatile IByteBuffer polledValue;
         private final NettyDelegateByteBuffer polledValueBuffer;
         private boolean closed = false;
+        private boolean initialized = false;
 
-        private Reader(final int socketSize) {
-            this.socketSize = socketSize;
+        private Reader(final NettyDatagramSynchronousChannel channel) {
+            this.channel = channel;
             this.polledValueBuffer = new NettyDelegateByteBuffer();
             this.buffer = new NettyDelegateByteBuffer();
         }
@@ -150,6 +140,10 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
             final DatagramPacket msgBuf = (DatagramPacket) msg;
+            if (!initialized) {
+                channel.setOtherSocketAddress(msgBuf.sender());
+                initialized = true;
+            }
             //CHECKSTYLE:OFF
             while (read(ctx, msgBuf.content())) {
             }
@@ -169,7 +163,7 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
                 repeat = false;
             }
             if (buf == null) {
-                buf = ctx.alloc().buffer(socketSize);
+                buf = ctx.alloc().buffer(channel.getSocketSize());
                 buffer.setDelegate(buf);
             }
             msgBuf.readBytes(buf, position, read);

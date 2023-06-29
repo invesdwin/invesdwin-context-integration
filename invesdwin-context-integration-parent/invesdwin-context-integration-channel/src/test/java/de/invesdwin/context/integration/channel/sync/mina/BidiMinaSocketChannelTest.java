@@ -6,7 +6,6 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -29,7 +28,6 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
         runBidiMinaSocketChannelPerformanceTest(MinaSocketType.NioTcp, address);
     }
 
-    @Disabled
     @Test
     public void testBidiMinaDatagramChannelPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();

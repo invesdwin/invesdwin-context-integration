@@ -1,14 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.netty.udt;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
-import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
@@ -28,11 +26,6 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private UdtMessage udtMessage;
     private Runnable writer;
     private ChannelFuture future;
-
-    public NettyUdtSynchronousWriter(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettyUdtSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize));
-    }
 
     public NettyUdtSynchronousWriter(final NettyUdtSynchronousChannel channel) {
         this.channel = channel;

@@ -2,14 +2,12 @@ package de.invesdwin.context.integration.channel.sync.netty.udt;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -26,11 +24,6 @@ public class NettyUdtSynchronousReader implements ISynchronousReader<IByteBuffer
 
     private NettyUdtSynchronousChannel channel;
     private Reader reader;
-
-    public NettyUdtSynchronousReader(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        this(new NettyUdtSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize));
-    }
 
     public NettyUdtSynchronousReader(final NettyUdtSynchronousChannel channel) {
         this.channel = channel;

@@ -1,14 +1,12 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
@@ -22,7 +20,6 @@ import io.netty.channel.socket.DatagramPacket;
 @NotThreadSafe
 public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final boolean SERVER = false;
     private NettyDatagramSynchronousChannel channel;
     private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
@@ -31,16 +28,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private Runnable writer;
     private ChannelFuture future;
 
-    public NettyDatagramSynchronousWriter(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
-        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public NettyDatagramSynchronousWriter(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram writer has to be the client");
-        }
         this.channel.setWriterRegistered();
     }
 
@@ -67,7 +56,10 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         this.buf = Unpooled.directBuffer(channel.getSocketSize());
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyDatagramSynchronousChannel.MESSAGE_INDEX);
-        this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
+        if (!channel.isServer()) {
+            //client immediately knows where to send requests to
+            this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
+        }
     }
 
     protected boolean isSafeWriter(final NettyDatagramSynchronousChannel channel) {
@@ -82,10 +74,12 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     @Override
     public void close() {
         if (buffer != null) {
-            try {
-                writeFuture(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (datagramPacket != null) {
+                try {
+                    writeFuture(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             buf.release();
             buf = null;
@@ -124,6 +118,11 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     private void writeFuture(final IByteBufferProvider message) throws IOException {
+        if (datagramPacket == null) {
+            //server needs to know where to respond to
+            this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
+        }
+
         buf.setIndex(0, 0); //reset indexes
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);

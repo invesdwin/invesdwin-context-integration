@@ -30,20 +30,24 @@ public class NettyUdtSynchronousChannelTest extends AChannelTest {
     private void runNettyUdtChannelPerformanceTest(final INettyUdtChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyUdtSynchronousWriter(type,
-                responseAddress, false, getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyUdtSynchronousReader(type,
-                requestAddress, true, getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyUdtSynchronousWriter(
+                newNettyUdtChannel(type, responseAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyUdtSynchronousReader(
+                newNettyUdtChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
                 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(type,
-                requestAddress, false, getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(type,
-                responseAddress, true, getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(
+                newNettyUdtChannel(type, requestAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(
+                newNettyUdtChannel(type, responseAddress, true, getMaxMessageSize()));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
 
+    protected NettyUdtSynchronousChannel newNettyUdtChannel(final INettyUdtChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        return new NettyUdtSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+    }
 }
