@@ -14,39 +14,36 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagr
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class NettyNativeDatagramChannelTest extends AChannelTest {
+public class BidiNettyDatagramChannelTest extends AChannelTest {
 
     @Test
-    public void testNettyNativeDatagramChannelPerformance() throws InterruptedException {
-        if (OperatingSystem.isWindows()) {
-            //not supported on windows
-            return;
-        }
-        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNettyNativeDatagramChannelPerformanceTest(INettyDatagramChannelType.getDefault(), responseAddress,
-                requestAddress);
+    public void testBidiNettyDatagramChannelPerformance() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runBidiNettyDatagramChannelPerformanceTest(INettyDatagramChannelType.getDefault(), address);
     }
 
-    private void runNettyNativeDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
-            final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
-            throws InterruptedException {
+    private void runBidiNettyDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
+            final InetSocketAddress address) throws InterruptedException {
+        final NettyDatagramSynchronousChannel serverChannel = newNettyDatagramChannel(type, address, true,
+                getMaxMessageSize());
+        final NettyDatagramSynchronousChannel clientChannel = newNettyDatagramChannel(type, address, false,
+                getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyNativeDatagramSynchronousWriter(
-                newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize()));
+                serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeDatagramSynchronousReader(
-                newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors
-                .newFixedThreadPool("runNettyNativeDatagramChannelPerformanceTest", 1);
+                serverChannel);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
+                1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeDatagramSynchronousWriter(
-                newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize()));
+                clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeDatagramSynchronousReader(
-                newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize()));
+                clientChannel);
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();

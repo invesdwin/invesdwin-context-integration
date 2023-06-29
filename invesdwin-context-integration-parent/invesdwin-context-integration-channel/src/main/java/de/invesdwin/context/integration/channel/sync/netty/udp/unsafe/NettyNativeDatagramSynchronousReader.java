@@ -1,67 +1,58 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp.unsafe;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.unix.FileDescriptor;
+import io.netty.channel.unix.DatagramSocketAddress;
+import io.netty.channel.unix.Socket;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
 public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final boolean SERVER = true;
     private final int socketSize;
     private NettyDatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
-    private FileDescriptor fd;
+    private Socket fd;
     private int position = 0;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
-
-    public NettyNativeDatagramSynchronousReader(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
-    }
+    private boolean initialized;
 
     public NettyNativeDatagramSynchronousReader(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram reader has to be the server");
-        }
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        if (channel.isWriterRegistered()) {
-            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
-        } else {
-            channel.open(bootstrap -> {
-                bootstrap.handler(new ChannelInboundHandlerAdapter());
-            }, null);
-            channel.getDatagramChannel().deregister();
-            final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
-            channel.closeBootstrapAsync();
-            fd = unixChannel.fd();
-            //use direct buffer to prevent another copy from byte[] to native
-            buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-            messageBuffer = buffer.asNioByteBuffer();
-        }
+        //        if (channel.isWriterRegistered()) {
+        //            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
+        //        } else {
+        channel.open(bootstrap -> {
+            bootstrap.handler(new ChannelInboundHandlerAdapter());
+        }, null);
+        channel.getDatagramChannel().deregister();
+        final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
+        channel.closeBootstrapAsync();
+        fd = (Socket) unixChannel.fd();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = buffer.asNioByteBuffer();
+        //        }
+        initialized = false;
     }
 
     @Override
@@ -115,7 +106,16 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
-            position += NettyNativeSocketSynchronousReader.read0(fd, messageBuffer, position, readLength);
+            if (!initialized) {
+                final DatagramSocketAddress recvFrom = fd.recvFrom(messageBuffer, position, readLength);
+                if (recvFrom != null) {
+                    channel.setOtherSocketAddress(recvFrom);
+                    position += recvFrom.receivedAmount();
+                    initialized = true;
+                }
+            } else {
+                position += NettyNativeSocketSynchronousReader.read0(fd, messageBuffer, position, readLength);
+            }
         }
         return position >= targetPosition;
     }

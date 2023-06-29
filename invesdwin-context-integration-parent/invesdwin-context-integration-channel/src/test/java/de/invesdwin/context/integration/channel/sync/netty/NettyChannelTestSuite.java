@@ -23,9 +23,10 @@ import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchrono
 @Suite
 @SelectClasses({ TlsNettySocketChannelTest.class, NettySocketChannelTest.class, BidiNettySocketChannelTest.class,
         TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class,
-        BidiNettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class,
-        NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class, NettyDatagramHandlerTest.class,
-        NettyUdtHandlerTest.class, NettyUdtSynchronousChannelTest.class, BidiNettyUdtSynchronousChannelTest.class })
+        BidiNettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
+        NettyQueueChannelTest.class, NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class,
+        NettyDatagramHandlerTest.class, NettyUdtHandlerTest.class, NettyUdtSynchronousChannelTest.class,
+        BidiNettyUdtSynchronousChannelTest.class })
 @Immutable
 public class NettyChannelTestSuite {
 

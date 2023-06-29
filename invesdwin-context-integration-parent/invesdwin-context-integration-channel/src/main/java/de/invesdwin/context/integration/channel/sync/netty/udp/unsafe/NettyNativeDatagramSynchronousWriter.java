@@ -7,9 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -23,7 +21,6 @@ import io.netty.channel.unix.UnixChannel;
 @NotThreadSafe
 public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final boolean SERVER = false;
     private final int socketSize;
     private NettyDatagramSynchronousChannel channel;
     private Socket fd;
@@ -33,36 +30,28 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     private int position;
     private int remaining;
 
-    public NettyNativeDatagramSynchronousWriter(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new NettyDatagramSynchronousChannel(type, socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public NettyNativeDatagramSynchronousWriter(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram writer has to be the client");
-        }
         this.channel.setWriterRegistered();
         this.socketSize = channel.getSocketSize();
     }
 
     @Override
     public void open() throws IOException {
-        if (channel.isReaderRegistered()) {
-            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
-        } else {
-            channel.open(bootstrap -> {
-                bootstrap.handler(new ChannelInboundHandlerAdapter());
-            }, null);
-            channel.getDatagramChannel().deregister();
-            final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
-            channel.closeBootstrapAsync();
-            fd = (Socket) unixChannel.fd();
-            //use direct buffer to prevent another copy from byte[] to native
-            buffer = ByteBuffers.allocateDirectExpandable(socketSize);
-            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
-        }
+        //        if (channel.isReaderRegistered()) {
+        //            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
+        //        } else {
+        channel.open(bootstrap -> {
+            bootstrap.handler(new ChannelInboundHandlerAdapter());
+        }, null);
+        channel.getDatagramChannel().deregister();
+        final UnixChannel unixChannel = (UnixChannel) channel.getDatagramChannel();
+        channel.closeBootstrapAsync();
+        fd = (Socket) unixChannel.fd();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(socketSize);
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
+        //        }
     }
 
     @Override
@@ -119,8 +108,13 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     }
 
     private boolean writeFurther() throws IOException {
-        final int count = fd.sendTo(messageToWrite, position, remaining, channel.getSocketAddress().getAddress(),
-                channel.getSocketAddress().getPort(), false);
+        final InetSocketAddress addr;
+        if (channel.isServer()) {
+            addr = channel.getOtherSocketAddress();
+        } else {
+            addr = channel.getSocketAddress();
+        }
+        final int count = fd.sendTo(messageToWrite, position, remaining, addr.getAddress(), addr.getPort(), false);
         remaining -= count;
         position += count;
         return remaining > 0;
