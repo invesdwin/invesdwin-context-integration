@@ -33,24 +33,19 @@ public class NettyNativeSocketSynchronousWriter implements ISynchronousWriter<IB
 
     @Override
     public void open() throws IOException {
-        if (channel.isReaderRegistered()) {
-            throw newNativeBidiNotSupportedException();
-            //            channel.open(ch -> {
-            //                ch.deregister();
-            //            });
-        } else {
-            channel.open(ch -> {
-                //make sure netty does not process any bytes
+        channel.open(ch -> {
+            //make sure netty does not process any bytes
+            if (!channel.isReaderRegistered()) {
                 ch.shutdownInput();
-            });
-            channel.getSocketChannel().deregister();
-            final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
-            channel.closeBootstrapAsync();
-            fd = unixChannel.fd();
-            //use direct buffer to prevent another copy from byte[] to native
-            buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
-            messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
-        }
+            }
+        });
+        channel.getSocketChannel().deregister();
+        final UnixChannel unixChannel = (UnixChannel) channel.getSocketChannel();
+        channel.closeBootstrapAsync();
+        fd = unixChannel.fd();
+        //use direct buffer to prevent another copy from byte[] to native
+        buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
     }
 
     public static UnsupportedOperationException newNativeBidiNotSupportedException() {

@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.BidiNettySocketCh
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsBidiNettySocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.TlsNettySocketChannelTest;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.BidiNettyNativeSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.unsafe.NettyNativeSocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.BidiNettyDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramChannelTest;
@@ -22,11 +23,11 @@ import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchrono
 
 @Suite
 @SelectClasses({ TlsNettySocketChannelTest.class, NettySocketChannelTest.class, BidiNettySocketChannelTest.class,
-        TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, NettyDatagramChannelTest.class,
-        BidiNettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
-        NettyQueueChannelTest.class, NettySocketHandlerTest.class, TlsNettySocketHandlerTest.class,
-        NettyDatagramHandlerTest.class, NettyUdtHandlerTest.class, NettyUdtSynchronousChannelTest.class,
-        BidiNettyUdtSynchronousChannelTest.class })
+        TlsBidiNettySocketChannelTest.class, NettyNativeSocketChannelTest.class, BidiNettyNativeSocketChannelTest.class,
+        NettyDatagramChannelTest.class, BidiNettyDatagramChannelTest.class, NettyNativeDatagramChannelTest.class,
+        NettyNativeDatagramChannelTest.class, NettyQueueChannelTest.class, NettySocketHandlerTest.class,
+        TlsNettySocketHandlerTest.class, NettyDatagramHandlerTest.class, NettyUdtHandlerTest.class,
+        NettyUdtSynchronousChannelTest.class, BidiNettyUdtSynchronousChannelTest.class })
 @Immutable
 public class NettyChannelTestSuite {
 
