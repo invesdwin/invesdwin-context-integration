@@ -35,6 +35,7 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BidiBlo
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramTlsHandshakeProviderTest;
+import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.BidiNativeDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramTlsHandshakeProviderTest;
@@ -48,17 +49,18 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
         BidiBlockingSocketChannelTest.class, TlsBlockingSocketChannelTest.class, TlsBidiBlockingSocketChannelTest.class,
         NativeSocketChannelTest.class, BidiNativeSocketChannelTest.class, DatagramChannelTest.class,
         BidiDatagramChannelTest.class, BlockingDatagramChannelTest.class, BidiBlockingDatagramChannelTest.class,
-        NativeDatagramChannelTest.class, BidiNativeSocketTlsHandshakeProviderTest.class,
-        BidiNativeSocketDtlsHandshakeProviderTest.class, BidiSocketTlsHandshakeProviderTest.class,
-        BidiSocketDtlsHandshakeProviderTest.class, DatagramTlsHandshakeProviderTest.class,
-        BlockingDatagramTlsHandshakeProviderTest.class, BlockingDatagramDtlsHandshakeProviderTest.class,
-        NativeDatagramTlsHandshakeProviderTest.class, DatagramDtlsHandshakeProviderTest.class,
-        NativeDatagramDtlsHandshakeProviderTest.class, StreamEncryptionNativeSocketChannelTest.class,
-        StreamVerifiedEncryptionNativeSocketChannelTest.class, UdtChannelTest.class, BidiUdtChannelTest.class,
-        BidiUdtTlsHandshakeProviderTest.class, BidiUdtDtlsHandshakeProviderTest.class,
-        UnixDomainSocketChannelTest.class, BidiUnixDomainSocketChannelTest.class,
-        NativeUnixDomainSocketChannelTest.class, BidiNativeUnixDomainSocketChannelTest.class, SctpChannelTest.class,
-        BidiSctpChannelTest.class, NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
+        NativeDatagramChannelTest.class, BidiNativeDatagramChannelTest.class,
+        BidiNativeSocketTlsHandshakeProviderTest.class, BidiNativeSocketDtlsHandshakeProviderTest.class,
+        BidiSocketTlsHandshakeProviderTest.class, BidiSocketDtlsHandshakeProviderTest.class,
+        DatagramTlsHandshakeProviderTest.class, BlockingDatagramTlsHandshakeProviderTest.class,
+        BlockingDatagramDtlsHandshakeProviderTest.class, NativeDatagramTlsHandshakeProviderTest.class,
+        DatagramDtlsHandshakeProviderTest.class, NativeDatagramDtlsHandshakeProviderTest.class,
+        StreamEncryptionNativeSocketChannelTest.class, StreamVerifiedEncryptionNativeSocketChannelTest.class,
+        UdtChannelTest.class, BidiUdtChannelTest.class, BidiUdtTlsHandshakeProviderTest.class,
+        BidiUdtDtlsHandshakeProviderTest.class, UnixDomainSocketChannelTest.class,
+        BidiUnixDomainSocketChannelTest.class, NativeUnixDomainSocketChannelTest.class,
+        BidiNativeUnixDomainSocketChannelTest.class, SctpChannelTest.class, BidiSctpChannelTest.class,
+        NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
 

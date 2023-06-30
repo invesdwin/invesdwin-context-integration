@@ -17,27 +17,31 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class NativeDatagramChannelTest extends AChannelTest {
+public class BidiNativeDatagramChannelTest extends AChannelTest {
+
     @Test
-    public void testNativeDatagramSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNativeDatagramSocketPerformanceTest(responseAddress, requestAddress);
+    public void testDatagramPerformance() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runDatagramPerformanceTest(address);
     }
 
-    private void runNativeDatagramSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
+    protected void runDatagramPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final DatagramSynchronousChannel serverChannel = newDatagramSynchronousChannel(address, true,
+                getMaxMessageSize());
+        final DatagramSynchronousChannel clientChannel = newDatagramSynchronousChannel(address, false,
+                getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NativeDatagramSynchronousReader(
-                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+                serverChannel);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
-                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                clientChannel);
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();

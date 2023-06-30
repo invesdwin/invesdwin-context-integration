@@ -35,7 +35,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         channel.open();
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize + 1);
-        messageBuffer = buffer.asNioByteBuffer(0, buffer.capacity());
+        messageBuffer = buffer.nioByteBuffer();
         socketChannel = channel.getSocketChannel();
     }
 
@@ -59,7 +59,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
             return true;
         }
         final SocketAddress receive = socketChannel.receive(messageBuffer);
-        if (channel.getOtherSocketAddress() == null) {
+        if (channel.getOtherSocketAddress() == null && receive != null) {
             channel.setOtherSocketAddress(receive);
         }
         return messageBuffer.position() > 0;

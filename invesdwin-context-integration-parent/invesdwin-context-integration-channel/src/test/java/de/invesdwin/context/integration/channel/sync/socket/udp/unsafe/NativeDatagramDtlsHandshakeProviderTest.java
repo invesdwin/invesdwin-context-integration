@@ -18,7 +18,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
@@ -46,23 +45,27 @@ public class NativeDatagramDtlsHandshakeProviderTest extends AChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new NativeDatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new NativeDatagramSynchronousReader(requestAddress, getMaxMessageSize()));
+                .newReader(new NativeDatagramSynchronousReader(
+                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new NativeDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new NativeDatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new NativeDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new NativeDatagramSynchronousReader(
+                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
 
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
+    protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,
