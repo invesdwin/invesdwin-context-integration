@@ -44,15 +44,19 @@ public class DatagramTlsHandshakeProviderTest extends AChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new DatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new DatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new DatagramSynchronousReader(requestAddress, getMaxMessageSize()));
+                .newReader(new DatagramSynchronousReader(
+                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new DatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new DatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new DatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new DatagramSynchronousReader(
+                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
@@ -81,6 +85,11 @@ public class DatagramTlsHandshakeProviderTest extends AChannelTest {
                 };
             }
         };
+    }
+
+    protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

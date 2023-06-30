@@ -28,7 +28,6 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
     private int position = 0;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
-    private boolean initialized;
 
     public NettyNativeDatagramSynchronousReader(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
@@ -38,9 +37,6 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     @Override
     public void open() throws IOException {
-        //        if (channel.isWriterRegistered()) {
-        //            throw NettyNativeSocketSynchronousWriter.newNativeBidiNotSupportedException();
-        //        } else {
         channel.open(bootstrap -> {
             bootstrap.handler(new ChannelInboundHandlerAdapter());
         }, null);
@@ -51,8 +47,6 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = buffer.asNioByteBuffer();
-        //        }
-        initialized = false;
     }
 
     @Override
@@ -106,12 +100,11 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
-            if (!initialized) {
+            if (channel.getOtherSocketAddress() == null) {
                 final DatagramSocketAddress recvFrom = fd.recvFrom(messageBuffer, position, readLength);
                 if (recvFrom != null) {
                     channel.setOtherSocketAddress(recvFrom);
                     position += recvFrom.receivedAmount();
-                    initialized = true;
                 }
             } else {
                 position += NettyNativeSocketSynchronousReader.read0(fd, messageBuffer, position, readLength);

@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -19,7 +18,6 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 @NotThreadSafe
 public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final boolean SERVER = false;
     private BlockingDatagramSynchronousChannel channel;
     private IByteBuffer packetBuffer;
     private IByteBuffer messageBuffer;
@@ -27,15 +25,8 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
     private DatagramSocket socket;
     private final int socketSize;
 
-    public BlockingDatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public BlockingDatagramSynchronousWriter(final BlockingDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram writer has to be the client");
-        }
         this.channel.setWriterRegistered();
         this.socketSize = channel.getSocketSize();
     }
@@ -46,17 +37,21 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
         //old socket would actually slow down with direct buffer because it requires a byte[]
         packetBuffer = ByteBuffers.allocateExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(packetBuffer, DatagramSynchronousChannel.MESSAGE_INDEX);
-        packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0);
         socket = channel.getSocket();
+        if (!channel.isServer()) {
+            packet = new DatagramPacket(Bytes.EMPTY_ARRAY, 0, channel.getSocketAddress());
+        }
     }
 
     @Override
     public void close() throws IOException {
         if (socket != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (packet != null) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             packet = null;
             packetBuffer = null;
@@ -82,7 +77,12 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
                     "Data truncation would occur: datagramSize[" + datagramSize + "] > socketSize[" + socketSize + "]");
         }
         packetBuffer.putInt(DatagramSynchronousChannel.SIZE_INDEX, size);
-        packet.setData(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size);
+        if (packet == null) {
+            packet = new DatagramPacket(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size,
+                    channel.getOtherSocketAddress());
+        } else {
+            packet.setData(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size);
+        }
         socket.send(packet);
     }
 

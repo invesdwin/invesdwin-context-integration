@@ -28,19 +28,24 @@ public class DatagramChannelTest extends AChannelTest {
 
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new DatagramSynchronousWriter(responseAddress,
-                getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> requestReader = new DatagramSynchronousReader(requestAddress,
-                getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new DatagramSynchronousWriter(
+                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> requestReader = new DatagramSynchronousReader(
+                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new DatagramSynchronousWriter(requestAddress,
-                getMaxMessageSize());
-        final ISynchronousReader<IByteBufferProvider> responseReader = new DatagramSynchronousReader(responseAddress,
-                getMaxMessageSize());
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new DatagramSynchronousWriter(
+                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+        final ISynchronousReader<IByteBufferProvider> responseReader = new DatagramSynchronousReader(
+                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
+    }
+
+    protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
+            final boolean server, final int estimatedMaxMessageSize) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

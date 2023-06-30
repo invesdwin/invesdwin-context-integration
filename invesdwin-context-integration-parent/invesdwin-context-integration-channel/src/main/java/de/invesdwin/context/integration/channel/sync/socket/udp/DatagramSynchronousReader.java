@@ -16,7 +16,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class DatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final boolean SERVER = true;
     private DatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer messageBuffer;
@@ -24,15 +23,8 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
     private final int socketSize;
     private final int truncatedSize;
 
-    public DatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public DatagramSynchronousReader(final DatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram reader has to be the server");
-        }
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
         this.truncatedSize = socketSize - DatagramSynchronousChannel.MESSAGE_INDEX;
@@ -66,7 +58,10 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         if (messageBuffer.position() > 0) {
             return true;
         }
-        socketChannel.receive(messageBuffer);
+        final SocketAddress receive = socketChannel.receive(messageBuffer);
+        if (channel.getOtherSocketAddress() == null) {
+            channel.setOtherSocketAddress(receive);
+        }
         return messageBuffer.position() > 0;
     }
 

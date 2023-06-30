@@ -39,6 +39,7 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
     protected final int socketSize;
     protected volatile boolean socketOpening;
     protected final SocketAddress socketAddress;
+    protected SocketAddress otherSocketAddress;
     protected final boolean server;
     private final SocketSynchronousChannelFinalizer finalizer;
 
@@ -59,6 +60,17 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
 
     public SocketAddress getSocketAddress() {
         return socketAddress;
+    }
+
+    public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
+        if (this.otherSocketAddress != null) {
+            throw new IllegalStateException("otherSocketAddress should be null");
+        }
+        this.otherSocketAddress = otherSocketAddress;
+    }
+
+    public SocketAddress getOtherSocketAddress() {
+        return otherSocketAddress;
     }
 
     public boolean isServer() {
@@ -196,6 +208,7 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
             }
         }
         finalizer.close();
+        otherSocketAddress = null;
     }
 
     private static final class SocketSynchronousChannelFinalizer extends AFinalizer {

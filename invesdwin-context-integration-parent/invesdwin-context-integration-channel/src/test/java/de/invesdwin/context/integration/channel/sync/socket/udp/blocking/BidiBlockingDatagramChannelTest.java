@@ -16,35 +16,39 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BlockingDatagramChannelTest extends AChannelTest {
+public class BidiBlockingDatagramChannelTest extends AChannelTest {
+
     @Test
-    public void testBlockingDatagramSocketPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runBlockingDatagramSocketPerformanceTest(responseAddress, requestAddress);
+    public void testBlockingDatagramPerformance() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        runBlockingDatagramPerformanceTest(address);
     }
 
-    private void runBlockingDatagramSocketPerformanceTest(final SocketAddress responseAddress,
-            final SocketAddress requestAddress) throws InterruptedException {
+    protected void runBlockingDatagramPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final BlockingDatagramSynchronousChannel serverChannel = newBlockingDatagramSynchronousChannel(address, true,
+                getMaxMessageSize());
+        final BlockingDatagramSynchronousChannel clientChannel = newBlockingDatagramSynchronousChannel(address, false,
+                getMaxMessageSize());
+
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingDatagramSynchronousReader(
-                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
+                serverChannel);
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingDatagramSynchronousReader(
-                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                clientChannel);
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }
 
-    protected BlockingDatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress responseAddress,
-            final boolean server, final int maxMessageSize) {
-        return new BlockingDatagramSynchronousChannel(responseAddress, server, maxMessageSize);
+    protected BlockingDatagramSynchronousChannel newBlockingDatagramSynchronousChannel(
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+        return new BlockingDatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

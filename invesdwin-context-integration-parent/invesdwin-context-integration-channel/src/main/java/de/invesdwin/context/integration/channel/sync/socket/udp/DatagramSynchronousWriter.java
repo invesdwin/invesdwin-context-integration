@@ -16,7 +16,6 @@ import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateB
 @NotThreadSafe
 public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final boolean SERVER = false;
     private DatagramSynchronousChannel channel;
     private IByteBuffer buffer;
     private IByteBuffer messageBuffer;
@@ -25,15 +24,8 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private java.nio.ByteBuffer messageToWrite;
     private int positionBefore;
 
-    public DatagramSynchronousWriter(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new DatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public DatagramSynchronousWriter(final DatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram writer has to be the client");
-        }
         this.channel.setWriterRegistered();
         this.socketSize = channel.getSocketSize();
     }
@@ -98,7 +90,13 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     private boolean writeFurther() throws IOException {
-        final int count = socketChannel.write(messageToWrite);
+        final SocketAddress addr;
+        if (channel.isServer()) {
+            addr = channel.getOtherSocketAddress();
+        } else {
+            addr = channel.getSocketAddress();
+        }
+        final int count = socketChannel.send(messageToWrite, addr);
         if (count < 0) { // EOF
             throw ByteBuffers.newEOF();
         }

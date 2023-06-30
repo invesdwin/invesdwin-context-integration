@@ -48,15 +48,19 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends AChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
-                .newWriter(new BlockingDatagramSynchronousWriter(responseAddress, getMaxMessageSize()));
+                .newWriter(new BlockingDatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
-                .newReader(new BlockingDatagramSynchronousReader(requestAddress, getMaxMessageSize()));
+                .newReader(new BlockingDatagramSynchronousReader(
+                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
         executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
-                .newWriter(new BlockingDatagramSynchronousWriter(requestAddress, getMaxMessageSize()));
+                .newWriter(new BlockingDatagramSynchronousWriter(
+                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize())));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
-                .newReader(new BlockingDatagramSynchronousReader(responseAddress, getMaxMessageSize()));
+                .newReader(new BlockingDatagramSynchronousReader(
+                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
         new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
@@ -91,6 +95,11 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends AChannelTest {
                 };
             }
         };
+    }
+
+    protected BlockingDatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress responseAddress,
+            final boolean server, final int maxMessageSize) {
+        return new BlockingDatagramSynchronousChannel(responseAddress, server, maxMessageSize);
     }
 
     @Override

@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -18,7 +17,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class BlockingDatagramSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final boolean SERVER = true;
     private BlockingDatagramSynchronousChannel channel;
     private IByteBuffer packetBuffer;
     private DatagramPacket packet;
@@ -26,15 +24,8 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     private final int socketSize;
     private final int truncatedSize;
 
-    public BlockingDatagramSynchronousReader(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
-        this(new BlockingDatagramSynchronousChannel(socketAddress, SERVER, estimatedMaxMessageSize));
-    }
-
     public BlockingDatagramSynchronousReader(final BlockingDatagramSynchronousChannel channel) {
         this.channel = channel;
-        if (channel.isServer() != SERVER) {
-            throw new IllegalStateException("datagram reader has to be the server");
-        }
         this.channel.setReaderRegistered();
         this.socketSize = channel.getSocketSize();
         this.truncatedSize = socketSize - DatagramSynchronousChannel.MESSAGE_INDEX;
@@ -46,8 +37,8 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
         //old socket would actually slow down with direct buffer because it requires a byte[]
         final byte[] packetBytes = ByteBuffers.allocateByteArray(socketSize + 1);
         this.packetBuffer = ByteBuffers.wrap(packetBytes);
-        this.packet = new DatagramPacket(packetBytes, packetBytes.length);
         this.socket = channel.getSocket();
+        this.packet = new DatagramPacket(packetBytes, packetBytes.length, channel.getSocketAddress());
     }
 
     @Override
@@ -64,6 +55,9 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     @Override
     public boolean hasNext() throws IOException {
         socket.receive(packet);
+        if (channel.getOtherSocketAddress() == null) {
+            channel.setOtherSocketAddress(packet.getSocketAddress());
+        }
         return true;
     }
 
