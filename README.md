@@ -126,7 +126,7 @@ LinkedBlockingQueue        Records:  1,988.47/ms  in   5.029s    => ~7 times as 
 Mapped Memory              Records:  3,214.40/ms  in   3.111s    => ~11 times as fast as than Named Pipes
 Mapped Memory (tmpfs)      Records:  4,237.29/ms  in   2.360s    => ~15 times as fast as than Named Pipes
 ```
-New Benchmarks (2021, Core i9-9900k with SSD, Java 16; best in class marked by `*`):
+New Benchmarks (2021, Core i9-9900k with SSD, Java 17, mitigations=off; best in class marked by `*`):
 ```
 Network    NettyDatagramOio (loopback)            Records:      1.00/s     => ~99.99% slower (threading model unsuitable)
 Network    NettySocketOio (loopback)              Records:      1.01/s     => ~99.99% slower (threading model unsuitable)
@@ -136,10 +136,10 @@ Network    BarchartUdt (loopback)                 Records:    808.25/s     => ~9
 Network    AsyncNettyUdt (loopback)               Records:    859.93/s     => ~99.19% slower
 Network    BidiNettyUdt (loopback)                Records:      5.27/ms    => ~95% slower
 Network    NngTcp (loopback)                      Records:     13.33/ms    => ~87% slower
-Network    BidiMinaSctpApr (loopback)             Records:     22.54/ms    => ~79% slower
+Network    BidiMinaSctpApr (loopback)             Records:     24.82/ms    => ~% slower
 Thread     NngInproc                              Records:     28.93/ms    => ~73% slower
 Network    NettySocketIOUring (loopback)          Records:     29.97/ms    => ~72% slower
-Network    AsyncMinaSctpNio (loopback)            Records:     30.25/ms    => ~72% slower (using async handlers for servers)
+Network    AsyncMinaSctpApr (loopback)            Records:     36.33/ms    => ~% slower (using async handlers for servers)
 Network    MinaSocketNio (loopback)               Records:     31.55/ms    => ~70% slower
 Network    JnanomsgTcp (loopback)                 Records:     32.94/ms    => ~69% slower
 Network    BidiMinaSocketApr (loopback)           Records:     32.96/ms    => ~69% slower
