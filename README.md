@@ -194,14 +194,14 @@ Network    BidiHadroNioSocketChannel (SoftRoCE)   Records:    104.23/ms    => ~2
 Network    HadroNioSocketChannel (SoftRoCE)       Records:    105.47/ms    => ~1% slower (unreliable)
 Network    BlockingNioSocket (loopback)           Records:    106.51/ms    => using this as baseline
 ---
-Network    AsyncNettySocketHadroNio (SoftRoCE)    Records:    109.32/ms    => ~% slower (unreliable)
+Network    AsyncNettySocketHadroNio (SoftRoCE)    Records:    109.32/ms    => ~% faster (unreliable)
 Network    BidiBlockingHadroNioSocket (loopback)  Records:    109.66/ms    => ~2.9% faster
 Network    BidiNettySocketEpoll (loopback)        Records:    110.49/ms    => ~3% faster
 Thread     JnanomsgInproc                         Records:    111.31/ms    => ~4% faster
-Network    BlockingHadroNioSocket (loopback)      Records:    112.12/ms    => ~% slower
+Network    BlockingHadroNioSocket (loopback)      Records:    112.12/ms    => ~% faster
 Network    BlockingNioDatagramSocket (loopback)   Records:    113.16/ms    => ~6% faster (unreliable)
 Network    BidiJucxTag (SoftRoCE, PEH)            Records:    115.25/ms    => ~8% faster (PeerErrorHandling, unreliable, crashes after ~5 million records)
-Network    EnxioSocketChannel (loopback)          Records:    115.72/ms    => ~% slower
+Network    EnxioSocketChannel (loopback)          Records:    115.72/ms    => ~% faster
 Network    BidiDisniActive (SoftiWarp)            Records:    124.97/ms    => ~17% faster
 Network    BidiDisniPassive (SoftiWarp)           Records:    125.38/ms    => ~18% faster
 Network    BidiJucxStream (SoftRoCE, PEH)         Records:    129.80/ms    => ~22% faster (PeerErrorHandling, unreliable, crashes after ~5 million records)
