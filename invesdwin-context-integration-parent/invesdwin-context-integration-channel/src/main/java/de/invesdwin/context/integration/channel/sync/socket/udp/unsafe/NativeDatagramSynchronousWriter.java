@@ -82,6 +82,8 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     private int position;
     private int remaining;
     private boolean initialized;
+    private int targetAddressLen;
+    private long targetAddress;
 
     public NativeDatagramSynchronousWriter(final DatagramSynchronousChannel channel) {
         this.channel = channel;
@@ -121,6 +123,8 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             channel = null;
         }
         initialized = false;
+        targetAddress = 0;
+        targetAddressLen = 0;
     }
 
     @Override
@@ -159,22 +163,37 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     private boolean writeFurther() throws IOException {
         final int count;
         if (!initialized) {
+            initTargetAddress();
             count = send0(messageToWrite, position, remaining);
             initialized = true;
         } else {
-            count = write0(fd, messageToWrite, position, remaining);
+            if (channel.isServer()) {
+                count = send0(messageToWrite, position, remaining);
+            } else {
+                count = write0(fd, messageToWrite, position, remaining);
+            }
         }
         remaining -= count;
         position += count;
         return remaining > 0;
     }
 
+    private void initTargetAddress() {
+        try {
+            final Object targetSockAddr = CHANNEL_TARGETSOCKADDR_GETTER_MH.invoke(channel.getSocketChannel());
+            final ProtocolFamily family = (ProtocolFamily) CHANNEL_FAMILY_GETTER_MH.invoke(channel.getSocketChannel());
+            this.targetAddressLen = (int) NATIVESOCKETADDRESS_ENCODE_MH.invoke(targetSockAddr, family,
+                    channel.getOtherSocketAddress());
+            this.targetAddress = (long) NATIVESOCKETADDRESS_ADDRESS_MH.invoke(targetSockAddr);
+        } catch (final Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private int send0(final long address, final int position, final int length) throws IOException {
         final int res;
         try {
-            System.out.println(
-                    "TODO: configure target address and use correct method args, check if write0 afterwards correctly uses the configured address always or if we always have to use send0");
-            res = (int) CHANNEL_SEND0_MH.invokeExact(channel.getSocketChannel(), fd, address + position, length);
+            res = (int) CHANNEL_SEND0_MH.invokeExact(fd, address + position, length, targetAddress, targetAddressLen);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }

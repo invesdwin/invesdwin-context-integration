@@ -33,7 +33,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     static {
         try {
             final Class<?> dci = Class.forName("sun.nio.ch.DatagramChannelImpl");
-            final Method receive0 = Reflections.findMethod(dci, "send0", FileDescriptor.class, long.class, int.class,
+            final Method receive0 = Reflections.findMethod(dci, "receive0", FileDescriptor.class, long.class, int.class,
                     long.class, boolean.class);
             Reflections.makeAccessible(receive0);
             CHANNEL_RECEIVE0_MH = MethodHandles.lookup().unreflect(receive0);
@@ -90,8 +90,8 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
 
         try {
-            this.sourceSockAddr = CHANNEL_SOURCESOCKADDR_GETTER_MH.invokeExact(channel.getSocketChannel());
-            this.senderAddress = (long) NATIVESOCKETADDRESS_ADDRESS_MH.invokeExact(sourceSockAddr);
+            this.sourceSockAddr = CHANNEL_SOURCESOCKADDR_GETTER_MH.invoke(channel.getSocketChannel());
+            this.senderAddress = (long) NATIVESOCKETADDRESS_ADDRESS_MH.invoke(sourceSockAddr);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
@@ -124,7 +124,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
             if (count > 0) {
                 try {
                     final InetSocketAddress addr = (InetSocketAddress) NATIVESOCKETADDRESS_DECODE_MH
-                            .invokeExact(sourceSockAddr);
+                            .invoke(sourceSockAddr);
                     channel.setOtherSocketAddress(addr);
                 } catch (final Throwable e) {
                     throw new RuntimeException(e);
@@ -177,8 +177,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
     private int receive0(final long address, final int position, final int length) throws IOException {
         final int res;
         try {
-            res = (int) CHANNEL_RECEIVE0_MH.invokeExact(channel.getSocketChannel(), fd, address + position, length,
-                    senderAddress, true);
+            res = (int) CHANNEL_RECEIVE0_MH.invokeExact(fd, address + position, length, senderAddress, true);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
