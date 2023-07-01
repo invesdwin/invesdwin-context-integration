@@ -14,6 +14,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerAdapterAccessor;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.channel.ChannelPipeline;
@@ -35,6 +36,7 @@ public class NettySocketSynchronousReader implements ISynchronousReader<IByteBuf
         this.reader = new Reader(channel.getSocketSize());
         channel.open(channel -> {
             final ChannelPipeline pipeline = channel.pipeline();
+            ChannelHandlerAdapterAccessor.setAdded(reader, false);
             pipeline.addLast(reader);
         });
     }
