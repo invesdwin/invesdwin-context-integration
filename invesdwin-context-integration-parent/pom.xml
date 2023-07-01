@@ -84,7 +84,7 @@
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.jctools>3.3.0</version.jctools>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
-		<version.aeron>1.38.1</version.aeron>
+		<version.aeron>1.41.4</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
 		<version.jnanomsg>0.4.5</version.jnanomsg>
 		<version.nng-java>1.4.0-inv</version.nng-java>
