@@ -8,14 +8,12 @@ import java.nio.channels.SocketChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.lang.OperatingSystem;
 
-@Disabled
 @NotThreadSafe
 public class UnixDomainSocketChannelTest extends SocketChannelTest {
 
