@@ -384,7 +384,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                     outputBuffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
                     outputBuf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
                     outputBuf.retain();
-                    future = ctx.writeAndFlush(new DatagramPacket(inputBuf, sender));
+                    future = ctx.writeAndFlush(new DatagramPacket(outputBuf, sender));
                 }
             }
         }
