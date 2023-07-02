@@ -17,7 +17,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiNettyDatagramChannelTest extends AChannelTest {
+public class BidiNettyNativeDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testBidiNettyDatagramChannelPerformance() throws InterruptedException {

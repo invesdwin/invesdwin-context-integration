@@ -90,7 +90,7 @@
 		<version.nng-java>1.4.0-inv</version.nng-java>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
-		<version.chronicle-network>2.22.14</version.chronicle-network>
+		<version.chronicle-network>2.24ea12</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
 		<version.barchart-udt>2.3.0</version.barchart-udt>
