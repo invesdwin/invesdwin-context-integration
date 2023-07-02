@@ -126,7 +126,7 @@ LinkedBlockingQueue        Records:  1,988.47/ms  in   5.029s    => ~7 times as 
 Mapped Memory              Records:  3,214.40/ms  in   3.111s    => ~11 times as fast as than Named Pipes
 Mapped Memory (tmpfs)      Records:  4,237.29/ms  in   2.360s    => ~15 times as fast as than Named Pipes
 ```
-New Benchmarks (2021, Core i9-9900k with SSD, Java 17, mitigations=off; best in class marked by `*`):
+New Benchmarks (2021, Core i9-9900k with SSD, Java 17, [mitigations=off](https://unix.stackexchange.com/a/554922); best in class marked by `*`):
 ```
 Network    NettyDatagramOio (loopback)            Records:      1.00/s     => ~99.99% slower (threading model unsuitable)
 Network    NettySocketOio (loopback)              Records:      1.01/s     => ~99.99% slower (threading model unsuitable)
@@ -250,8 +250,8 @@ Network    JucxTag (noPEH)                        Records:    539.70/ms    => ~ 
 Process    MPJExpress (shared memory)             Records:    550.26/ms    => ~ times as fast
 Network    BidiJucxStream (noPEH)                 Records:    553.75/ms    => ~ times as fast (NoPeerErrorHandling, most likely using shared memory)
 Process    NamedPipe (Native)                     Records:    603.46/ms    => ~ times as fast
-Thread     LockedReference                        Records:    912.16/ms    => ~8.6 times as fast
-Process    OpenMPI (shared memory)                Records:    990.01/ms    => ~9.3 times as fast (supports Infiniband and other specialized hardware)
+Thread     LockedReference                        Records:    931.74/ms    => ~ times as fast
+Process    OpenMPI (shared memory)                Records:  1,024.63/ms    => ~ times as fast (supports Infiniband and other specialized hardware)
 Process    Jocket                                 Records:  1,204.82/ms    => ~11.3 times as fast (unstable; deadlocks after 2-3 million messages; their tests show ~1792.11/ms which would be ~16.8 times faster; had to test on Java 8)
 Thread     LinkedBlockingDeque                    Records:  1,520.45/ms    => ~14.3 times as fast
 Thread     ArrayBlockingQueue                     Records:  1,535.72/ms    => ~14.4 times as fast 
