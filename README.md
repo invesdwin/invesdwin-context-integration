@@ -193,7 +193,6 @@ Network    BidiJucxStream (loopback, PEH)         Records:    101.25/ms    => ~5
 Network    BidiHadroNioSocketChannel (SoftRoCE)   Records:    104.23/ms    => ~2% slower (unreliable)
 Network    HadroNioSocketChannel (SoftRoCE)       Records:    105.47/ms    => ~1% slower (unreliable)
 Network    BlockingNioSocket (loopback)           Records:    106.51/ms    => using this as baseline
----
 Network    AsyncNettySocketHadroNio (SoftRoCE)    Records:    109.32/ms    => ~3% faster (unreliable)
 Network    BlockingHadroNioSocket (loopback)      Records:    112.12/ms    => ~5% faster
 Network    BidiNettySocketEpoll (loopback)        Records:    114.18/ms    => ~7% faster
