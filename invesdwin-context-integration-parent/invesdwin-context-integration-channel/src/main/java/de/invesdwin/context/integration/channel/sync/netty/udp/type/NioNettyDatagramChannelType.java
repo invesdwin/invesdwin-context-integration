@@ -49,7 +49,7 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     }
 
     @Override
-    public void initChannel(final DatagramChannel channel, final boolean server) throws Exception {
+    public void initChannel(final DatagramChannel channel, final boolean server) {
         //noop
     }
 }

@@ -159,19 +159,23 @@ public class NettyDatagramSynchronousChannel implements Closeable {
                 }
             });
         } else {
-            awaitDatagramChannel(() -> {
-                finalizer.bootstrap = new Bootstrap();
-                finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
-                        newClientWorkerGroupSelectStrategyFactory())).channel(type.getClientChannelType());
-                type.channelOptions(finalizer.bootstrap::option, socketSize, server);
-                bootstrapListener.accept(finalizer.bootstrap);
-                try {
-                    return finalizer.bootstrap.connect(socketAddress);
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
-            });
+            connect(bootstrapListener);
         }
+    }
+
+    protected void connect(final Consumer<Bootstrap> bootstrapListener) throws IOException {
+        awaitDatagramChannel(() -> {
+            finalizer.bootstrap = new Bootstrap();
+            finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
+                    newClientWorkerGroupSelectStrategyFactory())).channel(type.getClientChannelType());
+            type.channelOptions(finalizer.bootstrap::option, socketSize, server);
+            bootstrapListener.accept(finalizer.bootstrap);
+            try {
+                return finalizer.bootstrap.connect(socketAddress);
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
@@ -210,7 +214,7 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         }
     }
 
-    private void awaitDatagramChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
+    protected void awaitDatagramChannel(final Supplier<ChannelFuture> channelFactory) throws IOException {
         datagramChannelOpening = true;
         try {
             //init bootstrap
@@ -331,10 +335,10 @@ public class NettyDatagramSynchronousChannel implements Closeable {
         finalizer.closeBootstrapAsync();
     }
 
-    private static final class NettyDatagramSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class NettyDatagramSynchronousChannelFinalizer extends AFinalizer {
 
+        protected volatile DatagramChannel datagramChannel;
         private final Exception initStackTrace;
-        private volatile DatagramChannel datagramChannel;
         private volatile Bootstrap bootstrap;
 
         protected NettyDatagramSynchronousChannelFinalizer() {
