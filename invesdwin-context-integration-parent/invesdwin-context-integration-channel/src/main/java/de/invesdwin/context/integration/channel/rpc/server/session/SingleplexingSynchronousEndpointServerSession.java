@@ -27,7 +27,7 @@ import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
- * Allows only one active request per
+ * Allows only one active request per client session.
  */
 @ThreadSafe
 public class SingleplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
