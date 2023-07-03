@@ -130,9 +130,6 @@ public class NettyDatagramSynchronousChannel implements Closeable {
     }
 
     public void setOtherSocketAddress(final InetSocketAddress otherSocketAddress) {
-        if (this.otherSocketAddress != null) {
-            throw new IllegalStateException("otherSocketAddress already set");
-        }
         this.otherSocketAddress = otherSocketAddress;
     }
 

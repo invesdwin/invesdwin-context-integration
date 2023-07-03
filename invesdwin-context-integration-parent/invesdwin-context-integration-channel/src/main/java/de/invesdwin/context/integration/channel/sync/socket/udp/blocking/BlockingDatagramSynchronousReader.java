@@ -55,7 +55,7 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
     @Override
     public boolean hasNext() throws IOException {
         socket.receive(packet);
-        if (channel.getOtherSocketAddress() == null) {
+        if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
             channel.setOtherSocketAddress(packet.getSocketAddress());
         }
         return true;

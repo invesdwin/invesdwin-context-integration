@@ -119,7 +119,7 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
             return true;
         }
         final int count;
-        if (channel.getOtherSocketAddress() == null) {
+        if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
             count = receive0(buffer.addressOffset(), position, buffer.remaining(position));
             if (count > 0) {
                 try {

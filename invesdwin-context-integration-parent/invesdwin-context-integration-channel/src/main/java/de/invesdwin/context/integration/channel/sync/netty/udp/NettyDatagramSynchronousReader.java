@@ -101,7 +101,6 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         private volatile IByteBuffer polledValue;
         private final NettyDelegateByteBuffer polledValueBuffer;
         private boolean closed = false;
-        private boolean initialized = false;
 
         private Reader(final NettyDatagramSynchronousChannel channel) {
             this.channel = channel;
@@ -140,9 +139,8 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
         @Override
         public void channelRead(final ChannelHandlerContext ctx, final Object msg) {
             final DatagramPacket msgBuf = (DatagramPacket) msg;
-            if (!initialized) {
+            if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
                 channel.setOtherSocketAddress(msgBuf.sender());
-                initialized = true;
             }
             //CHECKSTYLE:OFF
             while (read(ctx, msgBuf.content())) {

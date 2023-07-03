@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
@@ -42,6 +43,7 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
     private volatile boolean writerRegistered;
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
+    private boolean multipleClientsAllowed;
 
     public DatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int maxMessageSize) {
@@ -53,14 +55,20 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
         finalizer.register(this);
     }
 
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
+    }
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
 
     public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
-        if (this.otherSocketAddress != null) {
-            throw new IllegalStateException("otherSocketAddress should be null");
-        }
         this.otherSocketAddress = otherSocketAddress;
     }
 
