@@ -19,7 +19,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannelServer;
-import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -68,8 +68,8 @@ public class RpcNativeDatagramChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramClientEndpointFactory(
-                address, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
+                address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 

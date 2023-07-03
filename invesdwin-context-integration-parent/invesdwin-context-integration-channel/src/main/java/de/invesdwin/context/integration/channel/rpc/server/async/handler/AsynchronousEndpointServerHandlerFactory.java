@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.async;
+package de.invesdwin.context.integration.channel.rpc.server.async.handler;
 
 import java.io.IOException;
 

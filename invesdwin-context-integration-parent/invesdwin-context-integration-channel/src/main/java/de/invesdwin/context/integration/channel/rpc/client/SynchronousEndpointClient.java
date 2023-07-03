@@ -12,7 +12,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.handler.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
