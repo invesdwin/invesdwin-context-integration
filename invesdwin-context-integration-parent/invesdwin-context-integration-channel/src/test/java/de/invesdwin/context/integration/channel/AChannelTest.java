@@ -32,7 +32,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.handler.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.IRpcTestService;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcClientTask;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestService;
@@ -140,10 +140,10 @@ public abstract class AChannelTest extends ATest {
                 }, IRpcTestService.class);
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    RPC_CLIENT_THREADS);
+                    newRpcClientThreads());
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
-                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                for (int i = 0; i < newRpcClientThreads(); i++) {
                     clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
@@ -178,11 +178,11 @@ public abstract class AChannelTest extends ATest {
         }
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    RPC_CLIENT_THREADS);
+                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
-                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                for (int i = 0; i < newRpcClientThreads(); i++) {
                     clientFutures.add(
                             clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
@@ -202,6 +202,10 @@ public abstract class AChannelTest extends ATest {
             }
             Closeables.closeQuietly(serverChannel);
         }
+    }
+
+    protected int newRpcClientThreads() {
+        return RPC_CLIENT_THREADS;
     }
 
     protected void runRpcHandlerPerformanceTest(
@@ -232,10 +236,10 @@ public abstract class AChannelTest extends ATest {
                 }, IRpcTestService.class);
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    RPC_CLIENT_THREADS);
+                    newRpcClientThreads());
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
-                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                for (int i = 0; i < newRpcClientThreads(); i++) {
                     clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
@@ -267,11 +271,11 @@ public abstract class AChannelTest extends ATest {
         }
         try {
             final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    RPC_CLIENT_THREADS);
+                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
-                for (int i = 0; i < RPC_CLIENT_THREADS; i++) {
+                for (int i = 0; i < newRpcClientThreads(); i++) {
                     clientFutures.add(
                             clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
