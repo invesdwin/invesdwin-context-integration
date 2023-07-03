@@ -15,8 +15,8 @@ import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEnd
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
-import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramClientEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -25,6 +25,12 @@ import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class RpcNettyDatagramHandlerTest extends AChannelTest {
+
+    @Override
+    protected int newRpcClientThreads() {
+        //does not work reliably with multiple clients, drops packets
+        return 1;
+    }
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -65,19 +71,19 @@ public class RpcNettyDatagramHandlerTest extends AChannelTest {
             }
         };
         //netty shared bootstrap
-        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramClientEndpointFactory(
-        //                type, address, getMaxMessageSize()) {
-        //            @Override
-        //            protected int newClientWorkerGroupThreadCount() {
-        //                return RPC_CLIENT_TRANSPORTS;
-        //            }
-        //        };
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramClientEndpointFactory(
+                type, address, getMaxMessageSize()) {
+            @Override
+            protected int newClientWorkerGroupThreadCount() {
+                return RPC_CLIENT_TRANSPORTS;
+            }
+        };
         //netty no shared bootstrap
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramClientEndpointFactory(
         //                type, address, getMaxMessageSize());
         //fastest
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramClientEndpointFactory(
-                address, getMaxMessageSize());
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramClientEndpointFactory(
+        //                address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
     }
 

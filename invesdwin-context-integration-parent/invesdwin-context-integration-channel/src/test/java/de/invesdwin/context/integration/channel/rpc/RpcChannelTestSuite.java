@@ -6,8 +6,8 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({ RpcNativeSocketChannelTest.class, RpcNettySocketHandlerTest.class, RpcNettyUdtHandlerTest.class,
-        RpcMinaSocketHandlerTest.class, RpcMinaDatagramHandlerTest.class })
+@SelectClasses({ RpcNativeSocketChannelTest.class, RpcNettySocketHandlerTest.class, RpcNettyDatagramHandlerTest.class,
+        RpcNettyUdtHandlerTest.class, RpcMinaSocketHandlerTest.class, RpcMinaDatagramHandlerTest.class })
 @Immutable
 public class RpcChannelTestSuite {
 
