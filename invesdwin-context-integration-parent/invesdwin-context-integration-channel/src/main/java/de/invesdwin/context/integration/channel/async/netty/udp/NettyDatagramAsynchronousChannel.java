@@ -61,8 +61,14 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             closeAsync = NettyDatagramAsynchronousChannel.this::closeAsync;
         }
         channel.open(bootstrap -> {
-            bootstrap.handler(new Handler(ByteBufAllocator.DEFAULT, handlerFactory.newHandler(),
-                    channel.getSocketAddress(), channel.getSocketSize(), closeAsync));
+            final InetSocketAddress openRecipient;
+            if (channel.isServer()) {
+                openRecipient = null;
+            } else {
+                openRecipient = channel.getSocketAddress();
+            }
+            bootstrap.handler(new Handler(ByteBufAllocator.DEFAULT, handlerFactory.newHandler(), openRecipient,
+                    channel.getSocketSize(), closeAsync));
         }, ch -> {
             final ChannelPipeline pipeline = ch.pipeline();
             final Duration heartbeatInterval = handlerFactory.getHeartbeatInterval();
@@ -110,7 +116,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         private final DatagramChannel ch;
         private final String sessionId;
         private final int socketSize;
-        private final InetSocketAddress remoteAddressOverride;
+        private InetSocketAddress remoteAddressOverride;
         private AttributesMap attributes;
 
         private Context(final DatagramChannel ch, final int socketSize, final InetSocketAddress remoteAddressOverride) {
@@ -185,6 +191,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             final Attribute<Context> attr = ch.attr(CONTEXT_KEY);
             final Context existing = attr.get();
             if (existing != null) {
+                existing.remoteAddressOverride = remoteAddressOverride;
                 return existing;
             } else {
                 final Context created = new Context((DatagramChannel) ch, socketSize, remoteAddressOverride);
@@ -246,7 +253,16 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void channelActive(final ChannelHandlerContext ctx) throws Exception {
-            final Context context = Context.getOrCreate(ctx.channel(), socketSize, openRecipient);
+            final InetSocketAddress recipient;
+            if (openRecipient != null) {
+                recipient = openRecipient;
+            } else {
+                recipient = (InetSocketAddress) ctx.channel().remoteAddress();
+            }
+            if (recipient == null) {
+                return;
+            }
+            final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
             try {
                 final IByteBufferProvider output = handler.open(context);
                 try {
@@ -267,7 +283,16 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void userEventTriggered(final ChannelHandlerContext ctx, final Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
-                final Context context = Context.getOrCreate(ctx.channel(), socketSize, null);
+                final InetSocketAddress recipient;
+                if (openRecipient != null) {
+                    recipient = openRecipient;
+                } else {
+                    recipient = (InetSocketAddress) ctx.channel().remoteAddress();
+                }
+                if (recipient == null) {
+                    return;
+                }
+                final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
                 try {
                     final IByteBufferProvider output = handler.idle(context);
                     try {
@@ -339,7 +364,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 return false;
             } else {
                 final IByteBuffer input = inputBuffer.slice(0, size);
-                final Context context = Context.getOrCreate(ctx.channel(), socketSize, null);
+                final Context context = Context.getOrCreate(ctx.channel(), socketSize, sender);
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(context, input);
