@@ -48,7 +48,7 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = maxMessageSize;
-        this.socketSize = maxMessageSize;
+        this.socketSize = maxMessageSize + DatagramSynchronousChannel.MESSAGE_INDEX;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
