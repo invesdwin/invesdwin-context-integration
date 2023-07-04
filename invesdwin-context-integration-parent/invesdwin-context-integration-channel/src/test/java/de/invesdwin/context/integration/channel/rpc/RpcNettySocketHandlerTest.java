@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.server.handler.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySharedSocketClientEndpointFactory;

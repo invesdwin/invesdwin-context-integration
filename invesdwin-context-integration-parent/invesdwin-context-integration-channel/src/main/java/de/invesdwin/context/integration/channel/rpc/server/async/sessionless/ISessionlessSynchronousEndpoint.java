@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.sessionless;
+package de.invesdwin.context.integration.channel.rpc.server.async.sessionless;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 

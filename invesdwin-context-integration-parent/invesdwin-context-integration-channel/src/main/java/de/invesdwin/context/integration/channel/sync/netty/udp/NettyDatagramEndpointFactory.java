@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;

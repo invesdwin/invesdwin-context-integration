@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.handler;
+package de.invesdwin.context.integration.channel.rpc.server.async;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
-import de.invesdwin.context.integration.channel.rpc.server.handler.poll.IPollingQueueProvider;
+import de.invesdwin.context.integration.channel.rpc.server.async.poll.IPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;

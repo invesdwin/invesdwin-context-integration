@@ -1,11 +1,11 @@
-package de.invesdwin.context.integration.channel.rpc.server.handler.poll;
+package de.invesdwin.context.integration.channel.rpc.server.async.poll;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
-import de.invesdwin.context.integration.channel.rpc.server.handler.AsynchronousEndpointServerHandler;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandler;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;

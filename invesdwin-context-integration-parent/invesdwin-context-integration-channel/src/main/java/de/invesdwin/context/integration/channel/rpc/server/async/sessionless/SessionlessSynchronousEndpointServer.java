@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.sessionless;
+package de.invesdwin.context.integration.channel.rpc.server.async.sessionless;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -13,8 +13,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.handler.AsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.server.handler.poll.SyncPollingQueueProvider;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.poll.SyncPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousReader;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousWriter;
