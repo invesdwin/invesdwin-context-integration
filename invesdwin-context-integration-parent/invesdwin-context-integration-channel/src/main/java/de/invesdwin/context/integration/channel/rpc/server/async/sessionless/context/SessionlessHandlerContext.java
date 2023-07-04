@@ -15,6 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public final class SessionlessHandlerContext implements IAsynchronousHandlerContext<IByteBufferProvider> {
     private final ProcessResponseResult result = new ProcessResponseResult();
+    private boolean resultBorrowed;
     private AttributesMap attributes;
     private Object otherRemoteAddress;
     private IByteBufferProvider response;
@@ -41,7 +42,7 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     @Override
     public void write(final IByteBufferProvider output) {
         if (response != null) {
-            throw new IllegalStateException("can only write a single response");
+            throw new IllegalStateException("can only write a single response in this context");
         }
         response = output;
         writeQueue.add(this);
@@ -57,6 +58,7 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
         result.clean();
         attributes = null;
         response = null;
+        resultBorrowed = false;
     }
 
     @Override
@@ -78,6 +80,10 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
 
     @Override
     public ProcessResponseResult borrowResult() {
+        if (resultBorrowed) {
+            throw new IllegalStateException("only one result can be borrowed in this context");
+        }
+        resultBorrowed = true;
         return result;
     }
 
