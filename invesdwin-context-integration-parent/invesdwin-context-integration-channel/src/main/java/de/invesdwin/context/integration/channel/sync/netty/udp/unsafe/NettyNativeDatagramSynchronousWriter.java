@@ -29,6 +29,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     private java.nio.ByteBuffer messageToWrite;
     private int position;
     private int remaining;
+    private InetSocketAddress recipient;
 
     public NettyNativeDatagramSynchronousWriter(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
@@ -57,10 +58,12 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     @Override
     public void close() throws IOException {
         if (buffer != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && recipient != null) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             buffer = null;
             messageBuffer = null;
@@ -68,6 +71,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             messageToWrite = null;
             position = 0;
             remaining = 0;
+            recipient = null;
         }
         if (channel != null) {
             channel.close();
@@ -83,6 +87,11 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         try {
+            if (channel.isServer()) {
+                recipient = channel.getOtherSocketAddress();
+            } else {
+                recipient = channel.getSocketAddress();
+            }
             final int size = message.getBuffer(messageBuffer);
             buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
             messageToWrite = buffer.asNioByteBuffer();
@@ -101,6 +110,7 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             messageToWrite = null;
             position = 0;
             remaining = 0;
+            recipient = null;
             return true;
         } else {
             return false;
@@ -108,13 +118,8 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
     }
 
     private boolean writeFurther() throws IOException {
-        final InetSocketAddress addr;
-        if (channel.isServer()) {
-            addr = channel.getOtherSocketAddress();
-        } else {
-            addr = channel.getSocketAddress();
-        }
-        final int count = fd.sendTo(messageToWrite, position, remaining, addr.getAddress(), addr.getPort(), false);
+        final int count = fd.sendTo(messageToWrite, position, remaining, recipient.getAddress(), recipient.getPort(),
+                false);
         remaining -= count;
         position += count;
         return remaining > 0;

@@ -12,25 +12,22 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.async.poll.SyncPollingQueueProvider;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousReader;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceCommandSynchronousWriter;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
-import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
@@ -41,8 +38,8 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
     private final WrappedExecutorService ioExecutor;
     private final SyncPollingQueueProvider pollingQueueProvider = new SyncPollingQueueProvider();
     private ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, Object> serverEndpoint;
-    private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
-    private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
+    private ISynchronousReader<IByteBufferProvider> requestReader;
+    private ISynchronousWriter<IByteBufferProvider> responseWriter;
     private IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
     private IoRunnable ioRunnable;
 
@@ -69,10 +66,8 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
     @Override
     public void open() throws IOException {
         this.serverEndpoint = serverSessionFactory.newEndpoint();
-        this.requestReader = new ServiceCommandSynchronousReader<IByteBufferProvider>(serverEndpoint.getReader(),
-                ByteBufferProviderSerde.GET);
-        this.responseWriter = new ServiceCommandSynchronousWriter<IByteBufferProvider>(serverEndpoint.getWriter(),
-                ByteBufferProviderSerde.GET, ByteBuffers.EXPANDABLE_LENGTH);
+        this.requestReader = serverEndpoint.getReader();
+        this.responseWriter = serverEndpoint.getWriter();
         this.requestReader.open();
         this.responseWriter.open();
 
@@ -110,7 +105,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
          * We don't use a bounded sized queue here because one slow client might otherwise block worker threads that
          * could still work on other tasks for other clients. PendingCount check will just
          */
-        private final ManyToOneConcurrentLinkedQueue<ProcessResponseResult> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
+        private final ManyToOneConcurrentLinkedQueue<Context> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
 
         private volatile Future<?> future;
 
@@ -162,7 +157,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
 
         private boolean handle() throws IOException {
             boolean writing = pollingQueueProvider.maybePollResults();
-            final ProcessResponseResult writeTask = writeQueue.peek();
+            final Context writeTask = writeQueue.peek();
             if (writeTask != null) {
                 /*
                  * even if we finish writing the current task and no other task follows, we still handled something and
@@ -170,18 +165,20 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                  */
                 writing = true;
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
-                    if (writeTask.isWriting()) {
-                        final ProcessResponseResult removedTask = writeQueue.remove();
-                        final ProcessResponseResult nextWriteTask = writeQueue.peek();
+                    if (writeTask.result.isWriting()) {
+                        final Context removedTask = writeQueue.remove();
+                        final Context nextWriteTask = writeQueue.peek();
                         if (nextWriteTask != null) {
-                            responseWriter.write(nextWriteTask.getResponse());
-                            nextWriteTask.setWriting(true);
+                            serverEndpoint.setOtherRemoteAddress(nextWriteTask.otherRemoteAddress);
+                            responseWriter.write(nextWriteTask.response);
+                            nextWriteTask.result.setWriting(true);
                         }
                         writeTask.close();
                         Assertions.checkSame(writeTask, removedTask);
                     } else {
-                        responseWriter.write(writeTask.getResponse());
-                        writeTask.setWriting(true);
+                        serverEndpoint.setOtherRemoteAddress(writeTask.otherRemoteAddress);
+                        responseWriter.write(writeTask.response);
+                        writeTask.result.setWriting(true);
                     }
                 }
             } else {
@@ -189,18 +186,22 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                 writing = false;
             }
             if (requestReader.hasNext()) {
-                final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
+                final IByteBufferProvider request = requestReader.readMessage();
                 try {
-                    activeRequests.add(result);
-                    dispatchProcessResponse(result);
+                    //TODO: make the context pooled and return the pooled instance after write is finished
+                    final Context context = new Context();
+                    context.otherRemoteAddress = serverEndpoint.getOtherRemoteAddress();
+                    context.writeQueue = writeQueue;
+                    final IByteBufferProvider response = handler.handle(context, request);
+                    if (response != null) {
+                        context.write(response);
+                    }
                 } catch (final EOFException e) {
-                    activeRequests.remove(result);
-                    result.close();
                     close();
                 } catch (final IOException e) {
-                    activeRequests.remove(result);
-                    result.close();
                     throw new RuntimeException(e);
+                } finally {
+                    requestReader.readFinished();
                 }
                 return true;
             } else {
@@ -208,5 +209,57 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
             }
         }
 
+    }
+
+    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
+        private final ProcessResponseResult result = new ProcessResponseResult();
+        private AttributesMap attributes;
+        private Object otherRemoteAddress;
+        private IByteBufferProvider response;
+        private ManyToOneConcurrentLinkedQueue<Context> writeQueue;
+
+        @Override
+        public void write(final IByteBufferProvider output) {
+            if (response != null) {
+                throw new IllegalStateException("can only write a single response");
+            }
+            response = output;
+            writeQueue.add(this);
+        }
+
+        @Override
+        public void close() throws IOException {
+            otherRemoteAddress = null;
+            result.clean();
+            attributes = null;
+            response = null;
+        }
+
+        @Override
+        public String getSessionId() {
+            return Objects.toString(otherRemoteAddress);
+        }
+
+        @Override
+        public AttributesMap getAttributes() {
+            if (attributes == null) {
+                synchronized (this) {
+                    if (attributes == null) {
+                        attributes = new AttributesMap();
+                    }
+                }
+            }
+            return attributes;
+        }
+
+        @Override
+        public ProcessResponseResult borrowResult() {
+            return result;
+        }
+
+        @Override
+        public void returnResult(final ProcessResponseResult result) {
+            result.clean();
+        }
     }
 }

@@ -8,6 +8,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
 import java.net.ProtocolFamily;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -81,7 +82,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     private long messageToWrite;
     private int position;
     private int remaining;
-    private boolean initialized;
+    private SocketAddress recipient;
     private int targetAddressLen;
     private long targetAddress;
 
@@ -98,18 +99,17 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DatagramSynchronousChannel.MESSAGE_INDEX);
         fd = Jvm.getValue(channel.getSocketChannel(), "fd");
-        if (!channel.isServer()) {
-            initialized = true;
-        }
     }
 
     @Override
     public void close() throws IOException {
         if (fd != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && recipient != null) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             buffer = null;
             messageBuffer = null;
@@ -117,12 +117,12 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             messageToWrite = 0;
             position = 0;
             remaining = 0;
+            recipient = null;
         }
         if (channel != null) {
             channel.close();
             channel = null;
         }
-        initialized = false;
         targetAddress = 0;
         targetAddressLen = 0;
     }
@@ -134,6 +134,9 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
+        if (channel.isServer()) {
+            maybeInitTargetAddress();
+        }
         final int size = message.getBuffer(messageBuffer);
         final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
         if (datagramSize > socketSize) {
@@ -144,6 +147,22 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         messageToWrite = buffer.addressOffset();
         position = 0;
         remaining = datagramSize;
+    }
+
+    private void maybeInitTargetAddress() {
+        if (recipient == null
+                || channel.isMultipleClientsAllowed() && !recipient.equals(channel.getOtherSocketAddress())) {
+            try {
+                recipient = channel.getOtherSocketAddress();
+                final Object targetSockAddr = CHANNEL_TARGETSOCKADDR_GETTER_MH.invoke(channel.getSocketChannel());
+                final ProtocolFamily family = (ProtocolFamily) CHANNEL_FAMILY_GETTER_MH
+                        .invoke(channel.getSocketChannel());
+                this.targetAddressLen = (int) NATIVESOCKETADDRESS_ENCODE_MH.invoke(targetSockAddr, family, recipient);
+                this.targetAddress = (long) NATIVESOCKETADDRESS_ADDRESS_MH.invoke(targetSockAddr);
+            } catch (final Throwable e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Override
@@ -162,32 +181,14 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
 
     private boolean writeFurther() throws IOException {
         final int count;
-        if (!initialized) {
-            initTargetAddress();
+        if (channel.isServer()) {
             count = send0(messageToWrite, position, remaining);
-            initialized = true;
         } else {
-            if (channel.isServer()) {
-                count = send0(messageToWrite, position, remaining);
-            } else {
-                count = write0(fd, messageToWrite, position, remaining);
-            }
+            count = write0(fd, messageToWrite, position, remaining);
         }
         remaining -= count;
         position += count;
         return remaining > 0;
-    }
-
-    private void initTargetAddress() {
-        try {
-            final Object targetSockAddr = CHANNEL_TARGETSOCKADDR_GETTER_MH.invoke(channel.getSocketChannel());
-            final ProtocolFamily family = (ProtocolFamily) CHANNEL_FAMILY_GETTER_MH.invoke(channel.getSocketChannel());
-            this.targetAddressLen = (int) NATIVESOCKETADDRESS_ENCODE_MH.invoke(targetSockAddr, family,
-                    channel.getOtherSocketAddress());
-            this.targetAddress = (long) NATIVESOCKETADDRESS_ADDRESS_MH.invoke(targetSockAddr);
-        } catch (final Throwable e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private int send0(final long address, final int position, final int length) throws IOException {
