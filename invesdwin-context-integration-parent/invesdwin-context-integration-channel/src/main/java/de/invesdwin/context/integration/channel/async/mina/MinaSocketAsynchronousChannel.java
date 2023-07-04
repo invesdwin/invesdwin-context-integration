@@ -245,10 +245,12 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             final Context context = Context.getOrCreate(session, socketSize, alloc);
             try {
                 final IByteBufferProvider output = handler.open(context);
-                try {
-                    writeOutput(session, context, output);
-                } finally {
-                    handler.outputFinished(context);
+                if (output != null) {
+                    try {
+                        writeOutput(session, context, output);
+                    } finally {
+                        handler.outputFinished(context);
+                    }
                 }
             } catch (final IOException e) {
                 close(session);
@@ -266,10 +268,12 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             final Context context = Context.getOrCreate(session, socketSize, alloc);
             try {
                 final IByteBufferProvider output = handler.idle(context);
-                try {
-                    writeOutput(session, context, output);
-                } finally {
-                    handler.outputFinished(context);
+                if (output != null) {
+                    try {
+                        writeOutput(session, context, output);
+                    } finally {
+                        handler.outputFinished(context);
+                    }
                 }
             } catch (final IOException e) {
                 try {
@@ -342,10 +346,12 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(context, input);
-                    try {
-                        writeOutput(session, context, output);
-                    } finally {
-                        handler.outputFinished(context);
+                    if (output != null) {
+                        try {
+                            writeOutput(session, context, output);
+                        } finally {
+                            handler.outputFinished(context);
+                        }
                     }
                     return repeat;
                 } catch (final IOException e) {
@@ -369,21 +375,19 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final IoSession session, final Context context, final IByteBufferProvider output)
                 throws IOException {
-            if (output != null) {
-                if (future != null && !future.isDone()) {
-                    //use a fresh buffer to not overwrite pending output message
-                    context.writeOutputNotNullSafe(output);
-                } else {
-                    /*
-                     * reuse buffer, though a separate output buffer so we don't accidentaly overwrite output with the
-                     * next input during the same write cycle
-                     */
-                    outputBuf.position(0); //reset indexes
-                    final int size = output.getBuffer(outputMessageBuffer);
-                    outputBuffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
-                    outputBuf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-                    future = session.write(outputBuf);
-                }
+            if (future != null && !future.isDone()) {
+                //use a fresh buffer to not overwrite pending output message
+                context.writeOutputNotNullSafe(output);
+            } else {
+                /*
+                 * reuse buffer, though a separate output buffer so we don't accidentaly overwrite output with the next
+                 * input during the same write cycle
+                 */
+                outputBuf.position(0); //reset indexes
+                final int size = output.getBuffer(outputMessageBuffer);
+                outputBuffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
+                outputBuf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+                future = session.write(outputBuf);
             }
         }
     }

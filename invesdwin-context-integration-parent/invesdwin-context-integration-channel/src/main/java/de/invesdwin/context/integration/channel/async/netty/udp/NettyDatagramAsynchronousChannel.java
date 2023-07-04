@@ -277,10 +277,12 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
             try {
                 final IByteBufferProvider output = handler.open(context);
-                try {
-                    writeOutput(ctx, context, context.getRemoteAddressOverride(), output);
-                } finally {
-                    handler.outputFinished(context);
+                if (output != null) {
+                    try {
+                        writeOutput(ctx, context, context.getRemoteAddressOverride(), output);
+                    } finally {
+                        handler.outputFinished(context);
+                    }
                 }
             } catch (final IOException e) {
                 close(ctx);
@@ -307,10 +309,12 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
                 try {
                     final IByteBufferProvider output = handler.idle(context);
-                    try {
-                        writeOutput(ctx, context, context.getRemoteAddressOverride(), output);
-                    } finally {
-                        handler.outputFinished(context);
+                    if (output != null) {
+                        try {
+                            writeOutput(ctx, context, context.getRemoteAddressOverride(), output);
+                        } finally {
+                            handler.outputFinished(context);
+                        }
                     }
                 } catch (final IOException e) {
                     try {
@@ -380,10 +384,12 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(context, input);
-                    try {
-                        writeOutput(ctx, context, sender, output);
-                    } finally {
-                        handler.outputFinished(context);
+                    if (output != null) {
+                        try {
+                            writeOutput(ctx, context, sender, output);
+                        } finally {
+                            handler.outputFinished(context);
+                        }
                     }
                     return repeat;
                 } catch (final IOException e) {
@@ -407,22 +413,20 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         private void writeOutput(final ChannelHandlerContext ctx, final Context context, final InetSocketAddress sender,
                 final IByteBufferProvider output) throws IOException {
-            if (output != null) {
-                if (future != null && !future.isDone()) {
-                    //use a fresh buffer to not overwrite pending output message
-                    context.writeOutputNotNullSafe(output);
-                } else {
-                    /*
-                     * reuse buffer, though a separate output buffer so we don't accidentaly overwrite output with the
-                     * next input during the same write cycle
-                     */
-                    outputBuf.setIndex(0, 0); //reset indexes
-                    final int size = output.getBuffer(outputMessageBuffer);
-                    outputBuffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
-                    outputBuf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
-                    outputBuf.retain();
-                    future = ctx.writeAndFlush(new DatagramPacket(outputBuf, sender));
-                }
+            if (future != null && !future.isDone()) {
+                //use a fresh buffer to not overwrite pending output message
+                context.writeOutputNotNullSafe(output);
+            } else {
+                /*
+                 * reuse buffer, though a separate output buffer so we don't accidentaly overwrite output with the next
+                 * input during the same write cycle
+                 */
+                outputBuf.setIndex(0, 0); //reset indexes
+                final int size = output.getBuffer(outputMessageBuffer);
+                outputBuffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
+                outputBuf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
+                outputBuf.retain();
+                future = ctx.writeAndFlush(new DatagramPacket(outputBuf, sender));
             }
         }
     }

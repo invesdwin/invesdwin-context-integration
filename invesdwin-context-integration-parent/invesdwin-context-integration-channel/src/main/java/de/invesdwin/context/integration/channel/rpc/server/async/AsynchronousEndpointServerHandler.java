@@ -15,7 +15,6 @@ import de.invesdwin.context.integration.channel.rpc.server.service.command.IServ
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.FastEOFException;
@@ -30,7 +29,6 @@ public class AsynchronousEndpointServerHandler
 
     private final AsynchronousEndpointServerHandlerFactory parent;
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
-    private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private final ServiceSynchronousCommandSerde<IByteBufferProvider> outputSerde = new ServiceSynchronousCommandSerde<>(
             ByteBufferProviderSerde.GET, null);
     private volatile IServiceSynchronousCommand<IByteBufferProvider> output;
@@ -52,7 +50,6 @@ public class AsynchronousEndpointServerHandler
     @Override
     public void close() {
         requestHolder.close();
-        responseHolder.close();
         output = null;
         outputBuffer = null;
     }
@@ -103,7 +100,6 @@ public class AsynchronousEndpointServerHandler
     @Override
     public void outputFinished(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
         output = null;
-        responseHolder.close();
     }
 
     @Override
@@ -127,28 +123,28 @@ public class AsynchronousEndpointServerHandler
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
             return null;
         }
+        final ProcessResponseResult result = context.borrowResult();
+        result.setContext(context);
         final SynchronousEndpointService service = parent.getService(serviceId);
         if (service == null) {
-            responseHolder.setService(serviceId);
-            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            responseHolder.setSequence(requestHolder.getSequence());
-            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "service not found: " + serviceId);
-            return responseHolder;
+            result.getResponse().setService(serviceId);
+            result.getResponse().setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            result.getResponse().setSequence(requestHolder.getSequence());
+            result.getResponse()
+                    .setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "service not found: " + serviceId);
+            return result.getResponse();
         }
         final int methodId = requestHolder.getMethod();
         final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
         if (methodInfo == null) {
-            responseHolder.setService(serviceId);
-            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            responseHolder.setSequence(requestHolder.getSequence());
-            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "method not found: " + methodId);
-            return responseHolder;
+            result.getResponse().setService(serviceId);
+            result.getResponse().setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            result.getResponse().setSequence(requestHolder.getSequence());
+            result.getResponse()
+                    .setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "method not found: " + methodId);
+            return result.getResponse();
         }
 
-        final ProcessResponseResult result = context.borrowResult();
-        result.setContext(context);
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder,
@@ -166,25 +162,28 @@ public class AsynchronousEndpointServerHandler
             if (maxPendingWorkCountPerSession > 0) {
                 final int thisPendingCount = workExecutor.getPendingCount();
                 if (thisPendingCount > maxPendingWorkCountPerSession) {
-                    responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    responseHolder.setSequence(requestHolder.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                            "too many requests pending for this session [" + thisPendingCount
-                                    + "], please try again later");
-                    return responseHolder;
+                    result.getResponse().setService(serviceId);
+                    result.getResponse().setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    result.getResponse().setSequence(requestHolder.getSequence());
+                    result.getResponse()
+                            .setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                    "too many requests pending for this session [" + thisPendingCount
+                                            + "], please try again later");
+                    return result.getResponse();
                 }
             }
             final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
             if (maxPendingWorkCountOverall > 0) {
                 final int overallPendingCount = workExecutor.getPendingCount();
                 if (overallPendingCount > maxPendingWorkCountOverall) {
-                    responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    responseHolder.setSequence(requestHolder.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                            "too many requests pending overall [" + overallPendingCount + "], please try again later");
-                    return responseHolder;
+                    result.getResponse().setService(serviceId);
+                    result.getResponse().setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    result.getResponse().setSequence(requestHolder.getSequence());
+                    result.getResponse()
+                            .setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                                    "too many requests pending overall [" + overallPendingCount
+                                            + "], please try again later");
+                    return result.getResponse();
                 }
             }
             //copy request for the async processing

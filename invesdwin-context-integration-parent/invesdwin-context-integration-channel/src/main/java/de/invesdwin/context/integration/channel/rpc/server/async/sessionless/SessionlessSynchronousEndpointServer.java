@@ -12,22 +12,20 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.async.poll.SyncPollingQueueProvider;
-import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.context.SessionlessHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.context.SessionlessHandlerContextPool;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
@@ -105,7 +103,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
          * We don't use a bounded sized queue here because one slow client might otherwise block worker threads that
          * could still work on other tasks for other clients. PendingCount check will just
          */
-        private final ManyToOneConcurrentLinkedQueue<Context> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
+        private final ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
 
         private volatile Future<?> future;
 
@@ -157,7 +155,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
 
         private boolean handle() throws IOException {
             boolean writing = pollingQueueProvider.maybePollResults();
-            final Context writeTask = writeQueue.peek();
+            final SessionlessHandlerContext writeTask = writeQueue.peek();
             if (writeTask != null) {
                 /*
                  * even if we finish writing the current task and no other task follows, we still handled something and
@@ -165,20 +163,20 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                  */
                 writing = true;
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
-                    if (writeTask.result.isWriting()) {
-                        final Context removedTask = writeQueue.remove();
-                        final Context nextWriteTask = writeQueue.peek();
+                    if (writeTask.getResult().isWriting()) {
+                        final SessionlessHandlerContext removedTask = writeQueue.remove();
+                        final SessionlessHandlerContext nextWriteTask = writeQueue.peek();
                         if (nextWriteTask != null) {
-                            serverEndpoint.setOtherRemoteAddress(nextWriteTask.otherRemoteAddress);
-                            responseWriter.write(nextWriteTask.response);
-                            nextWriteTask.result.setWriting(true);
+                            serverEndpoint.setOtherRemoteAddress(nextWriteTask.getOtherRemoteAddress());
+                            responseWriter.write(nextWriteTask.getResponse());
+                            nextWriteTask.getResult().setWriting(true);
                         }
                         writeTask.close();
                         Assertions.checkSame(writeTask, removedTask);
                     } else {
-                        serverEndpoint.setOtherRemoteAddress(writeTask.otherRemoteAddress);
-                        responseWriter.write(writeTask.response);
-                        writeTask.result.setWriting(true);
+                        serverEndpoint.setOtherRemoteAddress(writeTask.getOtherRemoteAddress());
+                        responseWriter.write(writeTask.getResponse());
+                        writeTask.getResult().setWriting(true);
                     }
                 }
             } else {
@@ -187,18 +185,29 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
             }
             if (requestReader.hasNext()) {
                 final IByteBufferProvider request = requestReader.readMessage();
+                final SessionlessHandlerContext context = SessionlessHandlerContextPool.INSTANCE.borrowObject();
                 try {
-                    //TODO: make the context pooled and return the pooled instance after write is finished
-                    final Context context = new Context();
-                    context.otherRemoteAddress = serverEndpoint.getOtherRemoteAddress();
-                    context.writeQueue = writeQueue;
+                    context.init(serverEndpoint.getOtherRemoteAddress(), writeQueue);
                     final IByteBufferProvider response = handler.handle(context, request);
                     if (response != null) {
-                        context.write(response);
+                        try {
+                            context.write(response);
+                        } finally {
+                            /*
+                             * WARNING: this might cause problems if the handler reuses output buffers, since we don't
+                             * make a safe copy here for the write queue and further requests could come in. This needs
+                             * to be considered when modifying/wrapping the handler. To fix the issue,
+                             * ProcessResponseResult (via context.borrowResult() and result.close()) should be used by
+                             * the handler.
+                             */
+                            handler.outputFinished(context);
+                        }
                     }
                 } catch (final EOFException e) {
+                    context.close();
                     close();
                 } catch (final IOException e) {
+                    context.close();
                     throw new RuntimeException(e);
                 } finally {
                     requestReader.readFinished();
@@ -211,55 +220,4 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
 
     }
 
-    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
-        private final ProcessResponseResult result = new ProcessResponseResult();
-        private AttributesMap attributes;
-        private Object otherRemoteAddress;
-        private IByteBufferProvider response;
-        private ManyToOneConcurrentLinkedQueue<Context> writeQueue;
-
-        @Override
-        public void write(final IByteBufferProvider output) {
-            if (response != null) {
-                throw new IllegalStateException("can only write a single response");
-            }
-            response = output;
-            writeQueue.add(this);
-        }
-
-        @Override
-        public void close() throws IOException {
-            otherRemoteAddress = null;
-            result.clean();
-            attributes = null;
-            response = null;
-        }
-
-        @Override
-        public String getSessionId() {
-            return Objects.toString(otherRemoteAddress);
-        }
-
-        @Override
-        public AttributesMap getAttributes() {
-            if (attributes == null) {
-                synchronized (this) {
-                    if (attributes == null) {
-                        attributes = new AttributesMap();
-                    }
-                }
-            }
-            return attributes;
-        }
-
-        @Override
-        public ProcessResponseResult borrowResult() {
-            return result;
-        }
-
-        @Override
-        public void returnResult(final ProcessResponseResult result) {
-            result.clean();
-        }
-    }
 }
