@@ -4,15 +4,15 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class BlockingDatagramEndpointFactory
-        implements IAsynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
+        implements ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
 
     private final SocketAddress address;
     private final boolean server;
@@ -26,7 +26,7 @@ public class BlockingDatagramEndpointFactory
     }
 
     @Override
-    public IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> newEndpoint() {
+    public ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> newEndpoint() {
         final BlockingDatagramSynchronousChannel channel = newDatagramSynchronousChannel(address, server,
                 estimatedMaxMessageSize);
         if (server) {
@@ -43,7 +43,7 @@ public class BlockingDatagramEndpointFactory
     }
 
     private static final class BlockingDatagramEndpoint
-            implements IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
+            implements ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
         private final ISynchronousWriter<IByteBufferProvider> writer;
         private final BlockingDatagramSynchronousChannel channel;
         private final ISynchronousReader<IByteBufferProvider> reader;

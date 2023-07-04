@@ -133,7 +133,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                         nextWriteTask.setWriting(true);
                     }
                     activeRequests.remove(writeTask);
-                    ProcessResponseResultPool.INSTANCE.returnObject(writeTask);
+                    writeTask.close();
                     Assertions.checkSame(writeTask, removedTask);
                 } else {
                     responseWriter.write(writeTask.getResponse());
@@ -153,11 +153,11 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 dispatchProcessResponse(result);
             } catch (final EOFException e) {
                 activeRequests.remove(result);
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
+                result.close();
                 close();
             } catch (final IOException e) {
                 activeRequests.remove(result);
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
+                result.close();
                 throw new RuntimeException(e);
             }
             return true;

@@ -10,6 +10,8 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -198,6 +200,16 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 attr.set(created);
                 return created;
             }
+        }
+
+        @Override
+        public ProcessResponseResult borrowResult() {
+            return ProcessResponseResultPool.INSTANCE.borrowObject();
+        }
+
+        @Override
+        public void returnResult(final ProcessResponseResult result) {
+            ProcessResponseResultPool.INSTANCE.returnObject(result);
         }
     }
 

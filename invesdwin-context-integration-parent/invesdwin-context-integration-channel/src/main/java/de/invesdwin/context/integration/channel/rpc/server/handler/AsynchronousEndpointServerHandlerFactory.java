@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.async.handler;
+package de.invesdwin.context.integration.channel.rpc.server.handler;
 
 import java.io.IOException;
 
@@ -7,6 +7,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.handler.poll.IPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
@@ -29,6 +30,7 @@ public class AsynchronousEndpointServerHandlerFactory
     private final WrappedExecutorService workExecutor;
     private final int maxPendingWorkCountOverall;
     private final int maxPendingWorkCountPerSession;
+    private IPollingQueueProvider pollingQueueProvider;
 
     public AsynchronousEndpointServerHandlerFactory() {
         this(SerdeLookupConfig.DEFAULT);
@@ -47,6 +49,14 @@ public class AsynchronousEndpointServerHandlerFactory
             throw new IllegalArgumentException(
                     "maxPendingWorkCountPerSession should not be negative: " + maxPendingWorkCountPerSession);
         }
+    }
+
+    public void setPollingQueueProvider(final IPollingQueueProvider pollingQueueProvider) {
+        this.pollingQueueProvider = pollingQueueProvider;
+    }
+
+    public IPollingQueueProvider getPollingQueueProvider() {
+        return pollingQueueProvider;
     }
 
     /**

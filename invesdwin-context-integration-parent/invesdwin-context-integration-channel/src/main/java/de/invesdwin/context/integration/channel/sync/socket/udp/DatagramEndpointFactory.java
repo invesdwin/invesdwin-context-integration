@@ -4,15 +4,15 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class DatagramEndpointFactory
-        implements IAsynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
+        implements ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
     private final SocketAddress address;
     private final boolean server;
     private final int estimatedMaxMessageSize;
@@ -25,7 +25,7 @@ public class DatagramEndpointFactory
     }
 
     @Override
-    public IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> newEndpoint() {
+    public ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> newEndpoint() {
         final DatagramSynchronousChannel channel = newDatagramSynchronousChannel(address, server,
                 estimatedMaxMessageSize);
         if (server) {
@@ -42,7 +42,7 @@ public class DatagramEndpointFactory
     }
 
     private static final class DatagramEndpoint
-            implements IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
+            implements ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> {
         private final DatagramSynchronousChannel channel;
         private final ISynchronousReader<IByteBufferProvider> reader;
         private final ISynchronousWriter<IByteBufferProvider> writer;

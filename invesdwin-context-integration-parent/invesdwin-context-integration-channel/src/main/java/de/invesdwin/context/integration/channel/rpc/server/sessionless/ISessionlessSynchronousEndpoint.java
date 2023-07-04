@@ -1,8 +1,8 @@
-package de.invesdwin.context.integration.channel.rpc.server.async;
+package de.invesdwin.context.integration.channel.rpc.server.sessionless;
 
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 
-public interface IAsynchronousEndpoint<R, W, O> extends ISynchronousEndpoint<R, W> {
+public interface ISessionlessSynchronousEndpoint<R, W, O> extends ISynchronousEndpoint<R, W> {
 
     O getOtherRemoteAddress();
 

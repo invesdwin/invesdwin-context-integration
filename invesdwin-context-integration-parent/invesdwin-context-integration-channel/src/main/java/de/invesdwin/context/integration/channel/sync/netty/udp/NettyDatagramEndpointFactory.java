@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.async.IAsynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
@@ -13,7 +13,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class NettyDatagramEndpointFactory
-        implements IAsynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> {
+        implements ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> {
     private final INettyDatagramChannelType type;
     private final InetSocketAddress address;
     private final boolean server;
@@ -28,7 +28,7 @@ public class NettyDatagramEndpointFactory
     }
 
     @Override
-    public IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> newEndpoint() {
+    public ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> newEndpoint() {
         final NettyDatagramSynchronousChannel channel = newNettyDatagramSynchronousChannel(type, address, server,
                 estimatedMaxMessageSize);
         if (server) {
@@ -45,7 +45,7 @@ public class NettyDatagramEndpointFactory
     }
 
     private static final class NettyDatagramEndpoint
-            implements IAsynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> {
+            implements ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> {
         private final NettyDatagramSynchronousChannel channel;
         private final ISynchronousWriter<IByteBufferProvider> writer;
         private final ISynchronousReader<IByteBufferProvider> reader;
