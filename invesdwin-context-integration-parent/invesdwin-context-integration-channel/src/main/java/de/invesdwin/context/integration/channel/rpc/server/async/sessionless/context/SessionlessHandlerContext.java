@@ -56,7 +56,9 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     public void clean() {
         otherRemoteAddress = null;
         result.clean();
-        attributes = null;
+        if (attributes != null && !attributes.isEmpty()) {
+            attributes.clear();
+        }
         response = null;
         resultBorrowed = false;
     }
