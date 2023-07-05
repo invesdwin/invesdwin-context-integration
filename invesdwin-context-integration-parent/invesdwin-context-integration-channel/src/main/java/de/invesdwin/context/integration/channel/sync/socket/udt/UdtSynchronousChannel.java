@@ -10,7 +10,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import com.barchart.udt.ExceptionUDT;
 import com.barchart.udt.OptionUDT;
 import com.barchart.udt.SocketUDT;
 import com.barchart.udt.nio.SelectorProviderUDT;
@@ -53,6 +52,25 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
         this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    UdtSynchronousChannel(final UdtSynchronousChannelServer server, final SocketChannelUDT socketChannel)
+            throws IOException {
+        this.socketAddress = server.socketAddress;
+        this.server = false;
+        this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
+        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.finalizer = new SocketSynchronousChannelFinalizer();
+        finalizer.socketChannel = socketChannel;
+        finalizer.socket = extractSocket(socketChannel);
+        try {
+            configure();
+            activeCount.incrementAndGet();
+            finalizer.register(this);
+        } catch (final IOException e) {
+            close();
+            throw e;
+        }
     }
 
     public InetSocketAddress getSocketAddress() {
@@ -110,15 +128,6 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
         socketChannelOpening = true;
         try {
             if (server) {
-                //                SelectorProvider provider = SelectorProviderUDT.DATAGRAM;
-                //                ServerSocketChannel acceptChannel = provider.openServerSocketChannel();
-                //                ServerSocket acceptSocket = acceptChannel.socket();
-                //                InetSocketAddress acceptAddress = new InetSocketAddress(&quot;localhost&quot;, 12345);
-                //                acceptorSocket.bind(acceptAddress);
-                //                assert acceptSocket.isBound();
-                //                SocketChannel connectChannel = acceptChannel.accept();
-                //                assert connectChannel.isConnected();
-
                 finalizer.serverSocketChannel = newServerSocketChannel();
                 configureSocket(finalizer.serverSocketChannel.socketUDT());
                 finalizer.serverSocketChannel.socketUDT().bind(socketAddress);
@@ -149,18 +158,17 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
                     }
                 }
                 try {
-                    finalizer.socket = finalizer.socketChannel.socketUDT();
+                    finalizer.socket = extractSocket(finalizer.socketChannel);
                 } catch (final Throwable t) {
                     //unix domain sockets throw an error here
                 }
-                configureSocket(finalizer.socket);
             } else {
                 final Duration connectTimeout = getConnectTimeout();
                 final long startNanos = System.nanoTime();
                 while (true) {
                     finalizer.socketChannel = newSocketChannel();
                     try {
-                        configureSocket(finalizer.socketChannel.socketUDT());
+                        configureSocket(extractSocket(finalizer.socketChannel));
                         while (!finalizer.socketChannel.socketUDT().isConnected()) {
                             finalizer.socketChannel.connect(socketAddress);
                             if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
@@ -174,7 +182,7 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
                             }
                         }
                         try {
-                            finalizer.socket = finalizer.socketChannel.socketUDT();
+                            finalizer.socket = extractSocket(finalizer.socketChannel);
                         } catch (final Throwable t) {
                             //unix domain sockets throw an error here
                         }
@@ -199,14 +207,27 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
                     }
                 }
             }
-            //non-blocking sockets are a bit faster than blocking ones
-            finalizer.socketChannel.configureBlocking(false);
+            configure();
         } finally {
             socketChannelOpening = false;
         }
     }
 
-    private void configureSocket(final SocketUDT socket) throws ExceptionUDT {
+    protected void configure() throws IOException {
+        configureSocketChannel();
+        configureSocket(finalizer.socket);
+    }
+
+    protected void configureSocketChannel() throws IOException {
+        //non-blocking sockets are a bit faster than blocking ones
+        finalizer.socketChannel.configureBlocking(false);
+    }
+
+    protected void configureSocket(final SocketUDT socket) throws IOException {
+        configureSocketStatic(socket);
+    }
+
+    public static void configureSocketStatic(final SocketUDT socket) throws IOException {
         if (socket != null) {
             //might be unix domain socket
             //            socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
@@ -216,6 +237,15 @@ public class UdtSynchronousChannel implements ISynchronousChannel {
             socket.setOption(OptionUDT.UDT_RCVSYN, Boolean.FALSE);
             socket.setOption(OptionUDT.Is_Receive_Synchronous, Boolean.FALSE);
             socket.setOption(OptionUDT.Is_Send_Synchronous, Boolean.FALSE);
+        }
+    }
+
+    private static SocketUDT extractSocket(final SocketChannelUDT socketChannel) {
+        try {
+            return socketChannel.socketUDT();
+        } catch (final Throwable t) {
+            //unix domain sockets throw an error here
+            return null;
         }
     }
 

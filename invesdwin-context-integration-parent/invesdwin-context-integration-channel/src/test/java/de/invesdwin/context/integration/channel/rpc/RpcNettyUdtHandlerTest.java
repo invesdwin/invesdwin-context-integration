@@ -6,7 +6,6 @@ import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
@@ -29,11 +28,6 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class RpcNettyUdtHandlerTest extends ARpcChannelTest {
 
-    @Override
-    protected int newRpcClientThreads() {
-        return 1;
-    }
-
     @Test
     public void testRpcPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
@@ -41,12 +35,11 @@ public class RpcNettyUdtHandlerTest extends ARpcChannelTest {
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
 
-    @Disabled("has issues with closing")
     @Test
     public void testRpcAllModes() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
+            final int port = NetworkUtil.findAvailableTcpPort();
+            final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
             runRpcTest(address, mode);

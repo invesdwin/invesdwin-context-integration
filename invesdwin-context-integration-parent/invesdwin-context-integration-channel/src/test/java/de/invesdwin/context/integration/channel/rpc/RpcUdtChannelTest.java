@@ -17,10 +17,11 @@ import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousRea
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannelServer;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketEndpointFactory;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousChannelServer;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -28,7 +29,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNativeSocketChannelTest extends ARpcChannelTest {
+public class RpcUdtChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -52,22 +53,23 @@ public class RpcNativeSocketChannelTest extends ARpcChannelTest {
         }
     }
 
-    protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode) throws InterruptedException {
-        final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
-                new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
+    protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
+            throws InterruptedException {
+        final ATransformingSynchronousReader<UdtSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<UdtSynchronousChannel, ISynchronousEndpointSession>(
+                new UdtSynchronousChannelServer(address, getMaxMessageSize())) {
             private final AtomicInteger index = new AtomicInteger();
 
             @Override
-            protected ISynchronousEndpointSession transform(final SocketSynchronousChannel acceptedClientChannel) {
-                final ISynchronousReader<IByteBufferProvider> requestReader = new NativeSocketSynchronousReader(
+            protected ISynchronousEndpointSession transform(final UdtSynchronousChannel acceptedClientChannel) {
+                final ISynchronousReader<IByteBufferProvider> requestReader = new UdtSynchronousReader(
                         acceptedClientChannel);
-                final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeSocketSynchronousWriter(
+                final ISynchronousWriter<IByteBufferProvider> responseWriter = new UdtSynchronousWriter(
                         acceptedClientChannel);
                 return new DefaultSynchronousEndpointSession(String.valueOf(index.incrementAndGet()),
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new UdtEndpointFactory(
                 address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
