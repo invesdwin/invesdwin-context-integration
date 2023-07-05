@@ -69,16 +69,16 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 openRecipient = channel.getSocketAddress();
             }
-            bootstrap.handler(new Handler(ByteBufAllocator.DEFAULT, handlerFactory.newHandler(), openRecipient,
-                    channel.getSocketSize(), closeAsync));
+            bootstrap.handler(new Handler(ByteBufAllocator.DEFAULT, handlerFactory.newHandler(), openRecipient, channel,
+                    closeAsync));
         }, ch -> {
             final ChannelPipeline pipeline = ch.pipeline();
             final Duration heartbeatInterval = handlerFactory.getHeartbeatInterval();
             final long heartbeatIntervalMillis = heartbeatInterval.longValue(FTimeUnit.MILLISECONDS);
             pipeline.addLast(new IdleStateHandler(heartbeatIntervalMillis, heartbeatIntervalMillis,
                     heartbeatIntervalMillis, TimeUnit.MILLISECONDS));
-            pipeline.addLast(new Handler(ch.alloc(), handlerFactory.newHandler(), ch.remoteAddress(),
-                    channel.getSocketSize(), closeAsync));
+            pipeline.addLast(
+                    new Handler(ch.alloc(), handlerFactory.newHandler(), ch.remoteAddress(), channel, closeAsync));
         });
     }
 
@@ -215,7 +215,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     private static final class Handler extends ChannelInboundHandlerAdapter {
         private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
-        private final int socketSize;
+        private final NettyDatagramSynchronousChannel channel;
         private final InetSocketAddress openRecipient;
         private final ByteBuf inputBuf;
         private final NettyDelegateByteBuffer inputBuffer;
@@ -232,14 +232,15 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         private Handler(final ByteBufAllocator alloc,
                 final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler,
-                final InetSocketAddress openRecipient, final int socketSize, final Runnable closeAsync) {
+                final InetSocketAddress openRecipient, final NettyDatagramSynchronousChannel channel,
+                final Runnable closeAsync) {
             this.handler = handler;
-            this.socketSize = socketSize;
+            this.channel = channel;
             this.openRecipient = openRecipient;
             //netty uses direct buffers per default
-            this.inputBuf = alloc.buffer(socketSize);
+            this.inputBuf = alloc.buffer(channel.getSocketSize());
             this.inputBuffer = new NettyDelegateByteBuffer(inputBuf);
-            this.outputBuf = alloc.buffer(socketSize);
+            this.outputBuf = alloc.buffer(channel.getSocketSize());
             this.outputBuffer = new NettyDelegateByteBuffer(outputBuf);
             this.outputMessageBuffer = outputBuffer.newSliceFrom(NettyDatagramSynchronousChannel.MESSAGE_INDEX);
             this.closeAsync = closeAsync;
@@ -274,7 +275,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             if (recipient == null) {
                 return;
             }
-            final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
+            final Context context = Context.getOrCreate(ctx.channel(), channel.getSocketSize(), recipient);
             try {
                 final IByteBufferProvider output = handler.open(context);
                 if (output != null) {
@@ -291,7 +292,9 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void channelInactive(final ChannelHandlerContext ctx) throws Exception {
-            close(ctx);
+            if (!channel.isMultipleClientsAllowed()) {
+                close(ctx);
+            }
         }
 
         @Override
@@ -306,7 +309,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
                 if (recipient == null) {
                     return;
                 }
-                final Context context = Context.getOrCreate(ctx.channel(), socketSize, recipient);
+                final Context context = Context.getOrCreate(ctx.channel(), channel.getSocketSize(), recipient);
                 try {
                     final IByteBufferProvider output = handler.idle(context);
                     if (output != null) {
@@ -376,11 +379,13 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             }
             //message complete
             if (ClosedByteBuffer.isClosed(inputBuffer, 0, size)) {
-                close(ctx);
+                if (!channel.isMultipleClientsAllowed()) {
+                    close(ctx);
+                }
                 return false;
             } else {
                 final IByteBuffer input = inputBuffer.slice(0, size);
-                final Context context = Context.getOrCreate(ctx.channel(), socketSize, sender);
+                final Context context = Context.getOrCreate(ctx.channel(), channel.getSocketSize(), sender);
                 try {
                     reset();
                     final IByteBufferProvider output = handler.handle(context, input);

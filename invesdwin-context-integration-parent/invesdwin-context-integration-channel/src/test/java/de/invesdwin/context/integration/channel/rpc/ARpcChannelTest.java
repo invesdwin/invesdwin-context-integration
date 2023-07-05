@@ -57,7 +57,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        serverChannel.register(IRpcTestService.class, new RpcTestService());
+        serverChannel.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
                         new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)) {
@@ -96,7 +96,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        serverChannel.register(IRpcTestService.class, new RpcTestService());
+        serverChannel.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final SynchronousEndpointClient<IRpcTestService>[] clients = new SynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
             clients[i] = new SynchronousEndpointClient<>(
@@ -152,7 +152,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -188,7 +188,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final SynchronousEndpointClient<IRpcTestService>[] clients = new SynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
@@ -241,7 +241,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final SynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
@@ -278,7 +278,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService());
+        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
         final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final SynchronousEndpointClient<IRpcTestService>[] clients = new SynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];

@@ -7,6 +7,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.async.poll.AsyncPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.async.poll.IPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -30,7 +31,7 @@ public class AsynchronousEndpointServerHandlerFactory
     private final WrappedExecutorService workExecutor;
     private final int maxPendingWorkCountOverall;
     private final int maxPendingWorkCountPerSession;
-    private IPollingQueueProvider pollingQueueProvider;
+    private IPollingQueueProvider pollingQueueProvider = AsyncPollingQueueProvider.INSTANCE;
 
     public AsynchronousEndpointServerHandlerFactory() {
         this(SerdeLookupConfig.DEFAULT);

@@ -28,6 +28,7 @@ public class RpcNettyDatagramHandlerTest extends ARpcChannelTest {
     @Override
     protected int newRpcClientThreads() {
         //does not work reliably with multiple clients, drops packets
+        //also aborts after first client is done, maybe the server socket gets closed because of a client close message?
         return 1;
     }
 
@@ -49,7 +50,7 @@ public class RpcNettyDatagramHandlerTest extends ARpcChannelTest {
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(VALUES * RPC_CLIENT_THREADS, duration));
+                    new ProcessedEventsRateString(VALUES * newRpcClientThreads(), duration));
         }
     }
 

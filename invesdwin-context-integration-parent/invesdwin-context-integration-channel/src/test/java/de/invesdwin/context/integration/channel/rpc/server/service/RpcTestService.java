@@ -10,7 +10,6 @@ import javax.annotation.concurrent.Immutable;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.rpc.ARpcChannelTest;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -28,20 +27,23 @@ public class RpcTestService implements IRpcTestService {
     private static final WrappedExecutorService ASYNC_EXECUTOR = Executors
             .newFixedThreadPool(RpcTestService.class.getSimpleName() + "_ASYNC", 1)
             .setDynamicThreadName(false);
-    private static final int FLUSH_INTERVAL = AChannelTest.FLUSH_INTERVAL * ARpcChannelTest.RPC_CLIENT_THREADS;
+    private final int rpcClientThreads;
+    private final int flushInterval;
     private final OutputStream log;
     private final AtomicInteger countHolder = new AtomicInteger();
     private Instant writesStart;
 
-    public RpcTestService() {
-        this(new Log(RpcTestService.class));
+    public RpcTestService(final int rpcClientThreads) {
+        this(rpcClientThreads, new Log(RpcTestService.class));
     }
 
-    public RpcTestService(final Log log) {
-        this(Slf4jStream.of(log).asInfo());
+    public RpcTestService(final int rpcClientThreads, final Log log) {
+        this(rpcClientThreads, Slf4jStream.of(log).asInfo());
     }
 
-    public RpcTestService(final OutputStream log) {
+    public RpcTestService(final int rpcClientThreads, final OutputStream log) {
+        this.rpcClientThreads = rpcClientThreads;
+        this.flushInterval = AChannelTest.FLUSH_INTERVAL * rpcClientThreads;
         this.log = log;
     }
 
@@ -63,9 +65,8 @@ public class RpcTestService implements IRpcTestService {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
         final int count = countHolder.incrementAndGet();
-        if (count % FLUSH_INTERVAL == 0) {
-            AChannelTest.printProgress(log, "Writes", writesStart, count,
-                    AChannelTest.VALUES * ARpcChannelTest.RPC_CLIENT_THREADS);
+        if (count % flushInterval == 0) {
+            AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.VALUES * rpcClientThreads);
         }
         return response;
     }
