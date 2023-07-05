@@ -32,7 +32,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.async.handler.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.IRpcTestService;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcClientTask;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestService;
