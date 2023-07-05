@@ -34,7 +34,7 @@ public class NettySharedUdtClientEndpointFactory
     private final INettyUdtChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final NettyUdtClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final NettySharedUdtClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<NettyUdtClientEndpointChannel> connectQueue = new BufferingIterator<>();
@@ -45,7 +45,7 @@ public class NettySharedUdtClientEndpointFactory
         this.socketAddress = socketAddress;
         this.socketSize = estimatedMaxMessageSize + NettyUdtSynchronousChannel.MESSAGE_INDEX;
 
-        this.bootstrapFinalizer = new NettyUdtClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new NettySharedUdtClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
@@ -187,12 +187,12 @@ public class NettySharedUdtClientEndpointFactory
 
     }
 
-    private static final class NettyUdtClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class NettySharedUdtClientEndpointFactoryFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile Bootstrap clientBootstrap;
 
-        protected NettyUdtClientEndpointFactoryFinalizer() {
+        protected NettySharedUdtClientEndpointFactoryFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();

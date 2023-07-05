@@ -34,7 +34,7 @@ public class NettySharedDatagramClientEndpointFactory
     private final INettyDatagramChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final NettyDatagramClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final NettySharedDatagramClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<NettyDatagramClientEndpointChannel> connectQueue = new BufferingIterator<>();
@@ -45,7 +45,7 @@ public class NettySharedDatagramClientEndpointFactory
         this.socketAddress = socketAddress;
         this.socketSize = estimatedMaxMessageSize + NettyDatagramSynchronousChannel.MESSAGE_INDEX;
 
-        this.bootstrapFinalizer = new NettyDatagramClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new NettySharedDatagramClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
@@ -194,12 +194,12 @@ public class NettySharedDatagramClientEndpointFactory
 
     }
 
-    private static final class NettyDatagramClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class NettySharedDatagramClientEndpointFactoryFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile Bootstrap clientBootstrap;
 
-        protected NettyDatagramClientEndpointFactoryFinalizer() {
+        protected NettySharedDatagramClientEndpointFactoryFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();

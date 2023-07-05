@@ -12,18 +12,21 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class UdtClientEndpointFactory implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
+public class UdtEndpointFactory implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
     private final InetSocketAddress address;
+    private final boolean server;
     private final int estimatedMaxMessageSize;
 
-    public UdtClientEndpointFactory(final InetSocketAddress address, final int estimatedMaxMessageSize) {
+    public UdtEndpointFactory(final InetSocketAddress address, final boolean server,
+            final int estimatedMaxMessageSize) {
         this.address = address;
+        this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final UdtSynchronousChannel clientChannel = newUdtSynchronousChannel(address, false, estimatedMaxMessageSize);
+        final UdtSynchronousChannel clientChannel = newUdtSynchronousChannel(address, server, estimatedMaxMessageSize);
         final ISynchronousReader<IByteBufferProvider> responseReader = new UdtSynchronousReader(clientChannel);
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new UdtSynchronousWriter(clientChannel);
         return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);

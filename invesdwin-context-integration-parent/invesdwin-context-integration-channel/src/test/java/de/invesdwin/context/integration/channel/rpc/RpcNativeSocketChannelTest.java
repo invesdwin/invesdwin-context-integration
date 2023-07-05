@@ -18,7 +18,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannelServer;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -67,8 +67,8 @@ public class RpcNativeSocketChannelTest extends ARpcChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
-                address, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
+                address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 

@@ -1,29 +1,31 @@
-package de.invesdwin.context.integration.channel.rpc;
+package de.invesdwin.context.integration.channel.rpc.server.sessionless;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.channel.rpc.ARpcChannelTest;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNativeDatagramChannelTest extends ARpcChannelTest {
+public class RpcSessionlessNettyDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
+        Throwables.setDebugStackTraceEnabled(true);
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
@@ -44,17 +46,14 @@ public class RpcNativeDatagramChannelTest extends ARpcChannelTest {
         }
     }
 
-    protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode) throws InterruptedException {
-        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NativeDatagramEndpointFactory(
-                address, true, getMaxMessageSize());
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
-                address, false, getMaxMessageSize());
+    protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
+            throws InterruptedException {
+        final INettyDatagramChannelType type = INettyDatagramChannelType.getDefault();
+        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NettyDatagramEndpointFactory(
+                type, address, true, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramEndpointFactory(
+                type, address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
-    }
-
-    protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override
