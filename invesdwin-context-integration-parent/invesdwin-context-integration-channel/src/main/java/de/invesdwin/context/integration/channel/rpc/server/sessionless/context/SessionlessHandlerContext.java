@@ -28,6 +28,9 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     }
 
     public IByteBufferProvider getResponse() {
+        if (response == null) {
+            throw new IllegalStateException("response should not be null");
+        }
         return response;
     }
 
