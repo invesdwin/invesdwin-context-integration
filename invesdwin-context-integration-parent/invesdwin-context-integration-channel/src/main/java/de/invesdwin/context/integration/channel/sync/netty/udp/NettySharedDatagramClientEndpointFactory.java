@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.udt;
+package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
@@ -25,36 +25,36 @@ import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SelectStrategyFactory;
-import io.netty.channel.udt.UdtChannel;
+import io.netty.channel.socket.DatagramChannel;
 
 @ThreadSafe
-public class NettyUdtClientEndpointFactory
+public class NettySharedDatagramClientEndpointFactory
         implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
 
-    private final INettyUdtChannelType type;
+    private final INettyDatagramChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final NettyUdtClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final NettySharedDatagramClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
-    private final IBufferingIterator<NettyUdtClientEndpointChannel> connectQueue = new BufferingIterator<>();
+    private final IBufferingIterator<NettyDatagramClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
-    public NettyUdtClientEndpointFactory(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
+    public NettySharedDatagramClientEndpointFactory(final INettyDatagramChannelType type,
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
-        this.socketSize = estimatedMaxMessageSize + NettyUdtSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = estimatedMaxMessageSize + NettyDatagramSynchronousChannel.MESSAGE_INDEX;
 
-        this.bootstrapFinalizer = new NettyUdtClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new NettySharedDatagramClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final NettyUdtSynchronousChannel connector = new NettyUdtClientEndpointChannel(type, socketAddress, false,
-                socketSize);
-        final NettyUdtSynchronousReader reader = new NettyUdtSynchronousReader(connector);
-        final NettyUdtSynchronousWriter writer = new NettyUdtSynchronousWriter(connector);
+        final NettyDatagramSynchronousChannel connector = new NettyDatagramClientEndpointChannel(type, socketAddress,
+                false, socketSize);
+        final NettyDatagramSynchronousReader reader = new NettyDatagramSynchronousReader(connector);
+        final NettyDatagramSynchronousWriter writer = new NettyDatagramSynchronousWriter(connector);
         return ImmutableSynchronousEndpoint.of(reader, writer);
     }
 
@@ -63,14 +63,14 @@ public class NettyUdtClientEndpointFactory
             synchronized (this) {
                 if (bootstrapFinalizer.clientBootstrap == null) {
                     bootstrapFinalizer.clientBootstrap = new Bootstrap();
-                    bootstrapFinalizer.clientBootstrap
-                            .group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
-                    bootstrapFinalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
+                    bootstrapFinalizer.clientBootstrap.group(type.newClientWorkerGroup(
+                            newClientWorkerGroupThreadCount(), newClientWorkerGroupSelectStrategyFactory()));
+                    bootstrapFinalizer.clientBootstrap.channel(type.getClientChannelType());
                     type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, false);
-                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
+                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
-                        public void initChannel(final UdtChannel ch) throws Exception {
-                            final NettyUdtClientEndpointChannel connector;
+                        public void initChannel(final DatagramChannel ch) throws Exception {
+                            final NettyDatagramClientEndpointChannel connector;
                             synchronized (connectQueue) {
                                 if (connectQueue.hasNext()) {
                                     connector = connectQueue.next();
@@ -95,7 +95,7 @@ public class NettyUdtClientEndpointFactory
     /**
      * Can be overridden to add handlers
      */
-    protected void onUdtChannel(final UdtChannel udtChannel) {}
+    protected void onDatagramChannel(final DatagramChannel datagramChannel) {}
 
     protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
         return SelectStrategyFactories.DEFAULT;
@@ -105,14 +105,19 @@ public class NettyUdtClientEndpointFactory
         return 1;
     }
 
-    private final class NettyUdtClientEndpointChannel extends NettyUdtSynchronousChannel {
+    private final class NettyDatagramClientEndpointChannel extends NettyDatagramSynchronousChannel {
 
         @GuardedBy("this")
         private boolean opened;
 
-        private NettyUdtClientEndpointChannel(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-                final boolean server, final int estimatedMaxMessageSize) {
+        private NettyDatagramClientEndpointChannel(final INettyDatagramChannelType type,
+                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
             super(type, socketAddress, server, estimatedMaxMessageSize);
+        }
+
+        @Override
+        protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -121,7 +126,7 @@ public class NettyUdtClientEndpointFactory
         }
 
         @Override
-        protected int newServerAcceptorGroupThreadCount() {
+        protected SelectStrategyFactory newServerWorkerGroupSelectStrategyFactory() {
             throw new UnsupportedOperationException();
         }
 
@@ -131,8 +136,9 @@ public class NettyUdtClientEndpointFactory
         }
 
         @Override
-        public void open(final Consumer<UdtChannel> channelListener) throws IOException {
-            super.open(channelListener);
+        public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener)
+                throws IOException {
+            super.open(bootstrapListener, channelListener);
             synchronized (this) {
                 if (!opened) {
                     bootstrapActiveCount.incrementAndGet();
@@ -163,36 +169,37 @@ public class NettyUdtClientEndpointFactory
         }
 
         @Override
-        protected void connect() throws IOException {
+        protected void connect(final Consumer<Bootstrap> bootstrapListener) throws IOException {
             synchronized (connectQueue) {
                 connectQueue.add(this);
             }
             maybeInitClientBootstrap();
-            awaitUdtChannel(() -> {
+            bootstrapListener.accept(bootstrapFinalizer.clientBootstrap);
+            awaitDatagramChannel(() -> {
                 return bootstrapFinalizer.clientBootstrap.connect(socketAddress);
             });
         }
 
-        void onConnected(final UdtChannel ch) {
+        void onConnected(final DatagramChannel ch) {
             type.initChannel(ch, false);
-            onUdtChannel(ch);
-            finalizer.udtChannel = ch;
+            onDatagramChannel(ch);
+            finalizer.datagramChannel = ch;
         }
 
         @Override
-        protected void onUdtChannel(final UdtChannel udtChannel) {
-            NettyUdtClientEndpointFactory.this.onUdtChannel(udtChannel);
-            super.onUdtChannel(udtChannel);
+        protected void onDatagramChannel(final DatagramChannel datagramChannel) {
+            NettySharedDatagramClientEndpointFactory.this.onDatagramChannel(datagramChannel);
+            super.onDatagramChannel(datagramChannel);
         }
 
     }
 
-    private static final class NettyUdtClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class NettySharedDatagramClientEndpointFactoryFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile Bootstrap clientBootstrap;
 
-        protected NettyUdtClientEndpointFactoryFinalizer() {
+        protected NettySharedDatagramClientEndpointFactoryFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();
@@ -208,7 +215,7 @@ public class NettyUdtClientEndpointFactory
 
         @Override
         protected void onRun() {
-            String warning = "Finalizing unclosed " + NettyUdtSynchronousChannel.class.getSimpleName();
+            String warning = "Finalizing unclosed " + NettyDatagramSynchronousChannel.class.getSimpleName();
             if (Throwables.isDebugStackTraceEnabled()) {
                 final Exception stackTrace = initStackTrace;
                 if (stackTrace != null) {

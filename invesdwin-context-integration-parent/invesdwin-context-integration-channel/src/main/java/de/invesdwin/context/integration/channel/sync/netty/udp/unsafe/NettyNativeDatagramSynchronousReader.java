@@ -100,7 +100,7 @@ public class NettyNativeDatagramSynchronousReader implements ISynchronousReader<
 
     private boolean readFurther(final int targetPosition, final int readLength) throws IOException {
         if (position < targetPosition) {
-            if (channel.getOtherSocketAddress() == null) {
+            if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
                 final DatagramSocketAddress recvFrom = fd.recvFrom(messageBuffer, position, readLength);
                 if (recvFrom != null) {
                     channel.setOtherSocketAddress(recvFrom);

@@ -59,7 +59,7 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
             return true;
         }
         final SocketAddress receive = socketChannel.receive(messageBuffer);
-        if (channel.getOtherSocketAddress() == null && receive != null) {
+        if ((channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) && receive != null) {
             channel.setOtherSocketAddress(receive);
         }
         return messageBuffer.position() > 0;

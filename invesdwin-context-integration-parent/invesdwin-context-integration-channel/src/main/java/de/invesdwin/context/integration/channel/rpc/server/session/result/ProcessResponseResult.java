@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.server.session.result;
 
+import java.io.Closeable;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -13,7 +14,7 @@ import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class ProcessResponseResult implements INode<ProcessResponseResult> {
+public class ProcessResponseResult implements INode<ProcessResponseResult>, Closeable {
 
     public static final ProcessResponseResult[] EMPTY_ARRAY = new ProcessResponseResult[0];
 
@@ -88,7 +89,16 @@ public class ProcessResponseResult implements INode<ProcessResponseResult> {
         this.prev = prev;
     }
 
+    @Override
     public void close() {
+        if (context != null) {
+            context.returnResult(next);
+        } else {
+            ProcessResponseResultPool.INSTANCE.returnObject(this);
+        }
+    }
+
+    public void clean() {
         future = null;
         writing = false;
         requestCopy.close();

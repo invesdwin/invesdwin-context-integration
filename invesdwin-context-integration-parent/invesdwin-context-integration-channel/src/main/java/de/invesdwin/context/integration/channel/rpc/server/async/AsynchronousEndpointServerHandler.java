@@ -4,65 +4,36 @@ import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
-
-import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.server.async.poll.IPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
-import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResultPool;
-import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
-import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class AsynchronousEndpointServerHandler
-        implements IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider>, IByteBufferProvider {
-
-    private static final ManyToOneConcurrentLinkedQueue<ProcessResponseResult> POLLING_QUEUE_ADDS = new ManyToOneConcurrentLinkedQueue<>();
-    @GuardedBy("POLLING_QUEUE_ADDS")
-    private static WrappedExecutorService pollingExecutor;
+        implements IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> {
 
     private final AsynchronousEndpointServerHandlerFactory parent;
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
-    private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
-    private final ServiceSynchronousCommandSerde<IByteBufferProvider> outputSerde = new ServiceSynchronousCommandSerde<>(
-            ByteBufferProviderSerde.GET, null);
-    private volatile IServiceSynchronousCommand<IByteBufferProvider> output;
-    private IByteBuffer outputBuffer;
     private long lastHeartbeatNanos = System.nanoTime();
+    private final IPollingQueueProvider pollingQueueProvider;
 
     public AsynchronousEndpointServerHandler(final AsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
-    }
-
-    private static void addToPollingQueue(final ProcessResponseResult result) {
-        synchronized (POLLING_QUEUE_ADDS) {
-            if (pollingExecutor == null) {
-                //reduce cpu load by using max 1 thread
-                pollingExecutor = Executors
-                        .newFixedThreadPool(AsynchronousEndpointServerHandler.class.getSimpleName() + "_POLLING", 1)
-                        .setDynamicThreadName(false);
-                pollingExecutor.execute(new PollingQueueRunnable());
-            }
-            POLLING_QUEUE_ADDS.add(result);
-        }
+        this.pollingQueueProvider = parent.getPollingQueueProvider();
     }
 
     @Override
@@ -74,9 +45,6 @@ public class AsynchronousEndpointServerHandler
     @Override
     public void close() {
         requestHolder.close();
-        responseHolder.close();
-        output = null;
-        outputBuffer = null;
     }
 
     @Override
@@ -111,111 +79,86 @@ public class AsynchronousEndpointServerHandler
             requestHolder.setMessage(ByteBufferProviderSerde.GET,
                     buffer.slice(ServiceSynchronousCommandSerde.MESSAGE_INDEX, messageLength));
             //we expect async handlers to already be running inside of a worker pool, thus just execute in current thread
-            output = dispatchProcessResponse(context);
-            if (output != null) {
-                return this;
-            } else {
-                return null;
-            }
+            return dispatchProcessResponse(context);
         } finally {
             requestHolder.close();
         }
     }
 
-    @Override
-    public void outputFinished(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
-        output = null;
-        responseHolder.close();
-    }
-
-    @Override
-    public int getBuffer(final IByteBuffer dst) {
-        return outputSerde.toBuffer(dst, output);
-    }
-
-    @Override
-    public IByteBuffer asBuffer() {
-        if (outputBuffer == null) {
-            //needs to be expandable so that FragmentSynchronousWriter can work properly
-            outputBuffer = ByteBuffers.allocateExpandable();
-        }
-        final int length = getBuffer(outputBuffer);
-        return outputBuffer.slice(0, length);
-    }
-
-    @SuppressWarnings("unchecked")
-    private IServiceSynchronousCommand<IByteBufferProvider> dispatchProcessResponse(
-            final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
+    private IByteBufferProvider dispatchProcessResponse(final IAsynchronousHandlerContext<IByteBufferProvider> context)
+            throws IOException {
         final int serviceId = requestHolder.getService();
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
             return null;
         }
+        final ProcessResponseResult result = context.borrowResult();
+        result.setContext(context);
         final SynchronousEndpointService service = parent.getService(serviceId);
+        final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
         if (service == null) {
-            responseHolder.setService(serviceId);
-            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            responseHolder.setSequence(requestHolder.getSequence());
-            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "service not found: " + serviceId);
-            return responseHolder;
+            response.setService(serviceId);
+            response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            response.setSequence(requestHolder.getSequence());
+            response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "service not found: " + serviceId);
+            return response.asBuffer();
         }
         final int methodId = requestHolder.getMethod();
         final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
         if (methodInfo == null) {
-            responseHolder.setService(serviceId);
-            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            responseHolder.setSequence(requestHolder.getSequence());
-            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "method not found: " + methodId);
-            return responseHolder;
+            response.setService(serviceId);
+            response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
+            response.setSequence(requestHolder.getSequence());
+            response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "method not found: " + methodId);
+            return response.asBuffer();
         }
 
-        final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
-            final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder,
-                    result.getResponse());
+            final Future<Object> future = methodInfo.invoke(context.getSessionId(), requestHolder, response);
             if (future != null && !future.isDone()) {
                 result.setFuture(future);
                 result.setDelayedWriteResponse(true);
-                result.setContext(context);
-                addToPollingQueue(result);
+                pollingQueueProvider.addToPollingQueue(result);
                 return null;
             } else {
-                return result.getResponse();
+                return response.asBuffer();
             }
         } else {
             final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
             if (maxPendingWorkCountPerSession > 0) {
                 final int thisPendingCount = workExecutor.getPendingCount();
                 if (thisPendingCount > maxPendingWorkCountPerSession) {
-                    responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    responseHolder.setSequence(requestHolder.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                    response.setService(serviceId);
+                    response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    response.setSequence(requestHolder.getSequence());
+                    response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                             "too many requests pending for this session [" + thisPendingCount
                                     + "], please try again later");
-                    return responseHolder;
+                    return response.asBuffer();
                 }
             }
             final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
             if (maxPendingWorkCountOverall > 0) {
                 final int overallPendingCount = workExecutor.getPendingCount();
                 if (overallPendingCount > maxPendingWorkCountOverall) {
-                    responseHolder.setService(serviceId);
-                    responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
-                    responseHolder.setSequence(requestHolder.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                    response.setService(serviceId);
+                    response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
+                    response.setSequence(requestHolder.getSequence());
+                    response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                             "too many requests pending overall [" + overallPendingCount + "], please try again later");
-                    return responseHolder;
+                    return response.asBuffer();
                 }
             }
             //copy request for the async processing
             result.getRequestCopy().copy(requestHolder);
-            result.setContext(context);
             result.setFuture(workExecutor.submit(new ProcessResponseTask(methodInfo, result)));
             return null;
         }
+    }
+
+    @Override
+    public void outputFinished(final IAsynchronousHandlerContext<IByteBufferProvider> context) throws IOException {
+        //noop
     }
 
     private final class ProcessResponseTask implements Callable<Object> {
@@ -237,97 +180,20 @@ public class AsynchronousEndpointServerHandler
                 response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                         "request timeout [" + parent.getRequestTimeout() + "] exceeded, please try again later");
                 result.getContext().write(response.asBuffer());
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
+                result.close();
                 return null;
             }
             final Future<Object> future = methodInfo.invoke(result.getContext().getSessionId(), result.getRequestCopy(),
                     response);
             if (future != null && !future.isDone()) {
                 result.setDelayedWriteResponse(true);
-                addToPollingQueue(result);
+                pollingQueueProvider.addToPollingQueue(result);
                 return future;
             } else {
                 result.getContext().write(response.asBuffer());
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
+                result.close();
                 return null;
             }
-        }
-    }
-
-    private static final class PollingQueueRunnable implements Runnable {
-
-        private final ASpinWait spinWait = new ASpinWait() {
-            @Override
-            public boolean isConditionFulfilled() throws Exception {
-                return maybePollResults();
-            }
-        };
-        private long lastChangeNanos = System.nanoTime();
-        private final NodeBufferingIterator<ProcessResponseResult> pollingQueue = new NodeBufferingIterator<>();
-
-        @Override
-        public void run() {
-            try {
-                while (true) {
-                    if (!spinWait.awaitFulfill(System.nanoTime(), Duration.ONE_MINUTE)) {
-                        if (maybeClosePollingExecutor()) {
-                            return;
-                        }
-                    }
-                }
-            } catch (final InterruptedException e) {
-                //ignore
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        private boolean maybeClosePollingExecutor() {
-            if (isTimeout()) {
-                synchronized (POLLING_QUEUE_ADDS) {
-                    if (isTimeout()) {
-                        pollingExecutor.shutdown();
-                        pollingExecutor = null;
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        private boolean isTimeout() {
-            return pollingQueue.isEmpty() && POLLING_QUEUE_ADDS.isEmpty()
-                    && Duration.TEN_MINUTES.isLessThanNanos(System.nanoTime() - lastChangeNanos);
-        }
-
-        private boolean maybePollResults() {
-            boolean changed = false;
-            if (!POLLING_QUEUE_ADDS.isEmpty()) {
-                ProcessResponseResult addPollingResult = POLLING_QUEUE_ADDS.poll();
-                while (addPollingResult != null) {
-                    pollingQueue.add(addPollingResult);
-                    changed = true;
-                    addPollingResult = POLLING_QUEUE_ADDS.poll();
-                    lastChangeNanos = System.nanoTime();
-                }
-            }
-            if (!pollingQueue.isEmpty()) {
-                ProcessResponseResult pollingResult = pollingQueue.getHead();
-                while (pollingResult != null) {
-                    final ProcessResponseResult nextPollingResult = pollingResult.getNext();
-                    if (pollingResult.isDone()) {
-                        if (pollingResult.isDelayedWriteResponse()) {
-                            pollingResult.getContext().write(pollingResult.getResponse().asBuffer());
-                        }
-                        pollingQueue.remove(pollingResult);
-                        changed = true;
-                        ProcessResponseResultPool.INSTANCE.returnObject(pollingResult);
-                        lastChangeNanos = System.nanoTime();
-                    }
-                    pollingResult = nextPollingResult;
-                }
-            }
-            return changed;
         }
     }
 

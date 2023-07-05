@@ -45,20 +45,23 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
 
     @Override
     public void close() throws IOException {
+        final BlockingDatagramSynchronousChannel channelCopy = channel;
         if (socket != null) {
-            if (packet != null) {
-                try {
-                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && packet != null) {
+                    try {
+                        writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             packet = null;
             packetBuffer = null;
             messageBuffer = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }
@@ -82,6 +85,9 @@ public class BlockingDatagramSynchronousWriter implements ISynchronousWriter<IBy
                     channel.getOtherSocketAddress());
         } else {
             packet.setData(packetBuffer.byteArray(), 0, DatagramSynchronousChannel.MESSAGE_INDEX + size);
+            if (channel.isMultipleClientsAllowed()) {
+                packet.setSocketAddress(channel.getOtherSocketAddress());
+            }
         }
         socket.send(packet);
     }

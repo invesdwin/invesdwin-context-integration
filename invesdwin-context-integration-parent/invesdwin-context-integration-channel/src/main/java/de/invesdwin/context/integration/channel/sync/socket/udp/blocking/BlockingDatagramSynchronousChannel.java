@@ -12,9 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Integers;
@@ -22,7 +23,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
+public class BlockingDatagramSynchronousChannel implements ISessionlessSynchronousChannel<SocketAddress> {
 
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
@@ -47,6 +48,7 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
     private volatile boolean writerRegistered;
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
+    private boolean multipleClientsAllowed;
 
     public BlockingDatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
             final int estimatedMaxMessageSize) {
@@ -58,17 +60,25 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
         finalizer.register(this);
     }
 
+    public void setMultipleClientsAllowed() {
+        Assertions.checkTrue(isServer(), "only relevant for server channel");
+        this.multipleClientsAllowed = true;
+    }
+
+    public boolean isMultipleClientsAllowed() {
+        return multipleClientsAllowed;
+    }
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }
 
+    @Override
     public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
-        if (this.otherSocketAddress != null) {
-            throw new IllegalStateException("otherSocketAddress should be null");
-        }
         this.otherSocketAddress = otherSocketAddress;
     }
 
+    @Override
     public SocketAddress getOtherSocketAddress() {
         return otherSocketAddress;
     }

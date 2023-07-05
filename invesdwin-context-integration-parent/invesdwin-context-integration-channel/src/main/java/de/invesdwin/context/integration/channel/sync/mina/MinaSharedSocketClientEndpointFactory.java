@@ -38,7 +38,7 @@ public class MinaSharedSocketClientEndpointFactory
     private final IMinaSocketType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final MinaSocketClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final MinaSharedSocketClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<MinaSocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
@@ -49,7 +49,7 @@ public class MinaSharedSocketClientEndpointFactory
         this.socketAddress = socketAddress;
         this.socketSize = estimatedMaxMessageSize + MinaSocketSynchronousChannel.MESSAGE_INDEX;
 
-        this.bootstrapFinalizer = new MinaSocketClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new MinaSharedSocketClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
@@ -219,13 +219,13 @@ public class MinaSharedSocketClientEndpointFactory
 
     }
 
-    private static final class MinaSocketClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class MinaSharedSocketClientEndpointFactoryFinalizer extends AFinalizer {
 
         private final Exception initStackTrace;
         private volatile ExecutorService executor;
         private volatile IoConnector clientConnector;
 
-        protected MinaSocketClientEndpointFactoryFinalizer() {
+        protected MinaSharedSocketClientEndpointFactoryFinalizer() {
             if (Throwables.isDebugStackTraceEnabled()) {
                 initStackTrace = new Exception();
                 initStackTrace.fillInStackTrace();

@@ -21,7 +21,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSession {
 
     private final String sessionId;
-    private final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint;
+    private ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint;
 
     public DefaultSynchronousEndpointSession(final String sessionId,
             final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint) {
@@ -65,6 +65,7 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
     public void close() throws IOException {
         if (endpoint != null) {
             endpoint.close();
+            endpoint = null;
         }
     }
 

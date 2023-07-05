@@ -73,12 +73,15 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public void close() {
+        final NettyDatagramSynchronousChannel channelCopy = channel;
         if (buffer != null) {
-            if (datagramPacket != null) {
-                try {
-                    writeFuture(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && datagramPacket != null) {
+                    try {
+                        writeFuture(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             buf.release();
@@ -88,8 +91,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             datagramPacket = null;
             writer = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }
@@ -120,6 +123,10 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private void writeFuture(final IByteBufferProvider message) throws IOException {
         if (datagramPacket == null) {
             //server needs to know where to respond to
+            this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
+        } else if (channel.isMultipleClientsAllowed()
+                && !datagramPacket.recipient().equals(channel.getOtherSocketAddress())) {
+            this.datagramPacket.release();
             this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
         }
 

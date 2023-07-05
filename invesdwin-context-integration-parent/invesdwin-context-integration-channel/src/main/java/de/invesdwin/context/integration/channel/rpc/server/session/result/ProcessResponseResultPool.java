@@ -28,13 +28,13 @@ public final class ProcessResponseResultPool extends AAgronaObjectPool<ProcessRe
 
     @Override
     protected boolean passivateObject(final ProcessResponseResult element) {
-        element.close();
+        element.clean();
         return true;
     }
 
     @Override
     public void invalidateObject(final ProcessResponseResult element) {
-        element.close();
+        element.clean();
     }
 
 }

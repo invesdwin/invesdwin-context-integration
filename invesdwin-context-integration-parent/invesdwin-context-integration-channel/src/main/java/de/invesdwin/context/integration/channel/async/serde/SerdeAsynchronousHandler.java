@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -137,6 +138,16 @@ public class SerdeAsynchronousHandler<I, O>
         @Override
         public void close() throws IOException {
             delegate.close();
+        }
+
+        @Override
+        public ProcessResponseResult borrowResult() {
+            return delegate.borrowResult();
+        }
+
+        @Override
+        public void returnResult(final ProcessResponseResult result) {
+            delegate.returnResult(result);
         }
 
     }

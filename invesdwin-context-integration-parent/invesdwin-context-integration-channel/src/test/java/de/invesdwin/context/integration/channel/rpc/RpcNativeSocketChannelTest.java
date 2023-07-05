@@ -8,7 +8,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSession;
@@ -19,7 +18,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannelServer;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -29,7 +28,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNativeSocketChannelTest extends AChannelTest {
+public class RpcNativeSocketChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -40,16 +39,16 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
+            final int port = NetworkUtil.findAvailableTcpPort();
+            final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
             runRpcTest(address, mode);
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(VALUES * RPC_CLIENT_THREADS, duration));
+                    new ProcessedEventsRateString(VALUES * newRpcClientThreads(), duration));
         }
     }
 
@@ -68,8 +67,8 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
-                address, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
+                address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 

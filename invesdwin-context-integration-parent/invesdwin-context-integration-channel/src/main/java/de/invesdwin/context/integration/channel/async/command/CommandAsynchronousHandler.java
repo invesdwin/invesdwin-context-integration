@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.sync.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.MutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
@@ -157,6 +158,16 @@ public class CommandAsynchronousHandler<I, O>
         @Override
         public void close() throws IOException {
             delegate.close();
+        }
+
+        @Override
+        public ProcessResponseResult borrowResult() {
+            return delegate.borrowResult();
+        }
+
+        @Override
+        public void returnResult(final ProcessResponseResult result) {
+            delegate.returnResult(result);
         }
 
     }

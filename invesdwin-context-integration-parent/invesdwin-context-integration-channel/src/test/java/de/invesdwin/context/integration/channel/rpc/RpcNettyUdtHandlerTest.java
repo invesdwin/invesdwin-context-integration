@@ -8,14 +8,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.udt.NettyUdtAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udt.NettySharedUdtClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.NioNettyUdtChannelType;
@@ -27,7 +26,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNettyUdtHandlerTest extends AChannelTest {
+public class RpcNettyUdtHandlerTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -38,16 +37,16 @@ public class RpcNettyUdtHandlerTest extends AChannelTest {
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
+            final int port = NetworkUtil.findAvailableTcpPort();
+            final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
             runRpcTest(address, mode);
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(VALUES * RPC_CLIENT_THREADS, duration));
+                    new ProcessedEventsRateString(VALUES * newRpcClientThreads(), duration));
         }
     }
 
@@ -67,13 +66,17 @@ public class RpcNettyUdtHandlerTest extends AChannelTest {
                 return new NettyUdtAsynchronousChannel(channel, t, true);
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyUdtClientEndpointFactory(
+        //netty shared bootstrap
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedUdtClientEndpointFactory(
                 type, address, getMaxMessageSize()) {
             @Override
             protected int newClientWorkerGroupThreadCount() {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
+        //netty no shared bootstrap
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyUdtClientEndpointFactory(
+        //                type, address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
     }
 

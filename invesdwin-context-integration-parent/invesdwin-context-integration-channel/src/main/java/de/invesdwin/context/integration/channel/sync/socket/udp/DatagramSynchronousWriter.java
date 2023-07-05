@@ -23,6 +23,7 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private final int socketSize;
     private java.nio.ByteBuffer messageToWrite;
     private int positionBefore;
+    private SocketAddress recipient;
 
     public DatagramSynchronousWriter(final DatagramSynchronousChannel channel) {
         this.channel = channel;
@@ -41,18 +42,24 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public void close() throws IOException {
+        final DatagramSynchronousChannel channelCopy = channel;
         if (buffer != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && recipient != null) {
+                    try {
+                        writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
+                }
             }
             buffer = null;
             messageBuffer = null;
             socketChannel = null;
+            recipient = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }
@@ -64,6 +71,11 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
+        if (channel.isServer()) {
+            recipient = channel.getOtherSocketAddress();
+        } else {
+            recipient = channel.getSocketAddress();
+        }
         final int size = message.getBuffer(messageBuffer);
         final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
         if (datagramSize > socketSize) {
@@ -83,6 +95,7 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
             ByteBuffers.position(messageToWrite, positionBefore);
             messageToWrite = null;
             positionBefore = 0;
+            recipient = null;
             return true;
         } else {
             return false;
@@ -90,13 +103,7 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     private boolean writeFurther() throws IOException {
-        final SocketAddress addr;
-        if (channel.isServer()) {
-            addr = channel.getOtherSocketAddress();
-        } else {
-            addr = channel.getSocketAddress();
-        }
-        final int count = socketChannel.send(messageToWrite, addr);
+        final int count = socketChannel.send(messageToWrite, recipient);
         if (count < 0) { // EOF
             throw ByteBuffers.newEOF();
         }

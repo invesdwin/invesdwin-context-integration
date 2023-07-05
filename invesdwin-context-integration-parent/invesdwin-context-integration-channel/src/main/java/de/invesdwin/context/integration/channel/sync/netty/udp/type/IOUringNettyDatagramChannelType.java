@@ -45,7 +45,7 @@ public class IOUringNettyDatagramChannelType implements INettyDatagramChannelTyp
     }
 
     @Override
-    public void initChannel(final DatagramChannel channel, final boolean server) throws Exception {
+    public void initChannel(final DatagramChannel channel, final boolean server) {
         NioNettyDatagramChannelType.INSTANCE.initChannel(channel, server);
     }
 

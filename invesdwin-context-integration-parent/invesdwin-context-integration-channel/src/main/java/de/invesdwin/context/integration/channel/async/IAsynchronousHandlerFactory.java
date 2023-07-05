@@ -8,10 +8,6 @@ import de.invesdwin.util.time.duration.Duration;
 
 public interface IAsynchronousHandlerFactory<I, O> extends Closeable {
 
-    void open() throws IOException;
-
-    IAsynchronousHandler<I, O> newHandler();
-
     default Duration getHeartbeatInterval() {
         return ISynchronousEndpointSession.DEFAULT_HEARTBEAT_INTERVAL;
     }
@@ -20,8 +16,16 @@ public interface IAsynchronousHandlerFactory<I, O> extends Closeable {
         return ISynchronousEndpointSession.DEFAULT_HEARTBEAT_TIMEOUT;
     }
 
+    default Duration getRequestWaitInterval() {
+        return ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
+    }
+
     default Duration getRequestTimeout() {
         return ISynchronousEndpointSession.DEFAULT_REQUEST_TIMEOUT;
     }
+
+    void open() throws IOException;
+
+    IAsynchronousHandler<I, O> newHandler();
 
 }

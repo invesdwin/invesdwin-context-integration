@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.mina;
+package de.invesdwin.context.integration.channel.sync.netty.udt;
 
 import java.net.InetSocketAddress;
 
@@ -9,34 +9,35 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
+import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class MinaSocketClientEndpointFactory
-        implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
-    private final IMinaSocketType type;
+public class NettyUdtEndpointFactory implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
+    private final INettyUdtChannelType type;
     private final InetSocketAddress address;
+    private final boolean server;
     private final int estimatedMaxMessageSize;
 
-    public MinaSocketClientEndpointFactory(final IMinaSocketType type, final InetSocketAddress address,
-            final int estimatedMaxMessageSize) {
+    public NettyUdtEndpointFactory(final INettyUdtChannelType type, final InetSocketAddress address,
+            final boolean server, final int estimatedMaxMessageSize) {
         this.type = type;
+        this.server = server;
         this.address = address;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final MinaSocketSynchronousChannel clientChannel = newMinaSocketSynchronousChannel(type, address, false,
+        final NettyUdtSynchronousChannel clientChannel = newNettyUdtSynchronousChannel(type, address, server,
                 estimatedMaxMessageSize);
-        final ISynchronousReader<IByteBufferProvider> responseReader = new MinaSocketSynchronousReader(clientChannel);
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new MinaSocketSynchronousWriter(clientChannel);
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(clientChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(clientChannel);
         return ImmutableSynchronousEndpoint.of(responseReader, requestWriter);
     }
 
-    protected MinaSocketSynchronousChannel newMinaSocketSynchronousChannel(final IMinaSocketType type,
+    protected NettyUdtSynchronousChannel newNettyUdtSynchronousChannel(final INettyUdtChannelType type,
             final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new MinaSocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+        return new NettyUdtSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
     }
 }

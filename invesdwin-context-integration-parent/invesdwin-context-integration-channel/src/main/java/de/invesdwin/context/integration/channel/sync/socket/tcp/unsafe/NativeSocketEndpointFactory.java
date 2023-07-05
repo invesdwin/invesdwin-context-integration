@@ -13,19 +13,22 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronou
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class NativeSocketClientEndpointFactory
+public class NativeSocketEndpointFactory
         implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
     private final SocketAddress address;
+    private final boolean server;
     private final int estimatedMaxMessageSize;
 
-    public NativeSocketClientEndpointFactory(final SocketAddress address, final int estimatedMaxMessageSize) {
+    public NativeSocketEndpointFactory(final SocketAddress address, final boolean server,
+            final int estimatedMaxMessageSize) {
         this.address = address;
+        this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false,
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, server,
                 estimatedMaxMessageSize);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeSocketSynchronousReader(clientChannel);
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeSocketSynchronousWriter(clientChannel);

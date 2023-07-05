@@ -28,6 +28,7 @@ import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableSet;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -133,7 +134,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                         nextWriteTask.setWriting(true);
                     }
                     activeRequests.remove(writeTask);
-                    ProcessResponseResultPool.INSTANCE.returnObject(writeTask);
+                    writeTask.close();
                     Assertions.checkSame(writeTask, removedTask);
                 } else {
                     responseWriter.write(writeTask.getResponse());
@@ -144,25 +145,28 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             //reading could still indicate that we are busy handling work
             writing = false;
         }
-        if (requestReader.hasNext()) {
-            lastHeartbeatNanos = System.nanoTime();
+        try {
+            if (requestReader.hasNext()) {
+                lastHeartbeatNanos = System.nanoTime();
 
-            final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
-            try {
-                activeRequests.add(result);
-                dispatchProcessResponse(result);
-            } catch (final EOFException e) {
-                activeRequests.remove(result);
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
-                close();
-            } catch (final IOException e) {
-                activeRequests.remove(result);
-                ProcessResponseResultPool.INSTANCE.returnObject(result);
-                throw new RuntimeException(e);
+                final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
+                try {
+                    activeRequests.add(result);
+                    dispatchProcessResponse(result);
+                } catch (final Throwable t) {
+                    activeRequests.remove(result);
+                    result.close();
+                    throw Throwables.propagate(t);
+                }
+                return true;
+            } else {
+                return writing;
             }
-            return true;
-        } else {
-            return writing;
+        } catch (final EOFException e) {
+            close();
+            return false;
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

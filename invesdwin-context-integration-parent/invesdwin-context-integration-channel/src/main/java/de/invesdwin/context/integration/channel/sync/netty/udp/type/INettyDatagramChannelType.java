@@ -28,6 +28,6 @@ public interface INettyDatagramChannelType {
 
     void channelOptions(IChannelOptionConsumer consumer, int socketSize, boolean server);
 
-    void initChannel(DatagramChannel channel, boolean server) throws Exception;
+    void initChannel(DatagramChannel channel, boolean server);
 
 }
