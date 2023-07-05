@@ -225,18 +225,18 @@ public abstract class ARpcChannelTest extends AChannelTest {
         }
     }
 
-    protected void runRpcPerformanceTest(
+    protected void runRpcSessionlessPerformanceTest(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         if (RPC_CLIENT_LAZY) {
-            runRpcPerformanceTestLazy(serverEndpointFactory, clientEndpointFactory, mode);
+            runRpcSessionlessPerformanceTestLazy(serverEndpointFactory, clientEndpointFactory, mode);
         } else {
-            runRpcPerformanceTestEager(serverEndpointFactory, clientEndpointFactory, mode);
+            runRpcSessionlessPerformanceTestEager(serverEndpointFactory, clientEndpointFactory, mode);
         }
     }
 
-    private void runRpcPerformanceTestLazy(
+    private void runRpcSessionlessPerformanceTestLazy(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
@@ -273,7 +273,7 @@ public abstract class ARpcChannelTest extends AChannelTest {
     }
 
     @SuppressWarnings("unchecked")
-    private void runRpcPerformanceTestEager(
+    private void runRpcSessionlessPerformanceTestEager(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {

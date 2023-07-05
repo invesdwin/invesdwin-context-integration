@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
@@ -21,7 +21,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcSessionlessNativeDatagramChannelTest extends ARpcChannelTest {
+public class RpcSessionlessDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -47,9 +47,9 @@ public class RpcSessionlessNativeDatagramChannelTest extends ARpcChannelTest {
     }
 
     protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode) throws InterruptedException {
-        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NativeDatagramEndpointFactory(
+        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new DatagramEndpointFactory(
                 address, true, getMaxMessageSize());
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new DatagramEndpointFactory(
                 address, false, getMaxMessageSize());
         runRpcSessionlessPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
     }

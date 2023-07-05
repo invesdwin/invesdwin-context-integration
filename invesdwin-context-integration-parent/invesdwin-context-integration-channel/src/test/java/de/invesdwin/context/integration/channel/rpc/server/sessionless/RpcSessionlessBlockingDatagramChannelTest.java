@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.server.sessionless;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -11,8 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramEndpointFactory;
-import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
@@ -21,7 +21,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcSessionlessNettyDatagramChannelTest extends ARpcChannelTest {
+public class RpcSessionlessBlockingDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -46,14 +46,12 @@ public class RpcSessionlessNettyDatagramChannelTest extends ARpcChannelTest {
         }
     }
 
-    protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
-            throws InterruptedException {
-        final INettyDatagramChannelType type = INettyDatagramChannelType.getDefault();
-        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NettyDatagramEndpointFactory(
-                type, address, true, getMaxMessageSize());
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramEndpointFactory(
-                type, address, false, getMaxMessageSize());
-        runRpcPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
+    protected void runRpcTest(final SocketAddress address, final RpcTestServiceMode mode) throws InterruptedException {
+        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new BlockingDatagramEndpointFactory(
+                address, true, getMaxMessageSize());
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new BlockingDatagramEndpointFactory(
+                address, false, getMaxMessageSize());
+        runRpcSessionlessPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
     }
 
     @Override
