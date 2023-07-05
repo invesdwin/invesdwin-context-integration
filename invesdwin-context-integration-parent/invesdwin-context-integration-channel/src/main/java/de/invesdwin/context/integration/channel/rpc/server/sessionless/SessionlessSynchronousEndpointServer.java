@@ -185,38 +185,42 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                 //reading could still indicate that we are busy handling work
                 writing = false;
             }
-            if (requestReader.hasNext()) {
-                final IByteBufferProvider request = requestReader.readMessage();
-                final SessionlessHandlerContext context = SessionlessHandlerContextPool.INSTANCE.borrowObject();
-                try {
-                    context.init(serverEndpoint.getOtherSocketAddress(), writeQueue);
-                    final IByteBufferProvider response = handler.handle(context, request);
-                    if (response != null) {
-                        try {
-                            context.write(response);
-                        } finally {
-                            /*
-                             * WARNING: this might cause problems if the handler reuses output buffers, since we don't
-                             * make a safe copy here for the write queue and further requests could come in. This needs
-                             * to be considered when modifying/wrapping the handler. To fix the issue,
-                             * ProcessResponseResult (via context.borrowResult() and result.close()) should be used by
-                             * the handler.
-                             */
-                            handler.outputFinished(context);
+            try {
+                if (requestReader.hasNext()) {
+                    final IByteBufferProvider request = requestReader.readMessage();
+                    final SessionlessHandlerContext context = SessionlessHandlerContextPool.INSTANCE.borrowObject();
+                    try {
+                        context.init(serverEndpoint.getOtherSocketAddress(), writeQueue);
+                        final IByteBufferProvider response = handler.handle(context, request);
+                        if (response != null) {
+                            try {
+                                context.write(response);
+                            } finally {
+                                /*
+                                 * WARNING: this might cause problems if the handler reuses output buffers, since we
+                                 * don't make a safe copy here for the write queue and further requests could come in.
+                                 * This needs to be considered when modifying/wrapping the handler. To fix the issue,
+                                 * ProcessResponseResult (via context.borrowResult() and result.close()) should be used
+                                 * by the handler.
+                                 */
+                                handler.outputFinished(context);
+                            }
                         }
+                    } catch (final Throwable t) {
+                        context.close();
+                        throw Throwables.propagate(t);
+                    } finally {
+                        requestReader.readFinished();
                     }
-                } catch (final EOFException e) {
-                    context.close();
-                    close();
-                } catch (final IOException e) {
-                    context.close();
-                    throw new RuntimeException(e);
-                } finally {
-                    requestReader.readFinished();
+                    return true;
+                } else {
+                    return writing;
                 }
-                return true;
-            } else {
-                return writing;
+            } catch (final EOFException e) {
+                close();
+                return false;
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
         }
 
