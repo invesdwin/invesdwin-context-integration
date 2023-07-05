@@ -42,12 +42,15 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public void close() throws IOException {
+        final DatagramSynchronousChannel channelCopy = channel;
         if (buffer != null) {
-            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && recipient != null) {
-                try {
-                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && recipient != null) {
+                    try {
+                        writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             buffer = null;
@@ -55,8 +58,8 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
             socketChannel = null;
             recipient = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }

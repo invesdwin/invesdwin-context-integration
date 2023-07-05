@@ -73,12 +73,15 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public void close() {
+        final NettyDatagramSynchronousChannel channelCopy = channel;
         if (buffer != null) {
-            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && datagramPacket != null) {
-                try {
-                    writeFuture(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && datagramPacket != null) {
+                    try {
+                        writeFuture(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             buf.release();
@@ -88,8 +91,8 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             datagramPacket = null;
             writer = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }

@@ -103,12 +103,15 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public void close() throws IOException {
+        final DatagramSynchronousChannel channelCopy = channel;
         if (fd != null) {
-            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && recipient != null) {
-                try {
-                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && recipient != null) {
+                    try {
+                        writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             buffer = null;
@@ -118,13 +121,13 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
             position = 0;
             remaining = 0;
             recipient = null;
+            targetAddress = 0;
+            targetAddressLen = 0;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
-        targetAddress = 0;
-        targetAddressLen = 0;
     }
 
     @Override

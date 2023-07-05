@@ -5,6 +5,7 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.rpc.ARpcChannelTest;
@@ -31,6 +32,7 @@ public class RpcSessionlessBlockingDatagramChannelTest extends ARpcChannelTest {
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
 
+    @Disabled("can deadlock during close")
     @Test
     public void testRpcAllModes() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();

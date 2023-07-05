@@ -57,12 +57,15 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
 
     @Override
     public void close() throws IOException {
+        final NettyDatagramSynchronousChannel channelCopy = channel;
         if (buffer != null) {
-            if (!channel.isServer() || !channel.isMultipleClientsAllowed() && recipient != null) {
-                try {
-                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-                } catch (final Throwable t) {
-                    //ignore
+            if (channelCopy != null) {
+                if (!channelCopy.isServer() || !channelCopy.isMultipleClientsAllowed() && recipient != null) {
+                    try {
+                        writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
                 }
             }
             buffer = null;
@@ -73,8 +76,8 @@ public class NettyNativeDatagramSynchronousWriter implements ISynchronousWriter<
             remaining = 0;
             recipient = null;
         }
-        if (channel != null) {
-            channel.close();
+        if (channelCopy != null) {
+            channelCopy.close();
             channel = null;
         }
     }
