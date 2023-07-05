@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.async.sessionless.context;
+package de.invesdwin.context.integration.channel.rpc.server.sessionless.context;
 
 import javax.annotation.concurrent.ThreadSafe;
 

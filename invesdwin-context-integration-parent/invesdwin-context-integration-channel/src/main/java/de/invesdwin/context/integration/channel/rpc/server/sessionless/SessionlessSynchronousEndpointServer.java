@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.async.sessionless;
+package de.invesdwin.context.integration.channel.rpc.server.sessionless;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -17,8 +17,8 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessio
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.async.poll.SyncPollingQueueProvider;
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.context.SessionlessHandlerContext;
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.context.SessionlessHandlerContextPool;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.context.SessionlessHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.server.sessionless.context.SessionlessHandlerContextPool;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -34,7 +34,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class SessionlessSynchronousEndpointServer implements ISynchronousChannel {
 
     private final AsynchronousEndpointServerHandlerFactory handlerFactory;
-    private final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, Object> serverSessionFactory;
+    private final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, Object> serverEndpointFactory;
     private final WrappedExecutorService ioExecutor;
     private final SyncPollingQueueProvider pollingQueueProvider = new SyncPollingQueueProvider();
     private ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, Object> serverEndpoint;
@@ -45,9 +45,9 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public SessionlessSynchronousEndpointServer(
-            final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverSessionFactory,
+            final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final AsynchronousEndpointServerHandlerFactory handlerFactory) {
-        this.serverSessionFactory = (ISessionlessSynchronousEndpointFactory) serverSessionFactory;
+        this.serverEndpointFactory = (ISessionlessSynchronousEndpointFactory) serverEndpointFactory;
         this.handlerFactory = handlerFactory;
         this.ioExecutor = newIoExecutor();
     }
@@ -65,7 +65,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
 
     @Override
     public void open() throws IOException {
-        this.serverEndpoint = serverSessionFactory.newEndpoint();
+        this.serverEndpoint = serverEndpointFactory.newEndpoint();
         this.requestReader = serverEndpoint.getReader();
         this.responseWriter = serverEndpoint.getWriter();
         this.requestReader.open();
