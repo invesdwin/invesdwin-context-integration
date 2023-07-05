@@ -7,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
@@ -24,7 +23,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNettySocketHandlerTest extends AChannelTest {
+public class RpcNettySocketHandlerTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {

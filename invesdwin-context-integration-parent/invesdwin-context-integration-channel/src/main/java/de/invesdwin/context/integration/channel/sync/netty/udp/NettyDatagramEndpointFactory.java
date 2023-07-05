@@ -4,8 +4,8 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
@@ -69,12 +69,12 @@ public class NettyDatagramEndpointFactory
         }
 
         @Override
-        public void setOtherRemoteAddress(final InetSocketAddress otherRemoteAddress) {
-            channel.setOtherSocketAddress(otherRemoteAddress);
+        public void setOtherSocketAddress(final InetSocketAddress otherSocketAddress) {
+            channel.setOtherSocketAddress(otherSocketAddress);
         }
 
         @Override
-        public InetSocketAddress getOtherRemoteAddress() {
+        public InetSocketAddress getOtherSocketAddress() {
             return channel.getOtherSocketAddress();
         }
     }

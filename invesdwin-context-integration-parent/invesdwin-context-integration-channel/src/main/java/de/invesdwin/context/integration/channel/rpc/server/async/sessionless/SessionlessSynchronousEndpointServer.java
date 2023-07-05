@@ -12,6 +12,8 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.async.poll.SyncPollingQueueProvider;
@@ -167,14 +169,14 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                         final SessionlessHandlerContext removedTask = writeQueue.remove();
                         final SessionlessHandlerContext nextWriteTask = writeQueue.peek();
                         if (nextWriteTask != null) {
-                            serverEndpoint.setOtherRemoteAddress(nextWriteTask.getOtherRemoteAddress());
+                            serverEndpoint.setOtherSocketAddress(nextWriteTask.getOtherSocketAddress());
                             responseWriter.write(nextWriteTask.getResponse());
                             nextWriteTask.getResult().setWriting(true);
                         }
                         writeTask.close();
                         Assertions.checkSame(writeTask, removedTask);
                     } else {
-                        serverEndpoint.setOtherRemoteAddress(writeTask.getOtherRemoteAddress());
+                        serverEndpoint.setOtherSocketAddress(writeTask.getOtherSocketAddress());
                         responseWriter.write(writeTask.getResponse());
                         writeTask.getResult().setWriting(true);
                     }
@@ -187,7 +189,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
                 final IByteBufferProvider request = requestReader.readMessage();
                 final SessionlessHandlerContext context = SessionlessHandlerContextPool.INSTANCE.borrowObject();
                 try {
-                    context.init(serverEndpoint.getOtherRemoteAddress(), writeQueue);
+                    context.init(serverEndpoint.getOtherSocketAddress(), writeQueue);
                     final IByteBufferProvider response = handler.handle(context, request);
                     if (response != null) {
                         try {

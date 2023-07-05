@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.server.async.sessionless;
+package de.invesdwin.context.integration.channel.rpc.endpoint.sessionless;
 
 public interface ISessionlessSynchronousEndpointFactory<R, W, O> {
 

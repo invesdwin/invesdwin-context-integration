@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -23,7 +23,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
+public class BlockingDatagramSynchronousChannel implements ISessionlessSynchronousChannel<SocketAddress> {
 
     public static final int IPTOS_LOWCOST = 0x02;
     public static final int IPTOS_RELIABILITY = 0x04;
@@ -73,10 +73,12 @@ public class BlockingDatagramSynchronousChannel implements ISynchronousChannel {
         return socketAddress;
     }
 
+    @Override
     public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
         this.otherSocketAddress = otherSocketAddress;
     }
 
+    @Override
     public SocketAddress getOtherSocketAddress() {
         return otherSocketAddress;
     }

@@ -4,8 +4,8 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.server.async.sessionless.ISessionlessSynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -67,12 +67,12 @@ public class BlockingDatagramEndpointFactory
         }
 
         @Override
-        public void setOtherRemoteAddress(final SocketAddress otherRemoteAddress) {
-            channel.setOtherSocketAddress(otherRemoteAddress);
+        public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
+            channel.setOtherSocketAddress(otherSocketAddress);
         }
 
         @Override
-        public SocketAddress getOtherRemoteAddress() {
+        public SocketAddress getOtherSocketAddress() {
             return channel.getOtherSocketAddress();
         }
     }

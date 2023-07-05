@@ -8,7 +8,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.mina.MinaSocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
@@ -25,7 +24,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcMinaSocketHandlerTest extends AChannelTest {
+public class RpcMinaSocketHandlerTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {

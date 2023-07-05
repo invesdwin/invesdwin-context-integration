@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.context.log.Log;
@@ -24,7 +24,7 @@ import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class DatagramSynchronousChannel implements ISynchronousChannel {
+public class DatagramSynchronousChannel implements ISessionlessSynchronousChannel<SocketAddress> {
 
     public static final int SIZE_INDEX = 0;
     public static final int SIZE_SIZE = Integer.BYTES;
@@ -68,10 +68,12 @@ public class DatagramSynchronousChannel implements ISynchronousChannel {
         return socketAddress;
     }
 
+    @Override
     public void setOtherSocketAddress(final SocketAddress otherSocketAddress) {
         this.otherSocketAddress = otherSocketAddress;
     }
 
+    @Override
     public SocketAddress getOtherSocketAddress() {
         return otherSocketAddress;
     }

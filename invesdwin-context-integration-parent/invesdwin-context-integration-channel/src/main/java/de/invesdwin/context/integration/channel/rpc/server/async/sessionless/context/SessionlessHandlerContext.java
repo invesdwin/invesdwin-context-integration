@@ -17,13 +17,13 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     private final ProcessResponseResult result = new ProcessResponseResult();
     private boolean resultBorrowed;
     private AttributesMap attributes;
-    private Object otherRemoteAddress;
+    private Object otherSocketAddress;
     private IByteBufferProvider response;
     private ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue;
 
-    public void init(final Object otherRemoteAddress,
+    public void init(final Object otherSocketAddress,
             final ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue) {
-        this.otherRemoteAddress = otherRemoteAddress;
+        this.otherSocketAddress = otherSocketAddress;
         this.writeQueue = writeQueue;
     }
 
@@ -35,8 +35,8 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
         return result;
     }
 
-    public Object getOtherRemoteAddress() {
-        return otherRemoteAddress;
+    public Object getOtherSocketAddress() {
+        return otherSocketAddress;
     }
 
     @Override
@@ -54,7 +54,7 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     }
 
     public void clean() {
-        otherRemoteAddress = null;
+        otherSocketAddress = null;
         result.clean();
         if (attributes != null && !attributes.isEmpty()) {
             attributes.clear();
@@ -65,7 +65,7 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
 
     @Override
     public String getSessionId() {
-        return Objects.toString(otherRemoteAddress);
+        return Objects.toString(otherSocketAddress);
     }
 
     @Override

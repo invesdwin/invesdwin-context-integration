@@ -65,6 +65,7 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
     public void close() throws IOException {
         if (endpoint != null) {
             endpoint.close();
+            endpoint = null;
         }
     }
 
