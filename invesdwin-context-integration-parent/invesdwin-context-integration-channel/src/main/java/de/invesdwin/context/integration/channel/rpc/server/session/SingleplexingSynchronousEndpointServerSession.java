@@ -150,10 +150,16 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
 
     @Override
     public boolean isHeartbeatTimeout() {
+        if (endpointSession == null) {
+            return true;
+        }
         return endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private boolean isRequestTimeout() {
+        if (endpointSession == null) {
+            return true;
+        }
         return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
