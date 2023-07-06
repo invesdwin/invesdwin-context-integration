@@ -25,6 +25,7 @@ import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 
 /**
  * Allows only one active request per client session.
@@ -34,6 +35,9 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
 
     private final SynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
+    private final String sessionId;
+    private final Duration heartbeatTimeout;
+    private final Duration requestTimeout;
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     private final LazySerializingServiceSynchronousCommand<Object> responseHolder = new LazySerializingServiceSynchronousCommand<Object>();
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
@@ -46,6 +50,9 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
+        this.sessionId = endpointSession.getSessionId();
+        this.heartbeatTimeout = endpointSession.getHeartbeatInterval();
+        this.requestTimeout = endpointSession.getRequestTimeout();
         this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
         this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
         try {
@@ -153,14 +160,14 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         if (endpointSession == null) {
             return true;
         }
-        return endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private boolean isRequestTimeout() {
         if (endpointSession == null) {
             return true;
         }
-        return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private void dispatchProcessResponse() throws IOException {
@@ -269,12 +276,12 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
                     responseHolder.setService(methodInfo.getService().getServiceId());
                     responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
-                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
-                            + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
+                    responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                            "request timeout [" + requestTimeout + "] exceeded, please try again later");
                     responseWriter.write(responseHolder);
                     return null;
                 }
-                return methodInfo.invoke(endpointSession.getSessionId(), request, responseHolder);
+                return methodInfo.invoke(sessionId, request, responseHolder);
             } finally {
                 requestReader.readFinished();
             }

@@ -31,6 +31,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 
 /**
  * Allows to process multiple requests in parallel for the same endpoint by multiplexing it.
@@ -40,6 +41,9 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
 
     private final SynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
+    private final String sessionId;
+    private final Duration heartbeatTimeout;
+    private final Duration requestTimeout;
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
@@ -60,6 +64,9 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
+        this.sessionId = endpointSession.getSessionId();
+        this.heartbeatTimeout = endpointSession.getHeartbeatInterval();
+        this.requestTimeout = endpointSession.getRequestTimeout();
         this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
         this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
         try {
@@ -198,14 +205,14 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         if (endpointSession == null) {
             return true;
         }
-        return endpointSession.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private boolean isRequestTimeout() {
         if (endpointSession == null) {
             return true;
         }
-        return endpointSession.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private void dispatchProcessResponse(final ProcessResponseResult result) throws IOException {
@@ -241,8 +248,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
 
             final WrappedExecutorService workExecutor = parent.getWorkExecutor();
             if (workExecutor == null || methodInfo.isBlocking()) {
-                final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), request,
-                        result.getResponse());
+                final Future<Object> future = methodInfo.invoke(sessionId, request, result.getResponse());
                 if (future != null && !future.isDone()) {
                     result.setFuture(future);
                     result.setDelayedWriteResponse(true);
@@ -306,13 +312,12 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 response.setService(methodInfo.getService().getServiceId());
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                 response.setSequence(result.getRequestCopy().getSequence());
-                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ, "request timeout ["
-                        + endpointSession.getRequestTimeout() + "] exceeded, please try again later");
+                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
+                        "request timeout [" + requestTimeout + "] exceeded, please try again later");
                 writeQueue.add(result);
                 return null;
             }
-            final Future<Object> future = methodInfo.invoke(endpointSession.getSessionId(), result.getRequestCopy(),
-                    response);
+            final Future<Object> future = methodInfo.invoke(sessionId, result.getRequestCopy(), response);
             if (future != null && !future.isDone()) {
                 result.setDelayedWriteResponse(true);
                 pollingQueueAsyncAdds.add(result);
