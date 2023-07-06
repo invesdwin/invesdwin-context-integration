@@ -79,11 +79,6 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
     }
 
     @Override
-    public ISynchronousEndpointSession getEndpointSession() {
-        return endpointSession;
-    }
-
-    @Override
     public void close() {
         //only the IO thread will access the active requests array, also only IO thread will call close of the server session, thus we are fine here
         final ProcessResponseResult[] activeRequestsArray = activeRequests.asArray(ProcessResponseResult.EMPTY_ARRAY);
@@ -198,6 +193,16 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
                 pollingResult = nextPollingResult;
             }
         }
+    }
+
+    @Override
+    public Duration getHeartbeatTimeout() {
+        return heartbeatTimeout;
+    }
+
+    @Override
+    public String getSessionId() {
+        return sessionId;
     }
 
     @Override

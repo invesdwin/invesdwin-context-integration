@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.rpc.server.session;
 import java.io.Closeable;
 import java.io.IOException;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.util.time.duration.Duration;
 
 public interface ISynchronousEndpointServerSession extends Closeable {
 
@@ -11,7 +11,9 @@ public interface ISynchronousEndpointServerSession extends Closeable {
 
     boolean isHeartbeatTimeout();
 
-    ISynchronousEndpointSession getEndpointSession();
+    Duration getHeartbeatTimeout();
+
+    String getSessionId();
 
     boolean handle() throws IOException;
 

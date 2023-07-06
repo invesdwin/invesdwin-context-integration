@@ -65,11 +65,6 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
     }
 
     @Override
-    public ISynchronousEndpointSession getEndpointSession() {
-        return endpointSession;
-    }
-
-    @Override
     public void close() {
         final Future<?> processResponseFutureCopy = processResponseFuture;
         if (processResponseFutureCopy != null) {
@@ -153,6 +148,16 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         } else {
             return false;
         }
+    }
+
+    @Override
+    public Duration getHeartbeatTimeout() {
+        return heartbeatTimeout;
+    }
+
+    @Override
+    public String getSessionId() {
+        return sessionId;
     }
 
     @Override
