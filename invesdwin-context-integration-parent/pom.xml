@@ -79,7 +79,6 @@
 		<version.sardine>5.11-inv</version.sardine>
 		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
-		<version.affinity>3.21ea5</version.affinity>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.jctools>3.3.0</version.jctools>
@@ -90,6 +89,7 @@
 		<version.nng-java>1.4.0-inv</version.nng-java>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.0-RC1</version.kryonet>
+		<version.affinity>3.23.3</version.affinity>
 		<version.chronicle-network>2.24ea12</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
