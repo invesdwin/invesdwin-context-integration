@@ -17,14 +17,14 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 @NotThreadSafe
 public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private DisniActiveSynchronousChannel channel;
+    private SynchronousDisniActiveSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
 
-    public DisniActiveSynchronousReader(final DisniActiveSynchronousChannel channel) {
+    public DisniActiveSynchronousReader(final SynchronousDisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
     }
@@ -63,12 +63,12 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
 
     private boolean hasMessage() throws IOException {
         if (messageTargetPosition == 0) {
-            final int sizeTargetPosition = bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX;
+            final int sizeTargetPosition = bufferOffset + ADisniActiveSynchronousChannel.MESSAGE_INDEX;
             //allow reading further than required to reduce the syscalls if possible
             if (!readFurther(sizeTargetPosition, buffer.remaining(nioBuffer.position()))) {
                 return false;
             }
-            final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
+            final int size = buffer.getInt(bufferOffset + ADisniActiveSynchronousChannel.SIZE_INDEX);
             if (size <= 0) {
                 close();
                 throw FastEOFException.getInstance("non positive size: %s", size);
@@ -89,12 +89,12 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
                 channel.getEndpoint().setRecvFinished(false);
                 //when there is no pending read, writes on the other side will never arrive
                 //disni does not provide a way to give the received size, instead message are always received fully
-                final int size = buffer.getInt(bufferOffset + DisniActiveSynchronousChannel.SIZE_INDEX);
+                final int size = buffer.getInt(bufferOffset + ADisniActiveSynchronousChannel.SIZE_INDEX);
                 if (size <= 0) {
                     close();
                     throw FastEOFException.getInstance("non positive size: %s", size);
                 }
-                ByteBuffers.position(nioBuffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX + size);
+                ByteBuffers.position(nioBuffer, bufferOffset + ADisniActiveSynchronousChannel.MESSAGE_INDEX + size);
             }
         }
         return nioBuffer.position() >= targetPosition;
@@ -102,14 +102,14 @@ public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBuf
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final int size = messageTargetPosition - bufferOffset - DisniActiveSynchronousChannel.MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX, size)) {
+        final int size = messageTargetPosition - bufferOffset - ADisniActiveSynchronousChannel.MESSAGE_INDEX;
+        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + ADisniActiveSynchronousChannel.MESSAGE_INDEX, size)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
 
-        final IByteBuffer message = buffer.slice(bufferOffset + DisniActiveSynchronousChannel.MESSAGE_INDEX, size);
-        final int offset = DisniActiveSynchronousChannel.MESSAGE_INDEX + size;
+        final IByteBuffer message = buffer.slice(bufferOffset + ADisniActiveSynchronousChannel.MESSAGE_INDEX, size);
+        final int offset = ADisniActiveSynchronousChannel.MESSAGE_INDEX + size;
         if (nioBuffer.position() > (bufferOffset + offset)) {
             /*
              * can be a maximum of a few messages we read like this because of the size in hasNext, the next read in

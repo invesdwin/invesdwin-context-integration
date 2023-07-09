@@ -43,18 +43,18 @@ public class DisniActiveChannelTest extends AChannelTest {
     }
 
     protected ISynchronousReader<IByteBufferProvider> newDisniSynchronousReader(
-            final DisniActiveSynchronousChannel channel) {
+            final SynchronousDisniActiveSynchronousChannel channel) {
         return new DisniActiveSynchronousReader(channel);
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newDisniSynchronousWriter(
-            final DisniActiveSynchronousChannel channel) {
+            final SynchronousDisniActiveSynchronousChannel channel) {
         return new DisniActiveSynchronousWriter(channel);
     }
 
-    protected DisniActiveSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
+    protected SynchronousDisniActiveSynchronousChannel newDisniSynchronousChannel(final InetSocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new DisniActiveSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new SynchronousDisniActiveSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

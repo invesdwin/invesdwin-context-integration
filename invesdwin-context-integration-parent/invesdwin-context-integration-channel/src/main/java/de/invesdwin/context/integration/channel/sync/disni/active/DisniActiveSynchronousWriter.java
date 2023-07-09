@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 @NotThreadSafe
 public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private DisniActiveSynchronousChannel channel;
+    private SynchronousDisniActiveSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -26,7 +26,7 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
     private SVCPostSend sendTask;
     private boolean request;
 
-    public DisniActiveSynchronousWriter(final DisniActiveSynchronousChannel channel) {
+    public DisniActiveSynchronousWriter(final SynchronousDisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setWriterRegistered();
     }
@@ -36,7 +36,7 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
         channel.open();
         nioBuffer = channel.getEndpoint().getSendBuf();
         buffer = new UnsafeByteBuffer(nioBuffer);
-        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DisniActiveSynchronousChannel.MESSAGE_INDEX);
+        messageBuffer = new SlicedFromDelegateByteBuffer(buffer, ADisniActiveSynchronousChannel.MESSAGE_INDEX);
 
         sendTask = channel.getEndpoint().postSend(channel.getEndpoint().getWrList_send());
     }
@@ -73,10 +73,10 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void write(final IByteBufferProvider message) throws IOException {
         try {
             final int size = message.getBuffer(messageBuffer);
-            buffer.putInt(DisniActiveSynchronousChannel.SIZE_INDEX, size);
+            buffer.putInt(ADisniActiveSynchronousChannel.SIZE_INDEX, size);
             messageToWrite = buffer.addressOffset();
             ByteBuffers.position(nioBuffer, 0);
-            ByteBuffers.limit(nioBuffer, DisniActiveSynchronousChannel.MESSAGE_INDEX + size);
+            ByteBuffers.limit(nioBuffer, ADisniActiveSynchronousChannel.MESSAGE_INDEX + size);
         } catch (final IOException e) {
             throw FastEOFException.getInstance(e);
         }

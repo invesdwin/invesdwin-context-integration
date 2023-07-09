@@ -19,7 +19,7 @@ import com.ibm.disni.verbs.SVCPostSend;
 import de.invesdwin.util.error.UnknownArgumentException;
 
 @NotThreadSafe
-public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
+public abstract class ADisniActiveRdmaEndpoint<E extends ADisniActiveRdmaEndpoint<E>> extends RdmaActiveEndpoint {
     private final int socketSize;
 
     private java.nio.ByteBuffer sendBuf;
@@ -37,14 +37,11 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
     private final LinkedList<IbvSge> sgeListRecv;
     private final IbvRecvWR recvWR;
 
-    private volatile boolean recvFinished;
-    private volatile boolean sendFinished;
-
     private SVCPostRecv recvTask;
     private SVCPostSend sendTask;
 
-    public DisniActiveRdmaEndpoint(final RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup,
-            final RdmaCmId idPriv, final boolean serverSide, final int socketSize) throws IOException {
+    public ADisniActiveRdmaEndpoint(final RdmaActiveEndpointGroup<E> endpointGroup, final RdmaCmId idPriv,
+            final boolean serverSide, final int socketSize) throws IOException {
         super(endpointGroup, idPriv, serverSide);
 
         this.socketSize = socketSize;
@@ -98,29 +95,17 @@ public class DisniActiveRdmaEndpoint extends RdmaActiveEndpoint {
     public void dispatchCqEvent(final IbvWC wc) throws IOException {
         final int opcode = wc.getOpcode();
         if (opcode == IbvWC.IbvWcOpcode.IBV_WC_SEND.getOpcode()) {
-            sendFinished = true;
+            onSendFinished(wc);
         } else if (opcode == IbvWC.IbvWcOpcode.IBV_WC_RECV.getOpcode()) {
-            recvFinished = true;
+            onRecvFinished(wc);
         } else {
             throw UnknownArgumentException.newInstance(Integer.class, opcode);
         }
     }
 
-    public boolean isSendFinished() {
-        return sendFinished;
-    }
+    protected abstract void onRecvFinished(IbvWC wc);
 
-    public void setRecvFinished(final boolean recvFinished) {
-        this.recvFinished = recvFinished;
-    }
-
-    public boolean isRecvFinished() {
-        return recvFinished;
-    }
-
-    public void setSendFinished(final boolean sendFinished) {
-        this.sendFinished = sendFinished;
-    }
+    protected abstract void onSendFinished(IbvWC wc);
 
     public LinkedList<IbvSendWR> getWrList_send() {
         return wrList_send;
