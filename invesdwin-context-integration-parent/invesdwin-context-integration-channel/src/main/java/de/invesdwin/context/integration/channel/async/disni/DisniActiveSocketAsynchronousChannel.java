@@ -1,38 +1,53 @@
 package de.invesdwin.context.integration.channel.async.disni;
 
 import java.io.IOException;
+import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.ibm.disni.RdmaActiveEndpointGroup;
+
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.async.disni.endpoint.AsynchronousDisniActiveRdmaEndpoint;
+import de.invesdwin.context.integration.channel.async.disni.endpoint.AsynchronousDisniActiveRdmaEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.disni.active.ADisniActiveSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.ADisniActiveRdmaEndpointFactory;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class DisniActiveSocketAsynchronousChannel implements IAsynchronousChannel {
+public class DisniActiveSocketAsynchronousChannel
+        extends ADisniActiveSynchronousChannel<AsynchronousDisniActiveRdmaEndpoint> implements IAsynchronousChannel {
 
-    private AsynchronousDisniActiveSynchronousChannel channel;
+    private final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory;
+    private final boolean multipleClientsAllowed;
 
-    public DisniActiveSocketAsynchronousChannel(final AsynchronousDisniActiveSynchronousChannel channel) {
-        channel.setReaderRegistered();
-        channel.setWriterRegistered();
-        this.channel = channel;
+    public DisniActiveSocketAsynchronousChannel(final SocketAddress socketAddress, final boolean server,
+            final int estimatedMaxMessageSize,
+            final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory,
+            final boolean multipleClientsAllowed) {
+        super(socketAddress, server, estimatedMaxMessageSize);
+        setReaderRegistered();
+        setWriterRegistered();
+        this.handlerFactory = handlerFactory;
+        this.multipleClientsAllowed = multipleClientsAllowed;
     }
 
     @Override
-    public void open() throws IOException {
-        channel.open();
+    protected ADisniActiveRdmaEndpointFactory<AsynchronousDisniActiveRdmaEndpoint> newRdmaEndpointFactory(
+            final RdmaActiveEndpointGroup<AsynchronousDisniActiveRdmaEndpoint> endpointGroup, final int socketSize) {
+        return new AsynchronousDisniActiveRdmaEndpointFactory(endpointGroup, socketSize, handlerFactory,
+                multipleClientsAllowed);
     }
 
     @Override
     public void close() {
-        if (channel != null) {
-            channel.close();
-            channel = null;
+        super.close();
+        try {
+            handlerFactory.close();
+        } catch (final IOException e) {
+            //ignore
         }
-    }
-
-    @Override
-    public boolean isClosed() {
-        return channel == null || channel.isClosed();
     }
 
 }

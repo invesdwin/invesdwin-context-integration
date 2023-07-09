@@ -9,13 +9,13 @@ import com.ibm.disni.verbs.IbvWC;
 import com.ibm.disni.verbs.RdmaCmId;
 
 @NotThreadSafe
-public class SynchronousDisniActiveRdmaEndpoint extends ADisniActiveRdmaEndpoint<SynchronousDisniActiveRdmaEndpoint> {
+public class DisniActiveRdmaEndpoint extends ADisniActiveRdmaEndpoint<DisniActiveRdmaEndpoint> {
 
     private volatile boolean recvFinished;
     private volatile boolean sendFinished;
 
-    public SynchronousDisniActiveRdmaEndpoint(
-            final RdmaActiveEndpointGroup<SynchronousDisniActiveRdmaEndpoint> endpointGroup, final RdmaCmId idPriv,
+    public DisniActiveRdmaEndpoint(
+            final RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup, final RdmaCmId idPriv,
             final boolean serverSide, final int socketSize) throws IOException {
         super(endpointGroup, idPriv, serverSide, socketSize);
     }

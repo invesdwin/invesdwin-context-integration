@@ -57,6 +57,17 @@ public abstract class ADisniActiveSynchronousChannel<E extends ADisniActiveRdmaE
         finalizer.register(this);
     }
 
+    ADisniActiveSynchronousChannel(final DisniActiveSynchronousChannelServer server, final E endpoint) {
+        this.socketAddress = server.socketAddress;
+        this.server = false;
+        this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
+        this.socketSize = server.getSocketSize();
+        this.finalizer = new DisniSynchronousChannelFinalizer<E>();
+        finalizer.endpoint = endpoint;
+        activeCount.incrementAndGet();
+        finalizer.register(this);
+    }
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }

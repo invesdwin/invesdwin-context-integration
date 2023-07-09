@@ -17,14 +17,14 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 @NotThreadSafe
 public class DisniActiveSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
-    private SynchronousDisniActiveSynchronousChannel channel;
+    private DisniActiveSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
     private SVCPostRecv recvTask;
 
-    public DisniActiveSynchronousReader(final SynchronousDisniActiveSynchronousChannel channel) {
+    public DisniActiveSynchronousReader(final DisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setReaderRegistered();
     }

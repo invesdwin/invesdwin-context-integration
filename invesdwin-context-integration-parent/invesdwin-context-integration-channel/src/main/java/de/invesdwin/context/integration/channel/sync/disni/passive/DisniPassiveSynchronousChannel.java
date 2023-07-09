@@ -55,6 +55,18 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
         finalizer.register(this);
     }
 
+    DisniPassiveSynchronousChannel(final DisniPassiveSynchronousChannelServer server,
+            final DisniPassiveRdmaEndpoint endpoint) {
+        this.socketAddress = server.socketAddress;
+        this.server = false;
+        this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
+        this.socketSize = server.getSocketSize();
+        this.finalizer = new DisniSynchronousChannelFinalizer();
+        finalizer.endpoint = endpoint;
+        activeCount.incrementAndGet();
+        finalizer.register(this);
+    }
+
     public SocketAddress getSocketAddress() {
         return socketAddress;
     }

@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 @NotThreadSafe
 public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private SynchronousDisniActiveSynchronousChannel channel;
+    private DisniActiveSynchronousChannel channel;
     private IByteBuffer buffer;
     private java.nio.ByteBuffer nioBuffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
@@ -26,7 +26,7 @@ public class DisniActiveSynchronousWriter implements ISynchronousWriter<IByteBuf
     private SVCPostSend sendTask;
     private boolean request;
 
-    public DisniActiveSynchronousWriter(final SynchronousDisniActiveSynchronousChannel channel) {
+    public DisniActiveSynchronousWriter(final DisniActiveSynchronousChannel channel) {
         this.channel = channel;
         this.channel.setWriterRegistered();
     }
