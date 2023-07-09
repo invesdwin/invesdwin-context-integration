@@ -263,11 +263,9 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
                         responseWriter.write(responseHolder);
                         return null;
                     }
-                } catch (final EOFException e) {
+                } catch (final IOException e) {
                     close();
                     return null;
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
                 }
             });
         }

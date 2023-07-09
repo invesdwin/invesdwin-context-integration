@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.rpc.server.session;
 
-import java.io.EOFException;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
@@ -164,11 +163,9 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             } else {
                 return writing;
             }
-        } catch (final EOFException e) {
+        } catch (final IOException e) {
             close();
             return false;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
