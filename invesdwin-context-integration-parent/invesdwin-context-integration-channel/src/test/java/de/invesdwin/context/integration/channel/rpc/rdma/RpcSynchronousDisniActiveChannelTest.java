@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc;
+package de.invesdwin.context.integration.channel.rpc.rdma;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.channel.rpc.ARpcChannelTest;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSession;

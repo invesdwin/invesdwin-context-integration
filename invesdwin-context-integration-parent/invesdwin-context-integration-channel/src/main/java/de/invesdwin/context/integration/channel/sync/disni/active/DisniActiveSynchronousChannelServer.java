@@ -113,15 +113,15 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
 
         @Override
         protected void clean() {
-            final DisniActiveRdmaEndpoint socketChannelCopy = pendingEndpoint;
-            if (socketChannelCopy != null) {
+            final DisniActiveRdmaEndpoint pendingEndpointCopy = pendingEndpoint;
+            if (pendingEndpointCopy != null) {
                 pendingEndpoint = null;
-                Closeables.closeQuietly(socketChannelCopy);
+                Closeables.closeQuietly(pendingEndpointCopy);
             }
-            final RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverSocketChannelCopy = serverEndpoint;
-            if (serverSocketChannelCopy != null) {
+            final RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverEndpointCopy = serverEndpoint;
+            if (serverEndpointCopy != null) {
                 serverEndpoint = null;
-                Closeables.closeQuietly(serverSocketChannelCopy);
+                Closeables.closeQuietly(serverEndpointCopy);
             }
             final RdmaEndpointGroup<DisniActiveRdmaEndpoint> endpointGroupCopy = endpointGroup;
             if (endpointGroupCopy != null) {
@@ -159,11 +159,11 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
         if (finalizer.pendingEndpoint != null) {
             return true;
         }
-        final RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverSocketChannelCopy = finalizer.serverEndpoint;
-        if (serverSocketChannelCopy == null) {
+        final RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverEndpointCopy = finalizer.serverEndpoint;
+        if (serverEndpointCopy == null) {
             throw FastEOFException.getInstance("closed");
         }
-        finalizer.pendingEndpoint = serverSocketChannelCopy.accept();
+        finalizer.pendingEndpoint = serverEndpointCopy.accept();
         return finalizer.pendingEndpoint != null;
     }
 

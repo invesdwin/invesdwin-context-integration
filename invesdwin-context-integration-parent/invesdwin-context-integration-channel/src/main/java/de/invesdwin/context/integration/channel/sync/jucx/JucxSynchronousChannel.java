@@ -4,8 +4,6 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
-import java.nio.channels.ServerSocketChannel;
-import java.nio.channels.SocketChannel;
 import java.util.PrimitiveIterator;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -92,6 +90,38 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         this.ucpMemMapParams = newUcpMemMapParams();
         this.finalizer = new UcxSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    JucxSynchronousChannel(final JucxSynchronousChannelServer server, final UcpConnectionRequest connRequest)
+            throws IOException {
+        this.type = server.getType();
+        this.socketAddress = server.socketAddress;
+        this.server = false;
+        this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
+        this.socketSize = server.getSocketSize();
+        this.ucpMemMapParams = newUcpMemMapParams();
+        this.finalizer = new UcxSynchronousChannelFinalizer();
+        finalizer.ucpContext = new UcpContext(newUcpContextParams());
+        finalizer.closeables.push(finalizer.ucpContext);
+        finalizer.ucpWorker = finalizer.ucpContext.newWorker(newUcpWorkerParams());
+        finalizer.closeables.push(finalizer.ucpWorker);
+        finalizer.ucpEndpoint = finalizer.ucpWorker
+                .newEndpoint(newUcpEndpointParams().setConnectionRequest(connRequest));
+        activeCount.incrementAndGet();
+        finalizer.register(this);
+
+        finalizer.ucpMemory = finalizer.ucpContext.memoryMap(getUcpMemMapParams());
+        finalizer.closeables.push(finalizer.ucpMemory);
+        try {
+            establishConnection();
+            finalizer.closeables.push(finalizer.ucpEndpoint);
+        } catch (final IOException e) {
+            close();
+            throw e;
+        } catch (final Throwable t) {
+            close();
+            throw Throwables.propagate(t);
+        }
     }
 
     protected UcpParams newUcpContextParams() {
@@ -357,14 +387,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     private synchronized boolean shouldOpen() {
         return activeCount.incrementAndGet() == 1;
-    }
-
-    protected SocketChannel newSocketChannel() throws IOException {
-        return SocketChannel.open();
-    }
-
-    protected ServerSocketChannel newServerSocketChannel() throws IOException {
-        return ServerSocketChannel.open();
     }
 
     protected Duration getMaxConnectRetryDelay() {

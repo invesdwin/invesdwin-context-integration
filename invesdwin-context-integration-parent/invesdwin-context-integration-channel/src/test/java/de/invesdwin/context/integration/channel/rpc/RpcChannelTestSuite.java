@@ -5,12 +5,13 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
+import de.invesdwin.context.integration.channel.rpc.rdma.RpcRdmaChannelTestSuite;
 import de.invesdwin.context.integration.channel.rpc.server.sessionless.RpcSessionlessChannelTestSuite;
 
 @Suite
 @SelectClasses({ RpcNativeSocketChannelTest.class, RpcNettySocketHandlerTest.class, RpcNettyDatagramHandlerTest.class,
         RpcNettyUdtHandlerTest.class, RpcUdtChannelTest.class, RpcMinaSocketHandlerTest.class,
-        RpcMinaDatagramHandlerTest.class, RpcSessionlessChannelTestSuite.class })
+        RpcMinaDatagramHandlerTest.class, RpcSessionlessChannelTestSuite.class, RpcRdmaChannelTestSuite.class })
 @Immutable
 public class RpcChannelTestSuite {
 
