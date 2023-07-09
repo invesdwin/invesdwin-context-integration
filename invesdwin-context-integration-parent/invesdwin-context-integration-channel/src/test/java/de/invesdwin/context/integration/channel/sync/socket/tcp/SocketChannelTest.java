@@ -20,10 +20,15 @@ public class SocketChannelTest extends AChannelTest {
 
     @Test
     public void testNioSocketPerformance() throws InterruptedException {
+        final String addr = newAddress();
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
+        final InetSocketAddress responseAddress = new InetSocketAddress(addr, ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress(addr, ports[1]);
         runNioSocketPerformanceTest(responseAddress, requestAddress);
+    }
+
+    protected String newAddress() {
+        return "localhost";
     }
 
     protected void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)

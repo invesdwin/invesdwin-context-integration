@@ -14,4 +14,9 @@ public class BidiBlockingHadronioSocketChannelTest extends BidiBlockingSocketCha
             final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
         return new BlockingHadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
+
+    @Override
+    protected String newAddress() {
+        return findLocalNetworkAddress();
+    }
 }

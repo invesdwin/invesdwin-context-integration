@@ -20,9 +20,14 @@ public class BidiSocketChannelTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
+        final String addr = newAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runNioSocketPerformanceTest(address);
+    }
+
+    protected String newAddress() {
+        return "localhost";
     }
 
     protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {

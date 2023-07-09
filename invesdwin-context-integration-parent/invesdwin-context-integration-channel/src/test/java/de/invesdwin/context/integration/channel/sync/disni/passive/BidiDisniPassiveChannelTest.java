@@ -19,8 +19,9 @@ public class BidiDisniPassiveChannelTest extends AChannelTest {
 
     @Test
     public void testBidiDisniPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("192.168.0.20", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runDisniPerformanceTest(address);
     }
 

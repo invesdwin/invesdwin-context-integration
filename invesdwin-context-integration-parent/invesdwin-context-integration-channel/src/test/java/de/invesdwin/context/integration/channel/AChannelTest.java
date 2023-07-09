@@ -4,6 +4,7 @@ import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -46,6 +47,7 @@ import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReade
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -88,6 +90,16 @@ public abstract class AChannelTest extends ATest {
         MAPPED,
         BLOCKING_MAPPED,
         UNIX_SOCKET;
+    }
+
+    public static String findLocalNetworkAddress() {
+        for (final InetAddress localAddress : NetworkUtil.getLocalAddresses()) {
+            final String localNetworkIp = localAddress.getHostAddress();
+            if (localNetworkIp.startsWith("192.")) {
+                return localNetworkIp;
+            }
+        }
+        throw new IllegalStateException("no suitable network interface found");
     }
 
     protected void runHandlerPerformanceTest(final IAsynchronousChannel serverChannel,

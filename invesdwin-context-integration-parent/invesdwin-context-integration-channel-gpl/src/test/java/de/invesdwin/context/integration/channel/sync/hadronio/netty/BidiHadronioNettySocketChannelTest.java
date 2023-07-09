@@ -23,8 +23,9 @@ public class BidiHadronioNettySocketChannelTest extends AChannelTest {
 
     @Test
     public void testBidiNettySocketChannelPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runBidiNettySocketChannelPerformanceTest(HadroNioNettySocketChannelType.INSTANCE, address);
     }
 

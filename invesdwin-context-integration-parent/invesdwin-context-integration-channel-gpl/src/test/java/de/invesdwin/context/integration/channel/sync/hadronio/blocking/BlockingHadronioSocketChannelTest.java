@@ -15,4 +15,9 @@ public class BlockingHadronioSocketChannelTest extends BlockingSocketChannelTest
         return new BlockingHadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
+    @Override
+    protected String newAddress() {
+        return findLocalNetworkAddress();
+    }
+
 }

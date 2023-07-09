@@ -31,4 +31,9 @@ public class HadronioSocketChannelTest extends SocketChannelTest {
         return new HadronioSocketSynchronousWriter((HadronioSocketSynchronousChannel) channel);
     }
 
+    @Override
+    protected String newAddress() {
+        return findLocalNetworkAddress();
+    }
+
 }

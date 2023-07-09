@@ -21,8 +21,9 @@ public class BidiJucxChannelTest extends AChannelTest {
 
     @Test
     public void testBidiJucxPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runJucxPerformanceTest(JucxTransportType.DEFAULT, address);
     }
 

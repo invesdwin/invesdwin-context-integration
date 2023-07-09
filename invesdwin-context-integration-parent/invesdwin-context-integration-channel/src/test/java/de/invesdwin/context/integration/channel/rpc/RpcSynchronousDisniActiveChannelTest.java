@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronou
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
+import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -33,16 +34,18 @@ public class RpcSynchronousDisniActiveChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("192.168.0.20", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
+            final String addr = findLocalNetworkAddress();
             final int port = NetworkUtil.findAvailableTcpPort();
-            final InetSocketAddress address = new InetSocketAddress("192.168.0.20", port);
+            final InetSocketAddress address = new InetSocketAddress(addr, port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
             runRpcTest(address, mode);
@@ -76,6 +79,11 @@ public class RpcSynchronousDisniActiveChannelTest extends ARpcChannelTest {
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+    }
+
+    @Override
+    protected int getMaxMessageSize() {
+        return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
     }
 
 }

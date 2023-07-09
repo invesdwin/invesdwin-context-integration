@@ -20,9 +20,14 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
 
     @Test
     public void testBlockingSocketPerformance() throws InterruptedException {
+        final String addr = newAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runBlockingSocketPerformanceTest(address);
+    }
+
+    protected String newAddress() {
+        return "localhost";
     }
 
     protected void runBlockingSocketPerformanceTest(final SocketAddress address) throws InterruptedException {

@@ -17,8 +17,9 @@ public class HadronioNettySocketHandlerTest extends AChannelTest {
 
     @Test
     public void testNettySocketHandlerPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runNettySocketHandlerPerformanceTest(HadroNioNettySocketChannelType.INSTANCE, address);
     }
 

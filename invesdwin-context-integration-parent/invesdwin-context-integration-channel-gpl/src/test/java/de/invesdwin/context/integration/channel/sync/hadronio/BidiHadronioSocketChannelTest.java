@@ -31,4 +31,9 @@ public class BidiHadronioSocketChannelTest extends BidiSocketChannelTest {
         return new HadronioSocketSynchronousWriter((HadronioSocketSynchronousChannel) channel);
     }
 
+    @Override
+    protected String newAddress() {
+        return findLocalNetworkAddress();
+    }
+
 }

@@ -19,9 +19,10 @@ public class DisniPassiveChannelTest extends AChannelTest {
 
     @Test
     public void testNioSocketPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress("192.168.0.20", ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress("192.168.0.20", ports[1]);
+        final InetSocketAddress responseAddress = new InetSocketAddress(addr, ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress(addr, ports[1]);
         runNioDisniPerformanceTest(responseAddress, requestAddress);
     }
 
