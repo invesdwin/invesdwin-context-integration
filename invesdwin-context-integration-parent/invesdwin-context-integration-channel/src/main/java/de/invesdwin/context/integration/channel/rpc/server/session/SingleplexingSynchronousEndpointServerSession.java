@@ -51,7 +51,7 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         this.parent = parent;
         this.endpointSession = endpointSession;
         this.sessionId = endpointSession.getSessionId();
-        this.heartbeatTimeout = endpointSession.getHeartbeatInterval();
+        this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
         this.requestTimeout = endpointSession.getRequestTimeout();
         this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
         this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
