@@ -280,7 +280,9 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
             final ServerMethodInfo methodInfo) {
         try {
             try {
-                if (isRequestTimeout()) {
+                if (isClosed()) {
+                    return null;
+                } else if (isRequestTimeout()) {
                     responseHolder.setService(methodInfo.getService().getServiceId());
                     responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());

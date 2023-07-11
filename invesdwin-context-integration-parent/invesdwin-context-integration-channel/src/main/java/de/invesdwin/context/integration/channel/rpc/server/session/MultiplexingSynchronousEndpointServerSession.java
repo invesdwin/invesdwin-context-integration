@@ -209,16 +209,10 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
 
     @Override
     public boolean isHeartbeatTimeout() {
-        if (endpointSession == null) {
-            return true;
-        }
         return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
     private boolean isRequestTimeout() {
-        if (endpointSession == null) {
-            return true;
-        }
         return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
@@ -315,7 +309,9 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         @Override
         public Object call() {
             final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
-            if (isRequestTimeout()) {
+            if (isClosed()) {
+                return null;
+            } else if (isRequestTimeout()) {
                 response.setService(methodInfo.getService().getServiceId());
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                 response.setSequence(result.getRequestCopy().getSequence());

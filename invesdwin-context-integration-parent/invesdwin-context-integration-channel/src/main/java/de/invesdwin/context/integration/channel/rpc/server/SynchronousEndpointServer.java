@@ -426,15 +426,16 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             for (int i = 0; i < serverSessionsArray.length; i++) {
                 final ISynchronousEndpointServerSession serverSession = serverSessionsArray[i];
                 if (serverSession.isHeartbeatTimeout()) {
-                    //session closed
-                    if (!serverSession.isClosed()) {
-                        Err.process(new TimeoutException("Heartbeat timeout [" + serverSession.getHeartbeatTimeout()
-                                + "] exceeded: " + serverSession.getSessionId()));
-                    }
+                    Err.process(new TimeoutException("Heartbeat timeout [" + serverSession.getHeartbeatTimeout()
+                            + "] exceeded: " + serverSession.getSessionId()));
                     serverSessions.remove(i - removedSessions);
                     activeSessionsOverall.decrementAndGet();
                     removedSessions++;
                     Closeables.closeQuietly(serverSession);
+                } else if (serverSession.isClosed()) {
+                    serverSessions.remove(i - removedSessions);
+                    activeSessionsOverall.decrementAndGet();
+                    removedSessions++;
                 }
             }
         }
