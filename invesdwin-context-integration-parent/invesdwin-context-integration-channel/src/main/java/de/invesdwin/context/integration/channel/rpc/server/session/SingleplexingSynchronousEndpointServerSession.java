@@ -96,6 +96,11 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
         }
     }
 
+    @Override
+    public boolean isClosed() {
+        return endpointSession == null;
+    }
+
     //look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
     //reject executions if too many pending count for worker pool
     //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)

@@ -116,6 +116,11 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
     }
 
     @Override
+    public boolean isClosed() {
+        return endpointSession == null;
+    }
+
+    @Override
     public boolean handle() throws IOException {
         maybePollResults();
         final boolean writing;

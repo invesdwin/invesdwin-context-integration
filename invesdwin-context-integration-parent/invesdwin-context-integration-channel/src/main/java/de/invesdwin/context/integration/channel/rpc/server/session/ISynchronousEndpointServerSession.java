@@ -17,4 +17,6 @@ public interface ISynchronousEndpointServerSession extends Closeable {
 
     boolean handle() throws IOException;
 
+    boolean isClosed();
+
 }
