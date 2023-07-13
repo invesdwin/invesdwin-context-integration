@@ -32,7 +32,7 @@ source "${flight_ROOT:-/opt/flight}"/etc/setup.sh
 # e.g.:
 # Load the OpenMPI module for access to `mpirun` command
 flight env activate gridware
-module load mpi/openmpi
+module load mpi/openmpi/4.1.5
 
 if ! command -v mpirun &>/dev/null; then
     echo "No mpirun command found, ensure that a version of MPI is installed and available in PATH" >&2
