@@ -16,7 +16,7 @@
 #SBATCH --mem=2g
 ## Processing slots
 #SBATCH --nodes=2
-#SBATCH --ntasks=2
+#SBATCH --ntasks-per-node=1
 ## Specify partition
 #SBATCH -p nodes
 
