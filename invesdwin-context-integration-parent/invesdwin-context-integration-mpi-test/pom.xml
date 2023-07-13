@@ -7,6 +7,19 @@
 	</parent>
 	<artifactId>invesdwin-context-integration-mpi-test</artifactId>
 	<packaging>jar</packaging>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>de/invesdwin/context/integration/mpi/test/MpiTestSuite.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
