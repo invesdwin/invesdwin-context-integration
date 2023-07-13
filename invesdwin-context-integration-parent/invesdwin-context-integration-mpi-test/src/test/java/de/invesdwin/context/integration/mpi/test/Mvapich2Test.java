@@ -13,12 +13,11 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
-import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.lang.Files;
 
 @Disabled
 @NotThreadSafe
-public class Mvapich2Test extends ATest {
+public class Mvapich2Test extends AMpiTest {
 
     @Test
     public void test() throws Throwable {

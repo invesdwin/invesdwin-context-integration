@@ -1,6 +1,6 @@
 #!/bin/bash -l
 
-################# Part-1 Slurm directives ####################
+################# Slurm directives ####################
 ## Working dir
 #SBATCH -D {WORKDIR}
 ## Environment variables
@@ -20,42 +20,30 @@
 ## Specify partition
 #SBATCH -p nodes
 
-################# Part-2 Shell script ####################
-#===============================
-#  Activate Flight Environment
-#-------------------------------
-source "${flight_ROOT:-/opt/flight}"/etc/setup.sh
+#source "${flight_ROOT:-/opt/flight}"/etc/setup.sh
+#flight env activate gridware
+#module load mpi/openmpi/4.1.5
 
-#==============================
-#  Activate Package Ecosystem
-#------------------------------
-# e.g.:
-# Load the OpenMPI module for access to `mpirun` command
-flight env activate gridware
-module load mpi/openmpi/4.1.5
+#download openmpi 4.1.5, prepare openjdk 17 and JAVA_HOME
+#./configure psm=false psm2=false torque=false sge=false pmi=/usr pmilib=/usr/lib64 extraopts=--with-libevent%external --enable-mpi-java --prefix=$HOME/tools/openmpi
+#make
+#make install
 
-if ! command -v mpirun &>/dev/null; then
-    echo "No mpirun command found, ensure that a version of MPI is installed and available in PATH" >&2
-    exit 1
-fi
+# create a .bash_profile similar to:
+#JAVA_HOME=$HOME/tools/jdk/jdk-17.0.2
+#export JAVA_HOME
+#MAVEN_HOME=$HOME/tools/apache-maven-3.9.3
+#export MAVEN_HOME
+#MPI_HOME=$HOME/tools/openmpi
+#export MPI_HOME
+#OPAL_PREFIX=$MPI_HOME
+#export OPAL_PREFIX
+#PATH=$PATH:$HOME/.local/bin:$HOME/bin:$JAVA_HOME/bin:$MAVEN_HOME/bin:$MPI_HOME/bin
+#export PATH
+#LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$MPI_HOME/lib
+#export LD_LIBRARY_PATH
+#ulimit -Sn $(ulimit -Hn)
 
-#===========================
-#  Create results directory
-#---------------------------
-RESULTS_DIR="$(pwd)/${SLURM_JOB_NAME}-outputs/${SLURM_JOB_ID}"
-echo "Your results will be stored in: $RESULTS_DIR"
-mkdir -p "$RESULTS_DIR"
+source ~/.bash_profile
 
-#===============================
-#  Application launch commands
-#-------------------------------
-# Customize this section to suit your needs.
-
-echo "Executing job commands, current working directory is $(pwd)"
-
-# REPLACE THE FOLLOWING WITH YOUR APPLICATION COMMANDS
-
-echo "This is an example job. It was allocated $SLURM_NTASKS slot(s) across $SLURM_JOB_NUM_NODES node(s). The master process ran on `hostname -s` (as `whoami`)." >> $RESULTS_DIR/test.output
-mpirun -np $SLURM_NTASKS {ARGS} >> $RESULTS_DIR/test.output
-
-echo "Output file has been generated, please check $RESULTS_DIR/test.output"
+mpirun -np $SLURM_NTASKS {ARGS}

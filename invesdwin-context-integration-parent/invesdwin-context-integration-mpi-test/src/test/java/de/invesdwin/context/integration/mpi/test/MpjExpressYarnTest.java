@@ -25,14 +25,13 @@ import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
 import de.invesdwin.context.system.properties.SystemProperties;
-import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
 
 @NotThreadSafe
 @Testcontainers
-public class MpjExpressYarnTest extends ATest {
+public class MpjExpressYarnTest extends AMpiTest {
 
     //not needed to run the jobs
     private static final boolean HADOOP_FRONTENDS = true;

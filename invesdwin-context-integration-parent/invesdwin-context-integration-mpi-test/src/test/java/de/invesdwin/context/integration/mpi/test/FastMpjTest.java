@@ -13,11 +13,10 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.system.properties.SystemProperties;
-import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.lang.Files;
 
 @NotThreadSafe
-public class FastMpjTest extends ATest {
+public class FastMpjTest extends AMpiTest {
 
     @Test
     public void test() throws Throwable {
