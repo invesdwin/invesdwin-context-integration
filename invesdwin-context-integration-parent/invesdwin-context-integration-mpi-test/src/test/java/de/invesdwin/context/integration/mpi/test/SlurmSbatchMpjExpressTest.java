@@ -33,6 +33,7 @@ public class SlurmSbatchMpjExpressTest extends AMpiTest {
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "slurm_sbatch_mpjexpress_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
+        //WARNING: does not execute the jobs on different nodes, instead on the same node, OpenMPI work on multiple nodes
         new ProcessExecutor().command("sbatch", "--wait", scriptFile.getAbsolutePath())
                 .destroyOnExit()
                 .exitValueNormal()
