@@ -113,7 +113,7 @@ public final class MpiJobYarnMain {
                     IOUtils.copy(in, out);
                 }
             }
-            javaTarGzPart.renameTo(javaTarGz);
+            Files.moveFileQuietly(javaTarGzPart, javaTarGz);
 
             final Archiver archiver = ArchiverFactory.createArchiver(javaTarGz);
             archiver.extract(javaTarGz, OPENJDK_FOLDER);

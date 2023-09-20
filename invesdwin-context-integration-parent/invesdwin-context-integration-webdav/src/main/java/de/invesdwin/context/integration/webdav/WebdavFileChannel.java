@@ -89,7 +89,11 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     public synchronized String getFileUrl() {
-        return serverUrl + getDirectory() + getFilename();
+        return newFileUrl(getFilename());
+    }
+
+    public synchronized String newFileUrl(final String filename) {
+        return serverUrl + getDirectory() + filename;
     }
 
     @Override
@@ -308,6 +312,17 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     private void assertConnected() {
         Assertions.checkTrue(isConnected(), "Please call connect() first");
+    }
+
+    @Override
+    public void rename(final String filename) {
+        assertConnected();
+        try {
+            finalizer.webdavClient.move(getFileUrl(), newFileUrl(filename));
+            setFilename(filename);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

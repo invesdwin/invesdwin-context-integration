@@ -309,6 +309,17 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
+    public void rename(final String filename) {
+        assertConnected();
+        try {
+            finalizer.ftpClient.rename(getFilename(), filename);
+            setFilename(filename);
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public synchronized void upload(final File file) {
         assertConnected();
         try {

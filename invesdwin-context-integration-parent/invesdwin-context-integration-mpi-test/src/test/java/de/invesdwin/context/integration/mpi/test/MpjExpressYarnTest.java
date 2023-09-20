@@ -85,7 +85,7 @@ public class MpjExpressYarnTest extends AMpiTest {
                 Files.deleteQuietly(hadoopFilePart);
                 IOUtils.copy(URIs.asUrl("http://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
                         + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
-                hadoopFilePart.renameTo(hadoopFile);
+                Files.moveFileQuietly(hadoopFilePart, hadoopFile);
                 Files.deleteQuietly(HADOOP_FOLDER);
                 Files.deleteQuietly(hadoopVersionedFolder);
             }
@@ -93,7 +93,7 @@ public class MpjExpressYarnTest extends AMpiTest {
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
-                hadoopVersionedFolder.renameTo(HADOOP_FOLDER);
+                Files.moveFileQuietly(hadoopVersionedFolder, HADOOP_FOLDER);
                 //                COPY core-site.xml $HADOOP_HOME/etc/hadoop/
                 for (final String filename : new String[] { "core-site.xml", "hdfs-site.xml", "yarn-site.xml" }) {
                     Files.copyFile(new File(HADOOP_DOCKER_FOLDER, filename),
