@@ -7,17 +7,15 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.reference.DisabledReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
-import de.invesdwin.util.concurrent.reference.IReference;
-import de.invesdwin.util.error.FastEOFException;
 
 @NotThreadSafe
-public class ReferenceSynchronousReader<M> implements ISynchronousReader<M> {
+public class SimpleReferenceSynchronousReader<M> implements ISynchronousReader<M> {
 
-    private IMutableReference<IReference<M>> reference;
+    private IMutableReference<M> reference;
 
     @SuppressWarnings("unchecked")
-    public ReferenceSynchronousReader(final IMutableReference<? extends IReference<M>> reference) {
-        this.reference = (IMutableReference<IReference<M>>) reference;
+    public SimpleReferenceSynchronousReader(final IMutableReference<? extends M> reference) {
+        this.reference = (IMutableReference<M>) reference;
     }
 
     @Override
@@ -35,13 +33,7 @@ public class ReferenceSynchronousReader<M> implements ISynchronousReader<M> {
 
     @Override
     public M readMessage() throws IOException {
-        final IReference<M> holder = reference.getAndSet(null);
-        final M message = holder.get();
-        if (message == null) {
-            close();
-            throw FastEOFException.getInstance("closed by other side");
-        }
-        return message;
+        return reference.getAndSet(null);
     }
 
     @Override

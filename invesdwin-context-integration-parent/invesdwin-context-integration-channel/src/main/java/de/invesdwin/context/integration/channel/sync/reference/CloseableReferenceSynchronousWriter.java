@@ -12,12 +12,12 @@ import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.concurrent.reference.ImmutableReference;
 
 @NotThreadSafe
-public class ReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
+public class CloseableReferenceSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     private IMutableReference<IReference<M>> reference;
 
     @SuppressWarnings("unchecked")
-    public ReferenceSynchronousWriter(final IMutableReference<? extends IReference<M>> reference) {
+    public CloseableReferenceSynchronousWriter(final IMutableReference<? extends IReference<M>> reference) {
         this.reference = (IMutableReference<IReference<M>>) reference;
     }
 

@@ -65,12 +65,12 @@ public class ReferenceChannelTest extends AChannelTest {
 
     private void runReferencePerformanceTest(final IMutableReference<IReference<FDate>> responseQueue,
             final IMutableReference<IReference<FDate>> requestQueue) throws InterruptedException {
-        final ISynchronousWriter<FDate> responseWriter = new ReferenceSynchronousWriter<FDate>(responseQueue);
-        final ISynchronousReader<FDate> requestReader = new ReferenceSynchronousReader<FDate>(requestQueue);
+        final ISynchronousWriter<FDate> responseWriter = new CloseableReferenceSynchronousWriter<FDate>(responseQueue);
+        final ISynchronousReader<FDate> requestReader = new CloseableReferenceSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runReferencePerformanceTest", 1);
         executor.execute(new ServerTask(requestReader, responseWriter));
-        final ISynchronousWriter<FDate> requestWriter = new ReferenceSynchronousWriter<FDate>(requestQueue);
-        final ISynchronousReader<FDate> responseReader = new ReferenceSynchronousReader<FDate>(responseQueue);
+        final ISynchronousWriter<FDate> requestWriter = new CloseableReferenceSynchronousWriter<FDate>(requestQueue);
+        final ISynchronousReader<FDate> responseReader = new CloseableReferenceSynchronousReader<FDate>(responseQueue);
         new ClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
