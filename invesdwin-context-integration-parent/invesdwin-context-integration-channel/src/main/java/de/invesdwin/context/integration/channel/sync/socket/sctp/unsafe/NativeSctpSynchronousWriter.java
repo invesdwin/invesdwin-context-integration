@@ -10,9 +10,9 @@ import java.net.InetAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.IOStatusAccessor;
 import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
