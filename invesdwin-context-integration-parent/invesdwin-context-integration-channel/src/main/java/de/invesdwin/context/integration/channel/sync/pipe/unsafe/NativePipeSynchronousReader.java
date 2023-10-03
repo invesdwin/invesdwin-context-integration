@@ -10,15 +10,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativePipeSynchronousReader extends APipeSynchronousChannel
@@ -40,7 +39,7 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
     public void open() throws IOException {
         in = new FileInputStream(file);
         fileChannel = in.getChannel();
-        fd = Jvm.getValue(fileChannel, "fd");
+        fd = Reflections.getBeanPathValue(fileChannel, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(fileSize);
     }
@@ -141,11 +140,11 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
 
     public static int read0(final FileDescriptor src, final long address, final int position, final int length)
             throws IOException {
-        final int res = OS.read0(src, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+        final int res = FileChannelImplAccessor.read0(src, address + position, length);
+        if (res == IOStatusAccessor.INTERRUPTED) {
             return 0;
         } else {
-            final int count = IOTools.normaliseIOStatus(res);
+            final int count = IOStatusAccessor.normalize(res);
             if (count < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }

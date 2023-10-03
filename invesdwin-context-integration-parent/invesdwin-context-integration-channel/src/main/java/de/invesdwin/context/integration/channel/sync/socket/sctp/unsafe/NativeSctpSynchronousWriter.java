@@ -12,6 +12,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -19,8 +20,6 @@ import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -58,8 +57,8 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
     @Override
     public void open() throws IOException {
         channel.open();
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
-        fdVal = Jvm.getValue(fd, "fd");
+        fd = Reflections.getBeanPathValue(channel.getSocketChannel(), "fd");
+        fdVal = Reflections.getBeanPathValue(fd, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);
@@ -140,10 +139,10 @@ public class NativeSctpSynchronousWriter implements ISynchronousWriter<IByteBuff
         try {
             final int res = (int) SCTPCHANNELIMPL_SEND0_METHOD.invokeExact(fd, address, length, addr, port, assocId,
                     streamNumber, unordered, ppid);
-            if (res == IOTools.IOSTATUS_INTERRUPTED) {
+            if (res == IOStatusAccessor.INTERRUPTED) {
                 return 0;
             } else {
-                return IOTools.normaliseIOStatus(res);
+                return IOStatusAccessor.normalize(res);
             }
         } catch (final IOException ioe) {
             throw ioe;

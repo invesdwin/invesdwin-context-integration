@@ -13,15 +13,15 @@ import java.net.SocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.FileChannelImplAccessor;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -64,7 +64,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
                 Reflections.makeAccessible(write0);
                 FD_WRITE0_MH = MethodHandles.lookup().unreflect(write0);
             } else {
-                final Method write0Fallback = Reflections.findMethod(net.openhft.chronicle.core.OS.class, "write0",
+                final Method write0Fallback = Reflections.findMethod(FileChannelImplAccessor.class, "write0",
                         FileDescriptor.class, long.class, int.class);
                 FD_WRITE0_MH = MethodHandles.lookup().unreflect(write0Fallback);
             }
@@ -98,7 +98,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, DatagramSynchronousChannel.MESSAGE_INDEX);
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
+        fd = Reflections.getBeanPathValue(channel.getSocketChannel(), "fd");
     }
 
     @Override
@@ -201,10 +201,10 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+        if (res == IOStatusAccessor.INTERRUPTED) {
             return 0;
         } else {
-            final int count = IOTools.normaliseIOStatus(res);
+            final int count = IOStatusAccessor.normalize(res);
             if (count < 0) { // EOF
                 throw ByteBuffers.newEOF();
             }
@@ -220,10 +220,10 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+        if (res == IOStatusAccessor.INTERRUPTED) {
             return 0;
         } else {
-            final int count = IOTools.normaliseIOStatus(res);
+            final int count = IOStatusAccessor.normalize(res);
             if (count < 0) { // EOF
                 throw ByteBuffers.newEOF();
             }

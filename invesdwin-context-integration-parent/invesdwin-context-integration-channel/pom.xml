@@ -26,20 +26,24 @@
 			<artifactId>invesdwin-context-integration</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-security-crypto</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>net.openhft</groupId>
 			<artifactId>chronicle-core</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>io.aeron</groupId>
-			<artifactId>aeron-driver</artifactId>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-security-crypto</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.nimbusds</groupId>
 			<artifactId>srp6a</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.aeron</groupId>
+			<artifactId>aeron-driver</artifactId>
+			<scope>provided</scope>
 		</dependency>
 		<dependency>
 			<groupId>io.netty</groupId>

@@ -10,14 +10,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.OS;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativePipeSynchronousWriter extends APipeSynchronousChannel
@@ -40,7 +39,7 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     public void open() throws IOException {
         out = new FileOutputStream(file, true);
         fileChannel = out.getChannel();
-        fd = Jvm.getValue(fileChannel, "fd");
+        fd = Reflections.getBeanPathValue(fileChannel, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(fileSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
@@ -107,11 +106,11 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
 
     public static int write0(final FileDescriptor dst, final long address, final int position, final int length)
             throws IOException {
-        final int res = OS.write0(dst, address + position, length);
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+        final int res = FileChannelImplAccessor.write0(dst, address + position, length);
+        if (res == IOStatusAccessor.INTERRUPTED) {
             return 0;
         } else {
-            final int count = IOTools.normaliseIOStatus(res);
+            final int count = IOStatusAccessor.normalize(res);
             if (count < 0) { // EOF
                 throw ByteBuffers.newEOF();
             }

@@ -10,14 +10,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.sctp.SctpSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -64,8 +63,8 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
     @Override
     public void open() throws IOException {
         channel.open();
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
-        fdVal = Jvm.getValue(fd, "fd");
+        fd = Reflections.getBeanPathValue(channel.getSocketChannel(), "fd");
+        fdVal = Reflections.getBeanPathValue(fd, "fd");
         try {
             resultContainer = RESULTCONTAINER_CLASS.getConstructor().newInstance();
         } catch (final Exception e) {
@@ -168,10 +167,10 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
         try {
             RESULTCONTAINER_CLEAR_METHOD.invoke(resultContainer);
             final int res = (int) SCTPCHANNELIMPL_RECEIVE0_METHOD.invoke(fd, resultContainer, address, length, peek);
-            if (res == IOTools.IOSTATUS_INTERRUPTED) {
+            if (res == IOStatusAccessor.INTERRUPTED) {
                 return 0;
             } else {
-                return IOTools.normaliseIOStatus(res);
+                return IOStatusAccessor.normalize(res);
             }
         } catch (final IOException ioe) {
             throw ioe;

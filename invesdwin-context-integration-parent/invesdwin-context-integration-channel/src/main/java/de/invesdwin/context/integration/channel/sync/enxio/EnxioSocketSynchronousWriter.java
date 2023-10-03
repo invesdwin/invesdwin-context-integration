@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -15,7 +16,6 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import jnr.enxio.channels.Native;
 import jnr.enxio.channels.NativeAccessor;
-import net.openhft.chronicle.core.Jvm;
 
 @NotThreadSafe
 public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
@@ -42,8 +42,8 @@ public class EnxioSocketSynchronousWriter implements ISynchronousWriter<IByteBuf
                 channel.getSocket().shutdownInput();
             }
         }
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
-        fdVal = Jvm.getValue(fd, "fd");
+        fd = Reflections.getBeanPathValue(channel.getSocketChannel(), "fd");
+        fdVal = Reflections.getBeanPathValue(fd, "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(channel.getSocketSize());
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, SocketSynchronousChannel.MESSAGE_INDEX);

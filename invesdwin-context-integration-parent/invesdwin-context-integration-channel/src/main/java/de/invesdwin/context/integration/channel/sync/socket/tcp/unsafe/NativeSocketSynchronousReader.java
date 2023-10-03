@@ -9,15 +9,15 @@ import java.lang.reflect.Method;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.pipe.unsafe.FileChannelImplAccessor;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
+import de.invesdwin.context.integration.network.IOStatusAccessor;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import net.openhft.chronicle.core.Jvm;
-import net.openhft.chronicle.core.io.IOTools;
 
 @NotThreadSafe
 public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -32,7 +32,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
                 Reflections.makeAccessible(read0);
                 READ0_MH = MethodHandles.lookup().unreflect(read0);
             } else {
-                final Method write0Fallback = Reflections.findMethod(net.openhft.chronicle.core.OS.class, "read0",
+                final Method write0Fallback = Reflections.findMethod(FileChannelImplAccessor.class, "read0",
                         FileDescriptor.class, long.class, int.class);
                 READ0_MH = MethodHandles.lookup().unreflect(write0Fallback);
             }
@@ -63,7 +63,7 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
                 channel.getSocket().shutdownOutput();
             }
         }
-        fd = Jvm.getValue(channel.getSocketChannel(), "fd");
+        fd = Reflections.getBeanPathValue(channel.getSocketChannel(), "fd");
         //use direct buffer to prevent another copy from byte[] to native
         buffer = ByteBuffers.allocateDirectExpandable(socketSize);
     }
@@ -157,10 +157,10 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }
-        if (res == IOTools.IOSTATUS_INTERRUPTED) {
+        if (res == IOStatusAccessor.INTERRUPTED) {
             return 0;
         } else {
-            final int count = IOTools.normaliseIOStatus(res);
+            final int count = IOStatusAccessor.normalize(res);
             if (count < 0) {
                 throw FastEOFException.getInstance("socket closed");
             }
