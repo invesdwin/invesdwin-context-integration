@@ -53,12 +53,14 @@ public class SynchronousWriterSpinWait<M> {
 
     public void waitForWrite(final M message, final Duration timeout) throws IOException {
         try {
-            while (!writeReady().awaitFulfill(System.nanoTime(), timeout)) {
-                onTimeout("Write message ready timeout exceeded", timeout);
+            long startNanos = System.nanoTime();
+            while (!writeReady().awaitFulfill(startNanos, timeout)) {
+                onTimeout("Write message ready timeout exceeded", timeout, startNanos);
             }
             writer.write(message);
-            while (!writeFlushed().awaitFulfill(System.nanoTime(), timeout)) {
-                onTimeout("Write message flush timeout exceeded", timeout);
+            startNanos = System.nanoTime();
+            while (!writeFlushed().awaitFulfill(startNanos, timeout)) {
+                onTimeout("Write message flush timeout exceeded", timeout, startNanos);
             }
         } catch (final IOException e) {
             throw e;
@@ -67,7 +69,8 @@ public class SynchronousWriterSpinWait<M> {
         }
     }
 
-    protected void onTimeout(final String reason, final Duration timeout) throws TimeoutException {
+    protected void onTimeout(final String reason, final Duration timeout, final long startNanos)
+            throws TimeoutException {
         throw new TimeoutException(reason + ": " + timeout);
     }
 

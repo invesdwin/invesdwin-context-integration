@@ -38,8 +38,9 @@ public class SynchronousReaderSpinWait<M> {
 
     public M waitForRead(final Duration timeout) throws IOException {
         try {
-            while (!hasNext().awaitFulfill(System.nanoTime(), timeout)) {
-                onTimeout("Read message hasNext timeout exceeded", timeout);
+            final long startNanos = System.nanoTime();
+            while (!hasNext().awaitFulfill(startNanos, timeout)) {
+                onTimeout("Read message hasNext timeout exceeded", timeout, startNanos);
             }
             return reader.readMessage();
         } catch (final IOException e) {
@@ -49,7 +50,8 @@ public class SynchronousReaderSpinWait<M> {
         }
     }
 
-    protected void onTimeout(final String reason, final Duration timeout) throws TimeoutException {
+    protected void onTimeout(final String reason, final Duration timeout, final long startNanos)
+            throws TimeoutException {
         throw new TimeoutException(reason + ": " + timeout);
     }
 }
