@@ -26,11 +26,6 @@
 			<artifactId>invesdwin-context-integration</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>net.openhft</groupId>
-			<artifactId>chronicle-core</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-security-crypto</artifactId>
 			<scope>provided</scope>
