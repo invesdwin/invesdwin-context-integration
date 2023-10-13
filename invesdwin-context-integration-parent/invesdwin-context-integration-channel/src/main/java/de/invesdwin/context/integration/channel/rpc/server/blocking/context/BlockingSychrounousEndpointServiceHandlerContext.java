@@ -6,7 +6,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
-import de.invesdwin.context.integration.channel.rpc.endpoint.blocking.BlockingSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
@@ -26,7 +25,7 @@ public class BlockingSychrounousEndpointServiceHandlerContext
     private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
     private UnsafeByteBuffer requestWrapperBuffer;
     private final ProcessResponseResult result = new ProcessResponseResult();
-    private final BlockingSynchronousEndpoint endpoint;
+    private final ServiceBlockingSynchronousEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
     private final SynchronousReaderSpinWait<IByteBufferProvider> requestReaderSpinWait;
     private final SynchronousWriterSpinWait<IByteBufferProvider> responseWriterSpinWait;
@@ -35,7 +34,7 @@ public class BlockingSychrounousEndpointServiceHandlerContext
     private IByteBufferProvider response;
 
     public BlockingSychrounousEndpointServiceHandlerContext(
-            final BlockingSychrounousEndpointServiceHandlerContextPool pool, final BlockingSynchronousEndpoint endpoint,
+            final BlockingSychrounousEndpointServiceHandlerContextPool pool, final ServiceBlockingSynchronousEndpoint endpoint,
             final ISynchronousEndpointSession endpointSession,
             final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler) {
         this.pool = pool;

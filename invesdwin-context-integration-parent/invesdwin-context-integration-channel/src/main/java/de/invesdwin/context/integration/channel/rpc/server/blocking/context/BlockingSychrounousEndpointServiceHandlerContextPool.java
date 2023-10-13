@@ -5,7 +5,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.blocking.BlockingSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
@@ -20,13 +19,13 @@ public final class BlockingSychrounousEndpointServiceHandlerContextPool
 
     private static final String KEY_MAX_POOL_SIZE = "MAX_POOL_SIZE";
     private final ABlockingSynchronousEndpointServer parent;
-    private final BlockingSynchronousEndpoint endpoint;
+    private final ServiceBlockingSynchronousEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
 
     public BlockingSychrounousEndpointServiceHandlerContextPool(final ABlockingSynchronousEndpointServer parent) {
         super(newMaxPoolSize());
         this.parent = parent;
-        this.endpoint = new BlockingSynchronousEndpoint();
+        this.endpoint = new ServiceBlockingSynchronousEndpoint();
         final ISynchronousEndpointSessionFactory endpointSessionFactory = parent.getSessionFactoryTransformer()
                 .transform(new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
                     @Override

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.endpoint.blocking;
+package de.invesdwin.context.integration.channel.rpc.server.blocking.context;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -9,12 +9,12 @@ import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BlockingSynchronousEndpoint implements ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> {
+public class ServiceBlockingSynchronousEndpoint implements ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> {
 
     private final SimpleReferenceSynchronousReader<IByteBufferProvider> reader;
     private final SimpleReferenceSynchronousWriter<IByteBufferProvider> writer;
 
-    public BlockingSynchronousEndpoint() {
+    public ServiceBlockingSynchronousEndpoint() {
         this.reader = new SimpleReferenceSynchronousReader<>(new MutableReference<>());
         this.writer = new SimpleReferenceSynchronousWriter<>(new MutableReference<>());
     }
