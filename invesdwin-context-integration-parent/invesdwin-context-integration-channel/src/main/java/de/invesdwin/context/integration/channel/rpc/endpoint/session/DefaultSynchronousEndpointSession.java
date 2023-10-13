@@ -40,25 +40,47 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
     }
 
     @Override
-    public <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newRequestWriter(final ISerde<T> requestSerde) {
-        final ISynchronousWriter<IByteBufferProvider> transport = endpoint.getWriter();
-        return new ServiceCommandSynchronousWriter<T>(transport, requestSerde, ByteBuffers.EXPANDABLE_LENGTH);
+    public ISynchronousWriter<IByteBufferProvider> newRequestWriter() {
+        return endpoint.getWriter();
     }
 
     @Override
-    public <T> ISynchronousReader<IServiceSynchronousCommand<T>> newRequestReader(final ISerde<T> requestSerde) {
-        final ISynchronousReader<IByteBufferProvider> transport = endpoint.getReader();
-        return new ServiceCommandSynchronousReader<T>(transport, requestSerde);
+    public <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandRequestWriter(
+            final ISynchronousWriter<IByteBufferProvider> requestWriter, final ISerde<T> requestSerde) {
+        return new ServiceCommandSynchronousWriter<T>(requestWriter, requestSerde, ByteBuffers.EXPANDABLE_LENGTH);
     }
 
     @Override
-    public <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newResponseWriter(final ISerde<T> responseSerde) {
-        return newRequestWriter(responseSerde);
+    public ISynchronousReader<IByteBufferProvider> newRequestReader() {
+        return endpoint.getReader();
     }
 
     @Override
-    public <T> ISynchronousReader<IServiceSynchronousCommand<T>> newResponseReader(final ISerde<T> responseSerde) {
-        return newRequestReader(responseSerde);
+    public <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandRequestReader(
+            final ISynchronousReader<IByteBufferProvider> requestReader, final ISerde<T> requestSerde) {
+        return new ServiceCommandSynchronousReader<T>(requestReader, requestSerde);
+    }
+
+    @Override
+    public ISynchronousWriter<IByteBufferProvider> newResponseWriter() {
+        return newRequestWriter();
+    }
+
+    @Override
+    public <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandResponseWriter(
+            final ISynchronousWriter<IByteBufferProvider> responseWriter, final ISerde<T> responseSerde) {
+        return newCommandRequestWriter(responseSerde);
+    }
+
+    @Override
+    public ISynchronousReader<IByteBufferProvider> newResponseReader() {
+        return newRequestReader();
+    }
+
+    @Override
+    public <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandResponseReader(
+            final ISynchronousReader<IByteBufferProvider> responseReader, final ISerde<T> responseSerde) {
+        return newCommandRequestReader(responseSerde);
     }
 
     @Override

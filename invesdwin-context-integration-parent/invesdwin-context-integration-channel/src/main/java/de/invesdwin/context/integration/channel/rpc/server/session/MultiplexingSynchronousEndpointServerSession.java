@@ -66,8 +66,8 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
         this.requestTimeout = endpointSession.getRequestTimeout();
-        this.requestReader = endpointSession.newRequestReader(ByteBufferProviderSerde.GET);
-        this.responseWriter = endpointSession.newResponseWriter(ByteBufferProviderSerde.GET);
+        this.requestReader = endpointSession.newCommandRequestReader(ByteBufferProviderSerde.GET);
+        this.responseWriter = endpointSession.newCommandResponseWriter(ByteBufferProviderSerde.GET);
         try {
             requestReader.open();
             responseWriter.open();

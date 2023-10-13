@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.rpc.server.service.command.IServ
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -37,12 +38,43 @@ public interface ISynchronousEndpointSession extends Closeable {
         return DEFAULT_HEARTBEAT_TIMEOUT;
     }
 
-    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newRequestWriter(ISerde<T> requestSerde);
+    ISynchronousWriter<IByteBufferProvider> newRequestWriter();
 
-    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newResponseReader(ISerde<T> responseSerde);
+    default <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandRequestWriter(
+            final ISerde<T> requestSerde) {
+        return newCommandRequestWriter(newRequestWriter(), requestSerde);
+    }
 
-    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newResponseWriter(ISerde<T> requestSerde);
+    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandRequestWriter(
+            ISynchronousWriter<IByteBufferProvider> requestWriter, ISerde<T> requestSerde);
 
-    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newRequestReader(ISerde<T> responseSerde);
+    ISynchronousReader<IByteBufferProvider> newResponseReader();
 
+    default <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandResponseReader(
+            final ISerde<T> responseSerde) {
+        return newCommandResponseReader(newResponseReader(), responseSerde);
+    }
+
+    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandResponseReader(
+            ISynchronousReader<IByteBufferProvider> responseReader, ISerde<T> responseSerde);
+
+    ISynchronousWriter<IByteBufferProvider> newResponseWriter();
+
+    default <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandResponseWriter(
+            final ISerde<T> responseSerde) {
+        return newCommandResponseWriter(newResponseWriter(), responseSerde);
+    }
+
+    <T> ISynchronousWriter<IServiceSynchronousCommand<T>> newCommandResponseWriter(
+            ISynchronousWriter<IByteBufferProvider> responseWriter, ISerde<T> responseSerde);
+
+    ISynchronousReader<IByteBufferProvider> newRequestReader();
+
+    default <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandRequestReader(
+            final ISerde<T> requestSerde) {
+        return newCommandRequestReader(newRequestReader(), requestSerde);
+    }
+
+    <T> ISynchronousReader<IServiceSynchronousCommand<T>> newCommandRequestReader(
+            ISynchronousReader<IByteBufferProvider> requestReader, ISerde<T> requestSerde);
 }

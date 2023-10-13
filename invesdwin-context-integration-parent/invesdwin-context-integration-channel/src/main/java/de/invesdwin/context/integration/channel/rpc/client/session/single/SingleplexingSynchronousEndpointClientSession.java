@@ -58,9 +58,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(SingleplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
         this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
-                endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
+                endpointSession.newCommandRequestWriter(ByteBufferProviderSerde.GET));
         this.responseReaderSpinWait = new SynchronousReaderSpinWait<>(
-                endpointSession.newResponseReader(ByteBufferProviderSerde.GET));
+                endpointSession.newCommandResponseReader(ByteBufferProviderSerde.GET));
         try {
             requestWriterSpinWait.getWriter().open();
             responseReaderSpinWait.getReader().open();

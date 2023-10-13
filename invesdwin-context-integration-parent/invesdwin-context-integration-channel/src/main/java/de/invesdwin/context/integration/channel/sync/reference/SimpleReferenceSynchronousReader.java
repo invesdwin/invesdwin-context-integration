@@ -18,6 +18,10 @@ public class SimpleReferenceSynchronousReader<M> implements ISynchronousReader<M
         this.reference = (IMutableReference<M>) reference;
     }
 
+    public IMutableReference<M> getReference() {
+        return reference;
+    }
+
     @Override
     public void open() throws IOException {}
 

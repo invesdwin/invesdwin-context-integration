@@ -73,8 +73,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         this.lock = ILockCollectionFactory.getInstance(true)
                 .newLock(MultiplexingSynchronousEndpointClientSession.class.getSimpleName() + "_lock");
         this.requestWriterSpinWait = new SynchronousWriterSpinWait<>(
-                endpointSession.newRequestWriter(ByteBufferProviderSerde.GET));
-        this.responseReader = endpointSession.newResponseReader(ByteBufferProviderSerde.GET);
+                endpointSession.newCommandRequestWriter(ByteBufferProviderSerde.GET));
+        this.responseReader = endpointSession.newCommandResponseReader(ByteBufferProviderSerde.GET);
         try {
             requestWriterSpinWait.getWriter().open();
             responseReader.open();

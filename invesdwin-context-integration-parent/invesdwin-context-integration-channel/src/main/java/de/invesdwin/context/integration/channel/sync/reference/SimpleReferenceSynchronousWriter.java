@@ -19,6 +19,10 @@ public class SimpleReferenceSynchronousWriter<M> implements ISynchronousWriter<M
         this.reference = (IMutableReference<M>) reference;
     }
 
+    public IMutableReference<M> getReference() {
+        return reference;
+    }
+
     @Override
     public void open() throws IOException {}
 
