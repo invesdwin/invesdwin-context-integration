@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.rpc.client;
 
-import java.io.Closeable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -35,7 +34,7 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @ThreadSafe
-public final class SynchronousEndpointClient<T> implements Closeable {
+public final class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<T> {
 
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT = AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
 
@@ -75,6 +74,7 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         return DEFAULT_FUTURE_EXECUTOR;
     }
 
+    @Override
     public SerdeLookupConfig getSerdeLookupConfig() {
         return serdeLookupConfig;
     }
@@ -83,14 +83,17 @@ public final class SynchronousEndpointClient<T> implements Closeable {
         return sessionPool;
     }
 
+    @Override
     public int getServiceId() {
         return handler.serviceId;
     }
 
+    @Override
     public Class<T> getServiceInterface() {
         return serviceInterface;
     }
 
+    @Override
     public T getService() {
         return service;
     }

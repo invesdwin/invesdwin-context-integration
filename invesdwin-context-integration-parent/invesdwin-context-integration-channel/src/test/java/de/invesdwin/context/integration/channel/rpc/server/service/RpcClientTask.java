@@ -10,7 +10,7 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.AChannelTest.ClientTask;
-import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.client.ISynchronousEndpointClient;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
@@ -21,21 +21,21 @@ import de.invesdwin.util.time.date.FDate;
 public class RpcClientTask implements Runnable {
 
     private final OutputStream log;
-    private final SynchronousEndpointClient<IRpcTestService> client;
+    private final ISynchronousEndpointClient<IRpcTestService> client;
     private final String clientId;
     private final RpcTestServiceMode mode;
 
-    public RpcClientTask(final SynchronousEndpointClient<IRpcTestService> client, final String clientId,
+    public RpcClientTask(final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
         this(new Log(ClientTask.class), client, clientId, mode);
     }
 
-    public RpcClientTask(final Log log, final SynchronousEndpointClient<IRpcTestService> client, final String clientId,
+    public RpcClientTask(final Log log, final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
         this(Slf4jStream.of(log).asInfo(), client, clientId, mode);
     }
 
-    public RpcClientTask(final OutputStream log, final SynchronousEndpointClient<IRpcTestService> client,
+    public RpcClientTask(final OutputStream log, final ISynchronousEndpointClient<IRpcTestService> client,
             final String clientId, final RpcTestServiceMode mode) {
         this.log = log;
         this.client = client;
