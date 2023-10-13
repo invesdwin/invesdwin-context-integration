@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.client.session;
 
 import java.io.Closeable;
 
-import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient.ClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.client.handler.ClientMethodInfo;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

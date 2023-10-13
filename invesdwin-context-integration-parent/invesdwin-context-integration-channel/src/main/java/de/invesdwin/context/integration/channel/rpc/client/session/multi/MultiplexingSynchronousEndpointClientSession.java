@@ -13,7 +13,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient.ClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.client.handler.ClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
 import de.invesdwin.context.integration.channel.rpc.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
