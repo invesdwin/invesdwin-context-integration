@@ -128,7 +128,7 @@ public final class SynchronousEndpointService {
         private final boolean blocking;
         private final boolean future;
 
-        public ServerMethodInfo(final SynchronousEndpointService service, final int methodId, final Method method,
+        private ServerMethodInfo(final SynchronousEndpointService service, final int methodId, final Method method,
                 final Lookup mhLookup, final SerdeLookupConfig serdeLookupConfig) throws IllegalAccessException {
             this.service = service;
             this.methodId = methodId;
