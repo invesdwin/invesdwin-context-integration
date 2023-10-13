@@ -58,12 +58,14 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
 
     public void clean() {
         otherSocketAddress = null;
-        result.clean();
+        if (resultBorrowed) {
+            result.clean();
+            resultBorrowed = false;
+        }
         if (attributes != null && !attributes.isEmpty()) {
             attributes.clear();
         }
         response = null;
-        resultBorrowed = false;
     }
 
     @Override

@@ -31,6 +31,11 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-rmi</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<groupId>com.nimbusds</groupId>
 			<artifactId>srp6a</artifactId>
 			<scope>provided</scope>

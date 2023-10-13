@@ -11,6 +11,7 @@ import de.invesdwin.context.integration.channel.rpc.server.service.command.CopyB
 import de.invesdwin.context.integration.channel.rpc.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
 import de.invesdwin.util.concurrent.future.Futures;
+import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -28,6 +29,7 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
     private ProcessResponseResult prev;
     private boolean delayedWriteResponse;
     private IAsynchronousHandlerContext<IByteBufferProvider> context;
+    private ASpinWait doneSpinWait;
 
     public CopyBufferServiceSynchronousCommand getRequestCopy() {
         return requestCopy;
@@ -127,6 +129,22 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
             }
         } else {
             return false;
+        }
+    }
+
+    public void awaitDone() {
+        if (doneSpinWait == null) {
+            doneSpinWait = new ASpinWait() {
+                @Override
+                public boolean isConditionFulfilled() throws Exception {
+                    return isDone();
+                }
+            };
+        }
+        try {
+            doneSpinWait.awaitFulfill(System.nanoTime());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
