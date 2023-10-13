@@ -15,7 +15,7 @@ import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 
 @ThreadSafe
-public final class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<T> {
+public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<T> {
 
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT = AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
 

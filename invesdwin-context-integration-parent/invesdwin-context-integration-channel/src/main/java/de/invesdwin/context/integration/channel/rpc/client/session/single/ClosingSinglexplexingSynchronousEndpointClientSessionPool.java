@@ -43,6 +43,8 @@ public class ClosingSinglexplexingSynchronousEndpointClientSessionPool
     public void clear() {}
 
     @Override
-    public void close() {}
+    public void close() {
+        endpointSessionFactory.close();
+    }
 
 }

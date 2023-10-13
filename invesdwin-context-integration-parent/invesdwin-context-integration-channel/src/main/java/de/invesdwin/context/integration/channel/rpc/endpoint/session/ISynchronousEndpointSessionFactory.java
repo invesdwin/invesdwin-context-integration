@@ -1,7 +1,12 @@
 package de.invesdwin.context.integration.channel.rpc.endpoint.session;
 
-public interface ISynchronousEndpointSessionFactory {
+import java.io.Closeable;
+
+public interface ISynchronousEndpointSessionFactory extends Closeable {
 
     ISynchronousEndpointSession newSession();
+
+    @Override
+    void close();
 
 }

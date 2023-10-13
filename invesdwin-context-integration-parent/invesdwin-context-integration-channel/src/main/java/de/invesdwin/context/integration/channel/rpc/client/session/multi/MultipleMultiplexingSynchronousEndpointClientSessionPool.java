@@ -191,6 +191,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
             synchronized (this) {
                 closed = true;
                 clear();
+                endpointSessionFactory.close();
                 ATimeoutObjectPool.ACTIVE_POOLS.decrementAndGet();
                 ATimeoutObjectPool.maybeCloseScheduledExecutor();
             }

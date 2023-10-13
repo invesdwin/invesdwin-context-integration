@@ -27,4 +27,7 @@ public class DefaultSynchronousEndpointSessionFactory implements ISynchronousEnd
         return new DefaultSynchronousEndpointSession(sessionId, endpoint);
     }
 
+    @Override
+    public void close() {}
+
 }

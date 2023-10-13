@@ -52,6 +52,7 @@ public class SingleplexingSynchronousEndpointClientSessionPool
     @Override
     public void close() {
         super.close();
+        endpointSessionFactory.close();
         closed = true;
     }
 
