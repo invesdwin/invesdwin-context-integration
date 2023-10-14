@@ -13,7 +13,6 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.transformer.DefaultSynchronousEndpointSessionFactoryTransformer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -57,11 +56,6 @@ public class RpcRmiChannelTest extends ARpcChannelTest {
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new RmiSynchronousEndpointClientFactory();
         runRpcBlockingPerformanceTest(serverFactory, clientEndpointFactory, mode);
-    }
-
-    @Override
-    protected int getMaxMessageSize() {
-        return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
     }
 
 }
