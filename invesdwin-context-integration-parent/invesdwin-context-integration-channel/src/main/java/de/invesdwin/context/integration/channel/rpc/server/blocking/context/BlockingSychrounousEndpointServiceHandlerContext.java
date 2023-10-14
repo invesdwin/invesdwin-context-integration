@@ -8,14 +8,15 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
-import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
+import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousReaderSpinLoop;
+import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWriterSpinLoop;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
+import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
 public class BlockingSychrounousEndpointServiceHandlerContext
@@ -25,24 +26,26 @@ public class BlockingSychrounousEndpointServiceHandlerContext
     private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
     private UnsafeByteBuffer requestWrapperBuffer;
     private final ProcessResponseResult result = new ProcessResponseResult();
-    private final ServiceBlockingSynchronousEndpoint endpoint;
+    private final ServerSideBlockingSynchronousEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
-    private final SynchronousReaderSpinWait<IByteBufferProvider> requestReaderSpinWait;
-    private final SynchronousWriterSpinWait<IByteBufferProvider> responseWriterSpinWait;
+    private final Duration requestTimeout;
+    private final SynchronousReaderSpinLoop<IByteBufferProvider> requestReaderSpinLoop;
+    private final SynchronousWriterSpinLoop<IByteBufferProvider> responseWriterSpinLoop;
     private boolean resultBorrowed;
     private AttributesMap attributes;
     private IByteBufferProvider response;
 
     public BlockingSychrounousEndpointServiceHandlerContext(
-            final BlockingSychrounousEndpointServiceHandlerContextPool pool, final ServiceBlockingSynchronousEndpoint endpoint,
-            final ISynchronousEndpointSession endpointSession,
+            final BlockingSychrounousEndpointServiceHandlerContextPool pool,
+            final ServerSideBlockingSynchronousEndpoint endpoint, final ISynchronousEndpointSession endpointSession,
             final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler) {
         this.pool = pool;
         this.endpoint = endpoint;
         this.endpointSession = endpointSession;
+        this.requestTimeout = endpointSession.getRequestTimeout();
         this.handler = handler;
-        this.requestReaderSpinWait = new SynchronousReaderSpinWait<>(endpointSession.newRequestReader());
-        this.responseWriterSpinWait = new SynchronousWriterSpinWait<>(endpointSession.newResponseWriter());
+        this.requestReaderSpinLoop = new SynchronousReaderSpinLoop<>(endpointSession.newRequestReader());
+        this.responseWriterSpinLoop = new SynchronousWriterSpinLoop<>(endpointSession.newResponseWriter());
     }
 
     public UnsafeByteBuffer getRequestWrapperBuffer() {
@@ -55,7 +58,7 @@ public class BlockingSychrounousEndpointServiceHandlerContext
     public void handle(final IByteBufferProvider request) throws IOException {
         endpoint.getReader().getReference().set(request);
         try {
-            final IByteBufferProvider transformedRequest = requestReaderSpinWait.spinForRead();
+            final IByteBufferProvider transformedRequest = requestReaderSpinLoop.spinForRead(requestTimeout);
             final IByteBufferProvider output = handler.handle(this, transformedRequest);
             if (output != null) {
                 try {
@@ -71,7 +74,7 @@ public class BlockingSychrounousEndpointServiceHandlerContext
                 }
             }
         } finally {
-            requestReaderSpinWait.getReader().readFinished();
+            requestReaderSpinLoop.getReader().readFinished();
         }
     }
 
@@ -105,7 +108,7 @@ public class BlockingSychrounousEndpointServiceHandlerContext
             throw new IllegalStateException("can only write a single response in this context");
         }
         try {
-            responseWriterSpinWait.spinForWrite(output);
+            responseWriterSpinLoop.spinForWrite(output, requestTimeout);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

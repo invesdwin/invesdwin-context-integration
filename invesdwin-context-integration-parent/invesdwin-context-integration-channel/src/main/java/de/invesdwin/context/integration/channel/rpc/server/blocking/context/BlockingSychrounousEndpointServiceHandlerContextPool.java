@@ -19,13 +19,13 @@ public final class BlockingSychrounousEndpointServiceHandlerContextPool
 
     private static final String KEY_MAX_POOL_SIZE = "MAX_POOL_SIZE";
     private final ABlockingSynchronousEndpointServer parent;
-    private final ServiceBlockingSynchronousEndpoint endpoint;
+    private final ServerSideBlockingSynchronousEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
 
     public BlockingSychrounousEndpointServiceHandlerContextPool(final ABlockingSynchronousEndpointServer parent) {
         super(newMaxPoolSize());
         this.parent = parent;
-        this.endpoint = new ServiceBlockingSynchronousEndpoint();
+        this.endpoint = new ServerSideBlockingSynchronousEndpoint();
         final ISynchronousEndpointSessionFactory endpointSessionFactory = parent.getSessionFactoryTransformer()
                 .transform(new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
                     @Override

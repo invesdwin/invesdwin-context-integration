@@ -1,7 +1,8 @@
-package de.invesdwin.context.integration.channel.rpc.client;
+package de.invesdwin.context.integration.channel.rpc.client.blocking;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.client.session.single.SingleplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
 

@@ -69,26 +69,6 @@ public class SynchronousWriterSpinWait<M> {
         }
     }
 
-    /**
-     * This can be used when no actual communication is required, instead we spin for as long needed without any timed
-     * spins or sleeps. E.g. to write all fragments to a complete buffer in a blocking RPC service.
-     */
-    public void spinForWrite(final M message) throws IOException {
-        try {
-            while (!writer.writeReady()) {
-                ASpinWait.onSpinWaitStatic();
-            }
-            writer.write(message);
-            while (!writer.writeFlushed()) {
-                ASpinWait.onSpinWaitStatic();
-            }
-        } catch (final IOException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new IOException(e);
-        }
-    }
-
     protected void onTimeout(final String reason, final Duration timeout, final long startNanos)
             throws TimeoutException {
         throw new TimeoutException(reason + ": " + timeout);

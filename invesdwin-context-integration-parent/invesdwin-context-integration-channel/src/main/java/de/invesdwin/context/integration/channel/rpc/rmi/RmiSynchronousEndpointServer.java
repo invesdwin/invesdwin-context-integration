@@ -7,10 +7,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.springframework.remoting.rmi.rmi.RmiServiceExporter;
 
-import de.invesdwin.context.integration.channel.rpc.rmi.service.IRmiSynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.rmi.service.RmiSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.service.blocking.ArrayBlockingSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IArrayBlockingSynchronousEndpointService;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.Closeables;
 
@@ -53,16 +53,10 @@ public class RmiSynchronousEndpointServer extends ABlockingSynchronousEndpointSe
             throw new IllegalStateException("server should be null");
         }
         server = new RmiServiceExporter();
-        //<property name="serviceName" value="HelloService"/>
         server.setServiceName(serviceName);
-        //<property name="service" ref="helloService"/>
-        server.setService(new RmiSynchronousEndpointService(this));
-        //<property name="serviceInterface" value="com.etymgiko.springrmiexample.shared.HelloService"/>
-        server.setServiceInterface(IRmiSynchronousEndpointService.class);
-        //<!-- defaults to 1099 -->
-        //<property name="registryPort" value="1099"/>
+        server.setService(new ArrayBlockingSynchronousEndpointService(this));
+        server.setServiceInterface(IArrayBlockingSynchronousEndpointService.class);
         server.setRegistryPort(registryPort);
-        //</bean>
         server.afterPropertiesSet();
     }
 

@@ -50,23 +50,6 @@ public class SynchronousReaderSpinWait<M> {
         }
     }
 
-    /**
-     * This can be used when no actual communication is required, instead we spin for as long needed without any timed
-     * spins or sleeps. E.g. to read all fragments from a complete buffer in a blocking RPC service.
-     */
-    public M spinForRead() throws IOException {
-        try {
-            while (!reader.hasNext()) {
-                ASpinWait.onSpinWaitStatic();
-            }
-            return reader.readMessage();
-        } catch (final IOException e) {
-            throw e;
-        } catch (final Exception e) {
-            throw new IOException(e);
-        }
-    }
-
     protected void onTimeout(final String reason, final Duration timeout, final long startNanos)
             throws TimeoutException {
         throw new TimeoutException(reason + ": " + timeout);
