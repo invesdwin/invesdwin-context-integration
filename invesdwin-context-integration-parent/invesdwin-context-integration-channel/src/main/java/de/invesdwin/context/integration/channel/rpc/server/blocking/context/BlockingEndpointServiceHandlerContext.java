@@ -71,6 +71,12 @@ public class BlockingEndpointServiceHandlerContext
                      */
                     handler.outputFinished(this);
                 }
+            } else {
+                result.awaitDone();
+                if (result.isDelayedWriteResponse()) {
+                    result.getContext().write(result.getResponse().asBuffer());
+                }
+                result.close();
             }
         } finally {
             requestReaderSpinLoop.getReader().readFinished();

@@ -6,7 +6,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.server.async.poll.BlockingPollingQueueProvider;
+import de.invesdwin.context.integration.channel.rpc.server.async.poll.DisabledPollingQueueProvider;
 
 @NotThreadSafe
 public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
@@ -18,7 +18,8 @@ public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
     public ABlockingEndpointServer(final AsynchronousEndpointServerHandlerFactory handlerFactory,
             final ISynchronousEndpointSessionFactoryTransformer endpointSessionTransformer) {
         this.handlerFactory = handlerFactory;
-        handlerFactory.setPollingQueueProvider(BlockingPollingQueueProvider.INSTANCE);
+        //polling queue disabled because this is handled in BlockingEndpointServiceHandlerContext directly
+        handlerFactory.setPollingQueueProvider(DisabledPollingQueueProvider.INSTANCE);
         this.sessionFactoryTransformer = endpointSessionTransformer;
         this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
         if (maxPendingWorkCountOverall < 0) {
