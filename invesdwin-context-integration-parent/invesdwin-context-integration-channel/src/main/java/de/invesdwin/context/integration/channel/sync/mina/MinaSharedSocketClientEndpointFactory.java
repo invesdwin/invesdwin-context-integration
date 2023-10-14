@@ -15,9 +15,9 @@ import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;

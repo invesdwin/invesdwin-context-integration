@@ -8,9 +8,9 @@ import java.util.function.Consumer;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.context.log.Log;

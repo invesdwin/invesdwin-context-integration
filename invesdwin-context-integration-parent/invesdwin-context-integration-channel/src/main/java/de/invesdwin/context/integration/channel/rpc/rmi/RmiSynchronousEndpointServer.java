@@ -7,11 +7,11 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.springframework.remoting.rmi.rmi.RmiServiceExporter;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
-import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.ArrayBlockingEndpointService;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IArrayBlockingEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.blocking.ABlockingEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.ArrayBlockingEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.IArrayBlockingEndpointService;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.Closeables;
 

@@ -4,9 +4,9 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;

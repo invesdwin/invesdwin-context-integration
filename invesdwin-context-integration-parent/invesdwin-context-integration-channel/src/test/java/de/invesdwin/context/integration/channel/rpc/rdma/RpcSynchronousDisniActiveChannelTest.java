@@ -8,13 +8,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.rpc.ARpcChannelTest;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ImmutableSynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.server.service.RpcTestServiceMode;
-import de.invesdwin.context.integration.channel.rpc.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;

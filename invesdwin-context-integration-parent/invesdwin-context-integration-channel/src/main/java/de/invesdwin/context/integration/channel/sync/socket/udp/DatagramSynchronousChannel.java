@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.sessionless.ISessionlessSynchronousChannel;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.context.log.Log;

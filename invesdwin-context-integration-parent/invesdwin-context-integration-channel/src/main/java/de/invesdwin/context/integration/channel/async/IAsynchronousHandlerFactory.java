@@ -3,7 +3,7 @@ package de.invesdwin.context.integration.channel.async;
 import java.io.Closeable;
 import java.io.IOException;
 
-import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.util.time.duration.Duration;
 
 public interface IAsynchronousHandlerFactory<I, O> extends Closeable {

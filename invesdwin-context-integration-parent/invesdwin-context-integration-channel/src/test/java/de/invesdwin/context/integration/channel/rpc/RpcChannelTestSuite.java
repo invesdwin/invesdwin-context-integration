@@ -6,12 +6,11 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.channel.rpc.rdma.RpcRdmaChannelTestSuite;
-import de.invesdwin.context.integration.channel.rpc.server.sessionless.RpcSessionlessChannelTestSuite;
+import de.invesdwin.context.integration.channel.rpc.rmi.RpcRmiChannelTest;
+import de.invesdwin.context.integration.channel.rpc.socket.RpcSocketChannelTestSuite;
 
 @Suite
-@SelectClasses({ RpcNativeSocketChannelTest.class, RpcNettySocketHandlerTest.class, RpcNettyDatagramHandlerTest.class,
-        RpcNettyUdtHandlerTest.class, RpcUdtChannelTest.class, RpcMinaSocketHandlerTest.class,
-        RpcMinaDatagramHandlerTest.class, RpcSessionlessChannelTestSuite.class, RpcRdmaChannelTestSuite.class })
+@SelectClasses({ RpcSocketChannelTestSuite.class, RpcRdmaChannelTestSuite.class, RpcRmiChannelTest.class })
 @Immutable
 public class RpcChannelTestSuite {
 

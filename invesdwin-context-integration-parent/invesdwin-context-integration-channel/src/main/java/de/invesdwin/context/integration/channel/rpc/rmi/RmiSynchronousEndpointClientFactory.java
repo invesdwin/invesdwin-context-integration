@@ -4,11 +4,11 @@ import javax.annotation.concurrent.Immutable;
 
 import org.springframework.remoting.rmi.rmi.RmiProxyFactoryBean;
 
-import de.invesdwin.context.integration.channel.rpc.client.blocking.ClientSideBlockingEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.BufferBlockingEndpointServiceFromArray;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IArrayBlockingEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.client.blocking.ClientSideBlockingEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpoint;
+import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.BufferBlockingEndpointServiceFromArray;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.IArrayBlockingEndpointService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @SuppressWarnings("deprecation")

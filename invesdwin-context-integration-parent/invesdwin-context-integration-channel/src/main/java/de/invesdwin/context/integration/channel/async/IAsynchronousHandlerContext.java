@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.async;
 
 import java.io.Closeable;
 
-import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 
 public interface IAsynchronousHandlerContext<O> extends Closeable {

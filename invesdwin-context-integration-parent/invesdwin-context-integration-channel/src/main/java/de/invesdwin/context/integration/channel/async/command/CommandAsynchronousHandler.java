@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
-import de.invesdwin.context.integration.channel.rpc.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.sync.command.ISynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.MutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
