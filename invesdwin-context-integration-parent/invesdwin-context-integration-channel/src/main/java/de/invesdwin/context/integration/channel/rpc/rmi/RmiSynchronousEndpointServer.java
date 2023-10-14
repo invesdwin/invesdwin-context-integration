@@ -7,16 +7,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.springframework.remoting.rmi.rmi.RmiServiceExporter;
 
+import de.invesdwin.context.integration.channel.rpc.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
 import de.invesdwin.context.integration.channel.rpc.server.async.AsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingSynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.ArrayBlockingSynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IArrayBlockingSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.service.blocking.ArrayBlockingEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IArrayBlockingEndpointService;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.Closeables;
 
 @SuppressWarnings("deprecation")
 @NotThreadSafe
-public class RmiSynchronousEndpointServer extends ABlockingSynchronousEndpointServer {
+public class RmiSynchronousEndpointServer extends ABlockingEndpointServer {
 
     public static final String DEFAULT_SERVICE_NAME = RmiSynchronousEndpointServer.class.getSimpleName();
     public static final int DEFAULT_REGISTRY_PORT = 1099;
@@ -25,8 +26,9 @@ public class RmiSynchronousEndpointServer extends ABlockingSynchronousEndpointSe
     private final int registryPort;
     private RmiServiceExporter server;
 
-    public RmiSynchronousEndpointServer(final AsynchronousEndpointServerHandlerFactory handlerFactory) {
-        super(handlerFactory);
+    public RmiSynchronousEndpointServer(final AsynchronousEndpointServerHandlerFactory handlerFactory,
+            final ISynchronousEndpointSessionFactoryTransformer endpointSessionTransformer) {
+        super(handlerFactory, endpointSessionTransformer);
         this.serviceName = newServiceName();
         this.registryPort = newRegistryPort();
     }
@@ -54,10 +56,15 @@ public class RmiSynchronousEndpointServer extends ABlockingSynchronousEndpointSe
         }
         server = new RmiServiceExporter();
         server.setServiceName(serviceName);
-        server.setService(new ArrayBlockingSynchronousEndpointService(this));
-        server.setServiceInterface(IArrayBlockingSynchronousEndpointService.class);
+        server.setService(new ArrayBlockingEndpointService(this));
+        server.setServiceInterface(IArrayBlockingEndpointService.class);
         server.setRegistryPort(registryPort);
         server.afterPropertiesSet();
+    }
+
+    @Override
+    public boolean isClosed() {
+        return server == null;
     }
 
     @Override

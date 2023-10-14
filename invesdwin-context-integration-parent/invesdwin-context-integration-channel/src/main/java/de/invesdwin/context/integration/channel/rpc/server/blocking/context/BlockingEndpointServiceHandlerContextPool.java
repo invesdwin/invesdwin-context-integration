@@ -8,24 +8,24 @@ import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoin
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingEndpointServer;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
-public final class BlockingSychrounousEndpointServiceHandlerContextPool
-        extends AAgronaObjectPool<BlockingSychrounousEndpointServiceHandlerContext> {
+public final class BlockingEndpointServiceHandlerContextPool
+        extends AAgronaObjectPool<BlockingEndpointServiceHandlerContext> {
 
     private static final String KEY_MAX_POOL_SIZE = "MAX_POOL_SIZE";
-    private final ABlockingSynchronousEndpointServer parent;
-    private final ServerSideBlockingSynchronousEndpoint endpoint;
+    private final ABlockingEndpointServer parent;
+    private final ServerSideBlockingEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
 
-    public BlockingSychrounousEndpointServiceHandlerContextPool(final ABlockingSynchronousEndpointServer parent) {
+    public BlockingEndpointServiceHandlerContextPool(final ABlockingEndpointServer parent) {
         super(newMaxPoolSize());
         this.parent = parent;
-        this.endpoint = new ServerSideBlockingSynchronousEndpoint();
+        this.endpoint = new ServerSideBlockingEndpoint();
         final ISynchronousEndpointSessionFactory endpointSessionFactory = parent.getSessionFactoryTransformer()
                 .transform(new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
                     @Override
@@ -37,25 +37,25 @@ public final class BlockingSychrounousEndpointServiceHandlerContextPool
     }
 
     private static int newMaxPoolSize() {
-        return new SystemProperties(BlockingSychrounousEndpointServiceHandlerContextPool.class).getIntegerOptional(
+        return new SystemProperties(BlockingEndpointServiceHandlerContextPool.class).getIntegerOptional(
                 KEY_MAX_POOL_SIZE, SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
     }
 
     @Override
-    protected BlockingSychrounousEndpointServiceHandlerContext newObject() {
+    protected BlockingEndpointServiceHandlerContext newObject() {
         final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler = parent.getHandlerFactory()
                 .newHandler();
-        return new BlockingSychrounousEndpointServiceHandlerContext(this, endpoint, endpointSession, handler);
+        return new BlockingEndpointServiceHandlerContext(this, endpoint, endpointSession, handler);
     }
 
     @Override
-    protected boolean passivateObject(final BlockingSychrounousEndpointServiceHandlerContext element) {
+    protected boolean passivateObject(final BlockingEndpointServiceHandlerContext element) {
         element.clean();
         return true;
     }
 
     @Override
-    public void invalidateObject(final BlockingSychrounousEndpointServiceHandlerContext element) {
+    public void invalidateObject(final BlockingEndpointServiceHandlerContext element) {
         element.clean();
     }
 

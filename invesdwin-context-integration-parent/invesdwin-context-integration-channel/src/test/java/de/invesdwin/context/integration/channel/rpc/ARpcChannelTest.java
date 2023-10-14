@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.client.ISynchronousEndpointC
 import de.invesdwin.context.integration.channel.rpc.client.SynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.client.session.multi.MultipleMultiplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.client.session.multi.SingleMultiplexingSynchronousEndpointClientSessionPool;
+import de.invesdwin.context.integration.channel.rpc.client.session.single.SingleplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
@@ -195,6 +196,49 @@ public abstract class ARpcChannelTest extends AChannelTest {
         for (int i = 0; i < clients.length; i++) {
             clients[i] = new SynchronousEndpointClient<>(
                     new SingleMultiplexingSynchronousEndpointClientSessionPool(
+                            new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
+                    IRpcTestService.class);
+        }
+        try {
+            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
+                    newRpcClientThreads());
+            serverChannel.open();
+            int curClient = 0;
+            try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
+                for (int i = 0; i < newRpcClientThreads(); i++) {
+                    clientFutures.add(
+                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    curClient++;
+                    if (curClient >= clients.length) {
+                        curClient = 0;
+                    }
+                }
+                while (clientFutures.hasNext()) {
+                    Futures.getNoInterrupt(clientFutures.next());
+                }
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        } finally {
+            for (int i = 0; i < clients.length; i++) {
+                Closeables.closeQuietly(clients[i]);
+            }
+            Closeables.closeQuietly(serverChannel);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    protected void runRpcBlockingPerformanceTest(
+            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
+            final RpcTestServiceMode mode) throws InterruptedException {
+        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
+        final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
+        for (int i = 0; i < clients.length; i++) {
+            clients[i] = new SynchronousEndpointClient<>(
+                    new SingleplexingSynchronousEndpointClientSessionPool(
                             new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                     IRpcTestService.class);
         }

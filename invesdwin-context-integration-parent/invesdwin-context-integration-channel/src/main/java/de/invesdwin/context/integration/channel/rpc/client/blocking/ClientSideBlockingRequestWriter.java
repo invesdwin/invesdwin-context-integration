@@ -4,19 +4,19 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IBufferBlockingSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.service.blocking.IBufferBlockingEndpointService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
-public class ClientSideBlockingSynchronousRequestWriter implements ISynchronousWriter<IByteBufferProvider> {
+public class ClientSideBlockingRequestWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private final IBufferBlockingSynchronousEndpointService service;
-    private final ClientSideBlockingSynchronousResponseReader responseReader;
+    private final IBufferBlockingEndpointService service;
+    private final ClientSideBlockingResponseReader responseReader;
 
-    public ClientSideBlockingSynchronousRequestWriter(final IBufferBlockingSynchronousEndpointService service,
-            final ClientSideBlockingSynchronousResponseReader responseReader) {
+    public ClientSideBlockingRequestWriter(final IBufferBlockingEndpointService service,
+            final ClientSideBlockingResponseReader responseReader) {
         this.service = service;
         this.responseReader = responseReader;
     }

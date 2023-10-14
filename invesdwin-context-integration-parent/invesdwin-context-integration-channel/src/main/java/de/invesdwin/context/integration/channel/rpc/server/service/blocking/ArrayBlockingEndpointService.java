@@ -5,17 +5,17 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingSynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.server.blocking.BlockingSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.server.blocking.ABlockingEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.server.blocking.BlockingEndpointService;
 import de.invesdwin.util.error.Throwables;
 
 @ThreadSafe
-public class ArrayBlockingSynchronousEndpointService implements IArrayBlockingSynchronousEndpointService, Closeable {
+public class ArrayBlockingEndpointService implements IArrayBlockingEndpointService, Closeable {
 
-    private final BlockingSynchronousEndpointService delegate;
+    private final BlockingEndpointService delegate;
 
-    public ArrayBlockingSynchronousEndpointService(final ABlockingSynchronousEndpointServer parent) {
-        this.delegate = new BlockingSynchronousEndpointService(parent);
+    public ArrayBlockingEndpointService(final ABlockingEndpointServer parent) {
+        this.delegate = new BlockingEndpointService(parent);
     }
 
     @Override

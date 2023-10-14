@@ -19,14 +19,14 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BlockingSychrounousEndpointServiceHandlerContext
+public class BlockingEndpointServiceHandlerContext
         implements IAsynchronousHandlerContext<IByteBufferProvider>, ICloseableByteBufferProvider {
 
-    private final BlockingSychrounousEndpointServiceHandlerContextPool pool;
+    private final BlockingEndpointServiceHandlerContextPool pool;
     private final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler;
     private UnsafeByteBuffer requestWrapperBuffer;
     private final ProcessResponseResult result = new ProcessResponseResult();
-    private final ServerSideBlockingSynchronousEndpoint endpoint;
+    private final ServerSideBlockingEndpoint endpoint;
     private final ISynchronousEndpointSession endpointSession;
     private final Duration requestTimeout;
     private final SynchronousReaderSpinLoop<IByteBufferProvider> requestReaderSpinLoop;
@@ -35,9 +35,8 @@ public class BlockingSychrounousEndpointServiceHandlerContext
     private AttributesMap attributes;
     private IByteBufferProvider response;
 
-    public BlockingSychrounousEndpointServiceHandlerContext(
-            final BlockingSychrounousEndpointServiceHandlerContextPool pool,
-            final ServerSideBlockingSynchronousEndpoint endpoint, final ISynchronousEndpointSession endpointSession,
+    public BlockingEndpointServiceHandlerContext(final BlockingEndpointServiceHandlerContextPool pool,
+            final ServerSideBlockingEndpoint endpoint, final ISynchronousEndpointSession endpointSession,
             final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler) {
         this.pool = pool;
         this.endpoint = endpoint;

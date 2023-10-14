@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.server.service.blocking;
 
 import java.io.IOException;
 
-public interface IArrayBlockingSynchronousEndpointService {
+public interface IArrayBlockingEndpointService {
 
     byte[] call(byte[] request) throws IOException;
 

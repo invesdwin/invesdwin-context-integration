@@ -8,7 +8,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
-public class ClientSideBlockingSynchronousResponseReader implements ISynchronousReader<ICloseableByteBufferProvider> {
+public class ClientSideBlockingResponseReader implements ISynchronousReader<ICloseableByteBufferProvider> {
 
     private ICloseableByteBufferProvider message;
     private ICloseableByteBufferProvider closeMessage;

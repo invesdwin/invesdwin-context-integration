@@ -13,12 +13,12 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
  * Needs to be pooled from the outside with client sessions.
  */
 @NotThreadSafe
-public class BufferBlockingSynchronousEndpointServiceFromArray implements IBufferBlockingSynchronousEndpointService {
+public class BufferBlockingEndpointServiceFromArray implements IBufferBlockingEndpointService {
 
-    private final IArrayBlockingSynchronousEndpointService service;
+    private final IArrayBlockingEndpointService service;
     private final UnsafeByteBuffer responseBufferWrapper;
 
-    public BufferBlockingSynchronousEndpointServiceFromArray(final IArrayBlockingSynchronousEndpointService service) {
+    public BufferBlockingEndpointServiceFromArray(final IArrayBlockingEndpointService service) {
         this.service = service;
         this.responseBufferWrapper = new UnsafeByteBuffer(Bytes.EMPTY_ARRAY);
     }

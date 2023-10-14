@@ -7,6 +7,6 @@ public interface ISynchronousEndpointSessionFactory extends Closeable {
     ISynchronousEndpointSession newSession();
 
     @Override
-    void close();
+    default void close() {}
 
 }

@@ -28,6 +28,8 @@ public class DefaultSynchronousEndpointSessionFactory implements ISynchronousEnd
     }
 
     @Override
-    public void close() {}
+    public void close() {
+        endpointFactory.close();
+    }
 
 }
