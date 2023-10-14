@@ -3,8 +3,6 @@ package de.invesdwin.context.integration.channel.rpc.server.blocking.context;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpoint;
-import de.invesdwin.context.integration.channel.rpc.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.endpoint.session.ISynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.server.SynchronousEndpointServer;
@@ -19,21 +17,10 @@ public final class BlockingEndpointServiceHandlerContextPool
 
     private static final String KEY_MAX_POOL_SIZE = "MAX_POOL_SIZE";
     private final ABlockingEndpointServer parent;
-    private final ServerSideBlockingEndpoint endpoint;
-    private final ISynchronousEndpointSession endpointSession;
 
     public BlockingEndpointServiceHandlerContextPool(final ABlockingEndpointServer parent) {
         super(newMaxPoolSize());
         this.parent = parent;
-        this.endpoint = new ServerSideBlockingEndpoint();
-        final ISynchronousEndpointSessionFactory endpointSessionFactory = parent.getSessionFactoryTransformer()
-                .transform(new ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider>() {
-                    @Override
-                    public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-                        return endpoint;
-                    }
-                });
-        this.endpointSession = endpointSessionFactory.newSession();
     }
 
     private static int newMaxPoolSize() {
@@ -43,6 +30,10 @@ public final class BlockingEndpointServiceHandlerContextPool
 
     @Override
     protected BlockingEndpointServiceHandlerContext newObject() {
+        final ServerSideBlockingEndpoint endpoint = new ServerSideBlockingEndpoint();
+        final ISynchronousEndpointSessionFactory endpointSessionFactory = parent.getSessionFactoryTransformer()
+                .transform(() -> endpoint);
+        final ISynchronousEndpointSession endpointSession = endpointSessionFactory.newSession();
         final IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> handler = parent.getHandlerFactory()
                 .newHandler();
         return new BlockingEndpointServiceHandlerContext(this, endpoint, endpointSession, handler);
