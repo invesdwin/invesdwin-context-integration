@@ -18,7 +18,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.disni.active.DisniActiveEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousChannelServer;
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousReader;
@@ -73,7 +73,7 @@ public class RpcSynchronousDisniPassiveChannelTest extends ARpcChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
             }
         };
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new DisniActiveEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new DisniPassiveEndpointFactory(
                 address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
