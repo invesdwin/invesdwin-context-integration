@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.darpc.client;
+package de.invesdwin.context.integration.channel.rpc.darpc.client;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -16,10 +16,10 @@ import com.ibm.darpc.DaRPCStream;
 import com.ibm.disni.RdmaEndpointGroup;
 import com.ibm.disni.RdmaServerEndpoint;
 
+import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcMessage;
+import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcProtocol;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.darpc.RdmaRpcMessage;
-import de.invesdwin.context.integration.channel.sync.darpc.RdmaRpcProtocol;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;

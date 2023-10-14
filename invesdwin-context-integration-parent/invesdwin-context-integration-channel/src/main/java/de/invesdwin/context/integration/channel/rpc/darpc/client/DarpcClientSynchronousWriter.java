@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.darpc.client;
+package de.invesdwin.context.integration.channel.rpc.darpc.client;
 
 import java.io.IOException;
 
@@ -7,8 +7,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import com.ibm.darpc.DaRPCFuture;
 import com.ibm.darpc.DaRPCStream;
 
+import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcMessage;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.darpc.RdmaRpcMessage;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.darpc;
+package de.invesdwin.context.integration.channel.rpc.darpc;
 
 import java.io.IOException;
 

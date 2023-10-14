@@ -16,13 +16,13 @@
  *
  */
 
-package de.invesdwin.context.integration.channel.sync.darpc;
+package de.invesdwin.context.integration.channel.rpc.darpc;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import com.ibm.darpc.DaRPCMessage;
 
-import de.invesdwin.context.integration.channel.sync.darpc.client.DarpcClientSynchronousChannel;
+import de.invesdwin.context.integration.channel.rpc.darpc.client.DarpcClientSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
