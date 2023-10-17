@@ -14,7 +14,6 @@ import java.util.zip.Checksum;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.commons.math3.random.RandomAdaptor;
 import org.openucx.jucx.ucp.UcpConnectionRequest;
 import org.openucx.jucx.ucp.UcpContext;
 import org.openucx.jucx.ucp.UcpEndpoint;
@@ -38,6 +37,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.math.random.RandomAdapter;
 import de.invesdwin.util.math.random.PseudoRandomGenerators;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
@@ -55,10 +55,8 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     private static final long MIN_TAG = 0;
     private static final long MAX_TAG = 0x00ffffffffffffffL;
 
-    private static final PrimitiveIterator.OfLong NEXT_TAG = new RandomAdaptor(PseudoRandomGenerators.newPseudoRandom())
-            .longs(MIN_TAG, MAX_TAG)
-            .distinct()
-            .iterator();
+    private static final PrimitiveIterator.OfLong NEXT_TAG = new RandomAdapter(
+            PseudoRandomGenerators.newPseudoRandom()).longs(MIN_TAG, MAX_TAG).distinct().iterator();
 
     protected final IJucxTransportType type;
     protected final int estimatedMaxMessageSize;
