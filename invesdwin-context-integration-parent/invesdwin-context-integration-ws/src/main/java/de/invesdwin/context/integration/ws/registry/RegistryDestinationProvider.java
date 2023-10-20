@@ -32,7 +32,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
     private String serviceName;
     private volatile URI cachedServiceUri;
     private volatile List<URI> cachedServiceUris;
-    private volatile boolean retryWhenUnavailable = true;
+    private volatile boolean retryWhenUnavailable = false;
 
     public void setServiceName(final String serviceName) {
         this.serviceName = serviceName;
@@ -102,9 +102,10 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
                 }
             }
         } catch (final Throwable e) {
-            throw new IOException(
-                    "Registry server [" + IntegrationWsProperties.getRegistryServerUri() + "] seems to be unreachable.",
-                    e);
+            if (isRetryWhenUnavailable()) {
+                throw new IOException("Registry server [" + IntegrationWsProperties.getRegistryServerUri()
+                        + "] seems to be unreachable.", e);
+            }
         }
         if (serviceUris.isEmpty() && isRetryWhenUnavailable()) {
             throw new IOException("Service [" + serviceName + "] has no reachable instance!");
@@ -128,9 +129,10 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
                 }
             }
         } catch (final Throwable e) {
-            throw new IOException(
-                    "Registry server [" + IntegrationWsProperties.getRegistryServerUri() + "] seems to be unreachable.",
-                    e);
+            if (isRetryWhenUnavailable()) {
+                throw new IOException("Registry server [" + IntegrationWsProperties.getRegistryServerUri()
+                        + "] seems to be unreachable.", e);
+            }
         }
         if (serviceUri == null && isRetryWhenUnavailable()) {
             throw new IOException("Service [" + serviceName + "] has no reachable instance!");
