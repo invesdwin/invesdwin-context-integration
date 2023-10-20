@@ -32,7 +32,7 @@ public class RegistryDestinationProvider extends RetryHookSupport implements IDe
     private String serviceName;
     private volatile URI cachedServiceUri;
     private volatile List<URI> cachedServiceUris;
-    private volatile boolean retryWhenUnavailable = false;
+    private volatile boolean retryWhenUnavailable = true;
 
     public void setServiceName(final String serviceName) {
         this.serviceName = serviceName;

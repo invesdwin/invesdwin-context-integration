@@ -1,10 +1,10 @@
 package de.invesdwin.context.integration.webdav;
 
 import javax.annotation.concurrent.ThreadSafe;
-import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
+import jakarta.inject.Named;
 
 @ThreadSafe
 @Named
@@ -12,11 +12,7 @@ public class WebdavServerDestinationProvider extends RegistryDestinationProvider
 
     public WebdavServerDestinationProvider() {
         setServiceName(WebdavClientProperties.SERVICE_NAME);
-    }
-
-    @Override
-    public boolean isRetryWhenUnavailable() {
-        return true;
+        setRetryWhenUnavailable(false);
     }
 
     @Override
