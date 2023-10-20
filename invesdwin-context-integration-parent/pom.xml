@@ -71,7 +71,7 @@
 		<!-- cxf does not yet support jakarta EE 9: https://issues.apache.org/jira/browse/CXF-8371 -->
 		<version.cxf>3.5.4</version.cxf>
 		<version.jersey>3.1.0</version.jersey>
-		<version.xmlsec>3.0.1</version.xmlsec>
+		<version.xmlsec>3.0.3</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
