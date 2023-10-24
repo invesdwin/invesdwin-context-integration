@@ -22,6 +22,7 @@ public final class FileChannelImplAccessor {
             WRITE0_PROVIDER = newWrite0Provider(fdi);
 
             final Method read0 = Reflections.findMethod(fdi, "read0", FileDescriptor.class, long.class, int.class);
+            Reflections.makeAccessible(read0);
             READ0_MH = MethodHandles.lookup().unreflect(read0);
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -47,6 +48,7 @@ public final class FileChannelImplAccessor {
     private static IWrite0Provider newWrite0Provider(final Class<?> fdi) throws IllegalAccessException {
         try {
             final Method write0 = Reflections.findMethod(fdi, "write0", FileDescriptor.class, long.class, int.class);
+            Reflections.makeAccessible(write0);
             final MethodHandle write0Mh = MethodHandles.lookup().unreflect(write0);
             return (fd, address, len) -> {
                 try {
@@ -60,6 +62,7 @@ public final class FileChannelImplAccessor {
         } catch (final Throwable ae) {
             final Method write0 = Reflections.findMethod(fdi, "write0", FileDescriptor.class, long.class, int.class,
                     boolean.class);
+            Reflections.makeAccessible(write0);
             final MethodHandle write0Mh2 = MethodHandles.lookup().unreflect(write0);
             return (fd, address, len) -> {
                 try {
