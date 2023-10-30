@@ -186,18 +186,10 @@ public abstract class AChannelTest extends ATest {
             if (SynchronousChannels.isNamedPipeSupported() && !OperatingSystem.isWindows()) {
                 Assertions.checkTrue(SynchronousChannels.createNamedPipe(file));
             } else {
-                try {
-                    Files.touch(file);
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
+                Files.touchQuietly(file);
             }
         } else if (type == FileChannelType.MAPPED || type == FileChannelType.BLOCKING_MAPPED) {
-            try {
-                Files.touch(file);
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
+            Files.touchQuietly(file);
         } else {
             throw UnknownArgumentException.newInstance(FileChannelType.class, type);
         }
