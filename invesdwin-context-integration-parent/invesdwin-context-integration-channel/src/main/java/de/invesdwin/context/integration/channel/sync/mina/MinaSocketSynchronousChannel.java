@@ -29,11 +29,9 @@ import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
@@ -410,22 +408,12 @@ public class MinaSocketSynchronousChannel implements Closeable {
         }
     }
 
-    protected static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class MinaSocketSynchronousChannelFinalizer extends AWarningFinalizer {
 
         protected volatile IoSession session;
-        private final Exception initStackTrace;
         private volatile ExecutorService executor;
         private volatile IoAcceptor serverAcceptor;
         private volatile IoConnector clientConnector;
-
-        protected MinaSocketSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -435,18 +423,6 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 executor.shutdownNow();
                 executor = null;
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + MinaSocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

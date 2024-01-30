@@ -17,10 +17,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -367,38 +365,16 @@ public class NettyUdtSynchronousChannel implements Closeable {
         finalizer.closeBootstrapAsync();
     }
 
-    protected static final class NettyUdtSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class NettyUdtSynchronousChannelFinalizer extends AWarningFinalizer {
 
         protected volatile UdtChannel udtChannel;
-        private final Exception initStackTrace;
         private volatile ServerBootstrap serverBootstrap;
         private volatile Bootstrap clientBootstrap;
-
-        protected NettyUdtSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
             closeUdtChannel();
             closeBootstrapAsync();
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + NettyUdtSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

@@ -16,10 +16,8 @@ import org.apache.tomcat.jni.Status;
 
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -243,20 +241,10 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
         return finalizer;
     }
 
-    public static final class MinaSocketSynchronousChannelFinalizer extends AFinalizer {
+    public static final class MinaSocketSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile long pool;
         private volatile long fd;
-
-        protected MinaSocketSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         public long getFd() {
             return fd;
@@ -288,18 +276,6 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
                 }
                 fd = 0;
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + MinaNativeDatagramSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

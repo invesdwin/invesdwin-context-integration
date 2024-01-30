@@ -19,10 +19,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.ADisniActiveRdmaEndpoint;
 import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.ADisniActiveRdmaEndpointFactory;
-import de.invesdwin.context.log.Log;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -231,21 +229,11 @@ public abstract class ADisniActiveSynchronousChannel<E extends ADisniActiveRdmaE
     }
 
     private static final class DisniSynchronousChannelFinalizer<E extends ADisniActiveRdmaEndpoint<E>>
-            extends AFinalizer {
+            extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile RdmaActiveEndpointGroup<E> endpointGroup;
         private volatile E endpoint;
         private volatile RdmaServerEndpoint<E> serverEndpoint;
-
-        protected DisniSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -264,18 +252,6 @@ public abstract class ADisniActiveSynchronousChannel<E extends ADisniActiveRdmaE
                 endpointGroup = null;
                 Closeables.closeQuietly(endpointGroupCopy);
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + ADisniActiveSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

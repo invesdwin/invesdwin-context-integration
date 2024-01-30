@@ -14,12 +14,9 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.DisniActiveRdmaEndpoint;
 import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.DisniActiveRdmaEndpointFactory;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -71,8 +68,8 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
         final boolean blocking = isBlocking();
         finalizer.endpointGroup = new RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint>(
                 getConnectTimeout().intValue(FTimeUnit.MILLISECONDS), !blocking, 2, 1, 2);
-        final DisniActiveRdmaEndpointFactory factory = new DisniActiveRdmaEndpointFactory(
-                finalizer.endpointGroup, socketSize);
+        final DisniActiveRdmaEndpointFactory factory = new DisniActiveRdmaEndpointFactory(finalizer.endpointGroup,
+                socketSize);
         finalizer.endpointGroup.init(factory);
         finalizer.serverEndpoint = finalizer.endpointGroup.createServerEndpoint();
         try {
@@ -95,21 +92,11 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
         finalizer.close();
     }
 
-    private static final class DisniActiveSynchronousChannelFinalizer extends AFinalizer {
+    private static final class DisniActiveSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private RdmaActiveEndpointGroup<DisniActiveRdmaEndpoint> endpointGroup;
         private volatile RdmaServerEndpoint<DisniActiveRdmaEndpoint> serverEndpoint;
         private DisniActiveRdmaEndpoint pendingEndpoint;
-
-        protected DisniActiveSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -128,18 +115,6 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
                 endpointGroup = null;
                 Closeables.closeQuietly(endpointGroupCopy);
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + SocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

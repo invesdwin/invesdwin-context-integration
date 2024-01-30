@@ -8,11 +8,9 @@ import java.nio.channels.SocketChannel;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 
 @NotThreadSafe
 public class SocketSynchronousChannelServer implements ISynchronousReader<SocketSynchronousChannel> {
@@ -59,20 +57,10 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
         finalizer.close();
     }
 
-    private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+    private static final class SocketSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile ServerSocketChannel serverSocketChannel;
         private SocketChannel pendingSocketChannel;
-
-        protected SocketSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -86,18 +74,6 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
                 serverSocketChannel = null;
                 Closeables.closeQuietly(serverSocketChannelCopy);
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + SocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

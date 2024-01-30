@@ -31,14 +31,13 @@ import org.openucx.jucx.ucp.UcpWorkerParams;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.jucx.type.IJucxTransportType;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Integers;
-import de.invesdwin.util.math.random.RandomAdapter;
 import de.invesdwin.util.math.random.PseudoRandomGenerators;
+import de.invesdwin.util.math.random.RandomAdapter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
@@ -55,8 +54,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
     private static final long MIN_TAG = 0;
     private static final long MAX_TAG = 0x00ffffffffffffffL;
 
-    private static final PrimitiveIterator.OfLong NEXT_TAG = new RandomAdapter(
-            PseudoRandomGenerators.newPseudoRandom()).longs(MIN_TAG, MAX_TAG).distinct().iterator();
+    private static final PrimitiveIterator.OfLong NEXT_TAG = new RandomAdapter(PseudoRandomGenerators.newPseudoRandom())
+            .longs(MIN_TAG, MAX_TAG)
+            .distinct()
+            .iterator();
 
     protected final IJucxTransportType type;
     protected final int estimatedMaxMessageSize;
@@ -427,9 +428,8 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         return checksum.getValue();
     }
 
-    private static final class UcxSynchronousChannelFinalizer extends AFinalizer {
+    private static final class UcxSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private UcpContext ucpContext;
         private UcpWorker ucpWorker;
         private UcpListener ucpListener;
@@ -438,15 +438,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         private UcpRemoteKey ucpRemoteKey;
 
         private final Stack<Closeable> closeables = new Stack<>();
-
-        protected UcxSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -459,18 +450,6 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
             while (!closeables.isEmpty()) {
                 Closeables.closeQuietly(closeables.pop());
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + JucxSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

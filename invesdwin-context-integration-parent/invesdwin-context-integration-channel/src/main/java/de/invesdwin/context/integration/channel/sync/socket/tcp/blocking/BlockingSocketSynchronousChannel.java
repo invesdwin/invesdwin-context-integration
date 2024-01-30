@@ -16,10 +16,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
-import de.invesdwin.context.log.Log;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
@@ -211,20 +209,10 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
         finalizer.close();
     }
 
-    protected static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+    protected static final class SocketSynchronousChannelFinalizer extends AWarningFinalizer {
 
         protected volatile Socket socket;
         protected volatile ServerSocket serverSocket;
-        private final Exception initStackTrace;
-
-        protected SocketSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -238,18 +226,6 @@ public class BlockingSocketSynchronousChannel implements ISynchronousChannel {
                 serverSocket = null;
                 Closeables.closeQuietly(serverSocketCopy);
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + BlockingSocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

@@ -19,12 +19,10 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.util.concurrent.FastThreadLocal;
@@ -219,20 +217,10 @@ public class MinaSharedSocketClientEndpointFactory
 
     }
 
-    private static final class MinaSharedSocketClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class MinaSharedSocketClientEndpointFactoryFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile ExecutorService executor;
         private volatile IoConnector clientConnector;
-
-        protected MinaSharedSocketClientEndpointFactoryFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -241,18 +229,6 @@ public class MinaSharedSocketClientEndpointFactory
                 executor.shutdownNow();
                 executor = null;
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + MinaSocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

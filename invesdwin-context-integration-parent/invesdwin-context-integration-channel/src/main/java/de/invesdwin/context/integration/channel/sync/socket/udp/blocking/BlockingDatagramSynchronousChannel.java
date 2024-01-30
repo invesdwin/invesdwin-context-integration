@@ -14,10 +14,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.time.duration.Duration;
@@ -221,19 +219,9 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
         otherSocketAddress = null;
     }
 
-    private static final class SocketSynchronousChannelFinalizer extends AFinalizer {
+    private static final class SocketSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile DatagramSocket socket;
-
-        protected SocketSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -241,18 +229,6 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
                 socket.close();
                 socket = null;
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + BlockingDatagramSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

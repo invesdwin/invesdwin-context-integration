@@ -22,10 +22,8 @@ import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcMessage;
 import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.log.Log;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -213,22 +211,12 @@ public class DarpcServerSynchronousChannel implements ISynchronousChannel {
         finalizer.close();
     }
 
-    private static final class DisniSynchronousChannelFinalizer extends AFinalizer {
+    private static final class DisniSynchronousChannelFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile DaRPCServerGroup<RdmaRpcMessage, RdmaRpcMessage> endpointGroup;
         private volatile DaRPCServerEndpoint<RdmaRpcMessage, RdmaRpcMessage> endpoint;
         private volatile RdmaServerEndpoint<DaRPCServerEndpoint<RdmaRpcMessage, RdmaRpcMessage>> serverEndpoint;
         private final Stack<IbvMr> memoryRegions = new Stack<>();
-
-        protected DisniSynchronousChannelFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
@@ -254,18 +242,6 @@ public class DarpcServerSynchronousChannel implements ISynchronousChannel {
                 endpointGroup = null;
                 Closeables.closeQuietly(endpointGroupCopy);
             }
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + DarpcServerSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override

@@ -13,11 +13,9 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
-import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.finalizer.AFinalizer;
+import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -38,8 +36,8 @@ public class NettySharedSocketClientEndpointFactory
     @GuardedBy("self")
     private final IBufferingIterator<NettySocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
-    public NettySharedSocketClientEndpointFactory(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
+    public NettySharedSocketClientEndpointFactory(final INettySocketChannelType type,
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.socketSize = estimatedMaxMessageSize + NettySocketSynchronousChannel.MESSAGE_INDEX;
@@ -196,35 +194,13 @@ public class NettySharedSocketClientEndpointFactory
 
     }
 
-    private static final class NettySharedSocketClientEndpointFactoryFinalizer extends AFinalizer {
+    private static final class NettySharedSocketClientEndpointFactoryFinalizer extends AWarningFinalizer {
 
-        private final Exception initStackTrace;
         private volatile Bootstrap clientBootstrap;
-
-        protected NettySharedSocketClientEndpointFactoryFinalizer() {
-            if (Throwables.isDebugStackTraceEnabled()) {
-                initStackTrace = new Exception();
-                initStackTrace.fillInStackTrace();
-            } else {
-                initStackTrace = null;
-            }
-        }
 
         @Override
         protected void clean() {
             closeBootstrapAsync();
-        }
-
-        @Override
-        protected void onRun() {
-            String warning = "Finalizing unclosed " + NettySocketSynchronousChannel.class.getSimpleName();
-            if (Throwables.isDebugStackTraceEnabled()) {
-                final Exception stackTrace = initStackTrace;
-                if (stackTrace != null) {
-                    warning += " from stacktrace:\n" + Throwables.getFullStackTrace(stackTrace);
-                }
-            }
-            new Log(this).warn(warning);
         }
 
         @Override
