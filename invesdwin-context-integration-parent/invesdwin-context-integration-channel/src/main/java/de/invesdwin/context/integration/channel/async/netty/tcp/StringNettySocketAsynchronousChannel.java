@@ -305,7 +305,9 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
                 }
                 //message complete
                 if (Strings.isBlank(input)) {
-                    close(ctx);
+                    if (inputBufStream.lineBufLength() == input.length()) {
+                        close(ctx);
+                    }
                     return false;
                 } else {
                     final String output = handler.handle(context, input);
