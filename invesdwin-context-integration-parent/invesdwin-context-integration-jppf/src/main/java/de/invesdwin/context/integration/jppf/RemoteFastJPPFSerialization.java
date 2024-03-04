@@ -36,8 +36,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     private static volatile FDate lastRefreshTrigger = new FDate();
 
-    public RemoteFastJPPFSerialization() {
-    }
+    public RemoteFastJPPFSerialization() {}
 
     public static void refresh() {
         lastRefreshTrigger = new FDate();
@@ -72,7 +71,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         }
     }
 
-    private static class RefreshingCoderReference {
+    private static final class RefreshingCoderReference {
 
         private DefaultCoder coder = new DefaultCoder();
         private FDate lastRefresh = new FDate();

@@ -27,7 +27,7 @@ public class LmaxDisruptorQueue<T> extends AbstractQueue<T> implements BlockingQ
     /**
      * An event holder.
      */
-    private static class Event<T> {
+    private static final class Event<T> {
         private T item;
 
         public T getValue() {
@@ -48,7 +48,7 @@ public class LmaxDisruptorQueue<T> extends AbstractQueue<T> implements BlockingQ
     /**
      * Event factory to create event holder instance.
      */
-    private static class Factory<T> implements EventFactory<Event<T>> {
+    private static final class Factory<T> implements EventFactory<Event<T>> {
 
         @Override
         public Event<T> newInstance() {

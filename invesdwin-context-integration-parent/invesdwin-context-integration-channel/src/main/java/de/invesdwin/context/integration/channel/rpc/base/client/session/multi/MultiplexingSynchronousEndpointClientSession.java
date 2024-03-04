@@ -467,7 +467,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 .isLessThanOrEqualToNanos(System.nanoTime() - request.getWaitingSinceNanos());
     }
 
-    private class ThrottleSpinWait extends ASpinWait {
+    private final class ThrottleSpinWait extends ASpinWait {
 
         private MultiplexingSynchronousEndpointClientSessionResponse outer;
         private MultiplexingSynchronousEndpointClientSessionResponse pollingOuter;
