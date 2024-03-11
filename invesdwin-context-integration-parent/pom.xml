@@ -63,7 +63,7 @@
 		<project.version.invesdwin-context-security>1.0.3-SNAPSHOT</project.version.invesdwin-context-security>
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
-		<version.spring-amqp>3.1.0</version.spring-amqp>
+		<version.spring-amqp>3.1.2</version.spring-amqp>
 		<version.artemis>2.27.0</version.artemis>
 		<version.jakarta-jms>3.1.0</version.jakarta-jms>
 		<version.org.linkedin.util-core>1.9.0</version.org.linkedin.util-core>
@@ -97,7 +97,6 @@
 		<version.srp6a>2.1.0</version.srp6a>
 		<version.barchart-udt>2.3.0</version.barchart-udt>
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
-		<version.mina>2.2.1</version.mina>
 		<version.tomcat-jni>10.0.27</version.tomcat-jni>
 		<version.jnr-enxio>0.32.14</version.jnr-enxio>
 		<version.fastmpj>1.0_7</version.fastmpj>
@@ -737,22 +736,6 @@
 					<exclusion>
 						<groupId>com.esotericsoftware</groupId>
 						<artifactId>minlog</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.mina</groupId>
-				<artifactId>mina-core</artifactId>
-				<version>${version.mina}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.apache.mina</groupId>
-				<artifactId>mina-transport-apr</artifactId>
-				<version>${version.mina}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.apache.mina</groupId>
-						<artifactId>mina-core</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
