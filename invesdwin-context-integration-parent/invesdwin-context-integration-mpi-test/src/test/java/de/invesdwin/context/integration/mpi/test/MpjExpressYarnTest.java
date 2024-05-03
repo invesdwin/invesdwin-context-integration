@@ -93,7 +93,7 @@ public class MpjExpressYarnTest extends AMpiTest {
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
-                Files.moveFileQuietly(hadoopVersionedFolder, HADOOP_FOLDER);
+                Files.moveDirectory(hadoopVersionedFolder, HADOOP_FOLDER);
                 //                COPY core-site.xml $HADOOP_HOME/etc/hadoop/
                 for (final String filename : new String[] { "core-site.xml", "hdfs-site.xml", "yarn-site.xml" }) {
                     Files.copyFile(new File(HADOOP_DOCKER_FOLDER, filename),
