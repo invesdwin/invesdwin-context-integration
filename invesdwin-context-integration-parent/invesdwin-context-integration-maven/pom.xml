@@ -24,6 +24,16 @@
 			<groupId>org.codehaus.plexus</groupId>
 			<artifactId>plexus-xml</artifactId>
 		</dependency>
+		<dependency>
+			<!-- upper bound eps -->
+			<groupId>eu.maveniverse.maven.mima.runtime</groupId>
+			<artifactId>embedded-maven</artifactId>
+		</dependency>
+		<dependency>
+			<!-- upper bound eps -->
+			<groupId>eu.maveniverse.maven.mima.runtime</groupId>
+			<artifactId>standalone-static</artifactId>
+		</dependency>
 	</dependencies>
 
 
