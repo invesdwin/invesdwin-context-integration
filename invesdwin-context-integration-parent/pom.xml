@@ -79,7 +79,7 @@
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
 		<version.sardine>5.11-inv</version.sardine>
-		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
+		<version.shrinkwrap-resolver>3.3.0</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
