@@ -83,7 +83,7 @@ public class MpjExpressYarnTest extends AMpiTest {
             if (!hadoopFile.exists()) {
                 final File hadoopFilePart = new File(hadoopFile.getAbsolutePath() + ".part");
                 Files.deleteQuietly(hadoopFilePart);
-                IOUtils.copy(URIs.asUrl("http://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
+                IOUtils.copy(URIs.asUrl("https://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
                         + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
                 Files.moveFileQuietly(hadoopFilePart, hadoopFile);
                 Files.deleteQuietly(HADOOP_FOLDER);
