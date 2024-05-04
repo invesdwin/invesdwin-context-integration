@@ -6,6 +6,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.mpi.IMpiAdapter;
 import de.invesdwin.context.integration.mpi.IMpiAdapterFactory;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @Immutable
@@ -19,6 +20,7 @@ public class FastMpjAdapterFactory implements IMpiAdapterFactory {
             final Field jField = Reflections.findField(mpiClass, "j");
             return jField != null;
         } catch (final Throwable t) {
+            Err.process(t);
             return false;
         }
     }

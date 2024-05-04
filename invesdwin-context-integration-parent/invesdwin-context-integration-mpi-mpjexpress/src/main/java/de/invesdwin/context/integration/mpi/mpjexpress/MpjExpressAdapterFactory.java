@@ -6,6 +6,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.mpi.IMpiAdapter;
 import de.invesdwin.context.integration.mpi.IMpiAdapterFactory;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @Immutable
@@ -18,6 +19,7 @@ public class MpjExpressAdapterFactory implements IMpiAdapterFactory {
             final Field loggerField = Reflections.findField(mpiClass, "logger");
             return loggerField != null;
         } catch (final Throwable t) {
+            Err.process(t);
             return false;
         }
     }
