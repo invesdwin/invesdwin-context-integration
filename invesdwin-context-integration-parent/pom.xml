@@ -63,7 +63,7 @@
 		<project.version.invesdwin-context-security>1.0.3-SNAPSHOT</project.version.invesdwin-context-security>
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
 		<version.freemarker>2.3.23</version.freemarker>
-		<version.spring-amqp>3.1.2</version.spring-amqp>
+		<version.spring-amqp>3.1.4</version.spring-amqp>
 		<version.artemis>2.27.0</version.artemis>
 		<version.jakarta-jms>3.1.0</version.jakarta-jms>
 		<version.org.linkedin.util-core>1.9.0</version.org.linkedin.util-core>
@@ -79,7 +79,7 @@
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
 		<version.sardine>5.11-inv</version.sardine>
-		<version.shrinkwrap-resolver>2.2.6</version.shrinkwrap-resolver>
+		<version.shrinkwrap-resolver>3.3.0</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
@@ -109,6 +109,8 @@
 		<version.jucx>1.14.100</version.jucx>
 		<version.hadronio>0.3.3-inv</version.hadronio>
 		<version.jgroups>5.2.14.Final</version.jgroups>
+		<version.embedded-maven>2.3.2</version.embedded-maven>
+		<version.sisu>0.9.0.M2</version.sisu>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -523,6 +525,12 @@
 				<groupId>org.jboss.shrinkwrap.resolver</groupId>
 				<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
 				<version>${version.shrinkwrap-resolver}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.annotation</groupId>
+						<artifactId>javax.annotation-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>org.eclipse.aether</groupId>
@@ -815,6 +823,31 @@
 				<groupId>org.jgroups</groupId>
 				<artifactId>jgroups</artifactId>
 				<version>${version.jgroups}</version>
+			</dependency>
+			<dependency>
+				<groupId>eu.maveniverse.maven.mima.runtime</groupId>
+				<artifactId>embedded-maven</artifactId>
+				<version>${version.embedded-maven}</version>
+			</dependency>
+			<dependency>
+				<groupId>eu.maveniverse.maven.mima</groupId>
+				<artifactId>context</artifactId>
+				<version>${version.embedded-maven}</version>
+			</dependency>
+			<dependency>
+				<groupId>eu.maveniverse.maven.mima.runtime</groupId>
+				<artifactId>standalone-static</artifactId>
+				<version>${version.embedded-maven}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.sisu</groupId>
+				<artifactId>org.eclipse.sisu.inject</artifactId>
+				<version>${version.sisu}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.eclipse.sisu</groupId>
+				<artifactId>org.eclipse.sisu.plexus</artifactId>
+				<version>${version.sisu}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
