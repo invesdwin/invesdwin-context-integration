@@ -20,7 +20,7 @@ public class BidiBlockingDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testBlockingDatagramPerformance() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
+        final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runBlockingDatagramPerformanceTest(address);
     }
