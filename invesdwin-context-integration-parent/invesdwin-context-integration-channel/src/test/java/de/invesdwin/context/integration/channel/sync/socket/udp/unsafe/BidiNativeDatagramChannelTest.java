@@ -17,6 +17,7 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
 public class BidiNativeDatagramChannelTest extends AChannelTest {
@@ -34,6 +35,7 @@ public class BidiNativeDatagramChannelTest extends AChannelTest {
         } catch (final Throwable t) {
             //workaround needed for testsuite because ports kind of stay blocked sometimes
             if (Throwables.isCausedByType(t, PortUnreachableException.class) && tries < 100) {
+                FTimeUnit.MILLISECONDS.sleep(10);
                 testDatagramPerformanceTry(tries + 1);
             } else {
                 throw t;
