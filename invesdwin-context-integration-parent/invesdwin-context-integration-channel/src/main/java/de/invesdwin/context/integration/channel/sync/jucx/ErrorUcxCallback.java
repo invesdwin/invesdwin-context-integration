@@ -6,6 +6,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.openucx.jucx.UcxCallback;
+import org.openucx.jucx.ucp.UcpEndpoint;
 import org.openucx.jucx.ucp.UcpRequest;
 
 @ThreadSafe
@@ -42,6 +43,10 @@ public class ErrorUcxCallback extends UcxCallback {
         error = ucsStatus + ": " + errorMsg;
     }
 
+    public void onError(final UcpEndpoint ep, final int status, final String errorMsg) {
+        onError(status, errorMsg);
+    }
+
     public synchronized ErrorUcxCallback maybeThrowAndReset() throws IOException {
         maybeThrow();
         return reset();
@@ -53,4 +58,5 @@ public class ErrorUcxCallback extends UcxCallback {
             throw new IOException(errorCopy);
         }
     }
+
 }

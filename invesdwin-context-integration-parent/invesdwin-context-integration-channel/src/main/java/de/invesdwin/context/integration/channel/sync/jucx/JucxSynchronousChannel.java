@@ -143,7 +143,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
 
     protected UcpEndpointParams newUcpEndpointParams() {
         final UcpEndpointParams params = new UcpEndpointParams();
-        params.setErrorHandler((ep, status, errorMsg) -> errorUcxCallback.onError(status, errorMsg));
+        params.setErrorHandler(errorUcxCallback::onError);
         type.configureEndpointParams(params);
         return params;
     }
