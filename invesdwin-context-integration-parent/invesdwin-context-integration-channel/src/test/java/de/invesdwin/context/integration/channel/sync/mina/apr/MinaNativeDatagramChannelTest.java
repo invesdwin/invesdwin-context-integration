@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -15,6 +16,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
+@Disabled("requires older apr version")
 @NotThreadSafe
 public class MinaNativeDatagramChannelTest extends AChannelTest {
 

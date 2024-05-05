@@ -14,7 +14,6 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestS
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
@@ -25,7 +24,6 @@ public class RpcSessionlessNativeDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
-        Throwables.setDebugStackTraceEnabled(true);
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);

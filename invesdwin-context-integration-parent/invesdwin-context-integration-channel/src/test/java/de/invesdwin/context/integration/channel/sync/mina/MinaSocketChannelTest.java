@@ -30,10 +30,10 @@ public class MinaSocketChannelTest extends AChannelTest {
         runMinaSocketChannelPerformanceTest(MinaSocketType.NioTcp, responseAddress, requestAddress);
     }
 
-    @Disabled
+    @Disabled("does not work at all")
     @Test
     public void testMinaDatagramChannelPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
         runMinaSocketChannelPerformanceTest(MinaSocketType.NioUdp, responseAddress, requestAddress);

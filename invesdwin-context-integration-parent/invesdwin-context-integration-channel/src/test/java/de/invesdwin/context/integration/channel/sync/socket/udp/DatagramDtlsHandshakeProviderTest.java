@@ -22,7 +22,6 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronou
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -31,7 +30,6 @@ public class DatagramDtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
-        Throwables.setDebugStackTraceEnabled(true);
         final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);

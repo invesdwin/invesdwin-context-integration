@@ -15,7 +15,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
-import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -23,7 +22,6 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testDtlsHandshakePerformance() throws InterruptedException {
-        Throwables.setDebugStackTraceEnabled(true);
         final boolean tmpfs = true;
         //we need to block here because multiple messages are written in succession
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
@@ -40,7 +38,6 @@ public class DtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testSizedTlsHandshakePerformance() throws InterruptedException {
-        Throwables.setDebugStackTraceEnabled(true);
         final boolean tmpfs = true;
         //we need to block here because multiple messages are written in succession
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
