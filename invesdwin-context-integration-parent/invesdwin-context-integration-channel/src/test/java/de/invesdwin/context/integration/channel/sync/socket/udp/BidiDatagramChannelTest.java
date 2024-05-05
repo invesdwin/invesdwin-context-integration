@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -13,6 +14,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -20,9 +22,22 @@ public class BidiDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testDatagramPerformance() throws InterruptedException {
+        testDatagramPerformanceTry(0);
+    }
+
+    private void testDatagramPerformanceTry(final int tries) throws InterruptedException {
         final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runDatagramPerformanceTest(address);
+        try {
+            runDatagramPerformanceTest(address);
+        } catch (final Throwable t) {
+            //workaround needed for testsuite because ports kind of stay blocked sometimes
+            if (Throwables.isCausedByType(t, PortUnreachableException.class) && tries < 100) {
+                testDatagramPerformanceTry(tries + 1);
+            } else {
+                throw t;
+            }
+        }
     }
 
     protected void runDatagramPerformanceTest(final SocketAddress address) throws InterruptedException {
