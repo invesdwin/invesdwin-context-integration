@@ -272,9 +272,6 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
             } else {
                 recipient = (InetSocketAddress) ctx.channel().remoteAddress();
             }
-            if (recipient == null) {
-                return;
-            }
             final Context context = Context.getOrCreate(ctx.channel(), channel.getSocketSize(), recipient);
             try {
                 final IByteBufferProvider output = handler.open(context);
