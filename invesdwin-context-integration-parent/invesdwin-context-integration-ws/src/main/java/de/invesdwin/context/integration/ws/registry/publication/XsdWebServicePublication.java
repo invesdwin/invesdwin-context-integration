@@ -25,7 +25,8 @@ import de.invesdwin.util.lang.uri.URIs;
  * 
  */
 @ThreadSafe
-public class XsdWebServicePublication extends DefaultWsdl11Definition implements IWebServicePublication, BeanNameAware {
+public class XsdWebServicePublication extends DefaultWsdl11Definition
+        implements IConfigurableWebServicePublication, BeanNameAware {
 
     private static final String LOCATION = "/spring-ws/";
 

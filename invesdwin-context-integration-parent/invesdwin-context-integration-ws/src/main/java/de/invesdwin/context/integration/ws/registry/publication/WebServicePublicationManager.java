@@ -1,6 +1,5 @@
-package de.invesdwin.context.integration.ws.registry.publication.internal;
+package de.invesdwin.context.integration.ws.registry.publication;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
-import de.invesdwin.context.integration.ws.registry.publication.IWebServicePublication;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
@@ -35,7 +33,7 @@ public class WebServicePublicationManager implements IStartupHook {
     private volatile boolean started;
     private final Map<String, URI> serviceName_accessUri = new ConcurrentHashMap<String, URI>();
 
-    public void registerPublication(final IWebServicePublication publication) throws IOException {
+    public void registerPublication(final IWebServicePublication publication) {
         publications.add(publication);
         registerServiceInstance(publication);
     }
@@ -68,7 +66,7 @@ public class WebServicePublicationManager implements IStartupHook {
     }
 
     @Scheduled(fixedDelay = IntegrationWsProperties.SERVICE_BINDING_HEARTBEAT_REFRESH_INVERVAL_MILLIS)
-    public void scheduledHeartbeat() throws IOException {
+    public void scheduledHeartbeat() {
         if (!started) {
             return;
         }
@@ -77,7 +75,7 @@ public class WebServicePublicationManager implements IStartupHook {
         }
     }
 
-    private void registerServiceInstance(final IWebServicePublication publication) throws IOException {
+    private void registerServiceInstance(final IWebServicePublication publication) {
         final URI publicationUri = publication.getUri();
         if (publicationUri != null) {
             if (URIs.connect(publicationUri).isServerResponding()) {
@@ -92,8 +90,7 @@ public class WebServicePublicationManager implements IStartupHook {
         }
     }
 
-    private void registerServiceInstanceInRegistry(final IWebServicePublication publication, final URI publicationUri)
-            throws IOException {
+    private void registerServiceInstanceInRegistry(final IWebServicePublication publication, final URI publicationUri) {
         if (serviceName_accessUri.get(publication.getServiceName()) == null) {
             log.debug("Registering Service: %s", publicationUri);
         } else {
@@ -103,7 +100,7 @@ public class WebServicePublicationManager implements IStartupHook {
     }
 
     @Retry
-    private void retryRegisterServiceInstance(final IWebServicePublication publication) throws IOException {
+    private void retryRegisterServiceInstance(final IWebServicePublication publication) {
         final URI publicationUri = publication.getUri();
         try {
             Assertions.assertThat(registry.registerServiceBinding(publication.getServiceName(), publicationUri))

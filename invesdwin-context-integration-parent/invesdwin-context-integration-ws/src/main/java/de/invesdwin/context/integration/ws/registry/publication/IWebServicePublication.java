@@ -6,11 +6,7 @@ public interface IWebServicePublication {
 
     String getServiceName();
 
-    void setServiceName(String serviceName);
-
     URI getUri();
-
-    void setUseRegistry(boolean useRegistry);
 
     boolean isUseRegistry();
 

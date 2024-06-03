@@ -5,7 +5,6 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.ws.registry.publication.internal.WebServicePublicationManager;
 import de.invesdwin.context.test.ATest;
 import jakarta.inject.Inject;
 
