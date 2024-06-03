@@ -16,9 +16,9 @@ import de.invesdwin.util.time.date.FTimeUnit;
 public final class IntegrationWsProperties {
 
     public static final long SERVICE_BINDING_HEARTBEAT_REFRESH_INVERVAL_MILLIS = 1 * FTimeUnit.SECONDS_IN_MINUTE
+            * FTimeUnit.MILLISECONDS_IN_SECOND; //1 minute
+    public static final long SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS = 5 * FTimeUnit.SECONDS_IN_MINUTE
             * FTimeUnit.MILLISECONDS_IN_SECOND; //5 minutes
-    public static final long SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS = 15 * FTimeUnit.SECONDS_IN_MINUTE
-            * FTimeUnit.MILLISECONDS_IN_SECOND; //10 minutes
     public static final String WSS_USERNAMETOKEN_USER;
     public static final String WSS_USERNAMETOKEN_PASSWORD;
     public static final String SPRING_WEB_USER;

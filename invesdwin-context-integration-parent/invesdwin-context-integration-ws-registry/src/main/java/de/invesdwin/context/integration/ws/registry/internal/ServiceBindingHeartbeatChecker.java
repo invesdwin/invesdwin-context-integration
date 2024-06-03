@@ -4,8 +4,6 @@ import java.io.IOException;
 import java.util.Collection;
 
 import javax.annotation.concurrent.ThreadSafe;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -17,6 +15,8 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 @ThreadSafe
 @Named
@@ -32,7 +32,7 @@ public class ServiceBindingHeartbeatChecker implements IStartupHook {
         started = true;
     }
 
-    @Scheduled(fixedDelay = IntegrationWsProperties.SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS)
+    @Scheduled(fixedDelay = IntegrationWsProperties.SERVICE_BINDING_HEARTBEAT_REFRESH_INVERVAL_MILLIS)
     public void purgeOldBindings() throws IOException {
         if (!started) {
             return;
