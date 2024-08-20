@@ -251,4 +251,11 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
 
     }
 
+    @Override
+    public int size() {
+        synchronized (sessions) {
+            return sessions.size();
+        }
+    }
+
 }

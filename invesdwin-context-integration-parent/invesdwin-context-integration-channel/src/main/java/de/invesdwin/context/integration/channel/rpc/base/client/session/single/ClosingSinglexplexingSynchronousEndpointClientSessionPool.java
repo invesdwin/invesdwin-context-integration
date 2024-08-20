@@ -47,4 +47,9 @@ public class ClosingSinglexplexingSynchronousEndpointClientSessionPool
         endpointSessionFactory.close();
     }
 
+    @Override
+    public int size() {
+        return 0;
+    }
+
 }

@@ -112,6 +112,15 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
         }
     }
 
+    @Override
+    public int size() {
+        if (singleSession == null) {
+            return 0;
+        } else {
+            return 1;
+        }
+    }
+
     private final class CheckHeartbeatRunnable implements Runnable {
         @Override
         public void run() {
