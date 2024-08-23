@@ -32,6 +32,7 @@ import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.list.Lists;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.string.Strings;
@@ -142,23 +143,15 @@ public class JPPFProcessingThreadsCounter {
 
         final Triple<List<Integer>, Map<String, String>, Map<String, String>> processingThreadsAndNodesAndDrivers = countProcessingThreads();
         sumProcessingThreadsCounts.add(Integers.sum(processingThreadsAndNodesAndDrivers.getFirst()));
+        Lists.maybeTrimSizeStart(sumProcessingThreadsCounts, MAX_COUNT_HISTORY);
         medianProcessingThreadsCounts.add(Integers.median(processingThreadsAndNodesAndDrivers.getFirst()));
-        while (sumProcessingThreadsCounts.size() > MAX_COUNT_HISTORY) {
-            sumProcessingThreadsCounts.remove(0);
-        }
-        while (medianProcessingThreadsCounts.size() > MAX_COUNT_HISTORY) {
-            medianProcessingThreadsCounts.remove(0);
-        }
+        Lists.maybeTrimSizeStart(medianProcessingThreadsCounts, MAX_COUNT_HISTORY);
         nodeInfos = sortInfos(processingThreadsAndNodesAndDrivers.getSecond());
         driverInfos = sortInfos(processingThreadsAndNodesAndDrivers.getThird());
         nodesCounts.add(nodeInfos.size());
-        while (nodesCounts.size() > MAX_COUNT_HISTORY) {
-            nodesCounts.remove(0);
-        }
+        Lists.maybeTrimSizeStart(nodesCounts, MAX_COUNT_HISTORY);
         driversCounts.add(driverInfos.size());
-        while (driversCounts.size() > MAX_COUNT_HISTORY) {
-            driversCounts.remove(0);
-        }
+        Lists.maybeTrimSizeStart(driversCounts, MAX_COUNT_HISTORY);
 
         if (warmupFinished) {
             if (processingThreadsCountBefore != getSumProcessingThreadsCount() || nodesCountBefore != getNodesCount()
