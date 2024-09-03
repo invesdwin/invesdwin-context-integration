@@ -1,5 +1,3 @@
-// @NotThreadSafe
-// CHECKSTYLE:OFF
 package de.invesdwin.context.integration.channel.sync.jucx.examples;
 
 import static java.nio.file.StandardOpenOption.CREATE;
@@ -10,13 +8,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.UUID;
+
+import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 import org.openucx.jucx.UcxUtils;
@@ -31,9 +28,13 @@ import org.openucx.jucx.ucp.UcpRemoteKey;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
 
+import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.lang.Files;
+
+@NotThreadSafe
 public class UcpMemoryTest extends UcxTest {
-    static int MEM_SIZE = 4096;
-    static String RANDOM_TEXT = UUID.randomUUID().toString();
+    public static final int MEM_SIZE = 4096;
+    public static final String RANDOM_TEXT = UUID.randomUUID().toString();
 
     @Test
     public void testMmapFile() throws Exception {
@@ -66,9 +67,9 @@ public class UcpMemoryTest extends UcxTest {
     @Test
     public void testGetRkey() {
         final UcpContext context = new UcpContext(new UcpParams().requestRmaFeature());
-        final ByteBuffer buf = ByteBuffer.allocateDirect(MEM_SIZE);
+        final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(MEM_SIZE);
         final UcpMemory mem = context.registerMemory(buf);
-        final ByteBuffer rkeyBuffer = mem.getRemoteKeyBuffer();
+        final java.nio.ByteBuffer rkeyBuffer = mem.getRemoteKeyBuffer();
         assertTrue(rkeyBuffer.capacity() > 0);
         assertTrue(mem.getAddress() > 0);
         mem.deregister();
@@ -82,7 +83,7 @@ public class UcpMemoryTest extends UcxTest {
         final UcpWorker worker2 = new UcpWorker(context, new UcpWorkerParams());
         final UcpEndpoint endpoint = new UcpEndpoint(worker1,
                 new UcpEndpointParams().setUcpAddress(worker2.getAddress()));
-        final ByteBuffer buf = ByteBuffer.allocateDirect(MEM_SIZE);
+        final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(MEM_SIZE);
         final UcpMemory mem = context.registerMemory(buf);
         final UcpRemoteKey rkey = endpoint.unpackRemoteKey(mem.getRemoteKeyBuffer());
         assertNotNull(rkey.getNativeId());
