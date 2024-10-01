@@ -3,17 +3,16 @@ package de.invesdwin.context.integration.ws.registry.internal;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.annotation.concurrent.ThreadSafe;
-import jakarta.inject.Inject;
 
 import org.apache.commons.io.IOUtils;
 import org.springframework.stereotype.Controller;
-import org.springframework.util.Base64Utils;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -36,6 +35,7 @@ import de.invesdwin.util.math.Longs;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
+import jakarta.inject.Inject;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -65,7 +65,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
             @PathVariable(SERVICE_NAME) final String serviceName, @PathVariable(ACCESS_URI) final String accessUri)
             throws IOException {
         final String serviceNameDecoded = URIs.decode(serviceName);
-        final URI accessUriDecoded = URIs.asUri(new String(Base64Utils.decode(accessUri.getBytes())));
+        final URI accessUriDecoded = URIs.asUri(new String(Base64.getDecoder().decode(accessUri.getBytes())));
         final ServiceBinding instance = registry.registerServiceBinding(serviceNameDecoded, accessUriDecoded);
         response.getOutputStream().print(MarshallerJsonJackson.toJson(instance));
     }
@@ -75,7 +75,7 @@ public class RegistryController implements IRestRegistryService, IStartupHook {
             @PathVariable(SERVICE_NAME) final String serviceName, @PathVariable(ACCESS_URI) final String accessUri)
             throws IOException {
         final String serviceNameDecoded = URIs.decode(serviceName);
-        final URI accessUriDecoded = URIs.asUri(new String(Base64Utils.decode(accessUri.getBytes())));
+        final URI accessUriDecoded = URIs.asUri(new String(Base64.getDecoder().decode(accessUri.getBytes())));
         final ServiceBinding instance = registry.unregisterServiceBinding(serviceNameDecoded, accessUriDecoded);
         response.getOutputStream().print(MarshallerJsonJackson.toJson(instance));
     }

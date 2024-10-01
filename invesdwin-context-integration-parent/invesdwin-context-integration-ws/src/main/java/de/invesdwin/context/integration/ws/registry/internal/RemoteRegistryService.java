@@ -2,12 +2,12 @@ package de.invesdwin.context.integration.ws.registry.internal;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.Base64;
 import java.util.Collection;
 
 import javax.annotation.concurrent.Immutable;
 
 import org.apache.commons.lang3.BooleanUtils;
-import org.springframework.util.Base64Utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
@@ -35,7 +35,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     public synchronized ServiceBinding registerServiceBinding(final String serviceName, final URI accessUri)
             throws IOException {
         final String serviceNameEncoded = URIs.encode(serviceName);
-        final String accessUriEncoded = Base64Utils.encodeToString(accessUri.toString().getBytes());
+        final String accessUriEncoded = Base64.getEncoder().encodeToString(accessUri.toString().getBytes());
         final String response = connect(REGISTER_SERVICE_BINDING.replace(SERVICE_NAME_PARAM, serviceNameEncoded)
                 .replace(ACCESS_URI_PARAM, accessUriEncoded)).downloadThrowing();
         final ServiceBinding result = MarshallerJsonJackson.fromJson(response, REF_SERVICE_BINDING);
@@ -46,7 +46,7 @@ public class RemoteRegistryService implements IRegistryService, IRestRegistrySer
     public synchronized ServiceBinding unregisterServiceBinding(final String serviceName, final URI accessUri)
             throws IOException {
         final String serviceNameEncoded = URIs.encode(serviceName);
-        final String accessUriEncoded = Base64Utils.encodeToString(accessUri.toString().getBytes());
+        final String accessUriEncoded = Base64.getEncoder().encodeToString(accessUri.toString().getBytes());
         final String response = connect(UNREGISTER_SERVICE_BINDING.replace(SERVICE_NAME_PARAM, serviceNameEncoded)
                 .replace(ACCESS_URI_PARAM, accessUriEncoded)).downloadThrowing();
         final ServiceBinding result = MarshallerJsonJackson.fromJson(response, REF_SERVICE_BINDING);
