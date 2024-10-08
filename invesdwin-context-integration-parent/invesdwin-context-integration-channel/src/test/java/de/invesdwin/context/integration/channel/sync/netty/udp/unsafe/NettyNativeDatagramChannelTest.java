@@ -14,23 +14,23 @@ import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagr
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
 public class NettyNativeDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testNettyNativeDatagramChannelPerformance() throws InterruptedException {
-        if (OperatingSystem.isWindows()) {
+        final INettyDatagramChannelType type = INettyDatagramChannelType.getDefault();
+        if (!UnixChannel.class.isAssignableFrom(type.getClientChannelType())) {
             //not supported on windows
             return;
         }
         final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
-        runNettyNativeDatagramChannelPerformanceTest(INettyDatagramChannelType.getDefault(), responseAddress,
-                requestAddress);
+        runNettyNativeDatagramChannelPerformanceTest(type, responseAddress, requestAddress);
     }
 
     private void runNettyNativeDatagramChannelPerformanceTest(final INettyDatagramChannelType type,

@@ -4,14 +4,16 @@ import de.invesdwin.context.integration.channel.sync.netty.IChannelOptionConsume
 import de.invesdwin.util.lang.OperatingSystem;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SelectStrategyFactory;
+import io.netty.channel.epoll.Epoll;
+import io.netty.channel.kqueue.KQueue;
 import io.netty.channel.socket.DatagramChannel;
 
 public interface INettyDatagramChannelType {
 
     static INettyDatagramChannelType getDefault() {
-        if (OperatingSystem.isMac()) {
+        if (OperatingSystem.isMac() && KQueue.isAvailable()) {
             return KQueueNettyDatagramChannelType.INSTANCE;
-        } else if (OperatingSystem.isLinux()) {
+        } else if (OperatingSystem.isLinux() && Epoll.isAvailable()) {
             return EpollNettyDatagramChannelType.INSTANCE;
         } else {
             return NioNettyDatagramChannelType.INSTANCE;
