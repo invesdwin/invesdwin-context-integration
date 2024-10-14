@@ -47,6 +47,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     private String filename;
     @GuardedBy("this")
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
+    private boolean directoryValidated = false;
 
     @GuardedBy("this")
     private transient WebdavFileChannelFinalizer finalizer;
@@ -76,11 +77,15 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     public synchronized void setDirectory(final String directory) {
+        final String directoryBefore = this.directory;
         if (directory == null) {
             this.directory = null;
         } else {
             this.directory = Strings
                     .putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
+        }
+        if (!Objects.equals(directoryBefore, this.directory)) {
+            directoryValidated = false;
         }
     }
 
@@ -152,9 +157,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             Assertions.checkNull(finalizer.webdavClient, "Already connected");
             finalizer.webdavClient = login();
             finalizer.webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
-            if (!finalizer.webdavClient.exists(getDirectoryUrl())) {
-                createAndChangeDirectory();
-            }
+            maybeCreateDirectory();
             finalizer.register(this);
         } catch (final Throwable e) {
             close();
@@ -162,10 +165,24 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         }
     }
 
+    private void maybeCreateDirectory() {
+        if (directoryValidated) {
+            return;
+        }
+        try {
+            if (!finalizer.webdavClient.exists(getDirectoryUrl())) {
+                createDirectory();
+            }
+            directoryValidated = true;
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
      */
-    private synchronized void createAndChangeDirectory() {
+    private synchronized void createDirectory() {
         final String[] pathElements = getDirectory().split("/");
         final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
@@ -173,7 +190,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
                 if (singleDir.length() > 0) {
                     prevPathElements.append(singleDir).append("/");
                     try {
-                        createAndChangeSingleDirectory(prevPathElements.toString());
+                        createSingleDirectory(prevPathElements.toString());
                     } catch (final Throwable t) {
                         throw new RuntimeException("At: " + prevPathElements, t);
                     }
@@ -182,7 +199,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         }
     }
 
-    private synchronized void createAndChangeSingleDirectory(final String singleDir) throws Exception {
+    private synchronized void createSingleDirectory(final String singleDir) throws Exception {
         try {
             finalizer.webdavClient.createDirectory(getServerUri() + singleDir);
         } catch (final SardineException e) {
@@ -328,6 +345,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public synchronized void upload(final File file) {
         assertConnected();
+        maybeCreateDirectory();
         try {
             finalizer.webdavClient.put(getFileUrl(), file, null);
         } catch (final Exception e) {
@@ -343,6 +361,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     @Override
     public synchronized void upload(final InputStream input) {
         assertConnected();
+        maybeCreateDirectory();
         try {
             finalizer.webdavClient.put(getFileUrl(), input);
         } catch (final Exception e) {
