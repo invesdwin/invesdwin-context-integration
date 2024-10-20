@@ -12,7 +12,7 @@
 		<license>
 			<!-- better not use this module if you don't want to put your code under GPL as well. 
 				 For testing/benchmarking purposes only. https://github.com/hhu-bsinfo/hadroNIO/issues/4
-				 See also: https://github.com/invesdwin/invesdwin-context-r#license-discussion -->
+				 See also: https://github.com/invesdwin/invesdwin-scripting/invesdwin-scripting-parent/invesdwin-scripting-r#license-discussion -->
 			<name>GNU General Public License (GPL), Version 3.0</name>
 			<url>http://www.gnu.org/licenses/gpl-3.0.html</url>
 		</license>
