@@ -105,6 +105,9 @@ public final class MpiJobYarnMain {
             if (OPENJDK_EXTRACTED_FOLDER.exists() && !javaTarGz.exists()) {
                 return OPENJDK_EXTRACTED_FOLDER;
             }
+            //CHECKSTYLE:OFF
+            System.out.println("Started downloading [" + javaTarGz + "]");
+            //CHECKSTYLE:ON
             final File javaTarGzPart = new File(javaTarGz.getAbsolutePath() + ".part");
             Files.deleteQuietly(javaTarGzPart);
             Files.deleteQuietly(javaTarGz);
@@ -114,11 +117,20 @@ public final class MpiJobYarnMain {
                 }
             }
             Files.moveFileQuietly(javaTarGzPart, javaTarGz);
+            //CHECKSTYLE:OFF
+            System.out.println("Finished downloading [" + javaTarGz + "]");
+            //CHECKSTYLE:ON
 
+            //CHECKSTYLE:OFF
+            System.out.println("Started extracting [" + javaTarGz + "]");
+            //CHECKSTYLE:ON
             final Archiver archiver = ArchiverFactory.createArchiver(javaTarGz);
             archiver.extract(javaTarGz, OPENJDK_FOLDER);
             Assertions.assertThat(OPENJDK_EXTRACTED_FOLDER).exists();
             Files.deleteQuietly(javaTarGz);
+            //CHECKSTYLE:OFF
+            System.out.println("Finished extracting [" + javaTarGz + "]");
+            //CHECKSTYLE:ON
             return OPENJDK_EXTRACTED_FOLDER;
         } catch (final IOException e) {
             throw new RuntimeException(e);

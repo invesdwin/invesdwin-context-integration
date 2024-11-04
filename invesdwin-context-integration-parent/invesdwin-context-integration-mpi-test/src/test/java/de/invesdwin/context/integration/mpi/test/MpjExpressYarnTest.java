@@ -24,14 +24,18 @@ import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.time.Instant;
 
 @NotThreadSafe
 @Testcontainers
 public class MpjExpressYarnTest extends AMpiTest {
+
+    private static final Log LOG = new Log(MpjExpressYarnTest.class);
 
     //not needed to run the jobs
     private static final boolean HADOOP_FRONTENDS = true;
@@ -81,6 +85,8 @@ public class MpjExpressYarnTest extends AMpiTest {
         final File hadoopFile = new File("mpj/hadoop/hadoop-" + HADOOP_VERSION + ".tar.gz");
         try {
             if (!hadoopFile.exists()) {
+                final Instant started = new Instant();
+                LOG.info("Started downloading [%s]", hadoopFile);
                 final File hadoopFilePart = new File(hadoopFile.getAbsolutePath() + ".part");
                 Files.deleteQuietly(hadoopFilePart);
                 IOUtils.copy(URIs.asUrl("https://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
@@ -88,8 +94,11 @@ public class MpjExpressYarnTest extends AMpiTest {
                 Files.moveFileQuietly(hadoopFilePart, hadoopFile);
                 Files.deleteQuietly(HADOOP_FOLDER);
                 Files.deleteQuietly(hadoopVersionedFolder);
+                LOG.info("Finished downloading [%s] after %s", hadoopFile, started);
             }
             if (!HADOOP_FOLDER.exists()) {
+                final Instant started = new Instant();
+                LOG.info("Started extracting [%s]", hadoopFile);
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
@@ -99,6 +108,7 @@ public class MpjExpressYarnTest extends AMpiTest {
                     Files.copyFile(new File(HADOOP_DOCKER_FOLDER, filename),
                             new File(HADOOP_FOLDER, "etc/hadoop/" + filename));
                 }
+                LOG.info("Finished extracting [%s] after %s", hadoopFile, started);
             }
         } catch (final IOException e) {
             throw new RuntimeException(e);
