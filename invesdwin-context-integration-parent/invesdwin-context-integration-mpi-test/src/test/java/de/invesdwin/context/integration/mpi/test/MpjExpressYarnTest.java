@@ -22,8 +22,8 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
-import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.assertions.Assertions;
@@ -41,7 +41,7 @@ public class MpjExpressYarnTest extends AMpiTest {
     private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
     private static final boolean HADOOP_EXPOSE_HOST = false;
-    private static final String HADOOP_VERSION = "3.3.4";
+    private static final String HADOOP_VERSION = "3.4.1";
     private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
     private static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
     @Container
@@ -127,13 +127,13 @@ public class MpjExpressYarnTest extends AMpiTest {
         script = script.replace("{HADOOP_HOME}", HADOOP_FOLDER.getAbsolutePath());
         final StringBuilder args = new StringBuilder();
         args.append("-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/" + getClass().getSimpleName() + "\" ");
-        //        args.append("-debugYarn");
+        args.append("-debugYarn");
         args.append(" -wdir \"");
         args.append(workDir.getAbsolutePath());
         args.append("\" -jar ");
         args.append(new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN3).getResource().getFile().getAbsolutePath());
         args.append(" ");
-        args.append(MpiJobYarnMain.class.getName());
+        args.append(MpiJobMain.class.getName());
         script = script.replace("{ARGS}", args.toString());
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());

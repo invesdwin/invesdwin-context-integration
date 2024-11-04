@@ -2,7 +2,7 @@
 # https://mygit.th-deg.de/mh11395/hadoop-single-node-cluster/-/tree/master
 
 #we expect most clusters to still run on java 8, so we test against that
-FROM eclipse-temurin:8-jdk-jammy
+FROM eclipse-temurin:11-jdk-jammy
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive && apt-get install -y --no-install-recommends \
         sudo \
