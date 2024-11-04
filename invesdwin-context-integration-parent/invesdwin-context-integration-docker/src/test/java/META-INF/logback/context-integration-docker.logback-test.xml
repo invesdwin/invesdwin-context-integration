@@ -2,6 +2,11 @@
 
 	<logger name="org.testcontainers" additivity="true" level="TRACE">
 	</logger>
-
+	
+	<logger name="org.testcontainers.shaded.com.github.dockerjava.core.exec.InspectContainerCmdExec" additivity="true" level="INFO">
+	</logger>
+	
+	<logger name="org.testcontainers.shaded.com.github.dockerjava.core.command.AbstrDockerCmd" additivity="true" level="INFO">
+	</logger>
 
 </configuration>
