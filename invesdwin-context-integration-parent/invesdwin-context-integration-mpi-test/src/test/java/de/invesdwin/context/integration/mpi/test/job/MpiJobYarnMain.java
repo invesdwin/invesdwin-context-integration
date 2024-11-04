@@ -105,6 +105,7 @@ public final class MpiJobYarnMain {
             if (OPENJDK_EXTRACTED_FOLDER.exists() && !javaTarGz.exists()) {
                 return OPENJDK_EXTRACTED_FOLDER;
             }
+            long started = System.currentTimeMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started downloading [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -118,9 +119,11 @@ public final class MpiJobYarnMain {
             }
             Files.moveFileQuietly(javaTarGzPart, javaTarGz);
             //CHECKSTYLE:OFF
-            System.out.println("Finished downloading [" + javaTarGz + "]");
+            System.out.println(
+                    "Finished downloading [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
             //CHECKSTYLE:ON
 
+            started = System.currentTimeMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started extracting [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -129,7 +132,8 @@ public final class MpiJobYarnMain {
             Assertions.assertThat(OPENJDK_EXTRACTED_FOLDER).exists();
             Files.deleteQuietly(javaTarGz);
             //CHECKSTYLE:OFF
-            System.out.println("Finished extracting [" + javaTarGz + "]");
+            System.out.println(
+                    "Finished extracting [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
             //CHECKSTYLE:ON
             return OPENJDK_EXTRACTED_FOLDER;
         } catch (final IOException e) {
