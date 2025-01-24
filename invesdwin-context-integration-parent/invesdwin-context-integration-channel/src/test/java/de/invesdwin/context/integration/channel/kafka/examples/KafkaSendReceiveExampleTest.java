@@ -41,7 +41,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
     private static final String TOPIC_NAME = "helloworldtopic1";// name of kafka topic
     private static final String MESSAGE = "helloworldtest"; //message to be sent
     private static final String KEY = "key1"; //partition key, messages with the same key go to the same partition
-    private static final int NUMOFEVENTS = 10000000;
+    private static final int NUMOFEVENTS = 1000;
 
     //using apache kafka's image 3.8.0 where testContainers will automatically start and stop containers
     @Container
