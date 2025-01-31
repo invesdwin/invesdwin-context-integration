@@ -114,7 +114,10 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     private void closeLocked() {
         if (endpointSession != null) {
             //no need to interrupt because we have the lock
-            heartbeatFuture.cancel(false);
+            final ScheduledFuture<?> heartbeatFutureCopy = heartbeatFuture;
+            if (heartbeatFutureCopy != null) {
+                heartbeatFutureCopy.cancel(false);
+            }
             try {
                 requestWriterSpinWait.getWriter().close();
             } catch (final Throwable t) {
