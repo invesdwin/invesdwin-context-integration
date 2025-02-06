@@ -170,12 +170,7 @@ public abstract class AChannelTest extends ATest {
     }
 
     protected File newFile(final String name, final boolean tmpfs, final FileChannelType type) {
-        final File baseFolder;
-        if (tmpfs) {
-            baseFolder = SynchronousChannels.getTmpfsFolderOrFallback();
-        } else {
-            baseFolder = ContextProperties.TEMP_DIRECTORY;
-        }
+        final File baseFolder = getBaseFolder(tmpfs);
         final File file = new File(baseFolder, name);
         Files.deleteQuietly(file);
         Assertions.checkFalse(file.exists(), "%s", file);
@@ -195,6 +190,25 @@ public abstract class AChannelTest extends ATest {
         }
         Assertions.checkTrue(file.exists());
         return file;
+    }
+
+    protected File newFolder(final String name, final boolean tmpfs) {
+        final File baseFolder = getBaseFolder(tmpfs);
+        final File folder = new File(baseFolder, name);
+        try {
+            Files.forceMkdir(folder);
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+        return folder;
+    }
+
+    protected File getBaseFolder(final boolean tmpfs) {
+        if (tmpfs) {
+            return SynchronousChannels.getTmpfsFolderOrFallback();
+        } else {
+            return ContextProperties.TEMP_DIRECTORY;
+        }
     }
 
     protected <T> ISynchronousReader<T> maybeSynchronize(final ISynchronousReader<T> reader, final Object synchronize) {
