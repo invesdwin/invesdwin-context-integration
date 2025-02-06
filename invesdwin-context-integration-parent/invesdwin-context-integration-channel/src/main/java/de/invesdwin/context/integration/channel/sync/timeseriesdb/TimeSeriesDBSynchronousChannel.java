@@ -27,13 +27,27 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
     @GuardedBy("this for modification")
     private final AtomicInteger activeCount = new AtomicInteger();
-    private final String key;
+    private final String hashKey;
     private final Integer valueFixedLength;
+    private final TimeSeriesDBSynchronousChannelIndexMode indexMode;
 
-    public TimeSeriesDBSynchronousChannel(final File directory, final String key, final Integer valueFixedLength) {
+    public TimeSeriesDBSynchronousChannel(final File directory, final Integer valueFixedLength) {
         this.directory = directory;
-        this.key = key;
         this.valueFixedLength = valueFixedLength;
+        this.hashKey = newHashKey();
+        this.indexMode = newIndexMode();
+    }
+
+    protected String newHashKey() {
+        return "";
+    }
+
+    protected TimeSeriesDBSynchronousChannelIndexMode newIndexMode() {
+        return TimeSeriesDBSynchronousChannelIndexMode.INDEX;
+    }
+
+    public TimeSeriesDBSynchronousChannelIndexMode getIndexMode() {
+        return indexMode;
     }
 
     @Override
@@ -57,8 +71,8 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
         return database;
     }
 
-    public String getKey() {
-        return key;
+    public String getHashKey() {
+        return hashKey;
     }
 
     private synchronized boolean shouldClose() {

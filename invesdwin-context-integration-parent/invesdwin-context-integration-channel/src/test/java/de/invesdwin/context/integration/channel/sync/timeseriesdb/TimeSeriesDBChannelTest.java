@@ -40,10 +40,9 @@ public class TimeSeriesDBChannelTest extends AChannelTest {
     private void runTimeSeriesDBPerformanceTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final String key = "";
-            final TimeSeriesDBSynchronousChannel requestChannel = new TimeSeriesDBSynchronousChannel(requestFile, key,
+            final TimeSeriesDBSynchronousChannel requestChannel = new TimeSeriesDBSynchronousChannel(requestFile,
                     MAX_MESSAGE_SIZE);
-            final TimeSeriesDBSynchronousChannel responseChannel = new TimeSeriesDBSynchronousChannel(responseFile, key,
+            final TimeSeriesDBSynchronousChannel responseChannel = new TimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
             final ISynchronousWriter<IByteBufferProvider> responseWriter = new TimeSeriesDBSynchronousWriter(
                     responseChannel);

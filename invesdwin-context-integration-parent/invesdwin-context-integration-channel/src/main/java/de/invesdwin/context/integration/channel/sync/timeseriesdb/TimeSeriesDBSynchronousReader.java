@@ -18,18 +18,17 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
 
     private final TimeSeriesDBSynchronousChannel channel;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
-    private long lastIndex = FDates.MIN_DATE.millisValue();
+    private long lastIndex = newIgnoreValuesBeforeIndex();
     private ICloseableIterator<IndexedByteBuffer> readRange;
     private FDate readRangeToIndex;
     private IndexedByteBuffer message;
 
-    /**
-     * TODO: we should let readers decide from what message index to start from; it might also make sense to offer a
-     * reader/writer option that use actual timestamps instead of slightly faster indexes so that the decision from
-     * which message to start from can be made based on time, not just on index.
-     */
     public TimeSeriesDBSynchronousReader(final TimeSeriesDBSynchronousChannel channel) {
         this.channel = channel;
+    }
+
+    protected long newIgnoreValuesBeforeIndex() {
+        return FDates.MIN_DATE.millisValue();
     }
 
     @Override
@@ -71,12 +70,12 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
     }
 
     private void readFirst() {
-        readRangeToIndex = database.getLatestValueKey(channel.getKey(), FDates.MAX_DATE);
+        readRangeToIndex = database.getLatestValueKey(channel.getHashKey(), FDates.MAX_DATE);
         if (readRangeToIndex == null || readRangeToIndex.millisValue() <= lastIndex) {
             //no additional data available yet
             return;
         }
-        readRange = database.rangeValues(channel.getKey(), new FDate(lastIndex + 1), readRangeToIndex).iterator();
+        readRange = database.rangeValues(channel.getHashKey(), new FDate(lastIndex + 1), readRangeToIndex).iterator();
         try {
             message = readRange.next();
         } catch (final NoSuchElementException e1) {

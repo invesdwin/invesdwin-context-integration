@@ -17,20 +17,22 @@ import de.invesdwin.util.time.date.FDates;
 public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private final TimeSeriesDBSynchronousChannel channel;
+    private final TimeSeriesDBSynchronousChannelIndexMode mode;
     private long lastIndex = Long.MIN_VALUE;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
 
     public TimeSeriesDBSynchronousWriter(final TimeSeriesDBSynchronousChannel channel) {
         this.channel = channel;
+        this.mode = channel.getIndexMode();
     }
 
     @Override
     public void open() throws IOException {
         channel.open();
         database = channel.getDatabase();
-        final FDate lastTime = database.getLatestValueKey(channel.getKey(), FDates.MAX_DATE);
+        final FDate lastTime = database.getLatestValueKey(channel.getHashKey(), FDates.MAX_DATE);
         if (lastTime == null) {
-            lastIndex = FDates.MIN_DATE.millisValue();
+            lastIndex = mode.initialIndex();
         } else {
             lastIndex = lastTime.millisValue();
         }
@@ -52,9 +54,9 @@ public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBu
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        lastIndex++;
+        lastIndex = mode.nextIndex(lastIndex);
         final IByteBuffer messageCopy = ByteBuffers.wrap(message.asBuffer().asByteArrayCopy());
-        database.putNextLiveValue(channel.getKey(), new IndexedByteBuffer(lastIndex, messageCopy));
+        database.putNextLiveValue(channel.getHashKey(), new IndexedByteBuffer(lastIndex, messageCopy));
     }
 
     @Override
