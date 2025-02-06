@@ -23,6 +23,11 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
     private FDate readRangeToIndex;
     private IndexedByteBuffer message;
 
+    /**
+     * TODO: we should let readers decide from what message index to start from; it might also make sense to offer a
+     * reader/writer option that use actual timestamps instead of slightly faster indexes so that the decision from
+     * which message to start from can be made based on time, not just on index.
+     */
     public TimeSeriesDBSynchronousReader(final TimeSeriesDBSynchronousChannel channel) {
         this.channel = channel;
     }
