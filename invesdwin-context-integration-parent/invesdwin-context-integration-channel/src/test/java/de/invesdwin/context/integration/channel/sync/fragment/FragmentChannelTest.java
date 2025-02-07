@@ -6,13 +6,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class FragmentChannelTest extends AChannelTest {
+public class FragmentChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testFragmentPerformance() throws InterruptedException {
@@ -20,7 +20,7 @@ public class FragmentChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
         final File requestFile = newFile("testFragmentPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testFragmentPerformance_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Override

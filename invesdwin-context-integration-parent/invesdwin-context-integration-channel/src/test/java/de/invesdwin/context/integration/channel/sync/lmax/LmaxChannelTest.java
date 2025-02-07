@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import com.lmax.disruptor.RingBuffer;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
@@ -21,13 +21,13 @@ import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public class LmaxChannelTest extends AChannelTest {
+public class LmaxChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testLmaxDisruptorQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
         final Queue<IReference<FDate>> requestQueue = new LmaxDisruptorQueue<IReference<FDate>>(256, true);
-        runQueuePerformanceTest(responseQueue, requestQueue, null, null);
+        runQueueLatencyTest(responseQueue, requestQueue, null, null);
     }
 
     @Disabled("flakey test")
@@ -45,10 +45,10 @@ public class LmaxChannelTest extends AChannelTest {
         final ISynchronousWriter<FDate> responseWriter = new LmaxSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new LmaxSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
-        executor.execute(new ServerTask(requestReader, responseWriter));
+        executor.execute(new LatencyServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new LmaxSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new LmaxSynchronousReader<FDate>(responseQueue);
-        new ClientTask(requestWriter, responseReader).run();
+        new LatencyClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

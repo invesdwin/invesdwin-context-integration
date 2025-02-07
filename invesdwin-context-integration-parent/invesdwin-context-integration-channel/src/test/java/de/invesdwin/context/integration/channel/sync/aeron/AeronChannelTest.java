@@ -4,7 +4,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -14,7 +14,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class AeronChannelTest extends AChannelTest {
+public class AeronChannelTest extends ALatencyChannelTest {
 
     //https://github.com/real-logic/aeron/blob/master/aeron-driver/src/main/c/README.md
     private static final AeronMediaDriverMode MODE = AeronMediaDriverMode.EMBEDDED;
@@ -47,12 +47,12 @@ public class AeronChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new AeronSynchronousReader(instance,
                 requestChannel, requestStreamId);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance,
                 requestChannel, requestStreamId);
         final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
                 responseChannel, responseStreamId);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
         Assertions.checkTrue(instance.isClosed());

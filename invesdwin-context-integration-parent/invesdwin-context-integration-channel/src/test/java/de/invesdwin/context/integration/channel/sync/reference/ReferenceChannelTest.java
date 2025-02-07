@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
@@ -23,7 +23,7 @@ import de.invesdwin.util.concurrent.reference.VolatileReference;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public class ReferenceChannelTest extends AChannelTest {
+public class ReferenceChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testSynchronizedReferencePerformance() throws InterruptedException {
@@ -68,10 +68,10 @@ public class ReferenceChannelTest extends AChannelTest {
         final ISynchronousWriter<FDate> responseWriter = new CloseableReferenceSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new CloseableReferenceSynchronousReader<FDate>(requestQueue);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runReferencePerformanceTest", 1);
-        executor.execute(new ServerTask(requestReader, responseWriter));
+        executor.execute(new LatencyServerTask(requestReader, responseWriter));
         final ISynchronousWriter<FDate> requestWriter = new CloseableReferenceSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new CloseableReferenceSynchronousReader<FDate>(responseQueue);
-        new ClientTask(requestWriter, responseReader).run();
+        new LatencyClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }

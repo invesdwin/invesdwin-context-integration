@@ -6,10 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 
 @NotThreadSafe
-public class NativePipeChannelTest extends AChannelTest {
+public class NativePipeChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testNamedPipeNativePerformance() throws InterruptedException {
@@ -17,7 +17,7 @@ public class NativePipeChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.PIPE_NATIVE;
         final File requestFile = newFile("testNamedPipePerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testNamedPipePerformance_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Test
@@ -26,7 +26,7 @@ public class NativePipeChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.PIPE_NATIVE;
         final File requestFile = newFile("testNamedPipePerformanceWithTmpfs_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testNamedPipePerformanceWithTmpfs_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
 }

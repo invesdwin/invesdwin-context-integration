@@ -6,10 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 
 @NotThreadSafe
-public class BlockingMappedChannelTest extends AChannelTest {
+public class BlockingMappedChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBlockingMappedMemoryPerformance() throws InterruptedException {
@@ -17,7 +17,7 @@ public class BlockingMappedChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
         final File requestFile = newFile("testBlockingMappedMemoryPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testBlockingMappedMemoryPerformance_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Test
@@ -26,7 +26,7 @@ public class BlockingMappedChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
         final File requestFile = newFile("testBlockingMappedMemoryPerformanceWithTmpfs_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testBlockingMappedMemoryPerformanceWithTmpfs_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
 }

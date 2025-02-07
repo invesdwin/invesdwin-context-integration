@@ -18,9 +18,9 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
-import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.AChannelTest.ClientTask;
-import de.invesdwin.context.integration.channel.AChannelTest.ServerTask;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
@@ -92,7 +92,7 @@ public class MpiJobMain extends AMain {
         switch (MPI.rank()) {
         case 0:
             try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
-                    AChannelTest.MAX_MESSAGE_SIZE)) {
+                    ALatencyChannelTest.MAX_MESSAGE_SIZE)) {
                 bcastWriter.open();
                 final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
                         .borrowObject(bcastWriter);
@@ -109,7 +109,7 @@ public class MpiJobMain extends AMain {
             break;
         case 1:
             try (ISynchronousReader<IByteBufferProvider> bcastReader = MPI.newBcastReader(0,
-                    AChannelTest.MAX_MESSAGE_SIZE)) {
+                    ALatencyChannelTest.MAX_MESSAGE_SIZE)) {
                 bcastReader.open();
                 final SynchronousReaderSpinWait<IByteBufferProvider> bcastReaderSpinWait = SynchronousReaderSpinWaitPool
                         .borrowObject(bcastReader);
@@ -136,23 +136,23 @@ public class MpiJobMain extends AMain {
     private void testPerformance() {
         switch (MPI.rank()) {
         case 0:
-            final ISynchronousWriter<FDate> requestWriter = AChannelTest
-                    .newCommandWriter(MPI.newSendWriter(1, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            final ISynchronousReader<FDate> responseReader = AChannelTest
-                    .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ClientTask.class)) {
-                new ClientTask(log, requestWriter, responseReader).run();
+            final ISynchronousWriter<FDate> requestWriter = ALatencyChannelTest
+                    .newSerdeWriter(MPI.newSendWriter(1, 0, ALatencyChannelTest.MAX_MESSAGE_SIZE));
+            final ISynchronousReader<FDate> responseReader = ALatencyChannelTest
+                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), ALatencyChannelTest.MAX_MESSAGE_SIZE));
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyClientTask.class)) {
+                new LatencyClientTask(log, requestWriter, responseReader).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
             break;
         case 1:
-            final ISynchronousReader<FDate> requestReader = AChannelTest
-                    .newCommandReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            final ISynchronousWriter<FDate> responseWriter = AChannelTest
-                    .newCommandWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            try (OutputStream log = newLog(MPI.rank(), MPI.size(), ServerTask.class)) {
-                new ServerTask(log, requestReader, responseWriter).run();
+            final ISynchronousReader<FDate> requestReader = ALatencyChannelTest
+                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), ALatencyChannelTest.MAX_MESSAGE_SIZE));
+            final ISynchronousWriter<FDate> responseWriter = ALatencyChannelTest
+                    .newSerdeWriter(MPI.newSendWriter(0, 0, ALatencyChannelTest.MAX_MESSAGE_SIZE));
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyServerTask.class)) {
+                new LatencyServerTask(log, requestReader, responseWriter).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }

@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class NettyNativeDatagramChannelTest extends AChannelTest {
+public class NettyNativeDatagramChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testNettyNativeDatagramChannelPerformance() throws InterruptedException {
@@ -42,12 +42,12 @@ public class NettyNativeDatagramChannelTest extends AChannelTest {
                 newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors
                 .newFixedThreadPool("runNettyNativeDatagramChannelPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeDatagramSynchronousWriter(
                 newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeDatagramSynchronousReader(
                 newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize()));
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

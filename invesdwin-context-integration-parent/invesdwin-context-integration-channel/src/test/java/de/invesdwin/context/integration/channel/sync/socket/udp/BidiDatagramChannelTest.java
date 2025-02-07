@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -19,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class BidiDatagramChannelTest extends AChannelTest {
+public class BidiDatagramChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testDatagramPerformance() throws InterruptedException {
@@ -51,10 +51,10 @@ public class BidiDatagramChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new DatagramSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new DatagramSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new DatagramSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new DatagramSynchronousReader(clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

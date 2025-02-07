@@ -6,13 +6,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.security.crypto.CryptoProperties;
 import de.invesdwin.util.lang.UUIDs;
 
 @NotThreadSafe
-public class Srp6HandshakeProviderTest extends AChannelTest {
+public class Srp6HandshakeProviderTest extends ALatencyChannelTest {
 
     @Test
     public void testSrp6HandshakePerformance() throws InterruptedException {
@@ -27,7 +27,7 @@ public class Srp6HandshakeProviderTest extends AChannelTest {
                 new PreSharedSrp6ServerHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier, userId, password));
         final HandshakeChannelFactory clientHandshakeChannel = new HandshakeChannelFactory(
                 new Srp6ClientHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier, userId, password));
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, serverHandshakeChannel,
+        runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshakeChannel,
                 clientHandshakeChannel);
     }
 

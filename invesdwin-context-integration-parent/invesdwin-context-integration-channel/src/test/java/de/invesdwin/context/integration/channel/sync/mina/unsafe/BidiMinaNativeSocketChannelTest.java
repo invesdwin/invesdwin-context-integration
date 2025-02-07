@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
@@ -21,7 +21,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("requires older apr version")
 @NotThreadSafe
-public class BidiMinaNativeSocketChannelTest extends AChannelTest {
+public class BidiMinaNativeSocketChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testMinaSocketChannelPerformance() throws InterruptedException {
@@ -46,12 +46,12 @@ public class BidiMinaNativeSocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new MinaNativeSocketSynchronousReader(
                 serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runMinaSocketChannelPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new MinaNativeSocketSynchronousWriter(
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaNativeSocketSynchronousReader(
                 clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -6,14 +6,14 @@ import javax.annotation.concurrent.Immutable;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.NioNettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 
 @Immutable
-public class NettyDatagramHandlerTest extends AChannelTest {
+public class NettyDatagramHandlerTest extends ALatencyChannelTest {
 
     @Test
     public void testNettyDatagramHandlerPerformance() throws InterruptedException {
@@ -29,10 +29,10 @@ public class NettyDatagramHandlerTest extends AChannelTest {
         final NettyDatagramSynchronousChannel clientChannel = new NettyDatagramSynchronousChannel(type, address, false,
                 getMaxMessageSize());
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
-                newCommandHandlerFactory(new WriterHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyWriterHandlerFactory()), false);
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,
-                newCommandHandlerFactory(new ReaderHandlerFactory()), false);
-        runHandlerPerformanceTest(serverHandler, clientHandler);
+                newSerdeHandlerFactory(new LatencyReaderHandlerFactory()), false);
+        runHandlerLatencyTest(serverHandler, clientHandler);
     }
 
 }

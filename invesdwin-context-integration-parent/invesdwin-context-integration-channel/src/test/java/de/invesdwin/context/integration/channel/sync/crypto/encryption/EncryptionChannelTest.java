@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
@@ -19,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class EncryptionChannelTest extends AChannelTest {
+public class EncryptionChannelTest extends ALatencyChannelTest {
 
     public static final DerivedKeyProvider DERIVED_KEY_PROVIDER;
     public static final IEncryptionFactory ENCRYPTION_FACTORY;
@@ -43,7 +43,7 @@ public class EncryptionChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.MAPPED;
         final File requestFile = newFile("testEncryptionPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testEncryptionPerformance_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Override

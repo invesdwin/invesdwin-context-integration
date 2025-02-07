@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.EncryptionChannelTest;
@@ -21,7 +21,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamEncryptionNativeSocketChannelTest extends AChannelTest {
+public class StreamEncryptionNativeSocketChannelTest extends ALatencyChannelTest {
 
     public static final IEncryptionFactory ENCRYPTION_FACTORY = EncryptionChannelTest.ENCRYPTION_FACTORY;
 
@@ -41,12 +41,12 @@ public class StreamEncryptionNativeSocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new StreamEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(serverChannel), ENCRYPTION_FACTORY);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new StreamEncryptionSynchronousWriter(
                 new NativeSocketSynchronousWriter(clientChannel), ENCRYPTION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> responseReader = new StreamEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(clientChannel), ENCRYPTION_FACTORY);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

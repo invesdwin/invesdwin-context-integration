@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -16,7 +16,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiBlockingSocketChannelTest extends AChannelTest {
+public class BidiBlockingSocketChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBlockingSocketPerformance() throws InterruptedException {
@@ -41,12 +41,12 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingSocketSynchronousReader(
                 serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testSocketPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
                 clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

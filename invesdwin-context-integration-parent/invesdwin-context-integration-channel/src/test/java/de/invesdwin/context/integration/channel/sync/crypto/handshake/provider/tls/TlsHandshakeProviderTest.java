@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
@@ -15,7 +15,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class TlsHandshakeProviderTest extends AChannelTest {
+public class TlsHandshakeProviderTest extends ALatencyChannelTest {
 
     @Test
     public void testTlsHandshakePerformance() throws InterruptedException {
@@ -29,7 +29,7 @@ public class TlsHandshakeProviderTest extends AChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
-        runPerformanceTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
+        runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,

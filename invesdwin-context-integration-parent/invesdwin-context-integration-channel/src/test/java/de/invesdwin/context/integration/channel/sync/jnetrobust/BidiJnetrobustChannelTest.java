@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -15,7 +15,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiJnetrobustChannelTest extends AChannelTest {
+public class BidiJnetrobustChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -33,10 +33,10 @@ public class BidiJnetrobustChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new JnetrobustSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new JnetrobustSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiJnetrobustPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new JnetrobustSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JnetrobustSynchronousReader(clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

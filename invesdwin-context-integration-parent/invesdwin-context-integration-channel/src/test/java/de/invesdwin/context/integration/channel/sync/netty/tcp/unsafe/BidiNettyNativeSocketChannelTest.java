@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
@@ -19,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("unreliable in testsuite")
 @NotThreadSafe
-public class BidiNettyNativeSocketChannelTest extends AChannelTest {
+public class BidiNettyNativeSocketChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNettySocketChannelPerformance() throws InterruptedException {
@@ -40,12 +40,12 @@ public class BidiNettyNativeSocketChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeSocketSynchronousReader(
                 serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettySocketChannelPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeSocketSynchronousWriter(
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeSocketSynchronousReader(
                 clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

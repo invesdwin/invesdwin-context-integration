@@ -9,7 +9,7 @@ import javax.annotation.concurrent.Immutable;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -43,7 +43,7 @@ public class RpcTestService implements IRpcTestService {
 
     public RpcTestService(final int rpcClientThreads, final OutputStream log) {
         this.rpcClientThreads = rpcClientThreads;
-        this.flushInterval = AChannelTest.FLUSH_INTERVAL * rpcClientThreads;
+        this.flushInterval = ALatencyChannelTest.FLUSH_INTERVAL * rpcClientThreads;
         this.log = log;
     }
 
@@ -56,17 +56,17 @@ public class RpcTestService implements IRpcTestService {
                 }
             }
         }
-        if (AChannelTest.DEBUG) {
+        if (ALatencyChannelTest.DEBUG) {
             log.write("server request in\n".getBytes());
         }
         final FDate response = date.addMilliseconds(1);
         //        FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
-        if (AChannelTest.DEBUG) {
+        if (ALatencyChannelTest.DEBUG) {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
         final int count = countHolder.incrementAndGet();
         if (count % flushInterval == 0) {
-            AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.VALUES * rpcClientThreads);
+            ALatencyChannelTest.printProgress(log, "Writes", writesStart, count, ALatencyChannelTest.VALUES * rpcClientThreads);
         }
         return response;
     }

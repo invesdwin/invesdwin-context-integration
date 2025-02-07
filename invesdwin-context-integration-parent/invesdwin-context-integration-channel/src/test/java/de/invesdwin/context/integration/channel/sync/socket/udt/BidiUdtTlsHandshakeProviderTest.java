@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
@@ -23,7 +23,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BidiUdtTlsHandshakeProviderTest extends AChannelTest {
+public class BidiUdtTlsHandshakeProviderTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNioUdtPerformance() throws InterruptedException {
@@ -45,12 +45,12 @@ public class BidiUdtTlsHandshakeProviderTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new UdtSynchronousReader(serverChannel));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiUdtPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new UdtSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new UdtSynchronousReader(clientChannel));
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

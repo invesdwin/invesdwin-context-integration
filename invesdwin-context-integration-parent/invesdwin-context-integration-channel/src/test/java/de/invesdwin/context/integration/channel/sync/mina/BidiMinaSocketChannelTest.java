@@ -9,7 +9,7 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
@@ -20,7 +20,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiMinaSocketChannelTest extends AChannelTest {
+public class BidiMinaSocketChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiMinaSocketChannelPerformance() throws InterruptedException {
@@ -55,10 +55,10 @@ public class BidiMinaSocketChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new MinaSocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new MinaSocketSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runMinaSocketChannelPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new MinaSocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaSocketSynchronousReader(clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
@@ -19,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("unreliable in test suite")
 @NotThreadSafe
-public class NettyUdtSynchronousChannelTest extends AChannelTest {
+public class NettyUdtSynchronousChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testNettyUdtChannelPerformance() throws InterruptedException {
@@ -38,12 +38,12 @@ public class NettyUdtSynchronousChannelTest extends AChannelTest {
                 newNettyUdtChannel(type, requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
                 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(
                 newNettyUdtChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(
                 newNettyUdtChannel(type, responseAddress, true, getMaxMessageSize()));
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

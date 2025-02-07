@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.EncryptionChannelTest;
@@ -23,7 +23,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamVerifiedEncryptionNativeSocketChannelTest extends AChannelTest {
+public class StreamVerifiedEncryptionNativeSocketChannelTest extends ALatencyChannelTest {
 
     public static final IEncryptionFactory ENCRYPTION_FACTORY = EncryptionChannelTest.ENCRYPTION_FACTORY;
     public static final IVerificationFactory VERIFICATION_FACTORY = VerificationChannelTest.VERIFICATION_FACTORY;
@@ -44,12 +44,12 @@ public class StreamVerifiedEncryptionNativeSocketChannelTest extends AChannelTes
         final ISynchronousReader<IByteBufferProvider> requestReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(serverChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new StreamVerifiedEncryptionSynchronousWriter(
                 new NativeSocketSynchronousWriter(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> responseReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

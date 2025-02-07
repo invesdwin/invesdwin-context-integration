@@ -7,7 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -16,7 +16,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiSctpChannelTest extends AChannelTest {
+public class BidiSctpChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -32,10 +32,10 @@ public class BidiSctpChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new SctpSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new SctpSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new SctpSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new SctpSynchronousReader(clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

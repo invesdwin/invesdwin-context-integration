@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
@@ -17,7 +17,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiNettyUdtSynchronousChannelTest extends AChannelTest {
+public class BidiNettyUdtSynchronousChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNettyUdtChannelPerformance() throws InterruptedException {
@@ -34,10 +34,10 @@ public class BidiNettyUdtSynchronousChannelTest extends AChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyUdtSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyUdtSynchronousReader(serverChannel);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyUdtChannelPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(clientChannel);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

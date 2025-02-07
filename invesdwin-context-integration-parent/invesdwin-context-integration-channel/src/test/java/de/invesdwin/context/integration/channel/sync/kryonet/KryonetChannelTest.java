@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
@@ -15,7 +15,7 @@ import de.invesdwin.util.lang.uri.Addresses;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class KryonetChannelTest extends AChannelTest {
+public class KryonetChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testKryonetTcpPerformance() throws InterruptedException {
@@ -34,12 +34,12 @@ public class KryonetChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new KryonetSynchronousReader(address,
                 requestTcpPort, requestUdpPort, false);
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new KryonetSynchronousWriter(address,
                 requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> responseReader = new KryonetSynchronousReader(address,
                 responseTcpPort, responseUdpPort, false);
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

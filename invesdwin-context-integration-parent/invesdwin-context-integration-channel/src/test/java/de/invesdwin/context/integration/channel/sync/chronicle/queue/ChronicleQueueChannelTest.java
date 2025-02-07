@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
@@ -16,7 +16,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 
 @NotThreadSafe
-public class ChronicleQueueChannelTest extends AChannelTest {
+public class ChronicleQueueChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testChroniclePerformance() throws InterruptedException {
@@ -52,12 +52,12 @@ public class ChronicleQueueChannelTest extends AChannelTest {
             final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleQueueSynchronousReader(
                     requestFile);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+            executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleQueueSynchronousWriter(
                     requestFile);
             final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
                     responseFile);
-            new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+            new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
             executor.shutdown();
             executor.awaitTermination();
         } finally {

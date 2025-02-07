@@ -8,8 +8,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.AChannelTest.ClientTask;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -27,7 +27,7 @@ public class RpcClientTask implements Runnable {
 
     public RpcClientTask(final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
-        this(new Log(ClientTask.class), client, clientId, mode);
+        this(new Log(LatencyClientTask.class), client, clientId, mode);
     }
 
     public RpcClientTask(final Log log, final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
@@ -49,9 +49,9 @@ public class RpcClientTask implements Runnable {
         FDate prevValue = null;
         int count = 0;
         try {
-            try (ICloseableIterator<FDate> values = AChannelTest.newValues().iterator()) {
-                while (count < AChannelTest.VALUES) {
-                    if (AChannelTest.DEBUG) {
+            try (ICloseableIterator<FDate> values = ALatencyChannelTest.newValues().iterator()) {
+                while (count < ALatencyChannelTest.VALUES) {
+                    if (ALatencyChannelTest.DEBUG) {
                         log.write((clientId + ": client request out\n").getBytes());
                     }
                     final FDate request = values.next();
@@ -60,7 +60,7 @@ public class RpcClientTask implements Runnable {
                         //don't count in connection establishment
                         readsStart = new Instant();
                     }
-                    if (AChannelTest.DEBUG) {
+                    if (ALatencyChannelTest.DEBUG) {
                         log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }
                     Assertions.checkNotNull(response);
@@ -77,10 +77,10 @@ public class RpcClientTask implements Runnable {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        Assertions.checkEquals(AChannelTest.VALUES, count);
+        Assertions.checkEquals(ALatencyChannelTest.VALUES, count);
         try {
-            AChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, AChannelTest.VALUES,
-                    AChannelTest.VALUES);
+            ALatencyChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, ALatencyChannelTest.VALUES,
+                    ALatencyChannelTest.VALUES);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

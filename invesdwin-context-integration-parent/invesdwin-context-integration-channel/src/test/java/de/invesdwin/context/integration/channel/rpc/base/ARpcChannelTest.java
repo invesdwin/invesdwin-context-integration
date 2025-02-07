@@ -6,7 +6,7 @@ import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.base.client.SynchronousEndpointClient;
@@ -34,7 +34,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public abstract class ARpcChannelTest extends AChannelTest {
+public abstract class ARpcChannelTest extends ALatencyChannelTest {
 
     public static final int RPC_CLIENT_THREADS = DEBUG ? 1 : 10;
     public static final int RPC_CLIENT_TRANSPORTS = DEBUG ? 1 : 2;

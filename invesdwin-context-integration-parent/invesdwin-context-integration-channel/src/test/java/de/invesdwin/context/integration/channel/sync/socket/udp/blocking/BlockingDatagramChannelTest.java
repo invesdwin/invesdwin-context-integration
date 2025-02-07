@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("hangs sometimes in testsuite")
 @NotThreadSafe
-public class BlockingDatagramChannelTest extends AChannelTest {
+public class BlockingDatagramChannelTest extends ALatencyChannelTest {
     @Test
     public void testBlockingDatagramSocketPerformance() throws InterruptedException {
         final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
@@ -34,12 +34,12 @@ public class BlockingDatagramChannelTest extends AChannelTest {
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingDatagramSynchronousReader(
                 newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
-        executor.execute(new ServerTask(newCommandReader(requestReader), newCommandWriter(responseWriter)));
+        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingDatagramSynchronousWriter(
                 newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingDatagramSynchronousReader(
                 newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
-        new ClientTask(newCommandWriter(requestWriter), newCommandReader(responseReader)).run();
+        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
         executor.shutdown();
         executor.awaitTermination();
     }

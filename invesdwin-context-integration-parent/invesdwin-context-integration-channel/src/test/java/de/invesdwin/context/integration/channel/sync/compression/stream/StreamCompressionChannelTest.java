@@ -6,13 +6,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamCompressionChannelTest extends AChannelTest {
+public class StreamCompressionChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testCompressionPerformance() throws InterruptedException {
@@ -20,7 +20,7 @@ public class StreamCompressionChannelTest extends AChannelTest {
         final FileChannelType pipes = FileChannelType.MAPPED;
         final File requestFile = newFile("testStreamCompressionPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testStreamCompressionPerformance_response.pipe", tmpfs, pipes);
-        runPerformanceTest(pipes, requestFile, responseFile, null, null);
+        runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Override
