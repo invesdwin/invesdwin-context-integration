@@ -14,4 +14,9 @@ public class DistributedLatencyReport extends ALatencyReport {
         return System.currentTimeMillis();
     }
 
+    @Override
+    protected String newHeader() {
+        return "ms";
+    }
+
 }

@@ -18,4 +18,9 @@ public class LocalLatencyReport extends ALatencyReport {
         return System.nanoTime();
     }
 
+    @Override
+    protected String newHeader() {
+        return "ns";
+    }
+
 }
