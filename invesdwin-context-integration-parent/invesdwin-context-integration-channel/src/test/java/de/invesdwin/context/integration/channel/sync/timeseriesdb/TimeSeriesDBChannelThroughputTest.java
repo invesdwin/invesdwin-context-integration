@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AThroughputChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.Executors;
@@ -15,7 +15,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class TimeSeriesDBChannelTest extends ALatencyChannelTest {
+public class TimeSeriesDBChannelThroughputTest extends AThroughputChannelTest {
 
     @Test
     public void testTimeSeriesDBPerformance() throws InterruptedException {
@@ -40,21 +40,15 @@ public class TimeSeriesDBChannelTest extends ALatencyChannelTest {
     private void runTimeSeriesDBPerformanceTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final TimeSeriesDBSynchronousChannel requestChannel = new TimeSeriesDBSynchronousChannel(requestFile,
+            final TimeSeriesDBSynchronousChannel channel = new TimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
-            final TimeSeriesDBSynchronousChannel responseChannel = new TimeSeriesDBSynchronousChannel(responseFile,
-                    MAX_MESSAGE_SIZE);
-            final ISynchronousWriter<IByteBufferProvider> responseWriter = new TimeSeriesDBSynchronousWriter(
-                    responseChannel);
-            final ISynchronousReader<IByteBufferProvider> requestReader = new TimeSeriesDBSynchronousReader(
-                    requestChannel);
+            final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(
+                    channel);
             final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
-            final ISynchronousWriter<IByteBufferProvider> requestWriter = new TimeSeriesDBSynchronousWriter(
-                    requestChannel);
-            final ISynchronousReader<IByteBufferProvider> responseReader = new TimeSeriesDBSynchronousReader(
-                    responseChannel);
-            new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
+            executor.execute(new ThroughputSenderTask(newSerdeWriter(channelWriter)));
+            final ISynchronousReader<IByteBufferProvider> channelReader = new TimeSeriesDBSynchronousReader(
+                    channel);
+            new ThroughputReceiverTask(newSerdeReader(channelReader)).run();
             executor.shutdown();
             executor.awaitTermination();
         } finally {
