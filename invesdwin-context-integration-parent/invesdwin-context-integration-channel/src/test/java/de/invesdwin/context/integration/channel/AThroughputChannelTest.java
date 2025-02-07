@@ -11,6 +11,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
+import de.invesdwin.context.integration.channel.report.ILatencyReport;
+import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -23,6 +25,7 @@ import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderS
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.reference.IReference;
@@ -30,6 +33,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.IFDateProvider;
 
 @NotThreadSafe
 public abstract class AThroughputChannelTest extends AChannelTest {
@@ -118,7 +122,10 @@ public abstract class AThroughputChannelTest extends AChannelTest {
         public void run() {
             Instant readsStart = new Instant();
             FDate prevValue = null;
-            int count = 0;
+            int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+            final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
+                    "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
             try {
                 if (DEBUG) {
                     log.write("receiver open channel reader\n".getBytes());
@@ -126,9 +133,14 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                 channelReader.open();
                 readsStart = new Instant();
                 final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(channelReader);
-                while (count < VALUES) {
+                while (count < MESSAGE_COUNT) {
+                    if (count == 0) {
+                        //don't count in connection establishment
+                        readsStart = new Instant();
+                    }
                     final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
                     channelReader.readFinished();
+                    latencyReportMessageReceived.measureLatency(readMessage);
                     if (DEBUG) {
                         log.write(("receiver channel in [" + readMessage + "]\n").getBytes());
                     }
@@ -144,18 +156,18 @@ public abstract class AThroughputChannelTest extends AChannelTest {
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
-            Assertions.checkEquals(VALUES, count);
             try {
                 if (DEBUG) {
                     log.write("receiver close channel reader\n".getBytes());
                 }
+                Assertions.checkEquals(MESSAGE_COUNT, count);
+                printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
                 channelReader.close();
-                printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
+                latencyReportMessageReceived.close();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     public static class ThroughputSenderTask implements Runnable {
@@ -179,28 +191,43 @@ public abstract class AThroughputChannelTest extends AChannelTest {
         @Override
         public void run() {
             final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(channelWriter);
+            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+            final ILatencyReport latencyReportMessageSent = latencyReportFactory
+                    .newLatencyReport("throughput/1_" + ThroughputSenderTask.class.getSimpleName() + "_messageSent");
             try {
-                int i = 0;
                 if (DEBUG) {
                     log.write("sender open channel writer\n".getBytes());
                 }
+                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
                 channelWriter.open();
-                final Instant writesStart = new Instant();
-                for (final FDate date : newValues()) {
-                    writeSpinWait.waitForWrite(date, MAX_WAIT_DURATION);
-                    if (DEBUG) {
-                        log.write(("sender channel out [" + date + "]\n").getBytes());
-                    }
-                    i++;
-                    if (i % FLUSH_INTERVAL == 0) {
-                        printProgress(log, "Writes", writesStart, i, VALUES);
+                Instant writesStart = new Instant();
+                try (ICloseableIterator<? extends IFDateProvider> values = latencyReportMessageSent.newRequestMessages()
+                        .iterator()) {
+                    while (count < MESSAGE_COUNT) {
+                        if (count == 0) {
+                            //don't count in connection establishment
+                            writesStart = new Instant();
+                        }
+                        final IFDateProvider requestProvider = values.next();
+                        final FDate value = requestProvider.asFDate();
+                        writeSpinWait.waitForWrite(value, MAX_WAIT_DURATION);
+                        latencyReportMessageSent.measureLatency(value);
+                        if (DEBUG) {
+                            log.write(("sender channel out [" + value + "]\n").getBytes());
+                        }
+                        if (count % FLUSH_INTERVAL == 0) {
+                            printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
+                        }
+                        count++;
                     }
                 }
-                printProgress(log, "WritesFinished", writesStart, VALUES, VALUES);
+                Assertions.checkEquals(MESSAGE_COUNT, count);
+                printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
                 if (DEBUG) {
                     log.write("sender close channel writer\n".getBytes());
                 }
                 channelWriter.close();
+                latencyReportMessageSent.close();
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }

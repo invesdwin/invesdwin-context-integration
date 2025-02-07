@@ -35,7 +35,7 @@ import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBCh
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         CompressionChannelTest.class, StreamCompressionChannelTest.class, CryptoChannelTestSuite.class,
         SocketChannelTestSuite.class, NettyChannelTestSuite.class, MinaChannelTestSuite.class,
-        ChronicleChannelTestSuite.class, RpcChannelTestSuite.class, TimeSeriesDBChannelTestSuite.class })
+        ChronicleChannelTestSuite.class, TimeSeriesDBChannelTestSuite.class, RpcChannelTestSuite.class })
 @Immutable
 public class ChannelTestSuite {
 

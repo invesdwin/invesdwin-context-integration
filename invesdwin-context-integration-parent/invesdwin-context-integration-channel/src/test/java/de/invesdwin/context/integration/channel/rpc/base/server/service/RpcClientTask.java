@@ -8,14 +8,18 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
+import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.report.ILatencyReport;
+import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
 import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.IFDateProvider;
 
 @NotThreadSafe
 public class RpcClientTask implements Runnable {
@@ -45,26 +49,38 @@ public class RpcClientTask implements Runnable {
 
     @Override
     public void run() {
+        int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
         Instant readsStart = new Instant();
         FDate prevValue = null;
-        int count = 0;
+        final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+        final ILatencyReport latencyReportResponseReceived = latencyReportFactory
+                .newLatencyReport("rpc/2_" + RpcClientTask.class.getSimpleName() + "_responseReceived");
+        final ILatencyReport latencyReportRequestResponseRoundtrip = latencyReportFactory
+                .newLatencyReport("rpc/3_" + RpcClientTask.class.getSimpleName() + "_requestResponseRoundtrip");
         try {
-            try (ICloseableIterator<FDate> values = ALatencyChannelTest.newValues().iterator()) {
-                while (count < ALatencyChannelTest.VALUES) {
-                    if (ALatencyChannelTest.DEBUG) {
-                        log.write((clientId + ": client request out\n").getBytes());
-                    }
-                    final FDate request = values.next();
-                    final FDate response = mode.request(client.getService(), request);
+            try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRequestResponseRoundtrip
+                    .newRequestMessages()
+                    .iterator()) {
+                while (count < ALatencyChannelTest.MESSAGE_COUNT) {
                     if (count == 0) {
                         //don't count in connection establishment
                         readsStart = new Instant();
                     }
                     if (ALatencyChannelTest.DEBUG) {
+                        log.write((clientId + ": client request out\n").getBytes());
+                    }
+                    final IFDateProvider requestProvider = values.next();
+                    final FDate request = requestProvider.asFDate();
+                    final FDate response = mode.request(client.getService(), request);
+                    final FDate arrivalTimestamp = latencyReportRequestResponseRoundtrip.newArrivalTimestamp()
+                            .asFDate();
+                    latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
+                    latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
+                    if (ALatencyChannelTest.DEBUG) {
                         log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }
                     Assertions.checkNotNull(response);
-                    Assertions.checkEquals(request.addMilliseconds(1), response);
+                    latencyReportRequestResponseRoundtrip.validateResponse(request, response);
                     if (prevValue != null) {
                         Assertions.checkTrue(prevValue.isBefore(response));
                     }
@@ -77,13 +93,15 @@ public class RpcClientTask implements Runnable {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        Assertions.checkEquals(ALatencyChannelTest.VALUES, count);
+        Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
         try {
-            ALatencyChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, ALatencyChannelTest.VALUES,
-                    ALatencyChannelTest.VALUES);
+            ALatencyChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, count,
+                    ALatencyChannelTest.MESSAGE_COUNT);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
+        latencyReportResponseReceived.close();
+        latencyReportRequestResponseRoundtrip.close();
     }
 
 }

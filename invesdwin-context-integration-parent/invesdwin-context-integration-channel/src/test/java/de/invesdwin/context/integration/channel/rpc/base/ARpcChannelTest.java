@@ -59,7 +59,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        serverChannel.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        serverChannel.register(IRpcTestService.class, service);
         final ISynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
                         new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)) {
@@ -80,11 +81,13 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -98,7 +101,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        serverChannel.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        serverChannel.register(IRpcTestService.class, service);
         final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
             clients[i] = new SynchronousEndpointClient<>(
@@ -124,6 +128,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -131,6 +136,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 Closeables.closeQuietly(clients[i]);
             }
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -154,7 +160,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -176,11 +183,13 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -190,7 +199,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
@@ -217,6 +227,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -224,6 +235,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 Closeables.closeQuietly(clients[i]);
             }
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -233,7 +245,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
@@ -260,6 +273,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -267,6 +281,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 Closeables.closeQuietly(clients[i]);
             }
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -286,7 +301,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        handlerFactory.register(IRpcTestService.class, service);
         final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
@@ -309,11 +325,13 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 
@@ -323,7 +341,8 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
-        handlerFactory.register(IRpcTestService.class, new RpcTestService(newRpcClientThreads()));
+        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        handlerFactory.register(IRpcTestService.class, service);
         final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
@@ -351,6 +370,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
+            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -358,6 +378,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                 Closeables.closeQuietly(clients[i]);
             }
             Closeables.closeQuietly(serverChannel);
+            Closeables.closeQuietly(service);
         }
     }
 

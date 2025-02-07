@@ -29,9 +29,9 @@ public class NettySocketHandlerTest extends ALatencyChannelTest {
         final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
                 getMaxMessageSize());
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyWriterHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
         final NettySocketAsynchronousChannel clientHandler = new NettySocketAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyReaderHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
         runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

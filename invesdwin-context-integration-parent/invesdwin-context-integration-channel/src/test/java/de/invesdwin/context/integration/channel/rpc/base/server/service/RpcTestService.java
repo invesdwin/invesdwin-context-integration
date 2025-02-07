@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.service;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
@@ -9,7 +10,9 @@ import javax.annotation.concurrent.Immutable;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
+import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -18,7 +21,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
 @Immutable
-public class RpcTestService implements IRpcTestService {
+public class RpcTestService implements IRpcTestService, Closeable {
 
     /*
      * Use only 1 thread to make the future response actually get delayed and not return isDone=true immediately.
@@ -32,6 +35,7 @@ public class RpcTestService implements IRpcTestService {
     private final OutputStream log;
     private final AtomicInteger countHolder = new AtomicInteger();
     private Instant writesStart;
+    private final ILatencyReport latencyReportRequestReceived;
 
     public RpcTestService(final int rpcClientThreads) {
         this(rpcClientThreads, new Log(RpcTestService.class));
@@ -45,13 +49,15 @@ public class RpcTestService implements IRpcTestService {
         this.rpcClientThreads = rpcClientThreads;
         this.flushInterval = ALatencyChannelTest.FLUSH_INTERVAL * rpcClientThreads;
         this.log = log;
+        this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
+                .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
     }
 
-    @Override
-    public FDate requestDefault(final FDate date) throws IOException {
+    private FDate handleRequest(final FDate request) throws IOException {
         if (writesStart == null) {
             synchronized (this) {
                 if (writesStart == null) {
+                    //don't count in connection establishment
                     writesStart = new Instant();
                 }
             }
@@ -59,16 +65,23 @@ public class RpcTestService implements IRpcTestService {
         if (ALatencyChannelTest.DEBUG) {
             log.write("server request in\n".getBytes());
         }
-        final FDate response = date.addMilliseconds(1);
+        final FDate response = latencyReportRequestReceived.newResponseMessage(request).asFDate();
         //        FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
         if (ALatencyChannelTest.DEBUG) {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
         final int count = countHolder.incrementAndGet();
         if (count % flushInterval == 0) {
-            ALatencyChannelTest.printProgress(log, "Writes", writesStart, count, ALatencyChannelTest.VALUES * rpcClientThreads);
+            ALatencyChannelTest.printProgress(log, "Writes", writesStart, count,
+                    ALatencyChannelTest.MESSAGE_COUNT * rpcClientThreads);
         }
         return response;
+    }
+
+    @Override
+    public FDate requestDefault(final FDate date) throws IOException {
+        latencyReportRequestReceived.measureLatency(date);
+        return handleRequest(date);
     }
 
     @Override
@@ -118,7 +131,8 @@ public class RpcTestService implements IRpcTestService {
 
     @Override
     public Future<FDate> requestAsyncDefault(final FDate date) throws IOException {
-        return ASYNC_EXECUTOR.submit(() -> requestDefault(date));
+        latencyReportRequestReceived.measureLatency(date);
+        return ASYNC_EXECUTOR.submit(() -> handleRequest(date));
     }
 
     @Override
@@ -139,6 +153,11 @@ public class RpcTestService implements IRpcTestService {
     @Override
     public Future<FDate> requestAsyncFalseFalse(final FDate date) throws IOException {
         return requestAsyncDefault(date);
+    }
+
+    @Override
+    public void close() throws IOException {
+        latencyReportRequestReceived.close();
     }
 
 }

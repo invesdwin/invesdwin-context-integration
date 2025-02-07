@@ -20,6 +20,8 @@ import de.invesdwin.context.integration.channel.async.AsynchronousHandlerFactory
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
+import de.invesdwin.context.integration.channel.report.ILatencyReport;
+import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
 import de.invesdwin.context.integration.channel.sync.DisabledChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannelFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -43,6 +45,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.IFDateProvider;
 
 @NotThreadSafe
 public abstract class ALatencyChannelTest extends AChannelTest {
@@ -179,7 +182,14 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         public void run() {
             Instant readsStart = new Instant();
             FDate prevValue = null;
-            int count = 0;
+            int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+            final ILatencyReport latencyReportRequestSent = latencyReportFactory
+                    .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
+            final ILatencyReport latencyReportResponseReceived = latencyReportFactory
+                    .newLatencyReport("latency/4_" + LatencyClientTask.class.getSimpleName() + "_responseReceived");
+            final ILatencyReport latencyReportRoundtrip = latencyReportFactory.newLatencyReport(
+                    "latency/5_" + LatencyClientTask.class.getSimpleName() + "_requestResponseRoundtrip");
             try {
                 if (DEBUG) {
                     log.write("client open request writer\n".getBytes());
@@ -189,33 +199,46 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write("client open response reader\n".getBytes());
                 }
                 responseReader.open();
-                readsStart = new Instant();
                 final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
                 final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
-                while (count < VALUES) {
-                    writeSpinWait.waitForWrite(REQUEST_MESSAGE, MAX_WAIT_DURATION);
-                    if (DEBUG) {
-                        log.write("client request out\n".getBytes());
+                try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRoundtrip.newRequestMessages()
+                        .iterator()) {
+                    while (count < ALatencyChannelTest.MESSAGE_COUNT) {
+                        if (count == 0) {
+                            //don't count in connection establishment
+                            readsStart = new Instant();
+                        }
+                        final IFDateProvider requestProvider = values.next();
+                        final FDate request = requestProvider.asFDate();
+                        writeSpinWait.waitForWrite(request, MAX_WAIT_DURATION);
+                        latencyReportRequestSent.measureLatency(request);
+                        if (DEBUG) {
+                            log.write("client request out\n".getBytes());
+                        }
+                        final FDate response = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                        responseReader.readFinished();
+                        final FDate arrivalTimestamp = latencyReportRoundtrip.newArrivalTimestamp().asFDate();
+                        latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
+                        latencyReportRoundtrip.measureLatency(request, arrivalTimestamp);
+                        if (DEBUG) {
+                            log.write(("client response in [" + response + "]\n").getBytes());
+                        }
+                        latencyReportRoundtrip.validateResponse(request, response);
+                        if (prevValue != null) {
+                            Assertions.checkTrue(prevValue.isBefore(response));
+                        }
+                        prevValue = response;
+                        count++;
                     }
-                    final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
-                    responseReader.readFinished();
-                    if (DEBUG) {
-                        log.write(("client response in [" + readMessage + "]\n").getBytes());
-                    }
-                    Assertions.checkNotNull(readMessage);
-                    if (prevValue != null) {
-                        Assertions.checkTrue(prevValue.isBefore(readMessage));
-                    }
-                    prevValue = readMessage;
-                    count++;
                 }
             } catch (final EOFException e) {
                 //writer closed
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
-            Assertions.checkEquals(VALUES, count);
             try {
+                Assertions.checkEquals(MESSAGE_COUNT, count);
+                printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
                 if (DEBUG) {
                     log.write("client close response reader\n".getBytes());
                 }
@@ -224,7 +247,9 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write("client close request writer\n".getBytes());
                 }
                 requestWriter.close();
-                printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
+                latencyReportRequestSent.close();
+                latencyReportResponseReceived.close();
+                latencyReportRoundtrip.close();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
@@ -259,8 +284,12 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         public void run() {
             final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(requestReader);
             final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(responseWriter);
+            final ILatencyReport latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
+                    .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
+            final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
+                    .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
             try {
-                int i = 0;
+                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
                 if (DEBUG) {
                     log.write("server open request reader\n".getBytes());
                 }
@@ -269,24 +298,31 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write("server open response writer\n".getBytes());
                 }
                 responseWriter.open();
-                final Instant writesStart = new Instant();
-                for (final FDate date : newValues()) {
-                    final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                Instant writesStart = new Instant();
+                while (count < MESSAGE_COUNT) {
+                    if (count == 0) {
+                        //don't count in connection establishment
+                        writesStart = new Instant();
+                    }
+                    final FDate request = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                    requestReader.readFinished();
+                    latencyReportRequestReceived.measureLatency(request);
                     if (DEBUG) {
                         log.write("server request in\n".getBytes());
                     }
-                    requestReader.readFinished();
-                    Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
-                    writeSpinWait.waitForWrite(date, MAX_WAIT_DURATION);
+                    final FDate response = latencyReportResponseSent.newResponseMessage(request).asFDate();
+                    writeSpinWait.waitForWrite(response, MAX_WAIT_DURATION);
+                    latencyReportResponseSent.measureLatency(response);
                     if (DEBUG) {
-                        log.write(("server response out [" + date + "]\n").getBytes());
+                        log.write(("server response out [" + response + "]\n").getBytes());
                     }
-                    i++;
-                    if (i % FLUSH_INTERVAL == 0) {
-                        printProgress(log, "Writes", writesStart, i, VALUES);
+                    if (count % FLUSH_INTERVAL == 0) {
+                        printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                     }
+                    count++;
                 }
-                printProgress(log, "WritesFinished", writesStart, VALUES, VALUES);
+                Assertions.checkEquals(MESSAGE_COUNT, count);
+                printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
                 if (DEBUG) {
                     log.write("server close response writer\n".getBytes());
                 }
@@ -295,6 +331,8 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write("server close request reader\n".getBytes());
                 }
                 requestReader.close();
+                latencyReportRequestReceived.close();
+                latencyReportResponseSent.close();
             } catch (final Exception e) {
                 throw new RuntimeException(e);
             }
@@ -302,31 +340,35 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
     }
 
-    public static class LatencyReaderHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
+    public static class LatencyClientHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
         @Override
         public IAsynchronousHandler<FDate, FDate> newHandler() {
-            return new LatencyReaderHandler();
+            return new LatencyClientHandler();
         }
 
     }
 
-    public static class LatencyReaderHandler implements IAsynchronousHandler<FDate, FDate> {
+    public static class LatencyClientHandler implements IAsynchronousHandler<FDate, FDate> {
 
         private final OutputStream log;
         private Instant readsStart;
         private int count;
+        private ICloseableIterator<? extends IFDateProvider> values;
         private FDate prevValue;
+        private ILatencyReport latencyReportResponseReceived;
+        private ILatencyReport latencyReportRequestResponseRoundtrip;
+        private FDate request;
 
-        public LatencyReaderHandler() {
-            this(new Log(LatencyReaderHandler.class));
+        public LatencyClientHandler() {
+            this(new Log(LatencyClientHandler.class));
         }
 
-        public LatencyReaderHandler(final Log log) {
+        public LatencyClientHandler(final Log log) {
             this(Slf4jStream.of(log).asInfo());
         }
 
-        public LatencyReaderHandler(final OutputStream log) {
+        public LatencyClientHandler(final OutputStream log) {
             this.log = log;
         }
 
@@ -334,8 +376,16 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             readsStart = new Instant();
             prevValue = null;
-            count = 0;
-            return REQUEST_MESSAGE;
+            count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+
+            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+            latencyReportResponseReceived = latencyReportFactory.newLatencyReport(
+                    "latencyHandler/2_" + LatencyClientHandler.class.getSimpleName() + "_responseReceived");
+            latencyReportRequestResponseRoundtrip = latencyReportFactory.newLatencyReport(
+                    "latencyHandler/3_" + LatencyClientHandler.class.getSimpleName() + "_requestResponseRoundtrip");
+            this.values = latencyReportRequestResponseRoundtrip.newRequestMessages().iterator();
+            request = values.next().asFDate();
+            return request;
         }
 
         @Override
@@ -344,21 +394,31 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         }
 
         @Override
-        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate readMessage)
-                throws IOException {
+        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate response) throws IOException {
+            if (count == 0) {
+                readsStart = new Instant();
+            }
+            final FDate arrivalTimestamp = latencyReportRequestResponseRoundtrip.newArrivalTimestamp().asFDate();
+            latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
+            latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
             if (DEBUG) {
                 log.write("client request out\n".getBytes());
             }
             if (DEBUG) {
-                log.write(("client response in [" + readMessage + "]\n").getBytes());
+                log.write(("client response in [" + response + "]\n").getBytes());
             }
-            Assertions.checkNotNull(readMessage);
-            if (prevValue != null && !prevValue.isBefore(readMessage)) {
-                Assertions.assertThat(prevValue).isBefore(readMessage);
+            Assertions.checkNotNull(response);
+            latencyReportRequestResponseRoundtrip.validateResponse(request, response);
+            if (prevValue != null && !prevValue.isBefore(response)) {
+                Assertions.assertThat(prevValue).isBefore(response);
             }
-            prevValue = readMessage;
+            prevValue = response;
             count++;
-            return REQUEST_MESSAGE;
+            if (count > MESSAGE_COUNT) {
+                throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
+            }
+            request = values.next().asFDate();
+            return request;
         }
 
         @Override
@@ -368,48 +428,54 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void close() throws IOException {
-            Assertions.checkEquals(count, VALUES);
+            Assertions.checkEquals(MESSAGE_COUNT, count);
             if (DEBUG) {
                 log.write("client close handler\n".getBytes());
             }
-            printProgress(log, "ReadsFinished", readsStart, VALUES, VALUES);
+            printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
+            latencyReportResponseReceived.close();
+            latencyReportResponseReceived = null;
+            latencyReportRequestResponseRoundtrip.close();
+            latencyReportRequestResponseRoundtrip = null;
         }
 
     }
 
-    public static class LatencyWriterHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
+    public static class LatencyServerHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
         @Override
         public IAsynchronousHandler<FDate, FDate> newHandler() {
-            return new LatencyWriterHandler();
+            return new LatencyServerHandler();
         }
 
     }
 
-    public static class LatencyWriterHandler implements IAsynchronousHandler<FDate, FDate> {
+    public static class LatencyServerHandler implements IAsynchronousHandler<FDate, FDate> {
 
         private final OutputStream log;
         private Instant writesStart;
-        private int i;
-        private ICloseableIterator<FDate> values;
+        private int count;
+        private ILatencyReport latencyReportRequestReceived;
 
-        public LatencyWriterHandler() {
-            this(new Log(LatencyWriterHandler.class));
+        public LatencyServerHandler() {
+            this(new Log(LatencyServerHandler.class));
         }
 
-        public LatencyWriterHandler(final Log log) {
+        public LatencyServerHandler(final Log log) {
             this(Slf4jStream.of(log).asInfo());
         }
 
-        public LatencyWriterHandler(final OutputStream log) {
+        public LatencyServerHandler(final OutputStream log) {
             this.log = log;
         }
 
         @Override
         public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             writesStart = new Instant();
-            i = 0;
-            this.values = newValues().iterator();
+            count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY.newLatencyReport(
+                    "latencyHandler/1_" + LatencyServerHandler.class.getSimpleName() + "_requestReceived");
+
             if (DEBUG) {
                 log.write("server open handler\n".getBytes());
             }
@@ -422,22 +488,26 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         }
 
         @Override
-        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate readMessage)
-                throws IOException {
+        public FDate handle(final IAsynchronousHandlerContext<FDate> context, final FDate request) throws IOException {
+            if (count == 0) {
+                writesStart = new Instant();
+            }
             if (DEBUG) {
                 log.write("server request in\n".getBytes());
             }
-            Assertions.checkEquals(readMessage, REQUEST_MESSAGE);
             try {
-                final FDate date = values.next();
+                final FDate response = latencyReportRequestReceived.newResponseMessage(request).asFDate();
                 if (DEBUG) {
-                    log.write(("server response out [" + date + "]\n").getBytes());
+                    log.write(("server response out [" + response + "]\n").getBytes());
                 }
-                i++;
-                if (i % FLUSH_INTERVAL == 0) {
-                    printProgress(log, "Writes", writesStart, i, VALUES);
+                count++;
+                if (count % FLUSH_INTERVAL == 0) {
+                    printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                 }
-                return date;
+                if (count > MESSAGE_COUNT) {
+                    throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
+                }
+                return response;
             } catch (final NoSuchElementException e) {
                 throw FastEOFException.getInstance(e);
             }
@@ -450,10 +520,13 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void close() throws IOException {
-            printProgress(log, "WritesFinished", writesStart, VALUES, VALUES);
+            Assertions.checkEquals(MESSAGE_COUNT, count);
+            printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
             if (DEBUG) {
                 log.write("server close handler\n".getBytes());
             }
+            latencyReportRequestReceived.close();
+            latencyReportRequestReceived = null;
         }
 
     }

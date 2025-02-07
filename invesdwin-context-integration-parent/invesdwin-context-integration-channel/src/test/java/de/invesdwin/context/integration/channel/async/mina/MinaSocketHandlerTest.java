@@ -29,9 +29,9 @@ public class MinaSocketHandlerTest extends ALatencyChannelTest {
         final MinaSocketSynchronousChannel clientChannel = newMinaSocketChannel(type, address, false,
                 getMaxMessageSize());
         final MinaSocketAsynchronousChannel serverHandler = new MinaSocketAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyWriterHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
         final MinaSocketAsynchronousChannel clientHandler = new MinaSocketAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyReaderHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
         runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

@@ -50,7 +50,7 @@ public class RpcUdtChannelTest extends ARpcChannelTest {
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(VALUES * newRpcClientThreads(), duration));
+                    new ProcessedEventsRateString(MESSAGE_COUNT * newRpcClientThreads(), duration));
         }
     }
 
