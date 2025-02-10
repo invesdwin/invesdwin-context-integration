@@ -13,6 +13,7 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -54,6 +55,7 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     @Override
     public void close() throws IOException {
         if (producer != null) {
+            write(ClosedByteBuffer.INSTANCE);
             producer.flush();
             producer.close();
             producer = null;

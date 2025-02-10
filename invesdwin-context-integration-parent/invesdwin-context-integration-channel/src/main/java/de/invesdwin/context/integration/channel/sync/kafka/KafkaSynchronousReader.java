@@ -17,6 +17,9 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.serde.ByteBufferProviderKafkaDeserializer;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.iterable.EmptyCloseableIterator;
+import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -80,7 +83,12 @@ public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        return recordsIterator.next().value();
+        final IByteBuffer message = recordsIterator.next().value().asBuffer();
+        if (ClosedByteBuffer.isClosed(message)) {
+            close();
+            throw FastEOFException.getInstance("closed by other side");
+        }
+        return message;
     }
 
     @Override
