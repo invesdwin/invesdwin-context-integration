@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -61,35 +62,35 @@ public class KafkaChannelLatencyTest extends ALatencyChannelTest {
 
     protected void runKafkaPerformanceTest(final String responseTopic, final String requestTopic,
             final Duration pollTimeout) throws InterruptedException {
-        final ISynchronousWriter<FDate> responseWriter = newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(),
-                responseTopic);
-        final ISynchronousReader<FDate> requestReader = new KafkaSynchronousReader<FDate>(
-                KAFKACONTAINER.getBootstrapServers(), requestTopic) {
-            @Override
-            protected Duration newPollTimeout() {
-                return pollTimeout;
-            }
-        };
+        final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), responseTopic));
+        final ISynchronousReader<FDate> requestReader = newSerdeReader(
+                new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), requestTopic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return pollTimeout;
+                    }
+                });
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKafkaPerformanceTest", 1);
         executor.execute(new LatencyServerTask(requestReader, responseWriter));
-        final ISynchronousWriter<FDate> requestWriter = newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(),
-                requestTopic);
-        final ISynchronousReader<FDate> responseReader = new KafkaSynchronousReader<FDate>(
-                KAFKACONTAINER.getBootstrapServers(), responseTopic) {
-            @Override
-            protected Duration newPollTimeout() {
-                return pollTimeout;
-            }
-        };
+        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), requestTopic));
+        final ISynchronousReader<FDate> responseReader = newSerdeReader(
+                new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), responseTopic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return pollTimeout;
+                    }
+                });
         new LatencyClientTask(requestWriter, responseReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
 
-    protected ISynchronousWriter<FDate> newKafkaSynchronousWriter(final String bootstrapServers,
+    protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
             final String requestTopic) {
         //flushing on each message should theoretically send the messages slightly earlier in this scenario
-        return new FlushingKafkaSynchronousWriter<FDate>(bootstrapServers, requestTopic);
+        return new FlushingKafkaSynchronousWriter(bootstrapServers, requestTopic);
     }
 
 }

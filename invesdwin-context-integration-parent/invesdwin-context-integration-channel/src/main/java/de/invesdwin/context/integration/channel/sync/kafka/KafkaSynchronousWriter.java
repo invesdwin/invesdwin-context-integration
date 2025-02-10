@@ -12,15 +12,15 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.kafka.serde.RemoteFastSerdeKafkaSerializer;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
+public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     protected final String bootstratServersConfig;
     protected final String topic;
-    protected Producer<byte[], M> producer;
+    protected Producer<byte[], byte[]> producer;
     protected final byte[] key;
 
     //constructor with serverconfig, topic to send messages to and key
@@ -39,7 +39,7 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
     public void open() throws IOException {
         //creates the properties and initiating a producer (writer) with strings as key and M type for general values to be flexible
         final Properties props = newProducerProperties();
-        producer = new KafkaProducer<byte[], M>(props);
+        producer = new KafkaProducer<byte[], byte[]>(props);
     }
 
     private Properties newProducerProperties() {
@@ -47,7 +47,7 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
         //TODO: debug if StringSerializer is called on every insert/read
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
-        kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, RemoteFastSerdeKafkaSerializer.class.getName());
+        kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return kafkaProps;
     }
 
@@ -68,8 +68,9 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
     }
 
     @Override
-    public void write(final M message) throws IOException {
-        final ProducerRecord<byte[], M> record = new ProducerRecord<>(topic, key, message);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, key,
+                message.asBuffer().asByteArrayCopy());
         producer.send(record);
     }
 

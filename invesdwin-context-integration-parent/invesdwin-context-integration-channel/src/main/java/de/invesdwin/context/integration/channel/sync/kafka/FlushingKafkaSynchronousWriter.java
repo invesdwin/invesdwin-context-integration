@@ -9,12 +9,13 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 
 import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
  * Flushes messages immediately to reduce latency for individual messages.
  */
 @NotThreadSafe
-public class FlushingKafkaSynchronousWriter<M> extends KafkaSynchronousWriter<M> {
+public class FlushingKafkaSynchronousWriter extends KafkaSynchronousWriter {
 
     private Future<RecordMetadata> writeFlushed = NullFuture.getInstance();
 
@@ -23,8 +24,9 @@ public class FlushingKafkaSynchronousWriter<M> extends KafkaSynchronousWriter<M>
     }
 
     @Override
-    public void write(final M message) throws IOException {
-        final ProducerRecord<byte[], M> record = new ProducerRecord<>(topic, key, message);
+    public void write(final IByteBufferProvider message) throws IOException {
+        final ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, key,
+                message.asBuffer().asByteArray());
         writeFlushed = producer.send(record);
         producer.flush();
     }

@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -56,25 +57,25 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
     }
 
     protected void runKafkaPerformanceTest(final String topic, final Duration pollTimeout) throws InterruptedException {
-        final ISynchronousWriter<FDate> channelWriter = newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(),
-                topic);
+        final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic));
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runKafkaPerformanceTest", 1);
         executor.execute(new ThroughputSenderTask(channelWriter));
-        final ISynchronousReader<FDate> channelReader = new KafkaSynchronousReader<FDate>(
-                KAFKACONTAINER.getBootstrapServers(), topic) {
-            @Override
-            protected Duration newPollTimeout() {
-                return pollTimeout;
-            }
-        };
+        final ISynchronousReader<FDate> channelReader = newSerdeReader(
+                new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), topic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return pollTimeout;
+                    }
+                });
         new ThroughputReceiverTask(channelReader).run();
         executor.shutdown();
         executor.awaitTermination();
     }
 
-    protected ISynchronousWriter<FDate> newKafkaSynchronousWriter(final String bootstrapServers,
+    protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
             final String requestTopic) {
-        return new KafkaSynchronousWriter<FDate>(bootstrapServers, requestTopic);
+        return new KafkaSynchronousWriter(bootstrapServers, requestTopic);
     }
 
 }
