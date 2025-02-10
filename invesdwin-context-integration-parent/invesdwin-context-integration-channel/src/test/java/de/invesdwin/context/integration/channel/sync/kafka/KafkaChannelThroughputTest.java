@@ -1,11 +1,13 @@
 package de.invesdwin.context.integration.channel.sync.kafka;
 
 import java.util.Properties;
+import java.util.Set;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
@@ -31,9 +33,9 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
             DockerImageName.parse("apache/kafka:3.8.0"));
 
-    private void createTopic(final String topic) {
+    public static void createTopic(final String bootstrapServers, final String topic) {
         final Properties config = new Properties();
-        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKACONTAINER.getBootstrapServers());
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         try (AdminClient adminClient = AdminClient.create(config)) {
             final NewTopic newTopic = new NewTopic(topic, 1, (short) 1);
             adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
@@ -42,17 +44,41 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
         }
     }
 
+    public static void deleteAllTopics(final String bootstrapServers) {
+        final Properties config = new Properties();
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        try (AdminClient adminClient = AdminClient.create(config)) {
+            final ListTopicsResult listTopics = adminClient.listTopics();
+            final Set<String> names = listTopics.names().get();
+            adminClient.deleteTopics(names).all().get();
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        KafkaChannelThroughputTest.deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
+    }
+
     @Test
     public void testKafkaPerformance() throws InterruptedException {
         final String topic = "testKafkaPerformance_chanel";
-        createTopic(topic);
+        createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
         runKafkaPerformanceTest(topic, Duration.ZERO);
     }
 
     @Test
     public void testBlockingKafkaPerformance() throws InterruptedException {
         final String topic = "testBlockingKafkaPerformance_topic";
-        createTopic(topic);
+        createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
         runKafkaPerformanceTest(topic, Duration.ONE_MILLISECOND);
     }
 
