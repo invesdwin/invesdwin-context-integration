@@ -54,7 +54,6 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     @Override
     public void close() throws IOException {
         if (producer != null) {
-            //was thinking to put writeFlushed(), but that would include a second if statement
             producer.flush();
             producer.close();
             producer = null;
