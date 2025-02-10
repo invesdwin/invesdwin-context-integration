@@ -1,6 +1,7 @@
-package de.invesdwin.context.integration.channel.kafka.examples;
+package de.invesdwin.context.integration.channel.sync.kafka.examples;
 
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -20,10 +21,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.kafka.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -35,18 +32,13 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-@Testcontainers
 public class KafkaSendReceiveExampleTest extends ATest {
 
-    private static final String TOPIC_NAME = "helloworldtopic1";// name of kafka topic
+    private static final java.time.Duration POLL_TIMEOUT = new Duration(10, FTimeUnit.MILLISECONDS).javaTimeValue();
+    private static final String TOPIC_NAME = "helloworldtopic6";// name of kafka topic
     private static final String MESSAGE = "helloworldtest"; //message to be sent
     private static final String KEY = "key1"; //partition key, messages with the same key go to the same partition
-    private static final int NUMOFEVENTS = 1000;
-
-    //using apache kafka's image 3.8.0 where testContainers will automatically start and stop containers
-    @Container
-    private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
-            DockerImageName.parse("apache/kafka:3.8.0"));
+    private static final int NUMOFEVENTS = 100000000;
 
     //volatile variable meaning its visibility is available across threads
     private volatile boolean consumerSubscribed = false; //flag to signal the consumer has subscribed
@@ -56,7 +48,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
 
         //Creating a topic using AdminClient
         final Properties config = new Properties();
-        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKACONTAINER.getBootstrapServers());
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
 
         final Instant start = new Instant();
         try (AdminClient adminClient = AdminClient.create(config)) {
@@ -82,12 +74,15 @@ public class KafkaSendReceiveExampleTest extends ATest {
              * "' does not exist. Nothing to delete."); }
              */
             // Defining the new topic with a name, partition and replication factor
-            final NewTopic newTopic = new NewTopic(TOPIC_NAME, 1, (short) 1);
-
-            // Creating the topic
-            adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+            final Set<String> topics = adminClient.listTopics().names().get();
+            if (!topics.contains(TOPIC_NAME)) {
+                final NewTopic newTopic = new NewTopic(TOPIC_NAME, 1, (short) 1);
+                // Creating the topic
+                adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+            }
         }
         log.info("topic created after %s", start);
+
         //creates and starts a thread, consumer, and runs the consume method
         final Thread consumer = new Thread() {
             @Override //overriding the run method
@@ -117,9 +112,9 @@ public class KafkaSendReceiveExampleTest extends ATest {
     private void produce() {
         final Instant startOverall = new Instant();
         //constantly checks if the consumer has subscribed before sending a message
-        while (!consumerSubscribed) {
-            FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
-        }
+        //while (!consumerSubscribed) {
+        //  FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
+        //}
         final Producer<String, String> producer = createProducer();// creates a producer using kafka's methods
         final Instant startMessaging = new Instant();
         try {
@@ -163,7 +158,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
             ConsumerRecords<String, String> records = null;
             //Continuously polls to check for messages to retrieve from the broker until NUMOFEVENTS messages have been pooled
             while (i < NUMOFEVENTS - 1) {
-                records = consumer.poll(new Duration(100, FTimeUnit.MILLISECONDS).javaTimeValue());
+                records = consumer.poll(POLL_TIMEOUT);
 
                 for (final ConsumerRecord<String, String> record : records) {
                     receivedText = record.value();
@@ -194,19 +189,25 @@ public class KafkaSendReceiveExampleTest extends ATest {
 
     private static Producer<String, String> createProducer() {
         final Properties kafkaProps = new Properties();
-        kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKACONTAINER.getBootstrapServers());
+        kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+
+        // Tuning for better batching
+        kafkaProps.put(ProducerConfig.BATCH_SIZE_CONFIG, "262144"); // 64KB batch
+        kafkaProps.put(ProducerConfig.LINGER_MS_CONFIG, "10"); // wait up to 5ms
+
         return new KafkaProducer<String, String>(kafkaProps);
     }
 
     private static Consumer<String, String> createConsumer() {
         final Properties kafkaProps = new Properties();
-        kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, KAFKACONTAINER.getBootstrapServers());
+        kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
         kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         kafkaProps.put(ConsumerConfig.GROUP_ID_CONFIG, "test_consumer_group");
         kafkaProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
         kafkaProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+
         return new KafkaConsumer<String, String>(kafkaProps);
     }
 

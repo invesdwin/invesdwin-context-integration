@@ -55,7 +55,7 @@ public abstract class AChannelTest extends ATest {
     public static final int SIMULATED_ADDITONAL_MESSAGE_SIZE = 0;
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;
-    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1_000;
+    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1000;
     public static final int FLUSH_INTERVAL = Math.max(10, MESSAGE_COUNT / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = DisabledLatencyReportFactory.INSTANCE;
