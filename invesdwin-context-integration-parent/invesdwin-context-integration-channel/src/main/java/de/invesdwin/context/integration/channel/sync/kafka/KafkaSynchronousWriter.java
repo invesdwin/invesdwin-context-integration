@@ -9,7 +9,7 @@ import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.common.serialization.StringSerializer;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.kafka.serde.RemoteFastSerdeKafkaSerializer;
@@ -20,14 +20,14 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     protected final String bootstratServersConfig;
     protected final String topic;
-    protected Producer<String, M> producer;
-    protected final String key;
+    protected Producer<byte[], M> producer;
+    protected final byte[] key;
 
     //constructor with serverconfig, topic to send messages to and key
     public KafkaSynchronousWriter(final String bootstratServersConfig, final String topic) {
         this.bootstratServersConfig = bootstratServersConfig;
         this.topic = topic;
-        this.key = newKey();
+        this.key = newKey().getBytes();
     }
 
     //method to create a random key id
@@ -39,14 +39,14 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
     public void open() throws IOException {
         //creates the properties and initiating a producer (writer) with strings as key and M type for general values to be flexible
         final Properties props = newProducerProperties();
-        producer = new KafkaProducer<String, M>(props);
+        producer = new KafkaProducer<byte[], M>(props);
     }
 
     private Properties newProducerProperties() {
         final Properties kafkaProps = new Properties();
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
         //TODO: debug if StringSerializer is called on every insert/read
-        kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, RemoteFastSerdeKafkaSerializer.class.getName());
         return kafkaProps;
     }
@@ -69,7 +69,7 @@ public class KafkaSynchronousWriter<M> implements ISynchronousWriter<M> {
 
     @Override
     public void write(final M message) throws IOException {
-        final ProducerRecord<String, M> record = new ProducerRecord<>(topic, key, message);
+        final ProducerRecord<byte[], M> record = new ProducerRecord<>(topic, key, message);
         producer.send(record);
     }
 

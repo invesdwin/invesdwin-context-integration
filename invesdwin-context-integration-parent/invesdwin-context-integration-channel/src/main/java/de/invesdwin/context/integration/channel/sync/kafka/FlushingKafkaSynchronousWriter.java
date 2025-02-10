@@ -24,7 +24,7 @@ public class FlushingKafkaSynchronousWriter<M> extends KafkaSynchronousWriter<M>
 
     @Override
     public void write(final M message) throws IOException {
-        final ProducerRecord<String, M> record = new ProducerRecord<>(topic, key, message);
+        final ProducerRecord<byte[], M> record = new ProducerRecord<>(topic, key, message);
         writeFlushed = producer.send(record);
         producer.flush();
     }

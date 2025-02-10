@@ -11,7 +11,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.serde.RemoteFastSerdeKafkaDeserializer;
@@ -25,8 +25,8 @@ public class KafkaSynchronousReader<M> implements ISynchronousReader<M> {
     private final String bootstratServersConfig;
     private final String topic;
     private final Duration pollTimeout;
-    private Consumer<String, M> consumer;
-    private Iterator<ConsumerRecord<String, M>> recordsIterator = EmptyCloseableIterator.getInstance();
+    private Consumer<java.nio.ByteBuffer, M> consumer;
+    private Iterator<ConsumerRecord<java.nio.ByteBuffer, M>> recordsIterator = EmptyCloseableIterator.getInstance();
 
     public KafkaSynchronousReader(final String bootstratServersConfig, final String topic) {
         this.bootstratServersConfig = bootstratServersConfig;
@@ -44,9 +44,9 @@ public class KafkaSynchronousReader<M> implements ISynchronousReader<M> {
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "invesdwin");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
+        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class.getName());
         props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, RemoteFastSerdeKafkaDeserializer.class.getName());
-        consumer = new KafkaConsumer<String, M>(props);
+        consumer = new KafkaConsumer<java.nio.ByteBuffer, M>(props);
         consumer.subscribe(Collections.singletonList(topic));//subscribes to the topic
     }
 
@@ -65,7 +65,7 @@ public class KafkaSynchronousReader<M> implements ISynchronousReader<M> {
         if (hasNext) {
             return true;
         }
-        final ConsumerRecords<String, M> records = consumer.poll(pollTimeout.javaTimeValue());
+        final ConsumerRecords<java.nio.ByteBuffer, M> records = consumer.poll(pollTimeout.javaTimeValue());
         if (records.isEmpty()) {
             recordsIterator = EmptyCloseableIterator.getInstance();
             return false;
