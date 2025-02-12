@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.io.IOException;
-import java.net.PortUnreachableException;
 import java.net.SocketAddress;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
@@ -66,8 +65,6 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
                 channel.setOtherSocketAddress(receive);
             }
             return messageBuffer.position() > 0;
-        } catch (final PortUnreachableException e) {
-            return false;
         } catch (final ClosedChannelException e) {
             throw FastEOFException.getInstance(e);
         }
