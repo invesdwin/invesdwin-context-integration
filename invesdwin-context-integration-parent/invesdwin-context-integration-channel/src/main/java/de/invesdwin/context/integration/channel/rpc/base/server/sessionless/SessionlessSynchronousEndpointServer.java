@@ -30,6 +30,9 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
+/**
+ * A sessionless server is used for datagram connections that do not track individual connections for each client.
+ */
 @ThreadSafe
 public class SessionlessSynchronousEndpointServer implements ISynchronousChannel {
 

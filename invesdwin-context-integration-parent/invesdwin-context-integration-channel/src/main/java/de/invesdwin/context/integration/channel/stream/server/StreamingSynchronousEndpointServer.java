@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.base.server;
+package de.invesdwin.context.integration.channel.stream.server;
 
 import java.io.Closeable;
 import java.io.EOFException;
@@ -13,83 +13,46 @@ import javax.annotation.concurrent.ThreadSafe;
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.session.MultiplexingSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.session.SingleplexingSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.MultiplexingStreamingSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.SingleplexingStreamingSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableList;
-import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
-import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
- * Possible server types:
+ * TODO: switch to command messages so that different topics can be defined as "service"??
  * 
- * - each client a separate thread for IO and work (unlimited is not a good idea, thus limited by maxIoThreadCount and
- * use null worker executor)
+ * TODO: add topics that clients can subscribe to or write messages to
  * 
- * - all clients share one thread for IO and work (use maxIoThreadCount=1 and null worker executor)
- * 
- * - one io thread, multiple worker threads, marshalling in IO (not implemented, marshalling is always done by worker)
- * 
- * - one io thread, multiple worker threads, marshalling in worker (use maxIoThreadCount=1 and a fixed worker executor)
- * 
- * - multiple io threads (sharding?), multiple worker threads, marshalling in IO (not implemented, marshalling is always
- * done by worker)
- * 
- * - multiple io threads (sharding?), multiple worker threads, marshalling in worker (IO threads limited by
- * maxIoThreadCount and use a fixed worker executor)
- * 
- * This is a weak server implementation that does not use a selector or native polling mechanism. Instead each channel
- * is checked individually for requests. This is useful for channels where selector or a native polling mechanism is not
- * available (e.g. memory mapped files). It can also be used when latency is not so important (though it can cause
- * excessive amounts of slow syscalls). For all other cases it might be better to use a netty async handler or disni
- * (active) handler for the server.
+ * TODO: add an actual heartbeat message to the transport layer
  */
 @ThreadSafe
-public class SynchronousEndpointServer implements ISynchronousChannel {
-
-    public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
-    public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 2;
-    public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
-            .newCachedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_IO")
-            .setDynamicThreadName(false);
-    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = Executors
-            .newFixedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_WORK",
-                    Executors.getCpuThreadPoolCount())
-            .setDynamicThreadName(false);
-    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = 10_000;
-    public static final int DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION = -50;
+public class StreamingSynchronousEndpointServer implements ISynchronousChannel {
 
     private static final IoRunnable[] IO_RUNNABLE_EMPTY_ARRAY = new IoRunnable[0];
     private static final int ROOT_IO_RUNNABLE_ID = 0;
 
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
-    private final SerdeLookupConfig serdeLookupConfig;
+    private final int maxIoThreadCount;
+    private final int createIoThreadSessionThreshold;
     private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
     private Duration heartbeatTimeout = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_TIMEOUT;
     private final Duration heartbeatInterval = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_INTERVAL;
     @GuardedBy("this")
-    private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
-    private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
-    @GuardedBy("this")
     private IFastIterableList<IoRunnable> ioRunnables;
-    private final int maxIoThreadCount;
-    private final int createIoThreadSessionThreshold;
     private final WrappedExecutorService ioExecutor;
     private final WrappedExecutorService workExecutor;
     private final int maxPendingWorkCountOverall;
@@ -97,9 +60,8 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
     private int maxPendingWorkCountPerSession;
     private final AtomicInteger activeSessionsOverall = new AtomicInteger();
 
-    public SynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
+    public StreamingSynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
         this.serverAcceptor = serverAcceptor;
-        this.serdeLookupConfig = newSerdeLookupConfig();
         this.maxIoThreadCount = newMaxIoThreadCount();
         if (maxIoThreadCount < 0) {
             throw new IllegalArgumentException(
@@ -121,12 +83,37 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         updateMaxPendingCountPerSession(0);
     }
 
-    protected int newCreateIoThreadSessionThreshold() {
-        return DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
+    /**
+     * Further requests will be rejected if the workExecutor has more than that amount of requests pending. Only applies
+     * when workExecutor is not null.
+     * 
+     * return 0 here for unlimited pending work count overall.
+     */
+    protected int newMaxPendingWorkCountOverall() {
+        return SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
     }
 
-    protected SerdeLookupConfig newSerdeLookupConfig() {
-        return SerdeLookupConfig.DEFAULT;
+    /**
+     * Return 0 here for unlimited pending work count per session, will be limited by overall pending work count only
+     * which means that one rogue client can take all resources for himself (not advisable unless clients can be
+     * trusted).
+     * 
+     * Return a positive value here to limit the pending requests
+     */
+    protected int newInitialMaxPendingWorkCountPerSession() {
+        return SynchronousEndpointServer.DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION;
+    }
+
+    /**
+     * Using multiple IO threads can be benefitial for throughput. More IO threads are added when more clients connect.
+     * After heartbeat timeout and an IO threads being empty the IO thread is scaled down again.
+     */
+    protected int newMaxIoThreadCount() {
+        return SynchronousEndpointServer.DEFAULT_MAX_IO_THREAD_COUNT;
+    }
+
+    protected int newCreateIoThreadSessionThreshold() {
+        return SynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
     }
 
     private void updateMaxPendingCountPerSession(final int activeSessions) {
@@ -140,33 +127,12 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
         }
     }
 
-    /**
-     * Further requests will be rejected if the workExecutor has more than that amount of requests pending. Only applies
-     * when workExecutor is not null.
-     * 
-     * return 0 here for unlimited pending work count overall.
-     */
-    protected int newMaxPendingWorkCountOverall() {
-        return DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+    public int getMaxPendingWorkCountOverall() {
+        return maxPendingWorkCountOverall;
     }
 
-    /**
-     * Return 0 here for unlimited pending work count per session, will be limited by overall pending work count only
-     * which means that one rogue client can take all resources for himself (not advisable unless clients can be
-     * trusted).
-     * 
-     * Return a positive value here to limit the pending requests
-     */
-    protected int newInitialMaxPendingWorkCountPerSession() {
-        return DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION;
-    }
-
-    /**
-     * Using multiple IO threads can be benefitial for throughput. More IO threads are added when more clients connect.
-     * After heartbeat timeout and an IO threads being empty the IO thread is scaled down again.
-     */
-    protected int newMaxIoThreadCount() {
-        return DEFAULT_MAX_IO_THREAD_COUNT;
+    public int getMaxPendingWorkCountPerSession() {
+        return maxPendingWorkCountPerSession;
     }
 
     /**
@@ -175,7 +141,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
      * runnables that are beyond the capacity of the IO executor.
      */
     protected WrappedExecutorService newIoExecutor() {
-        return DEFAULT_IO_EXECUTOR;
+        return SynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
     }
 
     /**
@@ -189,7 +155,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
      * work processing.
      */
     protected WrappedExecutorService newWorkExecutor() {
-        return DEFAULT_WORK_EXECUTOR;
+        return SynchronousEndpointServer.DEFAULT_WORK_EXECUTOR;
     }
 
     public final WrappedExecutorService getIoExecutor() {
@@ -198,48 +164,6 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
 
     public final WrappedExecutorService getWorkExecutor() {
         return workExecutor;
-    }
-
-    public int getMaxPendingWorkCountOverall() {
-        return maxPendingWorkCountOverall;
-    }
-
-    public int getMaxPendingWorkCountPerSession() {
-        return maxPendingWorkCountPerSession;
-    }
-
-    protected ISynchronousEndpointServerSession newServerSession(final ISynchronousEndpointSession endpointSession) {
-        if (workExecutor == null) {
-            /*
-             * Singlexplexing can not handle more than 1 request at a time, so this is the most efficient. Though could
-             * also be used with workExecutor to limit concurrent requests different to IO threads. But IO threads are
-             * normally good enough when requests are not expensive. Though if there is a mix between expensive and fast
-             * requests, then a work executor with Singleplexing might be preferable. In all other cases I guess
-             * multiplexing should be favored.
-             */
-            return new SingleplexingSynchronousEndpointServerSession(this, endpointSession);
-        } else {
-            //we want to be able to handle multiple
-            return new MultiplexingSynchronousEndpointServerSession(this, endpointSession);
-        }
-    }
-
-    public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
-        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(serdeLookupConfig,
-                serviceInterface, serviceImplementation);
-        final SynchronousEndpointService existing = serviceId_service_sync.putIfAbsent(service.getServiceId(), service);
-        if (existing != null) {
-            throw new IllegalStateException("Already registered [" + service + "] as [" + existing + "]");
-        }
-
-        //create a new copy of the map so that server thread does not require synchronization
-        this.serviceId_service_copy = new Int2ObjectOpenHashMap<>(serviceId_service_sync);
-    }
-
-    public synchronized <T> boolean unregister(final Class<? super T> serviceInterface) {
-        final int serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
-        final SynchronousEndpointService removed = serviceId_service_sync.remove(serviceId);
-        return removed != null;
     }
 
     @Override
@@ -265,17 +189,7 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             }
             ioRunnables = null;
             serverAcceptor.close();
-            serviceId_service_sync.clear();
-            serviceId_service_copy = new Int2ObjectOpenHashMap<>();
         }
-    }
-
-    public SerdeLookupConfig getSerdeLookupConfig() {
-        return serdeLookupConfig;
-    }
-
-    public SynchronousEndpointService getService(final int serviceId) {
-        return serviceId_service_copy.get(serviceId);
     }
 
     private final class IoRunnable implements Runnable, Closeable {
@@ -526,6 +440,22 @@ public class SynchronousEndpointServer implements ISynchronousChannel {
             if (initialMaxPendingWorkCountPerSession < 0) {
                 updateMaxPendingCountPerSession(activeSessions);
             }
+        }
+    }
+
+    protected ISynchronousEndpointServerSession newServerSession(final ISynchronousEndpointSession endpointSession) {
+        if (workExecutor == null) {
+            /*
+             * Singlexplexing can not handle more than 1 request at a time, so this is the most efficient. Though could
+             * also be used with workExecutor to limit concurrent requests different to IO threads. But IO threads are
+             * normally good enough when requests are not expensive. Though if there is a mix between expensive and fast
+             * requests, then a work executor with Singleplexing might be preferable. In all other cases I guess
+             * multiplexing should be favored.
+             */
+            return new SingleplexingStreamingSynchronousEndpointServerSession(this, endpointSession);
+        } else {
+            //we want to be able to handle multiple
+            return new MultiplexingStreamingSynchronousEndpointServerSession(this, endpointSession);
         }
     }
 
