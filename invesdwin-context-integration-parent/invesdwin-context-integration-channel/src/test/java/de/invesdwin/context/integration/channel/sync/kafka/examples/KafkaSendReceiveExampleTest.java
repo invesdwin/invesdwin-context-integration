@@ -50,6 +50,9 @@ public class KafkaSendReceiveExampleTest extends ATest {
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
             DockerImageName.parse("apache/kafka:3.8.0"));
 
+    //volatile variable meaning its visibility is available across threads
+    private volatile boolean consumerSubscribed = false; //flag to signal the consumer has subscribed
+
     private String getBootstrapServers() {
         //        return "localhost:9092";
         return KAFKACONTAINER.getBootstrapServers();
@@ -123,6 +126,10 @@ public class KafkaSendReceiveExampleTest extends ATest {
 
     private void produce() {
         final Instant startOverall = new Instant();
+        //constantly checks if the consumer has subscribed before sending a message
+//        while (!consumerSubscribed) {
+//            FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
+//        }
         final Producer<String, String> producer = createProducer();// creates a producer using kafka's methods
         final Instant startMessaging = new Instant();
         try {
@@ -155,6 +162,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
 
         // subscribe to the topic
         consumer.subscribe(Collections.singletonList(TOPIC_NAME));
+        consumerSubscribed = true;
 
         Instant startMessaging = new Instant();
         final LoopInterruptedCheck loopCheck = new LoopInterruptedCheck(Duration.ONE_SECOND);
