@@ -33,7 +33,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
             .setDynamicThreadName(false);
     private final int rpcClientThreads;
     private final OutputStream log;
-    private final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+    private final LoopInterruptedCheck loopCheck;
     private final AtomicInteger countHolder = new AtomicInteger();
     private Instant writesStart;
     private final ILatencyReport latencyReportRequestReceived;
@@ -48,6 +48,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     public RpcTestService(final int rpcClientThreads, final OutputStream log) {
         this.rpcClientThreads = rpcClientThreads;
+        this.loopCheck = AChannelTest.newLoopInterruptedCheck(ALatencyChannelTest.FLUSH_INTERVAL * rpcClientThreads);
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
