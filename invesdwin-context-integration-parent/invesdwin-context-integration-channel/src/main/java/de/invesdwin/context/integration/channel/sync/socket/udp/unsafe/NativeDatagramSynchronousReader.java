@@ -7,6 +7,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.PortUnreachableException;
 import java.net.SocketException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -179,6 +180,8 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         final int res;
         try {
             res = (int) CHANNEL_RECEIVE0_MH.invokeExact(fd, address + position, length, senderAddress, true);
+        } catch (final PortUnreachableException e) {
+            throw e;
         } catch (final SocketException e) {
             //java.net.SocketException: Ungültiger Dateideskriptor
             throw FastEOFException.getInstance(e);
@@ -201,6 +204,11 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         final int res;
         try {
             res = (int) FD_READ0_MH.invokeExact(src, address + position, length);
+        } catch (final PortUnreachableException e) {
+            throw e;
+        } catch (final SocketException e) {
+            //java.net.SocketException: Ungültiger Dateideskriptor
+            throw FastEOFException.getInstance(e);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }

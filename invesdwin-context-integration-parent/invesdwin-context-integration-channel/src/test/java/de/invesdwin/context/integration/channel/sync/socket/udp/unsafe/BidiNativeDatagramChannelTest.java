@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -22,19 +23,18 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testDatagramPerformance() throws InterruptedException {
-        while (true) {
-            testDatagramPerformanceTry(0);
-        }
+        testDatagramPerformanceTry(0);
     }
 
     private void testDatagramPerformanceTry(final int tries) throws InterruptedException {
-        final int port = NetworkUtil.findAvailableUdpPort();
+        final int port = NetworkUtil.findAvailableUdpPort() + tries;
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         try {
             runDatagramPerformanceTest(address);
         } catch (final Throwable t) {
             //workaround needed for testsuite because ports kind of stay blocked sometimes
-            if (Throwables.isCausedByAnyType(t, PortUnreachableException.class) && tries < 100) {
+            if (Throwables.isCausedByType(t, PortUnreachableException.class) && tries < 100) {
+                Err.process(new Exception("ignoring and retrying", t));
                 FTimeUnit.MILLISECONDS.sleep(10);
                 testDatagramPerformanceTry(tries + 1);
             } else {

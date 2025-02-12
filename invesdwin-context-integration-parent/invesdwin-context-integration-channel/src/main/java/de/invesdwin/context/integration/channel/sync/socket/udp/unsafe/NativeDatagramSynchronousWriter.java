@@ -137,9 +137,7 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
-        if (channel.isServer()) {
-            maybeInitTargetAddress();
-        }
+        maybeInitTargetAddress();
         final int size = message.getBuffer(messageBuffer);
         final int datagramSize = DatagramSynchronousChannel.MESSAGE_INDEX + size;
         if (datagramSize > socketSize) {
@@ -153,10 +151,15 @@ public class NativeDatagramSynchronousWriter implements ISynchronousWriter<IByte
     }
 
     private void maybeInitTargetAddress() {
-        if (recipient == null
-                || channel.isMultipleClientsAllowed() && !recipient.equals(channel.getOtherSocketAddress())) {
+        final SocketAddress newRecipient;
+        if (channel.isServer()) {
+            newRecipient = channel.getOtherSocketAddress();
+        } else {
+            newRecipient = channel.getSocketAddress();
+        }
+        if (recipient != newRecipient) {
+            recipient = newRecipient;
             try {
-                recipient = channel.getOtherSocketAddress();
                 final Object targetSockAddr = CHANNEL_TARGETSOCKADDR_GETTER_MH.invoke(channel.getSocketChannel());
                 final ProtocolFamily family = (ProtocolFamily) CHANNEL_FAMILY_GETTER_MH
                         .invoke(channel.getSocketChannel());

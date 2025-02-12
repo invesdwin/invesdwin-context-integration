@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -25,13 +26,14 @@ public class BidiBlockingDatagramChannelTest extends ALatencyChannelTest {
     }
 
     private void testBlockingDatagramPerformanceTry(final int tries) throws InterruptedException {
-        final int port = NetworkUtil.findAvailableUdpPort();
+        final int port = NetworkUtil.findAvailableUdpPort() + tries;
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         try {
             runBlockingDatagramPerformanceTest(address);
         } catch (final Throwable t) {
             //workaround needed for testsuite because ports kind of stay blocked sometimes
             if (Throwables.isCausedByType(t, PortUnreachableException.class) && tries < 100) {
+                Err.process(new Exception("ignoring and retrying", t));
                 FTimeUnit.MILLISECONDS.sleep(10);
                 testBlockingDatagramPerformanceTry(tries + 1);
             } else {

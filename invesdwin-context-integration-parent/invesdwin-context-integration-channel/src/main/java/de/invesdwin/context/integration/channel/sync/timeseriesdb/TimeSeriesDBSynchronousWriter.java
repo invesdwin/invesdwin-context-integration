@@ -17,7 +17,7 @@ import de.invesdwin.util.time.date.FDates;
 @NotThreadSafe
 public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final long CLOSED_INDEX = Long.MAX_VALUE;
+    public static final long CLOSED_INDEX = FDates.MAX_DATE.millisValue();
 
     private final TimeSeriesDBSynchronousChannel channel;
     private final TimeSeriesDBSynchronousChannelIndexMode indexMode;

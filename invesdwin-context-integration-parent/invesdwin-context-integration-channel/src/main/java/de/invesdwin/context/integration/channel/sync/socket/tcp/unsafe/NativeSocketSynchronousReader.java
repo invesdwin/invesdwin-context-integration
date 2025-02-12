@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.net.PortUnreachableException;
+import java.net.SocketException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -154,6 +156,10 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         final int res;
         try {
             res = (int) READ0_MH.invokeExact(src, address + position, length);
+        } catch (final PortUnreachableException e) {
+            throw e;
+        } catch (final SocketException e) {
+            throw e;
         } catch (final IOException e) {
             //java.io.IOException: Ungültiger Dateideskriptor
             throw FastEOFException.getInstance(e);

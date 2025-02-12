@@ -210,8 +210,17 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
 
     @Override
     public void close() {
-        if (!shouldClose()) {
-            return;
+        if (isReaderRegistered() && isWriterRegistered()) {
+            //bidi readers+writers on same channel have problems with closing when they are not closed on first request
+            synchronized (this) {
+                if (activeCount.get() > 0) {
+                    activeCount.decrementAndGet();
+                }
+            }
+        } else {
+            if (!shouldClose()) {
+                return;
+            }
         }
         finalizer.close();
         otherSocketAddress = null;
