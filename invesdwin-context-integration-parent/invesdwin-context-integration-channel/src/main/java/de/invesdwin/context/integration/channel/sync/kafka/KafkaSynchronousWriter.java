@@ -46,7 +46,6 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     private Properties newProducerProperties() {
         final Properties kafkaProps = new Properties();
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
-        //TODO: debug if StringSerializer is called on every insert/read
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         return kafkaProps;
