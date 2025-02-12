@@ -127,9 +127,9 @@ public class KafkaSendReceiveExampleTest extends ATest {
     private void produce() {
         final Instant startOverall = new Instant();
         //constantly checks if the consumer has subscribed before sending a message
-//        while (!consumerSubscribed) {
-//            FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
-//        }
+        //        while (!consumerSubscribed) {
+        //            FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
+        //        }
         final Producer<String, String> producer = createProducer();// creates a producer using kafka's methods
         final Instant startMessaging = new Instant();
         try {
