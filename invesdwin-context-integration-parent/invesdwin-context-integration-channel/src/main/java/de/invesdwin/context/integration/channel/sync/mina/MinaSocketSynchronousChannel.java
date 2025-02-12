@@ -22,6 +22,7 @@ import org.apache.mina.core.service.IoAcceptor;
 import org.apache.mina.core.service.IoConnector;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.write.WriteToClosedSessionException;
 import org.apache.mina.transport.socket.apr.AprSession;
 import org.apache.mina.transport.socket.apr.AprSessionAccessor;
 import org.apache.tomcat.jni.Socket;
@@ -31,6 +32,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.future.Futures;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -138,6 +140,14 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 finalizer.serverAcceptor = type.newAcceptor(finalizer.executor, newAcceptorProcessorCount());
                 finalizer.serverAcceptor.setCloseOnDeactivation(false);
                 finalizer.serverAcceptor.setHandler(new IoHandlerAdapter() {
+
+                    @Override
+                    public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
+                        if (!Throwables.isCausedByType(cause, WriteToClosedSessionException.class)) {
+                            super.exceptionCaught(session, cause);
+                        }
+                    }
+
                     @Override
                     public void sessionCreated(final IoSession session) throws Exception {
                         if (multipleClientsAllowed) {
@@ -176,7 +186,8 @@ public class MinaSocketSynchronousChannel implements Closeable {
             finalizer.clientConnector.setHandler(new IoHandlerAdapter() {
                 @Override
                 public void exceptionCaught(final IoSession session, final Throwable cause) throws Exception {
-                    if (!validatingConnect.get()) {
+                    if (!validatingConnect.get()
+                            && !Throwables.isCausedByType(cause, WriteToClosedSessionException.class)) {
                         super.exceptionCaught(session, cause);
                     }
                 }
@@ -356,13 +367,19 @@ public class MinaSocketSynchronousChannel implements Closeable {
 
     @Override
     public void close() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         internalClose();
         finalizer.close();
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     public boolean isClosed() {
@@ -385,10 +402,8 @@ public class MinaSocketSynchronousChannel implements Closeable {
     }
 
     public void closeAsync() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         finalizer.close();
     }
@@ -441,6 +456,9 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 session = null;
                 try {
                     sessionCopy.closeOnFlush().await(FTimeUnit.MILLISECONDS_IN_SECOND);
+                } catch (final IllegalStateException e) {
+                    //java.lang.IllegalStateException: DEAD LOCK: IoFuture.await() was invoked from an I/O processor thread.  Please use IoFutureListener or configure a proper thread model alternatively.
+                    //ignore
                 } catch (final InterruptedException e) {
                     //ignore
                 }

@@ -11,8 +11,6 @@ import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.OperatingSystem;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -38,15 +36,15 @@ public class MinaNativeDatagramChannelTest extends ALatencyChannelTest {
                 responseAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> requestReader = new MinaNativeDatagramSynchronousReader(
                 requestAddress, getMaxMessageSize());
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramSocketPerformance", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new MinaNativeDatagramSynchronousWriter(
                 requestAddress, getMaxMessageSize());
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaNativeDatagramSynchronousReader(
                 responseAddress, getMaxMessageSize());
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

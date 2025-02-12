@@ -40,9 +40,9 @@ public class RpcNativeSocketChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
-            final int port = NetworkUtil.findAvailableTcpPort();
-            final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
             runRpcTest(address, mode);

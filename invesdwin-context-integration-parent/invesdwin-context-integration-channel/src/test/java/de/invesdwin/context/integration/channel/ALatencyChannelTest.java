@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -37,6 +36,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
@@ -53,8 +53,8 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
     protected void runHandlerLatencyTest(final IAsynchronousChannel serverChannel,
             final IAsynchronousChannel clientChannel) throws InterruptedException {
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runHandlerLatencyTest", 1);
         try {
-            final WrappedExecutorService executor = Executors.newFixedThreadPool("runHandlerLatencyTest", 1);
             final ListenableFuture<?> openFuture = executor.submit(() -> {
                 try {
                     serverChannel.open();
@@ -73,6 +73,8 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         } catch (ExecutionException | TimeoutException | IOException e) {
             throw new RuntimeException(e);
         } finally {
+            executor.shutdown();
+            executor.awaitTermination();
             Closeables.closeQuietly(serverChannel);
             Closeables.closeQuietly(clientChannel);
         }
@@ -85,15 +87,13 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                 new QueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runQueueLatencyTest", 1);
-        executor.execute(new LatencyServerTask(requestReader, responseWriter));
+        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        new LatencyClientTask(requestWriter, responseReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        runLatencyTest(serverTask, clientTask);
     }
 
     /**
@@ -107,15 +107,13 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                 new BlockingQueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runBlockingQueueLatencyTest", 1);
-        executor.execute(new LatencyServerTask(requestReader, responseWriter));
+        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        new LatencyClientTask(requestWriter, responseReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
@@ -141,18 +139,31 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
             final ISynchronousReader<IByteBufferProvider> requestReader = maybeSynchronize(
                     wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
-            final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+            final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                    newSerdeWriter(responseWriter));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = maybeSynchronize(
                     wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
             final ISynchronousReader<IByteBufferProvider> responseReader = maybeSynchronize(
                     wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
-            new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-            executor.shutdown();
-            executor.awaitTermination();
+            final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                    newSerdeReader(responseReader));
+            runLatencyTest(serverTask, clientTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);
+        }
+    }
+
+    protected void runLatencyTest(final LatencyServerTask serverTask, final LatencyClientTask clientTask)
+            throws InterruptedException {
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runLatencyTest", 1);
+        try {
+            final ListenableFuture<?> serverFuture = executor.submit(serverTask);
+            clientTask.run();
+            Futures.get(serverFuture);
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination();
         }
     }
 
@@ -181,17 +192,17 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void run() {
-            Instant readsStart = new Instant();
-            FDate prevValue = null;
-            int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
-            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
-            final ILatencyReport latencyReportRequestSent = latencyReportFactory
-                    .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
-            final ILatencyReport latencyReportResponseReceived = latencyReportFactory
-                    .newLatencyReport("latency/4_" + LatencyClientTask.class.getSimpleName() + "_responseReceived");
-            final ILatencyReport latencyReportRoundtrip = latencyReportFactory.newLatencyReport(
-                    "latency/5_" + LatencyClientTask.class.getSimpleName() + "_requestResponseRoundtrip");
             try {
+                Instant readsStart = new Instant();
+                FDate prevValue = null;
+                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+                final ILatencyReport latencyReportRequestSent = latencyReportFactory
+                        .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
+                final ILatencyReport latencyReportResponseReceived = latencyReportFactory
+                        .newLatencyReport("latency/4_" + LatencyClientTask.class.getSimpleName() + "_responseReceived");
+                final ILatencyReport latencyReportRoundtrip = latencyReportFactory.newLatencyReport(
+                        "latency/5_" + LatencyClientTask.class.getSimpleName() + "_requestResponseRoundtrip");
                 if (DEBUG) {
                     log.write("client open request writer\n".getBytes());
                 }
@@ -200,57 +211,62 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write("client open response reader\n".getBytes());
                 }
                 responseReader.open();
-                final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(responseReader);
-                final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(requestWriter);
-                try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRoundtrip.newRequestMessages()
-                        .iterator()) {
-                    while (count < ALatencyChannelTest.MESSAGE_COUNT) {
-                        if (count == 0) {
-                            //don't count in connection establishment
-                            readsStart = new Instant();
+                try {
+                    final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(
+                            responseReader);
+                    final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(
+                            requestWriter);
+                    try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRoundtrip
+                            .newRequestMessages()
+                            .iterator()) {
+                        while (count < ALatencyChannelTest.MESSAGE_COUNT) {
+                            if (count == 0) {
+                                //don't count in connection establishment
+                                readsStart = new Instant();
+                            }
+                            final IFDateProvider requestProvider = values.next();
+                            final FDate request = requestProvider.asFDate();
+                            writeSpinWait.waitForWrite(request, MAX_WAIT_DURATION);
+                            latencyReportRequestSent.measureLatency(request);
+                            if (DEBUG) {
+                                log.write("client request out\n".getBytes());
+                            }
+                            final FDate response = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                            responseReader.readFinished();
+                            final FDate arrivalTimestamp = latencyReportRoundtrip.newArrivalTimestamp().asFDate();
+                            latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
+                            latencyReportRoundtrip.measureLatency(request, arrivalTimestamp);
+                            if (DEBUG) {
+                                log.write(("client response in [" + response + "]\n").getBytes());
+                            }
+                            latencyReportRoundtrip.validateResponse(request, response);
+                            if (prevValue != null) {
+                                Assertions.checkTrue(prevValue.isBefore(response));
+                            }
+                            prevValue = response;
+                            count++;
                         }
-                        final IFDateProvider requestProvider = values.next();
-                        final FDate request = requestProvider.asFDate();
-                        writeSpinWait.waitForWrite(request, MAX_WAIT_DURATION);
-                        latencyReportRequestSent.measureLatency(request);
-                        if (DEBUG) {
-                            log.write("client request out\n".getBytes());
+                    } catch (final FastEOFException e) {
+                        if (count != MESSAGE_COUNT) {
+                            throw e;
                         }
-                        final FDate response = readSpinWait.waitForRead(MAX_WAIT_DURATION);
-                        responseReader.readFinished();
-                        final FDate arrivalTimestamp = latencyReportRoundtrip.newArrivalTimestamp().asFDate();
-                        latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
-                        latencyReportRoundtrip.measureLatency(request, arrivalTimestamp);
-                        if (DEBUG) {
-                            log.write(("client response in [" + response + "]\n").getBytes());
-                        }
-                        latencyReportRoundtrip.validateResponse(request, response);
-                        if (prevValue != null) {
-                            Assertions.checkTrue(prevValue.isBefore(response));
-                        }
-                        prevValue = response;
-                        count++;
                     }
+                    Assertions.checkEquals(MESSAGE_COUNT, count);
+                    printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
+                } finally {
+                    if (DEBUG) {
+                        log.write("client close request writer\n".getBytes());
+                    }
+                    requestWriter.close();
+                    assertCloseMessageArrived(responseReader);
+                    if (DEBUG) {
+                        log.write("client close response reader\n".getBytes());
+                    }
+                    responseReader.close();
+                    latencyReportRequestSent.close();
+                    latencyReportResponseReceived.close();
+                    latencyReportRoundtrip.close();
                 }
-            } catch (final EOFException e) {
-                //writer closed
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                Assertions.checkEquals(MESSAGE_COUNT, count);
-                printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
-                if (DEBUG) {
-                    log.write("client close response reader\n".getBytes());
-                }
-                responseReader.close();
-                if (DEBUG) {
-                    log.write("client close request writer\n".getBytes());
-                }
-                requestWriter.close();
-                latencyReportRequestSent.close();
-                latencyReportResponseReceived.close();
-                latencyReportRoundtrip.close();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
@@ -283,13 +299,13 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void run() {
-            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(requestReader);
-            final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(responseWriter);
-            final ILatencyReport latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
-                    .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
-            final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
-                    .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
             try {
+                final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(requestReader);
+                final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(responseWriter);
+                final ILatencyReport latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
+                        .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
+                final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
+                        .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
                 final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
                 if (DEBUG) {
@@ -301,41 +317,45 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                 }
                 responseWriter.open();
                 Instant writesStart = new Instant();
-                while (count < MESSAGE_COUNT) {
-                    if (count == 0) {
-                        //don't count in connection establishment
-                        writesStart = new Instant();
+                try {
+                    while (count < MESSAGE_COUNT) {
+                        if (count == 0) {
+                            //don't count in connection establishment
+                            writesStart = new Instant();
+                        }
+                        final FDate request = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                        requestReader.readFinished();
+                        latencyReportRequestReceived.measureLatency(request);
+                        if (DEBUG) {
+                            log.write("server request in\n".getBytes());
+                        }
+                        final FDate response = latencyReportResponseSent.newResponseMessage(request).asFDate();
+                        writeSpinWait.waitForWrite(response, MAX_WAIT_DURATION);
+                        latencyReportResponseSent.measureLatency(response);
+                        if (DEBUG) {
+                            log.write(("server response out [" + response + "]\n").getBytes());
+                        }
+                        if (loopCheck.checkNoInterrupt()) {
+                            printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
+                        }
+                        count++;
                     }
-                    final FDate request = readSpinWait.waitForRead(MAX_WAIT_DURATION);
-                    requestReader.readFinished();
-                    latencyReportRequestReceived.measureLatency(request);
+                    Assertions.checkEquals(MESSAGE_COUNT, count);
+                    printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
+                } finally {
                     if (DEBUG) {
-                        log.write("server request in\n".getBytes());
+                        log.write("server close response writer\n".getBytes());
                     }
-                    final FDate response = latencyReportResponseSent.newResponseMessage(request).asFDate();
-                    writeSpinWait.waitForWrite(response, MAX_WAIT_DURATION);
-                    latencyReportResponseSent.measureLatency(response);
+                    responseWriter.close();
+                    assertCloseMessageArrived(requestReader);
                     if (DEBUG) {
-                        log.write(("server response out [" + response + "]\n").getBytes());
+                        log.write("server close request reader\n".getBytes());
                     }
-                    if (loopCheck.checkNoInterrupt()) {
-                        printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
-                    }
-                    count++;
+                    requestReader.close();
+                    latencyReportRequestReceived.close();
+                    latencyReportResponseSent.close();
                 }
-                Assertions.checkEquals(MESSAGE_COUNT, count);
-                printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
-                if (DEBUG) {
-                    log.write("server close response writer\n".getBytes());
-                }
-                responseWriter.close();
-                if (DEBUG) {
-                    log.write("server close request reader\n".getBytes());
-                }
-                requestReader.close();
-                latencyReportRequestReceived.close();
-                latencyReportResponseSent.close();
-            } catch (final Exception e) {
+            } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         }

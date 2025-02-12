@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AThroughputChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -42,15 +40,11 @@ public class TimeSeriesDBChannelThroughputTest extends AThroughputChannelTest {
         try {
             final TimeSeriesDBSynchronousChannel channel = new TimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
-            final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(
-                    channel);
-            final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new ThroughputSenderTask(newSerdeWriter(channelWriter)));
-            final ISynchronousReader<IByteBufferProvider> channelReader = new TimeSeriesDBSynchronousReader(
-                    channel);
-            new ThroughputReceiverTask(newSerdeReader(channelReader)).run();
-            executor.shutdown();
-            executor.awaitTermination();
+            final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(channel);
+            final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));
+            final ISynchronousReader<IByteBufferProvider> channelReader = new TimeSeriesDBSynchronousReader(channel);
+            final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(newSerdeReader(channelReader));
+            runThroughputTest(senderTask, receiverTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);

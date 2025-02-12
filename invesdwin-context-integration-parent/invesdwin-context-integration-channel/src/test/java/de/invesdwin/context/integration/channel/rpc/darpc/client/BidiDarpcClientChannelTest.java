@@ -10,8 +10,6 @@ import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -29,16 +27,15 @@ public class BidiDarpcClientChannelTest extends ALatencyChannelTest {
                 getMaxMessageSize());
         final DarpcClientSynchronousChannel clientChannel = newDarpcSynchronousChannel(address, false,
                 getMaxMessageSize());
-
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newDarpcSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = newDarpcSynchronousReader(serverChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiDarpcPerformance", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = newDarpcSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = newDarpcSynchronousReader(clientChannel);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected ISynchronousReader<IByteBufferProvider> newDarpcSynchronousReader(

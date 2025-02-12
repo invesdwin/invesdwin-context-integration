@@ -12,8 +12,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -29,16 +27,15 @@ public class BidiEnxioSocketChannelTest extends ALatencyChannelTest {
     protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
         final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
         final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
-
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new EnxioSocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new EnxioSocketSynchronousReader(serverChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testBidiSocketPerformance", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new EnxioSocketSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(clientChannel);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,

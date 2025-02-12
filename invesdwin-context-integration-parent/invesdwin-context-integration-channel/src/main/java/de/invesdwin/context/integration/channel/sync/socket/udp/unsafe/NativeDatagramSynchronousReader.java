@@ -7,6 +7,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.InetSocketAddress;
+import java.net.SocketException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -178,6 +179,9 @@ public class NativeDatagramSynchronousReader implements ISynchronousReader<IByte
         final int res;
         try {
             res = (int) CHANNEL_RECEIVE0_MH.invokeExact(fd, address + position, length, senderAddress, true);
+        } catch (final SocketException e) {
+            //java.net.SocketException: Ungültiger Dateideskriptor
+            throw FastEOFException.getInstance(e);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }

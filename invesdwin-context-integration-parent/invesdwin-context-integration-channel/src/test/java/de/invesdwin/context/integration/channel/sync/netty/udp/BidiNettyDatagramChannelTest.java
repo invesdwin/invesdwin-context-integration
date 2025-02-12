@@ -11,8 +11,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -35,15 +33,14 @@ public class BidiNettyDatagramChannelTest extends ALatencyChannelTest {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyDatagramSynchronousWriter(
                 serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyDatagramSynchronousReader(serverChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
-                1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyDatagramSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyDatagramSynchronousReader(
                 clientChannel);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,

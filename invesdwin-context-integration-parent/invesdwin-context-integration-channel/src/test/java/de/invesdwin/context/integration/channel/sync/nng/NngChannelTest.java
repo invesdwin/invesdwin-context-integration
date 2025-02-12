@@ -9,8 +9,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.nng.type.INngSocketType;
 import de.invesdwin.context.integration.channel.sync.nng.type.NngSocketType;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
@@ -77,15 +75,15 @@ public class NngChannelTest extends ALatencyChannelTest {
                 responseChannel, true);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NngSynchronousReader(socketType,
                 requestChannel, true);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runNngPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NngSynchronousWriter(socketType,
                 requestChannel, false);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NngSynchronousReader(socketType,
                 responseChannel, false);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

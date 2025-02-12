@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.socket.sctp;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -138,6 +139,8 @@ public class SctpSynchronousReader implements ISynchronousReader<IByteBufferProv
             }
             final Object result = SctpSynchronousChannel.MESSAGEINFO_BYTES_METHOD.invoke(messageInfo);
             count = (int) result;
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         } catch (final IOException e) {
             throw e;
         } catch (final Throwable e) {

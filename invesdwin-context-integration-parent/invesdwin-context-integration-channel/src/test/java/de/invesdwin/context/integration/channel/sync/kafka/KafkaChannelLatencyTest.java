@@ -11,8 +11,6 @@ import org.testcontainers.utility.DockerImageName;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -66,8 +64,7 @@ public class KafkaChannelLatencyTest extends ALatencyChannelTest {
                         return pollTimeout;
                     }
                 });
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runKafkaPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(requestReader, responseWriter));
+        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), requestTopic));
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
@@ -77,9 +74,8 @@ public class KafkaChannelLatencyTest extends ALatencyChannelTest {
                         return pollTimeout;
                     }
                 });
-        new LatencyClientTask(requestWriter, responseReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,

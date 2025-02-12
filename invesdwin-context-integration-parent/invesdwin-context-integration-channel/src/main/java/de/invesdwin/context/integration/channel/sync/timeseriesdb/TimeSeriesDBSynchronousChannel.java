@@ -30,12 +30,18 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
     private final String hashKey;
     private final Integer valueFixedLength;
     private final TimeSeriesDBSynchronousChannelIndexMode indexMode;
+    private final boolean closeMessageEnabled;
 
     public TimeSeriesDBSynchronousChannel(final File directory, final Integer valueFixedLength) {
         this.directory = directory;
         this.valueFixedLength = valueFixedLength;
         this.hashKey = newHashKey();
         this.indexMode = newIndexMode();
+        this.closeMessageEnabled = newCloseMessageEnabled();
+    }
+
+    protected boolean newCloseMessageEnabled() {
+        return true;
     }
 
     protected String newHashKey() {
@@ -48,6 +54,14 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
 
     public TimeSeriesDBSynchronousChannelIndexMode getIndexMode() {
         return indexMode;
+    }
+
+    public boolean isCloseMessageEnabled() {
+        return closeMessageEnabled;
+    }
+
+    public Integer getValueFixedLength() {
+        return valueFixedLength;
     }
 
     @Override
@@ -84,7 +98,7 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
     }
 
     @Override
-    public synchronized void close() throws IOException {
+    public void close() throws IOException {
         if (!shouldClose()) {
             return;
         }

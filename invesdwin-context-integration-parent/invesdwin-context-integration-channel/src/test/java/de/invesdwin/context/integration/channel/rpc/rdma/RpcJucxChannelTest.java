@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
@@ -32,6 +33,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
+@Disabled("jucx version mismatch")
 @NotThreadSafe
 public class RpcJucxChannelTest extends ARpcChannelTest {
 
@@ -49,9 +51,9 @@ public class RpcJucxChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
+        final int port = NetworkUtil.findAvailableTcpPort();
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
-            final String addr = findLocalNetworkAddress();
-            final int port = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress address = new InetSocketAddress(addr, port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();

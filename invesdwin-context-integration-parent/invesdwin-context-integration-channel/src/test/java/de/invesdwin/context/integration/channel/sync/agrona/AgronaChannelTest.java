@@ -24,8 +24,6 @@ import de.invesdwin.context.integration.channel.sync.agrona.broadcast.BroadcastS
 import de.invesdwin.context.integration.channel.sync.agrona.broadcast.BroadcastSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.agrona.ringbuffer.RingBufferSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.agrona.ringbuffer.RingBufferSynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
@@ -113,15 +111,15 @@ public class AgronaChannelTest extends ALatencyChannelTest {
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> requestReader = new RingBufferSynchronousReader(requestChannel,
                 zeroCopy);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaRingBufferPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new RingBufferSynchronousWriter(requestChannel,
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     @Test
@@ -136,13 +134,13 @@ public class AgronaChannelTest extends ALatencyChannelTest {
             final AtomicBuffer requestChannel) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BroadcastSynchronousWriter(responseChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new BroadcastSynchronousReader(requestChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAgronaBroadcastPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BroadcastSynchronousWriter(requestChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BroadcastSynchronousReader(responseChannel);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

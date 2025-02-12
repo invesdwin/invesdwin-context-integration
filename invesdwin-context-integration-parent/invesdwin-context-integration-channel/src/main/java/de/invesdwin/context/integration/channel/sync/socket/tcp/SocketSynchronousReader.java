@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.socket.tcp;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -140,6 +141,8 @@ public class SocketSynchronousReader implements ISynchronousReader<IByteBufferPr
                 throw ByteBuffers.newEOF();
             }
             return count;
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         } finally {
             buffer.clear();
         }

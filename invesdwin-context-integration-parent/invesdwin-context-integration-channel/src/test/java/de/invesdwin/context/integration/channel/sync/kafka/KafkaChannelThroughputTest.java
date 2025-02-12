@@ -19,8 +19,6 @@ import de.invesdwin.context.integration.channel.AThroughputChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -85,8 +83,7 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
     protected void runKafkaPerformanceTest(final String topic, final Duration pollTimeout) throws InterruptedException {
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runKafkaPerformanceTest", 1);
-        executor.execute(new ThroughputSenderTask(channelWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), topic) {
                     @Override
@@ -94,9 +91,8 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
                         return pollTimeout;
                     }
                 });
-        new ThroughputReceiverTask(channelReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(channelReader);
+        runThroughputTest(senderTask, receiverTask);
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,

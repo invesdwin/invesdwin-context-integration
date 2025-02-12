@@ -9,8 +9,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -42,20 +40,23 @@ public class AeronChannelTest extends ALatencyChannelTest {
             final int responseStreamId, final String requestChannel, final int requestStreamId)
             throws InterruptedException {
         final AeronInstance instance = new AeronInstance(mode);
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new AeronSynchronousWriter(instance,
-                responseChannel, responseStreamId);
-        final ISynchronousReader<IByteBufferProvider> requestReader = new AeronSynchronousReader(instance,
-                requestChannel, requestStreamId);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runAeronPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance,
-                requestChannel, requestStreamId);
-        final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
-                responseChannel, responseStreamId);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
-        Assertions.checkTrue(instance.isClosed());
+        try {
+            final ISynchronousWriter<IByteBufferProvider> responseWriter = new AeronSynchronousWriter(instance,
+                    responseChannel, responseStreamId);
+            final ISynchronousReader<IByteBufferProvider> requestReader = new AeronSynchronousReader(instance,
+                    requestChannel, requestStreamId);
+            final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                    newSerdeWriter(responseWriter));
+            final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance,
+                    requestChannel, requestStreamId);
+            final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
+                    responseChannel, responseStreamId);
+            final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                    newSerdeReader(responseReader));
+            runLatencyTest(serverTask, clientTask);
+        } finally {
+            Assertions.checkTrue(instance.isClosed());
+        }
     }
 
 }

@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
+import java.net.SocketException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -172,6 +173,9 @@ public class NativeSctpSynchronousReader implements ISynchronousReader<IByteBuff
             } else {
                 return IOStatusAccessor.normalize(res);
             }
+        } catch (final SocketException e) {
+            //java.net.SocketException: Ungültiger Dateideskriptor
+            throw FastEOFException.getInstance(e);
         } catch (final IOException ioe) {
             throw ioe;
         } catch (final Throwable e) {

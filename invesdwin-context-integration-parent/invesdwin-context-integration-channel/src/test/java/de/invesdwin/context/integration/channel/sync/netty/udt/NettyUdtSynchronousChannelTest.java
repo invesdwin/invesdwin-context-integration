@@ -13,8 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.NioNettyUdtChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("unreliable in test suite")
@@ -36,16 +34,15 @@ public class NettyUdtSynchronousChannelTest extends ALatencyChannelTest {
                 newNettyUdtChannel(type, responseAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyUdtSynchronousReader(
                 newNettyUdtChannel(type, requestAddress, true, getMaxMessageSize()));
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runNettyDatagramChannelPerformanceTest",
-                1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyUdtSynchronousWriter(
                 newNettyUdtChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyUdtSynchronousReader(
                 newNettyUdtChannel(type, responseAddress, true, getMaxMessageSize()));
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected NettyUdtSynchronousChannel newNettyUdtChannel(final INettyUdtChannelType type,

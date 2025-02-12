@@ -13,8 +13,6 @@ import com.conversantmedia.util.concurrent.PushPullConcurrentQueue;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.time.date.FDate;
 
@@ -53,13 +51,11 @@ public class ConversantChannelTest extends ALatencyChannelTest {
             final ConcurrentQueue<IReference<FDate>> requestQueue) throws InterruptedException {
         final ISynchronousWriter<FDate> responseWriter = new ConversantSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new ConversantSynchronousReader<FDate>(requestQueue);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testQueuePerformance", 1);
-        executor.execute(new LatencyServerTask(requestReader, responseWriter));
+        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = new ConversantSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ConversantSynchronousReader<FDate>(responseQueue);
-        new LatencyClientTask(requestWriter, responseReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

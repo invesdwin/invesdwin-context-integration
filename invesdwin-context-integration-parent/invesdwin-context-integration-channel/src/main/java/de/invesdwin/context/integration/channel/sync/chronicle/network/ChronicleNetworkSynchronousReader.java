@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.sync.chronicle.network;
 
 import java.io.IOException;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -137,6 +138,8 @@ public class ChronicleNetworkSynchronousReader implements ISynchronousReader<IBy
                 throw ByteBuffers.newEOF();
             }
             return count;
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         } finally {
             buffer.clear();
         }

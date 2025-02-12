@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
@@ -51,15 +49,15 @@ public class ChronicleQueueChannelTest extends ALatencyChannelTest {
                     responseFile);
             final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleQueueSynchronousReader(
                     requestFile);
-            final WrappedExecutorService executor = Executors.newFixedThreadPool(responseFile.getName(), 1);
-            executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+            final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                    newSerdeWriter(responseWriter));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleQueueSynchronousWriter(
                     requestFile);
             final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
                     responseFile);
-            new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-            executor.shutdown();
-            executor.awaitTermination();
+            final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                    newSerdeReader(responseReader));
+            runLatencyTest(serverTask, clientTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);

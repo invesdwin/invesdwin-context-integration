@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import com.barchart.udt.ExceptionUDT;
 import com.barchart.udt.SocketUDT;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -137,6 +138,13 @@ public class UdtSynchronousReader implements ISynchronousReader<IByteBufferProvi
                 throw ByteBuffers.newEOF();
             } else {
                 return count;
+            }
+        } catch (final ExceptionUDT e) {
+            //com.barchart.udt.ExceptionUDT: UDT Error : 5004 : invalid UDT socket : recv/recvmsg [id: 0x12469985]
+            if (e.getError().getCode() == 5004) {
+                throw FastEOFException.getInstance(e);
+            } else {
+                throw e;
             }
         } finally {
             buffer.clear();

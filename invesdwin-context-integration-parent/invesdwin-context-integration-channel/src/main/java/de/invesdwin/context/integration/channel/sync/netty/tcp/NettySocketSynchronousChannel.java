@@ -326,13 +326,19 @@ public class NettySocketSynchronousChannel implements Closeable {
 
     @Override
     public void close() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         internalClose();
         finalizer.close();
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     public boolean isClosed() {
@@ -362,10 +368,8 @@ public class NettySocketSynchronousChannel implements Closeable {
     }
 
     public void closeAsync() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         finalizer.close();
     }

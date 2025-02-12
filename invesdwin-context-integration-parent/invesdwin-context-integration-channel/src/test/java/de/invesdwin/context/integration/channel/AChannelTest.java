@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,6 +28,7 @@ import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeSynch
 import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -240,6 +242,19 @@ public abstract class AChannelTest extends ATest {
                 return true;
             }
         };
+    }
+
+    public static void assertCloseMessageArrived(final ISynchronousReader<FDate> reader) {
+        boolean closeMessageReceived = false;
+        try {
+            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(reader);
+            readSpinWait.waitForRead(MAX_WAIT_DURATION);
+        } catch (final EOFException e) {
+            closeMessageReceived = true;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+        Assertions.checkTrue(closeMessageReceived);
     }
 
 }

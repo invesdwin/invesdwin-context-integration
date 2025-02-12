@@ -3,12 +3,15 @@ package de.invesdwin.context.integration.channel.sync.socket.udp.blocking;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.SocketException;
+import java.nio.channels.ClosedChannelException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -54,11 +57,25 @@ public class BlockingDatagramSynchronousReader implements ISynchronousReader<IBy
 
     @Override
     public boolean hasNext() throws IOException {
-        socket.receive(packet);
-        if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
-            channel.setOtherSocketAddress(packet.getSocketAddress());
+        try {
+            final DatagramPacket packetCopy = packet;
+            if (packetCopy == null) {
+                throw FastEOFException.getInstance("packet is null");
+            }
+            socket.receive(packetCopy);
+            if (channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) {
+                channel.setOtherSocketAddress(packetCopy.getSocketAddress());
+            }
+            return true;
+        } catch (final SocketException e) {
+            //        java.net.SocketException: Socket closed
+            //        Caused by: java.nio.channels.ClosedChannelException
+            if (Throwables.isCausedByType(e, ClosedChannelException.class)) {
+                throw FastEOFException.getInstance(e);
+            } else {
+                throw e;
+            }
         }
-        return true;
     }
 
     @Override

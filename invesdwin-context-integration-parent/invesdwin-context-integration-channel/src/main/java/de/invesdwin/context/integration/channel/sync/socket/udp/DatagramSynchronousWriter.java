@@ -95,7 +95,6 @@ public class DatagramSynchronousWriter implements ISynchronousWriter<IByteBuffer
             ByteBuffers.position(messageToWrite, positionBefore);
             messageToWrite = null;
             positionBefore = 0;
-            recipient = null;
             return true;
         } else {
             return false;

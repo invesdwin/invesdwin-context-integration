@@ -154,6 +154,9 @@ public class NativeSocketSynchronousReader implements ISynchronousReader<IByteBu
         final int res;
         try {
             res = (int) READ0_MH.invokeExact(src, address + position, length);
+        } catch (final IOException e) {
+            //java.io.IOException: Ungültiger Dateideskriptor
+            throw FastEOFException.getInstance(e);
         } catch (final Throwable e) {
             throw new RuntimeException(e);
         }

@@ -43,9 +43,9 @@ public class RpcSynchronousDisniActiveChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
+        final int port = NetworkUtil.findAvailableTcpPort();
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
-            final String addr = findLocalNetworkAddress();
-            final int port = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress address = new InetSocketAddress(addr, port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();

@@ -69,9 +69,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                         return RPC_CLIENT_TRANSPORTS;
                     }
                 }, IRpcTestService.class);
+        final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTestLazy_client",
+                newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
@@ -81,10 +81,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
             Closeables.closeQuietly(service);
@@ -110,9 +111,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                             new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                     IRpcTestService.class);
         }
+        final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTestEager_client",
+                newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
@@ -128,10 +129,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
             }
@@ -171,9 +173,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                         return RPC_CLIENT_TRANSPORTS;
                     }
                 }, IRpcTestService.class);
+        final WrappedExecutorService clientExecutor = Executors
+                .newFixedThreadPool("runRpcHandlerPerformanceTestLazy_client", newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
@@ -183,10 +185,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
             Closeables.closeQuietly(service);
@@ -209,9 +212,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                             new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                     IRpcTestService.class);
         }
+        final WrappedExecutorService clientExecutor = Executors
+                .newFixedThreadPool("runRpcHandlerPerformanceTestEager_client", newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
@@ -227,10 +230,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
             }
@@ -255,9 +259,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                             new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                     IRpcTestService.class);
         }
+        final WrappedExecutorService clientExecutor = Executors
+                .newFixedThreadPool("runRpcBlockingPerformanceTest_client", newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
@@ -273,10 +277,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
             }
@@ -313,9 +318,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                         return RPC_CLIENT_TRANSPORTS;
                     }
                 }, IRpcTestService.class);
+        final WrappedExecutorService clientExecutor = Executors
+                .newFixedThreadPool("runRpcSessionlessPerformanceTestLazy_client", newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
@@ -325,10 +330,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
             Closeables.closeQuietly(service);
@@ -352,9 +358,9 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                             new DefaultSynchronousEndpointSessionFactory(clientEndpointFactory)),
                     IRpcTestService.class);
         }
+        final WrappedExecutorService clientExecutor = Executors
+                .newFixedThreadPool("runRpcSessionlessPerformanceTestEager_client", newRpcClientThreads());
         try {
-            final WrappedExecutorService clientExecutor = Executors.newFixedThreadPool("runRpcPerformanceTest_client",
-                    newRpcClientThreads());
             serverChannel.open();
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
@@ -370,10 +376,11 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-            clientExecutor.shutdown();
         } catch (final IOException e) {
             throw new RuntimeException(e);
         } finally {
+            clientExecutor.shutdown();
+            clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
             }

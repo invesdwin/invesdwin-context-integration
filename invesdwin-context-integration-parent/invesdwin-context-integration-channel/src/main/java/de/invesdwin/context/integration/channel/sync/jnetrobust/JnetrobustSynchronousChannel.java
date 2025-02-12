@@ -75,15 +75,21 @@ public class JnetrobustSynchronousChannel implements ISynchronousChannel {
 
     @Override
     public void close() throws IOException {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         if (protocolHost != null) {
             protocolHost.getChannel().close();
             protocolHost = null;
         }
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     public void registerWriter() {

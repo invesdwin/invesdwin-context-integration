@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.socket.udp;
 
 import java.io.IOException;
 import java.net.SocketAddress;
+import java.nio.channels.ClosedChannelException;
 import java.nio.channels.DatagramChannel;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -58,11 +59,15 @@ public class DatagramSynchronousReader implements ISynchronousReader<IByteBuffer
         if (messageBuffer.position() > 0) {
             return true;
         }
-        final SocketAddress receive = socketChannel.receive(messageBuffer);
-        if ((channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) && receive != null) {
-            channel.setOtherSocketAddress(receive);
+        try {
+            final SocketAddress receive = socketChannel.receive(messageBuffer);
+            if ((channel.isMultipleClientsAllowed() || channel.getOtherSocketAddress() == null) && receive != null) {
+                channel.setOtherSocketAddress(receive);
+            }
+            return messageBuffer.position() > 0;
+        } catch (final ClosedChannelException e) {
+            throw FastEOFException.getInstance(e);
         }
-        return messageBuffer.position() > 0;
     }
 
     @Override

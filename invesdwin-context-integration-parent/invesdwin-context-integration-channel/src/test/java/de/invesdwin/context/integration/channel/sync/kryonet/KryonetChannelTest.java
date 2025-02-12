@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.uri.Addresses;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -33,15 +31,15 @@ public class KryonetChannelTest extends ALatencyChannelTest {
                 responseTcpPort, responseUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> requestReader = new KryonetSynchronousReader(address,
                 requestTcpPort, requestUdpPort, false);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runKryonetPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new KryonetSynchronousWriter(address,
                 requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> responseReader = new KryonetSynchronousReader(address,
                 responseTcpPort, responseUdpPort, false);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

@@ -9,8 +9,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.IJnanomsgSocketType;
 import de.invesdwin.context.integration.channel.sync.jnanomsg.type.JnanomsgSocketType;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 /**
@@ -77,15 +75,15 @@ public class JnanomsgChannelTest extends ALatencyChannelTest {
                 responseChannel, true);
         final ISynchronousReader<IByteBufferProvider> requestReader = new JnanomsgSynchronousReader(socketType,
                 requestChannel, true);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runJnanomsgPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new JnanomsgSynchronousWriter(socketType,
                 requestChannel, false);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JnanomsgSynchronousReader(socketType,
                 responseChannel, false);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

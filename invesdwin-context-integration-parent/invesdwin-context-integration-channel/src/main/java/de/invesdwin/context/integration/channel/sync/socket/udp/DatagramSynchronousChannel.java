@@ -210,13 +210,19 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
 
     @Override
     public void close() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         finalizer.close();
         otherSocketAddress = null;
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     private static final class SocketSynchronousChannelFinalizer extends AWarningFinalizer {

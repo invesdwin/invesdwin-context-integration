@@ -9,8 +9,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.jeromq.type.IJeromqSocketType;
 import de.invesdwin.context.integration.channel.sync.jeromq.type.JeromqSocketType;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -71,15 +69,15 @@ public class JeromqChannelTest extends ALatencyChannelTest {
                 responseChannel, true);
         final ISynchronousReader<IByteBufferProvider> requestReader = new JeromqSynchronousReader(socketType,
                 requestChannel, true);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runJeromqPerformanceTest", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new JeromqSynchronousWriter(socketType,
                 requestChannel, false);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JeromqSynchronousReader(socketType,
                 responseChannel, false);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

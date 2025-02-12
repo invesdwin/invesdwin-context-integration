@@ -11,8 +11,6 @@ import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.reference.AtomicReference;
 import de.invesdwin.util.concurrent.reference.IMutableReference;
@@ -67,13 +65,11 @@ public class ReferenceChannelTest extends ALatencyChannelTest {
             final IMutableReference<IReference<FDate>> requestQueue) throws InterruptedException {
         final ISynchronousWriter<FDate> responseWriter = new CloseableReferenceSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new CloseableReferenceSynchronousReader<FDate>(requestQueue);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runReferencePerformanceTest", 1);
-        executor.execute(new LatencyServerTask(requestReader, responseWriter));
+        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = new CloseableReferenceSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new CloseableReferenceSynchronousReader<FDate>(responseQueue);
-        new LatencyClientTask(requestWriter, responseReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        runLatencyTest(serverTask, clientTask);
     }
 
 }

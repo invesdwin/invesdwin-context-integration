@@ -13,8 +13,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -24,7 +22,9 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testDatagramPerformance() throws InterruptedException {
-        testDatagramPerformanceTry(0);
+        while (true) {
+            testDatagramPerformanceTry(0);
+        }
     }
 
     private void testDatagramPerformanceTry(final int tries) throws InterruptedException {
@@ -34,7 +34,7 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
             runDatagramPerformanceTest(address);
         } catch (final Throwable t) {
             //workaround needed for testsuite because ports kind of stay blocked sometimes
-            if (Throwables.isCausedByType(t, PortUnreachableException.class) && tries < 100) {
+            if (Throwables.isCausedByAnyType(t, PortUnreachableException.class) && tries < 100) {
                 FTimeUnit.MILLISECONDS.sleep(10);
                 testDatagramPerformanceTry(tries + 1);
             } else {
@@ -53,15 +53,15 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
                 serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NativeDatagramSynchronousReader(
                 serverChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("testDatagramPerformance", 1);
-        executor.execute(new LatencyServerTask(newSerdeReader(requestReader), newSerdeWriter(responseWriter)));
+        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeDatagramSynchronousWriter(
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
                 clientChannel);
-        new LatencyClientTask(newSerdeWriter(requestWriter), newSerdeReader(responseReader)).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        runLatencyTest(serverTask, clientTask);
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,

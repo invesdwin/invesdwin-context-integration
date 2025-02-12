@@ -300,14 +300,20 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
 
     @Override
     public void close() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         internalClose();
         finalizer.close();
         otherSocketAddress = null;
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     public boolean isClosed() {
@@ -326,10 +332,8 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
     }
 
     public void closeAsync() {
-        synchronized (this) {
-            if (activeCount.get() > 0) {
-                activeCount.decrementAndGet();
-            }
+        if (!shouldClose()) {
+            return;
         }
         finalizer.close();
     }

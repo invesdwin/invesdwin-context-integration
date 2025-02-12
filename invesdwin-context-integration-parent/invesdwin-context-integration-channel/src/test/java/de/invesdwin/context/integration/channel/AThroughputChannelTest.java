@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel;
 
-import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -10,6 +9,8 @@ import java.util.concurrent.BlockingQueue;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
+
+import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
@@ -28,6 +29,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.lang.Files;
@@ -43,13 +45,11 @@ public abstract class AThroughputChannelTest extends AChannelTest {
             throws InterruptedException {
         final ISynchronousWriter<FDate> channelWriter = maybeSynchronize(
                 new QueueSynchronousWriter<FDate>(channelQueue), synchronizeChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runQueueThroughputTest", 1);
-        executor.execute(new ThroughputSenderTask(channelWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
         final ISynchronousReader<FDate> channelReader = maybeSynchronize(
                 new QueueSynchronousReader<FDate>(channelQueue), synchronizeChannel);
-        new ThroughputReceiverTask(channelReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(channelReader);
+        runThroughputTest(senderTask, receiverTask);
     }
 
     /**
@@ -60,13 +60,11 @@ public abstract class AThroughputChannelTest extends AChannelTest {
             final Object synchronizeChannel) throws InterruptedException {
         final ISynchronousWriter<FDate> channelWriter = maybeSynchronize(
                 new BlockingQueueSynchronousWriter<FDate>(channelQueue), synchronizeChannel);
-        final WrappedExecutorService executor = Executors.newFixedThreadPool("runBlockingQueueThroughputTest", 1);
-        executor.execute(new ThroughputSenderTask(channelWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
         final ISynchronousReader<FDate> channelReader = maybeSynchronize(
                 new BlockingQueueSynchronousReader<FDate>(channelQueue), synchronizeChannel);
-        new ThroughputReceiverTask(channelReader).run();
-        executor.shutdown();
-        executor.awaitTermination();
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(channelReader);
+        runThroughputTest(senderTask, receiverTask);
     }
 
     protected void runThroughputTest(final FileChannelType pipes, final File channelFile,
@@ -89,15 +87,26 @@ public abstract class AThroughputChannelTest extends AChannelTest {
         try {
             final ISynchronousWriter<IByteBufferProvider> channelWriter = maybeSynchronize(
                     wrapperSender.newWriter(newWriter(channelFile, pipes)), synchronizeChannel);
-            final WrappedExecutorService executor = Executors.newFixedThreadPool(channelFile.getName(), 1);
-            executor.execute(new ThroughputSenderTask(newSerdeWriter(channelWriter)));
+            final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));
             final ISynchronousReader<IByteBufferProvider> channelReader = maybeSynchronize(
                     wrapperReceiver.newReader(newReader(channelFile, pipes)), synchronizeChannel);
-            new ThroughputReceiverTask(newSerdeReader(channelReader)).run();
-            executor.shutdown();
-            executor.awaitTermination();
+            final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(newSerdeReader(channelReader));
+            runThroughputTest(senderTask, receiverTask);
         } finally {
             Files.deleteQuietly(channelFile);
+        }
+    }
+
+    protected void runThroughputTest(final ThroughputSenderTask senderTask, final ThroughputReceiverTask receiverTask)
+            throws InterruptedException {
+        final WrappedExecutorService executor = Executors.newFixedThreadPool("runThroughputTest", 1);
+        try {
+            final ListenableFuture<?> senderFuture = executor.submit(senderTask);
+            receiverTask.run();
+            Futures.get(senderFuture);
+        } finally {
+            executor.shutdown();
+            executor.awaitTermination();
         }
     }
 
@@ -121,50 +130,49 @@ public abstract class AThroughputChannelTest extends AChannelTest {
 
         @Override
         public void run() {
-            Instant readsStart = new Instant();
-            FDate prevValue = null;
-            int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
-            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
-            final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
-                    "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
             try {
+                Instant readsStart = new Instant();
+                FDate prevValue = null;
+                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+                final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
+                        "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
                 if (DEBUG) {
                     log.write("receiver open channel reader\n".getBytes());
                 }
                 channelReader.open();
-                readsStart = new Instant();
-                final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(channelReader);
-                while (count < MESSAGE_COUNT) {
-                    if (count == 0) {
-                        //don't count in connection establishment
-                        readsStart = new Instant();
+                try {
+                    readsStart = new Instant();
+                    final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(
+                            channelReader);
+                    while (count < MESSAGE_COUNT) {
+                        if (count == 0) {
+                            //don't count in connection establishment
+                            readsStart = new Instant();
+                        }
+                        final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                        channelReader.readFinished();
+                        latencyReportMessageReceived.measureLatency(readMessage);
+                        if (DEBUG) {
+                            log.write(("receiver channel in [" + readMessage + "]\n").getBytes());
+                        }
+                        Assertions.checkNotNull(readMessage);
+                        if (prevValue != null) {
+                            Assertions.checkTrue(prevValue.isBefore(readMessage));
+                        }
+                        prevValue = readMessage;
+                        count++;
                     }
-                    final FDate readMessage = readSpinWait.waitForRead(MAX_WAIT_DURATION);
-                    channelReader.readFinished();
-                    latencyReportMessageReceived.measureLatency(readMessage);
+                    Assertions.checkEquals(MESSAGE_COUNT, count);
+                    printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
+                    assertCloseMessageArrived(channelReader);
+                } finally {
                     if (DEBUG) {
-                        log.write(("receiver channel in [" + readMessage + "]\n").getBytes());
+                        log.write("receiver close channel reader\n".getBytes());
                     }
-                    Assertions.checkNotNull(readMessage);
-                    if (prevValue != null) {
-                        Assertions.checkTrue(prevValue.isBefore(readMessage));
-                    }
-                    prevValue = readMessage;
-                    count++;
+                    channelReader.close();
+                    latencyReportMessageReceived.close();
                 }
-            } catch (final EOFException e) {
-                //writer closed
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
-            try {
-                if (DEBUG) {
-                    log.write("receiver close channel reader\n".getBytes());
-                }
-                Assertions.checkEquals(MESSAGE_COUNT, count);
-                printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
-                channelReader.close();
-                latencyReportMessageReceived.close();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
@@ -191,46 +199,50 @@ public abstract class AThroughputChannelTest extends AChannelTest {
 
         @Override
         public void run() {
-            final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(channelWriter);
-            final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
-            final ILatencyReport latencyReportMessageSent = latencyReportFactory
-                    .newLatencyReport("throughput/1_" + ThroughputSenderTask.class.getSimpleName() + "_messageSent");
             try {
+                final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(channelWriter);
+                final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
+                final ILatencyReport latencyReportMessageSent = latencyReportFactory.newLatencyReport(
+                        "throughput/1_" + ThroughputSenderTask.class.getSimpleName() + "_messageSent");
                 if (DEBUG) {
                     log.write("sender open channel writer\n".getBytes());
                 }
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
                 final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
                 channelWriter.open();
-                Instant writesStart = new Instant();
-                try (ICloseableIterator<? extends IFDateProvider> values = latencyReportMessageSent.newRequestMessages()
-                        .iterator()) {
-                    while (count < MESSAGE_COUNT) {
-                        if (count == 0) {
-                            //don't count in connection establishment
-                            writesStart = new Instant();
+                try {
+                    Instant writesStart = new Instant();
+                    try (ICloseableIterator<? extends IFDateProvider> values = latencyReportMessageSent
+                            .newRequestMessages()
+                            .iterator()) {
+                        while (count < MESSAGE_COUNT) {
+                            if (count == 0) {
+                                //don't count in connection establishment
+                                writesStart = new Instant();
+                            }
+                            final IFDateProvider requestProvider = values.next();
+                            final FDate value = requestProvider.asFDate();
+                            writeSpinWait.waitForWrite(value, MAX_WAIT_DURATION);
+                            latencyReportMessageSent.measureLatency(value);
+                            if (DEBUG) {
+                                log.write(("sender channel out [" + value + "]\n").getBytes());
+                            }
+                            if (loopCheck.checkNoInterrupt()) {
+                                printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
+                            }
+                            count++;
                         }
-                        final IFDateProvider requestProvider = values.next();
-                        final FDate value = requestProvider.asFDate();
-                        writeSpinWait.waitForWrite(value, MAX_WAIT_DURATION);
-                        latencyReportMessageSent.measureLatency(value);
-                        if (DEBUG) {
-                            log.write(("sender channel out [" + value + "]\n").getBytes());
-                        }
-                        if (loopCheck.checkNoInterrupt()) {
-                            printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
-                        }
-                        count++;
                     }
+                    Assertions.checkEquals(MESSAGE_COUNT, count);
+                    printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
+                } finally {
+                    if (DEBUG) {
+                        log.write("sender close channel writer\n".getBytes());
+                    }
+                    channelWriter.close();
+                    latencyReportMessageSent.close();
                 }
-                Assertions.checkEquals(MESSAGE_COUNT, count);
-                printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
-                if (DEBUG) {
-                    log.write("sender close channel writer\n".getBytes());
-                }
-                channelWriter.close();
-                latencyReportMessageSent.close();
-            } catch (final Exception e) {
+            } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
         }
