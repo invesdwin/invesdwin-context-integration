@@ -124,6 +124,7 @@ public abstract class AThroughputChannelTest extends AChannelTest {
             Instant readsStart = new Instant();
             FDate prevValue = null;
             int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
             final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
             final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
                     "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
@@ -150,6 +151,9 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                         Assertions.checkTrue(prevValue.isBefore(readMessage));
                     }
                     prevValue = readMessage;
+                    if (loopCheck.checkNoInterrupt()) {
+                        printProgress(log, "Reads", readsStart, count, MESSAGE_COUNT);
+                    }
                     count++;
                 }
             } catch (final EOFException e) {
@@ -200,7 +204,6 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                     log.write("sender open channel writer\n".getBytes());
                 }
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
-                final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
                 channelWriter.open();
                 Instant writesStart = new Instant();
                 try (ICloseableIterator<? extends IFDateProvider> values = latencyReportMessageSent.newRequestMessages()
@@ -216,9 +219,6 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                         latencyReportMessageSent.measureLatency(value);
                         if (DEBUG) {
                             log.write(("sender channel out [" + value + "]\n").getBytes());
-                        }
-                        if (loopCheck.checkNoInterrupt()) {
-                            printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                         }
                         count++;
                     }
