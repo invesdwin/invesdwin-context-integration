@@ -17,6 +17,7 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.ImmutableFuture;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
@@ -31,8 +32,8 @@ public class RpcTestService implements IRpcTestService, Closeable {
             .newFixedThreadPool(RpcTestService.class.getSimpleName() + "_ASYNC", 1)
             .setDynamicThreadName(false);
     private final int rpcClientThreads;
-    private final int flushInterval;
     private final OutputStream log;
+    private final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
     private final AtomicInteger countHolder = new AtomicInteger();
     private Instant writesStart;
     private final ILatencyReport latencyReportRequestReceived;
@@ -47,7 +48,6 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     public RpcTestService(final int rpcClientThreads, final OutputStream log) {
         this.rpcClientThreads = rpcClientThreads;
-        this.flushInterval = ALatencyChannelTest.FLUSH_INTERVAL * rpcClientThreads;
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
@@ -71,7 +71,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
         final int count = countHolder.incrementAndGet();
-        if (count % flushInterval == 0) {
+        if (loopCheck.checkNoInterrupt()) {
             ALatencyChannelTest.printProgress(log, "Writes", writesStart, count,
                     ALatencyChannelTest.MESSAGE_COUNT * rpcClientThreads);
         }

@@ -37,6 +37,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.Closeables;
@@ -290,6 +291,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
             try {
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
                 if (DEBUG) {
                     log.write("server open request reader\n".getBytes());
                 }
@@ -316,7 +318,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     if (DEBUG) {
                         log.write(("server response out [" + response + "]\n").getBytes());
                     }
-                    if (count % FLUSH_INTERVAL == 0) {
+                    if (loopCheck.checkNoInterrupt()) {
                         printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                     }
                     count++;
@@ -455,6 +457,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         private final OutputStream log;
         private Instant writesStart;
         private int count;
+        private final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
         private ILatencyReport latencyReportRequestReceived;
 
         public LatencyServerHandler() {
@@ -501,7 +504,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     log.write(("server response out [" + response + "]\n").getBytes());
                 }
                 count++;
-                if (count % FLUSH_INTERVAL == 0) {
+                if (loopCheck.checkNoInterrupt()) {
                     printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                 }
                 if (count > MESSAGE_COUNT) {

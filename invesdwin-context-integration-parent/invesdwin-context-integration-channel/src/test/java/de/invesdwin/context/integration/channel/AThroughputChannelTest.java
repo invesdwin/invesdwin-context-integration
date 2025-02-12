@@ -28,6 +28,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -199,6 +200,7 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                     log.write("sender open channel writer\n".getBytes());
                 }
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
                 channelWriter.open();
                 Instant writesStart = new Instant();
                 try (ICloseableIterator<? extends IFDateProvider> values = latencyReportMessageSent.newRequestMessages()
@@ -215,7 +217,7 @@ public abstract class AThroughputChannelTest extends AChannelTest {
                         if (DEBUG) {
                             log.write(("sender channel out [" + value + "]\n").getBytes());
                         }
-                        if (count % FLUSH_INTERVAL == 0) {
+                        if (loopCheck.checkNoInterrupt()) {
                             printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
                         }
                         count++;

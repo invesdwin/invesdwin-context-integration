@@ -30,6 +30,7 @@ import de.invesdwin.context.integration.channel.sync.serde.SerdeSynchronousWrite
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.OperatingSystem;
@@ -55,8 +56,7 @@ public abstract class AChannelTest extends ATest {
     public static final int SIMULATED_ADDITONAL_MESSAGE_SIZE = 0;
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;
-    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1000;
-    public static final int FLUSH_INTERVAL = Math.max(10, MESSAGE_COUNT / 10);
+    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1000000;
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = DisabledLatencyReportFactory.INSTANCE;
 
@@ -225,6 +225,15 @@ public abstract class AChannelTest extends ATest {
                                 new Percent(count, maxCount).toString(PercentScale.PERCENT),
                                 new ProcessedEventsRateString(count, duration), duration)
                         .getBytes());
+    }
+
+    public static LoopInterruptedCheck newLoopInterruptedCheck() {
+        return new LoopInterruptedCheck(Duration.ONE_SECOND) {
+            @Override
+            protected boolean onInterval() throws InterruptedException {
+                return true;
+            }
+        };
     }
 
 }
