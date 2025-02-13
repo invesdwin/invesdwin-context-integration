@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.stream.server.session;
 
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -10,14 +11,14 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -59,6 +60,39 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
     @GuardedBy("only the io thread should access the result pool")
     private final IFastIterableSet<ProcessResponseResult> activeRequests = ILockCollectionFactory.getInstance(false)
             .newFastIterableIdentitySet();
+    private final IStreamSynchronousEndpointServerSessionInternalMethods internalMethods = new IStreamSynchronousEndpointServerSessionInternalMethods() {
+
+        @Override
+        public Object unsubscribe(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+
+        @Override
+        public Object subscribe(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+
+        @Override
+        public Object put(final IByteBufferProvider message) {
+            return null;
+        }
+
+        @Override
+        public IStreamSynchronousEndpointService getService(final int serviceId) {
+            return null;
+        }
+
+        @Override
+        public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
+                final Map<String, String> parameters) {
+            return null;
+        }
+
+        @Override
+        public Object delete(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+    };
 
     public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -224,19 +258,8 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
             if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                 return;
             }
-            final SynchronousEndpointService service = null; //TODO: parent.getService(serviceId);
-            if (service == null) {
-                final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
-                response.setService(serviceId);
-                response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-                response.setSequence(request.getSequence());
-                response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                        "service not found: " + serviceId);
-                writeQueue.add(result);
-                return;
-            }
             final int methodId = request.getMethod();
-            final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+            final StreamServerMethodInfo methodInfo = StreamServerMethodInfo.valueOfNullable(methodId);
             if (methodInfo == null) {
                 final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
                 response.setService(serviceId);
@@ -250,7 +273,8 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
 
             final WrappedExecutorService workExecutor = parent.getWorkExecutor();
             if (workExecutor == null || methodInfo.isBlocking()) {
-                final Future<Object> future = methodInfo.invoke(sessionId, request, result.getResponse());
+                final Future<Object> future = methodInfo.invoke(internalMethods, sessionId, request,
+                        result.getResponse());
                 if (future != null && !future.isDone()) {
                     result.setFuture(future);
                     result.setDelayedWriteResponse(true);
@@ -299,10 +323,10 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
     }
 
     private final class ProcessResponseTask implements Callable<Object> {
-        private final ServerMethodInfo methodInfo;
+        private final StreamServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseTask(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+        private ProcessResponseTask(final StreamServerMethodInfo methodInfo, final ProcessResponseResult result) {
             this.methodInfo = methodInfo;
             this.result = result;
         }
@@ -313,7 +337,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
             if (isClosed()) {
                 return null;
             } else if (isRequestTimeout()) {
-                response.setService(methodInfo.getService().getServiceId());
+                response.setService(result.getRequestCopy().getService());
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                 response.setSequence(result.getRequestCopy().getSequence());
                 response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
@@ -321,7 +345,8 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
                 writeQueue.add(result);
                 return null;
             }
-            final Future<Object> future = methodInfo.invoke(sessionId, result.getRequestCopy(), response);
+            final Future<Object> future = methodInfo.invoke(internalMethods, sessionId, result.getRequestCopy(),
+                    response);
             if (future != null && !future.isDone()) {
                 result.setDelayedWriteResponse(true);
                 pollingQueueAsyncAdds.add(result);

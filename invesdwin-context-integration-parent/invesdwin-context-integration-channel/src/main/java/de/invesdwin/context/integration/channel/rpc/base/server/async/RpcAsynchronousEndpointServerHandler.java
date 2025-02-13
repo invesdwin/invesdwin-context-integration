@@ -9,8 +9,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.IPollingQueueProvider;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcServerMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.deserializing.LazyDeserializingServiceSynchronousCommand;
@@ -93,7 +93,7 @@ public class RpcAsynchronousEndpointServerHandler
         }
         final ProcessResponseResult result = context.borrowResult();
         result.setContext(context);
-        final SynchronousEndpointService service = parent.getService(serviceId);
+        final RpcSynchronousEndpointService service = parent.getService(serviceId);
         final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
         if (service == null) {
             response.setService(serviceId);
@@ -103,7 +103,7 @@ public class RpcAsynchronousEndpointServerHandler
             return response.asBuffer();
         }
         final int methodId = requestHolder.getMethod();
-        final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+        final RpcServerMethodInfo methodInfo = service.getMethodInfo(methodId);
         if (methodInfo == null) {
             response.setService(serviceId);
             response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
@@ -162,10 +162,10 @@ public class RpcAsynchronousEndpointServerHandler
     }
 
     private final class ProcessResponseTask implements Callable<Object> {
-        private final ServerMethodInfo methodInfo;
+        private final RpcServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseTask(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+        private ProcessResponseTask(final RpcServerMethodInfo methodInfo, final ProcessResponseResult result) {
             this.methodInfo = methodInfo;
             this.result = result;
         }

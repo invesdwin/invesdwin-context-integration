@@ -4,7 +4,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.MultiplexingRpcSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.SingleplexingRpcSynchronousEndpointServerSession;
@@ -18,8 +18,8 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
 
     private final SerdeLookupConfig serdeLookupConfig;
     @GuardedBy("this")
-    private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
-    private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
+    private final Int2ObjectMap<RpcSynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
+    private volatile Int2ObjectMap<RpcSynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
 
     public RpcSynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor) {
         super(serverAcceptor);
@@ -48,9 +48,10 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
     }
 
     public synchronized <T> void register(final Class<? super T> serviceInterface, final T serviceImplementation) {
-        final SynchronousEndpointService service = SynchronousEndpointService.newInstance(serdeLookupConfig,
+        final RpcSynchronousEndpointService service = RpcSynchronousEndpointService.newInstance(serdeLookupConfig,
                 serviceInterface, serviceImplementation);
-        final SynchronousEndpointService existing = serviceId_service_sync.putIfAbsent(service.getServiceId(), service);
+        final RpcSynchronousEndpointService existing = serviceId_service_sync.putIfAbsent(service.getServiceId(),
+                service);
         if (existing != null) {
             throw new IllegalStateException("Already registered [" + service + "] as [" + existing + "]");
         }
@@ -60,9 +61,15 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
     }
 
     public synchronized <T> boolean unregister(final Class<? super T> serviceInterface) {
-        final int serviceId = SynchronousEndpointService.newServiceId(serviceInterface);
-        final SynchronousEndpointService removed = serviceId_service_sync.remove(serviceId);
-        return removed != null;
+        final int serviceId = RpcSynchronousEndpointService.newServiceId(serviceInterface);
+        final RpcSynchronousEndpointService removed = serviceId_service_sync.remove(serviceId);
+        if (removed != null) {
+            //create a new copy of the map so that server thread does not require synchronization
+            this.serviceId_service_copy = new Int2ObjectOpenHashMap<>(serviceId_service_sync);
+            return true;
+        } else {
+            return false;
+        }
     }
 
     @Override
@@ -75,7 +82,7 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
         return serdeLookupConfig;
     }
 
-    public SynchronousEndpointService getService(final int serviceId) {
+    public RpcSynchronousEndpointService getService(final int serviceId) {
         return serviceId_service_copy.get(serviceId);
     }
 

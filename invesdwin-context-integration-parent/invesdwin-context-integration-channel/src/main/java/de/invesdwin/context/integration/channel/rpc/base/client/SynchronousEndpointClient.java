@@ -4,7 +4,7 @@ import java.lang.reflect.Proxy;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.SynchronousEndpointClientHandler;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcSynchronousEndpointClientHandler;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
@@ -28,7 +28,7 @@ public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<
     private final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool;
     private final SerdeLookupConfig serdeLookupConfig;
     private final WrappedExecutorService futureExecutor;
-    private final SynchronousEndpointClientHandler handler;
+    private final RpcSynchronousEndpointClientHandler handler;
     private final T service;
 
     @SuppressWarnings("unchecked")
@@ -38,7 +38,7 @@ public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<
         this.sessionPool = sessionPool;
         this.serdeLookupConfig = newSerdeLookupConfig();
         this.futureExecutor = newFutureExecutor();
-        this.handler = new SynchronousEndpointClientHandler(this);
+        this.handler = new RpcSynchronousEndpointClientHandler(this);
         this.service = (T) Proxy.newProxyInstance(serviceInterface.getClassLoader(), new Class[] { serviceInterface },
                 handler);
     }

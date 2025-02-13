@@ -6,7 +6,7 @@ import java.util.concurrent.Future;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -18,22 +18,22 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @Immutable
-public final class ClientMethodInfo {
+public final class RpcClientMethodInfo {
 
-    private final SynchronousEndpointClientHandler handler;
+    private final RpcSynchronousEndpointClientHandler handler;
     private final int methodId;
     private final ISerde<Object[]> requestSerde;
     private final IResponseSerdeProvider responseSerdeProvider;
     private final boolean blocking;
     private final boolean future;
 
-    ClientMethodInfo(final SynchronousEndpointClientHandler handler, final Method method,
+    RpcClientMethodInfo(final RpcSynchronousEndpointClientHandler handler, final Method method,
             final SerdeLookupConfig serdeLookupConfig) {
         this.handler = handler;
-        this.methodId = SynchronousEndpointService.newMethodId(method);
+        this.methodId = RpcSynchronousEndpointService.newMethodId(method);
         this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
         this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
-        this.blocking = SynchronousEndpointService.isBlocking(method, true);
+        this.blocking = RpcSynchronousEndpointService.isBlocking(method, true);
         this.future = Future.class.isAssignableFrom(method.getReturnType());
     }
 

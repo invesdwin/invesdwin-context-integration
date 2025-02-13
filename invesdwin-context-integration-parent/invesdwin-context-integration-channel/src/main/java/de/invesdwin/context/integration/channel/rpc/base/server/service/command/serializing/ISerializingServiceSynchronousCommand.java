@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.rpc.base.server.service.command
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 public interface ISerializingServiceSynchronousCommand<M> extends IServiceSynchronousCommand<IByteBufferProvider> {
 
@@ -13,6 +14,8 @@ public interface ISerializingServiceSynchronousCommand<M> extends IServiceSynchr
     void setSequence(int sequence);
 
     void setMessage(ISerde<M> messageSerde, M message);
+
+    void setMessageBuffer(ICloseableByteBufferProvider messageBuffer);
 
     @Override
     void close();

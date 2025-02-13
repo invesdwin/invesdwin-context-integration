@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.stream.server.session;
 
 import java.io.EOFException;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -9,12 +10,12 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
+import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -46,6 +47,39 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
+    private final IStreamSynchronousEndpointServerSessionInternalMethods internalMethods = new IStreamSynchronousEndpointServerSessionInternalMethods() {
+
+        @Override
+        public Object unsubscribe(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+
+        @Override
+        public Object subscribe(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+
+        @Override
+        public Object put(final IByteBufferProvider message) {
+            return null;
+        }
+
+        @Override
+        public IStreamSynchronousEndpointService getService(final int serviceId) {
+            return null;
+        }
+
+        @Override
+        public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
+                final Map<String, String> parameters) {
+            return null;
+        }
+
+        @Override
+        public Object delete(final IStreamSynchronousEndpointService service) {
+            return null;
+        }
+    };
 
     public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -187,19 +221,8 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
             return;
         }
-        final SynchronousEndpointService service = null; //TODO: parent.getService(serviceId);
-        if (service == null) {
-            responseHolder.setService(serviceId);
-            responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-            responseHolder.setSequence(request.getSequence());
-            responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
-                    "service not found: " + serviceId);
-            responseWriter.write(responseHolder);
-            processResponseFuture = NullFuture.getInstance();
-            return;
-        }
         final int methodId = request.getMethod();
-        final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+        final StreamServerMethodInfo methodInfo = StreamServerMethodInfo.valueOfNullable(methodId);
         if (methodInfo == null) {
             responseHolder.setService(serviceId);
             responseHolder.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
@@ -278,13 +301,13 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
     }
 
     private Future<Object> processResponse(final IServiceSynchronousCommand<IByteBufferProvider> request,
-            final ServerMethodInfo methodInfo) {
+            final StreamServerMethodInfo methodInfo) {
         try {
             try {
                 if (isClosed()) {
                     return null;
                 } else if (isRequestTimeout()) {
-                    responseHolder.setService(methodInfo.getService().getServiceId());
+                    responseHolder.setService(request.getSequence());
                     responseHolder.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                     responseHolder.setSequence(request.getSequence());
                     responseHolder.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
@@ -292,7 +315,8 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
                     responseWriter.write(responseHolder);
                     return null;
                 }
-                return methodInfo.invoke(sessionId, request, responseHolder);
+
+                return methodInfo.invoke(internalMethods, sessionId, request, responseHolder);
             } finally {
                 requestReader.readFinished();
             }

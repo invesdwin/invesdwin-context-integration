@@ -8,7 +8,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.ClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
@@ -146,7 +146,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     }
 
     @Override
-    public ICloseableByteBufferProvider request(final ClientMethodInfo methodInfo, final IByteBufferProvider request) {
+    public ICloseableByteBufferProvider request(final RpcClientMethodInfo methodInfo, final IByteBufferProvider request) {
         lock.lock();
         try {
             final int requestSequence = sequenceCounter++;

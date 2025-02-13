@@ -8,7 +8,7 @@ import java.util.Map;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
@@ -19,15 +19,15 @@ import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @Immutable
-public final class SynchronousEndpointClientHandler implements InvocationHandler {
+public final class RpcSynchronousEndpointClientHandler implements InvocationHandler {
 
     private final int serviceId;
     private final ISynchronousEndpointClient<?> client;
-    private final Map<Method, ClientMethodInfo> method_methodInfo;
+    private final Map<Method, RpcClientMethodInfo> method_methodInfo;
 
-    public SynchronousEndpointClientHandler(final ISynchronousEndpointClient<?> client) {
+    public RpcSynchronousEndpointClientHandler(final ISynchronousEndpointClient<?> client) {
         this.client = client;
-        this.serviceId = SynchronousEndpointService.newServiceId(client.getServiceInterface());
+        this.serviceId = RpcSynchronousEndpointService.newServiceId(client.getServiceInterface());
         final Method[] methods = Reflections.getUniqueDeclaredMethods(client.getServiceInterface());
         this.method_methodInfo = new HashMap<>(methods.length);
         for (int i = 0; i < methods.length; i++) {
@@ -38,7 +38,7 @@ public final class SynchronousEndpointClientHandler implements InvocationHandler
             final int indexOf = Arrays.indexOf(ABeanPathProcessor.ELEMENT_NAME_BLACKLIST, method.getName());
             if (indexOf < 0) {
                 method_methodInfo.putIfAbsent(method,
-                        new ClientMethodInfo(this, method, client.getSerdeLookupConfig()));
+                        new RpcClientMethodInfo(this, method, client.getSerdeLookupConfig()));
             }
         }
     }
@@ -53,7 +53,7 @@ public final class SynchronousEndpointClientHandler implements InvocationHandler
 
     @Override
     public Object invoke(final Object proxy, final Method method, final Object[] args) throws Throwable {
-        final ClientMethodInfo methodInfo = method_methodInfo.get(method);
+        final RpcClientMethodInfo methodInfo = method_methodInfo.get(method);
         if (methodInfo == null) {
             throw UnknownArgumentException.newInstance(Method.class, method);
         }

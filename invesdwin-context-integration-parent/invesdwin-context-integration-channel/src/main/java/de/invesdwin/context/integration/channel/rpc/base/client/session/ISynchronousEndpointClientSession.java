@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.base.client.session;
 
 import java.io.Closeable;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.ClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClientMethodInfo;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -18,6 +18,6 @@ public interface ISynchronousEndpointClientSession extends Closeable {
 
     boolean isClosed();
 
-    ICloseableByteBufferProvider request(ClientMethodInfo methodInfo, IByteBufferProvider request);
+    ICloseableByteBufferProvider request(RpcClientMethodInfo methodInfo, IByteBufferProvider request);
 
 }

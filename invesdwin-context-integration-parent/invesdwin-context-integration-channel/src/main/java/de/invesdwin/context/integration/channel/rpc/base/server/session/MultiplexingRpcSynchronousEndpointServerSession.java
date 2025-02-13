@@ -11,8 +11,8 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcServerMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
@@ -223,7 +223,7 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
             if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                 return;
             }
-            final SynchronousEndpointService service = parent.getService(serviceId);
+            final RpcSynchronousEndpointService service = parent.getService(serviceId);
             if (service == null) {
                 final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
                 response.setService(serviceId);
@@ -235,7 +235,7 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
                 return;
             }
             final int methodId = request.getMethod();
-            final ServerMethodInfo methodInfo = service.getMethodInfo(methodId);
+            final RpcServerMethodInfo methodInfo = service.getMethodInfo(methodId);
             if (methodInfo == null) {
                 final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
                 response.setService(serviceId);
@@ -298,10 +298,10 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
     }
 
     private final class ProcessResponseTask implements Callable<Object> {
-        private final ServerMethodInfo methodInfo;
+        private final RpcServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseTask(final ServerMethodInfo methodInfo, final ProcessResponseResult result) {
+        private ProcessResponseTask(final RpcServerMethodInfo methodInfo, final ProcessResponseResult result) {
             this.methodInfo = methodInfo;
             this.result = result;
         }
