@@ -18,13 +18,6 @@ import de.invesdwin.util.lang.Closeables;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
-/**
- * TODO: switch to command messages so that different topics can be defined as "service"??
- * 
- * TODO: add topics that clients can subscribe to or write messages to
- * 
- * TODO: add an actual heartbeat message to the transport layer
- */
 @ThreadSafe
 public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer {
 
