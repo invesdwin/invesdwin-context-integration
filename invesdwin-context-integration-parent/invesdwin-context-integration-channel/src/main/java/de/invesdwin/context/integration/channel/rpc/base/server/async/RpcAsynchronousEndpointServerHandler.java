@@ -23,15 +23,15 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class AsynchronousEndpointServerHandler
+public class RpcAsynchronousEndpointServerHandler
         implements IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> {
 
-    private final AsynchronousEndpointServerHandlerFactory parent;
+    private final RpcAsynchronousEndpointServerHandlerFactory parent;
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
     private long lastHeartbeatNanos = System.nanoTime();
     private final IPollingQueueProvider pollingQueueProvider;
 
-    public AsynchronousEndpointServerHandler(final AsynchronousEndpointServerHandlerFactory parent) {
+    public RpcAsynchronousEndpointServerHandler(final RpcAsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
         this.pollingQueueProvider = parent.getPollingQueueProvider();
     }

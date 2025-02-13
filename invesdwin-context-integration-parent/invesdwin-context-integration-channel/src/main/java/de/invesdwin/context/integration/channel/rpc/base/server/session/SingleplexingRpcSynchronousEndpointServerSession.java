@@ -9,7 +9,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
@@ -31,9 +31,9 @@ import de.invesdwin.util.time.duration.Duration;
  * Allows only one active request per client session.
  */
 @ThreadSafe
-public class SingleplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
 
-    private final SynchronousEndpointServer parent;
+    private final RpcSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
     private final String sessionId;
     private final Duration heartbeatTimeout;
@@ -46,7 +46,7 @@ public class SingleplexingSynchronousEndpointServerSession implements ISynchrono
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
 
-    public SingleplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
+    public SingleplexingRpcSynchronousEndpointServerSession(final RpcSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;

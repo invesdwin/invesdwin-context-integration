@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.base.server.session;
+package de.invesdwin.context.integration.channel.stream.server.session;
 
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -10,13 +10,14 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService.ServerMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
+import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -36,9 +37,9 @@ import de.invesdwin.util.time.duration.Duration;
  * Allows to process multiple requests in parallel for the same endpoint by multiplexing it.
  */
 @ThreadSafe
-public class MultiplexingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+public class MultiplexingStreamSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
 
-    private final SynchronousEndpointServer parent;
+    private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
     private final String sessionId;
     private final Duration heartbeatTimeout;
@@ -59,7 +60,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
     private final IFastIterableSet<ProcessResponseResult> activeRequests = ILockCollectionFactory.getInstance(false)
             .newFastIterableIdentitySet();
 
-    public MultiplexingSynchronousEndpointServerSession(final SynchronousEndpointServer parent,
+    public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
@@ -223,7 +224,7 @@ public class MultiplexingSynchronousEndpointServerSession implements ISynchronou
             if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
                 return;
             }
-            final SynchronousEndpointService service = parent.getService(serviceId);
+            final SynchronousEndpointService service = null; //TODO: parent.getService(serviceId);
             if (service == null) {
                 final ISerializingServiceSynchronousCommand<Object> response = result.getResponse();
                 response.setService(serviceId);

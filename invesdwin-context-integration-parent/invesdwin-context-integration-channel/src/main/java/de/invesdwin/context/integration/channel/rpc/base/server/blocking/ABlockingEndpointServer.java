@@ -4,18 +4,18 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.DisabledPollingQueueProvider;
 
 @NotThreadSafe
 public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
 
-    private final AsynchronousEndpointServerHandlerFactory handlerFactory;
+    private final RpcAsynchronousEndpointServerHandlerFactory handlerFactory;
     private final ISynchronousEndpointSessionFactoryTransformer sessionFactoryTransformer;
     private final int maxPendingWorkCountOverall;
 
-    public ABlockingEndpointServer(final AsynchronousEndpointServerHandlerFactory handlerFactory,
+    public ABlockingEndpointServer(final RpcAsynchronousEndpointServerHandlerFactory handlerFactory,
             final ISynchronousEndpointSessionFactoryTransformer endpointSessionTransformer) {
         this.handlerFactory = handlerFactory;
         //polling queue disabled because this is handled in BlockingEndpointServiceHandlerContext directly
@@ -32,7 +32,7 @@ public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
         return sessionFactoryTransformer;
     }
 
-    public AsynchronousEndpointServerHandlerFactory getHandlerFactory() {
+    public RpcAsynchronousEndpointServerHandlerFactory getHandlerFactory() {
         return handlerFactory;
     }
 
@@ -43,7 +43,7 @@ public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
      * return 0 here for unlimited pending work count overall.
      */
     protected int newMaxPendingWorkCountOverall() {
-        return SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+        return RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
     }
 
     public int getMaxPendingWorkCountOverall() {

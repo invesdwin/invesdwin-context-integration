@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.springframework.remoting.rmi.rmi.RmiServiceExporter;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.blocking.ABlockingEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.ArrayBlockingEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.IArrayBlockingEndpointService;
@@ -26,7 +26,7 @@ public class RmiSynchronousEndpointServer extends ABlockingEndpointServer {
     private final int registryPort;
     private RmiServiceExporter server;
 
-    public RmiSynchronousEndpointServer(final AsynchronousEndpointServerHandlerFactory handlerFactory,
+    public RmiSynchronousEndpointServer(final RpcAsynchronousEndpointServerHandlerFactory handlerFactory,
             final ISynchronousEndpointSessionFactoryTransformer endpointSessionTransformer) {
         super(handlerFactory, endpointSessionTransformer);
         this.serviceName = newServiceName();

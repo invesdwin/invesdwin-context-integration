@@ -6,8 +6,8 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.handler.SynchronousEndpointClientHandler;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
@@ -17,10 +17,10 @@ import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 @ThreadSafe
 public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<T> {
 
-    public static final int DEFAULT_MAX_PENDING_WORK_COUNT = AsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT = RpcAsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
 
     public static final WrappedExecutorService DEFAULT_FUTURE_EXECUTOR = Executors
-            .newFixedThreadPool(SynchronousEndpointServer.class.getSimpleName() + "_FUTURE",
+            .newFixedThreadPool(RpcSynchronousEndpointServer.class.getSimpleName() + "_FUTURE",
                     DEFAULT_MAX_PENDING_WORK_COUNT)
             .setDynamicThreadName(false);
 

@@ -14,8 +14,8 @@ import com.google.common.util.concurrent.ListenableFuture;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.IAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.SyncPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.SessionlessHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.SessionlessHandlerContextPool;
@@ -34,9 +34,9 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
  * A sessionless server is used for datagram connections that do not track individual connections for each client.
  */
 @ThreadSafe
-public class SessionlessSynchronousEndpointServer implements ISynchronousChannel {
+public abstract class ASessionlessSynchronousEndpointServer implements ISynchronousChannel {
 
-    private final AsynchronousEndpointServerHandlerFactory handlerFactory;
+    private final IAsynchronousEndpointServerHandlerFactory handlerFactory;
     private final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, Object> serverEndpointFactory;
     private final WrappedExecutorService ioExecutor;
     private final SyncPollingQueueProvider pollingQueueProvider = new SyncPollingQueueProvider();
@@ -47,9 +47,9 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
     private IoRunnable ioRunnable;
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    public SessionlessSynchronousEndpointServer(
+    public ASessionlessSynchronousEndpointServer(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
-            final AsynchronousEndpointServerHandlerFactory handlerFactory) {
+            final IAsynchronousEndpointServerHandlerFactory handlerFactory) {
         this.serverEndpointFactory = (ISessionlessSynchronousEndpointFactory) serverEndpointFactory;
         this.handlerFactory = handlerFactory;
         this.ioExecutor = newIoExecutor();
@@ -59,7 +59,7 @@ public class SessionlessSynchronousEndpointServer implements ISynchronousChannel
      * Should always be a CachedExecutorService (default)
      */
     protected WrappedExecutorService newIoExecutor() {
-        return SynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
+        return RpcSynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
     }
 
     public WrappedExecutorService getIoExecutor() {

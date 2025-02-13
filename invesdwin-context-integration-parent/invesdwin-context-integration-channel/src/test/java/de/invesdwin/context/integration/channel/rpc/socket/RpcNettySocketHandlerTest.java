@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySharedSocketClientEndpointFactory;
@@ -51,9 +51,9 @@ public class RpcNettySocketHandlerTest extends ARpcChannelTest {
     protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
             throws InterruptedException {
         final INettySocketChannelType type = INettySocketChannelType.getDefault();
-        final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
+        final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
             @Override
-            public IAsynchronousChannel apply(final AsynchronousEndpointServerHandlerFactory t) {
+            public IAsynchronousChannel apply(final RpcAsynchronousEndpointServerHandlerFactory t) {
                 final NettySocketSynchronousChannel channel = new NettySocketSynchronousChannel(type, address, true,
                         getMaxMessageSize()) {
                     @Override

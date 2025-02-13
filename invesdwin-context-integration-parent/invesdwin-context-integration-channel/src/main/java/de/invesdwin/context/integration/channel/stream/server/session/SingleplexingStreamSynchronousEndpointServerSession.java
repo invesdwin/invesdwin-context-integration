@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.Synchron
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.StreamingSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -32,9 +32,9 @@ import de.invesdwin.util.time.duration.Duration;
  * Allows only one active request per client session.
  */
 @ThreadSafe
-public class SingleplexingStreamingSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+public class SingleplexingStreamSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
 
-    private final StreamingSynchronousEndpointServer parent;
+    private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
     private final String sessionId;
     private final Duration heartbeatTimeout;
@@ -47,7 +47,7 @@ public class SingleplexingStreamingSynchronousEndpointServerSession implements I
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
 
-    public SingleplexingStreamingSynchronousEndpointServerSession(final StreamingSynchronousEndpointServer parent,
+    public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;

@@ -17,13 +17,13 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.async.AsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.IRpcTestService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcClientTask;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
-import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.SessionlessSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.RpcSessionlessSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
@@ -53,7 +53,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
     private void runRpcPerformanceTestLazy(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor) {
+        final RpcSynchronousEndpointServer serverChannel = new RpcSynchronousEndpointServer(serverAcceptor) {
             @Override
             protected int newMaxIoThreadCount() {
                 return RPC_CLIENT_TRANSPORTS;
@@ -96,7 +96,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
     private void runRpcPerformanceTestEager(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final SynchronousEndpointServer serverChannel = new SynchronousEndpointServer(serverAcceptor) {
+        final RpcSynchronousEndpointServer serverChannel = new RpcSynchronousEndpointServer(serverAcceptor) {
             @Override
             protected int newMaxIoThreadCount() {
                 return RPC_CLIENT_TRANSPORTS;
@@ -147,7 +147,7 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
     }
 
     protected void runRpcHandlerPerformanceTest(
-            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         if (RPC_CLIENT_LAZY) {
@@ -158,10 +158,10 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
     }
 
     private void runRpcHandlerPerformanceTestLazy(
-            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
         final RpcTestService service = new RpcTestService(newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
@@ -198,10 +198,10 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
 
     @SuppressWarnings("unchecked")
     private void runRpcHandlerPerformanceTestEager(
-            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
         final RpcTestService service = new RpcTestService(newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
@@ -245,10 +245,10 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
 
     @SuppressWarnings("unchecked")
     protected void runRpcBlockingPerformanceTest(
-            final Function<AsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
+            final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
         final RpcTestService service = new RpcTestService(newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
@@ -305,10 +305,10 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
         final RpcTestService service = new RpcTestService(newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
-        final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
+        final RpcSessionlessSynchronousEndpointServer serverChannel = new RpcSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService> client = new SynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -346,10 +346,10 @@ public abstract class ARpcChannelTest extends ALatencyChannelTest {
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
-        final AsynchronousEndpointServerHandlerFactory handlerFactory = new AsynchronousEndpointServerHandlerFactory();
+        final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
         final RpcTestService service = new RpcTestService(newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
-        final SessionlessSynchronousEndpointServer serverChannel = new SessionlessSynchronousEndpointServer(
+        final RpcSessionlessSynchronousEndpointServer serverChannel = new RpcSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final ISynchronousEndpointClient<IRpcTestService>[] clients = new ISynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {

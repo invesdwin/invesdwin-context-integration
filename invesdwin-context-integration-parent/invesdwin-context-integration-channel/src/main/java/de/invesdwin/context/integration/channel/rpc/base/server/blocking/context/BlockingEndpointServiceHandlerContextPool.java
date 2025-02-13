@@ -5,7 +5,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.blocking.ABlockingEndpointServer;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
@@ -25,7 +25,7 @@ public final class BlockingEndpointServiceHandlerContextPool
 
     private static int newMaxPoolSize() {
         return new SystemProperties(BlockingEndpointServiceHandlerContextPool.class).getIntegerOptional(
-                KEY_MAX_POOL_SIZE, SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
+                KEY_MAX_POOL_SIZE, RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
     }
 
     @Override

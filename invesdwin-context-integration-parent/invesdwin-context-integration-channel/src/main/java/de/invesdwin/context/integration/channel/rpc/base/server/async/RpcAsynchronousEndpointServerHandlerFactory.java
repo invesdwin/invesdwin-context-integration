@@ -5,8 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
-import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.AsyncPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.IPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.SynchronousEndpointService;
@@ -18,13 +17,12 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
-public class AsynchronousEndpointServerHandlerFactory
-        implements IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> {
+public class RpcAsynchronousEndpointServerHandlerFactory implements IAsynchronousEndpointServerHandlerFactory {
 
-    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+    public static final int DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL = RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION = Integers
-            .abs(SynchronousEndpointServer.DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION);
-    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = SynchronousEndpointServer.DEFAULT_WORK_EXECUTOR;
+            .abs(RpcSynchronousEndpointServer.DEFAULT_INITIAL_MAX_PENDING_WORK_COUNT_PER_SESSION);
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = RpcSynchronousEndpointServer.DEFAULT_WORK_EXECUTOR;
     private final SerdeLookupConfig serdeLookupConfig;
     private final Int2ObjectMap<SynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<SynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
@@ -33,11 +31,11 @@ public class AsynchronousEndpointServerHandlerFactory
     private final int maxPendingWorkCountPerSession;
     private IPollingQueueProvider pollingQueueProvider = AsyncPollingQueueProvider.INSTANCE;
 
-    public AsynchronousEndpointServerHandlerFactory() {
+    public RpcAsynchronousEndpointServerHandlerFactory() {
         this(SerdeLookupConfig.DEFAULT);
     }
 
-    public AsynchronousEndpointServerHandlerFactory(final SerdeLookupConfig serdeLookupConfig) {
+    public RpcAsynchronousEndpointServerHandlerFactory(final SerdeLookupConfig serdeLookupConfig) {
         this.serdeLookupConfig = serdeLookupConfig;
         this.workExecutor = newWorkExecutor();
         this.maxPendingWorkCountOverall = newMaxPendingWorkCountOverall();
@@ -52,10 +50,12 @@ public class AsynchronousEndpointServerHandlerFactory
         }
     }
 
+    @Override
     public void setPollingQueueProvider(final IPollingQueueProvider pollingQueueProvider) {
         this.pollingQueueProvider = pollingQueueProvider;
     }
 
+    @Override
     public IPollingQueueProvider getPollingQueueProvider() {
         return pollingQueueProvider;
     }
@@ -144,7 +144,7 @@ public class AsynchronousEndpointServerHandlerFactory
 
     @Override
     public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler() {
-        return new AsynchronousEndpointServerHandler(this);
+        return new RpcAsynchronousEndpointServerHandler(this);
     }
 
 }

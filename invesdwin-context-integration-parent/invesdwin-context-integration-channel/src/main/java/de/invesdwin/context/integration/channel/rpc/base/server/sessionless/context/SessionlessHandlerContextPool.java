@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.base.server.sessionless.con
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.server.SynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
 
@@ -18,7 +18,7 @@ public final class SessionlessHandlerContextPool extends AAgronaObjectPool<Sessi
 
     private static int newMaxPoolSize() {
         return new SystemProperties(SessionlessHandlerContextPool.class).getIntegerOptional(KEY_MAX_POOL_SIZE,
-                SynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
+                RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
     }
 
     @Override
