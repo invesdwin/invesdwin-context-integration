@@ -12,8 +12,6 @@ public interface IStreamSynchronousEndpointService extends Closeable {
 
     String getTopic();
 
-    boolean isAlwaysFuturePut();
-
     /**
      * Can return false here if the message can not be immediately written and instead should be put into a queue with
      * potentially creating a copy of the message.
