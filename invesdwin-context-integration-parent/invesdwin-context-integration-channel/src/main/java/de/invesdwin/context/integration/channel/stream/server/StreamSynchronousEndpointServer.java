@@ -14,8 +14,8 @@ import de.invesdwin.context.integration.channel.stream.server.service.StreamServ
 import de.invesdwin.context.integration.channel.stream.server.session.MultiplexingStreamSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.session.SingleplexingStreamSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.DefaultStreamSessionManager;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Closeables;
@@ -86,7 +86,7 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
              */
             return new SingleplexingStreamSynchronousEndpointServerSession(this, endpointSession);
         } else {
-            //we want to be able to handle multiple
+            //we want to be able to handle multiple requests concurrently
             return new MultiplexingStreamSynchronousEndpointServerSession(this, endpointSession);
         }
     }
@@ -132,8 +132,7 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
         }
     }
 
-    public IStreamSessionManager newManager(
-            final IStreamSynchronousEndpointSession session) {
+    public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
         return new DefaultStreamSessionManager(session);
     }
 }

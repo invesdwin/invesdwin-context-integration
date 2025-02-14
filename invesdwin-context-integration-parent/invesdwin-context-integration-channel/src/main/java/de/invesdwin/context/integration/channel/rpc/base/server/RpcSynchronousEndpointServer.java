@@ -42,7 +42,7 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
              */
             return new SingleplexingRpcSynchronousEndpointServerSession(this, endpointSession);
         } else {
-            //we want to be able to handle multiple
+            //we want to be able to handle multiple requests concurrently
             return new MultiplexingRpcSynchronousEndpointServerSession(this, endpointSession);
         }
     }
