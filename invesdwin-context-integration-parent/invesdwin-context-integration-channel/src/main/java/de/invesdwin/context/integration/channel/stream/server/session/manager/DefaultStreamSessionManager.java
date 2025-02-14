@@ -20,7 +20,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 /**
- * A stream session manager that handles pushing messages for subscriptions and requests from clients.
+ * A stream session manager that handles pushing messages for subscriptions and creating responses for requests from
+ * clients.
  */
 @ThreadSafe
 public class DefaultStreamSessionManager implements IStreamSessionManager {
