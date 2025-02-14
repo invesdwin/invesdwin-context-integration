@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 public class ReadFinishedDelegateSynchronousReader<M> implements ISynchronousReader<M> {
 
     private final ISynchronousReader<M> delegate;
-    private boolean readFinished;
+    private boolean readFinished = true;
 
     public ReadFinishedDelegateSynchronousReader(final ISynchronousReader<M> delegate) {
         this.delegate = delegate;
