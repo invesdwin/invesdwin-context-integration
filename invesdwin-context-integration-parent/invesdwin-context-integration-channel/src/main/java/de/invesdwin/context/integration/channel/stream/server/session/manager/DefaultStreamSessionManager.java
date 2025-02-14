@@ -1,6 +1,8 @@
 package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -11,6 +13,7 @@ import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousE
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -26,6 +29,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
     private final StreamSynchronousEndpointServer server;
     @GuardedBy("self")
     private final Int2ObjectMap<DefaultStreamSessionManagerSubscription> serviceId_subscription = new Int2ObjectOpenHashMap<>();
+    @GuardedBy("self")
     private final NodeBufferingIterator<DefaultStreamSessionManagerSubscription> notifiedSubscriptions = new NodeBufferingIterator<>();
 
     public DefaultStreamSessionManager(final IStreamSynchronousEndpointSession session) {
@@ -152,6 +156,27 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
                     "can not delete serviceId [" + service.getServiceId() + "] for topic: " + service.getTopic());
         }
         return null;
+    }
+
+    @Override
+    public void close() {
+        final List<DefaultStreamSessionManagerSubscription> subscriptionsCopy;
+        synchronized (serviceId_subscription) {
+            subscriptionsCopy = new ArrayList<>(serviceId_subscription.values());
+        }
+        for (final DefaultStreamSessionManagerSubscription subscription : subscriptionsCopy) {
+            try {
+                subscription.unsubscribe(Collections.emptyMap());
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        synchronized (serviceId_subscription) {
+            serviceId_subscription.clear();
+        }
+        synchronized (notifiedSubscriptions) {
+            notifiedSubscriptions.clear();
+        }
     }
 
 }

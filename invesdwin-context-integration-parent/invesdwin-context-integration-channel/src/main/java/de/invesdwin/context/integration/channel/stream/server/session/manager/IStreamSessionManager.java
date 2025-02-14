@@ -1,12 +1,13 @@
 package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.Map;
 
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
-public interface IStreamSessionManager {
+public interface IStreamSessionManager extends Closeable {
 
     IStreamSynchronousEndpointSession getSession();
 
@@ -70,5 +71,8 @@ public interface IStreamSessionManager {
      * at a later time.
      */
     Object delete(IStreamSynchronousEndpointService service, Map<String, String> parameters) throws Exception;
+
+    @Override
+    void close();
 
 }

@@ -93,7 +93,11 @@ public class DefaultStreamSessionManagerSubscription
             throw new IllegalStateException(
                     "subscription to service [" + service.getServiceId() + "] already unsubscribed");
         }
-        notified.set(false);
+        if (notified.compareAndSet(true, false)) {
+            synchronized (notifiedSubscriptions) {
+                Assertions.checkTrue(notifiedSubscriptions.remove(this));
+            }
+        }
     }
 
     @Override

@@ -131,4 +131,9 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
         return executor.submit(() -> delegate.delete(service, parameters));
     }
 
+    @Override
+    public void close() {
+        delegate.close();
+    }
+
 }

@@ -104,6 +104,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             }
         }
         activeRequests.clear();
+        manager.close();
         final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReaderCopy = requestReader;
         requestReader = ClosedSynchronousReader.getInstance();
         try {
