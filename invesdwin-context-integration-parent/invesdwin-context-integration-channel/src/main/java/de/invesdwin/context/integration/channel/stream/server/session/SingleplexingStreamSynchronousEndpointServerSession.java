@@ -136,7 +136,8 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         responseHolder.setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
         /*
          * add a sequence to the pushed messages so that the client can validate if he missed some messages and
-         * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
+         * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request or by
+         * resetting the subscription entirely
          */
         responseHolder.setSequence(pushedMessages++);
         responseHolder.setMessageBuffer(message);
