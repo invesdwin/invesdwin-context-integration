@@ -70,6 +70,9 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
 
     @Override
     protected void onClose() {
+        for (final IStreamSynchronousEndpointService service : serviceId_service_sync.values()) {
+            service.close();
+        }
         serviceId_service_sync.clear();
         serviceId_service_copy = new Int2ObjectOpenHashMap<>();
     }
