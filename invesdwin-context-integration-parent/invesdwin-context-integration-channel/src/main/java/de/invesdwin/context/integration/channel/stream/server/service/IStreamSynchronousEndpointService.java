@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.util.Map;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 public interface IStreamSynchronousEndpointService extends Closeable {
@@ -13,13 +12,21 @@ public interface IStreamSynchronousEndpointService extends Closeable {
 
     String getTopic();
 
-    ISynchronousWriter<IByteBufferProvider> getSharedWriter();
+    boolean isAlwaysFuturePut();
 
-    ISynchronousReader<IByteBufferProvider> subscribe(Runnable notificationListener, Map<String, String> parameters);
+    /**
+     * Can return false here if the message can not be immediately written and instead should be put into a queue with
+     * potentially creating a copy of the message.
+     */
+    boolean put(IByteBufferProvider message);
 
-    boolean unsubscribe(Runnable notificationListener);
+    ISynchronousReader<IByteBufferProvider> subscribe(IStreamSynchronousEndpointServiceListener notificationListener,
+            Map<String, String> parameters);
 
-    void delete();
+    boolean unsubscribe(IStreamSynchronousEndpointServiceListener notificationListener, Map<String, String> parameters)
+            throws Exception;
+
+    boolean delete(Map<String, String> parameters);
 
     @Override
     void close();

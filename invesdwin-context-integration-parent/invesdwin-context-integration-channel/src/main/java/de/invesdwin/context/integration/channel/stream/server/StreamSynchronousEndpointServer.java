@@ -13,9 +13,9 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.stream.server.session.MultiplexingStreamSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.session.SingleplexingStreamSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.DefaultStreamSynchronousEndpointServerSessionManager;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.DefaultStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Closeables;
@@ -25,31 +25,47 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 @ThreadSafe
 public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer {
 
-    private static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT = 100;
+    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION = 100;
+    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION = 50;
 
     private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     @GuardedBy("this")
     private final Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
-    private final int maxSuccessivePushCount;
+    private final int maxSuccessivePushCountPerSession;
+    private final int maxSuccessivePushCountPerSubscription;
 
     public StreamSynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final IStreamSynchronousEndpointServiceFactory serviceFactory) {
         super(serverAcceptor);
         this.serviceFactory = serviceFactory;
-        this.maxSuccessivePushCount = newMaxSuccessivePushCount();
+        this.maxSuccessivePushCountPerSession = newMaxSuccessivePushCountPerSession();
+        this.maxSuccessivePushCountPerSubscription = newMaxSuccessivePushCountPerSubscription();
     }
 
     /**
      * This defines how many consecutive topic messages can be pushed before checking for the next request and giving
-     * that priority in handling before pushing again
+     * that request priority in handling before pushing again
      */
-    protected int newMaxSuccessivePushCount() {
-        return DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT;
+    protected int newMaxSuccessivePushCountPerSession() {
+        return DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION;
     }
 
-    public int getMaxSuccessivePushCount() {
-        return maxSuccessivePushCount;
+    /**
+     * This defines how many consecutive topic messages can be pushed for an individual subscription before checking the
+     * next subscription. This allows to give other topics the chance to send messages without being blocking by a
+     * particularly busy topic.
+     */
+    protected int newMaxSuccessivePushCountPerSubscription() {
+        return DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION;
+    }
+
+    public int getMaxSuccessivePushCountPerSession() {
+        return maxSuccessivePushCountPerSession;
+    }
+
+    public int getMaxSuccessivePushCountPerSubscription() {
+        return maxSuccessivePushCountPerSubscription;
     }
 
     @Override
@@ -116,8 +132,8 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
         }
     }
 
-    public IStreamSynchronousEndpointServerSessionManager newManager(
-            final IStreamSynchronousEndpointServerSession session) {
-        return new DefaultStreamSynchronousEndpointServerSessionManager(session);
+    public IStreamSessionManager newManager(
+            final IStreamSynchronousEndpointSession session) {
+        return new DefaultStreamSessionManager(session);
     }
 }

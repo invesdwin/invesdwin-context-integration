@@ -13,9 +13,10 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -34,7 +35,7 @@ import de.invesdwin.util.time.duration.Duration;
  */
 @ThreadSafe
 public class SingleplexingStreamSynchronousEndpointServerSession
-        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointServerSession {
+        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointSession {
 
     private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -48,7 +49,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
-    private final IStreamSynchronousEndpointServerSessionManager manager;
+    private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
 
     public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
@@ -112,6 +113,13 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         return endpointSession == null;
     }
 
+    @Override
+    public boolean pushTopicSubscriptionMessage(final IStreamSynchronousEndpointService service,
+            final ISynchronousReader<IByteBufferProvider> reader) {
+        //TODO
+        return false;
+    }
+
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
     @Override
     public boolean handle() throws IOException {
@@ -123,7 +131,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             if (managerHandled) {
                 if (skipRequestReadingCount == 0) {
                     //give pushing messages priority
-                    skipRequestReadingCount = parent.getMaxSuccessivePushCount();
+                    skipRequestReadingCount = parent.getMaxSuccessivePushCountPerSession();
                 } else {
                     //decrease priority for pushing messages
                     skipRequestReadingCount--;

@@ -12,7 +12,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
@@ -36,11 +36,17 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+        public boolean isAlwaysFuture(final IStreamSessionManager manager) {
+            return manager.isAlwaysFuturePut();
+        }
+
+        @Override
+        protected Object invoke(final IStreamSessionManager manager,
                 final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
             return manager.put(service, message);
         }
+
     },
     SUBSCRIBE(false) {
         @Override
@@ -49,7 +55,12 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+        public boolean isAlwaysFuture(final IStreamSessionManager manager) {
+            return manager.isAlwaysFutureSubscribe();
+        }
+
+        @Override
+        protected Object invoke(final IStreamSessionManager manager,
                 final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
@@ -66,7 +77,12 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+        public boolean isAlwaysFuture(final IStreamSessionManager manager) {
+            return manager.isAlwaysFutureUnsubscribe();
+        }
+
+        @Override
+        protected Object invoke(final IStreamSessionManager manager,
                 final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
@@ -84,7 +100,7 @@ public enum StreamServerMethodInfo {
 
         @Override
         protected IStreamSynchronousEndpointService getService(
-                final IStreamSynchronousEndpointServerSessionManager manager, final int serviceId,
+                final IStreamSessionManager manager, final int serviceId,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message);
             final String topic = parseTopic(uri);
@@ -93,7 +109,12 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+        public boolean isAlwaysFuture(final IStreamSessionManager manager) {
+            return false;
+        }
+
+        @Override
+        protected Object invoke(final IStreamSessionManager manager,
                 final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
             return null;
@@ -106,7 +127,12 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+        public boolean isAlwaysFuture(final IStreamSessionManager manager) {
+            return manager.isAlwaysFutureDelete();
+        }
+
+        @Override
+        protected Object invoke(final IStreamSessionManager manager,
                 final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
@@ -196,18 +222,16 @@ public enum StreamServerMethodInfo {
         return blocking;
     }
 
-    public boolean isFuture(final IStreamSynchronousEndpointServerSessionManager manager) {
-        return manager.isFuture(this);
-    }
+    public abstract boolean isAlwaysFuture(IStreamSessionManager manager);
 
     public abstract int getMethodId();
 
-    protected IStreamSynchronousEndpointService getService(final IStreamSynchronousEndpointServerSessionManager manager,
+    protected IStreamSynchronousEndpointService getService(final IStreamSessionManager manager,
             final int serviceId, final IByteBufferProvider message) throws Exception {
         return manager.getService(serviceId);
     }
 
-    public Future<Object> invoke(final IStreamSynchronousEndpointServerSessionManager manager, final String sessionId,
+    public Future<Object> invoke(final IStreamSessionManager manager, final String sessionId,
             final IServiceSynchronousCommand<IByteBufferProvider> request,
             final ISerializingServiceSynchronousCommand<Object> response) {
         final int serviceId = request.getService();
@@ -224,10 +248,10 @@ public enum StreamServerMethodInfo {
                 return null;
             }
 
-            final boolean future = manager.isFuture(this);
+            final boolean future = isAlwaysFuture(manager);
             final Object result = invoke(manager, service, future, request.getMessage());
-            if (future) {
-                if (result != null) {
+            if (result != null) {
+                if (future || result instanceof Future) {
                     @SuppressWarnings("unchecked")
                     final Future<Object> futureResult = (Future<Object>) result;
                     return new APostProcessingFuture<Object>(futureResult) {
@@ -253,7 +277,7 @@ public enum StreamServerMethodInfo {
         }
     }
 
-    protected abstract Object invoke(IStreamSynchronousEndpointServerSessionManager manager,
+    protected abstract Object invoke(IStreamSessionManager manager,
             IStreamSynchronousEndpointService service, boolean future, IByteBufferProvider message) throws Exception;
 
     private void handleResult(final ISerializingServiceSynchronousCommand<Object> response, final Object result) {

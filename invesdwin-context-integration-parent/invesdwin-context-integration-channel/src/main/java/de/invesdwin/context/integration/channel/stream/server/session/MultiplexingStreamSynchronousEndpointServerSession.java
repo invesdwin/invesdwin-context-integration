@@ -16,9 +16,10 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchro
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -39,7 +40,7 @@ import de.invesdwin.util.time.duration.Duration;
  */
 @ThreadSafe
 public class MultiplexingStreamSynchronousEndpointServerSession
-        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointServerSession {
+        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointSession {
 
     private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -61,7 +62,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
     @GuardedBy("only the io thread should access the result pool")
     private final IFastIterableSet<ProcessResponseResult> activeRequests = ILockCollectionFactory.getInstance(false)
             .newFastIterableIdentitySet();
-    private final IStreamSynchronousEndpointServerSessionManager manager;
+    private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
 
     public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
@@ -131,6 +132,13 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         return endpointSession == null;
     }
 
+    @Override
+    public boolean pushTopicSubscriptionMessage(final IStreamSynchronousEndpointService service,
+            final ISynchronousReader<IByteBufferProvider> reader) {
+        //TODO
+        return false;
+    }
+
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
     @Override
     public boolean handle() throws IOException {
@@ -142,7 +150,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             if (managerHandled) {
                 if (skipRequestReadingCount == 0) {
                     //give pushing messages priority
-                    skipRequestReadingCount = parent.getMaxSuccessivePushCount();
+                    skipRequestReadingCount = parent.getMaxSuccessivePushCountPerSession();
                 } else {
                     //decrease priority for pushing messages
                     skipRequestReadingCount--;
