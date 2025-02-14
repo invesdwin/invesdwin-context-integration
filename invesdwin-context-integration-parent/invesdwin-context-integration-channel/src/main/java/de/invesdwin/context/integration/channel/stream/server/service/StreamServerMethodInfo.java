@@ -41,9 +41,8 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSessionManager manager,
-                final IStreamSynchronousEndpointService service, final boolean future,
-                final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSessionManager manager, final IStreamSynchronousEndpointService service,
+                final boolean future, final IByteBufferProvider message) throws Exception {
             return manager.put(service, message);
         }
 
@@ -60,9 +59,8 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSessionManager manager,
-                final IStreamSynchronousEndpointService service, final boolean future,
-                final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSessionManager manager, final IStreamSynchronousEndpointService service,
+                final boolean future, final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
@@ -82,9 +80,8 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSessionManager manager,
-                final IStreamSynchronousEndpointService service, final boolean future,
-                final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSessionManager manager, final IStreamSynchronousEndpointService service,
+                final boolean future, final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
@@ -99,8 +96,7 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected IStreamSynchronousEndpointService getService(
-                final IStreamSessionManager manager, final int serviceId,
+        protected IStreamSynchronousEndpointService getService(final IStreamSessionManager manager, final int serviceId,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message);
             final String topic = parseTopic(uri);
@@ -114,9 +110,8 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSessionManager manager,
-                final IStreamSynchronousEndpointService service, final boolean future,
-                final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSessionManager manager, final IStreamSynchronousEndpointService service,
+                final boolean future, final IByteBufferProvider message) throws Exception {
             return null;
         }
     },
@@ -132,9 +127,8 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSessionManager manager,
-                final IStreamSynchronousEndpointService service, final boolean future,
-                final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSessionManager manager, final IStreamSynchronousEndpointService service,
+                final boolean future, final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
@@ -148,6 +142,7 @@ public enum StreamServerMethodInfo {
     public static final int METHOD_ID_UNSUBSCRIBE = 2;
     public static final int METHOD_ID_CREATE = 3;
     public static final int METHOD_ID_DELETE = 4;
+    public static final int METHOD_ID_PUSH = 10;
 
     private static final FastThreadLocal<Map<String, String>> QUERY_PARAMS_HOLDER = new FastThreadLocal<Map<String, String>>() {
         @Override
@@ -226,8 +221,8 @@ public enum StreamServerMethodInfo {
 
     public abstract int getMethodId();
 
-    protected IStreamSynchronousEndpointService getService(final IStreamSessionManager manager,
-            final int serviceId, final IByteBufferProvider message) throws Exception {
+    protected IStreamSynchronousEndpointService getService(final IStreamSessionManager manager, final int serviceId,
+            final IByteBufferProvider message) throws Exception {
         return manager.getService(serviceId);
     }
 
@@ -277,8 +272,8 @@ public enum StreamServerMethodInfo {
         }
     }
 
-    protected abstract Object invoke(IStreamSessionManager manager,
-            IStreamSynchronousEndpointService service, boolean future, IByteBufferProvider message) throws Exception;
+    protected abstract Object invoke(IStreamSessionManager manager, IStreamSynchronousEndpointService service,
+            boolean future, IByteBufferProvider message) throws Exception;
 
     private void handleResult(final ISerializingServiceSynchronousCommand<Object> response, final Object result) {
         response.setMethod(getMethodId());

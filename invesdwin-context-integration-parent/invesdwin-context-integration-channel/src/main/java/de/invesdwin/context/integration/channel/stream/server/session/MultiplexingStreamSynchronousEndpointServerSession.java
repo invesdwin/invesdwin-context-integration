@@ -151,7 +151,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         final ProcessResponseResult writeTask = ProcessResponseResultPool.INSTANCE.borrowObject();
         final IByteBufferProvider message = reader.readMessage();
         writeTask.getResponse().setService(service.getServiceId());
-        writeTask.getResponse().setMethod(StreamServerMethodInfo.METHOD_ID_PUT);
+        writeTask.getResponse().setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
         writeTask.getResponse().setSequence(-1);
         writeTask.getResponse().setMessageBuffer(message);
         responseWriter.write(writeTask.getResponse());

@@ -132,7 +132,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         }
         final IByteBufferProvider message = reader.readMessage();
         responseHolder.setService(service.getServiceId());
-        responseHolder.setMethod(StreamServerMethodInfo.METHOD_ID_PUT);
+        responseHolder.setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
         responseHolder.setSequence(-1);
         responseHolder.setMessageBuffer(message);
         responseWriter.write(responseHolder);
