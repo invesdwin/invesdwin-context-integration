@@ -22,6 +22,7 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
  * maximum active requests to prevent overloading the server.
  * 
  * Another use case would be to define a per-session pending work limit that forces the client to back-off if exceeded.
+ * This limit can be configured on an individual client basis instead of the limit that is given for all sessions.
  */
 @ThreadSafe
 public class AsyncDelegateStreamSessionManager implements IStreamSessionManager {
@@ -75,8 +76,8 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
         if (maxPendingTasksCountForSession > 0) {
             final int pendingTasksCount = executor.getPendingCount();
             if (pendingTasksCount > maxPendingTasksCountForSession) {
-                throw new RetryLaterRuntimeException(
-                        "too many requests pending for session [" + pendingTasksCount + "], please try again later");
+                throw new RetryLaterRuntimeException("too many requests pending for this session manager ["
+                        + pendingTasksCount + "], please try again later");
             }
         }
     }
