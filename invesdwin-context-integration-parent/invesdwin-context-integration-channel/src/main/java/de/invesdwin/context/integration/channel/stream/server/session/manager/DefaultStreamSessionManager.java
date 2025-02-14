@@ -9,6 +9,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -80,8 +81,18 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
     public Object put(final IStreamSynchronousEndpointService service, final IByteBufferProvider message)
             throws Exception {
         if (!service.put(message)) {
-            throw new IllegalStateException("unable to put message into serviceId [" + service.getServiceId()
-                    + "] for topic: " + service.getTopic());
+            /*
+             * Here we could theoretically offload the message into a local queue (NodeBufferingIterator) with a message
+             * copy so it gets retried to be written in the handle call of the session. Though this might be inefficient
+             * because multiple IO/worker threads could be trying to push messages simultaneously, which would cause
+             * thread synchronization overhead. It is better to keep track of an acceptable backlog/queue in the service
+             * directly instead of having a backlog on each session individually (which could exhaust memory
+             * uncontrollably). So instead we just throw an exception if service is overloaded to tell the client to
+             * retry later.
+             */
+            throw new RetryLaterRuntimeException("Unable to put message into serviceId [" + service.getServiceId()
+                    + "] for topic [" + service.getTopic()
+                    + "]. Please back off a bit with the writing since storage seems to busy.");
         }
         return null;
     }
