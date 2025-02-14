@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
+import java.io.IOException;
+
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -13,7 +15,7 @@ public interface IStreamSynchronousEndpointSession {
      * Returns true if the message was pushed fully and thus another message can now be pushed. Returns false if
      * response channel is busy and no more messages should be pushed.
      */
-    boolean pushTopicSubscriptionMessage(IStreamSynchronousEndpointService service,
-            ISynchronousReader<IByteBufferProvider> reader);
+    boolean pushSubscriptionMessage(IStreamSynchronousEndpointService service,
+            ISynchronousReader<IByteBufferProvider> reader) throws IOException;
 
 }

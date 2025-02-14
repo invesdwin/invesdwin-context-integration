@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.session.result;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -9,6 +10,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.CopyBufferServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
@@ -30,6 +32,7 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
     private boolean delayedWriteResponse;
     private IAsynchronousHandlerContext<IByteBufferProvider> context;
     private ASpinWait doneSpinWait;
+    private ISynchronousReader<IByteBufferProvider> readFinishedReader;
 
     public CopyBufferServiceSynchronousCommand getRequestCopy() {
         return requestCopy;
@@ -71,6 +74,14 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
         this.context = context;
     }
 
+    public void setReadFinishedReader(final ISynchronousReader<IByteBufferProvider> readFinishedReader) {
+        this.readFinishedReader = readFinishedReader;
+    }
+
+    public ISynchronousReader<IByteBufferProvider> getReadFinishedReader() {
+        return readFinishedReader;
+    }
+
     @Override
     public ProcessResponseResult getNext() {
         return next;
@@ -109,6 +120,14 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
         prev = null;
         next = null;
         context = null;
+        if (readFinishedReader != null) {
+            try {
+                readFinishedReader.readFinished();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+            readFinishedReader = null;
+        }
     }
 
     public boolean isDone() {

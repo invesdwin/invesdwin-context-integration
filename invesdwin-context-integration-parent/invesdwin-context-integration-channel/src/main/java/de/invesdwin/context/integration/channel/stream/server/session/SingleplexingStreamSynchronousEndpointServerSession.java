@@ -15,8 +15,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchro
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -26,6 +26,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.APostProcessingFuture;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -49,6 +50,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
+    private ISynchronousReader<IByteBufferProvider> readFinishedReader;
     private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
 
@@ -114,10 +116,36 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     }
 
     @Override
-    public boolean pushTopicSubscriptionMessage(final IStreamSynchronousEndpointService service,
-            final ISynchronousReader<IByteBufferProvider> reader) {
-        //TODO
-        return false;
+    public boolean pushSubscriptionMessage(final IStreamSynchronousEndpointService service,
+            final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
+        if (!responseWriter.writeReady()) {
+            //writer is not ready, continue with another session
+            throw FastNoSuchElementException.getInstance("writer.writeReady is false");
+        }
+        if (!responseWriter.writeFlushed()) {
+            //writer has not yet flushed, continue with another session
+            throw FastNoSuchElementException.getInstance("writer.writeFlushed is false");
+        }
+        if (processResponseFuture != null) {
+            //a request processing is still active which should be handled by the handleRequests method
+            throw FastNoSuchElementException.getInstance("processResponseFuture is not null");
+        }
+        final IByteBufferProvider message = reader.readMessage();
+        responseHolder.setService(service.getServiceId());
+        responseHolder.setMethod(StreamServerMethodInfo.METHOD_ID_PUT);
+        responseHolder.setSequence(-1);
+        responseHolder.setMessageBuffer(message);
+        responseWriter.write(responseHolder);
+        final boolean flushed = responseWriter.writeFlushed();
+        if (flushed) {
+            responseHolder.close();
+            reader.readFinished();
+        } else {
+            //let handleRequests flush the message
+            processResponseFuture = NullFuture.getInstance();
+            readFinishedReader = reader;
+        }
+        return flushed;
     }
 
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
@@ -161,6 +189,10 @@ public class SingleplexingStreamSynchronousEndpointServerSession
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
                     responseHolder.close(); //free memory
                     processResponseFuture = null;
+                    if (readFinishedReader != null) {
+                        readFinishedReader.readFinished();
+                        readFinishedReader = null;
+                    }
                     //directly check for next request
                 } else {
                     //tell we are busy with writing or next write is not ready

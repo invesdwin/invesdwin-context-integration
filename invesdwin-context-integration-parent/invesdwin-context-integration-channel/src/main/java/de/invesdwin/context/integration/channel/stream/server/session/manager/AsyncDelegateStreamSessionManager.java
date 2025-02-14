@@ -87,9 +87,8 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
             throws Exception {
         assertMaxPendingTasksCount();
         final ICloseableByteBuffer messageCopyBuffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject();
-        final IByteBuffer messageBuffer = message.asBuffer();
-        messageCopyBuffer.putBytes(0, messageBuffer);
-        final IByteBuffer messageCopy = messageCopyBuffer.sliceTo(messageBuffer.capacity());
+        final int size = message.getBuffer(messageCopyBuffer);
+        final IByteBuffer messageCopy = messageCopyBuffer.sliceTo(size);
         return executor.submit(() -> {
             try {
                 return delegate.put(service, messageCopy);

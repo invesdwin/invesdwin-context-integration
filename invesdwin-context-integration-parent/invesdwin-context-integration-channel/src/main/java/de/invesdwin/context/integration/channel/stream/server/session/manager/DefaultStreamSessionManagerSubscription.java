@@ -10,29 +10,28 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceListener;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @ThreadSafe
-public class DefaultStreamSessionManagerSubscription implements
-        IStreamSynchronousEndpointServiceListener, INode<DefaultStreamSessionManagerSubscription> {
+public class DefaultStreamSessionManagerSubscription
+        implements IStreamSynchronousEndpointServiceListener, INode<DefaultStreamSessionManagerSubscription> {
     private final IStreamSessionManager manager;
     private final IStreamSynchronousEndpointSession session;
     private final StreamSynchronousEndpointServer server;
     private final IStreamSynchronousEndpointService service;
     @GuardedBy("self")
     private final NodeBufferingIterator<DefaultStreamSessionManagerSubscription> notifiedSubscriptions;
-    private final ISynchronousReader<IByteBufferProvider> reader;
+    private final ReadFinishedDelegateSynchronousReader<IByteBufferProvider> reader;
     private DefaultStreamSessionManagerSubscription next;
     private DefaultStreamSessionManagerSubscription prev;
     private final AtomicBoolean notified = new AtomicBoolean();
     private int burstMessages = 0;
 
-    public DefaultStreamSessionManagerSubscription(
-            final IStreamSessionManager manager,
+    public DefaultStreamSessionManagerSubscription(final IStreamSessionManager manager,
             final IStreamSynchronousEndpointService service,
             final NodeBufferingIterator<DefaultStreamSessionManagerSubscription> notifiedSubscriptions,
             final Map<String, String> parameters) throws Exception {
@@ -41,13 +40,18 @@ public class DefaultStreamSessionManagerSubscription implements
         this.server = session.getParent();
         this.service = service;
         this.notifiedSubscriptions = notifiedSubscriptions;
-        this.reader = service.subscribe(this, parameters);
+        this.reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(
+                service.subscribe(this, parameters));
     }
 
     public boolean handle() throws IOException {
+        if (!reader.isReadFinished()) {
+            //last message from this reader is still being written to the client in the sessoion, wait for that to be finished
+            throw FastNoSuchElementException.getInstance("reader.isReadFinished is false");
+        }
         boolean handledOverall = false;
         while (reader.hasNext()) {
-            final boolean pushFinished = session.pushTopicSubscriptionMessage(service, reader);
+            final boolean pushFinished = session.pushSubscriptionMessage(service, reader);
             if (!pushFinished) {
                 //response channel is busy, we have to wait a bit before we can attempt to send additional messages
                 return false;

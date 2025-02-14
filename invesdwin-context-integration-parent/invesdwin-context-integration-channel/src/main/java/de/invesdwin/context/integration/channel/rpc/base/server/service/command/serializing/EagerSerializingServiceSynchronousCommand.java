@@ -1,14 +1,16 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing;
 
+import java.io.Closeable;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
 public class EagerSerializingServiceSynchronousCommand<M> implements ISerializingServiceSynchronousCommand<M> {
@@ -58,12 +60,15 @@ public class EagerSerializingServiceSynchronousCommand<M> implements ISerializin
     }
 
     @Override
-    public void setMessageBuffer(final ICloseableByteBufferProvider messageBuffer) {
+    public void setMessageBuffer(final IByteBufferProvider messageBuffer) {
         try {
             messageSize = ByteBufferProviderSerde.GET
                     .toBuffer(buffer.sliceFrom(ServiceSynchronousCommandSerde.MESSAGE_INDEX), messageBuffer);
         } finally {
-            messageBuffer.close();
+            if (messageBuffer instanceof Closeable) {
+                final Closeable cMessageBuffer = (Closeable) messageBuffer;
+                Closeables.closeQuietly(cMessageBuffer);
+            }
         }
     }
 

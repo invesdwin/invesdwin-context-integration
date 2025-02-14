@@ -18,8 +18,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -30,6 +30,7 @@ import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableSet;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -133,10 +134,39 @@ public class MultiplexingStreamSynchronousEndpointServerSession
     }
 
     @Override
-    public boolean pushTopicSubscriptionMessage(final IStreamSynchronousEndpointService service,
-            final ISynchronousReader<IByteBufferProvider> reader) {
-        //TODO
-        return false;
+    public boolean pushSubscriptionMessage(final IStreamSynchronousEndpointService service,
+            final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
+        if (!responseWriter.writeReady()) {
+            //writer is not ready, continue with another session
+            throw FastNoSuchElementException.getInstance("writer.writeReady is false");
+        }
+        if (!responseWriter.writeFlushed()) {
+            //writer has not yet flushed, continue with another session
+            throw FastNoSuchElementException.getInstance("writer.writeFlushed is false");
+        }
+        if (writeQueue.size() > parent.getMaxSuccessivePushCountPerSession()) {
+            //a request processing is still active which should be handled by the handleRequests method
+            throw FastNoSuchElementException.getInstance("writeQueue.size exceeds maxSuccessivePushCountPerSession");
+        }
+        final ProcessResponseResult writeTask = ProcessResponseResultPool.INSTANCE.borrowObject();
+        final IByteBufferProvider message = reader.readMessage();
+        writeTask.getResponse().setService(service.getServiceId());
+        writeTask.getResponse().setMethod(StreamServerMethodInfo.METHOD_ID_PUT);
+        writeTask.getResponse().setSequence(-1);
+        writeTask.getResponse().setMessageBuffer(message);
+        responseWriter.write(writeTask.getResponse());
+        final boolean flushed = responseWriter.writeFlushed();
+        if (flushed) {
+            writeTask.getResponse().close();
+            writeTask.close();
+            reader.readFinished();
+        } else {
+            //let handleRequests flush the message
+            writeTask.setReadFinishedReader(reader);
+            writeTask.setWriting(true);
+            writeQueue.add(writeTask);
+        }
+        return flushed;
     }
 
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions

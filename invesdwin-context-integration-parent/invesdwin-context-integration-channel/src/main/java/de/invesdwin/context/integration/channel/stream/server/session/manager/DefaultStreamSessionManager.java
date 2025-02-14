@@ -51,7 +51,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
                 }
             }
         } catch (final NoSuchElementException e) {
-            //end reached
+            //end reached for subscriptions or session writer is too busy, thus continue with the next session
         }
         return handledOverall;
     }

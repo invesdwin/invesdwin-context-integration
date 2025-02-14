@@ -1,14 +1,16 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing;
 
+import java.io.Closeable;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
 public class LazySerializingServiceSynchronousCommand<M> implements ISerializingServiceSynchronousCommand<M> {
@@ -16,7 +18,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     protected int service;
     protected int method;
     protected int sequence;
-    protected ICloseableByteBufferProvider messageBuffer;
+    protected IByteBufferProvider messageBuffer;
     protected ISerde<M> messageSerde = NullSerde.get();
     protected M message;
 
@@ -62,7 +64,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     }
 
     @Override
-    public void setMessageBuffer(final ICloseableByteBufferProvider messageBuffer) {
+    public void setMessageBuffer(final IByteBufferProvider messageBuffer) {
         this.messageBuffer = messageBuffer;
     }
 
@@ -85,7 +87,10 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     @Override
     public void close() {
         if (messageBuffer != null) {
-            messageBuffer.close();
+            if (messageBuffer instanceof Closeable) {
+                final Closeable cMessageBuffer = (Closeable) messageBuffer;
+                Closeables.closeQuietly(cMessageBuffer);
+            }
             messageBuffer = null;
         } else {
             messageSerde = NullSerde.get();
