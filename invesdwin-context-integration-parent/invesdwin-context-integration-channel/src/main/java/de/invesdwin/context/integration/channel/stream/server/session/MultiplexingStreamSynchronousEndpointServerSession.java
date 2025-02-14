@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.server.session;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 
@@ -17,8 +16,9 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchro
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -38,7 +38,8 @@ import de.invesdwin.util.time.duration.Duration;
  * Allows to process multiple requests in parallel for the same endpoint by multiplexing it.
  */
 @ThreadSafe
-public class MultiplexingStreamSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+public class MultiplexingStreamSynchronousEndpointServerSession
+        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointServerSession {
 
     private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -60,43 +61,13 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
     @GuardedBy("only the io thread should access the result pool")
     private final IFastIterableSet<ProcessResponseResult> activeRequests = ILockCollectionFactory.getInstance(false)
             .newFastIterableIdentitySet();
-    private final IStreamSynchronousEndpointServerSessionInternalMethods internalMethods = new IStreamSynchronousEndpointServerSessionInternalMethods() {
-
-        @Override
-        public Object unsubscribe(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-
-        @Override
-        public Object subscribe(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-
-        @Override
-        public Object put(final IByteBufferProvider message) {
-            return null;
-        }
-
-        @Override
-        public IStreamSynchronousEndpointService getService(final int serviceId) {
-            return null;
-        }
-
-        @Override
-        public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
-                final Map<String, String> parameters) {
-            return null;
-        }
-
-        @Override
-        public Object delete(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-    };
+    private final IStreamSynchronousEndpointServerSessionManager manager;
+    private int skipRequestReadingCount = 0;
 
     public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
+        this.manager = parent.newManager(this);
         this.endpointSession = endpointSession;
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
@@ -110,6 +81,11 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
             close();
             throw new RuntimeException(t);
         }
+    }
+
+    @Override
+    public StreamSynchronousEndpointServer getParent() {
+        return parent;
     }
 
     @Override
@@ -155,8 +131,31 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
         return endpointSession == null;
     }
 
+    //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
     @Override
     public boolean handle() throws IOException {
+        final boolean requestHandled = handleRequests();
+        if (requestHandled) {
+            return true;
+        } else {
+            final boolean managerHandled = manager.handle();
+            if (managerHandled) {
+                if (skipRequestReadingCount == 0) {
+                    //give pushing messages priority
+                    skipRequestReadingCount = parent.getMaxSuccessivePushCount();
+                } else {
+                    //decrease priority for pushing messages
+                    skipRequestReadingCount--;
+                }
+            } else {
+                //we can check for requests again now
+                skipRequestReadingCount = 0;
+            }
+            return managerHandled;
+        }
+    }
+
+    private boolean handleRequests() throws IOException {
         maybePollResults();
         final boolean writing;
         final ProcessResponseResult writeTask = writeQueue.peek();
@@ -185,6 +184,9 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
         } else {
             //reading could still indicate that we are busy handling work
             writing = false;
+        }
+        if (skipRequestReadingCount > 0) {
+            return false;
         }
         try {
             if (requestReader.hasNext()) {
@@ -273,8 +275,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
 
             final WrappedExecutorService workExecutor = parent.getWorkExecutor();
             if (workExecutor == null || methodInfo.isBlocking()) {
-                final Future<Object> future = methodInfo.invoke(internalMethods, sessionId, request,
-                        result.getResponse());
+                final Future<Object> future = methodInfo.invoke(manager, sessionId, request, result.getResponse());
                 if (future != null && !future.isDone()) {
                     result.setFuture(future);
                     result.setDelayedWriteResponse(true);
@@ -345,8 +346,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession implements ISync
                 writeQueue.add(result);
                 return null;
             }
-            final Future<Object> future = methodInfo.invoke(internalMethods, sessionId, result.getRequestCopy(),
-                    response);
+            final Future<Object> future = methodInfo.invoke(manager, sessionId, result.getRequestCopy(), response);
             if (future != null && !future.isDone()) {
                 result.setDelayedWriteResponse(true);
                 pollingQueueAsyncAdds.add(result);

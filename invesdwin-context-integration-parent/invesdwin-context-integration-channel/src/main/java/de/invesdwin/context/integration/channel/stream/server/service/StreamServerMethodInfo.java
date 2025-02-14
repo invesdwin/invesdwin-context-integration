@@ -12,17 +12,17 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
-import de.invesdwin.context.integration.channel.stream.server.session.IStreamSynchronousEndpointServerSessionInternalMethods;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.future.APostProcessingFuture;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.marshallers.serde.basic.StringUtf8Serde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import io.netty.util.concurrent.FastThreadLocal;
@@ -36,49 +36,44 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-                final IStreamSynchronousEndpointService service, final IByteBufferProvider message) throws Exception {
-            return parent.put(message);
+        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+                final IStreamSynchronousEndpointService service, final boolean future,
+                final IByteBufferProvider message) throws Exception {
+            return manager.put(service, message);
         }
     },
-    SUBSCRIBE(true) {
+    SUBSCRIBE(false) {
         @Override
         public int getMethodId() {
             return METHOD_ID_SUBSCRIBE;
         }
 
         @Override
-        protected IStreamSynchronousEndpointService getService(
-                final IStreamSynchronousEndpointServerSessionInternalMethods parent, final int serviceId,
+        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+                final IStreamSynchronousEndpointService service, final boolean future,
                 final IByteBufferProvider message) throws Exception {
-            final IByteBuffer messageBuffer = message.asBuffer();
-            if (messageBuffer.capacity() == 0) {
-                return parent.getService(serviceId);
-            } else {
-                //we can also create a topic while subscribing to it if parameters are provided
-                final URI uri = parseUri(messageBuffer);
-                final String topic = parseTopic(uri);
-                final Map<String, String> parameters = parseParameters(uri);
-                return parent.getOrCreateService(serviceId, topic, parameters);
-            }
-        }
-
-        @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-                final IStreamSynchronousEndpointService service, final IByteBufferProvider message) throws Exception {
-            return parent.subscribe(service);
+            final URI uri = parseUri(message.asBuffer());
+            final String topic = parseTopic(uri);
+            assertServiceTopic(service, topic);
+            final Map<String, String> parameters = parseParameters(uri, future);
+            return manager.subscribe(service, parameters);
         }
     },
-    UNSUBSCRIBE(true) {
+    UNSUBSCRIBE(false) {
         @Override
         public int getMethodId() {
             return METHOD_ID_UNSUBSCRIBE;
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-                final IStreamSynchronousEndpointService service, final IByteBufferProvider message) throws Exception {
-            return parent.unsubscribe(service);
+        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+                final IStreamSynchronousEndpointService service, final boolean future,
+                final IByteBufferProvider message) throws Exception {
+            final URI uri = parseUri(message.asBuffer());
+            final String topic = parseTopic(uri);
+            assertServiceTopic(service, topic);
+            final Map<String, String> parameters = parseParameters(uri, future);
+            return manager.unsubscribe(service, parameters);
         }
     },
     CREATE(false) {
@@ -89,17 +84,18 @@ public enum StreamServerMethodInfo {
 
         @Override
         protected IStreamSynchronousEndpointService getService(
-                final IStreamSynchronousEndpointServerSessionInternalMethods parent, final int serviceId,
+                final IStreamSynchronousEndpointServerSessionManager manager, final int serviceId,
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message);
             final String topic = parseTopic(uri);
-            final Map<String, String> parameters = parseParameters(uri);
-            return parent.getOrCreateService(serviceId, topic, parameters);
+            final Map<String, String> parameters = parseParameters(uri, false);
+            return manager.getOrCreateService(serviceId, topic, parameters);
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-                final IStreamSynchronousEndpointService service, final IByteBufferProvider message) throws Exception {
+        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+                final IStreamSynchronousEndpointService service, final boolean future,
+                final IByteBufferProvider message) throws Exception {
             return null;
         }
     },
@@ -110,9 +106,14 @@ public enum StreamServerMethodInfo {
         }
 
         @Override
-        protected Object invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-                final IStreamSynchronousEndpointService service, final IByteBufferProvider message) throws Exception {
-            return parent.delete(service);
+        protected Object invoke(final IStreamSynchronousEndpointServerSessionManager manager,
+                final IStreamSynchronousEndpointService service, final boolean future,
+                final IByteBufferProvider message) throws Exception {
+            final URI uri = parseUri(message.asBuffer());
+            final String topic = parseTopic(uri);
+            assertServiceTopic(service, topic);
+            final Map<String, String> parameters = parseParameters(uri, future);
+            return manager.delete(service, parameters);
         }
     };
 
@@ -158,9 +159,14 @@ public enum StreamServerMethodInfo {
         }
     }
 
+    public static String parseRequest(final IByteBufferProvider message) {
+        final String request = StringUtf8Serde.GET.fromBuffer(message);
+        return request;
+    }
+
     public static URI parseUri(final IByteBufferProvider message) {
-        final String uriStr = StringUtf8Serde.GET.fromBuffer(message);
-        final URI uri = URIs.asUri("p://" + uriStr);
+        final String request = parseRequest(message);
+        final URI uri = URIs.asUri("p://" + request);
         return uri;
     }
 
@@ -169,10 +175,18 @@ public enum StreamServerMethodInfo {
         return topic;
     }
 
-    public static Map<String, String> parseParameters(final URI uri) {
-        final Map<String, String> parameters = QUERY_PARAMS_HOLDER.get();
-        if (!parameters.isEmpty()) {
-            parameters.clear();
+    public static Map<String, String> parseParameters(final URI uri, final boolean future) {
+        if (uri == null) {
+            return Collections.emptyMap();
+        }
+        final Map<String, String> parameters;
+        if (future) {
+            parameters = new LinkedHashMap<>();
+        } else {
+            parameters = QUERY_PARAMS_HOLDER.get();
+            if (!parameters.isEmpty()) {
+                parameters.clear();
+            }
         }
         URIs.splitQuery(uri, parameters);
         return parameters;
@@ -182,22 +196,25 @@ public enum StreamServerMethodInfo {
         return blocking;
     }
 
-    public abstract int getMethodId();
-
-    protected IStreamSynchronousEndpointService getService(
-            final IStreamSynchronousEndpointServerSessionInternalMethods parent, final int serviceId,
-            final IByteBufferProvider message) throws Exception {
-        return parent.getService(serviceId);
+    public boolean isFuture(final IStreamSynchronousEndpointServerSessionManager manager) {
+        return manager.isFuture(this);
     }
 
-    public Future<Object> invoke(final IStreamSynchronousEndpointServerSessionInternalMethods parent,
-            final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
+    public abstract int getMethodId();
+
+    protected IStreamSynchronousEndpointService getService(final IStreamSynchronousEndpointServerSessionManager manager,
+            final int serviceId, final IByteBufferProvider message) throws Exception {
+        return manager.getService(serviceId);
+    }
+
+    public Future<Object> invoke(final IStreamSynchronousEndpointServerSessionManager manager, final String sessionId,
+            final IServiceSynchronousCommand<IByteBufferProvider> request,
             final ISerializingServiceSynchronousCommand<Object> response) {
         final int serviceId = request.getService();
         response.setService(serviceId);
         response.setSequence(request.getSequence());
         try {
-            final IStreamSynchronousEndpointService service = getService(parent, serviceId, request.getMessage());
+            final IStreamSynchronousEndpointService service = getService(manager, serviceId, request.getMessage());
             if (service == null) {
                 response.setService(serviceId);
                 response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
@@ -207,8 +224,9 @@ public enum StreamServerMethodInfo {
                 return null;
             }
 
-            final Object result = invoke(parent, service, request.getMessage());
-            if (result instanceof Future) {
+            final boolean future = manager.isFuture(this);
+            final Object result = invoke(manager, service, future, request.getMessage());
+            if (future) {
                 if (result != null) {
                     @SuppressWarnings("unchecked")
                     final Future<Object> futureResult = (Future<Object>) result;
@@ -235,8 +253,8 @@ public enum StreamServerMethodInfo {
         }
     }
 
-    protected abstract Object invoke(IStreamSynchronousEndpointServerSessionInternalMethods parent,
-            IStreamSynchronousEndpointService service, IByteBufferProvider message) throws Exception;
+    protected abstract Object invoke(IStreamSynchronousEndpointServerSessionManager manager,
+            IStreamSynchronousEndpointService service, boolean future, IByteBufferProvider message) throws Exception;
 
     private void handleResult(final ISerializingServiceSynchronousCommand<Object> response, final Object result) {
         response.setMethod(getMethodId());
@@ -265,6 +283,13 @@ public enum StreamServerMethodInfo {
             //keep full FQDN of exception types so that string matching can at least be done by clients
             response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                     Throwables.concatMessages(loggedException));
+        }
+    }
+
+    public static void assertServiceTopic(final IStreamSynchronousEndpointService service, final String topic) {
+        if (service.getTopic().equals(topic)) {
+            throw new IllegalStateException("serviceId [" + service.getServiceId() + "] topic mismatch: service.topic ["
+                    + service.getTopic() + "] != topic [" + topic + "]");
         }
     }
 

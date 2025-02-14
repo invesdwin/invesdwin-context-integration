@@ -15,9 +15,9 @@ public interface IStreamSynchronousEndpointService extends Closeable {
 
     ISynchronousWriter<IByteBufferProvider> getSharedWriter();
 
-    ISynchronousReader<IByteBufferProvider> subscribe(Runnable notificationListener, Map<String, String> properties);
+    ISynchronousReader<IByteBufferProvider> subscribe(Runnable notificationListener, Map<String, String> parameters);
 
-    boolean unsubscribe(Runnable notificationListener, Map<String, String> properties);
+    boolean unsubscribe(Runnable notificationListener);
 
     void delete();
 

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.stream.server.session;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -14,8 +13,9 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -33,7 +33,8 @@ import de.invesdwin.util.time.duration.Duration;
  * Allows only one active request per client session.
  */
 @ThreadSafe
-public class SingleplexingStreamSynchronousEndpointServerSession implements ISynchronousEndpointServerSession {
+public class SingleplexingStreamSynchronousEndpointServerSession
+        implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointServerSession {
 
     private final StreamSynchronousEndpointServer parent;
     private ISynchronousEndpointSession endpointSession;
@@ -47,43 +48,13 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
     private long lastHeartbeatNanos = System.nanoTime();
     private Future<Object> processResponseFuture;
-    private final IStreamSynchronousEndpointServerSessionInternalMethods internalMethods = new IStreamSynchronousEndpointServerSessionInternalMethods() {
-
-        @Override
-        public Object unsubscribe(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-
-        @Override
-        public Object subscribe(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-
-        @Override
-        public Object put(final IByteBufferProvider message) {
-            return null;
-        }
-
-        @Override
-        public IStreamSynchronousEndpointService getService(final int serviceId) {
-            return null;
-        }
-
-        @Override
-        public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
-                final Map<String, String> parameters) {
-            return null;
-        }
-
-        @Override
-        public Object delete(final IStreamSynchronousEndpointService service) {
-            return null;
-        }
-    };
+    private final IStreamSynchronousEndpointServerSessionManager manager;
+    private int skipRequestReadingCount = 0;
 
     public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
+        this.manager = parent.newManager(this);
         this.endpointSession = endpointSession;
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
@@ -97,6 +68,11 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
             close();
             throw new RuntimeException(t);
         }
+    }
+
+    @Override
+    public StreamSynchronousEndpointServer getParent() {
+        return parent;
     }
 
     @Override
@@ -136,14 +112,37 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
         return endpointSession == null;
     }
 
+    //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
+    @Override
+    public boolean handle() throws IOException {
+        final boolean requestHandled = handleRequests();
+        if (requestHandled) {
+            return true;
+        } else {
+            final boolean managerHandled = manager.handle();
+            if (managerHandled) {
+                if (skipRequestReadingCount == 0) {
+                    //give pushing messages priority
+                    skipRequestReadingCount = parent.getMaxSuccessivePushCount();
+                } else {
+                    //decrease priority for pushing messages
+                    skipRequestReadingCount--;
+                }
+            } else {
+                //we can check for requests again now
+                skipRequestReadingCount = 0;
+            }
+            return managerHandled;
+        }
+    }
+
     //look for requests in clients, dispatch request handling and response sending to worker (handle heartbeat as well), return client for request monitoring after completion
     //reject executions if too many pending count for worker pool
     //check on start of worker task if timeout is already exceeded and abort directly (might have been in queue for too long)
     //maybe return exceptions to clients (similar to RmiExceptions that contain the stacktrace as message, full stacktrace in testing only?)
     //handle writeFinished in io thread (maybe the better idea?)
     //return true if work was done
-    @Override
-    public boolean handle() throws IOException {
+    private boolean handleRequests() throws IOException {
         if (processResponseFuture != null) {
             if (isProcessResponseFutureDone()) {
                 if (delayedWriteResponse) {
@@ -163,6 +162,9 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
                 //throttle while waiting for response processing to finish
                 return false;
             }
+        }
+        if (skipRequestReadingCount > 0) {
+            return false;
         }
         if (requestReader.hasNext()) {
             lastHeartbeatNanos = System.nanoTime();
@@ -316,7 +318,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession implements ISyn
                     return null;
                 }
 
-                return methodInfo.invoke(internalMethods, sessionId, request, responseHolder);
+                return methodInfo.invoke(manager, sessionId, request, responseHolder);
             } finally {
                 requestReader.readFinished();
             }

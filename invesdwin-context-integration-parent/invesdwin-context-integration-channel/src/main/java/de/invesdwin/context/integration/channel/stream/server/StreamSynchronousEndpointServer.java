@@ -10,8 +10,12 @@ import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndp
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.stream.server.session.MultiplexingStreamSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.session.SingleplexingStreamSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.DefaultStreamSynchronousEndpointServerSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointServerSessionManager;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Closeables;
@@ -21,15 +25,31 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 @ThreadSafe
 public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer {
 
+    private static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT = 100;
+
     private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     @GuardedBy("this")
     private final Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
+    private final int maxSuccessivePushCount;
 
     public StreamSynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final IStreamSynchronousEndpointServiceFactory serviceFactory) {
         super(serverAcceptor);
         this.serviceFactory = serviceFactory;
+        this.maxSuccessivePushCount = newMaxSuccessivePushCount();
+    }
+
+    /**
+     * This defines how many consecutive topic messages can be pushed before checking for the next request and giving
+     * that priority in handling before pushing again
+     */
+    protected int newMaxSuccessivePushCount() {
+        return DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT;
+    }
+
+    public int getMaxSuccessivePushCount() {
+        return maxSuccessivePushCount;
     }
 
     @Override
@@ -59,17 +79,10 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
             final Map<String, String> parameters) {
         final IStreamSynchronousEndpointService service = getService(serviceId);
         if (service != null) {
-            assertServiceSameTopic(service, topic);
+            StreamServerMethodInfo.assertServiceTopic(service, topic);
             return service;
         } else {
             return registerService(serviceId, topic, parameters);
-        }
-    }
-
-    private void assertServiceSameTopic(final IStreamSynchronousEndpointService service, final String topic) {
-        if (service.getTopic().equals(topic)) {
-            throw new IllegalStateException("serviceId [" + service.getServiceId() + "] topic mismatch: service.topic ["
-                    + service.getTopic() + "] != topic [" + topic + "]");
         }
     }
 
@@ -81,7 +94,7 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
             final Map<String, String> parameters) {
         final IStreamSynchronousEndpointService existing = serviceId_service_sync.get(serviceId);
         if (existing != null) {
-            assertServiceSameTopic(existing, topic);
+            StreamServerMethodInfo.assertServiceTopic(existing, topic);
             return existing;
         }
         final IStreamSynchronousEndpointService service = serviceFactory.newService(serviceId, topic, parameters);
@@ -101,5 +114,10 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
         } else {
             return false;
         }
+    }
+
+    public IStreamSynchronousEndpointServerSessionManager newManager(
+            final IStreamSynchronousEndpointServerSession session) {
+        return new DefaultStreamSynchronousEndpointServerSessionManager(session);
     }
 }
