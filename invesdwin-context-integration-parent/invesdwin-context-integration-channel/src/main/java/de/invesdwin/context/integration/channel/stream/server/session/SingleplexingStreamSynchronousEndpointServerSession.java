@@ -53,6 +53,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     private ISynchronousReader<IByteBufferProvider> readFinishedReader;
     private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
+    private int pushedMessages = 0;
 
     public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -133,7 +134,11 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         final IByteBufferProvider message = reader.readMessage();
         responseHolder.setService(service.getServiceId());
         responseHolder.setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
-        responseHolder.setSequence(-1);
+        /*
+         * add a sequence to the pushed messages so that the client can validate if he missed some messages and
+         * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
+         */
+        responseHolder.setSequence(pushedMessages++);
         responseHolder.setMessageBuffer(message);
         responseWriter.write(responseHolder);
         final boolean flushed = responseWriter.writeFlushed();

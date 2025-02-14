@@ -65,6 +65,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             .newFastIterableIdentitySet();
     private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
+    private int pushedMessages = 0;
 
     public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
             final ISynchronousEndpointSession endpointSession) {
@@ -152,7 +153,11 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         final IByteBufferProvider message = reader.readMessage();
         writeTask.getResponse().setService(service.getServiceId());
         writeTask.getResponse().setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
-        writeTask.getResponse().setSequence(-1);
+        /*
+         * add a sequence to the pushed messages so that the client can validate if he missed some messages and
+         * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
+         */
+        writeTask.getResponse().setSequence(pushedMessages++);
         writeTask.getResponse().setMessageBuffer(message);
         responseWriter.write(writeTask.getResponse());
         final boolean flushed = responseWriter.writeFlushed();
