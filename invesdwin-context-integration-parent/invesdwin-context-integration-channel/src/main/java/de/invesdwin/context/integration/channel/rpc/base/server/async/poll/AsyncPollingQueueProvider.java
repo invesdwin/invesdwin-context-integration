@@ -5,7 +5,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
-import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandler;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -34,7 +33,7 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
             if (pollingExecutor == null) {
                 //reduce cpu load by using max 1 thread
                 pollingExecutor = Executors
-                        .newFixedThreadPool(RpcAsynchronousEndpointServerHandler.class.getSimpleName() + "_POLLING", 1)
+                        .newFixedThreadPool(AsyncPollingQueueProvider.class.getSimpleName() + "_POLLING", 1)
                         .setDynamicThreadName(false);
                 pollingExecutor.execute(new PollingQueueRunnable());
             }

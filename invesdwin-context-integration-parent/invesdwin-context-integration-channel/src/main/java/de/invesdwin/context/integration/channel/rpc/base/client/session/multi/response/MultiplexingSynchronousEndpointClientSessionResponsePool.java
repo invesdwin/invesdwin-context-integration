@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.base.client.session.multi.r
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.SynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.base.client.DefaultRpcSynchronousEndpointClient;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
 
@@ -19,7 +19,7 @@ public final class MultiplexingSynchronousEndpointClientSessionResponsePool
 
     private static int newMaxPoolSize() {
         return new SystemProperties(MultiplexingSynchronousEndpointClientSessionResponsePool.class)
-                .getIntegerOptional(KEY_MAX_POOL_SIZE, SynchronousEndpointClient.DEFAULT_MAX_PENDING_WORK_COUNT);
+                .getIntegerOptional(KEY_MAX_POOL_SIZE, DefaultRpcSynchronousEndpointClient.DEFAULT_MAX_PENDING_WORK_COUNT);
     }
 
     @Override

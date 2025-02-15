@@ -5,7 +5,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -18,7 +18,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
 
     private final IObjectPool<MultiplexingSynchronousEndpointClientSessionResponse> pool;
     private final ASpinWait completedSpinWait;
-    private RpcClientMethodInfo methodInfo;
+    private IClientMethodInfo methodInfo;
     private IByteBufferProvider request;
     private int requestSequence;
     private AtomicBoolean activePolling;
@@ -71,7 +71,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         return writingActive;
     }
 
-    public void init(final RpcClientMethodInfo methodInfo, final IByteBufferProvider request, final int requestSequence,
+    public void init(final IClientMethodInfo methodInfo, final IByteBufferProvider request, final int requestSequence,
             final AtomicBoolean activePolling) {
         this.methodInfo = methodInfo;
         this.request = request;
@@ -80,7 +80,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         this.waitingSinceNanos = System.nanoTime();
     }
 
-    public RpcClientMethodInfo getMethodInfo() {
+    public IClientMethodInfo getMethodInfo() {
         return methodInfo;
     }
 

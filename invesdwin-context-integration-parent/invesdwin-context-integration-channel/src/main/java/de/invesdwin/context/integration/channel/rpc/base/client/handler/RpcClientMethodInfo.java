@@ -18,7 +18,7 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @Immutable
-public final class RpcClientMethodInfo {
+public final class RpcClientMethodInfo implements IClientMethodInfo {
 
     private final RpcSynchronousEndpointClientHandler handler;
     private final int methodId;
@@ -37,10 +37,12 @@ public final class RpcClientMethodInfo {
         this.future = Future.class.isAssignableFrom(method.getReturnType());
     }
 
+    @Override
     public int getServiceId() {
         return handler.getServiceId();
     }
 
+    @Override
     public int getMethodId() {
         return methodId;
     }

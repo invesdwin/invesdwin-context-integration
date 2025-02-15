@@ -13,7 +13,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
@@ -165,7 +165,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     @Override
-    public ICloseableByteBufferProvider request(final RpcClientMethodInfo methodInfo, final IByteBufferProvider request) {
+    public ICloseableByteBufferProvider request(final IClientMethodInfo methodInfo, final IByteBufferProvider request) {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
@@ -422,7 +422,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
     private void writeLocked(final MultiplexingSynchronousEndpointClientSessionResponse task) throws Exception {
         try {
-            final RpcClientMethodInfo methodInfo = task.getMethodInfo();
+            final IClientMethodInfo methodInfo = task.getMethodInfo();
             final int serviceId = methodInfo.getServiceId();
             final int methodId = methodInfo.getMethodId();
             final int requestSequence = task.getRequestSequence();

@@ -7,7 +7,7 @@ import java.util.Map;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
@@ -22,10 +22,10 @@ import de.invesdwin.util.lang.reflection.Reflections;
 public final class RpcSynchronousEndpointClientHandler implements InvocationHandler {
 
     private final int serviceId;
-    private final ISynchronousEndpointClient<?> client;
+    private final IRpcSynchronousEndpointClient<?> client;
     private final Map<Method, RpcClientMethodInfo> method_methodInfo;
 
-    public RpcSynchronousEndpointClientHandler(final ISynchronousEndpointClient<?> client) {
+    public RpcSynchronousEndpointClientHandler(final IRpcSynchronousEndpointClient<?> client) {
         this.client = client;
         this.serviceId = RpcSynchronousEndpointService.newServiceId(client.getServiceInterface());
         final Method[] methods = Reflections.getUniqueDeclaredMethods(client.getServiceInterface());
@@ -47,7 +47,7 @@ public final class RpcSynchronousEndpointClientHandler implements InvocationHand
         return serviceId;
     }
 
-    public ISynchronousEndpointClient<?> getClient() {
+    public IRpcSynchronousEndpointClient<?> getClient() {
         return client;
     }
 

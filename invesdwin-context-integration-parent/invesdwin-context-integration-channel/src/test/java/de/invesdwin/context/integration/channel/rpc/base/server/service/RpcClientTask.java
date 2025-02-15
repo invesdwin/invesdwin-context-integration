@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
-import de.invesdwin.context.integration.channel.rpc.base.client.ISynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousEndpointClient;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
@@ -25,21 +25,21 @@ import de.invesdwin.util.time.date.IFDateProvider;
 public class RpcClientTask implements Runnable {
 
     private final OutputStream log;
-    private final ISynchronousEndpointClient<IRpcTestService> client;
+    private final IRpcSynchronousEndpointClient<IRpcTestService> client;
     private final String clientId;
     private final RpcTestServiceMode mode;
 
-    public RpcClientTask(final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
+    public RpcClientTask(final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
         this(new Log(LatencyClientTask.class), client, clientId, mode);
     }
 
-    public RpcClientTask(final Log log, final ISynchronousEndpointClient<IRpcTestService> client, final String clientId,
+    public RpcClientTask(final Log log, final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
         this(Slf4jStream.of(log).asInfo(), client, clientId, mode);
     }
 
-    public RpcClientTask(final OutputStream log, final ISynchronousEndpointClient<IRpcTestService> client,
+    public RpcClientTask(final OutputStream log, final IRpcSynchronousEndpointClient<IRpcTestService> client,
             final String clientId, final RpcTestServiceMode mode) {
         this.log = log;
         this.client = client;

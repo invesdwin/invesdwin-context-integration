@@ -15,7 +15,7 @@ import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 
 @ThreadSafe
-public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<T> {
+public class DefaultRpcSynchronousEndpointClient<T> implements IRpcSynchronousEndpointClient<T> {
 
     public static final int DEFAULT_MAX_PENDING_WORK_COUNT = RpcAsynchronousEndpointServerHandlerFactory.DEFAULT_MAX_PENDING_WORK_COUNT_PER_SESSION;
 
@@ -32,7 +32,7 @@ public class SynchronousEndpointClient<T> implements ISynchronousEndpointClient<
     private final T service;
 
     @SuppressWarnings("unchecked")
-    public SynchronousEndpointClient(final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
+    public DefaultRpcSynchronousEndpointClient(final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool,
             final Class<T> serviceInterface) {
         this.serviceInterface = serviceInterface;
         this.sessionPool = sessionPool;

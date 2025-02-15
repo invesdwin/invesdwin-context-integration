@@ -7,7 +7,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.marshallers.serde.lookup.SerdeLookupConfig;
 
-public interface ISynchronousEndpointClient<T> extends Closeable {
+public interface IRpcSynchronousEndpointClient<T> extends Closeable {
 
     SerdeLookupConfig getSerdeLookupConfig();
 

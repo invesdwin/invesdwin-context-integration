@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
@@ -230,7 +230,7 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         }
 
         @Override
-        public ICloseableByteBufferProvider request(final RpcClientMethodInfo methodInfo,
+        public ICloseableByteBufferProvider request(final IClientMethodInfo methodInfo,
                 final IByteBufferProvider request) {
             return delegate.request(methodInfo, request);
         }
