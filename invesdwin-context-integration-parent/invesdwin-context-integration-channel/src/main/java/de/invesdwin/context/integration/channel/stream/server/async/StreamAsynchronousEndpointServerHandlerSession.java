@@ -18,6 +18,10 @@ import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
+/**
+ * For sessionless servers (e.g. datagram) that do not track sessions themselves, we have to track our own sessions so
+ * we can handle subscriptions properly.
+ */
 @Immutable
 public class StreamAsynchronousEndpointServerHandlerSession extends BroadcastingCloseable
         implements IStreamSynchronousEndpointSession, Closeable {
