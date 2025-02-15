@@ -25,7 +25,7 @@ public class BidiUdtTlsHandshakeProviderTest extends ALatencyChannelTest {
 
     @Test
     public void testBidiNioUdtPerformance() throws InterruptedException {
-        final InetSocketAddress address = new InetSocketAddress("localhost", NetworkUtil.findAvailableTcpPort());
+        final InetSocketAddress address = new InetSocketAddress("localhost", NetworkUtil.findAvailableUdpPort());
         runNioUdtPerformanceTest(address);
     }
 

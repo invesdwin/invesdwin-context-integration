@@ -17,7 +17,7 @@ public class UdtChannelTest extends ALatencyChannelTest {
 
     @Test
     public void testNioUdtPerformance() throws InterruptedException {
-        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
         final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
         final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
         runNioUdtPerformanceTest(responseAddress, requestAddress);

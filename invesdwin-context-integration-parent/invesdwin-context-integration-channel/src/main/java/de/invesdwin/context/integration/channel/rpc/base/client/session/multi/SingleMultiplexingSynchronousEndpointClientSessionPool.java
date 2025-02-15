@@ -13,10 +13,9 @@ import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
- * This uses a given session only for one request at a time, opening more parallel connections when multiple requests
- * happen in parallel. This can be wasteful because an individual connection is not used to its fullest bandwidth but
- * can provide the lowest latency and overhead possible for single requests. Though for all other cases a multiplexing
- * client should be preferred.
+ * This uses a given session for multiple requests simultaneously, no additional sessions are opened. That way there is
+ * only one unique session on the server which utilizes to bandwidth of this connection as much as possible. Especially
+ * useful for stateful servers like streaming with topic subscriptions per session.
  */
 @ThreadSafe
 public class SingleMultiplexingSynchronousEndpointClientSessionPool

@@ -24,14 +24,14 @@ public class RpcSessionlessDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
+        final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
+        final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);

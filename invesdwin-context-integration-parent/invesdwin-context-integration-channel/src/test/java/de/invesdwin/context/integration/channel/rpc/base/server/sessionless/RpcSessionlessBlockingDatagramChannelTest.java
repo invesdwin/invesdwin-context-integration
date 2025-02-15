@@ -25,7 +25,7 @@ public class RpcSessionlessBlockingDatagramChannelTest extends ARpcChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
+        final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
     }
@@ -34,7 +34,7 @@ public class RpcSessionlessBlockingDatagramChannelTest extends ARpcChannelTest {
     @Test
     public void testRpcAllModes() throws InterruptedException {
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
-            final int port = NetworkUtil.findAvailableTcpPort();
+            final int port = NetworkUtil.findAvailableUdpPort();
             final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
