@@ -21,6 +21,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
+/**
+ * This uses a specific pooled number of session which can each handle multiple requests simultaneously, additional
+ * sessions are opened on parallel requests until the maximum session count is reached.
+ */
 @ThreadSafe
 public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {

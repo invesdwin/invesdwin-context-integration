@@ -216,6 +216,10 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider request, final long waitingSinceNanos) throws Exception {
+        if (request == null) {
+            //nothing to write, must be a subscription from the server that is being polled for
+            return;
+        }
         try {
             requestHolder.setService(serviceId);
             requestHolder.setMethod(methodId);

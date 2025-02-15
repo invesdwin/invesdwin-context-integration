@@ -421,6 +421,10 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     private void writeLocked(final MultiplexingSynchronousEndpointClientSessionResponse task) throws Exception {
+        if (task.getRequest() == null) {
+            //nothing to write, must be a subscription from the server that is being polled for
+            return;
+        }
         try {
             final IClientMethodInfo methodInfo = task.getMethodInfo();
             final int serviceId = methodInfo.getServiceId();
