@@ -12,7 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynch
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.LazySerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.IStreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
@@ -38,7 +38,7 @@ import de.invesdwin.util.time.duration.Duration;
 public class SingleplexingStreamSynchronousEndpointServerSession
         implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointSession {
 
-    private final StreamSynchronousEndpointServer parent;
+    private final IStreamSynchronousEndpointServer server;
     private ISynchronousEndpointSession endpointSession;
     private final String sessionId;
     private final Duration heartbeatTimeout;
@@ -55,10 +55,10 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     private int skipRequestReadingCount = 0;
     private int pushedMessages = 0;
 
-    public SingleplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
+    public SingleplexingStreamSynchronousEndpointServerSession(final IStreamSynchronousEndpointServer server,
             final ISynchronousEndpointSession endpointSession) {
-        this.parent = parent;
-        this.manager = parent.newManager(this);
+        this.server = server;
+        this.manager = server.newManager(this);
         this.endpointSession = endpointSession;
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
@@ -75,8 +75,8 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     }
 
     @Override
-    public StreamSynchronousEndpointServer getParent() {
-        return parent;
+    public IStreamSynchronousEndpointServer getServer() {
+        return server;
     }
 
     @Override
@@ -170,7 +170,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             if (managerHandled) {
                 if (skipRequestReadingCount == 0) {
                     //give pushing messages priority
-                    skipRequestReadingCount = parent.getMaxSuccessivePushCountPerSession();
+                    skipRequestReadingCount = server.getMaxSuccessivePushCountPerSession();
                 } else {
                     //decrease priority for pushing messages
                     skipRequestReadingCount--;
@@ -287,7 +287,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             return;
         }
 
-        final WrappedExecutorService workExecutor = parent.getWorkExecutor();
+        final WrappedExecutorService workExecutor = server.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = processResponse(request, methodInfo);
             if (future != null) {
@@ -298,7 +298,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
                 processResponseFuture = NullFuture.getInstance();
             }
         } else {
-            final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
+            final int maxPendingWorkCountOverall = server.getMaxPendingWorkCountOverall();
             if (maxPendingWorkCountOverall > 0) {
                 final int pendingCountOverall = workExecutor.getPendingCount();
                 if (pendingCountOverall > maxPendingWorkCountOverall) {

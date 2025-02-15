@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.async.command;
 
+import java.io.Closeable;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -168,6 +169,16 @@ public class CommandAsynchronousHandler<I, O>
         @Override
         public void returnResult(final ProcessResponseResult result) {
             delegate.returnResult(result);
+        }
+
+        @Override
+        public boolean registerCloseable(final Closeable closeable) {
+            return delegate.registerCloseable(closeable);
+        }
+
+        @Override
+        public boolean unregisterCloseable(final Closeable closeable) {
+            return delegate.unregisterCloseable(closeable);
         }
 
     }

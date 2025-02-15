@@ -14,7 +14,6 @@ import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
@@ -55,7 +54,7 @@ import de.invesdwin.util.time.duration.Duration;
  * (active) handler for the server.
  */
 @ThreadSafe
-public abstract class ASynchronousEndpointServer implements ISynchronousChannel {
+public abstract class ASynchronousEndpointServer implements ISynchronousEndpointServer {
 
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
     public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 2;
@@ -181,6 +180,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousChannel 
         return ioExecutor;
     }
 
+    @Override
     public final WrappedExecutorService getWorkExecutor() {
         return workExecutor;
     }

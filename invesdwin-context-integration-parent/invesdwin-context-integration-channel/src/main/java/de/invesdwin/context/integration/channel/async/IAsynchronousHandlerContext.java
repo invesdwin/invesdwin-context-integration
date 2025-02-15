@@ -20,4 +20,8 @@ public interface IAsynchronousHandlerContext<O> extends Closeable {
 
     void returnResult(ProcessResponseResult result);
 
+    boolean registerCloseable(Closeable closeable);
+
+    boolean unregisterCloseable(Closeable closeable);
+
 }

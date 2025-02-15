@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.channel.rpc.base.server.session.result;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
 
@@ -18,7 +18,7 @@ public final class ProcessResponseResultPool extends AAgronaObjectPool<ProcessRe
 
     private static int newMaxPoolSize() {
         return new SystemProperties(ProcessResponseResultPool.class).getIntegerOptional(KEY_MAX_POOL_SIZE,
-                RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
+                ASynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL);
     }
 
     @Override

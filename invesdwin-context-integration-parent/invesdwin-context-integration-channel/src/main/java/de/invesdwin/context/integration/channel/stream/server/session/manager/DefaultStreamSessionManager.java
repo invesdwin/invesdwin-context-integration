@@ -8,7 +8,7 @@ import java.util.NoSuchElementException;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.IStreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.system.properties.DisabledProperties;
@@ -27,7 +27,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class DefaultStreamSessionManager implements IStreamSessionManager {
 
     private final IStreamSynchronousEndpointSession session;
-    private final StreamSynchronousEndpointServer server;
+    private final IStreamSynchronousEndpointServer server;
     @GuardedBy("self")
     private final Int2ObjectMap<DefaultStreamSessionManagerSubscription> serviceId_subscription = new Int2ObjectOpenHashMap<>();
     @GuardedBy("self")
@@ -35,7 +35,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
 
     public DefaultStreamSessionManager(final IStreamSynchronousEndpointSession session) {
         this.session = session;
-        this.server = session.getParent();
+        this.server = session.getServer();
     }
 
     @Override

@@ -4,7 +4,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.transformer.ISynchronousEndpointSessionFactoryTransformer;
-import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.DisabledPollingQueueProvider;
 
@@ -43,7 +43,7 @@ public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
      * return 0 here for unlimited pending work count overall.
      */
     protected int newMaxPendingWorkCountOverall() {
-        return RpcSynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
+        return ASynchronousEndpointServer.DEFAULT_MAX_PENDING_WORK_COUNT_OVERALL;
     }
 
     public int getMaxPendingWorkCountOverall() {

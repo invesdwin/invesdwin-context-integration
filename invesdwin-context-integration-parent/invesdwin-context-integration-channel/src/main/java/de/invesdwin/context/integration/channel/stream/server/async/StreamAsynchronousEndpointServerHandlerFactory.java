@@ -1,46 +1,42 @@
-package de.invesdwin.context.integration.channel.stream.server;
+package de.invesdwin.context.integration.channel.stream.server.async;
 
 import java.io.IOException;
 
-import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
-import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
+import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
+import de.invesdwin.context.integration.channel.rpc.base.server.async.AAsynchronousEndpointServerHandlerFactory;
+import de.invesdwin.context.integration.channel.stream.server.IStreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.MultiplexingStreamSynchronousEndpointServerSession;
-import de.invesdwin.context.integration.channel.stream.server.session.SingleplexingStreamSynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.DefaultStreamSessionManager;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
-public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
+public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronousEndpointServerHandlerFactory
         implements IStreamSynchronousEndpointServer {
 
-    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION = 100;
-    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION = 50;
+    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION = StreamSynchronousEndpointServer.DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION;
+    public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION = StreamSynchronousEndpointServer.DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION;
 
-    private final IStreamSynchronousEndpointServiceFactory serviceFactory;
-    @GuardedBy("this")
     private final Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_sync = new Int2ObjectOpenHashMap<>();
     private volatile Int2ObjectMap<IStreamSynchronousEndpointService> serviceId_service_copy = new Int2ObjectOpenHashMap<>();
+    private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     private final int maxSuccessivePushCountPerSession;
     private final int maxSuccessivePushCountPerSubscription;
 
-    public StreamSynchronousEndpointServer(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+    public StreamAsynchronousEndpointServerHandlerFactory(
             final IStreamSynchronousEndpointServiceFactory serviceFactory) {
-        super(serverAcceptor);
         this.serviceFactory = serviceFactory;
         this.maxSuccessivePushCountPerSession = newMaxSuccessivePushCountPerSession();
         this.maxSuccessivePushCountPerSubscription = newMaxSuccessivePushCountPerSubscription();
@@ -68,12 +64,16 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
         return maxSuccessivePushCountPerSession;
     }
 
+    @Override
     public int getMaxSuccessivePushCountPerSubscription() {
         return maxSuccessivePushCountPerSubscription;
     }
 
     @Override
-    protected void onClose() {
+    public void open() throws IOException {}
+
+    @Override
+    public synchronized void close() throws IOException {
         for (final IStreamSynchronousEndpointService service : serviceId_service_sync.values()) {
             try {
                 service.close();
@@ -82,24 +82,12 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
             }
         }
         serviceId_service_sync.clear();
-        serviceId_service_copy = new Int2ObjectOpenHashMap<>();
+        serviceId_service_copy = null;
     }
 
     @Override
-    protected ISynchronousEndpointServerSession newServerSession(final ISynchronousEndpointSession endpointSession) {
-        if (getWorkExecutor() == null) {
-            /*
-             * Singlexplexing can not handle more than 1 request at a time, so this is the most efficient. Though could
-             * also be used with workExecutor to limit concurrent requests different to IO threads. But IO threads are
-             * normally good enough when requests are not expensive. Though if there is a mix between expensive and fast
-             * requests, then a work executor with Singleplexing might be preferable. In all other cases I guess
-             * multiplexing should be favored.
-             */
-            return new SingleplexingStreamSynchronousEndpointServerSession(this, endpointSession);
-        } else {
-            //we want to be able to handle multiple requests concurrently
-            return new MultiplexingStreamSynchronousEndpointServerSession(this, endpointSession);
-        }
+    public IAsynchronousHandler<IByteBufferProvider, IByteBufferProvider> newHandler() {
+        return new StreamAsynchronousEndpointServerHandler(this);
     }
 
     @Override
@@ -150,4 +138,5 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
     public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
         return new DefaultStreamSessionManager(session);
     }
+
 }

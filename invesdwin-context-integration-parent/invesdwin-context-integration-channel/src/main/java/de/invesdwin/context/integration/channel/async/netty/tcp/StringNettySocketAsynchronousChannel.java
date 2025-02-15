@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ReusableByteBufInputStream;
@@ -103,7 +104,7 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
         return channel == null || channel.isClosed();
     }
 
-    private static final class Context implements IAsynchronousHandlerContext<String> {
+    private static final class Context extends BroadcastingCloseable implements IAsynchronousHandlerContext<String> {
 
         private static final AttributeKey<Context> CONTEXT_KEY = AttributeKey
                 .newInstance(StringNettySocketAsynchronousChannel.class.getSimpleName() + "_context");
@@ -146,6 +147,7 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
 
         @Override
         public void close() {
+            super.close();
             try {
                 writeOutput(CLOSED_MESSAGE);
             } catch (final IOException e1) {
@@ -177,6 +179,11 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
                 attr.set(created);
                 return created;
             }
+        }
+
+        public static Context get(final Channel ch) {
+            final Attribute<Context> attr = ch.attr(CONTEXT_KEY);
+            return attr.get();
         }
 
         @Override
@@ -216,6 +223,10 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
         private void close(final ChannelHandlerContext ctx) {
             if (!closed) {
                 closed = true;
+                final Context context = Context.get(ctx.channel());
+                if (context != null) {
+                    context.close();
+                }
                 this.inputBuf.release();
                 this.outputBuf.release();
                 ctx.close();

@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.rpc.base.client.handler.RpcClien
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableList;
 import de.invesdwin.util.concurrent.lock.ILock;
@@ -25,8 +25,8 @@ import de.invesdwin.util.time.duration.Duration;
 public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {
 
-    public static final int DEFAULT_MAX_SESSIONS_COUNT = RpcSynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
-    public static final int DEFAULT_CREATE_SESSION_REQUEST_THRESHOLD = RpcSynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
+    public static final int DEFAULT_MAX_SESSIONS_COUNT = ASynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
+    public static final int DEFAULT_CREATE_SESSION_REQUEST_THRESHOLD = ASynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
 
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
     private final int maxSessionsCount;

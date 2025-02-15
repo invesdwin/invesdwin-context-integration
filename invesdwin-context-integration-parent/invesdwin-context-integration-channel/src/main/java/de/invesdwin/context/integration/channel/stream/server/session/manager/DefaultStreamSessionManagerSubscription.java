@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.IStreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceListener;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -22,7 +22,7 @@ public class DefaultStreamSessionManagerSubscription
         implements IStreamSynchronousEndpointServiceListener, INode<DefaultStreamSessionManagerSubscription> {
     private final IStreamSessionManager manager;
     private final IStreamSynchronousEndpointSession session;
-    private final StreamSynchronousEndpointServer server;
+    private final IStreamSynchronousEndpointServer server;
     private final IStreamSynchronousEndpointService service;
     @GuardedBy("self")
     private final NodeBufferingIterator<DefaultStreamSessionManagerSubscription> notifiedSubscriptions;
@@ -38,7 +38,7 @@ public class DefaultStreamSessionManagerSubscription
             final IProperties parameters) throws Exception {
         this.manager = manager;
         this.session = manager.getSession();
-        this.server = session.getParent();
+        this.server = session.getServer();
         this.service = service;
         this.notifiedSubscriptions = notifiedSubscriptions;
         final ISynchronousReader<IByteBufferProvider> subscription = service.subscribe(this, parameters);
@@ -61,7 +61,7 @@ public class DefaultStreamSessionManagerSubscription
             } else {
                 if (burstMessages == 0) {
                     //give pushing messages on this subscription priority
-                    burstMessages = server.getMaxSuccessivePushCountPerSession();
+                    burstMessages = server.getMaxSuccessivePushCountPerSubscription();
                 } else {
                     //decrease priority for pushing messages on this subcription
                     burstMessages--;

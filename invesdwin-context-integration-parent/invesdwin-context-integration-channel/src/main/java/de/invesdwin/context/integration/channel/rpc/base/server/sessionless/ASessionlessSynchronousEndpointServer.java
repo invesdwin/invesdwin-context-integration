@@ -14,7 +14,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.RpcSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.IAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.SyncPollingQueueProvider;
 import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.SessionlessHandlerContext;
@@ -59,7 +59,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
      * Should always be a CachedExecutorService (default)
      */
     protected WrappedExecutorService newIoExecutor() {
-        return RpcSynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
+        return ASynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
     }
 
     public WrappedExecutorService getIoExecutor() {

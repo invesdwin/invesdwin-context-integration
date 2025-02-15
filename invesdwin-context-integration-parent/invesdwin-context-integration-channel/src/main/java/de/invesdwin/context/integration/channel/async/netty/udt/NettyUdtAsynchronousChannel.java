@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -100,7 +101,8 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         return channel == null || channel.isClosed();
     }
 
-    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
+    private static final class Context extends BroadcastingCloseable
+            implements IAsynchronousHandlerContext<IByteBufferProvider> {
         private static final AttributeKey<Context> CONTEXT_KEY = AttributeKey
                 .newInstance(NettyUdtAsynchronousChannel.class.getSimpleName() + "_context");
         private final Channel ch;
@@ -142,6 +144,7 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void close() {
+            super.close();
             try {
                 writeOutput(ClosedByteBuffer.INSTANCE);
             } catch (final IOException e1) {
@@ -150,7 +153,6 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             ch.close();
         }
 
-        @SuppressWarnings("deprecation")
         private void writeOutput(final IByteBufferProvider output) throws IOException {
             if (output != null) {
                 writeOutputNotNullSafe(output);
@@ -177,6 +179,11 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
                 attr.set(created);
                 return created;
             }
+        }
+
+        public static Context get(final Channel ch) {
+            final Attribute<Context> attr = ch.attr(CONTEXT_KEY);
+            return attr.get();
         }
 
         @Override
@@ -223,6 +230,10 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         private void close(final ChannelHandlerContext ctx) {
             if (!closed) {
                 closed = true;
+                final Context context = Context.get(ctx.channel());
+                if (context != null) {
+                    context.close();
+                }
                 this.inputBuf.release();
                 this.outputBuf.release();
                 ctx.close();

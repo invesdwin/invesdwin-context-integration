@@ -22,6 +22,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -99,7 +100,8 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         return channel == null || channel.isClosed();
     }
 
-    private static final class Context implements IAsynchronousHandlerContext<IByteBufferProvider> {
+    private static final class Context extends BroadcastingCloseable
+            implements IAsynchronousHandlerContext<IByteBufferProvider> {
         private static final AttributeKey CONTEXT_KEY = new AttributeKey(MinaSocketAsynchronousChannel.class,
                 "context");
         private final IoSession session;
@@ -143,6 +145,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public void close() {
+            super.close();
             try {
                 writeOutput(ClosedByteBuffer.INSTANCE);
             } catch (final IOException e1) {
@@ -169,7 +172,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         }
 
         public static Context getOrCreate(final IoSession ch, final int socketSize, final IoBufferAllocator alloc) {
-            final Context existing = (Context) ch.getAttribute(CONTEXT_KEY);
+            final Context existing = get(ch);
             if (existing != null) {
                 return existing;
             } else {
@@ -177,6 +180,10 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
                 ch.setAttribute(CONTEXT_KEY, created);
                 return created;
             }
+        }
+
+        public static Context get(final IoSession ch) {
+            return (Context) ch.getAttribute(CONTEXT_KEY);
         }
 
         @Override
@@ -188,6 +195,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         public void returnResult(final ProcessResponseResult result) {
             ProcessResponseResultPool.INSTANCE.returnObject(result);
         }
+
     }
 
     private static final class Reader extends IoFilterAdapter {
@@ -224,6 +232,10 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         private void close(final IoSession session) {
             if (!closed) {
                 closed = true;
+                final Context context = Context.get(session);
+                if (context != null) {
+                    context.close();
+                }
                 this.inputBuf.free();
                 this.outputBuf.free();
                 session.closeNow();

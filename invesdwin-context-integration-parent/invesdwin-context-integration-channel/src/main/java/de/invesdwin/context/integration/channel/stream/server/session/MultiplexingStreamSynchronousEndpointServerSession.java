@@ -15,7 +15,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
-import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
+import de.invesdwin.context.integration.channel.stream.server.IStreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
@@ -43,7 +43,7 @@ import de.invesdwin.util.time.duration.Duration;
 public class MultiplexingStreamSynchronousEndpointServerSession
         implements ISynchronousEndpointServerSession, IStreamSynchronousEndpointSession {
 
-    private final StreamSynchronousEndpointServer parent;
+    private final IStreamSynchronousEndpointServer server;
     private ISynchronousEndpointSession endpointSession;
     private final String sessionId;
     private final Duration heartbeatTimeout;
@@ -67,10 +67,10 @@ public class MultiplexingStreamSynchronousEndpointServerSession
     private int skipRequestReadingCount = 0;
     private int pushedMessages = 0;
 
-    public MultiplexingStreamSynchronousEndpointServerSession(final StreamSynchronousEndpointServer parent,
+    public MultiplexingStreamSynchronousEndpointServerSession(final IStreamSynchronousEndpointServer server,
             final ISynchronousEndpointSession endpointSession) {
-        this.parent = parent;
-        this.manager = parent.newManager(this);
+        this.server = server;
+        this.manager = server.newManager(this);
         this.endpointSession = endpointSession;
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
@@ -87,8 +87,8 @@ public class MultiplexingStreamSynchronousEndpointServerSession
     }
 
     @Override
-    public StreamSynchronousEndpointServer getParent() {
-        return parent;
+    public IStreamSynchronousEndpointServer getServer() {
+        return server;
     }
 
     @Override
@@ -150,7 +150,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             //writer has not yet flushed, continue with another session
             throw FastNoSuchElementException.getInstance("writer.writeFlushed is false");
         }
-        if (writeQueue.size() > parent.getMaxSuccessivePushCountPerSession()) {
+        if (writeQueue.size() > server.getMaxSuccessivePushCountPerSession()) {
             //a request processing is still active which should be handled by the handleRequests method
             throw FastNoSuchElementException.getInstance("writeQueue.size exceeds maxSuccessivePushCountPerSession");
         }
@@ -191,7 +191,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             if (managerHandled) {
                 if (skipRequestReadingCount == 0) {
                     //give pushing messages priority
-                    skipRequestReadingCount = parent.getMaxSuccessivePushCountPerSession();
+                    skipRequestReadingCount = server.getMaxSuccessivePushCountPerSession();
                 } else {
                     //decrease priority for pushing messages
                     skipRequestReadingCount--;
@@ -322,7 +322,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                 return;
             }
 
-            final WrappedExecutorService workExecutor = parent.getWorkExecutor();
+            final WrappedExecutorService workExecutor = server.getWorkExecutor();
             if (workExecutor == null || methodInfo.isBlocking()) {
                 final Future<Object> future = methodInfo.invoke(manager, sessionId, request, result.getResponse());
                 if (future != null && !future.isDone()) {
@@ -333,7 +333,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                     writeQueue.add(result);
                 }
             } else {
-                final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
+                final int maxPendingWorkCountPerSession = server.getMaxPendingWorkCountPerSession();
                 if (maxPendingWorkCountPerSession > 0) {
                     final int thisPendingCount = activeRequests.size();
                     if (thisPendingCount > maxPendingWorkCountPerSession) {
@@ -348,7 +348,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                         return;
                     }
                 }
-                final int maxPendingWorkCountOverall = parent.getMaxPendingWorkCountOverall();
+                final int maxPendingWorkCountOverall = server.getMaxPendingWorkCountOverall();
                 if (maxPendingWorkCountOverall > 0) {
                     final int overallPendingCount = workExecutor.getPendingCount();
                     if (overallPendingCount > maxPendingWorkCountOverall) {

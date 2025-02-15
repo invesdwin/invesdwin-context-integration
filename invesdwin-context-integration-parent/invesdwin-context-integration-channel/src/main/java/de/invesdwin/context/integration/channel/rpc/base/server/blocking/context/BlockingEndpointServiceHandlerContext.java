@@ -11,6 +11,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousReaderSpinLoop;
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWriterSpinLoop;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -19,7 +20,7 @@ import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BlockingEndpointServiceHandlerContext
+public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
         implements IAsynchronousHandlerContext<IByteBufferProvider>, ICloseableByteBufferProvider {
 
     private final BlockingEndpointServiceHandlerContextPool pool;
@@ -141,6 +142,7 @@ public class BlockingEndpointServiceHandlerContext
     }
 
     public void clean() {
+        super.close();
         requestWrapperBuffer.wrap(Bytes.EMPTY_ARRAY);
         response = null;
         if (resultBorrowed) {

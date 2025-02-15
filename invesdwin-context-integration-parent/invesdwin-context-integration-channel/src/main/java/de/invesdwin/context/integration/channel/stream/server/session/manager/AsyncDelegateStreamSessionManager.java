@@ -34,7 +34,7 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
     public AsyncDelegateStreamSessionManager(final IStreamSessionManager delegate,
             final WrappedExecutorService executor, final int maxPendingTasksCountForSession) {
         this.delegate = delegate;
-        if (executor == delegate.getSession().getParent().getWorkExecutor()) {
+        if (executor == delegate.getSession().getServer().getWorkExecutor()) {
             throw new IllegalArgumentException(
                     "executor should not be the workExecutor from the server, this will cause deadlocks due to thread starvations");
         }

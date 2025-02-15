@@ -1,7 +1,5 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context;
 
-import java.io.IOException;
-
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
@@ -9,11 +7,13 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public final class SessionlessHandlerContext implements IAsynchronousHandlerContext<IByteBufferProvider> {
+public final class SessionlessHandlerContext extends BroadcastingCloseable
+        implements IAsynchronousHandlerContext<IByteBufferProvider> {
     private final ProcessResponseResult result = new ProcessResponseResult();
     private boolean resultBorrowed;
     private AttributesMap attributes;
@@ -52,11 +52,12 @@ public final class SessionlessHandlerContext implements IAsynchronousHandlerCont
     }
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         SessionlessHandlerContextPool.INSTANCE.returnObject(this);
     }
 
     public void clean() {
+        super.close();
         otherSocketAddress = null;
         if (resultBorrowed) {
             result.clean();
