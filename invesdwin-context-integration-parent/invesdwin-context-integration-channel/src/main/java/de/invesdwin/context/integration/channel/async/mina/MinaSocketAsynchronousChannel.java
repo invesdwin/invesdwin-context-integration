@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.async.mina;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -22,6 +23,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -135,11 +138,12 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         }
 
         @Override
-        public void write(final IByteBufferProvider output) {
+        public Future<?> write(final IByteBufferProvider output) {
             try {
-                writeOutput(output);
+                return writeOutput(output);
             } catch (final IOException e) {
                 close();
+                return ThrowableFuture.of(e);
             }
         }
 
@@ -154,13 +158,15 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             session.closeNow();
         }
 
-        private void writeOutput(final IByteBufferProvider output) throws IOException {
+        private Future<?> writeOutput(final IByteBufferProvider output) throws IOException {
             if (output != null) {
-                writeOutputNotNullSafe(output);
+                return writeOutputNotNullSafe(output);
+            } else {
+                return NullFuture.getInstance();
             }
         }
 
-        private void writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
+        private Future<?> writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
             final IoBuffer buf = alloc.allocate(socketSize, true);
             final UnsafeByteBuffer buffer = new UnsafeByteBuffer(buf.buf());
             final IByteBuffer messageBuffer = buffer.sliceFrom(MinaSocketSynchronousChannel.MESSAGE_INDEX);
@@ -168,7 +174,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
             buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
             buf.position(0);
             buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
-            session.write(buf);
+            return WriteFutureAdapter.valueOf(session.write(buf));
         }
 
         public static Context getOrCreate(final IoSession ch, final int socketSize, final IoBufferAllocator alloc) {
@@ -194,6 +200,11 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void returnResult(final ProcessResponseResult result) {
             ProcessResponseResultPool.INSTANCE.returnObject(result);
+        }
+
+        @Override
+        public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
+            return this;
         }
 
     }

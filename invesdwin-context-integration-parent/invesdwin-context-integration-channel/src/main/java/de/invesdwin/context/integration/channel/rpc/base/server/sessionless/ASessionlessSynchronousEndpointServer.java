@@ -17,8 +17,8 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.IS
 import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.IAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.poll.SyncPollingQueueProvider;
-import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.SessionlessHandlerContext;
-import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.SessionlessHandlerContextPool;
+import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.MutableSessionlessHandlerContext;
+import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context.MutableSessionlessHandlerContextPool;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -108,7 +108,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
          * We don't use a bounded sized queue here because one slow client might otherwise block worker threads that
          * could still work on other tasks for other clients. PendingCount check will just
          */
-        private final ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
+        private final ManyToOneConcurrentLinkedQueue<MutableSessionlessHandlerContext> writeQueue = new ManyToOneConcurrentLinkedQueue<>();
 
         private volatile Future<?> future;
 
@@ -160,7 +160,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
 
         private boolean handle() throws IOException {
             boolean writing = pollingQueueProvider.maybePollResults();
-            final SessionlessHandlerContext writeTask = writeQueue.peek();
+            final MutableSessionlessHandlerContext writeTask = writeQueue.peek();
             if (writeTask != null) {
                 /*
                  * even if we finish writing the current task and no other task follows, we still handled something and
@@ -169,8 +169,8 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
                 writing = true;
                 if (responseWriter.writeFlushed() && responseWriter.writeReady()) {
                     if (writeTask.getResult().isWriting()) {
-                        final SessionlessHandlerContext removedTask = writeQueue.remove();
-                        final SessionlessHandlerContext nextWriteTask = writeQueue.peek();
+                        final MutableSessionlessHandlerContext removedTask = writeQueue.remove();
+                        final MutableSessionlessHandlerContext nextWriteTask = writeQueue.peek();
                         if (nextWriteTask != null) {
                             serverEndpoint.setOtherSocketAddress(nextWriteTask.getOtherSocketAddress());
                             responseWriter.write(nextWriteTask.getResponse());
@@ -191,7 +191,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
             try {
                 if (requestReader.hasNext()) {
                     final IByteBufferProvider request = requestReader.readMessage();
-                    final SessionlessHandlerContext context = SessionlessHandlerContextPool.INSTANCE.borrowObject();
+                    final MutableSessionlessHandlerContext context = MutableSessionlessHandlerContextPool.INSTANCE.borrowObject();
                     try {
                         context.init(serverEndpoint.getOtherSocketAddress(), writeQueue);
                         final IByteBufferProvider response = handler.handle(context, request);

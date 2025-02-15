@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.async.serde;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -129,10 +130,10 @@ public class SerdeAsynchronousHandler<I, O>
         }
 
         @Override
-        public void write(final O output) {
+        public Future<?> write(final O output) {
             try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                 final int length = outputSerde.toBuffer(buffer, output);
-                delegate.write(buffer.sliceTo(length));
+                return delegate.write(buffer.sliceTo(length));
             }
         }
 
@@ -159,6 +160,16 @@ public class SerdeAsynchronousHandler<I, O>
         @Override
         public boolean unregisterCloseable(final Closeable closeable) {
             return delegate.unregisterCloseable(closeable);
+        }
+
+        @Override
+        public IAsynchronousHandlerContext<O> asImmutable() {
+            final IAsynchronousHandlerContext<IByteBufferProvider> immutable = delegate.asImmutable();
+            if (immutable == delegate) {
+                return this;
+            } else {
+                return new SerdeAsynchronousContext<>(immutable, outputSerde);
+            }
         }
 
     }

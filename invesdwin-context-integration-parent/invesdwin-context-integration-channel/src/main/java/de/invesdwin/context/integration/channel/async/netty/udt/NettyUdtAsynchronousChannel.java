@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.async.netty.udt;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -13,6 +14,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -134,11 +137,12 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         }
 
         @Override
-        public void write(final IByteBufferProvider output) {
+        public Future<?> write(final IByteBufferProvider output) {
             try {
-                writeOutput(output);
+                return writeOutput(output);
             } catch (final IOException e) {
                 close();
+                return ThrowableFuture.of(e);
             }
         }
 
@@ -153,20 +157,22 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
             ch.close();
         }
 
-        private void writeOutput(final IByteBufferProvider output) throws IOException {
+        private Future<?> writeOutput(final IByteBufferProvider output) throws IOException {
             if (output != null) {
-                writeOutputNotNullSafe(output);
+                return writeOutputNotNullSafe(output);
+            } else {
+                return NullFuture.getInstance();
             }
         }
 
-        private void writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
+        private Future<?> writeOutputNotNullSafe(final IByteBufferProvider output) throws IOException {
             final ByteBuf buf = ch.alloc().buffer(socketSize);
             final NettyDelegateByteBuffer buffer = new NettyDelegateByteBuffer(buf);
             final IByteBuffer messageBuffer = buffer.sliceFrom(NettyUdtSynchronousChannel.MESSAGE_INDEX);
             final int size = output.getBuffer(messageBuffer);
             buffer.putInt(NettyUdtSynchronousChannel.SIZE_INDEX, size);
             buf.setIndex(0, NettyUdtSynchronousChannel.MESSAGE_INDEX + size);
-            ch.writeAndFlush(new UdtMessage(buf));
+            return ch.writeAndFlush(new UdtMessage(buf));
         }
 
         public static Context getOrCreate(final Channel ch, final int socketSize) {
@@ -194,6 +200,11 @@ public class NettyUdtAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public void returnResult(final ProcessResponseResult result) {
             ProcessResponseResultPool.INSTANCE.returnObject(result);
+        }
+
+        @Override
+        public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
+            return this;
         }
     }
 

@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.async;
 
 import java.io.Closeable;
+import java.util.concurrent.Future;
 
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
@@ -13,8 +14,10 @@ public interface IAsynchronousHandlerContext<O> extends Closeable {
 
     /**
      * Can be used to write message asynchronously from outside of the handler thread (e.g. from a worker thread).
+     *
+     * @return
      */
-    void write(O output);
+    Future<?> write(O output);
 
     ProcessResponseResult borrowResult();
 
@@ -23,5 +26,7 @@ public interface IAsynchronousHandlerContext<O> extends Closeable {
     boolean registerCloseable(Closeable closeable);
 
     boolean unregisterCloseable(Closeable closeable);
+
+    IAsynchronousHandlerContext<O> asImmutable();
 
 }

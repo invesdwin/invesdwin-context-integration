@@ -1,10 +1,7 @@
 package de.invesdwin.context.integration.channel.stream.server.async;
 
-import java.io.Closeable;
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -33,7 +30,6 @@ public class StreamAsynchronousEndpointServerHandler
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
     private long lastHeartbeatNanos = System.nanoTime();
     private final IPollingQueueProvider pollingQueueProvider;
-    private final Map<String, StreamAsynchronousEndpointServerHandlerSession> sessionId_sessionManager = new ConcurrentHashMap<>();
 
     public StreamAsynchronousEndpointServerHandler(final StreamAsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
@@ -56,7 +52,6 @@ public class StreamAsynchronousEndpointServerHandler
         if (isHeartbeatTimeout()) {
             throw FastEOFException.getInstance("heartbeat timeout [%s] exceeded", parent.getHeartbeatTimeout());
         }
-        //System.out.println("TODO: add a thread that pushed out subscription messages");
         return null;
     }
 
@@ -72,6 +67,9 @@ public class StreamAsynchronousEndpointServerHandler
     public IByteBufferProvider handle(final IAsynchronousHandlerContext<IByteBufferProvider> context,
             final IByteBufferProvider input) throws IOException {
         lastHeartbeatNanos = System.nanoTime();
+        final StreamAsynchronousEndpointServerHandlerSession session = parent.getOrCreateSession(context);
+        session.updateLastHeartbeatNanos(lastHeartbeatNanos);
+
         final IByteBuffer buffer = input.asBuffer();
         final int service = buffer.getInt(ServiceSynchronousCommandSerde.SERVICE_INDEX);
         final int method = buffer.getInt(ServiceSynchronousCommandSerde.METHOD_INDEX);
@@ -84,18 +82,19 @@ public class StreamAsynchronousEndpointServerHandler
             requestHolder.setMessage(ByteBufferProviderSerde.GET,
                     buffer.slice(ServiceSynchronousCommandSerde.MESSAGE_INDEX, messageLength));
             //we expect async handlers to already be running inside of a worker pool, thus just execute in current thread
-            return dispatchProcessResponse(context);
+            return dispatchProcessResponse(session);
         } finally {
             requestHolder.close();
         }
     }
 
-    private IByteBufferProvider dispatchProcessResponse(final IAsynchronousHandlerContext<IByteBufferProvider> context)
+    private IByteBufferProvider dispatchProcessResponse(final StreamAsynchronousEndpointServerHandlerSession session)
             throws IOException {
         final int serviceId = requestHolder.getService();
         if (serviceId == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
             return null;
         }
+        final IAsynchronousHandlerContext<IByteBufferProvider> context = session.getContext();
         final ProcessResponseResult result = context.borrowResult();
         result.setContext(context);
         final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
@@ -110,9 +109,7 @@ public class StreamAsynchronousEndpointServerHandler
             return response.asBuffer();
         }
 
-        final StreamAsynchronousEndpointServerHandlerSession session = getOrCreateSession(context);
         final IStreamSessionManager manager = session.getManager();
-
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
             final Future<Object> future = methodInfo.invoke(manager, context.getSessionId(), requestHolder, response);
@@ -155,24 +152,6 @@ public class StreamAsynchronousEndpointServerHandler
             result.setFuture(workExecutor.submit(new ProcessResponseTask(manager, methodInfo, result)));
             return null;
         }
-    }
-
-    private StreamAsynchronousEndpointServerHandlerSession getOrCreateSession(
-            final IAsynchronousHandlerContext<IByteBufferProvider> context) {
-        final StreamAsynchronousEndpointServerHandlerSession session = sessionId_sessionManager
-                .computeIfAbsent(context.getSessionId(), (k) -> {
-                    final StreamAsynchronousEndpointServerHandlerSession s = new StreamAsynchronousEndpointServerHandlerSession(
-                            parent, context);
-                    context.registerCloseable(new Closeable() {
-                        @Override
-                        public void close() throws IOException {
-                            s.close();
-                            sessionId_sessionManager.remove(context.getSessionId());
-                        }
-                    });
-                    return s;
-                });
-        return session;
     }
 
     @Override

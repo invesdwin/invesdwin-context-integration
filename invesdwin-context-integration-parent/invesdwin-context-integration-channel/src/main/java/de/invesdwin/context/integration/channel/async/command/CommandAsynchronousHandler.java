@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.async.command;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -145,14 +146,14 @@ public class CommandAsynchronousHandler<I, O>
         }
 
         @Override
-        public void write(final ISynchronousCommand<O> output) {
+        public Future<?> write(final ISynchronousCommand<O> output) {
             try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                 buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
                 buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());
                 final int messageLength = outputSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
                         output.getMessage());
                 final int length = SynchronousCommandSerde.MESSAGE_INDEX + messageLength;
-                delegate.write(buffer.sliceTo(length));
+                return delegate.write(buffer.sliceTo(length));
             }
         }
 
@@ -179,6 +180,16 @@ public class CommandAsynchronousHandler<I, O>
         @Override
         public boolean unregisterCloseable(final Closeable closeable) {
             return delegate.unregisterCloseable(closeable);
+        }
+
+        @Override
+        public IAsynchronousHandlerContext<ISynchronousCommand<O>> asImmutable() {
+            final IAsynchronousHandlerContext<IByteBufferProvider> immutable = delegate.asImmutable();
+            if (immutable == delegate) {
+                return this;
+            } else {
+                return new CommandAsynchronousContext<>(immutable, outputSerde);
+            }
         }
 
     }

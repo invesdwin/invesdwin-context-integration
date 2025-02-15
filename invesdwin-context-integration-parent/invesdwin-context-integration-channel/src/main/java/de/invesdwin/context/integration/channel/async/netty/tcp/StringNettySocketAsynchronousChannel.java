@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.async.netty.tcp;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -13,6 +14,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
@@ -137,11 +140,12 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
         }
 
         @Override
-        public void write(final String output) {
+        public Future<?> write(final String output) {
             try {
-                writeOutput(output);
+                return writeOutput(output);
             } catch (final IOException e) {
                 close();
+                return ThrowableFuture.of(e);
             }
         }
 
@@ -156,17 +160,19 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
             ch.close();
         }
 
-        private void writeOutput(final String output) throws IOException {
+        private Future<?> writeOutput(final String output) throws IOException {
             if (output != null) {
-                writeOutputNotNullSafe(output);
+                return writeOutputNotNullSafe(output);
+            } else {
+                return NullFuture.getInstance();
             }
         }
 
-        private void writeOutputNotNullSafe(final String output) throws IOException {
+        private Future<?> writeOutputNotNullSafe(final String output) throws IOException {
             final ByteBuf buf = ch.alloc().buffer(socketSize);
             buf.writeCharSequence(output, Charsets.UTF_8);
             buf.writeCharSequence(NEWLINE_STR, Charsets.UTF_8);
-            ch.writeAndFlush(buf);
+            return ch.writeAndFlush(buf);
         }
 
         public static Context getOrCreate(final Channel ch, final int socketSize) {
@@ -194,6 +200,11 @@ public class StringNettySocketAsynchronousChannel implements IAsynchronousChanne
         @Override
         public void returnResult(final ProcessResponseResult result) {
             ProcessResponseResultPool.INSTANCE.returnObject(result);
+        }
+
+        @Override
+        public IAsynchronousHandlerContext<String> asImmutable() {
+            return this;
         }
     }
 

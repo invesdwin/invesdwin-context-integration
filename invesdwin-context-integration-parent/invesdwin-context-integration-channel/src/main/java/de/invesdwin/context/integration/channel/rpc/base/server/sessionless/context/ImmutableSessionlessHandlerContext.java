@@ -1,72 +1,53 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.sessionless.context;
 
+import java.util.concurrent.Future;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
+import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public final class SessionlessHandlerContext extends BroadcastingCloseable
-        implements IAsynchronousHandlerContext<IByteBufferProvider> {
-    private final ProcessResponseResult result = new ProcessResponseResult();
-    private boolean resultBorrowed;
+public final class ImmutableSessionlessHandlerContext extends BroadcastingCloseable
+        implements ISessionlessHandlerContext {
+    private final Object otherSocketAddress;
+    private final ManyToOneConcurrentLinkedQueue<MutableSessionlessHandlerContext> writeQueue;
     private AttributesMap attributes;
-    private Object otherSocketAddress;
-    private IByteBufferProvider response;
-    private ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue;
 
-    public void init(final Object otherSocketAddress,
-            final ManyToOneConcurrentLinkedQueue<SessionlessHandlerContext> writeQueue) {
+    public ImmutableSessionlessHandlerContext(final Object otherSocketAddress,
+            final ManyToOneConcurrentLinkedQueue<MutableSessionlessHandlerContext> writeQueue) {
+        Assertions.checkNotNull(otherSocketAddress);
         this.otherSocketAddress = otherSocketAddress;
         this.writeQueue = writeQueue;
     }
 
-    public IByteBufferProvider getResponse() {
-        if (response == null) {
-            throw new IllegalStateException("response should not be null");
-        }
-        return response;
-    }
-
-    public ProcessResponseResult getResult() {
-        return result;
-    }
-
+    @Override
     public Object getOtherSocketAddress() {
         return otherSocketAddress;
     }
 
     @Override
-    public void write(final IByteBufferProvider output) {
-        if (response != null) {
-            throw new IllegalStateException("can only write a single response in this context");
-        }
-        response = output;
-        writeQueue.add(this);
+    public Future<?> write(final IByteBufferProvider output) {
+        final MutableSessionlessHandlerContext pooledContext = MutableSessionlessHandlerContextPool.INSTANCE
+                .borrowObject();
+        pooledContext.init(otherSocketAddress, writeQueue);
+        return pooledContext.write(output);
     }
 
     @Override
     public void close() {
-        SessionlessHandlerContextPool.INSTANCE.returnObject(this);
-    }
-
-    public void clean() {
         super.close();
-        otherSocketAddress = null;
-        if (resultBorrowed) {
-            result.clean();
-            resultBorrowed = false;
-        }
         if (attributes != null && !attributes.isEmpty()) {
             attributes.clear();
         }
-        response = null;
     }
 
     @Override
@@ -88,16 +69,17 @@ public final class SessionlessHandlerContext extends BroadcastingCloseable
 
     @Override
     public ProcessResponseResult borrowResult() {
-        if (resultBorrowed) {
-            throw new IllegalStateException("only one result can be borrowed in this context");
-        }
-        resultBorrowed = true;
-        return result;
+        return ProcessResponseResultPool.INSTANCE.borrowObject();
     }
 
     @Override
     public void returnResult(final ProcessResponseResult result) {
-        //don't clean yet
+        ProcessResponseResultPool.INSTANCE.returnObject(result);
+    }
+
+    @Override
+    public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
+        return this;
     }
 
 }

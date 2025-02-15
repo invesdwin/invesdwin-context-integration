@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.blocking.context;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -11,6 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousReaderSpinLoop;
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWriterSpinLoop;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -109,7 +111,7 @@ public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
     }
 
     @Override
-    public void write(final IByteBufferProvider output) {
+    public Future<?> write(final IByteBufferProvider output) {
         if (response != null) {
             throw new IllegalStateException("can only write a single response in this context");
         }
@@ -120,6 +122,7 @@ public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
         }
         response = endpoint.getWriter().getMessage();
         endpoint.getWriter().setMessage(null);
+        return NullFuture.getInstance();
     }
 
     @Override
@@ -162,6 +165,12 @@ public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
     @Override
     public IByteBuffer asBuffer() throws IOException {
         return getResponse().asBuffer();
+    }
+
+    @Override
+    public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
+        throw new UnsupportedOperationException(
+                "can not make this instance immutable since asynchronous writes are not supported");
     }
 
 }
