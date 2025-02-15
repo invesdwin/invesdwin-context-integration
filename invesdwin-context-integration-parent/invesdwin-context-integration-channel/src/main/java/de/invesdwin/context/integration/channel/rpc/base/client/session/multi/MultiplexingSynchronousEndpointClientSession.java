@@ -55,7 +55,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> responseReader;
     @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
-    private final AtomicInteger sequenceCounter = new AtomicInteger();
+    private final AtomicInteger requestSequenceCounter = new AtomicInteger();
+    private final AtomicInteger streamSequenceCounter = new AtomicInteger();
     private final ILock lock;
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
@@ -170,7 +171,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 .borrowObject();
         response.setOuterActive();
         try {
-            final int requestSequence = sequenceCounter.incrementAndGet();
+            final int requestSequence = nextRequestSequence(request);
             response.init(methodInfo, request, requestSequence, activePolling);
             if (activePolling.compareAndSet(false, true)) {
                 //take over the job of the activePolling thread and handle other requests while polling
@@ -207,6 +208,45 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         } catch (final Throwable t) {
             response.close();
             throw new RetryLaterRuntimeException(t);
+        }
+    }
+
+    private int nextRequestSequence(final IByteBufferProvider request) {
+        if (request == null) {
+            //stream sequence numbers are negative so that the polling queue can separate them properly
+            final int sequence = streamSequenceCounter.decrementAndGet();
+            if (sequence > 0) {
+                /*
+                 * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
+                 * others picking numbers after that
+                 */
+                synchronized (streamSequenceCounter) {
+                    if (streamSequenceCounter.compareAndSet(sequence, -1)) {
+                        return -1;
+                    } else {
+                        return streamSequenceCounter.decrementAndGet();
+                    }
+                }
+            } else {
+                return sequence;
+            }
+        } else {
+            final int sequence = requestSequenceCounter.incrementAndGet();
+            if (sequence < 0) {
+                /*
+                 * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
+                 * others picking numbers after that
+                 */
+                synchronized (requestSequenceCounter) {
+                    if (requestSequenceCounter.compareAndSet(sequence, 1)) {
+                        return 1;
+                    } else {
+                        return requestSequenceCounter.incrementAndGet();
+                    }
+                }
+            } else {
+                return sequence;
+            }
         }
     }
 

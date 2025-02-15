@@ -44,7 +44,9 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     @GuardedBy("lock")
     private long lastHeartbeatNanos = System.nanoTime();
     @GuardedBy("lock")
-    private int sequenceCounter = 0;
+    private int requestSequenceCounter = 0;
+    @GuardedBy("lock")
+    private int streamSequenceCounter = 0;
     private final ILock lock;
     @GuardedBy("lock")
     private final ScheduledFuture<?> heartbeatFuture;
@@ -149,7 +151,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     public ICloseableByteBufferProvider request(final IClientMethodInfo methodInfo, final IByteBufferProvider request) {
         lock.lock();
         try {
-            final int requestSequence = sequenceCounter++;
+            final int requestSequence = nextRequestSequence(request);
             final long waitingSinceNanos = System.nanoTime();
             writeLocked(methodInfo.getServiceId(), methodInfo.getMethodId(), requestSequence, request,
                     waitingSinceNanos);
@@ -211,6 +213,27 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             }
             lock.unlock();
             throw new RetryLaterRuntimeException(e);
+        }
+    }
+
+    private int nextRequestSequence(final IByteBufferProvider request) {
+        if (request == null) {
+            //stream sequence numbers are negative so that the polling queue can separate them properly
+            final int sequence = --streamSequenceCounter;
+            if (sequence > 0) {
+                streamSequenceCounter = -1;
+                return -1;
+            } else {
+                return sequence;
+            }
+        } else {
+            final int sequence = ++requestSequenceCounter;
+            if (sequence < 0) {
+                requestSequenceCounter = 1;
+                return 1;
+            } else {
+                return sequence;
+            }
         }
     }
 

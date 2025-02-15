@@ -53,7 +53,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     private ISynchronousReader<IByteBufferProvider> readFinishedReader;
     private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
-    private int pushedMessages = 0;
+    private int streamSequenceCounter = 0;
 
     public SingleplexingStreamSynchronousEndpointServerSession(final IStreamSynchronousEndpointServer server,
             final ISynchronousEndpointSession endpointSession) {
@@ -142,9 +142,10 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         /*
          * add a sequence to the pushed messages so that the client can validate if he missed some messages and
          * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request or by
-         * resetting the subscription entirely
+         * resetting the subscription entirely. The stream sequence numbers are negative so that they be separated in a
+         * polling queues from rpc requests/responses.
          */
-        responseHolder.setSequence(pushedMessages++);
+        responseHolder.setSequence(nextStreamSequence());
         responseHolder.setMessageBuffer(message);
         responseWriter.write(responseHolder);
         final boolean flushed = responseWriter.writeFlushed();
@@ -157,6 +158,17 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             readFinishedReader = reader;
         }
         return flushed;
+    }
+
+    private int nextStreamSequence() {
+        final int sequence = --streamSequenceCounter;
+        if (sequence > 0) {
+            //handle rollover
+            streamSequenceCounter = -1;
+            return -1;
+        } else {
+            return sequence;
+        }
     }
 
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions

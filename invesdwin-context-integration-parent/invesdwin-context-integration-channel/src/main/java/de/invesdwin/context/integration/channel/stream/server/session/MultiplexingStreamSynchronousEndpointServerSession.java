@@ -65,7 +65,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             .newFastIterableIdentitySet();
     private final IStreamSessionManager manager;
     private int skipRequestReadingCount = 0;
-    private int pushedMessages = 0;
+    private int streamSequenceCounter = 0;
 
     public MultiplexingStreamSynchronousEndpointServerSession(final IStreamSynchronousEndpointServer server,
             final ISynchronousEndpointSession endpointSession) {
@@ -161,9 +161,10 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         /*
          * add a sequence to the pushed messages so that the client can validate if he missed some messages and
          * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request or by
-         * resetting the subscription entirely
+         * resetting the subscription entirely. The stream sequence numbers are negative so that they be separated in a
+         * polling queues from rpc requests/responses.
          */
-        writeTask.getResponse().setSequence(pushedMessages++);
+        writeTask.getResponse().setSequence(nextStreamSequence());
         writeTask.getResponse().setMessageBuffer(message);
         responseWriter.write(writeTask.getResponse());
         final boolean flushed = responseWriter.writeFlushed();
@@ -178,6 +179,17 @@ public class MultiplexingStreamSynchronousEndpointServerSession
             writeQueue.add(writeTask);
         }
         return flushed;
+    }
+
+    private int nextStreamSequence() {
+        final int sequence = --streamSequenceCounter;
+        if (sequence > 0) {
+            //handle rollover
+            streamSequenceCounter = -1;
+            return -1;
+        } else {
+            return sequence;
+        }
     }
 
     //handling requests has a higher priority than handling subscriptions, except for bursts from subscriptions
