@@ -68,7 +68,7 @@ public class StreamAsynchronousEndpointServerHandler
             final IByteBufferProvider input) throws IOException {
         lastHeartbeatNanos = System.nanoTime();
         final StreamAsynchronousEndpointServerHandlerSession session = parent.getOrCreateSession(context);
-        session.updateLastHeartbeatNanos(lastHeartbeatNanos);
+        session.setLastHeartbeatNanos(lastHeartbeatNanos);
 
         final IByteBuffer buffer = input.asBuffer();
         final int service = buffer.getInt(ServiceSynchronousCommandSerde.SERVICE_INDEX);

@@ -104,7 +104,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         return heartbeatTimeout;
     }
 
-    public void updateLastHeartbeatNanos(final long lastHeartbeatNanos) {
+    public void setLastHeartbeatNanos(final long lastHeartbeatNanos) {
         this.lastHeartbeatNanos = lastHeartbeatNanos;
     }
 
