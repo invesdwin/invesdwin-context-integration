@@ -1,6 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.server;
 
-import java.util.Map;
+import java.io.IOException;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -17,6 +17,8 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.De
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.log.error.Err;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Closeables;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -71,7 +73,11 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
     @Override
     protected void onClose() {
         for (final IStreamSynchronousEndpointService service : serviceId_service_sync.values()) {
-            service.close();
+            try {
+                service.close();
+            } catch (final Throwable t) {
+                Err.process(new RuntimeException("Ignoring", t));
+            }
         }
         serviceId_service_sync.clear();
         serviceId_service_copy = new Int2ObjectOpenHashMap<>();
@@ -95,7 +101,7 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
     }
 
     public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
-            final Map<String, String> parameters) {
+            final IProperties parameters) throws IOException {
         final IStreamSynchronousEndpointService service = getService(serviceId);
         if (service != null) {
             StreamServerMethodInfo.assertServiceTopic(service, topic);
@@ -110,13 +116,14 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer 
     }
 
     private synchronized IStreamSynchronousEndpointService registerService(final int serviceId, final String topic,
-            final Map<String, String> parameters) {
+            final IProperties parameters) throws IOException {
         final IStreamSynchronousEndpointService existing = serviceId_service_sync.get(serviceId);
         if (existing != null) {
             StreamServerMethodInfo.assertServiceTopic(existing, topic);
             return existing;
         }
         final IStreamSynchronousEndpointService service = serviceFactory.newService(serviceId, topic, parameters);
+        service.open();
         Assertions.checkNull(serviceId_service_sync.put(service.getServiceId(), service));
         //create a new copy of the map so that server thread does not require synchronization
         this.serviceId_service_copy = new Int2ObjectOpenHashMap<>(serviceId_service_sync);

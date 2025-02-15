@@ -86,6 +86,11 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             processResponseFutureCopy.cancel(true);
             processResponseFuture = null;
         }
+        try {
+            manager.close();
+        } catch (final Throwable t) {
+            Err.process(new RuntimeException("Ignoring", t));
+        }
         final ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReaderCopy = requestReader;
         requestReader = ClosedSynchronousReader.getInstance();
         try {

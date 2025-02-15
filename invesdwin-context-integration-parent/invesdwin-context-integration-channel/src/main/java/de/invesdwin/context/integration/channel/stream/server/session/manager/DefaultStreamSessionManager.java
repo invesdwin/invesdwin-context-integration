@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.stream.server.session.manager;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -12,8 +11,9 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.system.properties.DisabledProperties;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -73,7 +73,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
 
     @Override
     public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
-            final Map<String, String> parameters) {
+            final IProperties parameters) throws IOException {
         return server.getOrCreateService(serviceId, topic, parameters);
     }
 
@@ -108,7 +108,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
     }
 
     @Override
-    public Object subscribe(final IStreamSynchronousEndpointService service, final Map<String, String> parameters)
+    public Object subscribe(final IStreamSynchronousEndpointService service, final IProperties parameters)
             throws Exception {
         final int serviceId = service.getServiceId();
         synchronized (serviceId_subscription) {
@@ -130,7 +130,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
 
     @Override
     public synchronized Object unsubscribe(final IStreamSynchronousEndpointService service,
-            final Map<String, String> parameters) throws Exception {
+            final IProperties parameters) throws Exception {
         final int serviceId = service.getServiceId();
         final DefaultStreamSessionManagerSubscription removed;
         synchronized (serviceId_subscription) {
@@ -150,7 +150,7 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
     }
 
     @Override
-    public Object delete(final IStreamSynchronousEndpointService service, final Map<String, String> parameters)
+    public Object delete(final IStreamSynchronousEndpointService service, final IProperties parameters)
             throws Exception {
         if (!service.delete(parameters)) {
             throw new IllegalStateException(
@@ -160,17 +160,13 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         final List<DefaultStreamSessionManagerSubscription> subscriptionsCopy;
         synchronized (serviceId_subscription) {
             subscriptionsCopy = new ArrayList<>(serviceId_subscription.values());
         }
         for (final DefaultStreamSessionManagerSubscription subscription : subscriptionsCopy) {
-            try {
-                subscription.unsubscribe(Collections.emptyMap());
-            } catch (final Exception e) {
-                throw new RuntimeException(e);
-            }
+            subscription.unsubscribe(DisabledProperties.INSTANCE);
         }
         synchronized (serviceId_subscription) {
             serviceId_subscription.clear();

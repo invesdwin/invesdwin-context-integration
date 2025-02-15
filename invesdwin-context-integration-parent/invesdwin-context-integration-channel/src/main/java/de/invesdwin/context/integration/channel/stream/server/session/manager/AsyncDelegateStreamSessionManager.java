@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
 import java.io.IOException;
-import java.util.Map;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -58,7 +58,7 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
 
     @Override
     public IStreamSynchronousEndpointService getOrCreateService(final int serviceId, final String topic,
-            final Map<String, String> parameters) {
+            final IProperties parameters) throws IOException {
         return delegate.getOrCreateService(serviceId, topic, parameters);
     }
 
@@ -104,7 +104,7 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
     }
 
     @Override
-    public Object subscribe(final IStreamSynchronousEndpointService service, final Map<String, String> parameters) {
+    public Object subscribe(final IStreamSynchronousEndpointService service, final IProperties parameters) {
         assertMaxPendingTasksCount();
         return executor.submit(() -> delegate.subscribe(service, parameters));
     }
@@ -115,7 +115,7 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
     }
 
     @Override
-    public Object unsubscribe(final IStreamSynchronousEndpointService service, final Map<String, String> parameters) {
+    public Object unsubscribe(final IStreamSynchronousEndpointService service, final IProperties parameters) {
         assertMaxPendingTasksCount();
         return executor.submit(() -> delegate.unsubscribe(service, parameters));
     }
@@ -126,13 +126,13 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
     }
 
     @Override
-    public Object delete(final IStreamSynchronousEndpointService service, final Map<String, String> parameters) {
+    public Object delete(final IStreamSynchronousEndpointService service, final IProperties parameters) {
         assertMaxPendingTasksCount();
         return executor.submit(() -> delegate.delete(service, parameters));
     }
 
     @Override
-    public void close() {
+    public void close() throws IOException {
         delegate.close();
     }
 

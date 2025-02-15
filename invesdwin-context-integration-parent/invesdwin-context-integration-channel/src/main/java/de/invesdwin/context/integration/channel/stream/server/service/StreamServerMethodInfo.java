@@ -1,8 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.server.service;
 
 import java.net.URI;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -16,8 +14,10 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.IS
 import de.invesdwin.context.integration.retry.Retries;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.log.error.LoggedRuntimeException;
+import de.invesdwin.context.system.properties.DisabledProperties;
+import de.invesdwin.context.system.properties.IProperties;
+import de.invesdwin.context.system.properties.MapProperties;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.concurrent.future.APostProcessingFuture;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.uri.URIs;
@@ -64,7 +64,7 @@ public enum StreamServerMethodInfo {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
-            final Map<String, String> parameters = parseParameters(uri, future);
+            final IProperties parameters = parseParameters(uri, future);
             return manager.subscribe(service, parameters);
         }
     },
@@ -85,7 +85,7 @@ public enum StreamServerMethodInfo {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
-            final Map<String, String> parameters = parseParameters(uri, future);
+            final IProperties parameters = parseParameters(uri, future);
             return manager.unsubscribe(service, parameters);
         }
     },
@@ -100,7 +100,7 @@ public enum StreamServerMethodInfo {
                 final IByteBufferProvider message) throws Exception {
             final URI uri = parseUri(message);
             final String topic = parseTopic(uri);
-            final Map<String, String> parameters = parseParameters(uri, false);
+            final IProperties parameters = parseParameters(uri, false);
             return manager.getOrCreateService(serviceId, topic, parameters);
         }
 
@@ -132,7 +132,7 @@ public enum StreamServerMethodInfo {
             final URI uri = parseUri(message.asBuffer());
             final String topic = parseTopic(uri);
             assertServiceTopic(service, topic);
-            final Map<String, String> parameters = parseParameters(uri, future);
+            final IProperties parameters = parseParameters(uri, future);
             return manager.delete(service, parameters);
         }
     };
@@ -144,10 +144,10 @@ public enum StreamServerMethodInfo {
     public static final int METHOD_ID_DELETE = 4;
     public static final int METHOD_ID_PUSH = 10;
 
-    private static final FastThreadLocal<Map<String, String>> QUERY_PARAMS_HOLDER = new FastThreadLocal<Map<String, String>>() {
+    private static final FastThreadLocal<IProperties> QUERY_PARAMS_HOLDER = new FastThreadLocal<IProperties>() {
         @Override
-        protected Map<String, String> initialValue() throws Exception {
-            return new LinkedHashMap<>();
+        protected IProperties initialValue() throws Exception {
+            return new MapProperties();
         };
     };
 
@@ -196,20 +196,20 @@ public enum StreamServerMethodInfo {
         return topic;
     }
 
-    public static Map<String, String> parseParameters(final URI uri, final boolean future) {
+    public static IProperties parseParameters(final URI uri, final boolean future) {
         if (uri == null) {
-            return Collections.emptyMap();
+            return DisabledProperties.INSTANCE;
         }
-        final Map<String, String> parameters;
+        final IProperties parameters;
         if (future) {
-            parameters = new LinkedHashMap<>();
+            parameters = new MapProperties();
         } else {
             parameters = QUERY_PARAMS_HOLDER.get();
             if (!parameters.isEmpty()) {
                 parameters.clear();
             }
         }
-        URIs.splitQuery(uri, parameters);
+        URIs.splitQuery(uri, parameters.asMap());
         return parameters;
     }
 

@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
 import java.io.IOException;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -10,6 +9,8 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceListener;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
@@ -34,14 +35,16 @@ public class DefaultStreamSessionManagerSubscription
     public DefaultStreamSessionManagerSubscription(final IStreamSessionManager manager,
             final IStreamSynchronousEndpointService service,
             final NodeBufferingIterator<DefaultStreamSessionManagerSubscription> notifiedSubscriptions,
-            final Map<String, String> parameters) throws Exception {
+            final IProperties parameters) throws Exception {
         this.manager = manager;
         this.session = manager.getSession();
         this.server = session.getParent();
         this.service = service;
         this.notifiedSubscriptions = notifiedSubscriptions;
-        this.reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(
-                service.subscribe(this, parameters));
+        final ISynchronousReader<IByteBufferProvider> subscription = service.subscribe(this, parameters);
+        Assertions.checkNotNull(subscription);
+        this.reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(subscription);
+        this.reader.open();
     }
 
     public boolean handle() throws IOException {
@@ -88,7 +91,7 @@ public class DefaultStreamSessionManagerSubscription
         return handledOverall;
     }
 
-    public void unsubscribe(final Map<String, String> parameters) throws Exception {
+    public void unsubscribe(final IProperties parameters) throws IOException {
         if (!service.unsubscribe(this, parameters)) {
             throw new IllegalStateException(
                     "subscription to service [" + service.getServiceId() + "] already unsubscribed");
@@ -98,6 +101,7 @@ public class DefaultStreamSessionManagerSubscription
                 Assertions.checkTrue(notifiedSubscriptions.remove(this));
             }
         }
+        reader.close();
     }
 
     @Override
@@ -110,7 +114,7 @@ public class DefaultStreamSessionManagerSubscription
     }
 
     @Override
-    public void onDelete(final Map<String, String> parameters) throws Exception {
+    public void onDelete(final IProperties parameters) throws Exception {
         manager.unsubscribe(service, parameters);
     }
 

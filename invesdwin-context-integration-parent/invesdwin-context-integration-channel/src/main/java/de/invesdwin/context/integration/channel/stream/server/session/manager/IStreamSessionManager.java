@@ -2,9 +2,9 @@ package de.invesdwin.context.integration.channel.stream.server.session.manager;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.Map;
 
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
+import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 public interface IStreamSessionManager extends Closeable {
@@ -13,7 +13,8 @@ public interface IStreamSessionManager extends Closeable {
 
     IStreamSynchronousEndpointService getService(int serviceId);
 
-    IStreamSynchronousEndpointService getOrCreateService(int serviceId, String topic, Map<String, String> parameters);
+    IStreamSynchronousEndpointService getOrCreateService(int serviceId, String topic, IProperties parameters)
+            throws IOException;
 
     boolean handle() throws IOException;
 
@@ -48,7 +49,7 @@ public interface IStreamSessionManager extends Closeable {
      * This method can either return null, a IClosingByteBufferProvider or a Future that gives the actual return value
      * at a later time.
      */
-    Object subscribe(IStreamSynchronousEndpointService service, Map<String, String> parameters) throws Exception;
+    Object subscribe(IStreamSynchronousEndpointService service, IProperties parameters) throws Exception;
 
     /**
      * return true here to indicate that a future result is returned
@@ -59,7 +60,7 @@ public interface IStreamSessionManager extends Closeable {
      * This method can either return null, a IClosingByteBufferProvider or a Future that gives the actual return value
      * at a later time.
      */
-    Object unsubscribe(IStreamSynchronousEndpointService service, Map<String, String> parameters) throws Exception;
+    Object unsubscribe(IStreamSynchronousEndpointService service, IProperties parameters) throws Exception;
 
     /**
      * return true here to indicate that a future result is returned
@@ -70,9 +71,6 @@ public interface IStreamSessionManager extends Closeable {
      * This method can either return null, a IClosingByteBufferProvider or a Future that gives the actual return value
      * at a later time.
      */
-    Object delete(IStreamSynchronousEndpointService service, Map<String, String> parameters) throws Exception;
-
-    @Override
-    void close();
+    Object delete(IStreamSynchronousEndpointService service, IProperties parameters) throws Exception;
 
 }

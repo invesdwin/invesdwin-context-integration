@@ -8,6 +8,8 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.compression.ICompressionFactory;
+import de.invesdwin.context.integration.compression.lz4.LZ4Streams;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.PeriodicalSegmentFinder;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.SegmentedKey;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.finder.DummySegmentFinder;
@@ -54,6 +56,10 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
 
     public TimeSeriesDBSynchronousChannelIndexMode getIndexMode() {
         return indexMode;
+    }
+
+    public ICompressionFactory newCompressionFactory() {
+        return LZ4Streams.getDefaultCompressionFactory();
     }
 
     public boolean isCloseMessageEnabled() {
@@ -172,6 +178,11 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
         @Override
         public FDate getLastAvailableHistoricalSegmentTo(final String key, final FDate updateTo) {
             return PeriodicalSegmentFinder.BEFORE_DUMMY_RANGE.getTo();
+        }
+
+        @Override
+        protected ICompressionFactory newCompressionFactory() {
+            return TimeSeriesDBSynchronousChannel.this.newCompressionFactory();
         }
     }
 
