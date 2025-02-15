@@ -15,7 +15,6 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.stream.server.service.StreamServerMethodInfo;
-import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
@@ -30,6 +29,7 @@ public class StreamAsynchronousEndpointServerHandler
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
     private long lastHeartbeatNanos = System.nanoTime();
     private final IPollingQueueProvider pollingQueueProvider;
+    private volatile boolean closed;
 
     public StreamAsynchronousEndpointServerHandler(final StreamAsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
@@ -45,6 +45,11 @@ public class StreamAsynchronousEndpointServerHandler
     @Override
     public void close() {
         requestHolder.close();
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override
@@ -59,7 +64,17 @@ public class StreamAsynchronousEndpointServerHandler
         return parent.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
-    private boolean isRequestTimeout() {
+    /**
+     * This is not measured based on individual requests, instead it is measured based on the handler/session being
+     * still active.
+     */
+    private boolean isRequestTimeout(final StreamAsynchronousEndpointServerHandlerSession session) {
+        if (session.isRequestTimeout()) {
+            return true;
+        }
+        if (isClosed()) {
+            return true;
+        }
         return parent.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
@@ -109,10 +124,10 @@ public class StreamAsynchronousEndpointServerHandler
             return response.asBuffer();
         }
 
-        final IStreamSessionManager manager = session.getManager();
         final WrappedExecutorService workExecutor = parent.getWorkExecutor();
         if (workExecutor == null || methodInfo.isBlocking()) {
-            final Future<Object> future = methodInfo.invoke(manager, context.getSessionId(), requestHolder, response);
+            final Future<Object> future = methodInfo.invoke(session.getManager(), context.getSessionId(), requestHolder,
+                    response);
             if (future != null && !future.isDone()) {
                 result.setFuture(future);
                 result.setDelayedWriteResponse(true);
@@ -149,7 +164,7 @@ public class StreamAsynchronousEndpointServerHandler
             }
             //copy request for the async processing
             result.getRequestCopy().copy(requestHolder);
-            result.setFuture(workExecutor.submit(new ProcessResponseTask(manager, methodInfo, result)));
+            result.setFuture(workExecutor.submit(new ProcessResponseTask(session, methodInfo, result)));
             return null;
         }
     }
@@ -160,13 +175,13 @@ public class StreamAsynchronousEndpointServerHandler
     }
 
     private final class ProcessResponseTask implements Callable<Object> {
-        private final IStreamSessionManager manager;
+        private final StreamAsynchronousEndpointServerHandlerSession session;
         private final StreamServerMethodInfo methodInfo;
         private final ProcessResponseResult result;
 
-        private ProcessResponseTask(final IStreamSessionManager manager, final StreamServerMethodInfo methodInfo,
-                final ProcessResponseResult result) {
-            this.manager = manager;
+        private ProcessResponseTask(final StreamAsynchronousEndpointServerHandlerSession session,
+                final StreamServerMethodInfo methodInfo, final ProcessResponseResult result) {
+            this.session = session;
             this.methodInfo = methodInfo;
             this.result = result;
         }
@@ -174,7 +189,7 @@ public class StreamAsynchronousEndpointServerHandler
         @Override
         public Object call() {
             final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
-            if (isRequestTimeout()) {
+            if (isRequestTimeout(session)) {
                 response.setService(result.getRequestCopy().getService());
                 response.setMethod(IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID);
                 response.setSequence(result.getRequestCopy().getSequence());
@@ -184,7 +199,7 @@ public class StreamAsynchronousEndpointServerHandler
                 result.close();
                 return null;
             }
-            final Future<Object> future = methodInfo.invoke(manager, result.getContext().getSessionId(),
+            final Future<Object> future = methodInfo.invoke(session.getManager(), result.getContext().getSessionId(),
                     result.getRequestCopy(), response);
             if (future != null && !future.isDone()) {
                 result.setDelayedWriteResponse(true);

@@ -30,6 +30,7 @@ public class RpcAsynchronousEndpointServerHandler
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
     private long lastHeartbeatNanos = System.nanoTime();
     private final IPollingQueueProvider pollingQueueProvider;
+    private volatile boolean closed;
 
     public RpcAsynchronousEndpointServerHandler(final RpcAsynchronousEndpointServerHandlerFactory parent) {
         this.parent = parent;
@@ -45,6 +46,11 @@ public class RpcAsynchronousEndpointServerHandler
     @Override
     public void close() {
         requestHolder.close();
+        closed = true;
+    }
+
+    public boolean isClosed() {
+        return closed;
     }
 
     @Override
@@ -59,7 +65,14 @@ public class RpcAsynchronousEndpointServerHandler
         return parent.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
+    /**
+     * This is not measured based on individual requests, instead it is measured based on the handler/session being
+     * still active.
+     */
     private boolean isRequestTimeout() {
+        if (isClosed()) {
+            return true;
+        }
         return parent.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 

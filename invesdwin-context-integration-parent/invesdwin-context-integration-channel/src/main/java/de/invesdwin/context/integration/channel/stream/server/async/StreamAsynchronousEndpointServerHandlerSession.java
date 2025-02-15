@@ -27,6 +27,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private final IStreamSynchronousEndpointServer server;
     private final IAsynchronousHandlerContext<IByteBufferProvider> context;
     private final Duration heartbeatTimeout;
+    private final Duration requestTimeout;
     private final IStreamSessionManager manager;
     private long lastHeartbeatNanos = System.nanoTime();
     private int pushedMessages = 0;
@@ -34,10 +35,11 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private volatile boolean closed;
 
     public StreamAsynchronousEndpointServerHandlerSession(final IStreamSynchronousEndpointServer server,
-            final IAsynchronousHandlerContext<IByteBufferProvider> context, final Duration heartbeatTimeout) {
+            final IAsynchronousHandlerContext<IByteBufferProvider> context) {
         this.server = server;
         this.context = context.asImmutable();
-        this.heartbeatTimeout = heartbeatTimeout;
+        this.heartbeatTimeout = server.getHeartbeatTimeout();
+        this.requestTimeout = server.getRequestTimeout();
         this.manager = server.newManager(this);
     }
 
@@ -100,8 +102,19 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         return getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
+    public boolean isRequestTimeout() {
+        if (isClosed()) {
+            return true;
+        }
+        return getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+    }
+
     public Duration getHeartbeatTimeout() {
         return heartbeatTimeout;
+    }
+
+    public Duration getRequestTimeout() {
+        return requestTimeout;
     }
 
     public void setLastHeartbeatNanos(final long lastHeartbeatNanos) {

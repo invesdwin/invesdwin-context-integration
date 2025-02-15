@@ -212,7 +212,14 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
         return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 
+    /**
+     * This is not measured based on individual requests, instead it is measured based on the handler/session being
+     * still active.
+     */
     private boolean isRequestTimeout() {
+        if (isClosed()) {
+            return true;
+        }
         return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
     }
 

@@ -39,6 +39,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -139,6 +140,16 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     }
 
     @Override
+    public Duration getHeartbeatTimeout() {
+        return super.getHeartbeatTimeout();
+    }
+
+    @Override
+    public Duration getRequestTimeout() {
+        return super.getRequestTimeout();
+    }
+
+    @Override
     public synchronized void open() throws IOException {
         if (ioRunnables != null) {
             throw new IllegalStateException("already opened");
@@ -232,7 +243,7 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     private StreamAsynchronousEndpointServerHandlerSession newSession(
             final IAsynchronousHandlerContext<IByteBufferProvider> context) {
         final StreamAsynchronousEndpointServerHandlerSession session = new StreamAsynchronousEndpointServerHandlerSession(
-                this, context, getHeartbeatTimeout());
+                this, context);
         maybeIncreaseIoRunnableCount();
         assignServerSessionToIoRunnable(session);
         return session;

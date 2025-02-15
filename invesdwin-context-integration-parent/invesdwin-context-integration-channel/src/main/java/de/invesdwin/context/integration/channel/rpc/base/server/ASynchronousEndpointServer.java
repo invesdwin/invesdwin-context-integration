@@ -74,6 +74,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
     private final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor;
     private Duration requestWaitInterval = ISynchronousEndpointSession.DEFAULT_REQUEST_WAIT_INTERVAL;
     private Duration heartbeatTimeout = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_TIMEOUT;
+    private Duration requestTimeout = ISynchronousEndpointSession.DEFAULT_REQUEST_TIMEOUT;
     private final Duration heartbeatInterval = ISynchronousEndpointSession.DEFAULT_HEARTBEAT_INTERVAL;
     @GuardedBy("this")
     private IFastIterableList<IoRunnable> ioRunnables;
@@ -185,12 +186,22 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
         return workExecutor;
     }
 
+    @Override
     public int getMaxPendingWorkCountOverall() {
         return maxPendingWorkCountOverall;
     }
 
+    @Override
     public int getMaxPendingWorkCountPerSession() {
         return maxPendingWorkCountPerSession;
+    }
+
+    public Duration getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public Duration getHeartbeatTimeout() {
+        return heartbeatTimeout;
     }
 
     @Override
@@ -415,6 +426,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
                     //use latest request wait interval so that we don't need this in the constructor of the server
                     requestWaitInterval = endpointSession.getRequestWaitInterval();
                     heartbeatTimeout = endpointSession.getHeartbeatTimeout();
+                    requestTimeout = endpointSession.getRequestTimeout();
                     maybeIncreaseIoRunnableCount();
                     assignServerSessionToIoRunnable(endpointSession);
                 } finally {

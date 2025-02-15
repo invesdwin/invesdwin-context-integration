@@ -7,6 +7,7 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.system.properties.IProperties;
+import de.invesdwin.util.time.duration.Duration;
 
 public interface IStreamSynchronousEndpointServer extends ISynchronousEndpointServer {
 
@@ -20,5 +21,9 @@ public interface IStreamSynchronousEndpointServer extends ISynchronousEndpointSe
     int getMaxSuccessivePushCountPerSubscription();
 
     IStreamSessionManager newManager(IStreamSynchronousEndpointSession session);
+
+    Duration getHeartbeatTimeout();
+
+    Duration getRequestTimeout();
 
 }
