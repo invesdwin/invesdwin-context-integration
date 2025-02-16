@@ -79,16 +79,20 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
-                if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
-                    try {
-                        writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
-                                getDefaultRequestTimeout(), System.nanoTime());
-                    } catch (final Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                }
+                maybeSendHeartbeatLocked();
             } finally {
                 lock.unlock();
+            }
+        }
+    }
+
+    private void maybeSendHeartbeatLocked() {
+        if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)) {
+            try {
+                writeLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE,
+                        getDefaultRequestTimeout(), System.nanoTime());
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
             }
         }
     }
@@ -271,7 +275,11 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             final IByteBufferProvider request, final Duration requestTimeout, final long waitingSinceNanos)
             throws Exception {
         if (request == null) {
-            //nothing to write, must be a subscription from the server that is being polled for
+            /*
+             * nothing to write, must be a subscription from the server that is being polled for, just check if a
+             * heartbeat message should be sent instead since heartbeat thread could be locked out constantly
+             */
+            maybeSendHeartbeatLocked();
             return;
         }
         try {

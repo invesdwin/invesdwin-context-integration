@@ -95,19 +95,22 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
-                try {
-                    if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)
-                            && requestWriterSpinWait.getWriter().writeFlushed()
-                            && requestWriterSpinWait.getWriter().writeReady()) {
-                        writeAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1,
-                                EmptyByteBuffer.INSTANCE);
-                    }
-                } catch (final Exception e) {
-                    throw new RuntimeException(e);
-                }
+                maybeSendHeartbeatLocked();
             } finally {
                 lock.unlock();
             }
+        }
+    }
+
+    private void maybeSendHeartbeatLocked() {
+        try {
+            if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)
+                    && requestWriterSpinWait.getWriter().writeFlushed()
+                    && requestWriterSpinWait.getWriter().writeReady()) {
+                writeAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE);
+            }
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -265,6 +268,13 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             final MultiplexingSynchronousEndpointClientSessionResponse outer,
             final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
         lock.lock();
+        if (pollingOuter != null && pollingOuter.getRequest() == null) {
+            /*
+             * nothing to write, must be a subscription from the server that is being polled for, just check if a
+             * heartbeat message should be sent instead since heartbeat thread could be locked out constantly
+             */
+            maybeSendHeartbeatLocked();
+        }
         try {
             throttle.outer = outer;
             throttle.pollingOuter = pollingOuter;
