@@ -7,6 +7,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.DisabledUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
@@ -74,7 +75,7 @@ public final class RpcClientMethodInfo implements IServiceMethodInfo {
         final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
         try {
             return session.request(getServiceId(), getMethodId(), request, session.nextRequestSequence(),
-                    session.getDefaultRequestTimeout());
+                    session.getDefaultRequestTimeout(), DisabledUnexpectedMessageListener.INSTANCE);
         } catch (final TimeoutException e) {
             sessionPool.invalidateObject(session);
             throw new RetryLaterRuntimeException(e);

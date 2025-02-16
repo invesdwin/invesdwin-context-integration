@@ -8,6 +8,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
@@ -239,8 +240,28 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         }
 
         @Override
+        public void setRequestSequence(final int sequence) {
+            delegate.setRequestSequence(sequence);
+        }
+
+        @Override
+        public int getRequestSequence() {
+            return delegate.getRequestSequence();
+        }
+
+        @Override
         public int nextStreamSequence() {
             return delegate.nextStreamSequence();
+        }
+
+        @Override
+        public void setStreamSequence(final int sequence) {
+            delegate.setStreamSequence(sequence);
+        }
+
+        @Override
+        public int getStreamSequence() {
+            return delegate.getStreamSequence();
         }
 
         @Override
@@ -250,9 +271,10 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
 
         @Override
         public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
-                final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout)
-                throws TimeoutException {
-            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout);
+                final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
+                final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
+            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout,
+                    unexpectedMessageListener);
         }
 
         @Override

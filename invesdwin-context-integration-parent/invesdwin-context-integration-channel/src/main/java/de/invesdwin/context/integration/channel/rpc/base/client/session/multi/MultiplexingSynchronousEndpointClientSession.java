@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionE
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.MutableServiceSynchronousCommand;
@@ -173,10 +174,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         return endpointSession.getRequestTimeout();
     }
 
+    /**
+     * Only the active polling request will use its unexpectedMessageListener. All others with only use it if they
+     * become the polling request. Otherwise it gets ignored. If multiple requests should be notified, a broadcasting
+     * listener should be used for all requests.
+     */
     @Override
     public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
-            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout)
-            throws TimeoutException {
+            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
+            final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
@@ -185,7 +191,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             if (activePolling.compareAndSet(false, true)) {
                 //take over the job of the activePolling thread and handle other requests while polling
                 try {
-                    return requestActivePolling(response, response);
+                    return requestActivePolling(unexpectedMessageListener, response, response);
                 } finally {
                     activePolling.set(false);
                 }
@@ -206,7 +212,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         if (activePolling.compareAndSet(false, true)) {
                             //take over the job of the other activePolling thread that just go finished
                             try {
-                                return requestActivePolling(response, null);
+                                return requestActivePolling(unexpectedMessageListener, response, null);
                             } finally {
                                 activePolling.set(false);
                             }
@@ -244,6 +250,16 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     @Override
+    public int getRequestSequence() {
+        return requestSequenceCounter.get();
+    }
+
+    @Override
+    public void setRequestSequence(final int sequence) {
+        requestSequenceCounter.set(sequence);
+    }
+
+    @Override
     public int nextStreamSequence() {
         //stream sequence numbers are negative so that the polling queue can separate them properly
         final int sequence = streamSequenceCounter.decrementAndGet();
@@ -264,7 +280,18 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
+    @Override
+    public int getStreamSequence() {
+        return streamSequenceCounter.get();
+    }
+
+    @Override
+    public void setStreamSequence(final int sequence) {
+        streamSequenceCounter.set(sequence);
+    }
+
     private MultiplexingSynchronousEndpointClientSessionResponse requestActivePolling(
+            final IUnexpectedMessageListener unexpectedMessageListener,
             final MultiplexingSynchronousEndpointClientSessionResponse outer,
             final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
         lock.lock();
@@ -276,6 +303,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             maybeSendHeartbeatLocked();
         }
         try {
+            throttle.unexpectedMessageListener = unexpectedMessageListener;
             throttle.outer = outer;
             throttle.pollingOuter = pollingOuter;
             while (true) {
@@ -304,6 +332,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         } finally {
             throttle.pollingOuter = null;
             throttle.outer = null;
+            throttle.unexpectedMessageListener = null;
             lock.unlock();
         }
     }
@@ -361,8 +390,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
-    private boolean handleLocked(final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter)
-            throws Exception {
+    private boolean handleLocked(final IUnexpectedMessageListener unexpectedMessageListener,
+            final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
         final boolean writing;
         if ((pollingOuter != null && pollingOuter.getRequest() != null || !writeRequests.isEmpty())
                 && requestWriterSpinWait.getWriter().writeFlushed() && requestWriterSpinWait.getWriter().writeReady()) {
@@ -396,7 +425,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 } else {
                     response = writtenRequests.remove(responseSequence);
                     if (response == null) {
-                        maybeAddPushedWithoutRequest(responseService, responseMethod, responseSequence);
+                        maybeAddPushedWithoutRequest(unexpectedMessageListener, responseService, responseMethod,
+                                responseSequence, responseHolder.getMessage());
                         /*
                          * ignore invalid response and wait for correct one (might happen due to previous timeout and
                          * late response or pushed streaming message)
@@ -456,19 +486,27 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         return writing;
     }
 
-    private void maybeAddPushedWithoutRequest(final int responseService, final int responseMethod,
-            final int responseSequence) {
+    private void maybeAddPushedWithoutRequest(final IUnexpectedMessageListener unexpectedMessageListener,
+            final int responseService, final int responseMethod, final int responseSequence,
+            final IByteBufferProvider responseMessage) throws IOException {
         if (responseSequence < 0) {
-            /*
-             * this might be a streaming message that we should add so that it can be polled for from the outside later
-             * (at least until requestTimeout is exceeded)
-             */
-            final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
-                    .borrowObject();
-            pushedWithoutRequest.init(responseService, responseMethod, null, responseSequence,
-                    getDefaultRequestTimeout(), activePolling);
-            pushedWithoutRequest.setPushedWithoutRequest();
-            writtenRequests.put(responseSequence, pushedWithoutRequest);
+            if (unexpectedMessageListener.onPushedWithoutRequest(responseService, responseMethod, responseSequence,
+                    responseMessage)) {
+                /*
+                 * this might be a streaming message that we should add so that it can be polled for from the outside
+                 * later (at least until requestTimeout is exceeded)
+                 */
+                final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
+                        .borrowObject();
+                pushedWithoutRequest.init(responseService, responseMethod, null, responseSequence,
+                        getDefaultRequestTimeout(), activePolling);
+                pushedWithoutRequest.setPushedWithoutRequest();
+                pushedWithoutRequest.responseCompleted(responseMessage);
+                writtenRequests.put(responseSequence, pushedWithoutRequest);
+            }
+        } else {
+            unexpectedMessageListener.onUnexpectedResponse(responseService, responseMethod, responseSequence,
+                    responseMessage);
         }
     }
 
@@ -566,6 +604,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
         private MultiplexingSynchronousEndpointClientSessionResponse outer;
         private MultiplexingSynchronousEndpointClientSessionResponse pollingOuter;
+        private IUnexpectedMessageListener unexpectedMessageListener;
 
         @Override
         public boolean isConditionFulfilled() throws Exception {
@@ -573,7 +612,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             boolean handledOverall = false;
             boolean handledNow;
             do {
-                handledNow = handleLocked(pollingOuter);
+                handledNow = handleLocked(unexpectedMessageListener, pollingOuter);
                 handledOverall |= handledNow;
                 if (outer.isCompleted()) {
                     return true;

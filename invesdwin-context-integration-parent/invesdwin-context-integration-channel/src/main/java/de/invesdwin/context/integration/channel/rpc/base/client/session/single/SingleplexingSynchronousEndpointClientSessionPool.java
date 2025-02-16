@@ -15,7 +15,8 @@ import de.invesdwin.util.time.duration.Duration;
  * requests happen in parallel. This can be wasteful because an individual connection is not used to its fullest
  * bandwidth but can provide the lowest latency and overhead possible for single requests. Though for all other cases a
  * multiplexing client should be preferred. This client will explicitly not work for unexpected messages like pushed
- * streaming messages that arrive without requests.
+ * streaming messages that arrive without requests. The only way to handle those messages is with an
+ * IUnexpectedMessageListener.
  */
 @ThreadSafe
 public class SingleplexingSynchronousEndpointClientSessionPool

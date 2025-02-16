@@ -10,6 +10,8 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.MultiplexingSynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.MutableServiceSynchronousCommand;
@@ -157,8 +159,8 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     @Override
     public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
-            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout)
-            throws TimeoutException {
+            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
+            final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
         lock.lock();
         try {
             final long waitingSinceNanos = System.nanoTime();
@@ -181,6 +183,18 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     final int responseSequence = responseHolder.getSequence();
                     if (responseSequence != requestSequence) {
                         //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
+                        if (responseSequence < 0) {
+                            if (unexpectedMessageListener.onPushedWithoutRequest(serviceId, methodId, responseSequence,
+                                    request)) {
+                                throw new UnsupportedOperationException(
+                                        "PushedWithoutRequest messages can not be stored for later polling. Use a "
+                                                + MultiplexingSynchronousEndpointClientSession.class.getSimpleName()
+                                                + " if this feature is required.");
+                            }
+                        } else {
+                            unexpectedMessageListener.onUnexpectedResponse(serviceId, methodId, responseSequence,
+                                    request);
+                        }
                         continue;
                     }
                     if (responseMethod != methodId) {
@@ -206,7 +220,8 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
                     response.setMessage(responseMessage);
                     return response;
-                } catch (final RemoteExecutionException | RetryLaterRuntimeException e) {
+                } catch (final RemoteExecutionException | RetryLaterRuntimeException
+                        | UnsupportedOperationException e) {
                     responseReaderSpinWait.getReader().readFinished();
                     throw e;
                 } catch (final Throwable e) {
@@ -214,7 +229,8 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     throw Throwables.propagate(e);
                 }
             }
-        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException e) {
+        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
+                | UnsupportedOperationException e) {
             lock.unlock();
             throw e;
         } catch (final IOException e) {
@@ -251,6 +267,16 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     }
 
     @Override
+    public int getRequestSequence() {
+        return requestSequenceCounter.get();
+    }
+
+    @Override
+    public void setRequestSequence(final int sequence) {
+        requestSequenceCounter.set(sequence);
+    }
+
+    @Override
     public int nextStreamSequence() {
         //stream sequence numbers are negative so that the polling queue can separate them properly
         final int sequence = streamSequenceCounter.decrementAndGet();
@@ -269,6 +295,16 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
         } else {
             return sequence;
         }
+    }
+
+    @Override
+    public int getStreamSequence() {
+        return streamSequenceCounter.get();
+    }
+
+    @Override
+    public void setStreamSequence(final int sequence) {
+        streamSequenceCounter.set(sequence);
     }
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,

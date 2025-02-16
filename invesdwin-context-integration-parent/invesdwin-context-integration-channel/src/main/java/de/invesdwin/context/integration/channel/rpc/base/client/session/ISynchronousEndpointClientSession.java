@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.rpc.base.client.session;
 import java.io.Closeable;
 import java.util.concurrent.TimeoutException;
 
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -21,11 +22,19 @@ public interface ISynchronousEndpointClientSession extends Closeable {
 
     int nextRequestSequence();
 
+    int getRequestSequence();
+
+    void setRequestSequence(int sequence);
+
     int nextStreamSequence();
+
+    int getStreamSequence();
+
+    void setStreamSequence(int sequence);
 
     Duration getDefaultRequestTimeout();
 
     ICloseableByteBufferProvider request(int serviceId, int methodId, IByteBufferProvider request, int requestSequence,
-            Duration requestTimeout) throws TimeoutException;
+            Duration requestTimeout, IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException;
 
 }
