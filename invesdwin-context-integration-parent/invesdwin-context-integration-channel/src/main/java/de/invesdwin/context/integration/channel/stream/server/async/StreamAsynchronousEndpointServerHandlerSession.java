@@ -2,7 +2,9 @@ package de.invesdwin.context.integration.channel.stream.server.async;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.util.concurrent.Future;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
@@ -14,6 +16,8 @@ import de.invesdwin.context.integration.channel.stream.server.service.StreamServ
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.circular.CircularGenericArray;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -35,6 +39,9 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private final IStreamSessionManager manager;
     private long lastHeartbeatNanos = System.nanoTime();
     private int pushedMessages = 0;
+    private final int maxSuccessivePushCountPerSession;
+    @GuardedBy("self")
+    private final CircularGenericArray<Future<?>> pendingWrites;
 
     private volatile boolean closed;
 
@@ -45,6 +52,8 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         this.heartbeatTimeout = server.getHeartbeatTimeout();
         this.requestTimeout = server.getRequestTimeout();
         this.manager = server.newManager(this);
+        this.maxSuccessivePushCountPerSession = server.getMaxSuccessivePushCountPerSession();
+        this.pendingWrites = new CircularGenericArray<Future<?>>(maxSuccessivePushCountPerSession);
     }
 
     @Override
@@ -63,26 +72,48 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     @Override
     public boolean pushSubscriptionMessage(final IStreamSynchronousEndpointService service,
             final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
-        final ProcessResponseResult result = context.borrowResult();
-        result.setContext(context);
-        final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
-        response.setService(service.getServiceId());
-        response.setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
-        /*
-         * add a sequence to the pushed messages so that the client can validate if he missed some messages and
-         * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request or by
-         * resetting the subscription entirely
-         */
-        response.setSequence(pushedMessages++);
+        synchronized (pendingWrites) {
+            if (!pendingWrites.isEmpty()) {
+                while (true) {
+                    final Future<?> pendingWrite = pendingWrites.get(0);
+                    if (pendingWrite.isDone()) {
+                        final Future<?> removed = pendingWrites.removeFirst();
+                        Assertions.checkSame(pendingWrite, removed);
+                    } else {
+                        //first-in-first-out
+                        break;
+                    }
+                }
+                if (pendingWrites.size() >= maxSuccessivePushCountPerSession) {
+                    //session is too busy right now
+                    return false;
+                }
+            }
 
-        final IByteBufferProvider message = reader.readMessage();
-        try {
-            response.setMessageBuffer(message);
-        } finally {
-            reader.readFinished();
+            final ProcessResponseResult result = context.borrowResult();
+            result.setContext(context);
+            final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
+            response.setService(service.getServiceId());
+            response.setMethod(StreamServerMethodInfo.METHOD_ID_PUSH);
+            /*
+             * add a sequence to the pushed messages so that the client can validate if he missed some messages and
+             * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
+             * or by resetting the subscription entirely
+             */
+            response.setSequence(pushedMessages++);
+
+            final IByteBufferProvider message = reader.readMessage();
+            try {
+                response.setMessageBuffer(message);
+            } finally {
+                reader.readFinished();
+            }
+            final Future<?> pendingWrite = context.write(response.asBuffer());
+            if (!pendingWrite.isDone()) {
+                pendingWrites.add(pendingWrite);
+            }
+            return true;
         }
-        context.write(response.asBuffer());
-        return true;
     }
 
     @Override
