@@ -8,8 +8,11 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.DisabledUnexpectedMessageListener;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.LoggingDelegateUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -22,6 +25,10 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @Immutable
 public final class RpcClientMethodInfo implements IServiceMethodInfo {
+
+    private static final Log LOG = new Log(RpcClientMethodInfo.class);
+    private static final IUnexpectedMessageListener UNEXPECTED_MESSAGE_LISTENER = new LoggingDelegateUnexpectedMessageListener(
+            DisabledUnexpectedMessageListener.INSTANCE, LOG);
 
     private final RpcSynchronousEndpointClientHandler handler;
     private final int methodId;
@@ -75,7 +82,7 @@ public final class RpcClientMethodInfo implements IServiceMethodInfo {
         final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
         try {
             return session.request(getServiceId(), getMethodId(), request, session.nextRequestSequence(),
-                    session.getDefaultRequestTimeout(), DisabledUnexpectedMessageListener.INSTANCE);
+                    session.getDefaultRequestTimeout(), UNEXPECTED_MESSAGE_LISTENER);
         } catch (final TimeoutException e) {
             sessionPool.invalidateObject(session);
             throw new RetryLaterRuntimeException(e);
