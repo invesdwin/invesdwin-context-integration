@@ -396,7 +396,11 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 } else {
                     response = writtenRequests.remove(responseSequence);
                     if (response == null) {
-                        //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
+                        maybeAddPushedWithoutRequest(responseService, responseMethod, responseSequence);
+                        /*
+                         * ignore invalid response and wait for correct one (might happen due to previous timeout and
+                         * late response or pushed streaming message)
+                         */
                         return true;
                     }
                 }
@@ -452,6 +456,22 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         return writing;
     }
 
+    private void maybeAddPushedWithoutRequest(final int responseService, final int responseMethod,
+            final int responseSequence) {
+        if (responseSequence < 0) {
+            /*
+             * this might be a streaming message that we should add so that it can be polled for from the outside later
+             * (at least until requestTimeout is exceeded)
+             */
+            final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
+                    .borrowObject();
+            pushedWithoutRequest.init(responseService, responseMethod, null, responseSequence,
+                    getDefaultRequestTimeout(), activePolling);
+            pushedWithoutRequest.setPushedWithoutRequest();
+            writtenRequests.put(responseSequence, pushedWithoutRequest);
+        }
+    }
+
     private void writePollingRequest() throws Exception {
         final MultiplexingSynchronousEndpointClientSessionResponse writeTask = writeRequests.peek();
         if (writeTask != null) {
@@ -468,7 +488,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     } else {
                         //make sure this is marked as written before a response could be received
                         nextWriteTask.setWritingActive();
-                        writtenRequests.put(nextWriteTask.getRequestSequence(), nextWriteTask);
+                        putWrittenRequest(nextWriteTask);
                         writeLocked(nextWriteTask);
                     }
                 }
@@ -480,10 +500,20 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 } else {
                     //make sure this is marked as written before a response could be received
                     writeTask.setWritingActive();
-                    writtenRequests.put(writeTask.getRequestSequence(), writeTask);
+                    putWrittenRequest(writeTask);
                     writeLocked(writeTask);
                 }
             }
+        }
+    }
+
+    private void putWrittenRequest(final MultiplexingSynchronousEndpointClientSessionResponse writeTask) {
+        final int requestSequence = writeTask.getRequestSequence();
+        final MultiplexingSynchronousEndpointClientSessionResponse removed = writtenRequests.put(requestSequence,
+                writeTask);
+        if (removed != null && removed.isPushedWithoutRequest()) {
+            writeTask.maybeResponseCompleted(removed);
+            removed.close();
         }
     }
 

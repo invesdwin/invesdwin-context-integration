@@ -34,6 +34,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     private volatile boolean outerActive;
     private volatile boolean pollingActive;
     private volatile boolean writingActive;
+    private boolean pushedWithoutRequest;
 
     public MultiplexingSynchronousEndpointClientSessionResponse(
             final IObjectPool<MultiplexingSynchronousEndpointClientSessionResponse> pool) {
@@ -86,6 +87,14 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         this.waitingSinceNanos = System.nanoTime();
     }
 
+    public void setPushedWithoutRequest() {
+        this.pushedWithoutRequest = true;
+    }
+
+    public boolean isPushedWithoutRequest() {
+        return pushedWithoutRequest;
+    }
+
     @Override
     public int getServiceId() {
         return serviceId;
@@ -121,13 +130,25 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     }
 
     public void responseCompleted(final IByteBufferProvider response) throws IOException {
-        responseSize = response.getBuffer(this.response);
-        completed = true;
+        this.responseSize = response.getBuffer(this.response);
+        this.completed = true;
     }
 
     public void responseCompleted(final RuntimeException exceptionResponse) {
         this.exceptionResponse = exceptionResponse;
-        completed = true;
+        this.completed = true;
+    }
+
+    public void maybeResponseCompleted(final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest) {
+        if (!pushedWithoutRequest.completed) {
+            return;
+        }
+        if (pushedWithoutRequest.response != null) {
+            this.responseSize = pushedWithoutRequest.response.getBuffer(this.response);
+        } else {
+            this.exceptionResponse = pushedWithoutRequest.exceptionResponse;
+        }
+        this.completed = true;
     }
 
     public long getWaitingSinceNanos() {
@@ -183,6 +204,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         outerActive = false;
         pollingActive = false;
         writingActive = false;
+        pushedWithoutRequest = false;
     }
 
     @Override
