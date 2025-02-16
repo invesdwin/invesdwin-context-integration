@@ -17,7 +17,7 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.IS
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.circular.CircularGenericArray;
+import de.invesdwin.util.collections.circular.CircularGenericArrayQueue;
 import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -38,10 +38,10 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private final Duration requestTimeout;
     private final IStreamSessionManager manager;
     private long lastHeartbeatNanos = System.nanoTime();
-    private int pushedMessages = 0;
-    private final int maxSuccessivePushCountPerSession;
     @GuardedBy("self")
-    private final CircularGenericArray<Future<?>> pendingWrites;
+    private final CircularGenericArrayQueue<Future<?>> pendingWrites;
+    @GuardedBy("pendingWrites")
+    private int streamSequenceCounter = 0;
 
     private volatile boolean closed;
 
@@ -52,8 +52,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         this.heartbeatTimeout = server.getHeartbeatTimeout();
         this.requestTimeout = server.getRequestTimeout();
         this.manager = server.newManager(this);
-        this.maxSuccessivePushCountPerSession = server.getMaxSuccessivePushCountPerSession();
-        this.pendingWrites = new CircularGenericArray<Future<?>>(maxSuccessivePushCountPerSession);
+        this.pendingWrites = new CircularGenericArrayQueue<Future<?>>(server.getMaxSuccessivePushCountPerSession());
     }
 
     @Override
@@ -74,17 +73,17 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
             final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
         synchronized (pendingWrites) {
             if (!pendingWrites.isEmpty()) {
-                while (true) {
-                    final Future<?> pendingWrite = pendingWrites.get(0);
+                do {
+                    final Future<?> pendingWrite = pendingWrites.peek();
                     if (pendingWrite.isDone()) {
-                        final Future<?> removed = pendingWrites.removeFirst();
+                        final Future<?> removed = pendingWrites.poll();
                         Assertions.checkSame(pendingWrite, removed);
                     } else {
                         //first-in-first-out
                         break;
                     }
-                }
-                if (pendingWrites.size() >= maxSuccessivePushCountPerSession) {
+                } while ((!pendingWrites.isEmpty()));
+                if (pendingWrites.size() >= pendingWrites.capacity()) {
                     //session is too busy right now
                     return false;
                 }
@@ -100,7 +99,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
              * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
              * or by resetting the subscription entirely
              */
-            response.setSequence(pushedMessages++);
+            response.setSequence(nextStreamSequence());
 
             final IByteBufferProvider message = reader.readMessage();
             try {
@@ -113,6 +112,17 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
                 pendingWrites.add(pendingWrite);
             }
             return true;
+        }
+    }
+
+    private int nextStreamSequence() {
+        final int sequence = --streamSequenceCounter;
+        if (sequence > 0) {
+            //handle rollover
+            streamSequenceCounter = -1;
+            return -1;
+        } else {
+            return sequence;
         }
     }
 
