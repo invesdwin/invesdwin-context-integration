@@ -2,11 +2,13 @@ package de.invesdwin.context.integration.channel.rpc.base.client.handler;
 
 import java.lang.reflect.Method;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -18,7 +20,7 @@ import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @Immutable
-public final class RpcClientMethodInfo implements IClientMethodInfo {
+public final class RpcClientMethodInfo implements IServiceMethodInfo {
 
     private final RpcSynchronousEndpointClientHandler handler;
     private final int methodId;
@@ -71,7 +73,11 @@ public final class RpcClientMethodInfo implements IClientMethodInfo {
                 .getSessionPool();
         final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
         try {
-            return session.request(this, request);
+            return session.request(getServiceId(), getMethodId(), request, session.nextRequestSequence(),
+                    session.getDefaultRequestTimeout());
+        } catch (final TimeoutException e) {
+            sessionPool.invalidateObject(session);
+            throw new RetryLaterRuntimeException(e);
         } catch (final Throwable t) {
             sessionPool.invalidateObject(session);
             throw Throwables.propagate(t);

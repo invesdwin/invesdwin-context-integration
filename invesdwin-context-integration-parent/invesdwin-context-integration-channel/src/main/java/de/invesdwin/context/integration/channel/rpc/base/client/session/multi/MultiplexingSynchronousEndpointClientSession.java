@@ -13,7 +13,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
@@ -40,6 +39,7 @@ import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
 @ThreadSafe
@@ -166,13 +166,19 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     @Override
-    public ICloseableByteBufferProvider request(final IClientMethodInfo methodInfo, final IByteBufferProvider request) {
+    public Duration getDefaultRequestTimeout() {
+        return endpointSession.getRequestTimeout();
+    }
+
+    @Override
+    public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
+            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout)
+            throws TimeoutException {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
         try {
-            final int requestSequence = nextRequestSequence(request);
-            response.init(methodInfo, request, requestSequence, activePolling);
+            response.init(serviceId, methodId, request, requestSequence, requestTimeout, activePolling);
             if (activePolling.compareAndSet(false, true)) {
                 //take over the job of the activePolling thread and handle other requests while polling
                 try {
@@ -205,48 +211,53 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     }
                 }
             }
+        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException e) {
+            response.close();
+            throw e;
         } catch (final Throwable t) {
             response.close();
             throw new RetryLaterRuntimeException(t);
         }
     }
 
-    private int nextRequestSequence(final IByteBufferProvider request) {
-        if (request == null) {
-            //stream sequence numbers are negative so that the polling queue can separate them properly
-            final int sequence = streamSequenceCounter.decrementAndGet();
-            if (sequence > 0) {
-                /*
-                 * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
-                 * others picking numbers after that
-                 */
-                synchronized (streamSequenceCounter) {
-                    if (streamSequenceCounter.compareAndSet(sequence, -1)) {
-                        return -1;
-                    } else {
-                        return streamSequenceCounter.decrementAndGet();
-                    }
+    @Override
+    public int nextRequestSequence() {
+        final int sequence = requestSequenceCounter.incrementAndGet();
+        if (sequence < 0) {
+            /*
+             * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
+             * others picking numbers after that
+             */
+            synchronized (requestSequenceCounter) {
+                if (requestSequenceCounter.compareAndSet(sequence, 1)) {
+                    return 1;
+                } else {
+                    return requestSequenceCounter.incrementAndGet();
                 }
-            } else {
-                return sequence;
             }
         } else {
-            final int sequence = requestSequenceCounter.incrementAndGet();
-            if (sequence < 0) {
-                /*
-                 * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
-                 * others picking numbers after that
-                 */
-                synchronized (requestSequenceCounter) {
-                    if (requestSequenceCounter.compareAndSet(sequence, 1)) {
-                        return 1;
-                    } else {
-                        return requestSequenceCounter.incrementAndGet();
-                    }
+            return sequence;
+        }
+    }
+
+    @Override
+    public int nextStreamSequence() {
+        //stream sequence numbers are negative so that the polling queue can separate them properly
+        final int sequence = streamSequenceCounter.decrementAndGet();
+        if (sequence > 0) {
+            /*
+             * specifically synchronizing on atomicInt so that the first inside the lock resets the sequence and all
+             * others picking numbers after that
+             */
+            synchronized (streamSequenceCounter) {
+                if (streamSequenceCounter.compareAndSet(sequence, -1)) {
+                    return -1;
+                } else {
+                    return streamSequenceCounter.decrementAndGet();
                 }
-            } else {
-                return sequence;
             }
+        } else {
+            return sequence;
         }
     }
 
@@ -268,12 +279,18 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     maybeCheckRequestTimeouts(outer);
                 }
             }
+        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException e) {
+            throw e;
+        } catch (final IOException e) {
+            //signal the pool that we want to reconnect
+            closeLocked();
+            throw new RetryLaterRuntimeException(e);
         } catch (final Throwable t) {
             if (Throwables.isCausedByType(t, IOException.class)) {
                 //signal the pool that we want to reconnect
                 closeLocked();
             }
-            throw Throwables.propagate(t);
+            throw new RetryLaterRuntimeException(t);
         } finally {
             throttle.pollingOuter = null;
             throttle.outer = null;
@@ -300,7 +317,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (!writeRequests.isEmpty()) {
             MultiplexingSynchronousEndpointClientSessionResponse writeRequest = writeRequests.peek();
             while (writeRequest != null) {
-                if (isRequestTimeout(writeRequest) || !writeRequest.isOuterActive()) {
+                if (writeRequest.isRequestTimeout() || !writeRequest.isOuterActive()) {
                     final MultiplexingSynchronousEndpointClientSessionResponse removed = writeRequests.remove();
                     assert writeRequest == removed;
                     removed.releasePollingActive();
@@ -313,7 +330,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (!writtenRequests.isEmpty()) {
             IBufferingIterator<MultiplexingSynchronousEndpointClientSessionResponse> toBeRemoved = null;
             for (final MultiplexingSynchronousEndpointClientSessionResponse writtenRequest : writtenRequests.values()) {
-                if (isRequestTimeout(writtenRequest) || !writtenRequest.isOuterActive()) {
+                if (writtenRequest.isRequestTimeout() || !writtenRequest.isOuterActive()) {
                     if (toBeRemoved == null) {
                         toBeRemoved = new BufferingIterator<>();
                     }
@@ -373,7 +390,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         return true;
                     }
                 }
-                if (responseMethod != response.getMethodInfo().getMethodId()) {
+                if (responseMethod != response.getMethodId()) {
                     if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
                         final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
                         final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
@@ -392,21 +409,21 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                         }
                         return true;
                     } else {
-                        response.responseCompleted(new RetryLaterRuntimeException("Unexpected methodId in response ["
-                                + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
-                                + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
-                                + ":" + response.getRequestSequence() + "]"));
+                        response.responseCompleted(new RetryLaterRuntimeException(
+                                "Unexpected methodId in response [" + responseService + ":" + responseMethod + ":"
+                                        + responseSequence + "] for request [" + response.getServiceId() + ":"
+                                        + response.getMethodId() + ":" + response.getRequestSequence() + "]"));
                         if (response != pollingOuter) {
                             response.releasePollingActive();
                         }
                         return true;
                     }
                 }
-                if (responseService != response.getMethodInfo().getServiceId()) {
-                    response.responseCompleted(new RetryLaterRuntimeException("Unexpected serviceId in response ["
-                            + responseService + ":" + responseMethod + ":" + responseSequence + "] for request ["
-                            + response.getMethodInfo().getServiceId() + ":" + response.getMethodInfo().getMethodId()
-                            + ":" + response.getRequestSequence() + "]"));
+                if (responseService != response.getServiceId()) {
+                    response.responseCompleted(new RetryLaterRuntimeException(
+                            "Unexpected serviceId in response [" + responseService + ":" + responseMethod + ":"
+                                    + responseSequence + "] for request [" + response.getServiceId() + ":"
+                                    + response.getMethodId() + ":" + response.getRequestSequence() + "]"));
                     if (response != pollingOuter) {
                         response.releasePollingActive();
                     }
@@ -466,9 +483,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             return;
         }
         try {
-            final IClientMethodInfo methodInfo = task.getMethodInfo();
-            final int serviceId = methodInfo.getServiceId();
-            final int methodId = methodInfo.getMethodId();
+            final int serviceId = task.getServiceId();
+            final int methodId = task.getMethodId();
             final int requestSequence = task.getRequestSequence();
             final IByteBufferProvider request = task.getRequest();
             writeLocked(serviceId, methodId, requestSequence, request);
@@ -499,16 +515,11 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
     private void throwIfRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request)
             throws TimeoutException {
-        if (isRequestTimeout(request)) {
-            throw new TimeoutException("Request timeout exceeded for [" + request.getMethodInfo().getServiceId() + ":"
-                    + request.getMethodInfo().getMethodId() + ":" + request.getRequestSequence() + "]: "
-                    + endpointSession.getRequestTimeout());
+        if (request.isRequestTimeout()) {
+            throw new TimeoutException(
+                    "Request timeout exceeded for [" + request.getServiceId() + ":" + request.getMethodId() + ":"
+                            + request.getRequestSequence() + "]: " + endpointSession.getRequestTimeout());
         }
-    }
-
-    private boolean isRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request) {
-        return endpointSession.getRequestTimeout()
-                .isLessThanOrEqualToNanos(System.nanoTime() - request.getWaitingSinceNanos());
     }
 
     private final class ThrottleSpinWait extends ASpinWait {

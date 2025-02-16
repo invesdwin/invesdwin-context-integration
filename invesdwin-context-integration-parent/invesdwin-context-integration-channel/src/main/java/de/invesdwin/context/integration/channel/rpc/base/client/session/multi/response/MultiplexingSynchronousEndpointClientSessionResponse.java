@@ -5,22 +5,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.IServiceMethodInfo;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
+import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public class MultiplexingSynchronousEndpointClientSessionResponse implements ICloseableByteBufferProvider {
+public class MultiplexingSynchronousEndpointClientSessionResponse
+        implements ICloseableByteBufferProvider, IServiceMethodInfo {
 
     private final IObjectPool<MultiplexingSynchronousEndpointClientSessionResponse> pool;
     private final ASpinWait completedSpinWait;
-    private IClientMethodInfo methodInfo;
+    private int serviceId;
+    private int methodId;
     private IByteBufferProvider request;
     private int requestSequence;
+    private Duration requestTimeout;
     private AtomicBoolean activePolling;
     private volatile boolean completed;
     private final IByteBuffer response = ByteBuffers.allocateDirectExpandable();
@@ -71,17 +75,25 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
         return writingActive;
     }
 
-    public void init(final IClientMethodInfo methodInfo, final IByteBufferProvider request, final int requestSequence,
-            final AtomicBoolean activePolling) {
-        this.methodInfo = methodInfo;
+    public void init(final int serviceId, final int methodId, final IByteBufferProvider request,
+            final int requestSequence, final Duration requestTimeout, final AtomicBoolean activePolling) {
+        this.serviceId = serviceId;
+        this.methodId = methodId;
         this.request = request;
         this.requestSequence = requestSequence;
+        this.requestTimeout = requestTimeout;
         this.activePolling = activePolling;
         this.waitingSinceNanos = System.nanoTime();
     }
 
-    public IClientMethodInfo getMethodInfo() {
-        return methodInfo;
+    @Override
+    public int getServiceId() {
+        return serviceId;
+    }
+
+    @Override
+    public int getMethodId() {
+        return methodId;
     }
 
     public IByteBufferProvider getRequest() {
@@ -90,6 +102,14 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
 
     public int getRequestSequence() {
         return requestSequence;
+    }
+
+    public Duration getRequestTimeout() {
+        return requestTimeout;
+    }
+
+    public boolean isRequestTimeout() {
+        return getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - getWaitingSinceNanos());
     }
 
     public boolean isCompleted() {
@@ -150,9 +170,11 @@ public class MultiplexingSynchronousEndpointClientSessionResponse implements ICl
     }
 
     public void clean() {
-        methodInfo = null;
+        serviceId = 0;
+        methodId = 0;
         request = null;
         requestSequence = 0;
+        requestTimeout = null;
         completed = false;
         responseSize = 0;
         activePolling = null;

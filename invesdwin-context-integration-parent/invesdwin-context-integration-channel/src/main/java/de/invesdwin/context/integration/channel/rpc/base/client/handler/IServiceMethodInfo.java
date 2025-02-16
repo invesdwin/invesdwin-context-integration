@@ -1,6 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.base.client.handler;
 
-public interface IClientMethodInfo {
+public interface IServiceMethodInfo {
 
     int getServiceId();
 

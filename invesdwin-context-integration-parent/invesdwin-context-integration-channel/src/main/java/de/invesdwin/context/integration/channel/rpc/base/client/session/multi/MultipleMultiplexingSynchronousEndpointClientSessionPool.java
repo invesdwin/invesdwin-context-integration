@@ -1,12 +1,12 @@
 package de.invesdwin.context.integration.channel.rpc.base.client.session.multi;
 
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
-import de.invesdwin.context.integration.channel.rpc.base.client.handler.IClientMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
@@ -234,9 +234,25 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         }
 
         @Override
-        public ICloseableByteBufferProvider request(final IClientMethodInfo methodInfo,
-                final IByteBufferProvider request) {
-            return delegate.request(methodInfo, request);
+        public int nextRequestSequence() {
+            return delegate.nextRequestSequence();
+        }
+
+        @Override
+        public int nextStreamSequence() {
+            return delegate.nextStreamSequence();
+        }
+
+        @Override
+        public Duration getDefaultRequestTimeout() {
+            return delegate.getDefaultRequestTimeout();
+        }
+
+        @Override
+        public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
+                final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout)
+                throws TimeoutException {
+            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout);
         }
 
         @Override

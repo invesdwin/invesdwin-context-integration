@@ -10,6 +10,7 @@ import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
+import de.invesdwin.context.integration.channel.rpc.base.client.handler.IServiceMethodInfo;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.retry.Retries;
@@ -23,7 +24,7 @@ import de.invesdwin.util.marshallers.serde.lookup.response.IResponseSerdeProvide
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
-public class RpcServerMethodInfo {
+public class RpcServerMethodInfo implements IServiceMethodInfo {
 
     private final RpcSynchronousEndpointService service;
     private final int methodId;
@@ -48,6 +49,12 @@ public class RpcServerMethodInfo {
         return service;
     }
 
+    @Override
+    public int getServiceId() {
+        return service.getServiceId();
+    }
+
+    @Override
     public int getMethodId() {
         return methodId;
     }
