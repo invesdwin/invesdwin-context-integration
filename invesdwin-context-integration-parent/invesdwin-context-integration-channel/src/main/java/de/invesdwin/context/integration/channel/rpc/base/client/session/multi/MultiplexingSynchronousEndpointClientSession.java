@@ -93,6 +93,11 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
     }
 
+    @Override
+    public ISynchronousEndpointSession getEndpointSession() {
+        return endpointSession;
+    }
+
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
@@ -490,8 +495,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             final int responseService, final int responseMethod, final int responseSequence,
             final IByteBufferProvider responseMessage) throws IOException {
         if (responseSequence < 0) {
-            if (unexpectedMessageListener.onPushedWithoutRequest(responseService, responseMethod, responseSequence,
-                    responseMessage)) {
+            if (unexpectedMessageListener.onPushedWithoutRequest(this, responseService, responseMethod,
+                    responseSequence, responseMessage)) {
                 /*
                  * this might be a streaming message that we should add so that it can be polled for from the outside
                  * later (at least until requestTimeout is exceeded)
@@ -505,7 +510,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 writtenRequests.put(responseSequence, pushedWithoutRequest);
             }
         } else {
-            unexpectedMessageListener.onUnexpectedResponse(responseService, responseMethod, responseSequence,
+            unexpectedMessageListener.onUnexpectedResponse(this, responseService, responseMethod, responseSequence,
                     responseMessage);
         }
     }

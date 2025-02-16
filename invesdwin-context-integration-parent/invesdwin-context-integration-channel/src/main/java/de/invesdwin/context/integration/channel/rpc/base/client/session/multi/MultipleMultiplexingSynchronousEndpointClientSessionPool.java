@@ -235,6 +235,11 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         }
 
         @Override
+        public ISynchronousEndpointSession getEndpointSession() {
+            return delegate.getEndpointSession();
+        }
+
+        @Override
         public int nextRequestSequence() {
             return delegate.nextRequestSequence();
         }

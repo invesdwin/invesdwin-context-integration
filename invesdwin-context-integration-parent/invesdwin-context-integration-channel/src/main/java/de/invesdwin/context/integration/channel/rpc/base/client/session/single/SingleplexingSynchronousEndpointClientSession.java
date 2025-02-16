@@ -78,6 +78,11 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 responseReaderSpinWait.getReader());
     }
 
+    @Override
+    public ISynchronousEndpointSession getEndpointSession() {
+        return endpointSession;
+    }
+
     public void maybeSendHeartbeat() {
         if (lock.tryLock()) {
             try {
@@ -184,15 +189,15 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     if (responseSequence != requestSequence) {
                         //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
                         if (responseSequence < 0) {
-                            if (unexpectedMessageListener.onPushedWithoutRequest(serviceId, methodId, responseSequence,
-                                    request)) {
+                            if (unexpectedMessageListener.onPushedWithoutRequest(this, serviceId, methodId,
+                                    responseSequence, request)) {
                                 throw new UnsupportedOperationException(
                                         "PushedWithoutRequest messages can not be stored for later polling. Use a "
                                                 + MultiplexingSynchronousEndpointClientSession.class.getSimpleName()
                                                 + " if this feature is required.");
                             }
                         } else {
-                            unexpectedMessageListener.onUnexpectedResponse(serviceId, methodId, responseSequence,
+                            unexpectedMessageListener.onUnexpectedResponse(this, serviceId, methodId, responseSequence,
                                     request);
                         }
                         continue;
