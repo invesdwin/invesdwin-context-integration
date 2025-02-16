@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.ClosedSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.APostProcessingFuture;
 import de.invesdwin.util.concurrent.future.Futures;
@@ -50,6 +51,7 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
+        Assertions.checkNotNull(endpointSession);
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
         this.requestTimeout = endpointSession.getRequestTimeout();
@@ -66,6 +68,9 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
 
     @Override
     public void close() {
+        if (isClosed()) {
+            return;
+        }
         final Future<?> processResponseFutureCopy = processResponseFuture;
         if (processResponseFutureCopy != null) {
             processResponseFutureCopy.cancel(true);

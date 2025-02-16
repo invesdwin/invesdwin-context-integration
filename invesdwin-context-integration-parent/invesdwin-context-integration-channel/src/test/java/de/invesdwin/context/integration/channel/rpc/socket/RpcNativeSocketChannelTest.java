@@ -65,7 +65,7 @@ public class RpcNativeSocketChannelTest extends ARpcChannelTest {
                 final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeSocketSynchronousWriter(
                         acceptedClientChannel);
                 return new DefaultSynchronousEndpointSession(String.valueOf(index.incrementAndGet()),
-                        ImmutableSynchronousEndpoint.of(requestReader, responseWriter));
+                        ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(

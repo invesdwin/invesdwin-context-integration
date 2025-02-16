@@ -63,6 +63,7 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
             final ISynchronousEndpointSession endpointSession) {
         this.parent = parent;
         this.endpointSession = endpointSession;
+        Assertions.checkNotNull(endpointSession);
         this.sessionId = endpointSession.getSessionId();
         this.heartbeatTimeout = endpointSession.getHeartbeatTimeout();
         this.requestTimeout = endpointSession.getRequestTimeout();
@@ -79,6 +80,9 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
 
     @Override
     public void close() {
+        if (isClosed()) {
+            return;
+        }
         //only the IO thread will access the active requests array, also only IO thread will call close of the server session, thus we are fine here
         final ProcessResponseResult[] activeRequestsArray = activeRequests.asArray(ProcessResponseResult.EMPTY_ARRAY);
         for (int i = 0; i < activeRequestsArray.length; i++) {

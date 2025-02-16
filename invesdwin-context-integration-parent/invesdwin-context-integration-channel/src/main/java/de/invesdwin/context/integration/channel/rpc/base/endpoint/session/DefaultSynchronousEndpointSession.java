@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceCommandSynchronousReader;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceCommandSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.marshallers.serde.ISerde;
@@ -22,11 +23,14 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
 
     private final String sessionId;
     private ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint;
+    private ISynchronousChannel channel;
 
     public DefaultSynchronousEndpointSession(final String sessionId,
-            final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint) {
+            final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint,
+            final ISynchronousChannel channel) {
         this.sessionId = sessionId;
         this.endpoint = endpoint;
+        this.channel = channel;
     }
 
     @Override
@@ -88,6 +92,10 @@ public class DefaultSynchronousEndpointSession implements ISynchronousEndpointSe
         if (endpoint != null) {
             endpoint.close();
             endpoint = null;
+        }
+        if (channel != null) {
+            channel.close();
+            channel = null;
         }
     }
 

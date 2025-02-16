@@ -24,7 +24,7 @@ public class DefaultSynchronousEndpointSessionFactory implements ISynchronousEnd
     public ISynchronousEndpointSession newSession() {
         final String sessionId = Processes.getProcessId() + "_" + nextId.incrementAndGet();
         final ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> endpoint = endpointFactory.newEndpoint();
-        return new DefaultSynchronousEndpointSession(sessionId, endpoint);
+        return new DefaultSynchronousEndpointSession(sessionId, endpoint, null);
     }
 
     @Override
