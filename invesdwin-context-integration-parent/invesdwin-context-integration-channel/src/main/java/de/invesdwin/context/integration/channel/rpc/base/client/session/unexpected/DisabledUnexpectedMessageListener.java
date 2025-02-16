@@ -12,14 +12,14 @@ public final class DisabledUnexpectedMessageListener implements IUnexpectedMessa
     private DisabledUnexpectedMessageListener() {}
 
     @Override
-    public boolean onPushedWithoutRequest(final int serviceId, final int methodId, final int sequence,
+    public boolean onPushedWithoutRequest(final int serviceId, final int methodId, final int streamSequence,
             final IByteBufferProvider message) {
         //discard
         return false;
     }
 
     @Override
-    public void onUnexpectedResponse(final int serviceId, final int methodId, final int sequence,
+    public void onUnexpectedResponse(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider message) {}
 
 }

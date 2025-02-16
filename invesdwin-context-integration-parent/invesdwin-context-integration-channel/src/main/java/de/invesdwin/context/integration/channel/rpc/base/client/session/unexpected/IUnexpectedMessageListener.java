@@ -10,7 +10,7 @@ public interface IUnexpectedMessageListener {
      * Return true if the message should be stored as a written request for later polling. The message should not be
      * leaked as it is bound to the call, instead a copy should be made if it is to be used later.
      */
-    boolean onPushedWithoutRequest(int serviceId, int methodId, int sequence, IByteBufferProvider message);
+    boolean onPushedWithoutRequest(int serviceId, int methodId, int streamSequence, IByteBufferProvider message);
 
     /**
      * This is an unexpected response for a non-existent request.
@@ -18,6 +18,6 @@ public interface IUnexpectedMessageListener {
      * Unexpected responses for requests can not be stored for later polling. The message should not be leaked as it is
      * bound to the call, instead a copy should be made if it is to be used later.
      */
-    void onUnexpectedResponse(int serviceId, int methodId, int sequence, IByteBufferProvider message);
+    void onUnexpectedResponse(int serviceId, int methodId, int requestSequence, IByteBufferProvider message);
 
 }
