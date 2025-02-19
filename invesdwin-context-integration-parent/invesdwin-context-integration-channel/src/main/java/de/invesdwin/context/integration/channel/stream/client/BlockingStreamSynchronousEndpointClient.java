@@ -147,6 +147,13 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
                     getRequestTimeout(session), false, requestUnexpectedMessageListener);
             //TODO: return a real future that allows handling a potential exception response directly (e.g. server overload for back-off)
             /*
+             * TODO: make sure that sequence is kept properly, even if we already have 5 messages in the queue and 1 in
+             * the middle gets rejected and needs to be resent while the next ones were processed properly; server needs
+             * to wait for the resend before writing the next sequenced messages so that we don't mix the order. Though
+             * we could add this also as a reader/writer step that is useable with any transport transparently? Also
+             * does the server write the message and then complain or does it actually reject the message fully?
+             */
+            /*
              * TODO: implement a truly non-blocking endpoint client session wrapper that directly returns futures for
              * requests and handles requests in a queue to keep the order. Also maybe pool futures and return a
              * ICloseableFuture?
