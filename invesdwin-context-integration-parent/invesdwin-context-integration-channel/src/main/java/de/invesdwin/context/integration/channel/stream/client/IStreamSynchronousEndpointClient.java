@@ -7,7 +7,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynch
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.lang.uri.URIs;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 public interface IStreamSynchronousEndpointClient extends ISynchronousChannel {
@@ -18,7 +18,7 @@ public interface IStreamSynchronousEndpointClient extends ISynchronousChannel {
 
     void poll(Duration timeout) throws TimeoutException;
 
-    Future<?> put(int serviceId, IByteBufferProvider message);
+    Future<?> put(int serviceId, ICloseableByteBufferProvider message);
 
     default Future<?> create(final String topic, final IProperties parameters) {
         final int serviceId = newServiceId(topic);

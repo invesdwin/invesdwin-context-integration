@@ -34,6 +34,7 @@ import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.error.FastTimeoutException;
 import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
@@ -186,15 +187,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
      * listener should be used for all requests.
      */
     @Override
-    public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
-            final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
+    public ICloseableByteBufferProvider request(final int serviceId, final int methodId, final int requestSequence,
+            final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
             final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
             throws TimeoutException, AbortRequestException {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
         try {
-            response.init(serviceId, methodId, request, requestSequence, requestTimeout, activePolling);
+            response.init(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout, activePolling);
             if (!waitForResponse) {
                 //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
                 response.setPushedWithoutRequest();
@@ -513,7 +514,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                  */
                 final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                         .borrowObject();
-                pushedWithoutRequest.init(responseService, responseMethod, null, responseSequence,
+                pushedWithoutRequest.init(responseService, responseMethod, responseSequence, null, false,
                         getDefaultRequestTimeout(), activePolling);
                 pushedWithoutRequest.setPushedWithoutRequest();
                 pushedWithoutRequest.responseCompleted(responseMessage);
@@ -605,17 +606,17 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         writeLocked(serviceId, methodId, requestSequence, request);
         if (!requestWriterSpinWait.writeFlushed()
                 .awaitFulfill(System.nanoTime(), endpointSession.getRequestTimeout())) {
-            throw new TimeoutException("Request write flush timeout exceeded for [" + serviceId + ":" + methodId + ":"
-                    + requestSequence + "]: " + endpointSession.getRequestTimeout());
+            throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s", serviceId,
+                    methodId, requestSequence, endpointSession.getRequestTimeout());
         }
     }
 
     private void throwIfRequestTimeout(final MultiplexingSynchronousEndpointClientSessionResponse request)
             throws TimeoutException {
         if (request.isRequestTimeout()) {
-            throw new TimeoutException(
-                    "Request timeout exceeded for [" + request.getServiceId() + ":" + request.getMethodId() + ":"
-                            + request.getRequestSequence() + "]: " + endpointSession.getRequestTimeout());
+            throw FastTimeoutException.getInstance("Request timeout exceeded for [%s:%s:%s]: %s",
+                    request.getServiceId(), request.getMethodId(), request.getRequestSequence(),
+                    endpointSession.getRequestTimeout());
         }
     }
 

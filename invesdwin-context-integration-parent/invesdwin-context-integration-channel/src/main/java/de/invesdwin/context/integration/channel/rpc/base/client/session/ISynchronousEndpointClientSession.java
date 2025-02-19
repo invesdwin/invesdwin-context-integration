@@ -38,8 +38,8 @@ public interface ISynchronousEndpointClientSession extends Closeable {
 
     Duration getDefaultRequestTimeout();
 
-    ICloseableByteBufferProvider request(int serviceId, int methodId, IByteBufferProvider request, int requestSequence,
-            Duration requestTimeout, boolean waitForResponse, IUnexpectedMessageListener unexpectedMessageListener)
-            throws TimeoutException, AbortRequestException;
+    ICloseableByteBufferProvider request(int serviceId, int methodId, int requestSequence, IByteBufferProvider request,
+            boolean closeRequest, Duration requestTimeout, boolean waitForResponse,
+            IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException, AbortRequestException;
 
 }

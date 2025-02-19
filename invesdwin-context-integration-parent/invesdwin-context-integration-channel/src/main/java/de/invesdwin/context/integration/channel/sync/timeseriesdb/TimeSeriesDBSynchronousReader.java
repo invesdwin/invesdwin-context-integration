@@ -21,7 +21,7 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
 
     private final TimeSeriesDBSynchronousChannel channel;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
-    private long lastIndex = newIgnoreValuesBeforeIndex();
+    private long lastIndex = newFromIndex();
     private ICloseableIterator<IndexedByteBuffer> readRange;
     private FDate readRangeToIndex;
     private IndexedByteBuffer message;
@@ -32,7 +32,7 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
         this.closeMessageEnabled = channel.isCloseMessageEnabled();
     }
 
-    protected long newIgnoreValuesBeforeIndex() {
+    protected long newFromIndex() {
         return FDates.MIN_DATE.millisValue();
     }
 

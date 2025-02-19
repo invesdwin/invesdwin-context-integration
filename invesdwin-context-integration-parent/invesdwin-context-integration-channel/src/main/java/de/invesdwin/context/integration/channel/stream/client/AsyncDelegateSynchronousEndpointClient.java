@@ -9,10 +9,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
-import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -73,22 +70,8 @@ public class AsyncDelegateSynchronousEndpointClient implements IStreamSynchronou
     }
 
     @Override
-    public Future<?> put(final int serviceId, final IByteBufferProvider message) {
-        final ICloseableByteBuffer messageCopyBuffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject();
-        final int size;
-        try {
-            size = message.getBuffer(messageCopyBuffer);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        final IByteBuffer messageCopy = messageCopyBuffer.sliceTo(size);
-        return getPutExecutor().submit(() -> {
-            try {
-                return delegate.put(serviceId, messageCopy);
-            } finally {
-                messageCopyBuffer.close();
-            }
-        });
+    public Future<?> put(final int serviceId, final ICloseableByteBufferProvider message) {
+        return getPutExecutor().submit(() -> delegate.put(serviceId, message));
     }
 
     @Override

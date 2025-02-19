@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.error.FastTimeoutException;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -71,7 +72,7 @@ public class SynchronousWriterSpinWait<M> {
 
     protected void onTimeout(final String reason, final Duration timeout, final long startNanos)
             throws TimeoutException {
-        throw new TimeoutException(reason + ": " + timeout);
+        throw FastTimeoutException.getInstance("%s: %s", reason, timeout);
     }
 
 }

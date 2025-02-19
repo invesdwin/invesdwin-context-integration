@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.service;
+package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.service;
 
 import javax.annotation.concurrent.Immutable;
 

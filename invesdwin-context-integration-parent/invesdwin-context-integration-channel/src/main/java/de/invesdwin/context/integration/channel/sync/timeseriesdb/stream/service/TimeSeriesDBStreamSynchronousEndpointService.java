@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.service;
+package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.service;
 
 import java.io.File;
 import java.io.IOException;
@@ -106,11 +106,11 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
         if (listeners.add(listener)) {
             return new TimeSeriesDBSynchronousReader(channel) {
                 @Override
-                protected long newIgnoreValuesBeforeIndex() {
+                protected long newFromIndex() {
                     if (fromTimestamp != null) {
                         return fromTimestamp.millisValue();
                     } else {
-                        return super.newIgnoreValuesBeforeIndex();
+                        return super.newFromIndex();
                     }
                 }
             };

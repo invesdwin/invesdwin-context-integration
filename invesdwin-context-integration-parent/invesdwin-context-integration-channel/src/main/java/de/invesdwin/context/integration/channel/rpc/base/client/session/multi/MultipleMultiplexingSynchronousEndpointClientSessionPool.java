@@ -276,12 +276,12 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         }
 
         @Override
-        public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
-                final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
+        public ICloseableByteBufferProvider request(final int serviceId, final int methodId, final int requestSequence,
+                final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
                 final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
                 throws TimeoutException, AbortRequestException {
-            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout, waitForResponse,
-                    unexpectedMessageListener);
+            return delegate.request(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout,
+                    waitForResponse, unexpectedMessageListener);
         }
 
         @Override

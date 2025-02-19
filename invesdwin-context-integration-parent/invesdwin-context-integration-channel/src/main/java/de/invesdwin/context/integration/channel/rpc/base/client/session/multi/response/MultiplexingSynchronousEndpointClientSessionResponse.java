@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -8,6 +9,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.base.client.handler.IServiceMethodInfo;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
+import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -22,8 +24,9 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     private final ASpinWait completedSpinWait;
     private int serviceId;
     private int methodId;
-    private IByteBufferProvider request;
     private int requestSequence;
+    private IByteBufferProvider request;
+    private boolean closeRequest;
     private Duration requestTimeout;
     private AtomicBoolean activePolling;
     private volatile boolean completed;
@@ -76,12 +79,14 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         return writingActive;
     }
 
-    public void init(final int serviceId, final int methodId, final IByteBufferProvider request,
-            final int requestSequence, final Duration requestTimeout, final AtomicBoolean activePolling) {
+    public void init(final int serviceId, final int methodId, final int requestSequence,
+            final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
+            final AtomicBoolean activePolling) {
         this.serviceId = serviceId;
         this.methodId = methodId;
-        this.request = request;
         this.requestSequence = requestSequence;
+        this.request = request;
+        this.closeRequest = closeRequest;
         this.requestTimeout = requestTimeout;
         this.activePolling = activePolling;
         this.waitingSinceNanos = System.nanoTime();
@@ -182,6 +187,11 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     public void releaseWritingActive() {
         synchronized (this) {
             if (writingActive) {
+                if (closeRequest) {
+                    final Closeable cRequest = (Closeable) request;
+                    Closeables.closeQuietly(cRequest);
+                    closeRequest = false;
+                }
                 request = null;
                 writingActive = false;
                 if (!outerActive && !pollingActive) {
@@ -194,8 +204,13 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     public void clean() {
         serviceId = 0;
         methodId = 0;
-        request = null;
         requestSequence = 0;
+        if (closeRequest && request != null) {
+            final Closeable cRequest = (Closeable) request;
+            Closeables.closeQuietly(cRequest);
+        }
+        request = null;
+        closeRequest = false;
         requestTimeout = null;
         completed = false;
         responseSize = 0;

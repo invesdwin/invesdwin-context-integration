@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.stream.client;
 import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -26,6 +27,7 @@ import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -83,7 +85,7 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
                 throws AbortRequestException {
             final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                     .borrowObject();
-            response.init(serviceId, methodId, null, streamSequence, null, null);
+            response.init(serviceId, methodId, streamSequence, null, false, null, null);
             try {
                 response.responseCompleted(message);
             } catch (final IOException e) {
@@ -100,6 +102,8 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
         }
     };
     private final ManyToOneConcurrentLinkedQueue<MultiplexingSynchronousEndpointClientSessionResponse> asyncStreamMessages = new ManyToOneConcurrentLinkedQueue<>();
+    @GuardedBy("this for modification")
+    private final AtomicInteger activeCount = new AtomicInteger();
 
     public BlockingStreamSynchronousEndpointClient(
             final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool) {
@@ -107,16 +111,34 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
     }
 
     @Override
-    public void open() throws IOException {
+    public synchronized void open() throws IOException {
+        if (!shouldOpen()) {
+            return;
+        }
         this.session = sessionPool.borrowObject();
     }
 
+    private synchronized boolean shouldOpen() {
+        return activeCount.incrementAndGet() == 1;
+    }
+
     @Override
-    public void close() throws IOException {
+    public synchronized void close() throws IOException {
+        if (!shouldClose()) {
+            return;
+        }
         if (session != null) {
             sessionPool.returnObject(session);
             session = null;
         }
+    }
+
+    private synchronized boolean shouldClose() {
+        final int activeCountBefore = activeCount.get();
+        if (activeCountBefore > 0) {
+            activeCount.decrementAndGet();
+        }
+        return activeCountBefore == 1;
     }
 
     @Override
@@ -131,7 +153,7 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
                     polled.close();
                 }
             }
-            session.request(0, 0, null, 0, timeout, false, pollUnexpectedMessageListener);
+            session.request(0, 0, 0, null, false, timeout, false, pollUnexpectedMessageListener);
         } catch (final TimeoutException e) {
             throw e;
         } catch (final AbortRequestException e) {
@@ -140,11 +162,11 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
     }
 
     @Override
-    public Future<?> put(final int serviceId, final IByteBufferProvider message) {
+    public Future<?> put(final int serviceId, final ICloseableByteBufferProvider message) {
         try {
             //fire-and-forget/non-blocking write in sequence, response will get logged/thrown in pollUnexpectedMessageListener
-            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_PUT, message, session.nextRequestSequence(),
-                    getRequestTimeout(session), false, requestUnexpectedMessageListener);
+            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_PUT, session.nextRequestSequence(), message,
+                    true, getRequestTimeout(session), false, requestUnexpectedMessageListener);
             //TODO: return a real future that allows handling a potential exception response directly (e.g. server overload for back-off)
             /*
              * TODO: make sure that sequence is kept properly, even if we already have 5 messages in the queue and 1 in
@@ -172,8 +194,8 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
     public Future<?> create(final int serviceId, final String topicUri) {
         try (ICloseableByteBuffer message = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
             final int length = message.putStringUtf8(0, topicUri);
-            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_CREATE, message.sliceTo(length),
-                    session.nextRequestSequence(), getRequestTimeout(session), true, requestUnexpectedMessageListener);
+            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_CREATE, session.nextRequestSequence(),
+                    message.sliceTo(length), false, getRequestTimeout(session), true, requestUnexpectedMessageListener);
             return NullFuture.getInstance();
         } catch (final Throwable e) {
             return ThrowableFuture.of(e);
@@ -186,8 +208,8 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
         registerSubscription(serviceId, topicUri, subscription);
         try (ICloseableByteBuffer message = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
             final int length = message.putStringUtf8(0, topicUri);
-            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_SUBSCRIBE, message.sliceTo(length),
-                    session.nextRequestSequence(), getRequestTimeout(session), true, requestUnexpectedMessageListener);
+            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_SUBSCRIBE, session.nextRequestSequence(),
+                    message.sliceTo(length), false, getRequestTimeout(session), true, requestUnexpectedMessageListener);
             return NullFuture.getInstance();
         } catch (final Throwable e) {
             return ThrowableFuture.of(e);
@@ -199,8 +221,8 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
         unregisterSubscription(serviceId);
         try (ICloseableByteBuffer message = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
             final int length = message.putStringUtf8(0, topicUri);
-            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_UNSUBSCRIBE, message.sliceTo(length),
-                    session.nextRequestSequence(), getRequestTimeout(session), true, requestUnexpectedMessageListener);
+            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_UNSUBSCRIBE, session.nextRequestSequence(),
+                    message.sliceTo(length), false, getRequestTimeout(session), true, requestUnexpectedMessageListener);
             return NullFuture.getInstance();
         } catch (final Throwable e) {
             return ThrowableFuture.of(e);
@@ -211,8 +233,8 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
     public Future<?> delete(final int serviceId, final String topicUri) {
         try (ICloseableByteBuffer message = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
             final int length = message.putStringUtf8(0, topicUri);
-            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_DELETE, message.sliceTo(length),
-                    session.nextRequestSequence(), getRequestTimeout(session), true, requestUnexpectedMessageListener);
+            session.request(serviceId, StreamServerMethodInfo.METHOD_ID_DELETE, session.nextRequestSequence(),
+                    message.sliceTo(length), false, getRequestTimeout(session), true, requestUnexpectedMessageListener);
             return NullFuture.getInstance();
         } catch (final Throwable e) {
             return ThrowableFuture.of(e);

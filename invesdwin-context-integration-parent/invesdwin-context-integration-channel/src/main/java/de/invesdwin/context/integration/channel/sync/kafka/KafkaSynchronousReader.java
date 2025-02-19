@@ -15,6 +15,7 @@ import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.serde.ByteBufferProviderKafkaDeserializer;
+import de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.client.StreamSynchronousEndpointClientReader;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.iterable.EmptyCloseableIterator;
 import de.invesdwin.util.error.FastEOFException;
@@ -26,6 +27,7 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
+    public static final Duration DEFAULT_POLL_TIMEOUT = StreamSynchronousEndpointClientReader.DEFAULT_POLL_TIMEOUT;
     private final String bootstratServersConfig;
     private final String topic;
     private final Duration pollTimeout;
@@ -40,7 +42,7 @@ public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferPro
     }
 
     protected Duration newPollTimeout() {
-        return Duration.ZERO;
+        return DEFAULT_POLL_TIMEOUT;
     }
 
     @Override
