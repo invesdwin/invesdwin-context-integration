@@ -12,7 +12,7 @@ public interface IUnexpectedMessageListener {
      * leaked as it is bound to the call, instead a copy should be made if it is to be used later.
      */
     boolean onPushedWithoutRequest(ISynchronousEndpointClientSession session, int serviceId, int methodId,
-            int streamSequence, IByteBufferProvider message);
+            int streamSequence, IByteBufferProvider message) throws AbortRequestException;
 
     /**
      * This is an unexpected response for a non-existent request.
@@ -21,6 +21,6 @@ public interface IUnexpectedMessageListener {
      * bound to the call, instead a copy should be made if it is to be used later.
      */
     void onUnexpectedResponse(ISynchronousEndpointClientSession session, int serviceId, int methodId,
-            int requestSequence, IByteBufferProvider message);
+            int requestSequence, IByteBufferProvider message) throws AbortRequestException;
 
 }

@@ -11,6 +11,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.MultiplexingSynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.AbortRequestException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
@@ -165,11 +166,16 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     @Override
     public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
             final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
-            final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
+            final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
+            throws TimeoutException, AbortRequestException {
         lock.lock();
         try {
             final long waitingSinceNanos = System.nanoTime();
             writeLocked(serviceId, methodId, requestSequence, request, requestTimeout, waitingSinceNanos);
+            if (!waitForResponse) {
+                //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
+                return null;
+            }
             while (true) {
                 while (!responseReaderSpinWait.hasNext()
                         .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
@@ -225,8 +231,8 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                     final IByteBufferProvider responseMessage = responseHolder.getMessage();
                     response.setMessage(responseMessage);
                     return response;
-                } catch (final RemoteExecutionException | RetryLaterRuntimeException
-                        | UnsupportedOperationException e) {
+                } catch (final RemoteExecutionException | RetryLaterRuntimeException | UnsupportedOperationException
+                        | AbortRequestException e) {
                     responseReaderSpinWait.getReader().readFinished();
                     throw e;
                 } catch (final Throwable e) {
@@ -235,7 +241,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 }
             }
         } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
-                | UnsupportedOperationException e) {
+                | UnsupportedOperationException | AbortRequestException e) {
             lock.unlock();
             throw e;
         } catch (final IOException e) {
@@ -314,7 +320,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider request, final Duration requestTimeout, final long waitingSinceNanos)
-            throws Exception {
+            throws Exception, TimeoutException {
         if (request == null) {
             /*
              * nothing to write, must be a subscription from the server that is being polled for, just check if a

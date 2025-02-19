@@ -60,8 +60,14 @@ public final class RpcSynchronousEndpointService {
     }
 
     public static int newServiceId(final Class<?> serviceInterface) {
-        final int hash = serviceInterface.getName().hashCode();
+        final String name = serviceInterface.getName();
+        return newServiceId(name);
+    }
+
+    public static int newServiceId(final String name) {
+        final int hash = name.hashCode();
         if (hash == IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID) {
+            //prevent collisions
             return -hash;
         } else {
             return hash;
@@ -69,9 +75,15 @@ public final class RpcSynchronousEndpointService {
     }
 
     public static int newMethodId(final Method serviceMethod) {
-        final int hash = serviceMethod.toString().hashCode();
+        final String name = serviceMethod.toString();
+        return newMethodId(name);
+    }
+
+    public static int newMethodId(final String name) {
+        final int hash = name.hashCode();
         if (hash == IServiceSynchronousCommand.ERROR_METHOD_ID
                 || hash == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
+            //prevent collisions
             return -hash;
         } else {
             return hash;

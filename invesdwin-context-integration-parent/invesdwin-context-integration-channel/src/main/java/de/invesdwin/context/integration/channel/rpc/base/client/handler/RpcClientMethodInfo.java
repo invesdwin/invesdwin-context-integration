@@ -82,7 +82,7 @@ public final class RpcClientMethodInfo implements IServiceMethodInfo {
         final ISynchronousEndpointClientSession session = sessionPool.borrowObject();
         try {
             return session.request(getServiceId(), getMethodId(), request, session.nextRequestSequence(),
-                    session.getDefaultRequestTimeout(), UNEXPECTED_MESSAGE_LISTENER);
+                    session.getDefaultRequestTimeout(), true, UNEXPECTED_MESSAGE_LISTENER);
         } catch (final TimeoutException e) {
             sessionPool.invalidateObject(session);
             throw new RetryLaterRuntimeException(e);

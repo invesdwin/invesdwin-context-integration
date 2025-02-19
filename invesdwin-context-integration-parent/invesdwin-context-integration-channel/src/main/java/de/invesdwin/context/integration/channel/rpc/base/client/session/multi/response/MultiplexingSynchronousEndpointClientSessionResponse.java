@@ -139,7 +139,8 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         this.completed = true;
     }
 
-    public void maybeResponseCompleted(final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest) {
+    public void maybeResponseCompleted(
+            final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest) {
         if (!pushedWithoutRequest.completed) {
             return;
         }

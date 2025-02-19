@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.rpc.base.client.RemoteExecutionE
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponse;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.response.MultiplexingSynchronousEndpointClientSessionResponsePool;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.AbortRequestException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
@@ -187,12 +188,19 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     @Override
     public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
             final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
-            final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
+            final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
+            throws TimeoutException, AbortRequestException {
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
         try {
             response.init(serviceId, methodId, request, requestSequence, requestTimeout, activePolling);
+            if (!waitForResponse) {
+                //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
+                response.setPushedWithoutRequest();
+                writeRequests.add(response);
+                return null;
+            }
             if (activePolling.compareAndSet(false, true)) {
                 //take over the job of the activePolling thread and handle other requests while polling
                 try {
@@ -225,7 +233,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     }
                 }
             }
-        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException e) {
+        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
+                | AbortRequestException e) {
             response.close();
             throw e;
         } catch (final Throwable t) {
@@ -396,7 +405,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     private boolean handleLocked(final IUnexpectedMessageListener unexpectedMessageListener,
-            final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
+            final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter)
+            throws IOException, AbortRequestException {
         final boolean writing;
         if ((pollingOuter != null && pollingOuter.getRequest() != null || !writeRequests.isEmpty())
                 && requestWriterSpinWait.getWriter().writeFlushed() && requestWriterSpinWait.getWriter().writeReady()) {
@@ -493,7 +503,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
 
     private void maybeAddPushedWithoutRequest(final IUnexpectedMessageListener unexpectedMessageListener,
             final int responseService, final int responseMethod, final int responseSequence,
-            final IByteBufferProvider responseMessage) throws IOException {
+            final IByteBufferProvider responseMessage) throws IOException, AbortRequestException {
         if (responseSequence < 0) {
             if (unexpectedMessageListener.onPushedWithoutRequest(this, responseService, responseMethod,
                     responseSequence, responseMessage)) {
@@ -515,7 +525,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
-    private void writePollingRequest() throws Exception {
+    private void writePollingRequest() throws IOException {
         final MultiplexingSynchronousEndpointClientSessionResponse writeTask = writeRequests.peek();
         if (writeTask != null) {
             if (writeTask.isWritingActive()) {
@@ -551,6 +561,10 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     private void putWrittenRequest(final MultiplexingSynchronousEndpointClientSessionResponse writeTask) {
+        if (writeTask.isPushedWithoutRequest()) {
+            //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
+            return;
+        }
         final int requestSequence = writeTask.getRequestSequence();
         final MultiplexingSynchronousEndpointClientSessionResponse removed = writtenRequests.put(requestSequence,
                 writeTask);
@@ -560,7 +574,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
-    private void writeLocked(final MultiplexingSynchronousEndpointClientSessionResponse task) throws Exception {
+    private void writeLocked(final MultiplexingSynchronousEndpointClientSessionResponse task) throws IOException {
         if (task.getRequest() == null) {
             //nothing to write, must be a subscription from the server that is being polled for
             return;

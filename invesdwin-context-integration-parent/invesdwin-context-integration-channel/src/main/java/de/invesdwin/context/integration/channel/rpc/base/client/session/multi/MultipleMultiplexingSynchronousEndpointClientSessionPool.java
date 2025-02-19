@@ -8,6 +8,7 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.AbortRequestException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
@@ -277,8 +278,9 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         @Override
         public ICloseableByteBufferProvider request(final int serviceId, final int methodId,
                 final IByteBufferProvider request, final int requestSequence, final Duration requestTimeout,
-                final IUnexpectedMessageListener unexpectedMessageListener) throws TimeoutException {
-            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout,
+                final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
+                throws TimeoutException, AbortRequestException {
+            return delegate.request(serviceId, methodId, request, requestSequence, requestTimeout, waitForResponse,
                     unexpectedMessageListener);
         }
 
