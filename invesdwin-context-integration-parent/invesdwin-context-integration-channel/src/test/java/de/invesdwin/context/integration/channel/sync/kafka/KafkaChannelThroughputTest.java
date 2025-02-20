@@ -15,7 +15,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import de.invesdwin.context.integration.channel.AThroughputChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
@@ -25,7 +28,7 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Testcontainers
 @NotThreadSafe
-public class KafkaChannelThroughputTest extends AThroughputChannelTest {
+public class KafkaChannelThroughputTest extends AChannelTest {
 
     @Container
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
@@ -91,8 +94,8 @@ public class KafkaChannelThroughputTest extends AThroughputChannelTest {
                         return pollTimeout;
                     }
                 });
-        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(channelReader);
-        runThroughputTest(senderTask, receiverTask);
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
+        new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,

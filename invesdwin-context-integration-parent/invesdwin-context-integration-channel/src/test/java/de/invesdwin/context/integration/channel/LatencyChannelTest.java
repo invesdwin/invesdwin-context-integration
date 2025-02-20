@@ -15,6 +15,7 @@ import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
+import de.invesdwin.context.integration.channel.AChannelTest.FileChannelType;
 import de.invesdwin.context.integration.channel.async.AsynchronousHandlerFactorySupport;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
@@ -49,9 +50,15 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.date.IFDateProvider;
 
 @NotThreadSafe
-public abstract class ALatencyChannelTest extends AChannelTest {
+public class LatencyChannelTest {
 
-    protected void runHandlerLatencyTest(final IAsynchronousChannel serverChannel,
+    protected final AChannelTest parent;
+
+    public LatencyChannelTest(final AChannelTest parent) {
+        this.parent = parent;
+    }
+
+    public void runHandlerLatencyTest(final IAsynchronousChannel serverChannel,
             final IAsynchronousChannel clientChannel) throws InterruptedException {
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runHandlerLatencyTest", 1);
         try {
@@ -69,7 +76,8 @@ public abstract class ALatencyChannelTest extends AChannelTest {
             //            while (!serverChannel.isClosed()) {
             //                FTimeUnit.MILLISECONDS.sleep(1);
             //            }
-            openFuture.get(MAX_WAIT_DURATION.longValue(), MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
+            openFuture.get(AChannelTest.MAX_WAIT_DURATION.longValue(),
+                    AChannelTest.MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
         } catch (ExecutionException | TimeoutException | IOException e) {
             throw new RuntimeException(e);
         } finally {
@@ -80,19 +88,19 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         }
     }
 
-    protected void runQueueLatencyTest(final Queue<IReference<FDate>> responseQueue,
+    public void runQueueLatencyTest(final Queue<IReference<FDate>> responseQueue,
             final Queue<IReference<FDate>> requestQueue, final Object synchronizeRequest,
             final Object synchronizeResponse) throws InterruptedException {
-        final ISynchronousWriter<FDate> responseWriter = maybeSynchronize(
-                new QueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
-        final ISynchronousReader<FDate> requestReader = maybeSynchronize(
-                new QueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
-        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
-        final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
-                new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
-        final ISynchronousReader<FDate> responseReader = maybeSynchronize(
-                new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        final ISynchronousWriter<FDate> responseWriter = parent
+                .maybeSynchronize(new QueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
+        final ISynchronousReader<FDate> requestReader = parent
+                .maybeSynchronize(new QueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
+        final LatencyServerTask serverTask = new LatencyServerTask(parent, requestReader, responseWriter);
+        final ISynchronousWriter<FDate> requestWriter = parent
+                .maybeSynchronize(new QueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
+        final ISynchronousReader<FDate> responseReader = parent
+                .maybeSynchronize(new QueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
+        final LatencyClientTask clientTask = new LatencyClientTask(parent, requestWriter, responseReader);
         runLatencyTest(serverTask, clientTask);
     }
 
@@ -100,53 +108,53 @@ public abstract class ALatencyChannelTest extends AChannelTest {
      * WARNING: causes cpu spikes
      */
     @Deprecated
-    protected void runBlockingQueueLatencyTest(final BlockingQueue<IReference<FDate>> responseQueue,
+    public void runBlockingQueueLatencyTest(final BlockingQueue<IReference<FDate>> responseQueue,
             final BlockingQueue<IReference<FDate>> requestQueue, final Object synchronizeRequest,
             final Object synchronizeResponse) throws InterruptedException {
-        final ISynchronousWriter<FDate> responseWriter = maybeSynchronize(
-                new BlockingQueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
-        final ISynchronousReader<FDate> requestReader = maybeSynchronize(
-                new BlockingQueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
-        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
-        final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
-                new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
-        final ISynchronousReader<FDate> responseReader = maybeSynchronize(
-                new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
+        final ISynchronousWriter<FDate> responseWriter = parent
+                .maybeSynchronize(new BlockingQueueSynchronousWriter<FDate>(responseQueue), synchronizeResponse);
+        final ISynchronousReader<FDate> requestReader = parent
+                .maybeSynchronize(new BlockingQueueSynchronousReader<FDate>(requestQueue), synchronizeRequest);
+        final LatencyServerTask serverTask = new LatencyServerTask(parent, requestReader, responseWriter);
+        final ISynchronousWriter<FDate> requestWriter = parent
+                .maybeSynchronize(new BlockingQueueSynchronousWriter<FDate>(requestQueue), synchronizeRequest);
+        final ISynchronousReader<FDate> responseReader = parent
+                .maybeSynchronize(new BlockingQueueSynchronousReader<FDate>(responseQueue), synchronizeResponse);
+        final LatencyClientTask clientTask = new LatencyClientTask(parent, requestWriter, responseReader);
         runLatencyTest(serverTask, clientTask);
     }
 
-    protected void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
+    public void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse) throws InterruptedException {
         runLatencyTest(pipes, requestFile, responseFile, synchronizeRequest, synchronizeResponse,
                 DisabledChannelFactory.getInstance());
     }
 
-    protected void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
+    public void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
             final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapper)
             throws InterruptedException {
         runLatencyTest(pipes, requestFile, responseFile, synchronizeRequest, synchronizeResponse, wrapper, wrapper);
     }
 
-    protected void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
+    public void runLatencyTest(final FileChannelType pipes, final File requestFile, final File responseFile,
             final Object synchronizeRequest, final Object synchronizeResponse,
             final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapperServer,
             final ISynchronousChannelFactory<IByteBufferProvider, IByteBufferProvider> wrapperClient)
             throws InterruptedException {
         try {
-            final ISynchronousWriter<IByteBufferProvider> responseWriter = maybeSynchronize(
-                    wrapperServer.newWriter(newWriter(responseFile, pipes)), synchronizeResponse);
-            final ISynchronousReader<IByteBufferProvider> requestReader = maybeSynchronize(
-                    wrapperServer.newReader(newReader(requestFile, pipes)), synchronizeRequest);
-            final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
-                    newSerdeWriter(responseWriter));
-            final ISynchronousWriter<IByteBufferProvider> requestWriter = maybeSynchronize(
-                    wrapperClient.newWriter(newWriter(requestFile, pipes)), synchronizeRequest);
-            final ISynchronousReader<IByteBufferProvider> responseReader = maybeSynchronize(
-                    wrapperClient.newReader(newReader(responseFile, pipes)), synchronizeResponse);
-            final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
-                    newSerdeReader(responseReader));
+            final ISynchronousWriter<IByteBufferProvider> responseWriter = parent.maybeSynchronize(
+                    wrapperServer.newWriter(parent.newWriter(responseFile, pipes)), synchronizeResponse);
+            final ISynchronousReader<IByteBufferProvider> requestReader = parent.maybeSynchronize(
+                    wrapperServer.newReader(parent.newReader(requestFile, pipes)), synchronizeRequest);
+            final LatencyServerTask serverTask = new LatencyServerTask(parent, parent.newSerdeReader(requestReader),
+                    parent.newSerdeWriter(responseWriter));
+            final ISynchronousWriter<IByteBufferProvider> requestWriter = parent.maybeSynchronize(
+                    wrapperClient.newWriter(parent.newWriter(requestFile, pipes)), synchronizeRequest);
+            final ISynchronousReader<IByteBufferProvider> responseReader = parent.maybeSynchronize(
+                    wrapperClient.newReader(parent.newReader(responseFile, pipes)), synchronizeResponse);
+            final LatencyClientTask clientTask = new LatencyClientTask(parent, parent.newSerdeWriter(requestWriter),
+                    parent.newSerdeReader(responseReader));
             runLatencyTest(serverTask, clientTask);
         } finally {
             Files.deleteQuietly(requestFile);
@@ -154,7 +162,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         }
     }
 
-    protected void runLatencyTest(final LatencyServerTask serverTask, final LatencyClientTask clientTask)
+    public void runLatencyTest(final LatencyServerTask serverTask, final LatencyClientTask clientTask)
             throws InterruptedException {
         final WrappedExecutorService executor = Executors.newFixedThreadPool("runLatencyTest", 1);
         try {
@@ -169,22 +177,24 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
     public static class LatencyClientTask implements Runnable {
 
+        private final AChannelTest parent;
         private final OutputStream log;
         private final ISynchronousWriter<FDate> requestWriter;
         private final ISynchronousReader<FDate> responseReader;
 
-        public LatencyClientTask(final ISynchronousWriter<FDate> requestWriter,
+        public LatencyClientTask(final AChannelTest parent, final ISynchronousWriter<FDate> requestWriter,
                 final ISynchronousReader<FDate> responseReader) {
-            this(new Log(LatencyClientTask.class), requestWriter, responseReader);
+            this(parent, new Log(LatencyClientTask.class), requestWriter, responseReader);
         }
 
-        public LatencyClientTask(final Log log, final ISynchronousWriter<FDate> requestWriter,
-                final ISynchronousReader<FDate> responseReader) {
-            this(Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
+        public LatencyClientTask(final AChannelTest parent, final Log log,
+                final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
+            this(parent, Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
         }
 
-        public LatencyClientTask(final OutputStream log, final ISynchronousWriter<FDate> requestWriter,
-                final ISynchronousReader<FDate> responseReader) {
+        public LatencyClientTask(final AChannelTest parent, final OutputStream log,
+                final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
+            this.parent = parent;
             this.log = log;
             this.requestWriter = requestWriter;
             this.responseReader = responseReader;
@@ -203,11 +213,11 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                         .newLatencyReport("latency/4_" + LatencyClientTask.class.getSimpleName() + "_responseReceived");
                 final ILatencyReport latencyReportRoundtrip = latencyReportFactory.newLatencyReport(
                         "latency/5_" + LatencyClientTask.class.getSimpleName() + "_requestResponseRoundtrip");
-                if (DEBUG) {
+                if (AChannelTest.DEBUG) {
                     log.write("client open request writer\n".getBytes());
                 }
                 requestWriter.open();
-                if (DEBUG) {
+                if (AChannelTest.DEBUG) {
                     log.write("client open response reader\n".getBytes());
                 }
                 responseReader.open();
@@ -219,24 +229,24 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                     try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRoundtrip
                             .newRequestMessages()
                             .iterator()) {
-                        while (count < ALatencyChannelTest.MESSAGE_COUNT) {
+                        while (count < AChannelTest.MESSAGE_COUNT) {
                             if (count == 0) {
                                 //don't count in connection establishment
                                 readsStart = new Instant();
                             }
                             final IFDateProvider requestProvider = values.next();
                             final FDate request = requestProvider.asFDate();
-                            writeSpinWait.waitForWrite(request, MAX_WAIT_DURATION);
+                            writeSpinWait.waitForWrite(request, AChannelTest.MAX_WAIT_DURATION);
                             latencyReportRequestSent.measureLatency(request);
-                            if (DEBUG) {
+                            if (AChannelTest.DEBUG) {
                                 log.write("client request out\n".getBytes());
                             }
-                            final FDate response = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                            final FDate response = readSpinWait.waitForRead(AChannelTest.MAX_WAIT_DURATION);
                             responseReader.readFinished();
                             final FDate arrivalTimestamp = latencyReportRoundtrip.newArrivalTimestamp().asFDate();
                             latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
                             latencyReportRoundtrip.measureLatency(request, arrivalTimestamp);
-                            if (DEBUG) {
+                            if (AChannelTest.DEBUG) {
                                 log.write(("client response in [" + response + "]\n").getBytes());
                             }
                             latencyReportRoundtrip.validateResponse(request, response);
@@ -247,19 +257,19 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                             count++;
                         }
                     } catch (final FastEOFException e) {
-                        if (count != MESSAGE_COUNT) {
+                        if (count != AChannelTest.MESSAGE_COUNT) {
                             throw e;
                         }
                     }
-                    Assertions.checkEquals(MESSAGE_COUNT, count);
-                    printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
+                    Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+                    AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, AChannelTest.MESSAGE_COUNT);
                 } finally {
-                    if (DEBUG) {
+                    if (AChannelTest.DEBUG) {
                         log.write("client close request writer\n".getBytes());
                     }
                     requestWriter.close();
-                    assertCloseMessageArrived(responseReader);
-                    if (DEBUG) {
+                    parent.assertCloseMessageArrived(responseReader);
+                    if (AChannelTest.DEBUG) {
                         log.write("client close response reader\n".getBytes());
                     }
                     responseReader.close();
@@ -276,22 +286,24 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
     public static class LatencyServerTask implements Runnable {
 
+        private final AChannelTest parent;
         private final OutputStream log;
         private final ISynchronousReader<FDate> requestReader;
         private final ISynchronousWriter<FDate> responseWriter;
 
-        public LatencyServerTask(final ISynchronousReader<FDate> requestReader,
+        public LatencyServerTask(final AChannelTest parent, final ISynchronousReader<FDate> requestReader,
                 final ISynchronousWriter<FDate> responseWriter) {
-            this(new Log(LatencyServerTask.class), requestReader, responseWriter);
+            this(parent, new Log(LatencyServerTask.class), requestReader, responseWriter);
         }
 
-        public LatencyServerTask(final Log log, final ISynchronousReader<FDate> requestReader,
-                final ISynchronousWriter<FDate> responseWriter) {
-            this(Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
+        public LatencyServerTask(final AChannelTest parent, final Log log,
+                final ISynchronousReader<FDate> requestReader, final ISynchronousWriter<FDate> responseWriter) {
+            this(parent, Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
         }
 
-        public LatencyServerTask(final OutputStream log, final ISynchronousReader<FDate> requestReader,
-                final ISynchronousWriter<FDate> responseWriter) {
+        public LatencyServerTask(final AChannelTest parent, final OutputStream log,
+                final ISynchronousReader<FDate> requestReader, final ISynchronousWriter<FDate> responseWriter) {
+            this.parent = parent;
             this.log = log;
             this.requestReader = requestReader;
             this.responseWriter = responseWriter;
@@ -307,48 +319,48 @@ public abstract class ALatencyChannelTest extends AChannelTest {
                 final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
                         .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
                 int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
-                final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
-                if (DEBUG) {
+                final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+                if (AChannelTest.DEBUG) {
                     log.write("server open request reader\n".getBytes());
                 }
                 requestReader.open();
-                if (DEBUG) {
+                if (AChannelTest.DEBUG) {
                     log.write("server open response writer\n".getBytes());
                 }
                 responseWriter.open();
                 Instant writesStart = new Instant();
                 try {
-                    while (count < MESSAGE_COUNT) {
+                    while (count < AChannelTest.MESSAGE_COUNT) {
                         if (count == 0) {
                             //don't count in connection establishment
                             writesStart = new Instant();
                         }
-                        final FDate request = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+                        final FDate request = readSpinWait.waitForRead(AChannelTest.MAX_WAIT_DURATION);
                         requestReader.readFinished();
                         latencyReportRequestReceived.measureLatency(request);
-                        if (DEBUG) {
+                        if (AChannelTest.DEBUG) {
                             log.write("server request in\n".getBytes());
                         }
                         final FDate response = latencyReportResponseSent.newResponseMessage(request).asFDate();
-                        writeSpinWait.waitForWrite(response, MAX_WAIT_DURATION);
+                        writeSpinWait.waitForWrite(response, AChannelTest.MAX_WAIT_DURATION);
                         latencyReportResponseSent.measureLatency(response);
-                        if (DEBUG) {
+                        if (AChannelTest.DEBUG) {
                             log.write(("server response out [" + response + "]\n").getBytes());
                         }
                         if (loopCheck.checkNoInterrupt()) {
-                            printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
+                            AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.MESSAGE_COUNT);
                         }
                         count++;
                     }
-                    Assertions.checkEquals(MESSAGE_COUNT, count);
-                    printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
+                    Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+                    AChannelTest.printProgress(log, "WritesFinished", writesStart, count, AChannelTest.MESSAGE_COUNT);
                 } finally {
-                    if (DEBUG) {
+                    if (AChannelTest.DEBUG) {
                         log.write("server close response writer\n".getBytes());
                     }
                     responseWriter.close();
-                    assertCloseMessageArrived(requestReader);
-                    if (DEBUG) {
+                    parent.assertCloseMessageArrived(requestReader);
+                    if (AChannelTest.DEBUG) {
                         log.write("server close request reader\n".getBytes());
                     }
                     requestReader.close();
@@ -423,10 +435,10 @@ public abstract class ALatencyChannelTest extends AChannelTest {
             final FDate arrivalTimestamp = latencyReportRequestResponseRoundtrip.newArrivalTimestamp().asFDate();
             latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
             latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
-            if (DEBUG) {
+            if (AChannelTest.DEBUG) {
                 log.write("client request out\n".getBytes());
             }
-            if (DEBUG) {
+            if (AChannelTest.DEBUG) {
                 log.write(("client response in [" + response + "]\n").getBytes());
             }
             Assertions.checkNotNull(response);
@@ -436,7 +448,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
             }
             prevValue = response;
             count++;
-            if (count > MESSAGE_COUNT) {
+            if (count > AChannelTest.MESSAGE_COUNT) {
                 throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
             }
             request = values.next().asFDate();
@@ -450,11 +462,11 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void close() throws IOException {
-            Assertions.checkEquals(MESSAGE_COUNT, count);
-            if (DEBUG) {
+            Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+            if (AChannelTest.DEBUG) {
                 log.write("client close handler\n".getBytes());
             }
-            printProgress(log, "ReadsFinished", readsStart, count, MESSAGE_COUNT);
+            AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, AChannelTest.MESSAGE_COUNT);
             latencyReportResponseReceived.close();
             latencyReportResponseReceived = null;
             latencyReportRequestResponseRoundtrip.close();
@@ -477,7 +489,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
         private final OutputStream log;
         private Instant writesStart;
         private int count;
-        private final LoopInterruptedCheck loopCheck = newLoopInterruptedCheck();
+        private final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
         private ILatencyReport latencyReportRequestReceived;
 
         public LatencyServerHandler() {
@@ -499,7 +511,7 @@ public abstract class ALatencyChannelTest extends AChannelTest {
             this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY.newLatencyReport(
                     "latencyHandler/1_" + LatencyServerHandler.class.getSimpleName() + "_requestReceived");
 
-            if (DEBUG) {
+            if (AChannelTest.DEBUG) {
                 log.write("server open handler\n".getBytes());
             }
             return null;
@@ -515,19 +527,19 @@ public abstract class ALatencyChannelTest extends AChannelTest {
             if (count == 0) {
                 writesStart = new Instant();
             }
-            if (DEBUG) {
+            if (AChannelTest.DEBUG) {
                 log.write("server request in\n".getBytes());
             }
             try {
                 final FDate response = latencyReportRequestReceived.newResponseMessage(request).asFDate();
-                if (DEBUG) {
+                if (AChannelTest.DEBUG) {
                     log.write(("server response out [" + response + "]\n").getBytes());
                 }
                 count++;
                 if (loopCheck.checkNoInterrupt()) {
-                    printProgress(log, "Writes", writesStart, count, MESSAGE_COUNT);
+                    AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.MESSAGE_COUNT);
                 }
-                if (count > MESSAGE_COUNT) {
+                if (count > AChannelTest.MESSAGE_COUNT) {
                     throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
                 }
                 return response;
@@ -543,9 +555,9 @@ public abstract class ALatencyChannelTest extends AChannelTest {
 
         @Override
         public void close() throws IOException {
-            Assertions.checkEquals(MESSAGE_COUNT, count);
-            printProgress(log, "WritesFinished", writesStart, count, MESSAGE_COUNT);
-            if (DEBUG) {
+            Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+            AChannelTest.printProgress(log, "WritesFinished", writesStart, count, AChannelTest.MESSAGE_COUNT);
+            if (AChannelTest.DEBUG) {
                 log.write("server close handler\n".getBytes());
             }
             latencyReportRequestReceived.close();

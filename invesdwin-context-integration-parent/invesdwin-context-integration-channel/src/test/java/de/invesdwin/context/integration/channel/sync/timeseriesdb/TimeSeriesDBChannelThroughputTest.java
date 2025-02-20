@@ -6,14 +6,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.AThroughputChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class TimeSeriesDBChannelThroughputTest extends AThroughputChannelTest {
+public class TimeSeriesDBChannelThroughputTest extends AChannelTest {
 
     @Test
     public void testTimeSeriesDBPerformance() throws InterruptedException {
@@ -43,8 +46,8 @@ public class TimeSeriesDBChannelThroughputTest extends AThroughputChannelTest {
             final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(channel);
             final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));
             final ISynchronousReader<IByteBufferProvider> channelReader = new TimeSeriesDBSynchronousReader(channel);
-            final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(newSerdeReader(channelReader));
-            runThroughputTest(senderTask, receiverTask);
+            final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(channelReader));
+            new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);

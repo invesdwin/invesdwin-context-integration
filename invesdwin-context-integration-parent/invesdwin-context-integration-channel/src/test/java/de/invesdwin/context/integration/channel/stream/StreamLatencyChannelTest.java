@@ -6,7 +6,8 @@ import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.MultipleMultiplexingSynchronousEndpointClientSessionPool;
@@ -36,37 +37,31 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
+public class StreamLatencyChannelTest extends LatencyChannelTest {
 
-    public static final int STREAM_CLIENT_TRANSPORTS = DEBUG ? 1 : 2;
+    public static final int STREAM_CLIENT_TRANSPORTS = AChannelTest.DEBUG ? 1 : 2;
     public static final boolean STREAM_CLIENT_LAZY = true;
     private static final int STREAM_TEST_THREADS = 1;
 
-    protected int newStreamTestThreads() {
-        return STREAM_TEST_THREADS;
+    public StreamLatencyChannelTest(final AChannelTest parent) {
+        super(parent);
     }
 
-    protected IStreamSynchronousEndpointServiceFactory newServiceFactory() {
-        return TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
-    }
-
-    protected void runStreamPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
+    public void runStreamPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamPerformanceTestLazy(serverAcceptor, serviceFactory, clientEndpointFactory);
+            runStreamPerformanceTestLazy(serverAcceptor, clientEndpointFactory);
         } else {
-            runStreamPerformanceTestEager(serverAcceptor, serviceFactory, clientEndpointFactory);
+            runStreamPerformanceTestEager(serverAcceptor, clientEndpointFactory);
         }
     }
 
     private void runStreamPerformanceTestLazy(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
-                serviceFactory) {
+                newServiceFactory()) {
             @Override
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
@@ -102,11 +97,10 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
 
     @SuppressWarnings({ "resource" })
     private void runStreamPerformanceTestEager(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
-                serviceFactory) {
+                newServiceFactory()) {
             @Override
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
@@ -125,25 +119,23 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected void runStreamHandlerPerformanceTest(
+    public void runStreamHandlerPerformanceTest(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamHandlerPerformanceTestLazy(serverFactory, serviceFactory, clientEndpointFactory);
+            runStreamHandlerPerformanceTestLazy(serverFactory, clientEndpointFactory);
         } else {
-            runStreamHandlerPerformanceTestEager(serverFactory, serviceFactory, clientEndpointFactory);
+            runStreamHandlerPerformanceTestEager(serverFactory, clientEndpointFactory);
         }
     }
 
     private void runStreamHandlerPerformanceTestLazy(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                serviceFactory);
+                newServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -176,11 +168,10 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
     @SuppressWarnings({ "resource" })
     private void runStreamHandlerPerformanceTestEager(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                serviceFactory);
+                newServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleMultiplexingSynchronousEndpointClientSessionPool(
@@ -196,13 +187,12 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
     }
 
     @SuppressWarnings({ "resource" })
-    protected void runStreamBlockingPerformanceTest(
+    public void runStreamBlockingPerformanceTest(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                serviceFactory);
+                newServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleplexingSynchronousEndpointClientSessionPool(
@@ -217,25 +207,23 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected void runStreamSessionlessPerformanceTest(
+    public void runStreamSessionlessPerformanceTest(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamSessionlessPerformanceTestLazy(serverEndpointFactory, serviceFactory, clientEndpointFactory);
+            runStreamSessionlessPerformanceTestLazy(serverEndpointFactory, clientEndpointFactory);
         } else {
-            runStreamSessionlessPerformanceTestEager(serverEndpointFactory, serviceFactory, clientEndpointFactory);
+            runStreamSessionlessPerformanceTestEager(serverEndpointFactory, clientEndpointFactory);
         }
     }
 
     private void runStreamSessionlessPerformanceTestLazy(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                serviceFactory);
+                newServiceFactory());
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
@@ -269,11 +257,10 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
     @SuppressWarnings({ "resource" })
     private void runStreamSessionlessPerformanceTestEager(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
-            final IStreamSynchronousEndpointServiceFactory serviceFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                serviceFactory);
+                newServiceFactory());
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
@@ -289,7 +276,7 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected void runStreamLatencyTest(final Supplier<IStreamSynchronousEndpointClient> serverClientFactory,
+    public void runStreamLatencyTest(final Supplier<IStreamSynchronousEndpointClient> serverClientFactory,
             final Supplier<IStreamSynchronousEndpointClient> clientClientFactory) throws InterruptedException {
         final WrappedExecutorService testExecutor = Executors.newFixedThreadPool("runStreamLatencyTest_parallelTests",
                 newStreamTestThreads());
@@ -323,26 +310,26 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected void runStreamLatencyTest(final IStreamSynchronousEndpointClient serverClient,
+    public void runStreamLatencyTest(final IStreamSynchronousEndpointClient serverClient,
             final IStreamSynchronousEndpointClient clientClient, final String topicSuffix) {
         final StreamSynchronousEndpointClientChannel serverRequestChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, "request" + topicSuffix, getMaxMessageSize());
+                serverClient, "request" + topicSuffix, parent.getMaxMessageSize());
         final StreamSynchronousEndpointClientChannel serverResponseChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, "response" + topicSuffix, getMaxMessageSize());
-        final ISynchronousReader<FDate> serverRequestReader = newSerdeReader(
-                newStreamSynchronousEndpointClientReader(serverRequestChannel));
-        final ISynchronousWriter<FDate> serverResponseWriter = newSerdeWriter(
-                newStreamSynchronousEndpointClientWriter(serverResponseChannel));
-        final LatencyServerTask serverTask = new LatencyServerTask(serverRequestReader, serverResponseWriter);
+                serverClient, "response" + topicSuffix, parent.getMaxMessageSize());
+        final ISynchronousReader<FDate> serverRequestReader = parent
+                .newSerdeReader(newStreamSynchronousEndpointClientReader(serverRequestChannel));
+        final ISynchronousWriter<FDate> serverResponseWriter = parent
+                .newSerdeWriter(newStreamSynchronousEndpointClientWriter(serverResponseChannel));
+        final LatencyServerTask serverTask = new LatencyServerTask(parent, serverRequestReader, serverResponseWriter);
         final StreamSynchronousEndpointClientChannel clientRequestChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, "request" + topicSuffix, getMaxMessageSize());
+                clientClient, "request" + topicSuffix, parent.getMaxMessageSize());
         final StreamSynchronousEndpointClientChannel clientResponseChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, "response" + topicSuffix, getMaxMessageSize());
-        final ISynchronousWriter<FDate> clientRequestWriter = newSerdeWriter(
-                newStreamSynchronousEndpointClientWriter(clientRequestChannel));
-        final ISynchronousReader<FDate> clientResponseReader = newSerdeReader(
-                newStreamSynchronousEndpointClientReader(clientResponseChannel));
-        final LatencyClientTask clientTask = new LatencyClientTask(clientRequestWriter, clientResponseReader);
+                clientClient, "response" + topicSuffix, parent.getMaxMessageSize());
+        final ISynchronousWriter<FDate> clientRequestWriter = parent
+                .newSerdeWriter(newStreamSynchronousEndpointClientWriter(clientRequestChannel));
+        final ISynchronousReader<FDate> clientResponseReader = parent
+                .newSerdeReader(newStreamSynchronousEndpointClientReader(clientResponseChannel));
+        final LatencyClientTask clientTask = new LatencyClientTask(parent, clientRequestWriter, clientResponseReader);
         try {
             runLatencyTest(serverTask, clientTask);
         } catch (final InterruptedException e) {
@@ -350,27 +337,35 @@ public abstract class AStreamLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newStreamSynchronousEndpointClientWriter(
+    public ISynchronousWriter<IByteBufferProvider> newStreamSynchronousEndpointClientWriter(
             final StreamSynchronousEndpointClientChannel channel) {
         return new StreamSynchronousEndpointClientWriter(channel);
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newStreamSynchronousEndpointClientReader(
+    public ISynchronousReader<IByteBufferProvider> newStreamSynchronousEndpointClientReader(
             final StreamSynchronousEndpointClientChannel channel) {
         return new StreamSynchronousEndpointClientReader(channel);
     }
 
-    protected StreamSynchronousEndpointClientChannel newStreamSynchronousEndpointClientChannel(
+    public StreamSynchronousEndpointClientChannel newStreamSynchronousEndpointClientChannel(
             final IStreamSynchronousEndpointClient client, final String topic, final Integer valueFixedLength) {
         return new StreamSynchronousEndpointClientChannel(client, topic, valueFixedLength);
     }
 
-    protected IStreamSynchronousEndpointClient newStreamSynchronousEndpointClient(
+    public IStreamSynchronousEndpointClient newStreamSynchronousEndpointClient(
             final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool) {
         final BlockingStreamSynchronousEndpointClient blocking = new BlockingStreamSynchronousEndpointClient(
                 sessionPool);
         //        return new AsyncDelegateSynchronousEndpointClient(blocking);
         return blocking;
+    }
+
+    protected int newStreamTestThreads() {
+        return STREAM_TEST_THREADS;
+    }
+
+    protected IStreamSynchronousEndpointServiceFactory newServiceFactory() {
+        return TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
     }
 
 }

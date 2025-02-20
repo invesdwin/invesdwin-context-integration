@@ -7,7 +7,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
@@ -18,7 +19,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class DtlsHandshakeProviderTest extends ALatencyChannelTest {
+public class DtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testDtlsHandshakePerformance() throws InterruptedException {
@@ -33,7 +34,8 @@ public class DtlsHandshakeProviderTest extends ALatencyChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true, protocol));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false, protocol));
-        runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake,
+                clientHandshake);
     }
 
     @Test
@@ -49,7 +51,8 @@ public class DtlsHandshakeProviderTest extends ALatencyChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true, protocol));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false, protocol));
-        runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake,
+                clientHandshake);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,
@@ -78,7 +81,7 @@ public class DtlsHandshakeProviderTest extends ALatencyChannelTest {
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         //TlsSynchronousChannel should manage this
         return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }

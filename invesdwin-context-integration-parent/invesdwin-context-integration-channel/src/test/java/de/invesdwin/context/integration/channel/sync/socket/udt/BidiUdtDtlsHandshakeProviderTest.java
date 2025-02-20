@@ -6,7 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -22,7 +25,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class BidiUdtDtlsHandshakeProviderTest extends ALatencyChannelTest {
+public class BidiUdtDtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioUdtPerformance() throws InterruptedException {
@@ -43,15 +46,15 @@ public class BidiUdtDtlsHandshakeProviderTest extends ALatencyChannelTest {
                 .newWriter(new UdtSynchronousWriter(serverChannel));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new UdtSynchronousReader(serverChannel));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new UdtSynchronousWriter(clientChannel));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new UdtSynchronousReader(clientChannel));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected UdtSynchronousChannel newUdtSynchronousChannel(final InetSocketAddress socketAddress,
@@ -85,7 +88,7 @@ public class BidiUdtDtlsHandshakeProviderTest extends ALatencyChannelTest {
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }
 

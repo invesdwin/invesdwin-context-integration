@@ -6,7 +6,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.security.crypto.encryption.IEncryptionFactory;
@@ -19,7 +20,7 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class EncryptionChannelTest extends ALatencyChannelTest {
+public class EncryptionChannelTest extends AChannelTest {
 
     public static final DerivedKeyProvider DERIVED_KEY_PROVIDER;
     public static final IEncryptionFactory ENCRYPTION_FACTORY;
@@ -43,21 +44,21 @@ public class EncryptionChannelTest extends ALatencyChannelTest {
         final FileChannelType pipes = FileChannelType.MAPPED;
         final File requestFile = newFile("testEncryptionPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testEncryptionPerformance_response.pipe", tmpfs, pipes);
-        runLatencyTest(pipes, requestFile, responseFile, null, null);
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Override
-    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         return new EncryptionSynchronousReader(super.newReader(file, pipes), ENCRYPTION_FACTORY);
     }
 
     @Override
-    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         return new EncryptionSynchronousWriter(super.newWriter(file, pipes), ENCRYPTION_FACTORY);
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return 24;
     }
 

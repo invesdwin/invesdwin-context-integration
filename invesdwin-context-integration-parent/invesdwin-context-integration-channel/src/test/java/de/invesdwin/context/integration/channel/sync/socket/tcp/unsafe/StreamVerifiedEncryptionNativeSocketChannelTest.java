@@ -7,7 +7,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.crypto.encryption.EncryptionChannelTest;
@@ -21,7 +24,7 @@ import de.invesdwin.context.security.crypto.verification.IVerificationFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamVerifiedEncryptionNativeSocketChannelTest extends ALatencyChannelTest {
+public class StreamVerifiedEncryptionNativeSocketChannelTest extends AChannelTest {
 
     public static final IEncryptionFactory ENCRYPTION_FACTORY = EncryptionChannelTest.ENCRYPTION_FACTORY;
     public static final IVerificationFactory VERIFICATION_FACTORY = VerificationChannelTest.VERIFICATION_FACTORY;
@@ -41,15 +44,15 @@ public class StreamVerifiedEncryptionNativeSocketChannelTest extends ALatencyCha
                 new NativeSocketSynchronousWriter(serverChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> requestReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(serverChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new StreamVerifiedEncryptionSynchronousWriter(
                 new NativeSocketSynchronousWriter(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
         final ISynchronousReader<IByteBufferProvider> responseReader = new StreamVerifiedEncryptionSynchronousReader(
                 new NativeSocketSynchronousReader(clientChannel), ENCRYPTION_FACTORY, VERIFICATION_FACTORY);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
@@ -58,7 +61,7 @@ public class StreamVerifiedEncryptionNativeSocketChannelTest extends ALatencyCha
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return 28;
     }
 

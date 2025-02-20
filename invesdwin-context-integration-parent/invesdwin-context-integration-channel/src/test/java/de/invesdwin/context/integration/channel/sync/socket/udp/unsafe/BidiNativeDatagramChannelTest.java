@@ -8,7 +8,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.udp.DatagramSynchronousChannel;
@@ -19,7 +22,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
+public class BidiNativeDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testDatagramPerformance() throws InterruptedException {
@@ -53,15 +56,15 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
                 serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NativeDatagramSynchronousReader(
                 serverChannel);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NativeDatagramSynchronousWriter(
                 clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
                 clientChannel);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
@@ -70,7 +73,7 @@ public class BidiNativeDatagramChannelTest extends ALatencyChannelTest {
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return 12;
     }
 

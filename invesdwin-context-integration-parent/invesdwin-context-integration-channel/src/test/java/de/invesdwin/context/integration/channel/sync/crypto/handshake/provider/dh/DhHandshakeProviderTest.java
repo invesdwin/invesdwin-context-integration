@@ -6,13 +6,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.DerivedSignedKeyAgreementHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.SignedKeyAgreementHandshakeProvider;
 
 @NotThreadSafe
-public class DhHandshakeProviderTest extends ALatencyChannelTest {
+public class DhHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testDhHandshakePerformance() throws InterruptedException {
@@ -21,7 +22,7 @@ public class DhHandshakeProviderTest extends ALatencyChannelTest {
         final String sessionIdentifier = "testDhHandshakePerformance";
         final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
         final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
-        runLatencyTest(pipes, requestFile, responseFile, null, null,
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null,
                 new HandshakeChannelFactory(new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier)));
     }
 
@@ -33,7 +34,7 @@ public class DhHandshakeProviderTest extends ALatencyChannelTest {
         final String sessionIdentifier = "testDhHandshakePerformanceSigned";
         final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
         final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
-        runLatencyTest(pipes, requestFile, responseFile, null, null,
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null,
                 new HandshakeChannelFactory(new SignedKeyAgreementHandshakeProvider(
                         new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
@@ -45,13 +46,13 @@ public class DhHandshakeProviderTest extends ALatencyChannelTest {
         final String sessionIdentifier = "testDhHandshakePerformanceDerivedSigned";
         final File requestFile = newFile(sessionIdentifier + "_request.pipe", tmpfs, pipes);
         final File responseFile = newFile(sessionIdentifier + "_response.pipe", tmpfs, pipes);
-        runLatencyTest(pipes, requestFile, responseFile, null, null,
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null,
                 new HandshakeChannelFactory(new DerivedSignedKeyAgreementHandshakeProvider(
                         new DhHandshakeProvider(MAX_WAIT_DURATION, sessionIdentifier))));
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return 1141;
     }
 

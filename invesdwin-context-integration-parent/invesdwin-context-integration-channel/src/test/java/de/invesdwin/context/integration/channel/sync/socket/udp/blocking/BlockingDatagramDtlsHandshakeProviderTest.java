@@ -8,7 +8,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -27,7 +30,7 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Disabled("not working with handshake")
 @NotThreadSafe
-public class BlockingDatagramDtlsHandshakeProviderTest extends ALatencyChannelTest {
+public class BlockingDatagramDtlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -51,7 +54,7 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends ALatencyChannelTe
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new BlockingDatagramSynchronousReader(
                         newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new BlockingDatagramSynchronousWriter(
@@ -59,9 +62,9 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends ALatencyChannelTe
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new BlockingDatagramSynchronousReader(
                         newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
@@ -101,7 +104,7 @@ public class BlockingDatagramDtlsHandshakeProviderTest extends ALatencyChannelTe
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return SynchronousChannels.MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE;
     }
 

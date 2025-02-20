@@ -7,7 +7,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.HandshakeChannelFactory;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.IHandshakeProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
@@ -15,7 +16,7 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class TlsHandshakeProviderTest extends ALatencyChannelTest {
+public class TlsHandshakeProviderTest extends AChannelTest {
 
     @Test
     public void testTlsHandshakePerformance() throws InterruptedException {
@@ -29,7 +30,8 @@ public class TlsHandshakeProviderTest extends ALatencyChannelTest {
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, true));
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
-        runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake, clientHandshake);
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null, serverHandshake,
+                clientHandshake);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,
@@ -48,7 +50,7 @@ public class TlsHandshakeProviderTest extends ALatencyChannelTest {
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return 1324;
     }
 

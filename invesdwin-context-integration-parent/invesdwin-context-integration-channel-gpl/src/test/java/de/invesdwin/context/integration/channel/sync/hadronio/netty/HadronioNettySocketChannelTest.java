@@ -6,7 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
@@ -17,7 +20,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class HadronioNettySocketChannelTest extends ALatencyChannelTest {
+public class HadronioNettySocketChannelTest extends AChannelTest {
 
     @Test
     public void testNettySocketChannelPerformance() throws InterruptedException {
@@ -35,15 +38,15 @@ public class HadronioNettySocketChannelTest extends ALatencyChannelTest {
                 newNettySocketChannel(type, responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettySocketSynchronousReader(
                 newNettySocketChannel(type, requestAddress, false, getMaxMessageSize()));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettySocketSynchronousWriter(
                 newNettySocketChannel(type, requestAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettySocketSynchronousReader(
                 newNettySocketChannel(type, responseAddress, false, getMaxMessageSize()));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,

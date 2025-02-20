@@ -7,7 +7,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.rpc.base.ARpcLatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.RpcLatencyChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
@@ -28,32 +29,34 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcUdtChannelTest extends ARpcLatencyChannelTest {
+public class RpcUdtChannelTest extends AChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runRpcTest(address, RpcTestServiceMode.requestFalseTrue);
+        final RpcLatencyChannelTest test = new RpcLatencyChannelTest(this);
+        runRpcTest(test, address, RpcTestServiceMode.requestFalseTrue);
     }
 
     @Test
     public void testRpcAllModes() throws InterruptedException {
+        final RpcLatencyChannelTest test = new RpcLatencyChannelTest(this);
         for (final RpcTestServiceMode mode : RpcTestServiceMode.values()) {
             final int port = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress address = new InetSocketAddress("localhost", port);
             log.warn("%s.%s: Starting", RpcTestServiceMode.class.getSimpleName(), mode);
             final Instant start = new Instant();
-            runRpcTest(address, mode);
+            runRpcTest(test, address, mode);
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(MESSAGE_COUNT * newRpcClientThreads(), duration));
+                    new ProcessedEventsRateString(MESSAGE_COUNT * test.newRpcClientThreads(), duration));
         }
     }
 
-    protected void runRpcTest(final InetSocketAddress address, final RpcTestServiceMode mode)
-            throws InterruptedException {
+    protected void runRpcTest(final RpcLatencyChannelTest test, final InetSocketAddress address,
+            final RpcTestServiceMode mode) throws InterruptedException {
         final ATransformingSynchronousReader<UdtSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<UdtSynchronousChannel, ISynchronousEndpointSession>(
                 new UdtSynchronousChannelServer(address, getMaxMessageSize())) {
             private final AtomicInteger index = new AtomicInteger();
@@ -70,7 +73,7 @@ public class RpcUdtChannelTest extends ARpcLatencyChannelTest {
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new UdtEndpointFactory(
                 address, false, getMaxMessageSize());
-        runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
+        test.runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 
 }

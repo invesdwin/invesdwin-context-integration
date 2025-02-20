@@ -9,7 +9,10 @@ import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
@@ -18,7 +21,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class MinaSocketChannelTest extends ALatencyChannelTest {
+public class MinaSocketChannelTest extends AChannelTest {
 
     @Test
     public void testMinaSocketChannelPerformance() throws InterruptedException {
@@ -51,15 +54,15 @@ public class MinaSocketChannelTest extends ALatencyChannelTest {
                 newMinaSocketChannel(type, responseAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new MinaSocketSynchronousReader(
                 newMinaSocketChannel(type, requestAddress, false, getMaxMessageSize()));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new MinaSocketSynchronousWriter(
                 newMinaSocketChannel(type, requestAddress, true, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new MinaSocketSynchronousReader(
                 newMinaSocketChannel(type, responseAddress, false, getMaxMessageSize()));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,

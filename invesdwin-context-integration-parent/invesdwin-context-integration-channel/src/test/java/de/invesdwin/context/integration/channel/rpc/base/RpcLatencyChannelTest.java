@@ -6,10 +6,11 @@ import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
-import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.base.client.DefaultRpcSynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.MultipleMultiplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.multi.SingleMultiplexingSynchronousEndpointClientSessionPool;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.single.SingleplexingSynchronousEndpointClientSessionPool;
@@ -34,13 +35,17 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public abstract class ARpcLatencyChannelTest extends ALatencyChannelTest {
+public class RpcLatencyChannelTest extends LatencyChannelTest {
 
-    public static final int RPC_CLIENT_THREADS = DEBUG ? 1 : 10;
-    public static final int RPC_CLIENT_TRANSPORTS = DEBUG ? 1 : 2;
+    public static final int RPC_CLIENT_THREADS = AChannelTest.DEBUG ? 1 : 10;
+    public static final int RPC_CLIENT_TRANSPORTS = AChannelTest.DEBUG ? 1 : 2;
     public static final boolean RPC_CLIENT_LAZY = true;
 
-    protected void runRpcPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+    public RpcLatencyChannelTest(final AChannelTest parent) {
+        super(parent);
+    }
+
+    public void runRpcPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         if (RPC_CLIENT_LAZY) {
@@ -142,11 +147,11 @@ public abstract class ARpcLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected int newRpcClientThreads() {
+    public int newRpcClientThreads() {
         return RPC_CLIENT_THREADS;
     }
 
-    protected void runRpcHandlerPerformanceTest(
+    public void runRpcHandlerPerformanceTest(
             final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
@@ -244,7 +249,7 @@ public abstract class ARpcLatencyChannelTest extends ALatencyChannelTest {
     }
 
     @SuppressWarnings("unchecked")
-    protected void runRpcBlockingPerformanceTest(
+    public void runRpcBlockingPerformanceTest(
             final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
@@ -290,7 +295,7 @@ public abstract class ARpcLatencyChannelTest extends ALatencyChannelTest {
         }
     }
 
-    protected void runRpcSessionlessPerformanceTest(
+    public void runRpcSessionlessPerformanceTest(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {

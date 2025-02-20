@@ -8,7 +8,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -16,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Disabled("hangs sometimes in testsuite")
 @NotThreadSafe
-public class BlockingDatagramChannelTest extends ALatencyChannelTest {
+public class BlockingDatagramChannelTest extends AChannelTest {
     @Test
     public void testBlockingDatagramSocketPerformance() throws InterruptedException {
         final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
@@ -31,15 +34,15 @@ public class BlockingDatagramChannelTest extends ALatencyChannelTest {
                 newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingDatagramSynchronousReader(
                 newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingDatagramSynchronousWriter(
                 newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingDatagramSynchronousReader(
                 newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected BlockingDatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress responseAddress,

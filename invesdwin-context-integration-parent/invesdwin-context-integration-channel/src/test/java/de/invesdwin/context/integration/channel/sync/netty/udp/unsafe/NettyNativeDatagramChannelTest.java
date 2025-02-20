@@ -6,7 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
@@ -16,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.channel.unix.UnixChannel;
 
 @NotThreadSafe
-public class NettyNativeDatagramChannelTest extends ALatencyChannelTest {
+public class NettyNativeDatagramChannelTest extends AChannelTest {
 
     @Test
     public void testNettyNativeDatagramChannelPerformance() throws InterruptedException {
@@ -38,15 +41,15 @@ public class NettyNativeDatagramChannelTest extends ALatencyChannelTest {
                 newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeDatagramSynchronousReader(
                 newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize()));
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeDatagramSynchronousWriter(
                 newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize()));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeDatagramSynchronousReader(
                 newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize()));
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,

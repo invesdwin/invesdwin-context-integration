@@ -10,14 +10,17 @@ import com.conversantmedia.util.concurrent.MultithreadConcurrentQueue;
 import com.conversantmedia.util.concurrent.PushPullBlockingQueue;
 import com.conversantmedia.util.concurrent.PushPullConcurrentQueue;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public class ConversantChannelTest extends ALatencyChannelTest {
+public class ConversantChannelTest extends AChannelTest {
 
     @Test
     public void testConversantPushPullConcurrentPerformance() throws InterruptedException {
@@ -51,11 +54,11 @@ public class ConversantChannelTest extends ALatencyChannelTest {
             final ConcurrentQueue<IReference<FDate>> requestQueue) throws InterruptedException {
         final ISynchronousWriter<FDate> responseWriter = new ConversantSynchronousWriter<FDate>(responseQueue);
         final ISynchronousReader<FDate> requestReader = new ConversantSynchronousReader<FDate>(requestQueue);
-        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
+        final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = new ConversantSynchronousWriter<FDate>(requestQueue);
         final ISynchronousReader<FDate> responseReader = new ConversantSynchronousReader<FDate>(responseQueue);
-        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
-        runLatencyTest(serverTask, clientTask);
+        final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
 }

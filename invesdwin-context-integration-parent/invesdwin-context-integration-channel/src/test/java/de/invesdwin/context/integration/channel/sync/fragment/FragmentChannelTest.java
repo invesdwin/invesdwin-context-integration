@@ -6,13 +6,14 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class FragmentChannelTest extends ALatencyChannelTest {
+public class FragmentChannelTest extends AChannelTest {
 
     @Test
     public void testFragmentPerformance() throws InterruptedException {
@@ -20,21 +21,21 @@ public class FragmentChannelTest extends ALatencyChannelTest {
         final FileChannelType pipes = FileChannelType.BLOCKING_MAPPED;
         final File requestFile = newFile("testFragmentPerformance_request.pipe", tmpfs, pipes);
         final File responseFile = newFile("testFragmentPerformance_response.pipe", tmpfs, pipes);
-        runLatencyTest(pipes, requestFile, responseFile, null, null);
+        new LatencyChannelTest(this).runLatencyTest(pipes, requestFile, responseFile, null, null);
     }
 
     @Override
-    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         return new FragmentSynchronousReader(super.newReader(file, pipes));
     }
 
     @Override
-    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         return new FragmentSynchronousWriter(super.newWriter(file, pipes), getMaxMessageSize());
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return FragmentSynchronousWriter.PAYLOAD_INDEX + 1;
     }
 

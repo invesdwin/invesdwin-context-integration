@@ -6,14 +6,17 @@ import javax.annotation.concurrent.Immutable;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientHandlerFactory;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.IMinaSocketType;
 import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 
 @Immutable
-public class MinaSocketHandlerTest extends ALatencyChannelTest {
+public class MinaSocketHandlerTest extends AChannelTest {
 
     @Test
     public void testMinaSocketHandlerPerformance() throws InterruptedException {
@@ -32,7 +35,7 @@ public class MinaSocketHandlerTest extends ALatencyChannelTest {
                 newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
         final MinaSocketAsynchronousChannel clientHandler = new MinaSocketAsynchronousChannel(clientChannel,
                 newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
-        runHandlerLatencyTest(serverHandler, clientHandler);
+        new LatencyChannelTest(this).runHandlerLatencyTest(serverHandler, clientHandler);
     }
 
     protected MinaSocketSynchronousChannel newMinaSocketChannel(final IMinaSocketType type,

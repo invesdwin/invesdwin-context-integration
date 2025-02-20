@@ -7,13 +7,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.tcp.NettySocketAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.stream.AStreamLatencyChannelTest;
+import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
 import de.invesdwin.context.integration.channel.stream.server.async.StreamAsynchronousEndpointServerHandlerFactory;
-import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySharedSocketClientEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
@@ -21,7 +21,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamNettySocketHandlerTest extends AStreamLatencyChannelTest {
+public class StreamNettySocketHandlerTest extends AChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {
@@ -35,19 +35,18 @@ public class StreamNettySocketHandlerTest extends AStreamLatencyChannelTest {
                         getMaxMessageSize()) {
                     @Override
                     protected int newServerWorkerGroupThreadCount() {
-                        return STREAM_CLIENT_TRANSPORTS;
+                        return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;
                     }
                 };
                 return new NettySocketAsynchronousChannel(channel, t, true);
             }
         };
-        final IStreamSynchronousEndpointServiceFactory serviceFactory = newServiceFactory();
         //netty shared bootstrap
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedSocketClientEndpointFactory(
                 type, address, getMaxMessageSize()) {
             @Override
             protected int newClientWorkerGroupThreadCount() {
-                return STREAM_CLIENT_TRANSPORTS;
+                return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;
             }
         };
         //netty no shared bootstrap
@@ -56,11 +55,11 @@ public class StreamNettySocketHandlerTest extends AStreamLatencyChannelTest {
         //fastest
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
         //                address, getMaxMessageSize());
-        runStreamHandlerPerformanceTest(serverFactory, serviceFactory, clientEndpointFactory);
+        new StreamLatencyChannelTest(this).runStreamHandlerPerformanceTest(serverFactory, clientEndpointFactory);
     }
 
     @Override
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
     }
 

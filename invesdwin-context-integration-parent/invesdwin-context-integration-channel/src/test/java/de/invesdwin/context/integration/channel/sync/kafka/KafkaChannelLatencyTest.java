@@ -8,7 +8,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -17,7 +20,7 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Testcontainers
 @NotThreadSafe
-public class KafkaChannelLatencyTest extends ALatencyChannelTest {
+public class KafkaChannelLatencyTest extends AChannelTest {
 
     @Container
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
@@ -64,7 +67,7 @@ public class KafkaChannelLatencyTest extends ALatencyChannelTest {
                         return pollTimeout;
                     }
                 });
-        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
+        final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), requestTopic));
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
@@ -74,8 +77,8 @@ public class KafkaChannelLatencyTest extends ALatencyChannelTest {
                         return pollTimeout;
                     }
                 });
-        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
-        runLatencyTest(serverTask, clientTask);
+        final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,

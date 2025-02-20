@@ -11,7 +11,6 @@ import javax.annotation.concurrent.Immutable;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.concurrent.Executors;
@@ -48,7 +47,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     public RpcTestService(final int rpcClientThreads, final OutputStream log) {
         this.rpcClientThreads = rpcClientThreads;
-        this.loopCheck = AChannelTest.newLoopInterruptedCheck(ALatencyChannelTest.FLUSH_INTERVAL * rpcClientThreads);
+        this.loopCheck = AChannelTest.newLoopInterruptedCheck(AChannelTest.FLUSH_INTERVAL * rpcClientThreads);
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
@@ -63,18 +62,18 @@ public class RpcTestService implements IRpcTestService, Closeable {
                 }
             }
         }
-        if (ALatencyChannelTest.DEBUG) {
+        if (AChannelTest.DEBUG) {
             log.write("server request in\n".getBytes());
         }
         final FDate response = latencyReportRequestReceived.newResponseMessage(request).asFDate();
         //        FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
-        if (ALatencyChannelTest.DEBUG) {
+        if (AChannelTest.DEBUG) {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
         final int count = countHolder.incrementAndGet();
         if (loopCheck.checkNoInterrupt()) {
-            ALatencyChannelTest.printProgress(log, "Writes", writesStart, count,
-                    ALatencyChannelTest.MESSAGE_COUNT * rpcClientThreads);
+            AChannelTest.printProgress(log, "Writes", writesStart, count,
+                    AChannelTest.MESSAGE_COUNT * rpcClientThreads);
         }
         return response;
     }

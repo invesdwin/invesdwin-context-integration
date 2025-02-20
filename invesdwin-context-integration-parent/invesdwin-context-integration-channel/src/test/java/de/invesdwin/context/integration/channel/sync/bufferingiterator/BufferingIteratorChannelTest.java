@@ -6,7 +6,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
@@ -18,7 +21,7 @@ import de.invesdwin.util.concurrent.reference.MutableReference;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public class BufferingIteratorChannelTest extends ALatencyChannelTest {
+public class BufferingIteratorChannelTest extends AChannelTest {
 
     private static final class MutableReferenceNode extends MutableReference<FDate>
             implements INode<MutableReferenceNode> {
@@ -89,7 +92,7 @@ public class BufferingIteratorChannelTest extends ALatencyChannelTest {
                 }, synchronizeResponse);
         final ISynchronousReader<FDate> requestReader = maybeSynchronize(
                 new BufferingIteratorSynchronousReader<FDate>(requestQueue), synchronizeRequest);
-        final LatencyServerTask serverTask = new LatencyServerTask(requestReader, responseWriter);
+        final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = maybeSynchronize(
                 new BufferingIteratorSynchronousWriter<FDate>(requestQueue) {
                     @Override
@@ -104,8 +107,8 @@ public class BufferingIteratorChannelTest extends ALatencyChannelTest {
                 }, synchronizeRequest);
         final ISynchronousReader<FDate> responseReader = maybeSynchronize(
                 new BufferingIteratorSynchronousReader<FDate>(responseQueue), synchronizeResponse);
-        final LatencyClientTask clientTask = new LatencyClientTask(requestWriter, responseReader);
-        runLatencyTest(serverTask, clientTask);
+        final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
 }

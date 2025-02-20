@@ -9,8 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
-import de.invesdwin.context.integration.channel.ALatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
 import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousEndpointClient;
@@ -61,12 +60,12 @@ public class RpcClientTask implements Runnable {
             try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRequestResponseRoundtrip
                     .newRequestMessages()
                     .iterator()) {
-                while (count < ALatencyChannelTest.MESSAGE_COUNT) {
+                while (count < AChannelTest.MESSAGE_COUNT) {
                     if (count == 0) {
                         //don't count in connection establishment
                         readsStart = new Instant();
                     }
-                    if (ALatencyChannelTest.DEBUG) {
+                    if (AChannelTest.DEBUG) {
                         log.write((clientId + ": client request out\n").getBytes());
                     }
                     final IFDateProvider requestProvider = values.next();
@@ -76,7 +75,7 @@ public class RpcClientTask implements Runnable {
                             .asFDate();
                     latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
                     latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
-                    if (ALatencyChannelTest.DEBUG) {
+                    if (AChannelTest.DEBUG) {
                         log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }
                     Assertions.checkNotNull(response);
@@ -95,8 +94,8 @@ public class RpcClientTask implements Runnable {
         }
         Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
         try {
-            ALatencyChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, count,
-                    ALatencyChannelTest.MESSAGE_COUNT);
+            AChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, count,
+                    AChannelTest.MESSAGE_COUNT);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

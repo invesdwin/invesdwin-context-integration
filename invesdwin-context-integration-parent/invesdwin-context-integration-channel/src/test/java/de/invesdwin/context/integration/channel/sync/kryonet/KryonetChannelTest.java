@@ -6,14 +6,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.lang.uri.Addresses;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class KryonetChannelTest extends ALatencyChannelTest {
+public class KryonetChannelTest extends AChannelTest {
 
     @Test
     public void testKryonetTcpPerformance() throws InterruptedException {
@@ -31,15 +34,15 @@ public class KryonetChannelTest extends ALatencyChannelTest {
                 responseTcpPort, responseUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> requestReader = new KryonetSynchronousReader(address,
                 requestTcpPort, requestUdpPort, false);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new KryonetSynchronousWriter(address,
                 requestTcpPort, requestUdpPort, true);
         final ISynchronousReader<IByteBufferProvider> responseReader = new KryonetSynchronousReader(address,
                 responseTcpPort, responseUdpPort, false);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
 }

@@ -6,14 +6,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class TimeSeriesDBChannelLatencyTest extends ALatencyChannelTest {
+public class TimeSeriesDBChannelLatencyTest extends AChannelTest {
 
     @Test
     public void testTimeSeriesDBPerformance() throws InterruptedException {
@@ -46,15 +49,15 @@ public class TimeSeriesDBChannelLatencyTest extends ALatencyChannelTest {
                     responseChannel);
             final ISynchronousReader<IByteBufferProvider> requestReader = new TimeSeriesDBSynchronousReader(
                     requestChannel);
-            final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+            final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                     newSerdeWriter(responseWriter));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new TimeSeriesDBSynchronousWriter(
                     requestChannel);
             final ISynchronousReader<IByteBufferProvider> responseReader = new TimeSeriesDBSynchronousReader(
                     responseChannel);
-            final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+            final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                     newSerdeReader(responseReader));
-            runLatencyTest(serverTask, clientTask);
+            new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);

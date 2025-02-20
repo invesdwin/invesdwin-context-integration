@@ -82,7 +82,7 @@ public abstract class AChannelTest extends ATest {
         throw new IllegalStateException("no suitable network interface found");
     }
 
-    protected File newFile(final String name, final boolean tmpfs, final FileChannelType type) {
+    public File newFile(final String name, final boolean tmpfs, final FileChannelType type) {
         final File baseFolder = getBaseFolder(tmpfs);
         final File file = new File(baseFolder, name);
         Files.deleteQuietly(file);
@@ -105,7 +105,7 @@ public abstract class AChannelTest extends ATest {
         return file;
     }
 
-    protected File newFolder(final String name, final boolean tmpfs) {
+    public File newFolder(final String name, final boolean tmpfs) {
         final File baseFolder = getBaseFolder(tmpfs);
         final File folder = new File(baseFolder, name);
         try {
@@ -116,7 +116,7 @@ public abstract class AChannelTest extends ATest {
         return folder;
     }
 
-    protected File getBaseFolder(final boolean tmpfs) {
+    public File getBaseFolder(final boolean tmpfs) {
         if (tmpfs) {
             return SynchronousChannels.getTmpfsFolderOrFallback();
         } else {
@@ -124,7 +124,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected <T> ISynchronousReader<T> maybeSynchronize(final ISynchronousReader<T> reader, final Object synchronize) {
+    public <T> ISynchronousReader<T> maybeSynchronize(final ISynchronousReader<T> reader, final Object synchronize) {
         if (synchronize != null) {
             return SynchronousChannels.synchronize(reader, synchronize);
         } else {
@@ -132,7 +132,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected <T> ISynchronousWriter<T> maybeSynchronize(final ISynchronousWriter<T> writer, final Object synchronize) {
+    public <T> ISynchronousWriter<T> maybeSynchronize(final ISynchronousWriter<T> writer, final Object synchronize) {
         if (synchronize != null) {
             return SynchronousChannels.synchronize(writer, synchronize);
         } else {
@@ -140,7 +140,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
+    public ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
             return new NativePipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
@@ -156,11 +156,11 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected int getMaxMessageSize() {
+    public int getMaxMessageSize() {
         return MAX_MESSAGE_SIZE;
     }
 
-    protected ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
+    public ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
         if (pipes == FileChannelType.PIPE_NATIVE) {
             return new NativePipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.PIPE_STREAMING) {
@@ -176,7 +176,7 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    protected IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> newSerdeHandlerFactory(
+    public IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> newSerdeHandlerFactory(
             final IAsynchronousHandlerFactory<FDate, FDate> handler) {
         final ISerde<FDate> serde = newSerde();
         return new SerdeAsynchronousHandlerFactory<FDate, FDate>(handler, serde, serde, MAX_MESSAGE_SIZE);
@@ -244,7 +244,7 @@ public abstract class AChannelTest extends ATest {
         };
     }
 
-    public static void assertCloseMessageArrived(final ISynchronousReader<FDate> reader) {
+    public void assertCloseMessageArrived(final ISynchronousReader<FDate> reader) {
         boolean closeMessageReceived = false;
         try {
             final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(reader);

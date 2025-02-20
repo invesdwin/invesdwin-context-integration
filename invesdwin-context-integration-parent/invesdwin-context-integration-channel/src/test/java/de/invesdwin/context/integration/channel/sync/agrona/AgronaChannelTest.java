@@ -17,7 +17,10 @@ import org.agrona.concurrent.ringbuffer.RingBufferDescriptor;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.agrona.broadcast.BroadcastSynchronousReader;
@@ -29,34 +32,34 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 
 @NotThreadSafe
-public class AgronaChannelTest extends ALatencyChannelTest {
+public class AgronaChannelTest extends AChannelTest {
 
     @Test
     public void testAgronaOneToOneConcurrentArrayQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new OneToOneConcurrentArrayQueue<IReference<FDate>>(256);
         final Queue<IReference<FDate>> requestQueue = new OneToOneConcurrentArrayQueue<IReference<FDate>>(256);
-        runQueueLatencyTest(responseQueue, requestQueue, null, null);
+        new LatencyChannelTest(this).runQueueLatencyTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaManyToOneConcurrentArrayQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(256);
         final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentArrayQueue<IReference<FDate>>(256);
-        runQueueLatencyTest(responseQueue, requestQueue, null, null);
+        new LatencyChannelTest(this).runQueueLatencyTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaManyToManyConcurrentArrayQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
         final Queue<IReference<FDate>> requestQueue = new ManyToManyConcurrentArrayQueue<IReference<FDate>>(2);
-        runQueueLatencyTest(responseQueue, requestQueue, null, null);
+        new LatencyChannelTest(this).runQueueLatencyTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
     public void testAgronaManyToOneConcurrentLinkedQueuePerformance() throws InterruptedException {
         final Queue<IReference<FDate>> responseQueue = new ManyToOneConcurrentLinkedQueue<IReference<FDate>>();
         final Queue<IReference<FDate>> requestQueue = new ManyToOneConcurrentLinkedQueue<IReference<FDate>>();
-        runQueueLatencyTest(responseQueue, requestQueue, null, null);
+        new LatencyChannelTest(this).runQueueLatencyTest(responseQueue, requestQueue, null, null);
     }
 
     @Test
@@ -111,15 +114,15 @@ public class AgronaChannelTest extends ALatencyChannelTest {
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> requestReader = new RingBufferSynchronousReader(requestChannel,
                 zeroCopy);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new RingBufferSynchronousWriter(requestChannel,
                 zeroCopy ? getMaxMessageSize() : null);
         final ISynchronousReader<IByteBufferProvider> responseReader = new RingBufferSynchronousReader(responseChannel,
                 zeroCopy);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     @Test
@@ -134,13 +137,13 @@ public class AgronaChannelTest extends ALatencyChannelTest {
             final AtomicBuffer requestChannel) throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BroadcastSynchronousWriter(responseChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new BroadcastSynchronousReader(requestChannel);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BroadcastSynchronousWriter(requestChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new BroadcastSynchronousReader(responseChannel);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
 }

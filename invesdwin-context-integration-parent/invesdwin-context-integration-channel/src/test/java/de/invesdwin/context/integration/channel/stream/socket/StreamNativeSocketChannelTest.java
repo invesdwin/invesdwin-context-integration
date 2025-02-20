@@ -8,12 +8,12 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.context.integration.channel.stream.AStreamLatencyChannelTest;
-import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -26,7 +26,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamNativeSocketChannelTest extends AStreamLatencyChannelTest {
+public class StreamNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testStreamPerformance() throws InterruptedException {
@@ -46,10 +46,9 @@ public class StreamNativeSocketChannelTest extends AStreamLatencyChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
-        final IStreamSynchronousEndpointServiceFactory serviceFactory = newServiceFactory();
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize());
-        runStreamPerformanceTest(serverAcceptor, serviceFactory, clientEndpointFactory);
+        new StreamLatencyChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,

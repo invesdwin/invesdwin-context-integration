@@ -6,14 +6,17 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.ALatencyChannelTest;
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiJnetrobustChannelTest extends ALatencyChannelTest {
+public class BidiJnetrobustChannelTest extends AChannelTest {
 
     @Test
     public void testBidiNioSocketPerformance() throws InterruptedException {
@@ -29,13 +32,13 @@ public class BidiJnetrobustChannelTest extends ALatencyChannelTest {
         final JnetrobustSynchronousChannel clientChannel = newJnetrobustSynchronousChannel(addressB, addressA);
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new JnetrobustSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new JnetrobustSynchronousReader(serverChannel);
-        final LatencyServerTask serverTask = new LatencyServerTask(newSerdeReader(requestReader),
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new JnetrobustSynchronousWriter(clientChannel);
         final ISynchronousReader<IByteBufferProvider> responseReader = new JnetrobustSynchronousReader(clientChannel);
-        final LatencyClientTask clientTask = new LatencyClientTask(newSerdeWriter(requestWriter),
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
-        runLatencyTest(serverTask, clientTask);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected JnetrobustSynchronousChannel newJnetrobustSynchronousChannel(final InetSocketAddress ourSocketAddress,
