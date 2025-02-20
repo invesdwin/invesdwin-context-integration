@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.base.server.sessionless;
+package de.invesdwin.context.integration.channel.rpc.socket.sessionless;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.ARpcLatencyChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
@@ -21,7 +21,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcSessionlessBlockingDatagramChannelTest extends ARpcChannelTest {
+public class RpcSessionlessBlockingDatagramChannelTest extends ARpcLatencyChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {

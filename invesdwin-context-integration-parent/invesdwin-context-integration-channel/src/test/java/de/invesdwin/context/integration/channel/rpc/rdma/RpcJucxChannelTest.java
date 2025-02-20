@@ -9,7 +9,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.ARpcLatencyChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
@@ -35,7 +35,7 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Disabled("jucx version mismatch")
 @NotThreadSafe
-public class RpcJucxChannelTest extends ARpcChannelTest {
+public class RpcJucxChannelTest extends ARpcLatencyChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {

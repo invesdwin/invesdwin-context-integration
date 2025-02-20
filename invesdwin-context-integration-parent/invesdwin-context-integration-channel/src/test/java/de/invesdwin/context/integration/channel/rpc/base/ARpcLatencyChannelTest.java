@@ -34,7 +34,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public abstract class ARpcChannelTest extends ALatencyChannelTest {
+public abstract class ARpcLatencyChannelTest extends ALatencyChannelTest {
 
     public static final int RPC_CLIENT_THREADS = DEBUG ? 1 : 10;
     public static final int RPC_CLIENT_TRANSPORTS = DEBUG ? 1 : 2;

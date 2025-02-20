@@ -5,7 +5,7 @@ import javax.annotation.concurrent.Immutable;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
-import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.RpcSessionlessChannelTestSuite;
+import de.invesdwin.context.integration.channel.rpc.socket.sessionless.RpcSessionlessChannelTestSuite;
 
 @Suite
 @SelectClasses({ RpcNativeSocketChannelTest.class, RpcNettySocketHandlerTest.class, RpcNettyDatagramHandlerTest.class,

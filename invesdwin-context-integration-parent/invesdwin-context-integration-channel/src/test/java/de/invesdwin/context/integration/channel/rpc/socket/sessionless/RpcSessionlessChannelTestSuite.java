@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.rpc.base.server.sessionless;
+package de.invesdwin.context.integration.channel.rpc.socket.sessionless;
 
 import javax.annotation.concurrent.Immutable;
 

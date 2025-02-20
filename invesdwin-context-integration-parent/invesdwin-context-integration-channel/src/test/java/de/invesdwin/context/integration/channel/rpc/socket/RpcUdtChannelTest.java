@@ -8,7 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
-import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.ARpcLatencyChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
@@ -30,7 +30,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcUdtChannelTest extends ARpcChannelTest {
+public class RpcUdtChannelTest extends ARpcLatencyChannelTest {
 
     @Test
     public void testRpcPerformance() throws InterruptedException {

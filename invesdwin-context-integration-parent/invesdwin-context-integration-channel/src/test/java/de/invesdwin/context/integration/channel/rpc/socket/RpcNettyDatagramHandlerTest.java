@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.udp.NettyDatagramAsynchronousChannel;
-import de.invesdwin.context.integration.channel.rpc.base.ARpcChannelTest;
+import de.invesdwin.context.integration.channel.rpc.base.ARpcLatencyChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
@@ -24,7 +24,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
-public class RpcNettyDatagramHandlerTest extends ARpcChannelTest {
+public class RpcNettyDatagramHandlerTest extends ARpcLatencyChannelTest {
 
     @Override
     protected int newRpcClientThreads() {
