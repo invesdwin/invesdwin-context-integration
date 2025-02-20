@@ -28,7 +28,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
     @Override
     public void open() throws IOException {
         super.open();
-        appender = queue.acquireAppender();
+        appender = queue.createAppender();
     }
 
     @Override

@@ -25,7 +25,7 @@ public abstract class AChronicleQueueSynchronousChannel implements ISynchronousC
     public void open() throws IOException {
         try {
             this.queue = SingleChronicleQueueBuilder.binary(file)
-                    .rollCycle(RollCycles.MINUTELY)
+                    .rollCycle(RollCycles.FIVE_MINUTELY)
                     .storeFileListener((cycle, file) -> Files.deleteQuietly(file))
                     .build();
         } catch (final Exception e) {

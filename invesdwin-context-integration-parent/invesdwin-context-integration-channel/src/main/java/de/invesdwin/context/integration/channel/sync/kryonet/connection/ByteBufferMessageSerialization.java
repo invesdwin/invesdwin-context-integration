@@ -5,8 +5,8 @@ import java.io.IOException;
 import javax.annotation.concurrent.Immutable;
 
 import com.esotericsoftware.kryonet.Connection;
-import com.esotericsoftware.kryonet.KryoSerialization;
-import com.esotericsoftware.kryonet.Serialization;
+import com.esotericsoftware.kryonet.serialization.KryoSerialization;
+import com.esotericsoftware.kryonet.serialization.Serialization;
 
 import de.invesdwin.util.math.Booleans;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;

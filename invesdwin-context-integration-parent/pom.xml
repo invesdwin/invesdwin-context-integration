@@ -90,8 +90,8 @@
 		<version.jnanomsg>0.4.5</version.jnanomsg>
 		<version.nng-java>1.4.0-inv</version.nng-java>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
-		<version.kryonet>2.22.0-RC1</version.kryonet>
-		<version.affinity>3.23.3</version.affinity>
+		<version.kryonet>2.22.9</version.kryonet>
+		<version.chronicle-affinity>3.27ea0</version.chronicle-affinity>
 		<version.chronicle-network>2.24ea15</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
@@ -665,7 +665,7 @@
 			<dependency>
 				<groupId>net.openhft</groupId>
 				<artifactId>affinity</artifactId>
-				<version>${version.affinity}</version>
+				<version>${version.chronicle-affinity}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.reactivestreams</groupId>
@@ -723,9 +723,15 @@
 				<version>${version.nng-java}</version>
 			</dependency>
 			<dependency>
-				<groupId>com.esotericsoftware</groupId>
+				<groupId>com.github.crykn</groupId>
 				<artifactId>kryonet</artifactId>
 				<version>${version.kryonet}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>com.esotericsoftware</groupId>
+						<artifactId>minlog</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>net.openhft</groupId>
