@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.socket;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -17,7 +16,6 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestS
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udt.UdtEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.udt.UdtSynchronousChannelServer;
@@ -73,11 +71,6 @@ public class RpcUdtChannelTest extends ARpcLatencyChannelTest {
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new UdtEndpointFactory(
                 address, false, getMaxMessageSize());
         runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

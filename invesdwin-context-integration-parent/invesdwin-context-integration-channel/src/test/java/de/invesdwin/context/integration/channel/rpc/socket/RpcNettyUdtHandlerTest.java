@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.socket;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -20,7 +19,6 @@ import de.invesdwin.context.integration.channel.sync.netty.udt.NettySharedUdtCli
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.NioNettyUdtChannelType;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -81,11 +79,6 @@ public class RpcNettyUdtHandlerTest extends ARpcLatencyChannelTest {
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyUdtClientEndpointFactory(
         //                type, address, getMaxMessageSize());
         runRpcHandlerPerformanceTest(serverFactory, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

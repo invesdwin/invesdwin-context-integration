@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.service;
+package de.invesdwin.context.integration.channel.sync.timeseriesdb.service;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientChannel;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceListener;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -25,10 +26,6 @@ import de.invesdwin.util.time.date.FDate;
 @ThreadSafe
 public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSynchronousEndpointService {
 
-    public static final String KEY_COMPRESSION_MODE = "COMPRESSION_MODE";
-    public static final String KEY_VALUE_FIXED_LENGTH = "VALUE_FIXED_LENGTH";
-    public static final String KEY_FROM_TIMESTAMP = "FROM_TIMESTAMP";
-
     private final int serviceId;
     private final String topic;
     private final IFastIterableSet<IStreamSynchronousEndpointServiceListener> listeners = ILockCollectionFactory
@@ -41,9 +38,10 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
             final IProperties properties) {
         this.serviceId = serviceId;
         this.topic = topic;
-        final Integer valueFixedLength = properties.getIntegerOptional(KEY_VALUE_FIXED_LENGTH, null);
-        final CompressionMode compressionMode = properties.getEnumOptional(CompressionMode.class, KEY_COMPRESSION_MODE,
-                CompressionMode.DEFAULT);
+        final Integer valueFixedLength = properties
+                .getIntegerOptional(StreamSynchronousEndpointClientChannel.KEY_VALUE_FIXED_LENGTH, null);
+        final CompressionMode compressionMode = properties.getEnumOptional(CompressionMode.class,
+                StreamSynchronousEndpointClientChannel.KEY_COMPRESSION_MODE, CompressionMode.DEFAULT);
         this.channel = new TimeSeriesDBSynchronousChannel(newFolder(), valueFixedLength) {
             @Override
             protected boolean newCloseMessageEnabled() {
@@ -102,7 +100,8 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
     @Override
     public ISynchronousReader<IByteBufferProvider> subscribe(final IStreamSynchronousEndpointServiceListener listener,
             final IProperties parameters) {
-        final FDate fromTimestamp = parameters.getDateOptional(KEY_FROM_TIMESTAMP);
+        final FDate fromTimestamp = parameters
+                .getDateOptional(StreamSynchronousEndpointClientChannel.KEY_FROM_TIMESTAMP);
         if (listeners.add(listener)) {
             return new TimeSeriesDBSynchronousReader(channel) {
                 @Override

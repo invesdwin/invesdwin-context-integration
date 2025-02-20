@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.client;
+package de.invesdwin.context.integration.channel.stream.client.channel;
 
 import java.io.IOException;
 import java.util.concurrent.TimeoutException;
@@ -21,7 +21,6 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
 
     public static final Duration DEFAULT_POLL_TIMEOUT = Duration.ONE_MILLISECOND;
     private final StreamSynchronousEndpointClientChannel channel;
-    private final String topic;
     private final boolean closeMessageEnabled;
     private final Duration pollTimeout;
     private IStreamSynchronousEndpointClient client;
@@ -30,7 +29,6 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
 
     public StreamSynchronousEndpointClientReader(final StreamSynchronousEndpointClientChannel channel) {
         this.channel = channel;
-        this.topic = channel.getTopic();
         this.closeMessageEnabled = channel.isCloseMessageEnabled();
         this.pollTimeout = newPollTimeout();
     }

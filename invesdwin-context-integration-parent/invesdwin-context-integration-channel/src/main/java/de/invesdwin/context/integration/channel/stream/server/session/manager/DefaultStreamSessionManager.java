@@ -47,6 +47,9 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
                 synchronized (notifiedSubscriptions) {
                     notifiedSubscription = notifiedSubscriptions.getHead();
                 }
+                if (notifiedSubscription == null) {
+                    break;
+                }
                 final boolean handledNow = notifiedSubscription.handle();
                 if (handledNow) {
                     handledOverall = true;

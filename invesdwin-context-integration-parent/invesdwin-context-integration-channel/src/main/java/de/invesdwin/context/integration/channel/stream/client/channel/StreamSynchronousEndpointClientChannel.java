@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.client;
+package de.invesdwin.context.integration.channel.stream.client.channel;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -8,12 +8,15 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.stream.client.IStreamSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.service.TimeSeriesDBStreamSynchronousEndpointService;
 import de.invesdwin.context.integration.compression.CompressionMode;
 import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
 public class StreamSynchronousEndpointClientChannel implements ISynchronousChannel {
+
+    public static final String KEY_COMPRESSION_MODE = "COMPRESSION_MODE";
+    public static final String KEY_VALUE_FIXED_LENGTH = "VALUE_FIXED_LENGTH";
+    public static final String KEY_FROM_TIMESTAMP = "FROM_TIMESTAMP";
 
     private final IStreamSynchronousEndpointClient client;
     private final Integer valueFixedLength;
@@ -24,13 +27,13 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
     private final AtomicInteger activeCount = new AtomicInteger();
     private final int serviceId;
 
-    public StreamSynchronousEndpointClientChannel(final IStreamSynchronousEndpointClient client,
+    public StreamSynchronousEndpointClientChannel(final IStreamSynchronousEndpointClient client, final String topic,
             final Integer valueFixedLength) {
         this.client = client;
         this.valueFixedLength = valueFixedLength;
         this.compressionMode = newCompressionMode();
         this.closeMessageEnabled = newCloseMessageEnabled();
-        this.topic = newTopic();
+        this.topic = topic;
         this.serviceId = client.newServiceId(topic);
     }
 
@@ -40,10 +43,6 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
 
     public Integer getValueFixedLength() {
         return valueFixedLength;
-    }
-
-    protected String newTopic() {
-        return "topic";
     }
 
     public String getTopic() {
@@ -86,12 +85,12 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
     public String newCreateTopicUri() {
         final StringBuilder uri = new StringBuilder(topic);
         uri.append("?");
-        uri.append(TimeSeriesDBStreamSynchronousEndpointService.KEY_COMPRESSION_MODE);
+        uri.append(KEY_COMPRESSION_MODE);
         uri.append("=");
         uri.append(getCompressionMode());
         if (getValueFixedLength() != null) {
             uri.append("&");
-            uri.append(TimeSeriesDBStreamSynchronousEndpointService.KEY_VALUE_FIXED_LENGTH);
+            uri.append(KEY_VALUE_FIXED_LENGTH);
             uri.append("=");
             uri.append(getValueFixedLength());
         }
@@ -102,7 +101,7 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
         if (fromTimestamp == null) {
             return topic;
         } else {
-            return topic + "?" + TimeSeriesDBStreamSynchronousEndpointService.KEY_FROM_TIMESTAMP + "=" + fromTimestamp;
+            return topic + "?" + KEY_FROM_TIMESTAMP + "=" + fromTimestamp;
         }
     }
 

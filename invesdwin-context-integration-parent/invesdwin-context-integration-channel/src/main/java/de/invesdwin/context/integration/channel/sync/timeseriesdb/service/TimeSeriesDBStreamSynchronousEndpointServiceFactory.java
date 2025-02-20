@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.service;
+package de.invesdwin.context.integration.channel.sync.timeseriesdb.service;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -7,7 +7,12 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.system.properties.IProperties;
 
 @Immutable
-public class TimeSeriesDBStreamSynchronousEndpointServiceFactory implements IStreamSynchronousEndpointServiceFactory {
+public final class TimeSeriesDBStreamSynchronousEndpointServiceFactory
+        implements IStreamSynchronousEndpointServiceFactory {
+
+    public static final TimeSeriesDBStreamSynchronousEndpointServiceFactory INSTANCE = new TimeSeriesDBStreamSynchronousEndpointServiceFactory();
+
+    private TimeSeriesDBStreamSynchronousEndpointServiceFactory() {}
 
     @Override
     public IStreamSynchronousEndpointService newService(final int serviceId, final String topic,

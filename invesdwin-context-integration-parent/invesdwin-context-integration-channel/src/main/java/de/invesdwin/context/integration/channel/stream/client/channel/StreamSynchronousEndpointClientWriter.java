@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.client;
+package de.invesdwin.context.integration.channel.stream.client.channel;
 
 import java.io.IOException;
 

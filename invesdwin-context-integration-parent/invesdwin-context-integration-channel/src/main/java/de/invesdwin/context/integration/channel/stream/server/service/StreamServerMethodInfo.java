@@ -306,7 +306,7 @@ public enum StreamServerMethodInfo {
     }
 
     public static void assertServiceTopic(final IStreamSynchronousEndpointService service, final String topic) {
-        if (service.getTopic().equals(topic)) {
+        if (!service.getTopic().equals(topic)) {
             throw new IllegalStateException("serviceId [" + service.getServiceId() + "] topic mismatch: service.topic ["
                     + service.getTopic() + "] != topic [" + topic + "]");
         }

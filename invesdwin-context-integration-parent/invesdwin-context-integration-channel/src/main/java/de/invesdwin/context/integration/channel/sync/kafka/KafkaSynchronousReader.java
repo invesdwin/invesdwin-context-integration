@@ -13,9 +13,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.ByteBufferDeserializer;
 
+import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.serde.ByteBufferProviderKafkaDeserializer;
-import de.invesdwin.context.integration.channel.sync.timeseriesdb.stream.client.StreamSynchronousEndpointClientReader;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.iterable.EmptyCloseableIterator;
 import de.invesdwin.util.error.FastEOFException;
