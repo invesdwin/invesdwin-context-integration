@@ -9,7 +9,7 @@ import de.invesdwin.context.integration.channel.stream.socket.sessionless.Stream
 
 @Suite
 @SelectClasses({ StreamNativeSocketChannelTest.class, StreamNettyDatagramHandlerTest.class,
-        StreamNettyDatagramHandlerTest.class, StreamSessionlessChannelTestSuite.class })
+        StreamNettySocketHandlerTest.class, StreamSessionlessChannelTestSuite.class })
 
 @Immutable
 public class StreamSocketChannelTestSuite {

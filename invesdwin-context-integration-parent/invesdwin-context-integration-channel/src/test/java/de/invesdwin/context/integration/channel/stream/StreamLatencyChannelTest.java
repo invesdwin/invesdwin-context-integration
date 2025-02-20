@@ -1,6 +1,7 @@
 package de.invesdwin.context.integration.channel.stream;
 
 import java.io.IOException;
+import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -29,8 +30,11 @@ import de.invesdwin.context.integration.channel.stream.server.sessionless.Stream
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.timeseriesdb.service.TimeSeriesDBStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
+import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -41,7 +45,8 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
 
     public static final int STREAM_CLIENT_TRANSPORTS = AChannelTest.DEBUG ? 1 : 2;
     public static final boolean STREAM_CLIENT_LAZY = true;
-    private static final int STREAM_TEST_THREADS = 1;
+    public static final int STREAM_TEST_THREADS = 1;
+    public static final IStreamSynchronousEndpointServiceFactory STREAM_SERVICE_FACTORY = TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
 
     public StreamLatencyChannelTest(final AChannelTest parent) {
         super(parent);
@@ -61,7 +66,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
-                newServiceFactory()) {
+                newStreamServiceFactory()) {
             @Override
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
@@ -100,7 +105,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
-                newServiceFactory()) {
+                newStreamServiceFactory()) {
             @Override
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
@@ -135,7 +140,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newServiceFactory());
+                newStreamServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -171,7 +176,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newServiceFactory());
+                newStreamServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleMultiplexingSynchronousEndpointClientSessionPool(
@@ -192,7 +197,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newServiceFactory());
+                newStreamServiceFactory());
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleplexingSynchronousEndpointClientSessionPool(
@@ -223,7 +228,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newServiceFactory());
+                newStreamServiceFactory());
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
@@ -260,7 +265,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newServiceFactory());
+                newStreamServiceFactory());
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
@@ -288,16 +293,21 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         }
         try {
             int curClient = 0;
-            for (int i = 0; i < newStreamTestThreads(); i++) {
-                final int index = i;
-                final IStreamSynchronousEndpointClient serverClient = serverClients[curClient];
-                final IStreamSynchronousEndpointClient clientClient = clientClients[curClient];
-                testExecutor.execute(() -> {
-                    runStreamLatencyTest(serverClient, clientClient, String.valueOf(index));
-                });
-                curClient++;
-                if (curClient >= serverClients.length) {
-                    curClient = 0;
+            try (IBufferingIterator<Future<?>> testFutures = new BufferingIterator<>()) {
+                for (int i = 0; i < newStreamTestThreads(); i++) {
+                    final int index = i;
+                    final IStreamSynchronousEndpointClient serverClient = serverClients[curClient];
+                    final IStreamSynchronousEndpointClient clientClient = clientClients[curClient];
+                    testFutures.add(testExecutor.submit(() -> {
+                        runStreamLatencyTest(serverClient, clientClient, String.valueOf(index));
+                    }));
+                    curClient++;
+                    if (curClient >= serverClients.length) {
+                        curClient = 0;
+                    }
+                }
+                while (testFutures.hasNext()) {
+                    Futures.getNoInterrupt(testFutures.next());
                 }
             }
         } finally {
@@ -312,22 +322,24 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
 
     public void runStreamLatencyTest(final IStreamSynchronousEndpointClient serverClient,
             final IStreamSynchronousEndpointClient clientClient, final String topicSuffix) {
+        final String requestTopic = "request" + topicSuffix;
+        final String responseTopic = "response" + topicSuffix;
         final StreamSynchronousEndpointClientChannel serverRequestChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, "request" + topicSuffix, parent.getMaxMessageSize());
+                serverClient, requestTopic, parent.getMaxMessageSize());
         final StreamSynchronousEndpointClientChannel serverResponseChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, "response" + topicSuffix, parent.getMaxMessageSize());
-        final ISynchronousReader<FDate> serverRequestReader = parent
+                serverClient, responseTopic, parent.getMaxMessageSize());
+        final ISynchronousReader<FDate> serverRequestReader = AChannelTest
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(serverRequestChannel));
-        final ISynchronousWriter<FDate> serverResponseWriter = parent
+        final ISynchronousWriter<FDate> serverResponseWriter = AChannelTest
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(serverResponseChannel));
         final LatencyServerTask serverTask = new LatencyServerTask(parent, serverRequestReader, serverResponseWriter);
         final StreamSynchronousEndpointClientChannel clientRequestChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, "request" + topicSuffix, parent.getMaxMessageSize());
+                clientClient, requestTopic, parent.getMaxMessageSize());
         final StreamSynchronousEndpointClientChannel clientResponseChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, "response" + topicSuffix, parent.getMaxMessageSize());
-        final ISynchronousWriter<FDate> clientRequestWriter = parent
+                clientClient, responseTopic, parent.getMaxMessageSize());
+        final ISynchronousWriter<FDate> clientRequestWriter = AChannelTest
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(clientRequestChannel));
-        final ISynchronousReader<FDate> clientResponseReader = parent
+        final ISynchronousReader<FDate> clientResponseReader = AChannelTest
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(clientResponseChannel));
         final LatencyClientTask clientTask = new LatencyClientTask(parent, clientRequestWriter, clientResponseReader);
         try {
@@ -364,8 +376,8 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         return STREAM_TEST_THREADS;
     }
 
-    protected IStreamSynchronousEndpointServiceFactory newServiceFactory() {
-        return TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
+    protected IStreamSynchronousEndpointServiceFactory newStreamServiceFactory() {
+        return STREAM_SERVICE_FACTORY;
     }
 
 }

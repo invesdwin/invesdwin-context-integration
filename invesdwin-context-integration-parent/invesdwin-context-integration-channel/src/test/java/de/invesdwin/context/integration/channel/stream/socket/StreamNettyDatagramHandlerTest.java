@@ -24,7 +24,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class StreamNettyDatagramHandlerTest extends AChannelTest {
 
     @Test
-    public void testRpcPerformance() throws InterruptedException {
+    public void testStreamPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final INettyDatagramChannelType type = INettyDatagramChannelType.getDefault();
