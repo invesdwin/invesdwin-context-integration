@@ -20,6 +20,7 @@ import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableSet;
+import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 
@@ -42,7 +43,7 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
                 .getIntegerOptional(StreamSynchronousEndpointClientChannel.KEY_VALUE_FIXED_LENGTH, null);
         final CompressionMode compressionMode = properties.getEnumOptional(CompressionMode.class,
                 StreamSynchronousEndpointClientChannel.KEY_COMPRESSION_MODE, CompressionMode.DEFAULT);
-        this.channel = new TimeSeriesDBSynchronousChannel(newFolder(), valueFixedLength) {
+        this.channel = new TimeSeriesDBSynchronousChannel(newFolder(topic), valueFixedLength) {
             @Override
             protected boolean newCloseMessageEnabled() {
                 return false;
@@ -67,7 +68,11 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
         writer.open();
     }
 
-    private File newFolder() {
+    protected File newFolder(final String topic) {
+        return new File(newBaseFolder(), Files.normalizePath(topic));
+    }
+
+    protected File newBaseFolder() {
         return new File(ContextProperties.getCacheDirectory(),
                 TimeSeriesDBStreamSynchronousEndpointService.class.getSimpleName());
     }
