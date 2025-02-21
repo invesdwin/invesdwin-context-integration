@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.stream.client;
 
 import java.io.IOException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -65,8 +64,8 @@ public class AsyncDelegateSynchronousEndpointClient implements IStreamSynchronou
     }
 
     @Override
-    public void poll(final Duration timeout) throws TimeoutException {
-        delegate.poll(timeout);
+    public boolean poll(final Duration timeout) {
+        return delegate.poll(timeout);
     }
 
     @Override

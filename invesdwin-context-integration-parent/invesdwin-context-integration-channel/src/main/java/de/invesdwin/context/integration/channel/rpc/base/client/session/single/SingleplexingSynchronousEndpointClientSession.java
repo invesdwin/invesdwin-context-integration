@@ -174,75 +174,19 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
         lock.lock();
         try {
             final long waitingSinceNanos = System.nanoTime();
-            writeLocked(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout, waitingSinceNanos);
+            if (request == null) {
+                //just send a heartbeat if needed
+                maybeSendHeartbeatLocked();
+            } else {
+                writeLocked(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout,
+                        waitingSinceNanos);
+            }
             if (!waitForResponse) {
                 //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
                 return null;
             }
-            while (true) {
-                while (!responseReaderSpinWait.hasNext()
-                        .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
-                    if (isClosed()) {
-                        throw FastEOFException.getInstance("closed");
-                    }
-                    if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
-                        throw FastTimeoutException.getInstance("Request timeout exceeded for [%s:%s:%s]: %s", serviceId,
-                                methodId, requestSequence, requestTimeout);
-                    }
-                }
-                try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
-                        .readMessage()) {
-                    final int responseService = responseHolder.getService();
-                    final int responseMethod = responseHolder.getMethod();
-                    final int responseSequence = responseHolder.getSequence();
-                    if (responseSequence != requestSequence) {
-                        //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
-                        if (responseSequence < 0) {
-                            if (unexpectedMessageListener.onPushedWithoutRequest(this, serviceId, methodId,
-                                    responseSequence, request)) {
-                                throw new UnsupportedOperationException(
-                                        "PushedWithoutRequest messages can not be stored for later polling. Use a "
-                                                + MultiplexingSynchronousEndpointClientSession.class.getSimpleName()
-                                                + " if this feature is required.");
-                            }
-                        } else {
-                            unexpectedMessageListener.onUnexpectedResponse(this, serviceId, methodId, responseSequence,
-                                    request);
-                        }
-                        continue;
-                    }
-                    if (responseMethod != methodId) {
-                        if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
-                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
-                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
-                            throw new RetryLaterRuntimeException(new RemoteExecutionException(message));
-                        } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
-                            final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
-                            final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
-                            throw new RemoteExecutionException(message);
-                        } else {
-                            throw new RetryLaterRuntimeException("Unexpected methodId in response [" + responseService
-                                    + ":" + responseMethod + ":" + responseSequence + "] for request [" + serviceId
-                                    + ":" + methodId + ":" + requestSequence + "]");
-                        }
-                    }
-                    if (responseService != serviceId) {
-                        throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService
-                                + ":" + responseMethod + ":" + responseSequence + "] for request [" + serviceId + ":"
-                                + methodId + ":" + requestSequence + "]");
-                    }
-                    final IByteBufferProvider responseMessage = responseHolder.getMessage();
-                    response.setMessage(responseMessage);
-                    return response;
-                } catch (final RemoteExecutionException | RetryLaterRuntimeException | UnsupportedOperationException
-                        | AbortRequestException e) {
-                    responseReaderSpinWait.getReader().readFinished();
-                    throw e;
-                } catch (final Throwable e) {
-                    responseReaderSpinWait.getReader().readFinished();
-                    throw Throwables.propagate(e);
-                }
-            }
+            return waitForResponseBlocking(serviceId, methodId, requestSequence, request, requestTimeout,
+                    unexpectedMessageListener, waitingSinceNanos);
         } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
                 | UnsupportedOperationException | AbortRequestException e) {
             lock.unlock();
@@ -257,6 +201,76 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             }
             lock.unlock();
             throw new RetryLaterRuntimeException(e);
+        }
+    }
+
+    private ICloseableByteBufferProvider waitForResponseBlocking(final int serviceId, final int methodId,
+            final int requestSequence, final IByteBufferProvider request, final Duration requestTimeout,
+            final IUnexpectedMessageListener unexpectedMessageListener, final long waitingSinceNanos)
+            throws Exception, FastEOFException, FastTimeoutException, IOException {
+        while (true) {
+            while (!responseReaderSpinWait.hasNext()
+                    .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {
+                if (isClosed()) {
+                    throw FastEOFException.getInstance("closed");
+                }
+                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                    throw FastTimeoutException.getInstance("Request timeout exceeded for [%s:%s:%s]: %s", serviceId,
+                            methodId, requestSequence, requestTimeout);
+                }
+            }
+            try (IServiceSynchronousCommand<IByteBufferProvider> responseHolder = responseReaderSpinWait.getReader()
+                    .readMessage()) {
+                final int responseService = responseHolder.getService();
+                final int responseMethod = responseHolder.getMethod();
+                final int responseSequence = responseHolder.getSequence();
+                if (responseSequence != requestSequence) {
+                    //ignore invalid response and wait for correct one (might happen due to previous timeout and late response)
+                    if (responseSequence < 0) {
+                        if (unexpectedMessageListener.onPushedWithoutRequest(this, serviceId, methodId,
+                                responseSequence, request)) {
+                            throw new UnsupportedOperationException(
+                                    "PushedWithoutRequest messages can not be stored for later polling. Use a "
+                                            + MultiplexingSynchronousEndpointClientSession.class.getSimpleName()
+                                            + " if this feature is required.");
+                        }
+                    } else {
+                        unexpectedMessageListener.onUnexpectedResponse(this, serviceId, methodId, responseSequence,
+                                request);
+                    }
+                    continue;
+                }
+                if (responseMethod != methodId) {
+                    if (responseMethod == IServiceSynchronousCommand.RETRY_ERROR_METHOD_ID) {
+                        final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                        final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                        throw new RetryLaterRuntimeException(new RemoteExecutionException(message));
+                    } else if (responseMethod == IServiceSynchronousCommand.ERROR_METHOD_ID) {
+                        final IByteBuffer messageBuffer = responseHolder.getMessage().asBuffer();
+                        final String message = messageBuffer.getStringUtf8(0, messageBuffer.capacity());
+                        throw new RemoteExecutionException(message);
+                    } else {
+                        throw new RetryLaterRuntimeException("Unexpected methodId in response [" + responseService + ":"
+                                + responseMethod + ":" + responseSequence + "] for request [" + serviceId + ":"
+                                + methodId + ":" + requestSequence + "]");
+                    }
+                }
+                if (responseService != serviceId) {
+                    throw new RetryLaterRuntimeException("Unexpected serviceId in response [" + responseService + ":"
+                            + responseMethod + ":" + responseSequence + "] for request [" + serviceId + ":" + methodId
+                            + ":" + requestSequence + "]");
+                }
+                final IByteBufferProvider responseMessage = responseHolder.getMessage();
+                response.setMessage(responseMessage);
+                return response;
+            } catch (final RemoteExecutionException | RetryLaterRuntimeException | UnsupportedOperationException
+                    | AbortRequestException e) {
+                responseReaderSpinWait.getReader().readFinished();
+                throw e;
+            } catch (final Throwable e) {
+                responseReaderSpinWait.getReader().readFinished();
+                throw Throwables.propagate(e);
+            }
         }
     }
 
@@ -324,14 +338,6 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     private void writeLocked(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
             final long waitingSinceNanos) throws Exception, TimeoutException {
-        if (request == null) {
-            /*
-             * nothing to write, must be a subscription from the server that is being polled for, just check if a
-             * heartbeat message should be sent instead since heartbeat thread could be locked out constantly
-             */
-            maybeSendHeartbeatLocked();
-            return;
-        }
         try {
             requestHolder.setService(serviceId);
             requestHolder.setMethod(methodId);

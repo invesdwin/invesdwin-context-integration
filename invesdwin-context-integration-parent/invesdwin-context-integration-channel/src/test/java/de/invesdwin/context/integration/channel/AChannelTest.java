@@ -54,7 +54,7 @@ public abstract class AChannelTest extends ATest {
 
     //one warmup/connect message
     public static final int WARMUP_MESSAGE_COUNT = 1;
-    public static final boolean DEBUG = false;
+    public static final boolean DEBUG = true;
     public static final int SIMULATED_ADDITONAL_MESSAGE_SIZE = 0;
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;

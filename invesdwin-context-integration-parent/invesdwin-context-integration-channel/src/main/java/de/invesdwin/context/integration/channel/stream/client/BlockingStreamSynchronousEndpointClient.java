@@ -142,22 +142,24 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
     }
 
     @Override
-    public void poll(final Duration timeout) throws TimeoutException {
+    public boolean poll(final Duration timeout) {
         try {
             final MultiplexingSynchronousEndpointClientSessionResponse polled = asyncStreamMessages.poll();
             if (polled != null) {
                 try {
                     pollUnexpectedMessageListener.onPushedWithoutRequest(session, polled.getServiceId(),
                             polled.getMethodId(), polled.getRequestSequence(), polled);
+                    return true;
                 } finally {
                     polled.close();
                 }
             }
-            session.request(0, 0, 0, null, false, timeout, false, pollUnexpectedMessageListener);
+            session.poll(timeout, pollUnexpectedMessageListener);
+            return false;
         } catch (final TimeoutException e) {
-            throw e;
+            return false;
         } catch (final AbortRequestException e) {
-            throw new RuntimeException(e);
+            return true;
         }
     }
 
@@ -174,6 +176,10 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
              * to wait for the resend before writing the next sequenced messages so that we don't mix the order. Though
              * we could add this also as a reader/writer step that is useable with any transport transparently? Also
              * does the server write the message and then complain or does it actually reject the message fully?
+             */
+            /*
+             * TODO: also reconsider making put blocking so it is not added to worker executor which might change order
+             * of elements, if its added to an executor, then by the async service with 1 thread only
              */
             /*
              * TODO: implement a truly non-blocking endpoint client session wrapper that directly returns futures for

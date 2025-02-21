@@ -7,6 +7,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.client.handler.IServiceMethodInfo;
+import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.lang.Closeables;
@@ -238,6 +239,12 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
             throw exceptionResponse;
         }
         return response.sliceTo(responseSize);
+    }
+
+    public boolean isPollOnly() {
+        return serviceId == ISynchronousEndpointClientSession.INVALID_POLL_ONLY_ID
+                && methodId == ISynchronousEndpointClientSession.INVALID_POLL_ONLY_ID
+                && requestSequence == ISynchronousEndpointClientSession.INVALID_POLL_ONLY_ID;
     }
 
 }

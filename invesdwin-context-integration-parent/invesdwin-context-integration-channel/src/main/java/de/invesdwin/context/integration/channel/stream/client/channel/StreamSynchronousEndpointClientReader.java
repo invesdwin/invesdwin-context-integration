@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.client.channel;
 
 import java.io.IOException;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -74,13 +73,11 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
 
     @Override
     public boolean hasNext() throws IOException {
-        //TODO: support polling with 0 timeout inside of the client (only 1 cycle)
-        try {
-            client.poll(pollTimeout);
-        } catch (final TimeoutException e) {
-            return false;
+        if (polledMessage != null) {
+            return true;
         }
-        return polledMessage != null;
+        //TODO: support polling with 0 timeout inside of the client (only 1 cycle)
+        return client.poll(pollTimeout);
     }
 
     @Override

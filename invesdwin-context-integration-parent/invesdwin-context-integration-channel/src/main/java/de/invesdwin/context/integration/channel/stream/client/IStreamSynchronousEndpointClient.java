@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.client;
 
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynchronousEndpointService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
@@ -16,7 +15,7 @@ public interface IStreamSynchronousEndpointClient extends ISynchronousChannel {
         return RpcSynchronousEndpointService.newServiceId(topic);
     }
 
-    void poll(Duration timeout) throws TimeoutException;
+    boolean poll(Duration timeout);
 
     Future<?> put(int serviceId, ICloseableByteBufferProvider message);
 
