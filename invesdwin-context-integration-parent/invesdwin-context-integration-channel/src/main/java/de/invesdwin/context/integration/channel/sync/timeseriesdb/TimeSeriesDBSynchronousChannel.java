@@ -8,8 +8,8 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.compression.CompressionMode;
 import de.invesdwin.context.integration.compression.ICompressionFactory;
-import de.invesdwin.context.integration.compression.lz4.LZ4Streams;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.PeriodicalSegmentFinder;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.SegmentedKey;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.finder.DummySegmentFinder;
@@ -25,6 +25,7 @@ import de.invesdwin.util.time.date.FDate;
 @NotThreadSafe
 public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
 
+    public static final CompressionMode DEFAULT_COMPRESSION_MODE = CompressionMode.FAST;
     private final File directory;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
     @GuardedBy("this for modification")
@@ -59,7 +60,7 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
     }
 
     public ICompressionFactory newCompressionFactory() {
-        return LZ4Streams.getDefaultCompressionFactory();
+        return DEFAULT_COMPRESSION_MODE.newCompressionFactory();
     }
 
     public boolean isCloseMessageEnabled() {

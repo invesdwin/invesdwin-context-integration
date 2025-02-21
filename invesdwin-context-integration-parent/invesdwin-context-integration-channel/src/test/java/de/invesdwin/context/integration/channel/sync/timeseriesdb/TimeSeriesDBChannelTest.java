@@ -44,9 +44,9 @@ public class TimeSeriesDBChannelTest extends AChannelTest {
     private void runTimeSeriesDBLatencyTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final TimeSeriesDBSynchronousChannel requestChannel = new TimeSeriesDBSynchronousChannel(requestFile,
+            final TimeSeriesDBSynchronousChannel requestChannel = newTimeSeriesDBSynchronousChannel(requestFile,
                     MAX_MESSAGE_SIZE);
-            final TimeSeriesDBSynchronousChannel responseChannel = new TimeSeriesDBSynchronousChannel(responseFile,
+            final TimeSeriesDBSynchronousChannel responseChannel = newTimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
             final ISynchronousWriter<IByteBufferProvider> responseWriter = new TimeSeriesDBSynchronousWriter(
                     responseChannel);
@@ -65,6 +65,11 @@ public class TimeSeriesDBChannelTest extends AChannelTest {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);
         }
+    }
+
+    protected TimeSeriesDBSynchronousChannel newTimeSeriesDBSynchronousChannel(final File directory,
+            final Integer valueFixedLength) {
+        return new TimeSeriesDBSynchronousChannel(directory, valueFixedLength);
     }
 
     @Test
@@ -90,7 +95,7 @@ public class TimeSeriesDBChannelTest extends AChannelTest {
     private void runTimeSeriesDBThroughputTest(final File requestFile, final File responseFile)
             throws InterruptedException {
         try {
-            final TimeSeriesDBSynchronousChannel channel = new TimeSeriesDBSynchronousChannel(responseFile,
+            final TimeSeriesDBSynchronousChannel channel = newTimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
             final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(channel);
             final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));

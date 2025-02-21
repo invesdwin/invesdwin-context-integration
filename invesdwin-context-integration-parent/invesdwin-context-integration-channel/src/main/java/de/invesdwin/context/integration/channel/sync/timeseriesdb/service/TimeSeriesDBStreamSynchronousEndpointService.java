@@ -42,7 +42,8 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
         final Integer valueFixedLength = properties
                 .getIntegerOptional(StreamSynchronousEndpointClientChannel.KEY_VALUE_FIXED_LENGTH, null);
         final CompressionMode compressionMode = properties.getEnumOptional(CompressionMode.class,
-                StreamSynchronousEndpointClientChannel.KEY_COMPRESSION_MODE, CompressionMode.DEFAULT);
+                StreamSynchronousEndpointClientChannel.KEY_COMPRESSION_MODE,
+                TimeSeriesDBSynchronousChannel.DEFAULT_COMPRESSION_MODE);
         this.channel = new TimeSeriesDBSynchronousChannel(newFolder(topic), valueFixedLength) {
             @Override
             protected boolean newCloseMessageEnabled() {

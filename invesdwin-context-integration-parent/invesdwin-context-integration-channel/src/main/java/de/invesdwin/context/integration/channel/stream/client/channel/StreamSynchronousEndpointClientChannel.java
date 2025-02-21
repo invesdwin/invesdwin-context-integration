@@ -54,7 +54,8 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
     }
 
     protected CompressionMode newCompressionMode() {
-        return CompressionMode.DEFAULT;
+        //keep default in the service
+        return null;
     }
 
     public CompressionMode getCompressionMode() {
@@ -83,18 +84,26 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
     }
 
     public String newCreateTopicUri() {
-        final StringBuilder uri = new StringBuilder(topic);
-        uri.append("?");
-        uri.append(KEY_COMPRESSION_MODE);
-        uri.append("=");
-        uri.append(getCompressionMode());
-        if (getValueFixedLength() != null) {
-            uri.append("&");
-            uri.append(KEY_VALUE_FIXED_LENGTH);
-            uri.append("=");
-            uri.append(getValueFixedLength());
+        final StringBuilder params = new StringBuilder();
+        final CompressionMode compressionMode = getCompressionMode();
+        if (compressionMode != null) {
+            params.append("?");
+            params.append(KEY_COMPRESSION_MODE);
+            params.append("=");
+            params.append(compressionMode);
         }
-        return uri.toString();
+        final Integer valueFixedLength = getValueFixedLength();
+        if (valueFixedLength != null) {
+            if (params.isEmpty()) {
+                params.append("?");
+            } else {
+                params.append("&");
+            }
+            params.append(KEY_VALUE_FIXED_LENGTH);
+            params.append("=");
+            params.append(valueFixedLength);
+        }
+        return topic + params.toString();
     }
 
     public String newSubscribeTopicUri(final FDate fromTimestamp) {

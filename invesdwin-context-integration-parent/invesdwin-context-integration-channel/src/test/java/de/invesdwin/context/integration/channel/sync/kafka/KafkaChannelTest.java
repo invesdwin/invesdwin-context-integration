@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.kafka;
 
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -15,6 +16,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import com.github.dockerjava.api.command.CreateContainerCmd;
+
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
@@ -25,6 +28,7 @@ import de.invesdwin.context.integration.channel.ThroughputChannelTest.Throughput
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.math.decimal.scaled.ByteSizeScale;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -33,9 +37,28 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class KafkaChannelTest extends AChannelTest {
 
+    private static final boolean TMPFS = false;
+    private static final boolean TRANSIENT = false;
+
     @Container
-    private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
-            DockerImageName.parse("apache/kafka:3.8.0"));
+    private static final KafkaContainer KAFKACONTAINER = newKafkaContainer();
+
+    private static KafkaContainer newKafkaContainer() {
+        final KafkaContainer container = new KafkaContainer(DockerImageName.parse("apache/kafka:3.8.0"));
+        if (TRANSIENT) {
+            container.withEnv("KAFKA_LOG_RETENTION_MS", "1");
+        }
+        if (TMPFS) {
+            container.withEnv("KAFKA_LOG_DIRS", "/dev/shm/kafka-logs");
+            container.withCreateContainerCmdModifier(new Consumer<CreateContainerCmd>() {
+                @Override
+                public void accept(final CreateContainerCmd t) {
+                    t.getHostConfig().withShmSize((long) ByteSizeScale.BYTES.convert(8, ByteSizeScale.GIGABYTES));
+                }
+            });
+        }
+        return container;
+    }
 
     public static void createTopic(final String bootstrapServers, final String topic) {
         final Properties config = new Properties();
