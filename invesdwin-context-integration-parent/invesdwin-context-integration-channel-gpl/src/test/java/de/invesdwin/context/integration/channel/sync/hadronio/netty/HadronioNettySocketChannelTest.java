@@ -34,24 +34,26 @@ public class HadronioNettySocketChannelTest extends AChannelTest {
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettySocketSynchronousWriter(
-                newNettySocketChannel(type, responseAddress, true, getMaxMessageSize()));
+                newNettySocketChannel(type, responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettySocketSynchronousReader(
-                newNettySocketChannel(type, requestAddress, false, getMaxMessageSize()));
+                newNettySocketChannel(type, requestAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettySocketSynchronousWriter(
-                newNettySocketChannel(type, requestAddress, true, getMaxMessageSize()));
+                newNettySocketChannel(type, requestAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettySocketSynchronousReader(
-                newNettySocketChannel(type, responseAddress, false, getMaxMessageSize()));
+                newNettySocketChannel(type, responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

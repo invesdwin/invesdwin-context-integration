@@ -34,24 +34,25 @@ public class BlockingSocketChannelTest extends AChannelTest {
 
     protected void runBlockingSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingSocketSynchronousWriter(
-                newBlockingSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newBlockingSocketSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingSocketSynchronousReader(
-                newBlockingSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newBlockingSocketSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingSocketSynchronousWriter(
-                newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newBlockingSocketSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingSocketSynchronousReader(
-                newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newBlockingSocketSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected BlockingSocketSynchronousChannel newBlockingSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new BlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new BlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

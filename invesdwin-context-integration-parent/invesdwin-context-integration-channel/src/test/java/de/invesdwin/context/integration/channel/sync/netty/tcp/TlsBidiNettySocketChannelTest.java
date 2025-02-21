@@ -14,8 +14,9 @@ public class TlsBidiNettySocketChannelTest extends BidiNettySocketChannelTest {
 
     @Override
     protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new TlsNettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize) {
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new TlsNettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency) {
 
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider(final ByteBufAllocator alloc) {

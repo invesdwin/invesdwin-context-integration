@@ -41,10 +41,14 @@ public class NettySharedUdtClientEndpointFactory
             final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
-        this.socketSize = estimatedMaxMessageSize + NettyUdtSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
 
         this.bootstrapFinalizer = new NettySharedUdtClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + NettyUdtSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override

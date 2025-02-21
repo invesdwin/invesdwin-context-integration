@@ -41,8 +41,9 @@ public class OioNettyDatagramChannelType implements INettyDatagramChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
-        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize, server);
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
+        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize, lowLatency, server);
     }
 
     @Override

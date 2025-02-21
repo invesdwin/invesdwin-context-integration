@@ -16,8 +16,8 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.Blockin
 public class BlockingHadronioSocketSynchronousChannel extends BlockingSocketSynchronousChannel {
 
     public BlockingHadronioSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
+        super(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

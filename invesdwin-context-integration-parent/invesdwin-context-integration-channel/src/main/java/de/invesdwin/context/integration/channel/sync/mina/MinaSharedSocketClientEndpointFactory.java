@@ -45,10 +45,14 @@ public class MinaSharedSocketClientEndpointFactory
             final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
-        this.socketSize = estimatedMaxMessageSize + MinaSocketSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
 
         this.bootstrapFinalizer = new MinaSharedSocketClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MinaSocketSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override

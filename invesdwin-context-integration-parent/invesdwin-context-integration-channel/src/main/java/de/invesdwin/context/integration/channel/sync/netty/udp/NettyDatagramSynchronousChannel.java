@@ -45,6 +45,7 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
     protected volatile boolean datagramChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
+    protected final boolean lowLatency;
     protected final NettyDatagramSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -57,18 +58,27 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
     private InetSocketAddress otherSocketAddress;
 
     public NettyDatagramSynchronousChannel(final INettyDatagramChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new NettyDatagramSynchronousChannelFinalizer();
         finalizer.register(this);
     }
 
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
+    }
+
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public boolean isReaderRegistered() {
@@ -153,7 +163,7 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
                 finalizer.bootstrap = new Bootstrap();
                 finalizer.bootstrap.group(type.newServerWorkerGroup(newServerWorkerGroupThreadCount(),
                         newServerWorkerGroupSelectStrategyFactory())).channel(type.getServerChannelType());
-                type.channelOptions(finalizer.bootstrap::option, socketSize, server);
+                type.channelOptions(finalizer.bootstrap::option, socketSize, lowLatency, server);
                 bootstrapListener.accept(finalizer.bootstrap);
                 try {
                     return finalizer.bootstrap.bind(socketAddress);
@@ -171,7 +181,7 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
             finalizer.bootstrap = new Bootstrap();
             finalizer.bootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
                     newClientWorkerGroupSelectStrategyFactory())).channel(type.getClientChannelType());
-            type.channelOptions(finalizer.bootstrap::option, socketSize, server);
+            type.channelOptions(finalizer.bootstrap::option, socketSize, lowLatency, server);
             bootstrapListener.accept(finalizer.bootstrap);
             try {
                 return finalizer.bootstrap.connect(socketAddress);

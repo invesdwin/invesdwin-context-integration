@@ -17,18 +17,20 @@ public class NativeDatagramEndpointFactory
     private final SocketAddress address;
     private final boolean server;
     private final int estimatedMaxMessageSize;
+    private final boolean lowLatency;
 
     public NativeDatagramEndpointFactory(final SocketAddress address, final boolean server,
-            final int estimatedMaxMessageSize) {
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.server = server;
         this.address = address;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
+        this.lowLatency = lowLatency;
     }
 
     @Override
     public ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, SocketAddress> newEndpoint() {
         final DatagramSynchronousChannel channel = newDatagramSynchronousChannel(address, server,
-                estimatedMaxMessageSize);
+                estimatedMaxMessageSize, lowLatency);
         if (server) {
             channel.setMultipleClientsAllowed();
         }
@@ -38,8 +40,8 @@ public class NativeDatagramEndpointFactory
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     private static final class NativeDatagramEndpoint

@@ -31,25 +31,31 @@ public class NettySharedSocketClientEndpointFactory
     private final INettySocketChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
+    private final boolean lowLatency;
     private final NettySharedSocketClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<NettySocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
     public NettySharedSocketClientEndpointFactory(final INettySocketChannelType type,
-            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
-        this.socketSize = estimatedMaxMessageSize + NettySocketSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
 
         this.bootstrapFinalizer = new NettySharedSocketClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + NettySocketSynchronousChannel.MESSAGE_INDEX;
+    }
+
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
         final NettySocketSynchronousChannel connector = new NettySocketClientEndpointChannel(type, socketAddress, false,
-                socketSize);
+                socketSize, lowLatency);
         final NettySocketSynchronousReader reader = new NettySocketSynchronousReader(connector);
         final NettySocketSynchronousWriter writer = new NettySocketSynchronousWriter(connector);
         return ImmutableSynchronousEndpoint.of(reader, writer);
@@ -63,7 +69,7 @@ public class NettySharedSocketClientEndpointFactory
                     bootstrapFinalizer.clientBootstrap.group(type.newClientWorkerGroup(
                             newClientWorkerGroupThreadCount(), newClientWorkerGroupSelectStrategyFactory()));
                     bootstrapFinalizer.clientBootstrap.channel(type.getClientChannelType());
-                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, false);
+                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, lowLatency, false);
                     bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
                         @Override
                         public void initChannel(final SocketChannel ch) throws Exception {
@@ -108,8 +114,9 @@ public class NettySharedSocketClientEndpointFactory
         private boolean opened;
 
         private NettySocketClientEndpointChannel(final INettySocketChannelType type,
-                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-            super(type, socketAddress, server, estimatedMaxMessageSize);
+                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+                final boolean lowLatency) {
+            super(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
         }
 
         @Override

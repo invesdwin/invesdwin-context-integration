@@ -47,8 +47,9 @@ public class EpollNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
-        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize, server);
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
+        NioNettySocketChannelType.INSTANCE.channelOptions(consumer, socketSize, lowLatency, server);
     }
 
     @Override

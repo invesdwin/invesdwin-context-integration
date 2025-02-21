@@ -47,19 +47,29 @@ public class NioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
         consumer.option(ChannelOption.SO_KEEPALIVE, true);
-        consumer.option(ChannelOption.TCP_NODELAY, true);
         consumer.option(ChannelOption.ALLOW_HALF_CLOSURE, true);
         //        consumer.option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
         //                ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
         //        consumer.option(ChannelOption.SO_TIMEOUT,
         //                ContextProperties.DEFAULT_NETWORK_TIMEOUT.intValue(FTimeUnit.MILLISECONDS));
-        consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-        consumer.option(ChannelOption.SO_SNDBUF, socketSize);
-        consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
-                .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+        if (lowLatency) {
+            consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            consumer.option(ChannelOption.SO_SNDBUF, socketSize);
+            consumer.option(ChannelOption.TCP_NODELAY, true);
+        } else {
+            consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            consumer.option(ChannelOption.SO_SNDBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            consumer.option(ChannelOption.TCP_NODELAY, false);
+        }
     }
 
     @Override

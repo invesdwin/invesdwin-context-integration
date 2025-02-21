@@ -32,10 +32,11 @@ public class BidiHadronioNettySocketChannelTest extends AChannelTest {
 
     private void runBidiNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final NettySocketSynchronousChannel serverChannel = newNettySocketChannel(type, address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettySocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettySocketSynchronousReader(serverChannel);
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
@@ -48,8 +49,9 @@ public class BidiHadronioNettySocketChannelTest extends AChannelTest {
     }
 
     protected NettySocketSynchronousChannel newNettySocketChannel(final INettySocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

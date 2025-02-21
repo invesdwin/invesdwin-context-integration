@@ -40,8 +40,9 @@ public class EpollNettyDatagramChannelType implements INettyDatagramChannelType 
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
-        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize, server);
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
+        NioNettyDatagramChannelType.INSTANCE.channelOptions(consumer, socketSize, lowLatency, server);
         //http://vger.kernel.org/netconf2019_files/udp_gro.pdf
         //        consumer.option(EpollChannelOption.UDP_GRO, true);
     }

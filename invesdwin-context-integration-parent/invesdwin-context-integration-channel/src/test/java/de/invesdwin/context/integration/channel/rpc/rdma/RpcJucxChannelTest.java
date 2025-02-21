@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.rpc.rdma;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -27,7 +26,6 @@ import de.invesdwin.context.integration.channel.sync.jucx.JucxSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.jucx.JucxSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.jucx.type.IJucxTransportType;
 import de.invesdwin.context.integration.channel.sync.jucx.type.JucxTransportType;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -87,11 +85,6 @@ public class RpcJucxChannelTest extends AChannelTest {
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new JucxEndpointFactory(
                 type, address, false, getMaxMessageSize());
         test.runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

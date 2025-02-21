@@ -24,7 +24,6 @@ import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveS
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousChannelServer;
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.disni.passive.DisniPassiveSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -80,11 +79,6 @@ public class RpcSynchronousDisniPassiveChannelTest extends AChannelTest {
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new DisniPassiveEndpointFactory(
                 address, false, getMaxMessageSize());
         test.runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     @Override

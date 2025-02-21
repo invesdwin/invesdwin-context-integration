@@ -40,12 +40,21 @@ public class NioNettyDatagramChannelType implements INettyDatagramChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
-        consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
-        consumer.option(ChannelOption.SO_SNDBUF, socketSize);
-        consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers
-                .calculateExpansion(socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
+        if (lowLatency) {
+            consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            consumer.option(ChannelOption.SO_SNDBUF, socketSize);
+        } else {
+            consumer.option(ChannelOption.IP_TOS, BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            consumer.option(ChannelOption.SO_RCVBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+            consumer.option(ChannelOption.SO_SNDBUF, ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER));
+        }
     }
 
     @Override

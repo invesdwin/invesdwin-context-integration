@@ -72,8 +72,9 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
+        final boolean lowLatency = true;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         test.runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);
     }
 

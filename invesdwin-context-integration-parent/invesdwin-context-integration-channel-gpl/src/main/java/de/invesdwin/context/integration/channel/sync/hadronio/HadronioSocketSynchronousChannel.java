@@ -18,8 +18,8 @@ public class HadronioSocketSynchronousChannel extends SocketSynchronousChannel {
     public static final HadronioProvider HADRONIO_PROVIDER = new HadronioProvider();
 
     public HadronioSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
+        super(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

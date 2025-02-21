@@ -12,8 +12,8 @@ public class TlsBlockingSocketChannelTest extends BlockingSocketChannelTest {
 
     @Override
     protected BlockingSocketSynchronousChannel newBlockingSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new TlsBlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new TlsBlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency) {
             @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider() {
                 return new DerivedKeyTransportLayerSecurityProvider(getSocketAddress(), server) {

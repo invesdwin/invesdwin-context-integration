@@ -30,24 +30,25 @@ public class EnxioSocketChannelTest extends AChannelTest {
 
     protected void runNativeSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new EnxioSocketSynchronousWriter(
-                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new EnxioSocketSynchronousReader(
-                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new EnxioSocketSynchronousWriter(
-                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(
-                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

@@ -51,10 +51,11 @@ public class RpcSessionlessBlockingDatagramChannelTest extends AChannelTest {
 
     protected void runRpcTest(final RpcLatencyChannelTest test, final SocketAddress address,
             final RpcTestServiceMode mode) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new BlockingDatagramEndpointFactory(
-                address, true, getMaxMessageSize());
+                address, true, getMaxMessageSize(), lowLatency);
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new BlockingDatagramEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         test.runRpcSessionlessPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
     }
 

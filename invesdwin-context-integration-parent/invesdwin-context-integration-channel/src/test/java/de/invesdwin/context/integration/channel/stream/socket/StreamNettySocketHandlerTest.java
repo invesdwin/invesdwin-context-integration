@@ -28,11 +28,12 @@ public class StreamNettySocketHandlerTest extends AChannelTest {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final INettySocketChannelType type = INettySocketChannelType.getDefault();
+        final boolean lowLatency = true;
         final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
             @Override
             public IAsynchronousChannel apply(final StreamAsynchronousEndpointServerHandlerFactory t) {
                 final NettySocketSynchronousChannel channel = new NettySocketSynchronousChannel(type, address, true,
-                        getMaxMessageSize()) {
+                        getMaxMessageSize(), lowLatency) {
                     @Override
                     protected int newServerWorkerGroupThreadCount() {
                         return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;
@@ -43,7 +44,7 @@ public class StreamNettySocketHandlerTest extends AChannelTest {
         };
         //netty shared bootstrap
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedSocketClientEndpointFactory(
-                type, address, getMaxMessageSize()) {
+                type, address, getMaxMessageSize(), lowLatency) {
             @Override
             protected int newClientWorkerGroupThreadCount() {
                 return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;

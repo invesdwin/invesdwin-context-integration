@@ -32,6 +32,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketChannelOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
+    protected boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -40,11 +41,12 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public SocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
@@ -78,6 +80,10 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
 
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public int getEstimatedMaxMessageSize() {
@@ -195,7 +201,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     }
 
     protected void configureSocket(final Socket socket) throws SocketException {
-        BlockingSocketSynchronousChannel.configureSocketStatic(socket, getSocketSize());
+        BlockingSocketSynchronousChannel.configureSocketStatic(socket, getSocketSize(), lowLatency);
     }
 
     private void awaitSocketChannel() throws IOException {

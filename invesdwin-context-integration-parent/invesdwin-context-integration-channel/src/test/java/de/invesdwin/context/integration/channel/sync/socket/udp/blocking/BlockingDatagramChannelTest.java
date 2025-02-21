@@ -30,24 +30,25 @@ public class BlockingDatagramChannelTest extends AChannelTest {
 
     private void runBlockingDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new BlockingDatagramSynchronousReader(
-                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new BlockingDatagramSynchronousWriter(
-                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new BlockingDatagramSynchronousReader(
-                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected BlockingDatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress responseAddress,
-            final boolean server, final int maxMessageSize) {
-        return new BlockingDatagramSynchronousChannel(responseAddress, server, maxMessageSize);
+            final boolean server, final int maxMessageSize, final boolean lowLatency) {
+        return new BlockingDatagramSynchronousChannel(responseAddress, server, maxMessageSize, lowLatency);
     }
 
 }

@@ -37,16 +37,17 @@ public class SocketChannelTest extends AChannelTest {
 
     protected void runNioSocketLatencyTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
-                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = newSocketSynchronousReader(
-                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = newSocketSynchronousWriter(
-                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(
-                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
@@ -61,11 +62,12 @@ public class SocketChannelTest extends AChannelTest {
     }
 
     protected void runNioSocketThroughputTest(final SocketAddress channelAddress) throws InterruptedException {
+        final boolean lowLatency = false;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
-                newSocketSynchronousChannel(channelAddress, true, getMaxMessageSize()));
+                newSocketSynchronousChannel(channelAddress, true, getMaxMessageSize(), lowLatency));
         final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(responseWriter));
         final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(
-                newSocketSynchronousChannel(channelAddress, false, getMaxMessageSize()));
+                newSocketSynchronousChannel(channelAddress, false, getMaxMessageSize(), lowLatency));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(responseReader));
         new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
     }
@@ -81,8 +83,8 @@ public class SocketChannelTest extends AChannelTest {
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency) {
             @Override
             protected int newSocketSize(final int estimatedMaxMessageSize) {
                 return super.newSocketSize(estimatedMaxMessageSize);

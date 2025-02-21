@@ -34,8 +34,11 @@ public class StreamEncryptionNativeSocketChannelTest extends AChannelTest {
     }
 
     protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
-        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
-        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
+        final boolean lowLatency = true;
+        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize(),
+                lowLatency);
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize(),
+                lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new StreamEncryptionSynchronousWriter(
                 new NativeSocketSynchronousWriter(serverChannel), ENCRYPTION_FACTORY);
@@ -53,8 +56,8 @@ public class StreamEncryptionNativeSocketChannelTest extends AChannelTest {
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

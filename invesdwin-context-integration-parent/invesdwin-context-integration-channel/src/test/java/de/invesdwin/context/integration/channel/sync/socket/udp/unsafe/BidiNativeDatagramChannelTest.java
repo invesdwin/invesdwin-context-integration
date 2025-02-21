@@ -47,10 +47,11 @@ public class BidiNativeDatagramChannelTest extends AChannelTest {
     }
 
     protected void runDatagramPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final DatagramSynchronousChannel serverChannel = newDatagramSynchronousChannel(address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final DatagramSynchronousChannel clientChannel = newDatagramSynchronousChannel(address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeDatagramSynchronousWriter(
                 serverChannel);
@@ -68,8 +69,8 @@ public class BidiNativeDatagramChannelTest extends AChannelTest {
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

@@ -15,8 +15,8 @@ public class BidiHadronioSocketChannelTest extends BidiSocketChannelTest {
 
     @Override
     protected HadronioSocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new HadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new HadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

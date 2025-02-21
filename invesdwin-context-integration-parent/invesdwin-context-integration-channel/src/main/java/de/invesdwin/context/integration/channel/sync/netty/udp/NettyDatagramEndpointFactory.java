@@ -18,19 +18,21 @@ public class NettyDatagramEndpointFactory
     private final InetSocketAddress address;
     private final boolean server;
     private final int estimatedMaxMessageSize;
+    private final boolean lowLatency;
 
     public NettyDatagramEndpointFactory(final INettyDatagramChannelType type, final InetSocketAddress address,
-            final boolean server, final int estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.address = address;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
+        this.lowLatency = lowLatency;
     }
 
     @Override
     public ISessionlessSynchronousEndpoint<IByteBufferProvider, IByteBufferProvider, InetSocketAddress> newEndpoint() {
         final NettyDatagramSynchronousChannel channel = newNettyDatagramSynchronousChannel(type, address, server,
-                estimatedMaxMessageSize);
+                estimatedMaxMessageSize, lowLatency);
         if (server) {
             channel.setMultipleClientsAllowed();
         }
@@ -40,8 +42,9 @@ public class NettyDatagramEndpointFactory
     }
 
     protected NettyDatagramSynchronousChannel newNettyDatagramSynchronousChannel(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     private static final class NettyDatagramEndpoint

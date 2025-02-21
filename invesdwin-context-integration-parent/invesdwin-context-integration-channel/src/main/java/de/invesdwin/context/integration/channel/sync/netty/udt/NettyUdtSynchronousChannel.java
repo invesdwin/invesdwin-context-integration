@@ -66,9 +66,13 @@ public class NettyUdtSynchronousChannel implements Closeable {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new NettyUdtSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     public boolean isServer() {

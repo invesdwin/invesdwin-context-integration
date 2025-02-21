@@ -28,10 +28,11 @@ public class BidiNettyDatagramChannelTest extends AChannelTest {
 
     private void runBidiNettyDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final NettyDatagramSynchronousChannel serverChannel = newNettyDatagramChannel(type, address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final NettyDatagramSynchronousChannel clientChannel = newNettyDatagramChannel(type, address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyDatagramSynchronousWriter(
                 serverChannel);
@@ -47,8 +48,9 @@ public class BidiNettyDatagramChannelTest extends AChannelTest {
     }
 
     protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

@@ -44,6 +44,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     protected final int socketSize;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
+    protected boolean lowLatency;
     protected final NettySocketSynchronousChannelFinalizer finalizer;
     private volatile boolean socketChannelOpening;
 
@@ -56,18 +57,27 @@ public class NettySocketSynchronousChannel implements Closeable {
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public NettySocketSynchronousChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new NettySocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
 
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
+    }
+
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public boolean isReaderRegistered() {
@@ -145,7 +155,7 @@ public class NettySocketSynchronousChannel implements Closeable {
                 finalizer.serverBootstrap = new ServerBootstrap();
                 finalizer.serverBootstrap.group(parentGroup, childGroup);
                 finalizer.serverBootstrap.channel(type.getServerChannelType());
-                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize, server);
+                type.channelOptions(finalizer.serverBootstrap::childOption, socketSize, lowLatency, server);
                 finalizer.serverBootstrap.childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     public void initChannel(final SocketChannel ch) throws Exception {
@@ -181,7 +191,7 @@ public class NettySocketSynchronousChannel implements Closeable {
             finalizer.clientBootstrap.group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount(),
                     newClientWorkerGroupSelectStrategyFactory()));
             finalizer.clientBootstrap.channel(type.getClientChannelType());
-            type.channelOptions(finalizer.clientBootstrap::option, socketSize, server);
+            type.channelOptions(finalizer.clientBootstrap::option, socketSize, lowLatency, server);
             finalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
                 @Override
                 public void initChannel(final SocketChannel ch) throws Exception {

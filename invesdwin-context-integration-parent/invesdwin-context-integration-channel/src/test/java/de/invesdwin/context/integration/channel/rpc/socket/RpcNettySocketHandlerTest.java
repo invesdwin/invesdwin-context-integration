@@ -53,12 +53,13 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
 
     protected void runRpcTest(final RpcLatencyChannelTest test, final InetSocketAddress address,
             final RpcTestServiceMode mode) throws InterruptedException {
+        final boolean lowLatency = true;
         final INettySocketChannelType type = INettySocketChannelType.getDefault();
         final Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory = new Function<RpcAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel>() {
             @Override
             public IAsynchronousChannel apply(final RpcAsynchronousEndpointServerHandlerFactory t) {
                 final NettySocketSynchronousChannel channel = new NettySocketSynchronousChannel(type, address, true,
-                        getMaxMessageSize()) {
+                        getMaxMessageSize(), lowLatency) {
                     @Override
                     protected int newServerWorkerGroupThreadCount() {
                         return RpcLatencyChannelTest.RPC_CLIENT_TRANSPORTS;
@@ -69,7 +70,7 @@ public class RpcNettySocketHandlerTest extends AChannelTest {
         };
         //netty shared bootstrap
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedSocketClientEndpointFactory(
-                type, address, getMaxMessageSize()) {
+                type, address, getMaxMessageSize(), lowLatency) {
             @Override
             protected int newClientWorkerGroupThreadCount() {
                 return RpcLatencyChannelTest.RPC_CLIENT_TRANSPORTS;

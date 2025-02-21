@@ -48,7 +48,7 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new DisniSynchronousChannelFinalizer();
         finalizer.register(this);
     }
@@ -63,6 +63,10 @@ public class DisniPassiveSynchronousChannel implements ISynchronousChannel {
         finalizer.endpoint = endpoint;
         activeCount.incrementAndGet();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     public SocketAddress getSocketAddress() {

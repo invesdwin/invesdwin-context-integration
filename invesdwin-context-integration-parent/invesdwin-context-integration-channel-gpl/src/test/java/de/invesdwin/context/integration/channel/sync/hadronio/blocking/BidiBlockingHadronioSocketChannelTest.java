@@ -11,8 +11,9 @@ public class BidiBlockingHadronioSocketChannelTest extends BidiBlockingSocketCha
 
     @Override
     protected BlockingHadronioSocketSynchronousChannel newBlockingSocketSynchronousChannel(
-            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new BlockingHadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new BlockingHadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

@@ -49,10 +49,11 @@ public class RpcSessionlessNativeDatagramChannelTest extends AChannelTest {
 
     protected void runRpcTest(final RpcLatencyChannelTest test, final SocketAddress address,
             final RpcTestServiceMode mode) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NativeDatagramEndpointFactory(
-                address, true, getMaxMessageSize());
+                address, true, getMaxMessageSize(), lowLatency);
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         test.runRpcSessionlessPerformanceTest(serverEndpointFactory, clientEndpointFactory, mode);
     }
 

@@ -28,10 +28,11 @@ public class BidiChronicleNetworkChannelTest extends AChannelTest {
 
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
             final InetSocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final ChronicleNetworkSynchronousChannel serverChannel = newChronicleNetworkSynchronousChannel(type, address,
-                true, getMaxMessageSize());
+                true, getMaxMessageSize(), lowLatency);
         final ChronicleNetworkSynchronousChannel clientChannel = newChronicleNetworkSynchronousChannel(type, address,
-                false, getMaxMessageSize());
+                false, getMaxMessageSize(), lowLatency);
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleNetworkSynchronousWriter(
                 serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleNetworkSynchronousReader(
@@ -49,8 +50,8 @@ public class BidiChronicleNetworkChannelTest extends AChannelTest {
 
     private ChronicleNetworkSynchronousChannel newChronicleNetworkSynchronousChannel(
             final ChronicleSocketChannelType type, final InetSocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        return new ChronicleNetworkSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new ChronicleNetworkSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

@@ -29,24 +29,25 @@ public class DatagramChannelTest extends AChannelTest {
 
     private void runNioDatagramSocketPerformanceTest(final SocketAddress responseAddress,
             final SocketAddress requestAddress) throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new DatagramSynchronousWriter(
-                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize()));
+                newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new DatagramSynchronousReader(
-                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize()));
+                newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new DatagramSynchronousWriter(
-                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize()));
+                newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new DatagramSynchronousReader(
-                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize()));
+                newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

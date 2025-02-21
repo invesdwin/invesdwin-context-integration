@@ -41,10 +41,14 @@ public class JucxSynchronousChannelServer implements ISynchronousReader<JucxSync
         this.type = type;
         this.socketAddress = socketAddress;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + JucxSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.ucpMemMapParams = newUcpMemMapParams();
         this.finalizer = new JucxSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + JucxSynchronousChannel.MESSAGE_INDEX;
     }
 
     public IJucxTransportType getType() {

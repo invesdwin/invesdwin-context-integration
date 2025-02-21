@@ -37,16 +37,17 @@ public class NettyNativeSocketChannelTest extends AChannelTest {
     private void runNettySocketChannelPerformanceTest(final INettySocketChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyNativeSocketSynchronousWriter(
-                new NettySocketSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
+                new NettySocketSynchronousChannel(type, responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeSocketSynchronousReader(
-                new NettySocketSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
+                new NettySocketSynchronousChannel(type, requestAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeSocketSynchronousWriter(
-                new NettySocketSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
+                new NettySocketSynchronousChannel(type, requestAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeSocketSynchronousReader(
-                new NettySocketSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
+                new NettySocketSynchronousChannel(type, responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);

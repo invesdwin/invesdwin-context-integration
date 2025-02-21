@@ -40,6 +40,7 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
     protected final SocketAddress socketAddress;
     protected SocketAddress otherSocketAddress;
     protected final boolean server;
+    protected final boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -49,13 +50,18 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
     private boolean multipleClientsAllowed;
 
     public BlockingDatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     public void setMultipleClientsAllowed() {
@@ -83,6 +89,10 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
 
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public int getSocketSize() {
@@ -155,15 +165,24 @@ public class BlockingDatagramSynchronousChannel implements ISessionlessSynchrono
     }
 
     protected void configureSocket(final DatagramSocket socket) throws SocketException {
-        configureSocketStatic(socket, socketSize);
+        configureSocketStatic(socket, socketSize, lowLatency);
     }
 
-    public static void configureSocketStatic(final DatagramSocket socket, final int socketSize) throws SocketException {
-        socket.setSendBufferSize(socketSize);
-        socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(),
-                ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-        socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
-                | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+    public static void configureSocketStatic(final DatagramSocket socket, final int socketSize,
+            final boolean lowLatency) throws SocketException {
+        if (lowLatency) {
+            socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_LOWDELAY
+                    | BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(),
+                    ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+            socket.setSendBufferSize(socketSize);
+        } else {
+            socket.setTrafficClass(BlockingDatagramSynchronousChannel.IPTOS_THROUGHPUT);
+            socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(),
+                    ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+            socket.setSendBufferSize(Integers.max(socket.getSendBufferSize(),
+                    ByteBuffers.calculateExpansion(socketSize * RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+        }
     }
 
     private void awaitSocketChannel() throws IOException {

@@ -45,9 +45,9 @@ public class NativeUnixDomainSocketChannelTest extends NativeSocketChannelTest {
 
     @Override
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         final StandardProtocolFamily protocolFamily = StandardProtocolFamily.UNIX;
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency) {
             @Override
             protected ServerSocketChannel newServerSocketChannel() throws IOException {
                 return ServerSocketChannel.open(protocolFamily);

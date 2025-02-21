@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.stream.socket;
 
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -47,8 +46,9 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
+        final boolean lowLatency = true;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         new StreamLatencyChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
     }
 
@@ -70,14 +70,10 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
+        final boolean lowLatency = false;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         new StreamThroughputChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
 }

@@ -27,10 +27,11 @@ public class NettyDatagramHandlerTest extends AChannelTest {
 
     private void runNettyDatagramHandlerPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final NettyDatagramSynchronousChannel serverChannel = new NettyDatagramSynchronousChannel(type, address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final NettyDatagramSynchronousChannel clientChannel = new NettyDatagramSynchronousChannel(type, address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
                 newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,

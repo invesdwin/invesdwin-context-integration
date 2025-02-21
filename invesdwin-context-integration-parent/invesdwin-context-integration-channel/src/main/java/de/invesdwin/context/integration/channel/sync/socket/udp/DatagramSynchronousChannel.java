@@ -35,6 +35,7 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
     protected final SocketAddress socketAddress;
     protected SocketAddress otherSocketAddress;
     protected final boolean server;
+    protected boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -43,14 +44,19 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
     private final AtomicInteger activeCount = new AtomicInteger();
     private boolean multipleClientsAllowed;
 
-    public DatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int maxMessageSize) {
+    public DatagramSynchronousChannel(final SocketAddress socketAddress, final boolean server, final int maxMessageSize,
+            final boolean lowLatency) {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = maxMessageSize;
-        this.socketSize = maxMessageSize + DatagramSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(maxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int maxMessageSize) {
+        return maxMessageSize + DatagramSynchronousChannel.MESSAGE_INDEX;
     }
 
     public void setMultipleClientsAllowed() {
@@ -78,6 +84,10 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
 
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public int getSocketSize() {
@@ -163,7 +173,7 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
     }
 
     protected void configureSocket(final DatagramSocket socket) throws SocketException {
-        BlockingDatagramSynchronousChannel.configureSocketStatic(socket, socketSize);
+        BlockingDatagramSynchronousChannel.configureSocketStatic(socket, socketSize, lowLatency);
     }
 
     private void awaitSocketChannel() throws IOException {

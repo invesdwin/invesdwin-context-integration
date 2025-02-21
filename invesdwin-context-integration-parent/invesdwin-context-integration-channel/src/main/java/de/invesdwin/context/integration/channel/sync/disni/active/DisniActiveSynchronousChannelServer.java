@@ -31,9 +31,13 @@ public class DisniActiveSynchronousChannelServer implements ISynchronousReader<D
     public DisniActiveSynchronousChannelServer(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
         this.socketAddress = socketAddress;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + DisniActiveSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new DisniActiveSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + DisniActiveSynchronousChannel.MESSAGE_INDEX;
     }
 
     public SocketAddress getSocketAddress() {

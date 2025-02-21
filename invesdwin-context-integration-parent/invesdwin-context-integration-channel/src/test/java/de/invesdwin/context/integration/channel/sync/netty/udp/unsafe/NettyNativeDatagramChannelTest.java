@@ -37,24 +37,26 @@ public class NettyNativeDatagramChannelTest extends AChannelTest {
     private void runNettyNativeDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyNativeDatagramSynchronousWriter(
-                newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize()));
+                newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeDatagramSynchronousReader(
-                newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize()));
+                newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeDatagramSynchronousWriter(
-                newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize()));
+                newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeDatagramSynchronousReader(
-                newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize()));
+                newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

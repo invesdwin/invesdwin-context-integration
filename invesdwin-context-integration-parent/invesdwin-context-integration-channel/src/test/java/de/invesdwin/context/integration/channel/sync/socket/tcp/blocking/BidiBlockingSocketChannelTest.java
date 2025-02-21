@@ -32,10 +32,11 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
     }
 
     protected void runBlockingSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final BlockingSocketSynchronousChannel serverChannel = newBlockingSocketSynchronousChannel(address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final BlockingSocketSynchronousChannel clientChannel = newBlockingSocketSynchronousChannel(address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingSocketSynchronousWriter(
                 serverChannel);
@@ -53,8 +54,8 @@ public class BidiBlockingSocketChannelTest extends AChannelTest {
     }
 
     protected BlockingSocketSynchronousChannel newBlockingSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new BlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new BlockingSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

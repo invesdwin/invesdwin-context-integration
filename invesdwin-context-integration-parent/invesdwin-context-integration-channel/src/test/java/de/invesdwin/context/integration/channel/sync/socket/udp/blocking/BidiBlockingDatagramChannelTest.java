@@ -46,10 +46,11 @@ public class BidiBlockingDatagramChannelTest extends AChannelTest {
     }
 
     protected void runBlockingDatagramPerformanceTest(final SocketAddress address) throws InterruptedException {
+        final boolean lowLatency = true;
         final BlockingDatagramSynchronousChannel serverChannel = newBlockingDatagramSynchronousChannel(address, true,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
         final BlockingDatagramSynchronousChannel clientChannel = newBlockingDatagramSynchronousChannel(address, false,
-                getMaxMessageSize());
+                getMaxMessageSize(), lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new BlockingDatagramSynchronousWriter(
                 serverChannel);
@@ -67,8 +68,9 @@ public class BidiBlockingDatagramChannelTest extends AChannelTest {
     }
 
     protected BlockingDatagramSynchronousChannel newBlockingDatagramSynchronousChannel(
-            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-        return new BlockingDatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final SocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new BlockingDatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

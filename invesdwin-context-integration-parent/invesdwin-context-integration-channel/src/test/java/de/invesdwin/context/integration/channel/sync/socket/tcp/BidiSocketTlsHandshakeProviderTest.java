@@ -39,8 +39,11 @@ public class BidiSocketTlsHandshakeProviderTest extends AChannelTest {
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
-        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
-        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
+        final boolean lowLatency = true;
+        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize(),
+                lowLatency);
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize(),
+                lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
                 .newWriter(new SocketSynchronousWriter(serverChannel));
@@ -58,8 +61,8 @@ public class BidiSocketTlsHandshakeProviderTest extends AChannelTest {
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,

@@ -32,25 +32,31 @@ public class NettySharedDatagramClientEndpointFactory
     private final INettyDatagramChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
+    private final boolean lowLatency;
     private final NettySharedDatagramClientEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<NettyDatagramClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
     public NettySharedDatagramClientEndpointFactory(final INettyDatagramChannelType type,
-            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize) {
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
-        this.socketSize = estimatedMaxMessageSize + NettyDatagramSynchronousChannel.MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
 
         this.bootstrapFinalizer = new NettySharedDatagramClientEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + NettyDatagramSynchronousChannel.MESSAGE_INDEX;
+    }
+
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
         final NettyDatagramSynchronousChannel connector = new NettyDatagramClientEndpointChannel(type, socketAddress,
-                false, socketSize);
+                false, socketSize, lowLatency);
         final NettyDatagramSynchronousReader reader = new NettyDatagramSynchronousReader(connector);
         final NettyDatagramSynchronousWriter writer = new NettyDatagramSynchronousWriter(connector);
         return ImmutableSynchronousEndpoint.of(reader, writer);
@@ -64,7 +70,7 @@ public class NettySharedDatagramClientEndpointFactory
                     bootstrapFinalizer.clientBootstrap.group(type.newClientWorkerGroup(
                             newClientWorkerGroupThreadCount(), newClientWorkerGroupSelectStrategyFactory()));
                     bootstrapFinalizer.clientBootstrap.channel(type.getClientChannelType());
-                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, false);
+                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, lowLatency, false);
                     bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
                         public void initChannel(final DatagramChannel ch) throws Exception {
@@ -103,14 +109,19 @@ public class NettySharedDatagramClientEndpointFactory
         return 1;
     }
 
+    public boolean isLowLatency() {
+        return lowLatency;
+    }
+
     private final class NettyDatagramClientEndpointChannel extends NettyDatagramSynchronousChannel {
 
         @GuardedBy("this")
         private boolean opened;
 
         private NettyDatagramClientEndpointChannel(final INettyDatagramChannelType type,
-                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
-            super(type, socketAddress, server, estimatedMaxMessageSize);
+                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+                final boolean lowLatency) {
+            super(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
         }
 
         @Override

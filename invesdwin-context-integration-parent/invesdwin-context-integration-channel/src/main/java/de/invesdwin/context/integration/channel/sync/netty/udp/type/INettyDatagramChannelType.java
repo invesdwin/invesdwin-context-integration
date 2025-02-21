@@ -28,7 +28,7 @@ public interface INettyDatagramChannelType {
 
     Class<? extends DatagramChannel> getServerChannelType();
 
-    void channelOptions(IChannelOptionConsumer consumer, int socketSize, boolean server);
+    void channelOptions(IChannelOptionConsumer consumer, int socketSize, boolean lowLatency, boolean server);
 
     void initChannel(DatagramChannel channel, boolean server);
 

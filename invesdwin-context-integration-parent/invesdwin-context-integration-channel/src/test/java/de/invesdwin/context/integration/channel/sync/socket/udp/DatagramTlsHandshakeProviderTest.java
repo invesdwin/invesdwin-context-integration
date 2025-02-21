@@ -20,7 +20,6 @@ import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.t
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.ITlsProtocol;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.protocol.TlsProtocol;
-import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -44,28 +43,24 @@ public class DatagramTlsHandshakeProviderTest extends AChannelTest {
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
                 .newWriter(new DatagramSynchronousWriter(
-                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency)));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new DatagramSynchronousReader(
-                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency)));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new DatagramSynchronousWriter(
-                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency)));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new DatagramSynchronousReader(
-                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency)));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
-    }
-
-    protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,
@@ -89,8 +84,8 @@ public class DatagramTlsHandshakeProviderTest extends AChannelTest {
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

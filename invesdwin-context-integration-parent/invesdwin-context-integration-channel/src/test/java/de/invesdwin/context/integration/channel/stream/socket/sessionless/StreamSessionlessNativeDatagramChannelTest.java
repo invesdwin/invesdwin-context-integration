@@ -22,10 +22,11 @@ public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
     public void testStreamPerformance() throws InterruptedException {
         final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final boolean lowLatency = true;
         final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NativeDatagramEndpointFactory(
-                address, true, getMaxMessageSize());
+                address, true, getMaxMessageSize(), lowLatency);
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
-                address, false, getMaxMessageSize());
+                address, false, getMaxMessageSize(), lowLatency);
         new StreamLatencyChannelTest(this).runStreamSessionlessPerformanceTest(serverEndpointFactory,
                 clientEndpointFactory);
     }

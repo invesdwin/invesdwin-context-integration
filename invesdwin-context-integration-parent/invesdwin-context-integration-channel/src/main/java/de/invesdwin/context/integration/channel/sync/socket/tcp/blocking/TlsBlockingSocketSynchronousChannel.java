@@ -22,8 +22,8 @@ import de.invesdwin.util.time.duration.Duration;
 public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchronousChannel {
 
     public TlsBlockingSocketSynchronousChannel(final SocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        super(socketAddress, server, estimatedMaxMessageSize);
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
+        super(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     @Override

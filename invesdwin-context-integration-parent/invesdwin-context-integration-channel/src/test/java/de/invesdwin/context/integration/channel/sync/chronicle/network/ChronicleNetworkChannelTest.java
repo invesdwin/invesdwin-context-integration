@@ -30,16 +30,17 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
     private void runChronicleSocketPerformanceTest(final ChronicleSocketChannelType type,
             final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleNetworkSynchronousWriter(
-                newChronicleNetworkSynchronousChannel(type, responseAddress, true, getMaxMessageSize()));
+                newChronicleNetworkSynchronousChannel(type, responseAddress, true, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleNetworkSynchronousReader(
-                newChronicleNetworkSynchronousChannel(type, requestAddress, true, getMaxMessageSize()));
+                newChronicleNetworkSynchronousChannel(type, requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleNetworkSynchronousWriter(
-                newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize()));
+                newChronicleNetworkSynchronousChannel(type, requestAddress, false, getMaxMessageSize(), lowLatency));
         final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleNetworkSynchronousReader(
-                newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize()));
+                newChronicleNetworkSynchronousChannel(type, responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
@@ -47,8 +48,8 @@ public class ChronicleNetworkChannelTest extends AChannelTest {
 
     private ChronicleNetworkSynchronousChannel newChronicleNetworkSynchronousChannel(
             final ChronicleSocketChannelType type, final InetSocketAddress socketAddress, final boolean server,
-            final int estimatedMaxMessageSize) {
-        return new ChronicleNetworkSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize);
+            final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new ChronicleNetworkSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

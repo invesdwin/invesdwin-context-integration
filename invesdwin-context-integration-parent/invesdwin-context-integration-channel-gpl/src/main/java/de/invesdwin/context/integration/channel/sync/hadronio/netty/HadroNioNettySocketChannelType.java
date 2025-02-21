@@ -43,7 +43,8 @@ public class HadroNioNettySocketChannelType implements INettySocketChannelType {
     }
 
     @Override
-    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean server) {
+    public void channelOptions(final IChannelOptionConsumer consumer, final int socketSize, final boolean lowLatency,
+            final boolean server) {
         consumer.option(ChannelOption.ALLOW_HALF_CLOSURE, true);
     }
 

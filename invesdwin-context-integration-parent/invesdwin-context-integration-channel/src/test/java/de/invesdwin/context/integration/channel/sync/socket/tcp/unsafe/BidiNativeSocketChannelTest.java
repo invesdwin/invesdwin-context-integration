@@ -28,8 +28,11 @@ public class BidiNativeSocketChannelTest extends AChannelTest {
     }
 
     protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
-        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize());
-        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize());
+        final boolean lowLatency = true;
+        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize(),
+                lowLatency);
+        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize(),
+                lowLatency);
 
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeSocketSynchronousWriter(serverChannel);
         final ISynchronousReader<IByteBufferProvider> requestReader = new NativeSocketSynchronousReader(serverChannel);
@@ -43,8 +46,8 @@ public class BidiNativeSocketChannelTest extends AChannelTest {
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
 }

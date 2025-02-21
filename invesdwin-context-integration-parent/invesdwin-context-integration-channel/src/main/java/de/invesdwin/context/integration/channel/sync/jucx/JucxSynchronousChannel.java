@@ -85,7 +85,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.ucpMemMapParams = newUcpMemMapParams();
         this.finalizer = new UcxSynchronousChannelFinalizer();
         finalizer.register(this);
@@ -121,6 +121,10 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
             close();
             throw Throwables.propagate(t);
         }
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     protected UcpParams newUcpContextParams() {

@@ -17,8 +17,8 @@ import io.netty.handler.ssl.SslHandler;
 public class TlsNettySocketSynchronousChannel extends NettySocketSynchronousChannel {
 
     public TlsNettySocketSynchronousChannel(final INettySocketChannelType type, final InetSocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        super(type, socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        super(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
         //unsafe write not supported, this would circumvent the ssl handler
         setKeepBootstrapRunningAfterOpen();
     }

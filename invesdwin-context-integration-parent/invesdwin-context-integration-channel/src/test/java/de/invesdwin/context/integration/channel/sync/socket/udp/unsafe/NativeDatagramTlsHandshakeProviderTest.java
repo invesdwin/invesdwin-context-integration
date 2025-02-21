@@ -44,28 +44,29 @@ public class NativeDatagramTlsHandshakeProviderTest extends AChannelTest {
         final HandshakeChannelFactory clientHandshake = new HandshakeChannelFactory(
                 newTlsHandshakeProvider(MAX_WAIT_DURATION, address, false));
 
+        final boolean lowLatency = true;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = serverHandshake
                 .newWriter(new NativeDatagramSynchronousWriter(
-                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency)));
         final ISynchronousReader<IByteBufferProvider> requestReader = serverHandshake
                 .newReader(new NativeDatagramSynchronousReader(
-                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency)));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
         final ISynchronousWriter<IByteBufferProvider> requestWriter = clientHandshake
                 .newWriter(new NativeDatagramSynchronousWriter(
-                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency)));
         final ISynchronousReader<IByteBufferProvider> responseReader = clientHandshake
                 .newReader(new NativeDatagramSynchronousReader(
-                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize())));
+                        newDatagramSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency)));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
     protected DatagramSynchronousChannel newDatagramSynchronousChannel(final SocketAddress socketAddress,
-            final boolean server, final int estimatedMaxMessageSize) {
-        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+            final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
+        return new DatagramSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
     private IHandshakeProvider newTlsHandshakeProvider(final Duration handshakeTimeout,

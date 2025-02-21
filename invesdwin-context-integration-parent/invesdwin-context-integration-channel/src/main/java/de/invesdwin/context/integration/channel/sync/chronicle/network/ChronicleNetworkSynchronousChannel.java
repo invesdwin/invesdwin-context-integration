@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,6 +39,7 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
+    protected boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -46,14 +48,20 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
     private final AtomicInteger activeCount = new AtomicInteger();
 
     public ChronicleNetworkSynchronousChannel(final ChronicleSocketChannelType type,
-            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize) {
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     public SocketAddress getSocketAddress() {
@@ -62,6 +70,10 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
 
     public boolean isServer() {
         return server;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     public int getSocketSize() {
@@ -142,14 +154,26 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
                 }
             }
             //non-blocking sockets are a bit faster than blocking ones
-            finalizer.socketChannel.configureBlocking(false);
-            finalizer.socket.setReceiveBufferSize(
-                    Integers.max(finalizer.socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
-                            socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
-            finalizer.socket.setSendBufferSize(socketSize);
-            finalizer.socket.setTcpNoDelay(true);
+            finalizer.socketChannel.configureBlocking(lowLatency);
+            configureSocketStatic(finalizer.socket, socketSize, readerRegistered);
         } finally {
             socketChannelOpening = false;
+        }
+    }
+
+    public static void configureSocketStatic(final ChronicleSocket socket, final int socketSize,
+            final boolean lowLatency) throws SocketException {
+        if (lowLatency) {
+            socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+            socket.setSendBufferSize(socketSize);
+            socket.setTcpNoDelay(true);
+        } else {
+            socket.setReceiveBufferSize(Integers.max(socket.getReceiveBufferSize(), ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+            socket.setSendBufferSize(Integers.max(socket.getSendBufferSize(), ByteBuffers.calculateExpansion(
+                    socketSize * BlockingDatagramSynchronousChannel.RECEIVE_BUFFER_SIZE_MULTIPLIER)));
+            socket.setTcpNoDelay(false);
         }
     }
 
