@@ -1,7 +1,14 @@
 package de.invesdwin.context.integration.channel.sync.kafka;
 
+import java.util.Properties;
+import java.util.Set;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.kafka.clients.admin.AdminClient;
+import org.apache.kafka.clients.admin.AdminClientConfig;
+import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -12,51 +19,107 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
 
 @Testcontainers
 @NotThreadSafe
-public class KafkaChannelLatencyTest extends AChannelTest {
+public class KafkaChannelTest extends AChannelTest {
 
     @Container
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
             DockerImageName.parse("apache/kafka:3.8.0"));
 
+    public static void createTopic(final String bootstrapServers, final String topic) {
+        final Properties config = new Properties();
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        try (AdminClient adminClient = AdminClient.create(config)) {
+            final NewTopic newTopic = new NewTopic(topic, 1, (short) 1);
+            adminClient.createTopics(Collections.singletonList(newTopic)).all().get();
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void deleteAllTopics(final String bootstrapServers) {
+        final Properties config = new Properties();
+        config.put(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        try (AdminClient adminClient = AdminClient.create(config)) {
+            final ListTopicsResult listTopics = adminClient.listTopics();
+            final Set<String> names = listTopics.names().get();
+            adminClient.deleteTopics(names).all().get();
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        KafkaChannelThroughputTest.deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
+        deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        KafkaChannelThroughputTest.deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
+        deleteAllTopics(KAFKACONTAINER.getBootstrapServers());
     }
 
     @Test
-    public void testKafkaPerformance() throws InterruptedException {
-        final String responseTopic = "testKafkaPerformance_response";
-        final String requestTopic = "testKafkaPerformance_request";
-        KafkaChannelThroughputTest.createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
-        KafkaChannelThroughputTest.createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
-        runKafkaPerformanceTest(responseTopic, requestTopic, Duration.ZERO);
+    public void testKafkaLatency() throws InterruptedException {
+        final String responseTopic = "testKafkaLatency_response";
+        final String requestTopic = "testKafkaLatency_request";
+        createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
+        createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
+        runKafkaLatencyTest(responseTopic, requestTopic, Duration.ZERO);
     }
 
     @Test
-    public void testBlockingKafkaPerformance() throws InterruptedException {
-        final String responseTopic = "testBlockingKafkaPerformance_response";
-        final String requestTopic = "testBlockingKafkaPerformance_request";
-        KafkaChannelThroughputTest.createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
-        KafkaChannelThroughputTest.createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
-        runKafkaPerformanceTest(responseTopic, requestTopic, Duration.ONE_MILLISECOND);
+    public void testBlockingKafkaLatency() throws InterruptedException {
+        final String responseTopic = "testBlockingKafkaLatency_response";
+        final String requestTopic = "testBlockingKafkaLatency_request";
+        createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
+        createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
+        runKafkaLatencyTest(responseTopic, requestTopic, Duration.ONE_MILLISECOND);
     }
 
-    protected void runKafkaPerformanceTest(final String responseTopic, final String requestTopic,
+    @Test
+    public void testKafkaThroughput() throws InterruptedException {
+        final String topic = "testKafkaThroughput_chanel";
+        createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
+        runKafkaThroughputTest(topic, Duration.ZERO);
+    }
+
+    @Test
+    public void testBlockingKafkaThroughput() throws InterruptedException {
+        final String topic = "testBlockingKafkaThroughput_topic";
+        createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
+        runKafkaThroughputTest(topic, Duration.ONE_MILLISECOND);
+    }
+
+    protected void runKafkaThroughputTest(final String topic, final Duration pollTimeout) throws InterruptedException {
+        final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
+        final ISynchronousReader<FDate> channelReader = newSerdeReader(
+                new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), topic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return pollTimeout;
+                    }
+                });
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
+        new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
+    }
+
+    protected void runKafkaLatencyTest(final String responseTopic, final String requestTopic,
             final Duration pollTimeout) throws InterruptedException {
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), responseTopic));
