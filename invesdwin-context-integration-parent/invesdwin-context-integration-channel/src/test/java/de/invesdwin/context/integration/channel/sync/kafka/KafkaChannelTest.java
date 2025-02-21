@@ -105,8 +105,9 @@ public class KafkaChannelTest extends AChannelTest {
     }
 
     protected void runKafkaThroughputTest(final String topic, final Duration pollTimeout) throws InterruptedException {
+        final boolean flush = false;
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
-                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic));
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic, flush));
         final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), topic) {
@@ -121,8 +122,9 @@ public class KafkaChannelTest extends AChannelTest {
 
     protected void runKafkaLatencyTest(final String responseTopic, final String requestTopic,
             final Duration pollTimeout) throws InterruptedException {
+        final boolean flush = true;
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
-                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), responseTopic));
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), responseTopic, flush));
         final ISynchronousReader<FDate> requestReader = newSerdeReader(
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), requestTopic) {
                     @Override
@@ -132,7 +134,7 @@ public class KafkaChannelTest extends AChannelTest {
                 });
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
         final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
-                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), requestTopic));
+                newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), requestTopic, flush));
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), responseTopic) {
                     @Override
@@ -145,9 +147,14 @@ public class KafkaChannelTest extends AChannelTest {
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
-            final String requestTopic) {
-        //flushing on each message should theoretically send the messages slightly earlier in this scenario
-        return new FlushingKafkaSynchronousWriter(bootstrapServers, requestTopic);
+            final String requestTopic, final boolean flush) {
+        if (flush) {
+            //flushing on each message should theoretically send the messages slightly earlier in the latency test
+            return new FlushingKafkaSynchronousWriter(bootstrapServers, requestTopic);
+        } else {
+            //non-flushing should be faster for the throughput test
+            return new KafkaSynchronousWriter(bootstrapServers, requestTopic);
+        }
     }
 
 }
