@@ -78,7 +78,7 @@ public class RpcSynchronousEndpointServer extends ASynchronousEndpointServer {
         serviceId_service_copy = new Int2ObjectOpenHashMap<>();
     }
 
-    public SerdeLookupConfig getSerdeLookupConfig() {
+    public final SerdeLookupConfig getSerdeLookupConfig() {
         return serdeLookupConfig;
     }
 

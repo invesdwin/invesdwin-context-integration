@@ -187,20 +187,20 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
     }
 
     @Override
-    public int getMaxPendingWorkCountOverall() {
+    public final int getMaxPendingWorkCountOverall() {
         return maxPendingWorkCountOverall;
     }
 
     @Override
-    public int getMaxPendingWorkCountPerSession() {
+    public final int getMaxPendingWorkCountPerSession() {
         return maxPendingWorkCountPerSession;
     }
 
-    public Duration getRequestTimeout() {
+    public final Duration getRequestTimeout() {
         return requestTimeout;
     }
 
-    public Duration getHeartbeatTimeout() {
+    public final Duration getHeartbeatTimeout() {
         return heartbeatTimeout;
     }
 

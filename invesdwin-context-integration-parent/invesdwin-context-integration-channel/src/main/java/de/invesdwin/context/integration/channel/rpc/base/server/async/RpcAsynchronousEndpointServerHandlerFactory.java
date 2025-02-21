@@ -45,7 +45,7 @@ public class RpcAsynchronousEndpointServerHandlerFactory extends AAsynchronousEn
         return removed != null;
     }
 
-    public SerdeLookupConfig getSerdeLookupConfig() {
+    public final SerdeLookupConfig getSerdeLookupConfig() {
         return serdeLookupConfig;
     }
 

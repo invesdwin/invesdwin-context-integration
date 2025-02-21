@@ -53,6 +53,7 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = ASynchronousEndpointServer.DEFAULT_MAX_IO_THREAD_COUNT;
     public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = ASynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = ASynchronousEndpointServer.DEFAULT_IO_EXECUTOR;
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = StreamSynchronousEndpointServer.DEFAULT_WORK_EXECUTOR;
 
     private static final IoRunnable[] IO_RUNNABLE_EMPTY_ARRAY = new IoRunnable[0];
     private static final int ROOT_IO_RUNNABLE_ID = 0;
@@ -109,12 +110,12 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     }
 
     @Override
-    public int getMaxSuccessivePushCountPerSession() {
+    public final int getMaxSuccessivePushCountPerSession() {
         return maxSuccessivePushCountPerSession;
     }
 
     @Override
-    public int getMaxSuccessivePushCountPerSubscription() {
+    public final int getMaxSuccessivePushCountPerSubscription() {
         return maxSuccessivePushCountPerSubscription;
     }
 
@@ -135,17 +136,22 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
         return DEFAULT_IO_EXECUTOR;
     }
 
-    public WrappedExecutorService getIoExecutor() {
+    public final WrappedExecutorService getIoExecutor() {
         return ioExecutor;
     }
 
     @Override
-    public Duration getHeartbeatTimeout() {
+    protected WrappedExecutorService newWorkExecutor() {
+        return DEFAULT_WORK_EXECUTOR;
+    }
+
+    @Override
+    public final Duration getHeartbeatTimeout() {
         return super.getHeartbeatTimeout();
     }
 
     @Override
-    public Duration getRequestTimeout() {
+    public final Duration getRequestTimeout() {
         return super.getRequestTimeout();
     }
 

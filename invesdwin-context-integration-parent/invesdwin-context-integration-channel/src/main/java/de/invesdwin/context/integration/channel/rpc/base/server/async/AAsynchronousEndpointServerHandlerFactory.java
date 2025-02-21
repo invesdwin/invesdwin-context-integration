@@ -37,12 +37,12 @@ public abstract class AAsynchronousEndpointServerHandlerFactory
     }
 
     @Override
-    public void setPollingQueueProvider(final IPollingQueueProvider pollingQueueProvider) {
+    public final void setPollingQueueProvider(final IPollingQueueProvider pollingQueueProvider) {
         this.pollingQueueProvider = pollingQueueProvider;
     }
 
     @Override
-    public IPollingQueueProvider getPollingQueueProvider() {
+    public final IPollingQueueProvider getPollingQueueProvider() {
         return pollingQueueProvider;
     }
 
@@ -87,12 +87,12 @@ public abstract class AAsynchronousEndpointServerHandlerFactory
     }
 
     @Override
-    public int getMaxPendingWorkCountOverall() {
+    public final int getMaxPendingWorkCountOverall() {
         return maxPendingWorkCountOverall;
     }
 
     @Override
-    public int getMaxPendingWorkCountPerSession() {
+    public final int getMaxPendingWorkCountPerSession() {
         return maxPendingWorkCountPerSession;
     }
 

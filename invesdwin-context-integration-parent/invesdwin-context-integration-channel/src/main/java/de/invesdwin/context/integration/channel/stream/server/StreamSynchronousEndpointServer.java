@@ -20,6 +20,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.lang.Closeables;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -30,6 +31,11 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
 
     public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION = 100;
     public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION = 50;
+
+    /**
+     * Disabled for now as it significantly adds latency and reduces performance for streaming
+     */
+    public static final WrappedExecutorService DEFAULT_WORK_EXECUTOR = null;
 
     private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     @GuardedBy("this")
@@ -64,11 +70,17 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
     }
 
     @Override
-    public int getMaxSuccessivePushCountPerSession() {
+    protected WrappedExecutorService newWorkExecutor() {
+        return DEFAULT_WORK_EXECUTOR;
+    }
+
+    @Override
+    public final int getMaxSuccessivePushCountPerSession() {
         return maxSuccessivePushCountPerSession;
     }
 
-    public int getMaxSuccessivePushCountPerSubscription() {
+    @Override
+    public final int getMaxSuccessivePushCountPerSubscription() {
         return maxSuccessivePushCountPerSubscription;
     }
 
