@@ -43,6 +43,8 @@ public class StreamSynchronousEndpointClientWriter implements ISynchronousWriter
                 } else {
                     final ICloseableByteBuffer messageBuffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject();
                     messageBuffer.ensureCapacity(valueFixedLength);
+                    final int closedBufferLength = ClosedByteBuffer.INSTANCE.capacity();
+                    messageBuffer.clear(closedBufferLength, valueFixedLength - closedBufferLength);
                     messageBuffer.putBytes(0, ClosedByteBuffer.INSTANCE);
                     message = messageBuffer.sliceTo(valueFixedLength);
                 }

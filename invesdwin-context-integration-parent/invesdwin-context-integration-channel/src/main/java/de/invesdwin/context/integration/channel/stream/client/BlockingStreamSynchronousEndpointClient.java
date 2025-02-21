@@ -70,6 +70,15 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
         @Override
         public void onUnexpectedResponse(final ISynchronousEndpointClientSession session, final int serviceId,
                 final int methodId, final int requestSequence, final IByteBufferProvider message) {
+            final RuntimeException exception = LoggingDelegateUnexpectedMessageListener.maybeExtractException(methodId,
+                    message);
+            if (exception != null) {
+                throw exception;
+            }
+            if (methodId == StreamServerMethodInfo.METHOD_ID_PUT) {
+                //put responses are to be expected here
+                return;
+            }
             if (LOG.isWarnEnabled()) {
                 LOG.warn("onUnexpectedResponse sessionId=%s serviceId=%s methodId=%s requestSequence=%s message=%s",
                         session.getEndpointSession().getSessionId(), serviceId, methodId, requestSequence,
