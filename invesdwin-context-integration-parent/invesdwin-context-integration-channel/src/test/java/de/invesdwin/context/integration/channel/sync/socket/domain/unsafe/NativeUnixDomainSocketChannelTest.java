@@ -20,7 +20,7 @@ public class NativeUnixDomainSocketChannelTest extends NativeSocketChannelTest {
     //https://nipafx.dev/java-unix-domain-sockets/ (requires java 16)
     @Override
     @Test
-    public void testNativeSocketPerformance() throws InterruptedException {
+    public void testNativeSocketLatency() throws InterruptedException {
         if (OperatingSystem.isWindows()) {
             //not supported on windows
             return;
@@ -29,7 +29,18 @@ public class NativeUnixDomainSocketChannelTest extends NativeSocketChannelTest {
                 .of(newFile("response", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
         final SocketAddress requestAddress = java.net.UnixDomainSocketAddress
                 .of(newFile("request", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
-        runNativeSocketPerformanceTest(responseAddress, requestAddress);
+        runNativeSocketLatencyTest(responseAddress, requestAddress);
+    }
+
+    @Override
+    public void testNativeSocketThroughput() throws InterruptedException {
+        if (OperatingSystem.isWindows()) {
+            //not supported on windows
+            return;
+        }
+        final SocketAddress channelAddress = java.net.UnixDomainSocketAddress
+                .of(newFile("response", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
+        runNativeSocketThroughputTest(channelAddress);
     }
 
     @Override

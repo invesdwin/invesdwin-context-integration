@@ -20,7 +20,7 @@ public class UnixDomainSocketChannelTest extends SocketChannelTest {
     //https://nipafx.dev/java-unix-domain-sockets/ (requires java 16)
     @Override
     @Test
-    public void testNioSocketPerformance() throws InterruptedException {
+    public void testNioSocketLatency() throws InterruptedException {
         if (OperatingSystem.isWindows()) {
             //not supported on windows
             return;
@@ -29,7 +29,7 @@ public class UnixDomainSocketChannelTest extends SocketChannelTest {
                 .of(newFile("response", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
         final SocketAddress requestAddress = java.net.UnixDomainSocketAddress
                 .of(newFile("request", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
-        runNioSocketPerformanceTest(responseAddress, requestAddress);
+        runNioSocketLatencyTest(responseAddress, requestAddress);
     }
 
     @Override

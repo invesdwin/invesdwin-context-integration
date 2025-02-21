@@ -11,6 +11,9 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -19,20 +22,20 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class SocketChannelTest extends AChannelTest {
 
-    @Test
-    public void testNioSocketPerformance() throws InterruptedException {
-        final String addr = newAddress();
-        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
-        final InetSocketAddress responseAddress = new InetSocketAddress(addr, ports[0]);
-        final InetSocketAddress requestAddress = new InetSocketAddress(addr, ports[1]);
-        runNioSocketPerformanceTest(responseAddress, requestAddress);
-    }
-
     protected String newAddress() {
         return "localhost";
     }
 
-    protected void runNioSocketPerformanceTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
+    @Test
+    public void testNioSocketLatency() throws InterruptedException {
+        final String addr = newAddress();
+        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress(addr, ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress(addr, ports[1]);
+        runNioSocketLatencyTest(responseAddress, requestAddress);
+    }
+
+    protected void runNioSocketLatencyTest(final SocketAddress responseAddress, final SocketAddress requestAddress)
             throws InterruptedException {
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
                 newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize()));
@@ -49,6 +52,24 @@ public class SocketChannelTest extends AChannelTest {
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
+    @Test
+    public void testNioSocketThroughput() throws InterruptedException {
+        final String addr = newAddress();
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress channelAddress = new InetSocketAddress(addr, port);
+        runNioSocketThroughputTest(channelAddress);
+    }
+
+    protected void runNioSocketThroughputTest(final SocketAddress channelAddress) throws InterruptedException {
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
+                newSocketSynchronousChannel(channelAddress, true, getMaxMessageSize()));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(responseWriter));
+        final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(
+                newSocketSynchronousChannel(channelAddress, false, getMaxMessageSize()));
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(responseReader));
+        new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
+    }
+
     protected ISynchronousReader<IByteBufferProvider> newSocketSynchronousReader(
             final SocketSynchronousChannel channel) {
         return new SocketSynchronousReader(channel);
@@ -61,7 +82,12 @@ public class SocketChannelTest extends AChannelTest {
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize) {
-        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize);
+        return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize) {
+            @Override
+            protected int newSocketSize(final int estimatedMaxMessageSize) {
+                return super.newSocketSize(estimatedMaxMessageSize);
+            }
+        };
     }
 
 }

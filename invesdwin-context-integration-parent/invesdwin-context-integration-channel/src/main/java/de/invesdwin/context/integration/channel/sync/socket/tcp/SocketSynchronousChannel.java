@@ -44,7 +44,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = socketAddress;
         this.server = server;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
@@ -54,7 +54,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         this.socketAddress = server.socketAddress;
         this.server = false;
         this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
-        this.socketSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.socketChannel = socketChannel;
         finalizer.socket = extractSocket(socketChannel);
@@ -66,6 +66,10 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             close();
             throw e;
         }
+    }
+
+    protected int newSocketSize(final int estimatedMaxMessageSize) {
+        return estimatedMaxMessageSize + MESSAGE_INDEX;
     }
 
     public SocketAddress getSocketAddress() {
@@ -191,7 +195,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     }
 
     protected void configureSocket(final Socket socket) throws SocketException {
-        BlockingSocketSynchronousChannel.configureSocketStatic(socket, socketSize);
+        BlockingSocketSynchronousChannel.configureSocketStatic(socket, getSocketSize());
     }
 
     private void awaitSocketChannel() throws IOException {
