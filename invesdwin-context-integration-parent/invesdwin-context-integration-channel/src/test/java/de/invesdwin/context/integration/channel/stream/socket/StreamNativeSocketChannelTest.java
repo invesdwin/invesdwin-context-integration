@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynch
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.DefaultSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
+import de.invesdwin.context.integration.channel.stream.StreamThroughputChannelTest;
 import de.invesdwin.context.integration.channel.sync.ATransformingSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -29,7 +30,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class StreamNativeSocketChannelTest extends AChannelTest {
 
     @Test
-    public void testStreamPerformance() throws InterruptedException {
+    public void testStreamLatency() throws InterruptedException {
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
@@ -49,6 +50,29 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize());
         new StreamLatencyChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
+    }
+
+    @Test
+    public void testStreamThroughput() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableTcpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
+                new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
+            private final AtomicInteger index = new AtomicInteger();
+
+            @Override
+            protected ISynchronousEndpointSession transform(final SocketSynchronousChannel acceptedClientChannel) {
+                final ISynchronousReader<IByteBufferProvider> requestReader = new NativeSocketSynchronousReader(
+                        acceptedClientChannel);
+                final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeSocketSynchronousWriter(
+                        acceptedClientChannel);
+                return new DefaultSynchronousEndpointSession(String.valueOf(index.incrementAndGet()),
+                        ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
+            }
+        };
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
+                address, false, getMaxMessageSize());
+        new StreamThroughputChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
