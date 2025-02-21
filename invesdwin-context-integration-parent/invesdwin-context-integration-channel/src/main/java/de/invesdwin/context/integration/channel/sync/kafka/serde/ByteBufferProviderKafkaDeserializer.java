@@ -18,7 +18,7 @@ public class ByteBufferProviderKafkaDeserializer implements Deserializer<IByteBu
 
     @Override
     public IByteBufferProvider deserialize(final String topic, final Headers headers, final java.nio.ByteBuffer data) {
-        return ByteBuffers.wrap(data);
+        return ByteBuffers.wrapRelative(data);
     }
 
 }
