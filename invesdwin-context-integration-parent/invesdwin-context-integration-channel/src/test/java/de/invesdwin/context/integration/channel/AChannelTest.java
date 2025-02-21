@@ -213,6 +213,7 @@ public abstract class AChannelTest extends ATest {
 
     public static void printProgress(final OutputStream log, final String action, final Instant start, final int count,
             final int maxCount) throws IOException {
+        //TODO: printProgress should be able to count messages aggregated over parallel tests as tests as possible in Stream latency/throughput tests
         if (count < 0) {
             //skip on warmup messages
             return;
