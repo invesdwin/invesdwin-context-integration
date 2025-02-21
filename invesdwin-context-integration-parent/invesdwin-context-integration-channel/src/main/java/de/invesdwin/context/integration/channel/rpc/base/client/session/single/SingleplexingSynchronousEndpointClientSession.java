@@ -207,7 +207,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     private ICloseableByteBufferProvider waitForResponseBlocking(final int serviceId, final int methodId,
             final int requestSequence, final IByteBufferProvider request, final Duration requestTimeout,
             final IUnexpectedMessageListener unexpectedMessageListener, final long waitingSinceNanos)
-            throws Exception, FastEOFException, FastTimeoutException, IOException {
+            throws Exception, FastEOFException, TimeoutException, IOException {
         while (true) {
             while (!responseReaderSpinWait.hasNext()
                     .awaitFulfill(waitingSinceNanos, endpointSession.getRequestWaitInterval())) {

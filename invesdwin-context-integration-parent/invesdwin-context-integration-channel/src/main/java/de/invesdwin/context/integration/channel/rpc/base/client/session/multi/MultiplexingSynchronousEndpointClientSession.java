@@ -375,7 +375,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     maybeCheckRequestTimeouts(outer);
                 }
             }
-        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException e) {
+        } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
+                | AbortRequestException e) {
             throw e;
         } catch (final IOException e) {
             //signal the pool that we want to reconnect
