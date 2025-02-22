@@ -28,6 +28,7 @@ import de.invesdwin.util.collections.fast.IFastIterableSet;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.error.Throwables;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -341,6 +342,11 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
                 return null;
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(endpointSession).toString();
     }
 
 }

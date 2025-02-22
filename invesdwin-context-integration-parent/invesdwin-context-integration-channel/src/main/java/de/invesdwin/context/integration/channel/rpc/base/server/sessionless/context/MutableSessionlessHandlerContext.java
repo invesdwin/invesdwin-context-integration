@@ -119,4 +119,9 @@ public final class MutableSessionlessHandlerContext implements ISessionlessHandl
         return new ImmutableSessionlessHandlerContext(otherSocketAddress, writeQueue);
     }
 
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(getSessionId()).toString();
+    }
+
 }

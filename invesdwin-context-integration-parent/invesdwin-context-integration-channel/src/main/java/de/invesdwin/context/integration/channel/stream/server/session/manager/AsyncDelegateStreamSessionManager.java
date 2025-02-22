@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -134,6 +135,11 @@ public class AsyncDelegateStreamSessionManager implements IStreamSessionManager 
     @Override
     public void close() throws IOException {
         delegate.close();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(delegate).toString();
     }
 
 }

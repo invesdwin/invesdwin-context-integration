@@ -26,6 +26,7 @@ import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -206,6 +207,11 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
         @Override
         public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
             return this;
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this).addValue(getSessionId()).toString();
         }
 
     }

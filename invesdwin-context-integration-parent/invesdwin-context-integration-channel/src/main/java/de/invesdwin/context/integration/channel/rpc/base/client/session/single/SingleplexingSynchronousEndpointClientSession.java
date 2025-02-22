@@ -30,6 +30,7 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.FastTimeoutException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -372,6 +373,11 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 Closeables.closeQuietly(cRequest);
             }
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(endpointSession).toString();
     }
 
 }

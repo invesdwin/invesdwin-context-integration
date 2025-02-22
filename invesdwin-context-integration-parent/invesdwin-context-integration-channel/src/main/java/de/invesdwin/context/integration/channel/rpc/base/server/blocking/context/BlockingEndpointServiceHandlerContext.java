@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWr
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.lang.BroadcastingCloseable;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -171,6 +172,11 @@ public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
     public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
         throw new UnsupportedOperationException(
                 "can not make this instance immutable since asynchronous writes are not supported");
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(endpointSession).toString();
     }
 
 }

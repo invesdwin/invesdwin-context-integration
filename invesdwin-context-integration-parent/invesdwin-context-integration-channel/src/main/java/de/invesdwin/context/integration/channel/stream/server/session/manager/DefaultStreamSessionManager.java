@@ -15,6 +15,7 @@ import de.invesdwin.context.system.properties.DisabledProperties;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
@@ -177,6 +178,11 @@ public class DefaultStreamSessionManager implements IStreamSessionManager {
         synchronized (notifiedSubscriptions) {
             notifiedSubscriptions.clear();
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(session).toString();
     }
 
 }

@@ -23,6 +23,7 @@ import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
 import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -289,6 +290,11 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
             subscription.onPush(serviceId, topic, message);
         }
 
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(session).toString();
     }
 
 }

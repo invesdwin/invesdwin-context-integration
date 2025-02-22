@@ -24,6 +24,7 @@ import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.APostProcessingFuture;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.future.NullFuture;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -310,6 +311,11 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(endpointSession).toString();
     }
 
 }

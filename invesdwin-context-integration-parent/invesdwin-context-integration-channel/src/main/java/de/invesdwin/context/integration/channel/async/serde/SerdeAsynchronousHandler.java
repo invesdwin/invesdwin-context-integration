@@ -10,6 +10,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -170,6 +171,11 @@ public class SerdeAsynchronousHandler<I, O>
             } else {
                 return new SerdeAsynchronousContext<>(immutable, outputSerde);
             }
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this).addValue(delegate).toString();
         }
 
     }

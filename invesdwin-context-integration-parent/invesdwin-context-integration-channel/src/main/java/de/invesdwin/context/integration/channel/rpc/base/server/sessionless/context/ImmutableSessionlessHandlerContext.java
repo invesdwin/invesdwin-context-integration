@@ -21,6 +21,7 @@ public final class ImmutableSessionlessHandlerContext extends BroadcastingClosea
     private final Object otherSocketAddress;
     private final ManyToOneConcurrentLinkedQueue<MutableSessionlessHandlerContext> writeQueue;
     private AttributesMap attributes;
+    private String sessionId;
 
     public ImmutableSessionlessHandlerContext(final Object otherSocketAddress,
             final ManyToOneConcurrentLinkedQueue<MutableSessionlessHandlerContext> writeQueue) {
@@ -52,7 +53,10 @@ public final class ImmutableSessionlessHandlerContext extends BroadcastingClosea
 
     @Override
     public String getSessionId() {
-        return Objects.toString(otherSocketAddress);
+        if (sessionId == null) {
+            sessionId = Objects.toString(otherSocketAddress);
+        }
+        return sessionId;
     }
 
     @Override
@@ -80,6 +84,11 @@ public final class ImmutableSessionlessHandlerContext extends BroadcastingClosea
     @Override
     public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(getSessionId()).toString();
     }
 
 }

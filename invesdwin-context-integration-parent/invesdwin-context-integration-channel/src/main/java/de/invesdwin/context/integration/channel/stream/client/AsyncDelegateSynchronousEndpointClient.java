@@ -8,6 +8,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.Futures;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -92,6 +93,11 @@ public class AsyncDelegateSynchronousEndpointClient implements IStreamSynchronou
     @Override
     public Future<?> delete(final int serviceId, final String topicUri) {
         return getRequestExecutor().submit(() -> Futures.get(delegate.delete(serviceId, topicUri)));
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(delegate).toString();
     }
 
 }

@@ -16,8 +16,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @Immutable
 public class LoggingDelegateUnexpectedMessageListener implements IUnexpectedMessageListener {
 
-    private static final Log DEFAULT_LOG = new Log(LoggingDelegateUnexpectedMessageListener.class);
-    private static final LogLevel DEFAULT_LOG_LEVEL = LogLevel.WARN;
+    public static final Log DEFAULT_LOG = new Log(LoggingDelegateUnexpectedMessageListener.class);
+    public static final LogLevel DEFAULT_LOG_LEVEL = LogLevel.WARN;
 
     private final IUnexpectedMessageListener delegate;
 

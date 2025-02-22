@@ -298,6 +298,11 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
             return delegate.isClosed();
         }
 
+        @Override
+        public String toString() {
+            return delegate.toString();
+        }
+
     }
 
     @Override

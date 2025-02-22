@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.sync.command.ISynchronousCommand
 import de.invesdwin.context.integration.channel.sync.command.MutableSynchronousCommand;
 import de.invesdwin.context.integration.channel.sync.command.SynchronousCommandSerde;
 import de.invesdwin.util.collections.attributes.AttributesMap;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
@@ -190,6 +191,11 @@ public class CommandAsynchronousHandler<I, O>
             } else {
                 return new CommandAsynchronousContext<>(immutable, outputSerde);
             }
+        }
+
+        @Override
+        public String toString() {
+            return Objects.toStringHelper(this).addValue(delegate).toString();
         }
 
     }
