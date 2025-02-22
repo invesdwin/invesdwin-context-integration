@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.blocking;
 
+import java.io.IOException;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
@@ -34,6 +36,16 @@ public abstract class ABlockingEndpointServer implements IAsynchronousChannel {
 
     public RpcAsynchronousEndpointServerHandlerFactory getHandlerFactory() {
         return handlerFactory;
+    }
+
+    @Override
+    public void open() throws IOException {
+        handlerFactory.open();
+    }
+
+    @Override
+    public void close() throws IOException {
+        handlerFactory.close();
     }
 
     /**

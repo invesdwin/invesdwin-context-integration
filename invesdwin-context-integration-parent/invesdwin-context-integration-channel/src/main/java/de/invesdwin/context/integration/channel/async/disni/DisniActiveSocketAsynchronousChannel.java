@@ -41,6 +41,12 @@ public class DisniActiveSocketAsynchronousChannel
     }
 
     @Override
+    public void open() throws IOException {
+        super.open();
+        handlerFactory.open();
+    }
+
+    @Override
     public void close() {
         super.close();
         try {

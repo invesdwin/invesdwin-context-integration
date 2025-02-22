@@ -51,6 +51,7 @@ public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public void open() throws IOException {
+        handlerFactory.open();
         channel.open(ch -> {
             final IoFilterChain pipeline = ch.getFilterChain();
             final Runnable closeAsync;

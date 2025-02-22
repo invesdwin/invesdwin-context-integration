@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -33,7 +32,7 @@ public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
 
     @Override
     public int getMaxMessageSize() {
-        return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
+        return 45;
     }
 
 }

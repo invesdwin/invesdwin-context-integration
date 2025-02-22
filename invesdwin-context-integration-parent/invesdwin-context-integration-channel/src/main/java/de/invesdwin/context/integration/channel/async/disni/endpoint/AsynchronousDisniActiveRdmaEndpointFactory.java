@@ -8,12 +8,13 @@ import com.ibm.disni.RdmaActiveEndpointGroup;
 import com.ibm.disni.verbs.RdmaCmId;
 
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
+import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.disni.active.endpoint.ADisniActiveRdmaEndpointFactory;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @Immutable
 public class AsynchronousDisniActiveRdmaEndpointFactory
-        extends ADisniActiveRdmaEndpointFactory<AsynchronousDisniActiveRdmaEndpoint> {
+        extends ADisniActiveRdmaEndpointFactory<AsynchronousDisniActiveRdmaEndpoint> implements ISynchronousChannel {
 
     private final IAsynchronousHandlerFactory<IByteBufferProvider, IByteBufferProvider> handlerFactory;
     private final boolean multipleClientsAllowed;
@@ -25,6 +26,16 @@ public class AsynchronousDisniActiveRdmaEndpointFactory
         super(endpointGroup, bufferSize);
         this.handlerFactory = handlerFactory;
         this.multipleClientsAllowed = multipleClientsAllowed;
+    }
+
+    @Override
+    public void open() throws IOException {
+        handlerFactory.open();
+    }
+
+    @Override
+    public void close() throws IOException {
+        handlerFactory.close();
     }
 
     @Override

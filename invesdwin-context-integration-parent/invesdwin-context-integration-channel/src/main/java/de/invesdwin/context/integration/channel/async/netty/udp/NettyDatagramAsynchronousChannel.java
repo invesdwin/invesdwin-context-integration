@@ -59,6 +59,7 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
     @Override
     public void open() throws IOException {
+        handlerFactory.open();
         final Runnable closeAsync;
         if (channel.isMultipleClientsAllowed()) {
             closeAsync = () -> {

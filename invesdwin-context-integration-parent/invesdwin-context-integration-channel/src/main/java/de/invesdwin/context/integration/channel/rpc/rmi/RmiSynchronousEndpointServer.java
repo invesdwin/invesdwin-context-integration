@@ -60,6 +60,7 @@ public class RmiSynchronousEndpointServer extends ABlockingEndpointServer {
         server.setServiceInterface(IArrayBlockingEndpointService.class);
         server.setRegistryPort(registryPort);
         server.afterPropertiesSet();
+        super.open();
     }
 
     @Override
@@ -77,6 +78,7 @@ public class RmiSynchronousEndpointServer extends ABlockingEndpointServer {
                 Err.process(new RuntimeException("Ignoring", e));
             }
             server = null;
+            super.close();
         }
     }
 

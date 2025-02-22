@@ -68,6 +68,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
 
     @Override
     public void open() throws IOException {
+        handlerFactory.open();
         this.serverEndpoint = serverEndpointFactory.newEndpoint();
         this.requestReader = serverEndpoint.getReader();
         this.responseWriter = serverEndpoint.getWriter();
@@ -87,6 +88,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
         if (ioRunnable != null) {
             ioRunnable.close();
             ioRunnable = null;
+            handlerFactory.close();
         }
     }
 
@@ -191,7 +193,8 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
             try {
                 if (requestReader.hasNext()) {
                     final IByteBufferProvider request = requestReader.readMessage();
-                    final MutableSessionlessHandlerContext context = MutableSessionlessHandlerContextPool.INSTANCE.borrowObject();
+                    final MutableSessionlessHandlerContext context = MutableSessionlessHandlerContextPool.INSTANCE
+                            .borrowObject();
                     try {
                         context.init(serverEndpoint.getOtherSocketAddress(), writeQueue);
                         final IByteBufferProvider response = handler.handle(context, request);
