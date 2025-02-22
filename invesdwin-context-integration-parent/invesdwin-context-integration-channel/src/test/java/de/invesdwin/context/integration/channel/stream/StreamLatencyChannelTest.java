@@ -53,6 +53,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     public static final boolean STREAM_CLIENT_LAZY = true;
     public static final int STREAM_TEST_THREADS = 1;
     public static final IStreamSynchronousEndpointServiceFactory STREAM_SERVICE_FACTORY = TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
+    public static final boolean VERBOSE_DEBUG = false;
 
     public StreamLatencyChannelTest(final AChannelTest parent) {
         super(parent);
@@ -430,7 +431,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     public static IStreamSessionManager maybeDebug(final IStreamSessionManager manager) {
-        if (AChannelTest.DEBUG) {
+        if (VERBOSE_DEBUG) {
             return new LoggingDelegateStreamSessionManager(manager);
         } else {
             return manager;
@@ -438,7 +439,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     public static IStreamSynchronousEndpointSession maybeDebug(final IStreamSynchronousEndpointSession session) {
-        if (AChannelTest.DEBUG) {
+        if (VERBOSE_DEBUG) {
             return new LoggingDelegateStreamSynchronousEndpointSession(session);
         } else {
             return session;
@@ -446,7 +447,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     public static IStreamSynchronousEndpointClient maybeDebug(final IStreamSynchronousEndpointClient client) {
-        if (AChannelTest.DEBUG) {
+        if (VERBOSE_DEBUG) {
             return new LoggingDelegateStreamSynchronousEndpointClient(client);
         } else {
             return client;
@@ -455,7 +456,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
 
     public static IStreamSynchronousEndpointServiceFactory maybeDebug(
             final IStreamSynchronousEndpointServiceFactory factory) {
-        if (AChannelTest.DEBUG) {
+        if (VERBOSE_DEBUG) {
             return new LoggingDelegateStreamSynchronousEndpointServiceFactory(factory);
         } else {
             return factory;
