@@ -19,7 +19,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.circular.CircularGenericArrayQueue;
 import de.invesdwin.util.lang.BroadcastingCloseable;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -169,7 +168,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(context).toString();
+        return context.toString();
     }
 
 }

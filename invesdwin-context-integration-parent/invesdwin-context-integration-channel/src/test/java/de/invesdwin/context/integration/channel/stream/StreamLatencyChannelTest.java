@@ -20,12 +20,18 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynch
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.stream.client.BlockingStreamSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.stream.client.IStreamSynchronousEndpointClient;
+import de.invesdwin.context.integration.channel.stream.client.LoggingDelegateStreamSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientChannel;
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientReader;
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientWriter;
 import de.invesdwin.context.integration.channel.stream.server.StreamSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.stream.server.async.StreamAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.integration.channel.stream.server.service.log.LoggingDelegateStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.log.LoggingDelegateStreamSessionManager;
+import de.invesdwin.context.integration.channel.stream.server.session.manager.log.LoggingDelegateStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.stream.server.sessionless.StreamSessionlessSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -71,6 +77,11 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
             }
+
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
         };
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -110,6 +121,11 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             protected int newMaxIoThreadCount() {
                 return STREAM_CLIENT_TRANSPORTS;
             }
+
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
         };
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleMultiplexingSynchronousEndpointClientSessionPool(
@@ -140,7 +156,12 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newStreamServiceFactory());
+                newStreamServiceFactory()) {
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
+        };
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -176,7 +197,12 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newStreamServiceFactory());
+                newStreamServiceFactory()) {
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
+        };
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleMultiplexingSynchronousEndpointClientSessionPool(
@@ -197,7 +223,12 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newStreamServiceFactory());
+                newStreamServiceFactory()) {
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
+        };
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
                 new SingleplexingSynchronousEndpointClientSessionPool(
@@ -228,7 +259,12 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newStreamServiceFactory());
+                newStreamServiceFactory()) {
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
+        };
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final IStreamSynchronousEndpointClient serverClient = newStreamSynchronousEndpointClient(
@@ -265,7 +301,12 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamAsynchronousEndpointServerHandlerFactory handlerFactory = new StreamAsynchronousEndpointServerHandlerFactory(
-                newStreamServiceFactory());
+                newStreamServiceFactory()) {
+            @Override
+            public IStreamSessionManager newManager(final IStreamSynchronousEndpointSession session) {
+                return maybeDebug(super.newManager(maybeDebug(session)));
+            }
+        };
         final StreamSessionlessSynchronousEndpointServer serverChannel = new StreamSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
         final Supplier<IStreamSynchronousEndpointClient> clientFactory = () -> newStreamSynchronousEndpointClient(
@@ -325,18 +366,18 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         final String requestTopic = "request" + topicSuffix;
         final String responseTopic = "response" + topicSuffix;
         final StreamSynchronousEndpointClientChannel serverRequestChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, requestTopic, parent.getMaxMessageSize());
+                serverClient, requestTopic, null);
         final StreamSynchronousEndpointClientChannel serverResponseChannel = newStreamSynchronousEndpointClientChannel(
-                serverClient, responseTopic, parent.getMaxMessageSize());
+                serverClient, responseTopic, null);
         final ISynchronousReader<FDate> serverRequestReader = AChannelTest
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(serverRequestChannel));
         final ISynchronousWriter<FDate> serverResponseWriter = AChannelTest
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(serverResponseChannel));
         final LatencyServerTask serverTask = new LatencyServerTask(parent, serverRequestReader, serverResponseWriter);
         final StreamSynchronousEndpointClientChannel clientRequestChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, requestTopic, parent.getMaxMessageSize());
+                clientClient, requestTopic, null);
         final StreamSynchronousEndpointClientChannel clientResponseChannel = newStreamSynchronousEndpointClientChannel(
-                clientClient, responseTopic, parent.getMaxMessageSize());
+                clientClient, responseTopic, null);
         final ISynchronousWriter<FDate> clientRequestWriter = AChannelTest
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(clientRequestChannel));
         final ISynchronousReader<FDate> clientResponseReader = AChannelTest
@@ -366,10 +407,9 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
 
     public IStreamSynchronousEndpointClient newStreamSynchronousEndpointClient(
             final ICloseableObjectPool<ISynchronousEndpointClientSession> sessionPool) {
-        final BlockingStreamSynchronousEndpointClient blocking = new BlockingStreamSynchronousEndpointClient(
-                sessionPool);
-        //        return new AsyncDelegateSynchronousEndpointClient(blocking);
-        return blocking;
+        final IStreamSynchronousEndpointClient client = new BlockingStreamSynchronousEndpointClient(sessionPool);
+        //        client = new AsyncDelegateSynchronousEndpointClient(client);
+        return maybeDebug(client);
     }
 
     protected int newStreamTestThreads() {
@@ -377,7 +417,40 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     protected IStreamSynchronousEndpointServiceFactory newStreamServiceFactory() {
-        return STREAM_SERVICE_FACTORY;
+        return maybeDebug(STREAM_SERVICE_FACTORY);
+    }
+
+    public static IStreamSessionManager maybeDebug(final IStreamSessionManager manager) {
+        if (AChannelTest.DEBUG) {
+            return new LoggingDelegateStreamSessionManager(manager);
+        } else {
+            return manager;
+        }
+    }
+
+    public static IStreamSynchronousEndpointSession maybeDebug(final IStreamSynchronousEndpointSession session) {
+        if (AChannelTest.DEBUG) {
+            return new LoggingDelegateStreamSynchronousEndpointSession(session);
+        } else {
+            return session;
+        }
+    }
+
+    public static IStreamSynchronousEndpointClient maybeDebug(final IStreamSynchronousEndpointClient client) {
+        if (AChannelTest.DEBUG) {
+            return new LoggingDelegateStreamSynchronousEndpointClient(client);
+        } else {
+            return client;
+        }
+    }
+
+    public static IStreamSynchronousEndpointServiceFactory maybeDebug(
+            final IStreamSynchronousEndpointServiceFactory factory) {
+        if (AChannelTest.DEBUG) {
+            return new LoggingDelegateStreamSynchronousEndpointServiceFactory(factory);
+        } else {
+            return factory;
+        }
     }
 
 }

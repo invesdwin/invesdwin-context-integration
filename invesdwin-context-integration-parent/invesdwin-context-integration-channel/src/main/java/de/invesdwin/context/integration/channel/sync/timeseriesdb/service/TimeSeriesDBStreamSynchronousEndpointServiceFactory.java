@@ -20,4 +20,9 @@ public final class TimeSeriesDBStreamSynchronousEndpointServiceFactory
         return new TimeSeriesDBStreamSynchronousEndpointService(serviceId, topic, properties);
     }
 
+    @Override
+    public String toString() {
+        return getClass().getSimpleName();
+    }
+
 }

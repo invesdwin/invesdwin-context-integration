@@ -121,7 +121,7 @@ public final class MutableSessionlessHandlerContext implements ISessionlessHandl
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(getSessionId()).toString();
+        return getSessionId();
     }
 
 }

@@ -46,7 +46,7 @@ public class LoggingDelegateStreamSynchronousEndpointServiceFactory
     @Override
     public IStreamSynchronousEndpointService newService(final int serviceId, final String topic,
             final IProperties properties) {
-        logLevel.log(log, "%s: newService(%s, %s, %s)", id, serviceId, topic, properties.asMap());
+        logLevel.log(log, "%s.newService(%s, %s, %s)", id, serviceId, topic, properties.asMap());
         final IStreamSynchronousEndpointService delegate = delegateFactory.newService(serviceId, topic, properties);
         return new LoggingDelegateStreamSynchronousEndpointService(delegate);
     }

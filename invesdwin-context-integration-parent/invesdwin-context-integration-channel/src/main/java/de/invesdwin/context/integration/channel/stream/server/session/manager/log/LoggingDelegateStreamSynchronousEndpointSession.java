@@ -9,7 +9,6 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -54,13 +53,13 @@ public class LoggingDelegateStreamSynchronousEndpointSession implements IStreamS
     @Override
     public boolean pushSubscriptionMessage(final IStreamSynchronousEndpointService service,
             final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
-        logLevel.log(log, "%s: pushSubscriptionMessage(%s, ...)", id, service);
+        logLevel.log(log, "%s.pushSubscriptionMessage(%s, ...)", id, service);
         return delegate.pushSubscriptionMessage(service, reader);
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(delegate).toString();
+        return delegate.toString();
     }
 
 }

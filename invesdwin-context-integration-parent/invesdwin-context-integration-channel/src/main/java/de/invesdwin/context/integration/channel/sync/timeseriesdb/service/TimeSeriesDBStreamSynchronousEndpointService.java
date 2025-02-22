@@ -21,6 +21,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableSet;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 
@@ -145,6 +146,11 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
     public void close() throws IOException {
         writer.close();
         channel.close();
+    }
+
+    @Override
+    public String toString() {
+        return Objects.toStringHelper(this).addValue(serviceId).addValue(topic).toString();
     }
 
 }

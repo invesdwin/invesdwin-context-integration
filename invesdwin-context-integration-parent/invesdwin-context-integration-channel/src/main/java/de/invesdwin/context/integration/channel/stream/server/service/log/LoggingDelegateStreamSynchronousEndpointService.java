@@ -9,7 +9,6 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.IProperties;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -48,18 +47,18 @@ public class LoggingDelegateStreamSynchronousEndpointService implements IStreamS
 
     @Override
     public void close() throws IOException {
-        logLevel.log(log, "%s: close()", id);
+        logLevel.log(log, "%s.close()", id);
         delegate.close();
     }
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(delegate).toString();
+        return delegate.toString();
     }
 
     @Override
     public void open() throws IOException {
-        logLevel.log(log, "%s: open()", id);
+        logLevel.log(log, "%s.open()", id);
         delegate.open();
     }
 
@@ -75,26 +74,26 @@ public class LoggingDelegateStreamSynchronousEndpointService implements IStreamS
 
     @Override
     public boolean put(final IByteBufferProvider message) throws Exception {
-        logLevel.log(log, "%s: put(...)", id);
+        logLevel.log(log, "%s.put(...)", id);
         return delegate.put(message);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> subscribe(final IStreamSynchronousEndpointServiceListener listener,
             final IProperties parameters) {
-        logLevel.log(log, "%s: subscribe(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.subscribe(..., %s)", id, parameters.asMap());
         return delegate.subscribe(listener, parameters);
     }
 
     @Override
     public boolean unsubscribe(final IStreamSynchronousEndpointServiceListener listener, final IProperties parameters) {
-        logLevel.log(log, "%s: unsubscribe(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.unsubscribe(..., %s)", id, parameters.asMap());
         return delegate.unsubscribe(listener, parameters);
     }
 
     @Override
     public boolean delete(final IProperties parameters) throws Exception {
-        logLevel.log(log, "%s: delete(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.delete(..., %s)", id, parameters.asMap());
         return delegate.delete(parameters);
     }
 

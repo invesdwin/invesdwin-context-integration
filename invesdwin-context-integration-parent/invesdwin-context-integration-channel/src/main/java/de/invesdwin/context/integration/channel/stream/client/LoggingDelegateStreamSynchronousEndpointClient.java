@@ -21,7 +21,7 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
 
     private final Log log;
     private final LogLevel logLevel;
-    private final String id;
+    private String id;
 
     public LoggingDelegateStreamSynchronousEndpointClient(final IStreamSynchronousEndpointClient delegate) {
         this(delegate, DEFAULT_LOG);
@@ -37,7 +37,6 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
         this.delegate = delegate;
         this.log = log;
         this.logLevel = logLevel;
-        this.id = newId(delegate);
     }
 
     protected String newId(final IStreamSynchronousEndpointClient delegate) {
@@ -46,13 +45,14 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
 
     @Override
     public void open() throws IOException {
-        logLevel.log(log, "%s: open()", id);
         delegate.open();
+        this.id = newId(delegate);
+        logLevel.log(log, "%s.open()", id);
     }
 
     @Override
     public void close() throws IOException {
-        logLevel.log(log, "%s: close()", id);
+        logLevel.log(log, "%s.close()", id);
         delegate.close();
     }
 
@@ -63,32 +63,32 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
 
     @Override
     public Future<?> put(final int serviceId, final ICloseableByteBufferProvider message) {
-        logLevel.log(log, "%s: put(%s, ...)", id, serviceId);
+        logLevel.log(log, "%s.put(%s, ...)", id, serviceId);
         return delegate.put(serviceId, message);
     }
 
     @Override
     public Future<?> create(final int serviceId, final String topicUri) {
-        logLevel.log(log, "%s: create(%s, %s)", id, serviceId, topicUri);
+        logLevel.log(log, "%s.create(%s, %s)", id, serviceId, topicUri);
         return delegate.create(serviceId, topicUri);
     }
 
     @Override
     public Future<?> subscribe(final int serviceId, final String topicUri,
             final IStreamSynchronousEndpointClientSubscription subscription) {
-        logLevel.log(log, "%s: subscribe(%s, %s, ...)", id, serviceId, topicUri);
+        logLevel.log(log, "%s.subscribe(%s, %s, ...)", id, serviceId, topicUri);
         return delegate.subscribe(serviceId, topicUri, subscription);
     }
 
     @Override
     public Future<?> unsubscribe(final int serviceId, final String topicUri) {
-        logLevel.log(log, "%s: unsubscribe(%s, %s)", id, serviceId, topicUri);
+        logLevel.log(log, "%s.unsubscribe(%s, %s)", id, serviceId, topicUri);
         return delegate.unsubscribe(serviceId, topicUri);
     }
 
     @Override
     public Future<?> delete(final int serviceId, final String topicUri) {
-        logLevel.log(log, "%s: delete(%s, %s)", id, serviceId, topicUri);
+        logLevel.log(log, "%s.delete(%s, %s)", id, serviceId, topicUri);
         return delegate.delete(serviceId, topicUri);
     }
 

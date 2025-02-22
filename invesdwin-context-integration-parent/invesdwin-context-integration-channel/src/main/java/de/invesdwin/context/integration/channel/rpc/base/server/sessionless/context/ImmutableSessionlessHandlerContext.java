@@ -12,7 +12,6 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.lang.BroadcastingCloseable;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -54,7 +53,7 @@ public final class ImmutableSessionlessHandlerContext extends BroadcastingClosea
     @Override
     public String getSessionId() {
         if (sessionId == null) {
-            sessionId = Objects.toString(otherSocketAddress);
+            sessionId = otherSocketAddress.toString();
         }
         return sessionId;
     }
@@ -88,7 +87,7 @@ public final class ImmutableSessionlessHandlerContext extends BroadcastingClosea
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(getSessionId()).toString();
+        return getSessionId();
     }
 
 }

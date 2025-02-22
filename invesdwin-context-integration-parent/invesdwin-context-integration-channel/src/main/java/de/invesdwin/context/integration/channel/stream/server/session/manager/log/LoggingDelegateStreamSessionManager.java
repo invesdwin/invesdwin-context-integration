@@ -47,7 +47,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
 
     @Override
     public void close() throws IOException {
-        logLevel.log(log, "%s: close()", id);
+        logLevel.log(log, "%s.close()", id);
         delegate.close();
     }
 
@@ -80,7 +80,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     @Override
     public Object put(final IStreamSynchronousEndpointService service, final IByteBufferProvider message)
             throws Exception {
-        logLevel.log(log, "%s: put(%s, ...)", id, service);
+        logLevel.log(log, "%s.put(%s, ...)", id, service);
         return delegate.put(service, message);
     }
 
@@ -92,7 +92,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     @Override
     public Object subscribe(final IStreamSynchronousEndpointService service, final IProperties parameters)
             throws Exception {
-        logLevel.log(log, "%s: subscribe(%s, %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.subscribe(%s, %s)", id, service, parameters.asMap());
         return delegate.subscribe(service, parameters);
     }
 
@@ -104,7 +104,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     @Override
     public Object unsubscribe(final IStreamSynchronousEndpointService service, final IProperties parameters)
             throws Exception {
-        logLevel.log(log, "%s: unsubscribe(%s, %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.unsubscribe(%s, %s)", id, service, parameters.asMap());
         return delegate.unsubscribe(service, parameters);
     }
 
@@ -116,7 +116,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     @Override
     public Object delete(final IStreamSynchronousEndpointService service, final IProperties parameters)
             throws Exception {
-        logLevel.log(log, "%s: delete(%s, %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.delete(%s, %s)", id, parameters.asMap());
         return delegate.delete(service, parameters);
     }
 
