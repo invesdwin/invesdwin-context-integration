@@ -10,6 +10,7 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.ISessionlessSynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
+import de.invesdwin.context.integration.channel.stream.StreamThroughputChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -18,7 +19,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
 
     @Test
-    public void testStreamPerformance() throws InterruptedException {
+    public void testStreamLatency() throws InterruptedException {
         final int port = NetworkUtil.findAvailableUdpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final boolean lowLatency = true;
@@ -26,7 +27,20 @@ public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
                 address, true, getMaxMessageSize(), lowLatency);
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
-        new StreamLatencyChannelTest(this).runStreamSessionlessPerformanceTest(serverEndpointFactory,
+        new StreamLatencyChannelTest(this).runStreamSessionlessLatencyTest(serverEndpointFactory,
+                clientEndpointFactory);
+    }
+
+    @Test
+    public void testStreamThroughput() throws InterruptedException {
+        final int port = NetworkUtil.findAvailableUdpPort();
+        final InetSocketAddress address = new InetSocketAddress("localhost", port);
+        final boolean lowLatency = true;
+        final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory = new NativeDatagramEndpointFactory(
+                address, true, getMaxMessageSize(), lowLatency);
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
+                address, false, getMaxMessageSize(), lowLatency);
+        new StreamThroughputChannelTest(this).runStreamSessionlessThroughputTest(serverEndpointFactory,
                 clientEndpointFactory);
     }
 

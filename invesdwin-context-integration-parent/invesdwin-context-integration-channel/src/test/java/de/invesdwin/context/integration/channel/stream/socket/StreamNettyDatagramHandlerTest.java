@@ -56,7 +56,7 @@ public class StreamNettyDatagramHandlerTest extends AChannelTest {
         //fastest
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramClientEndpointFactory(
         //                address, getMaxMessageSize());
-        new StreamLatencyChannelTest(this).runStreamHandlerPerformanceTest(serverFactory, clientEndpointFactory);
+        new StreamLatencyChannelTest(this).runStreamHandlerLatencyTest(serverFactory, clientEndpointFactory);
     }
 
     @Override

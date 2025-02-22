@@ -49,7 +49,7 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
-        new StreamLatencyChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
+        new StreamLatencyChannelTest(this).runStreamLatencyTest(serverAcceptor, clientEndpointFactory);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
-        new StreamThroughputChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
+        new StreamThroughputChannelTest(this).runStreamThroughputTest(serverAcceptor, clientEndpointFactory);
     }
 
 }

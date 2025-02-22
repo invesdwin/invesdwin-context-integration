@@ -56,7 +56,7 @@ public class StreamNettySocketHandlerTest extends AChannelTest {
         //fastest
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketClientEndpointFactory(
         //                address, getMaxMessageSize());
-        new StreamLatencyChannelTest(this).runStreamHandlerPerformanceTest(serverFactory, clientEndpointFactory);
+        new StreamLatencyChannelTest(this).runStreamHandlerLatencyTest(serverFactory, clientEndpointFactory);
     }
 
     @Override

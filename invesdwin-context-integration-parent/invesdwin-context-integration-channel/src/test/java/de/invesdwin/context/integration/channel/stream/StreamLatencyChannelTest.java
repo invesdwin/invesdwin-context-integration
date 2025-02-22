@@ -59,17 +59,17 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         super(parent);
     }
 
-    public void runStreamPerformanceTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+    public void runStreamLatencyTest(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamPerformanceTestLazy(serverAcceptor, clientEndpointFactory);
+            runStreamLatencyTestLazy(serverAcceptor, clientEndpointFactory);
         } else {
-            runStreamPerformanceTestEager(serverAcceptor, clientEndpointFactory);
+            runStreamLatencyTestEager(serverAcceptor, clientEndpointFactory);
         }
     }
 
-    private void runStreamPerformanceTestLazy(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+    private void runStreamLatencyTestLazy(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
@@ -113,7 +113,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     @SuppressWarnings({ "resource" })
-    private void runStreamPerformanceTestEager(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
+    private void runStreamLatencyTestEager(final ISynchronousReader<ISynchronousEndpointSession> serverAcceptor,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         final StreamSynchronousEndpointServer serverChannel = new StreamSynchronousEndpointServer(serverAcceptor,
@@ -141,18 +141,18 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         }
     }
 
-    public void runStreamHandlerPerformanceTest(
+    public void runStreamHandlerLatencyTest(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamHandlerPerformanceTestLazy(serverFactory, clientEndpointFactory);
+            runStreamHandlerLatencyTestLazy(serverFactory, clientEndpointFactory);
         } else {
-            runStreamHandlerPerformanceTestEager(serverFactory, clientEndpointFactory);
+            runStreamHandlerLatencyTestEager(serverFactory, clientEndpointFactory);
         }
     }
 
-    private void runStreamHandlerPerformanceTestLazy(
+    private void runStreamHandlerLatencyTestLazy(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
@@ -193,7 +193,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     @SuppressWarnings({ "resource" })
-    private void runStreamHandlerPerformanceTestEager(
+    private void runStreamHandlerLatencyTestEager(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
@@ -219,7 +219,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     @SuppressWarnings({ "resource" })
-    public void runStreamBlockingPerformanceTest(
+    public void runStreamBlockingLatencyTest(
             final Function<StreamAsynchronousEndpointServerHandlerFactory, IAsynchronousChannel> serverFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
@@ -244,18 +244,18 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         }
     }
 
-    public void runStreamSessionlessPerformanceTest(
+    public void runStreamSessionlessLatencyTest(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
         if (STREAM_CLIENT_LAZY) {
-            runStreamSessionlessPerformanceTestLazy(serverEndpointFactory, clientEndpointFactory);
+            runStreamSessionlessLatencyTestLazy(serverEndpointFactory, clientEndpointFactory);
         } else {
-            runStreamSessionlessPerformanceTestEager(serverEndpointFactory, clientEndpointFactory);
+            runStreamSessionlessLatencyTestEager(serverEndpointFactory, clientEndpointFactory);
         }
     }
 
-    private void runStreamSessionlessPerformanceTestLazy(
+    private void runStreamSessionlessLatencyTestLazy(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
@@ -297,7 +297,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     }
 
     @SuppressWarnings({ "resource" })
-    private void runStreamSessionlessPerformanceTestEager(
+    private void runStreamSessionlessLatencyTestEager(
             final ISessionlessSynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider, ?> serverEndpointFactory,
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory)
             throws InterruptedException {
