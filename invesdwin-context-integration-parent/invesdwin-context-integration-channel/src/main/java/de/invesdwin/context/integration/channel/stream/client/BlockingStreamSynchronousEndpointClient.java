@@ -187,10 +187,6 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
              * does the server write the message and then complain or does it actually reject the message fully?
              */
             /*
-             * TODO: also reconsider making put blocking so it is not added to worker executor which might change order
-             * of elements, if its added to an executor, then by the async service with 1 thread only
-             */
-            /*
              * TODO: implement a truly non-blocking endpoint client session wrapper that directly returns futures for
              * requests and handles requests in a queue to keep the order. Also maybe pool futures and return a
              * ICloseableFuture?
