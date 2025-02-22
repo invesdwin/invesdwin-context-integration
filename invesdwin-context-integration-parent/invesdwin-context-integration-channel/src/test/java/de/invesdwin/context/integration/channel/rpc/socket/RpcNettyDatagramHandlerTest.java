@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchr
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
@@ -80,7 +80,7 @@ public class RpcNettyDatagramHandlerTest extends AChannelTest {
             }
         };
         //netty shared bootstrap
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramClientEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramEndpointFactory(
                 type, address, getMaxMessageSize(), lowLatency) {
             @Override
             protected int newClientWorkerGroupThreadCount() {

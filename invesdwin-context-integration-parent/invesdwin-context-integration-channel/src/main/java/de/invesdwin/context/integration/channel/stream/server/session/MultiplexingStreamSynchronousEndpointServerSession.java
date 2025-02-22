@@ -164,7 +164,8 @@ public class MultiplexingStreamSynchronousEndpointServerSession
          * resetting the subscription entirely. The stream sequence numbers are negative so that they be separated in a
          * polling queues from rpc requests/responses.
          */
-        writeTask.getResponse().setSequence(nextStreamSequence());
+        final int sequence = nextStreamSequence();
+        writeTask.getResponse().setSequence(sequence);
         writeTask.getResponse().setMessageBuffer(message);
         responseWriter.write(writeTask.getResponse());
         final boolean flushed = responseWriter.writeFlushed();

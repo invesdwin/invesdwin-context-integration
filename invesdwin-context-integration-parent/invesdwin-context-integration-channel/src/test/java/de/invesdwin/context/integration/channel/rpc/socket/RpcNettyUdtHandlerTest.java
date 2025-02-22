@@ -16,7 +16,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.netty.udt.NettySharedUdtClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udt.NettySharedUdtEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udt.NettyUdtSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
 import de.invesdwin.context.integration.channel.sync.netty.udt.type.NioNettyUdtChannelType;
@@ -71,7 +71,7 @@ public class RpcNettyUdtHandlerTest extends AChannelTest {
             }
         };
         //netty shared bootstrap
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedUdtClientEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedUdtEndpointFactory(
                 type, address, getMaxMessageSize()) {
             @Override
             protected int newClientWorkerGroupThreadCount() {

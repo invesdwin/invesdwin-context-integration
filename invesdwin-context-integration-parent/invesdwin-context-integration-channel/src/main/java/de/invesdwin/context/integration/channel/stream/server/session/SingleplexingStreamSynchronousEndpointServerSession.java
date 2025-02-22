@@ -145,7 +145,8 @@ public class SingleplexingStreamSynchronousEndpointServerSession
          * resetting the subscription entirely. The stream sequence numbers are negative so that they be separated in a
          * polling queues from rpc requests/responses.
          */
-        responseHolder.setSequence(nextStreamSequence());
+        final int sequence = nextStreamSequence();
+        responseHolder.setSequence(sequence);
         responseHolder.setMessageBuffer(message);
         responseWriter.write(responseHolder);
         final boolean flushed = responseWriter.writeFlushed();

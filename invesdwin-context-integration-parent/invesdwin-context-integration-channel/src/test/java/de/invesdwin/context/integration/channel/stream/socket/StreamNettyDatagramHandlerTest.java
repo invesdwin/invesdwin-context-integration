@@ -15,7 +15,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
 import de.invesdwin.context.integration.channel.stream.server.async.StreamAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -43,7 +43,7 @@ public class StreamNettyDatagramHandlerTest extends AChannelTest {
             }
         };
         //netty shared bootstrap
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramClientEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramEndpointFactory(
                 type, address, getMaxMessageSize(), lowLatency) {
             @Override
             protected int newClientWorkerGroupThreadCount() {
@@ -51,11 +51,11 @@ public class StreamNettyDatagramHandlerTest extends AChannelTest {
             }
         };
         //netty no shared bootstrap
-        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramClientEndpointFactory(
-        //                type, address, getMaxMessageSize());
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramEndpointFactory(
+        //                type, address, false, getMaxMessageSize(), lowLatency);
         //fastest
-        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramClientEndpointFactory(
-        //                address, getMaxMessageSize());
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
+        //                address, false, getMaxMessageSize(), lowLatency);
         new StreamLatencyChannelTest(this).runStreamHandlerLatencyTest(serverFactory, clientEndpointFactory);
     }
 

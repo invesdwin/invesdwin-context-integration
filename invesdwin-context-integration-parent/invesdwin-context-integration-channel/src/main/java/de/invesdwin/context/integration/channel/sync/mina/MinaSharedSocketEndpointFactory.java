@@ -28,7 +28,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import io.netty.util.concurrent.FastThreadLocal;
 
 @ThreadSafe
-public class MinaSharedSocketClientEndpointFactory
+public class MinaSharedSocketEndpointFactory
         implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
 
     private static final FastThreadLocal<Boolean> VALIDATING_CONNECT = new FastThreadLocal<>();
@@ -36,18 +36,18 @@ public class MinaSharedSocketClientEndpointFactory
     private final IMinaSocketType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final MinaSharedSocketClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final MinaSharedSocketEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
     private final IBufferingIterator<MinaSocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
-    public MinaSharedSocketClientEndpointFactory(final IMinaSocketType type, final InetSocketAddress socketAddress,
+    public MinaSharedSocketEndpointFactory(final IMinaSocketType type, final InetSocketAddress socketAddress,
             final int estimatedMaxMessageSize) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.socketSize = newSocketSize(estimatedMaxMessageSize);
 
-        this.bootstrapFinalizer = new MinaSharedSocketClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new MinaSharedSocketEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
@@ -215,13 +215,13 @@ public class MinaSharedSocketClientEndpointFactory
 
         @Override
         protected void onSession(final IoSession session) {
-            MinaSharedSocketClientEndpointFactory.this.onSession(session);
+            MinaSharedSocketEndpointFactory.this.onSession(session);
             super.onSession(session);
         }
 
     }
 
-    private static final class MinaSharedSocketClientEndpointFactoryFinalizer extends AWarningFinalizer {
+    private static final class MinaSharedSocketEndpointFactoryFinalizer extends AWarningFinalizer {
 
         private volatile ExecutorService executor;
         private volatile IoConnector clientConnector;

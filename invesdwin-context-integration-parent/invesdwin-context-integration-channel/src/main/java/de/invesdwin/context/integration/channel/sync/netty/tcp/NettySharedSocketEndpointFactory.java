@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.udt;
+package de.invesdwin.context.integration.channel.sync.netty.tcp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,8 +12,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udt.type.INettyUdtChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
@@ -23,40 +22,42 @@ import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SelectStrategyFactory;
-import io.netty.channel.udt.UdtChannel;
+import io.netty.channel.socket.SocketChannel;
 
 @ThreadSafe
-public class NettySharedUdtClientEndpointFactory
+public class NettySharedSocketEndpointFactory
         implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
 
-    private final INettyUdtChannelType type;
+    private final INettySocketChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
-    private final NettySharedUdtClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final boolean lowLatency;
+    private final NettySharedSocketEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
-    private final IBufferingIterator<NettyUdtClientEndpointChannel> connectQueue = new BufferingIterator<>();
+    private final IBufferingIterator<NettySocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
-    public NettySharedUdtClientEndpointFactory(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-            final int estimatedMaxMessageSize) {
+    public NettySharedSocketEndpointFactory(final INettySocketChannelType type,
+            final InetSocketAddress socketAddress, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.socketSize = newSocketSize(estimatedMaxMessageSize);
+        this.lowLatency = lowLatency;
 
-        this.bootstrapFinalizer = new NettySharedUdtClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new NettySharedSocketEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
     protected int newSocketSize(final int estimatedMaxMessageSize) {
-        return estimatedMaxMessageSize + NettyUdtSynchronousChannel.MESSAGE_INDEX;
+        return estimatedMaxMessageSize + NettySocketSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final NettyUdtSynchronousChannel connector = new NettyUdtClientEndpointChannel(type, socketAddress, false,
-                socketSize);
-        final NettyUdtSynchronousReader reader = new NettyUdtSynchronousReader(connector);
-        final NettyUdtSynchronousWriter writer = new NettyUdtSynchronousWriter(connector);
+        final NettySocketSynchronousChannel connector = new NettySocketClientEndpointChannel(type, socketAddress, false,
+                socketSize, lowLatency);
+        final NettySocketSynchronousReader reader = new NettySocketSynchronousReader(connector);
+        final NettySocketSynchronousWriter writer = new NettySocketSynchronousWriter(connector);
         return ImmutableSynchronousEndpoint.of(reader, writer);
     }
 
@@ -65,14 +66,14 @@ public class NettySharedUdtClientEndpointFactory
             synchronized (this) {
                 if (bootstrapFinalizer.clientBootstrap == null) {
                     bootstrapFinalizer.clientBootstrap = new Bootstrap();
-                    bootstrapFinalizer.clientBootstrap
-                            .group(type.newClientWorkerGroup(newClientWorkerGroupThreadCount()));
-                    bootstrapFinalizer.clientBootstrap.channelFactory(type.getClientChannelFactory());
-                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, false);
-                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<UdtChannel>() {
+                    bootstrapFinalizer.clientBootstrap.group(type.newClientWorkerGroup(
+                            newClientWorkerGroupThreadCount(), newClientWorkerGroupSelectStrategyFactory()));
+                    bootstrapFinalizer.clientBootstrap.channel(type.getClientChannelType());
+                    type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, lowLatency, false);
+                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
                         @Override
-                        public void initChannel(final UdtChannel ch) throws Exception {
-                            final NettyUdtClientEndpointChannel connector;
+                        public void initChannel(final SocketChannel ch) throws Exception {
+                            final NettySocketClientEndpointChannel connector;
                             synchronized (connectQueue) {
                                 if (connectQueue.hasNext()) {
                                     connector = connectQueue.next();
@@ -97,7 +98,7 @@ public class NettySharedUdtClientEndpointFactory
     /**
      * Can be overridden to add handlers
      */
-    protected void onUdtChannel(final UdtChannel udtChannel) {}
+    protected void onSocketChannel(final SocketChannel socketChannel) {}
 
     protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
         return SelectStrategyFactories.DEFAULT;
@@ -107,14 +108,20 @@ public class NettySharedUdtClientEndpointFactory
         return 1;
     }
 
-    private final class NettyUdtClientEndpointChannel extends NettyUdtSynchronousChannel {
+    private final class NettySocketClientEndpointChannel extends NettySocketSynchronousChannel {
 
         @GuardedBy("this")
         private boolean opened;
 
-        private NettyUdtClientEndpointChannel(final INettyUdtChannelType type, final InetSocketAddress socketAddress,
-                final boolean server, final int estimatedMaxMessageSize) {
-            super(type, socketAddress, server, estimatedMaxMessageSize);
+        private NettySocketClientEndpointChannel(final INettySocketChannelType type,
+                final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+                final boolean lowLatency) {
+            super(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
+        }
+
+        @Override
+        protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -128,12 +135,17 @@ public class NettySharedUdtClientEndpointFactory
         }
 
         @Override
+        protected SelectStrategyFactory newServerWorkerGroupSelectStrategyFactory() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
         protected int newServerWorkerGroupThreadCount() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void open(final Consumer<UdtChannel> channelListener) throws IOException {
+        public void open(final Consumer<SocketChannel> channelListener) throws IOException {
             super.open(channelListener);
             synchronized (this) {
                 if (!opened) {
@@ -170,26 +182,26 @@ public class NettySharedUdtClientEndpointFactory
                 connectQueue.add(this);
             }
             maybeInitClientBootstrap();
-            awaitUdtChannel(() -> {
+            awaitSocketChannel(() -> {
                 return bootstrapFinalizer.clientBootstrap.connect(socketAddress);
             });
         }
 
-        void onConnected(final UdtChannel ch) {
+        void onConnected(final SocketChannel ch) {
             type.initChannel(ch, false);
-            onUdtChannel(ch);
-            finalizer.udtChannel = ch;
+            onSocketChannel(ch);
+            finalizer.socketChannel = ch;
         }
 
         @Override
-        protected void onUdtChannel(final UdtChannel udtChannel) {
-            NettySharedUdtClientEndpointFactory.this.onUdtChannel(udtChannel);
-            super.onUdtChannel(udtChannel);
+        protected void onSocketChannel(final SocketChannel socketChannel) {
+            NettySharedSocketEndpointFactory.this.onSocketChannel(socketChannel);
+            super.onSocketChannel(socketChannel);
         }
 
     }
 
-    private static final class NettySharedUdtClientEndpointFactoryFinalizer extends AWarningFinalizer {
+    private static final class NettySharedSocketEndpointFactoryFinalizer extends AWarningFinalizer {
 
         private volatile Bootstrap clientBootstrap;
 

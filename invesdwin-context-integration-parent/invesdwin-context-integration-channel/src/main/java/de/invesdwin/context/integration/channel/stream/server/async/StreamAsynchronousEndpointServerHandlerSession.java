@@ -99,7 +99,8 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
              * re-request them by resubscribing with his last known timestamp as a limiter in the subscription request
              * or by resetting the subscription entirely
              */
-            response.setSequence(nextStreamSequence());
+            final int sequence = nextStreamSequence();
+            response.setSequence(sequence);
 
             final IByteBufferProvider message = reader.readMessage();
             try {

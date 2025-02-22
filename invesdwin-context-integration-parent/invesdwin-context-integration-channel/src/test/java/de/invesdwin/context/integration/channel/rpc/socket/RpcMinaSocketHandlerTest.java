@@ -15,7 +15,7 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.server.async.RpcAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.context.integration.channel.sync.mina.MinaSharedSocketClientEndpointFactory;
+import de.invesdwin.context.integration.channel.sync.mina.MinaSharedSocketEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.mina.type.MinaSocketType;
 import de.invesdwin.context.integration.network.NetworkUtil;
@@ -68,7 +68,7 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
             }
         };
         //mina shared clientConnector
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSharedSocketClientEndpointFactory(
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new MinaSharedSocketEndpointFactory(
                 type, address, getMaxMessageSize()) {
             @Override
             protected int newConnectorProcessorCount() {

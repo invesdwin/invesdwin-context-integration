@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.netty.tcp;
+package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -12,7 +12,8 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEn
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ImmutableSynchronousEndpoint;
 import de.invesdwin.context.integration.channel.sync.netty.SelectStrategyFactories;
-import de.invesdwin.context.integration.channel.sync.netty.tcp.type.INettySocketChannelType;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
@@ -22,42 +23,42 @@ import io.netty.bootstrap.BootstrapConfig;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.SelectStrategyFactory;
-import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.DatagramChannel;
 
 @ThreadSafe
-public class NettySharedSocketClientEndpointFactory
+public class NettySharedDatagramEndpointFactory
         implements ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> {
 
-    private final INettySocketChannelType type;
+    private final INettyDatagramChannelType type;
     private final InetSocketAddress socketAddress;
     private final int socketSize;
     private final boolean lowLatency;
-    private final NettySharedSocketClientEndpointFactoryFinalizer bootstrapFinalizer;
+    private final NettySharedDatagramEndpointFactoryFinalizer bootstrapFinalizer;
     private final AtomicInteger bootstrapActiveCount = new AtomicInteger();
     @GuardedBy("self")
-    private final IBufferingIterator<NettySocketClientEndpointChannel> connectQueue = new BufferingIterator<>();
+    private final IBufferingIterator<NettyDatagramClientEndpointChannel> connectQueue = new BufferingIterator<>();
 
-    public NettySharedSocketClientEndpointFactory(final INettySocketChannelType type,
+    public NettySharedDatagramEndpointFactory(final INettyDatagramChannelType type,
             final InetSocketAddress socketAddress, final int estimatedMaxMessageSize, final boolean lowLatency) {
         this.type = type;
         this.socketAddress = socketAddress;
         this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.lowLatency = lowLatency;
 
-        this.bootstrapFinalizer = new NettySharedSocketClientEndpointFactoryFinalizer();
+        this.bootstrapFinalizer = new NettySharedDatagramEndpointFactoryFinalizer();
         bootstrapFinalizer.register(this);
     }
 
     protected int newSocketSize(final int estimatedMaxMessageSize) {
-        return estimatedMaxMessageSize + NettySocketSynchronousChannel.MESSAGE_INDEX;
+        return estimatedMaxMessageSize + NettyDatagramSynchronousChannel.MESSAGE_INDEX;
     }
 
     @Override
     public ISynchronousEndpoint<IByteBufferProvider, IByteBufferProvider> newEndpoint() {
-        final NettySocketSynchronousChannel connector = new NettySocketClientEndpointChannel(type, socketAddress, false,
-                socketSize, lowLatency);
-        final NettySocketSynchronousReader reader = new NettySocketSynchronousReader(connector);
-        final NettySocketSynchronousWriter writer = new NettySocketSynchronousWriter(connector);
+        final NettyDatagramSynchronousChannel connector = new NettyDatagramClientEndpointChannel(type, socketAddress,
+                false, socketSize, lowLatency);
+        final NettyDatagramSynchronousReader reader = new NettyDatagramSynchronousReader(connector);
+        final NettyDatagramSynchronousWriter writer = new NettyDatagramSynchronousWriter(connector);
         return ImmutableSynchronousEndpoint.of(reader, writer);
     }
 
@@ -70,10 +71,10 @@ public class NettySharedSocketClientEndpointFactory
                             newClientWorkerGroupThreadCount(), newClientWorkerGroupSelectStrategyFactory()));
                     bootstrapFinalizer.clientBootstrap.channel(type.getClientChannelType());
                     type.channelOptions(bootstrapFinalizer.clientBootstrap::option, socketSize, lowLatency, false);
-                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<SocketChannel>() {
+                    bootstrapFinalizer.clientBootstrap.handler(new ChannelInitializer<DatagramChannel>() {
                         @Override
-                        public void initChannel(final SocketChannel ch) throws Exception {
-                            final NettySocketClientEndpointChannel connector;
+                        public void initChannel(final DatagramChannel ch) throws Exception {
+                            final NettyDatagramClientEndpointChannel connector;
                             synchronized (connectQueue) {
                                 if (connectQueue.hasNext()) {
                                     connector = connectQueue.next();
@@ -98,7 +99,7 @@ public class NettySharedSocketClientEndpointFactory
     /**
      * Can be overridden to add handlers
      */
-    protected void onSocketChannel(final SocketChannel socketChannel) {}
+    protected void onDatagramChannel(final DatagramChannel datagramChannel) {}
 
     protected SelectStrategyFactory newClientWorkerGroupSelectStrategyFactory() {
         return SelectStrategyFactories.DEFAULT;
@@ -108,12 +109,16 @@ public class NettySharedSocketClientEndpointFactory
         return 1;
     }
 
-    private final class NettySocketClientEndpointChannel extends NettySocketSynchronousChannel {
+    public boolean isLowLatency() {
+        return lowLatency;
+    }
+
+    private final class NettyDatagramClientEndpointChannel extends NettyDatagramSynchronousChannel {
 
         @GuardedBy("this")
         private boolean opened;
 
-        private NettySocketClientEndpointChannel(final INettySocketChannelType type,
+        private NettyDatagramClientEndpointChannel(final INettyDatagramChannelType type,
                 final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
                 final boolean lowLatency) {
             super(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
@@ -130,11 +135,6 @@ public class NettySharedSocketClientEndpointFactory
         }
 
         @Override
-        protected int newServerAcceptorGroupThreadCount() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         protected SelectStrategyFactory newServerWorkerGroupSelectStrategyFactory() {
             throw new UnsupportedOperationException();
         }
@@ -145,8 +145,9 @@ public class NettySharedSocketClientEndpointFactory
         }
 
         @Override
-        public void open(final Consumer<SocketChannel> channelListener) throws IOException {
-            super.open(channelListener);
+        public void open(final Consumer<Bootstrap> bootstrapListener, final Consumer<DatagramChannel> channelListener)
+                throws IOException {
+            super.open(bootstrapListener, channelListener);
             synchronized (this) {
                 if (!opened) {
                     bootstrapActiveCount.incrementAndGet();
@@ -177,31 +178,32 @@ public class NettySharedSocketClientEndpointFactory
         }
 
         @Override
-        protected void connect() throws IOException {
+        protected void connect(final Consumer<Bootstrap> bootstrapListener) throws IOException {
             synchronized (connectQueue) {
                 connectQueue.add(this);
             }
             maybeInitClientBootstrap();
-            awaitSocketChannel(() -> {
+            bootstrapListener.accept(bootstrapFinalizer.clientBootstrap);
+            awaitDatagramChannel(() -> {
                 return bootstrapFinalizer.clientBootstrap.connect(socketAddress);
             });
         }
 
-        void onConnected(final SocketChannel ch) {
+        void onConnected(final DatagramChannel ch) {
             type.initChannel(ch, false);
-            onSocketChannel(ch);
-            finalizer.socketChannel = ch;
+            onDatagramChannel(ch);
+            finalizer.datagramChannel = ch;
         }
 
         @Override
-        protected void onSocketChannel(final SocketChannel socketChannel) {
-            NettySharedSocketClientEndpointFactory.this.onSocketChannel(socketChannel);
-            super.onSocketChannel(socketChannel);
+        protected void onDatagramChannel(final DatagramChannel datagramChannel) {
+            NettySharedDatagramEndpointFactory.this.onDatagramChannel(datagramChannel);
+            super.onDatagramChannel(datagramChannel);
         }
 
     }
 
-    private static final class NettySharedSocketClientEndpointFactoryFinalizer extends AWarningFinalizer {
+    private static final class NettySharedDatagramEndpointFactoryFinalizer extends AWarningFinalizer {
 
         private volatile Bootstrap clientBootstrap;
 
