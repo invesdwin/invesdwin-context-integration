@@ -29,7 +29,11 @@ import io.netty.util.concurrent.FastThreadLocal;
 
 @Immutable
 public enum StreamServerMethodInfo {
-    PUT(false) {
+    /**
+     * PUT should be blocking (no work executor) to keep the insertion order intact, service can decide to execute
+     * asynchronously
+     */
+    PUT(true) {
         @Override
         public int getMethodId() {
             return METHOD_ID_PUT;
