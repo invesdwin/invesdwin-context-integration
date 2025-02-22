@@ -365,7 +365,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
         final int threads = newStreamTestThreads();
         final String name = "runStreamLatencyTest_parallelTests";
         if (threads <= 1) {
-            return Executors.newCachedThreadPool(name);
+            return Executors.newDisabledExecutor(name);
         } else {
             return Executors.newFixedThreadPool(name, threads);
         }

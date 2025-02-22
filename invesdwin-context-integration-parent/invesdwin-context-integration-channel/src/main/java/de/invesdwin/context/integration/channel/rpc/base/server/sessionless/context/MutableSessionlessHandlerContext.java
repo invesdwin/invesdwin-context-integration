@@ -11,7 +11,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContex
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
-import de.invesdwin.util.lang.Objects;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -50,6 +50,7 @@ public final class MutableSessionlessHandlerContext implements ISessionlessHandl
         if (response != null) {
             throw new IllegalStateException("can only write a single response in this context");
         }
+        resultBorrowed = true;
         response = output;
         writeQueue.add(this);
         //no way to determine reliably if the write is finished without allocating additional objects
@@ -75,7 +76,7 @@ public final class MutableSessionlessHandlerContext implements ISessionlessHandl
 
     @Override
     public String getSessionId() {
-        return Objects.toString(otherSocketAddress);
+        return Strings.asString(otherSocketAddress);
     }
 
     @Override

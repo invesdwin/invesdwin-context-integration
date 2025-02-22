@@ -359,7 +359,7 @@ public class StreamThroughputChannelTest extends ThroughputChannelTest {
         final int threads = newStreamTestThreads();
         final String name = "runStreamThroughputTest_parallelTests";
         if (threads <= 1) {
-            return Executors.newCachedThreadPool(name);
+            return Executors.newDisabledExecutor(name);
         } else {
             return Executors.newFixedThreadPool(name, threads);
         }
