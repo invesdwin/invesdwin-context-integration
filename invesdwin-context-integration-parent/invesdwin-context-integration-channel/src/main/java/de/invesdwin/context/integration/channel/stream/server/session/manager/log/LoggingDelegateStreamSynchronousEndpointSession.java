@@ -53,7 +53,7 @@ public class LoggingDelegateStreamSynchronousEndpointSession implements IStreamS
     @Override
     public boolean pushSubscriptionMessage(final IStreamSynchronousEndpointService service,
             final ISynchronousReader<IByteBufferProvider> reader) throws IOException {
-        logLevel.log(log, "%s.pushSubscriptionMessage(%s, ...)", id, service);
+        logLevel.log(log, "%s.pushSubscriptionMessage(%s, reader)", id, service);
         return delegate.pushSubscriptionMessage(service, reader);
     }
 

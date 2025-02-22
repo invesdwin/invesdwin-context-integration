@@ -63,7 +63,7 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
 
     @Override
     public Future<?> put(final int serviceId, final ICloseableByteBufferProvider message) {
-        logLevel.log(log, "%s.put(%s, ...)", id, serviceId);
+        logLevel.log(log, "%s.put(%s, message)", id, serviceId);
         return delegate.put(serviceId, message);
     }
 
@@ -76,7 +76,7 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
     @Override
     public Future<?> subscribe(final int serviceId, final String topicUri,
             final IStreamSynchronousEndpointClientSubscription subscription) {
-        logLevel.log(log, "%s.subscribe(%s, %s, ...)", id, serviceId, topicUri);
+        logLevel.log(log, "%s.subscribe(%s, %s, subscription)", id, serviceId, topicUri);
         return delegate.subscribe(serviceId, topicUri, subscription);
     }
 

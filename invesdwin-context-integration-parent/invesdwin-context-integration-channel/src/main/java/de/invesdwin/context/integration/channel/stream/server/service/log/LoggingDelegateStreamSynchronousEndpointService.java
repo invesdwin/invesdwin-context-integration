@@ -74,26 +74,26 @@ public class LoggingDelegateStreamSynchronousEndpointService implements IStreamS
 
     @Override
     public boolean put(final IByteBufferProvider message) throws Exception {
-        logLevel.log(log, "%s.put(...)", id);
+        logLevel.log(log, "%s.put(message)", id);
         return delegate.put(message);
     }
 
     @Override
     public ISynchronousReader<IByteBufferProvider> subscribe(final IStreamSynchronousEndpointServiceListener listener,
             final IProperties parameters) {
-        logLevel.log(log, "%s.subscribe(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.subscribe(listener, %s)", id, parameters.asMap());
         return delegate.subscribe(listener, parameters);
     }
 
     @Override
     public boolean unsubscribe(final IStreamSynchronousEndpointServiceListener listener, final IProperties parameters) {
-        logLevel.log(log, "%s.unsubscribe(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.unsubscribe(listener, %s)", id, parameters.asMap());
         return delegate.unsubscribe(listener, parameters);
     }
 
     @Override
     public boolean delete(final IProperties parameters) throws Exception {
-        logLevel.log(log, "%s.delete(..., %s)", id, parameters.asMap());
+        logLevel.log(log, "%s.delete(%s)", id, parameters.asMap());
         return delegate.delete(parameters);
     }
 

@@ -80,7 +80,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     @Override
     public Object put(final IStreamSynchronousEndpointService service, final IByteBufferProvider message)
             throws Exception {
-        logLevel.log(log, "%s.put(%s, ...)", id, service);
+        logLevel.log(log, "%s.put(%s, message)", id, service);
         return delegate.put(service, message);
     }
 

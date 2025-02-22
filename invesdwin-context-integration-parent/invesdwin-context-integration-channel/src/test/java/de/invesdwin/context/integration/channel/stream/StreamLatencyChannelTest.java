@@ -324,8 +324,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
 
     public void runStreamLatencyTest(final Supplier<IStreamSynchronousEndpointClient> serverClientFactory,
             final Supplier<IStreamSynchronousEndpointClient> clientClientFactory) throws InterruptedException {
-        final WrappedExecutorService testExecutor = Executors.newFixedThreadPool("runStreamLatencyTest_parallelTests",
-                newStreamTestThreads());
+        final WrappedExecutorService testExecutor = newTestExecutor();
         final IStreamSynchronousEndpointClient[] serverClients = new IStreamSynchronousEndpointClient[STREAM_CLIENT_TRANSPORTS];
         final IStreamSynchronousEndpointClient[] clientClients = new IStreamSynchronousEndpointClient[STREAM_CLIENT_TRANSPORTS];
         for (int i = 0; i < serverClients.length; i++) {
@@ -358,6 +357,16 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
                 Closeables.closeQuietly(serverClients[i]);
                 Closeables.closeQuietly(clientClients[i]);
             }
+        }
+    }
+
+    protected WrappedExecutorService newTestExecutor() {
+        final int threads = newStreamTestThreads();
+        final String name = "runStreamLatencyTest_parallelTests";
+        if (threads <= 1) {
+            return Executors.newCachedThreadPool(name);
+        } else {
+            return Executors.newFixedThreadPool(name, threads);
         }
     }
 

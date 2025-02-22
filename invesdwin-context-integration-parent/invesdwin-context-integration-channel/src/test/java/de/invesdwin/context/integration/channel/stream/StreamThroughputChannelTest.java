@@ -319,8 +319,7 @@ public class StreamThroughputChannelTest extends ThroughputChannelTest {
 
     public void runStreamThroughputTest(final Supplier<IStreamSynchronousEndpointClient> serverClientFactory,
             final Supplier<IStreamSynchronousEndpointClient> clientClientFactory) throws InterruptedException {
-        final WrappedExecutorService testExecutor = Executors
-                .newFixedThreadPool("runStreamThroughputTest_parallelTests", newStreamTestThreads());
+        final WrappedExecutorService testExecutor = newTestExecutor();
         final IStreamSynchronousEndpointClient[] serverClients = new IStreamSynchronousEndpointClient[STREAM_CLIENT_TRANSPORTS];
         final IStreamSynchronousEndpointClient[] clientClients = new IStreamSynchronousEndpointClient[STREAM_CLIENT_TRANSPORTS];
         for (int i = 0; i < serverClients.length; i++) {
@@ -353,6 +352,16 @@ public class StreamThroughputChannelTest extends ThroughputChannelTest {
                 Closeables.closeQuietly(serverClients[i]);
                 Closeables.closeQuietly(clientClients[i]);
             }
+        }
+    }
+
+    protected WrappedExecutorService newTestExecutor() {
+        final int threads = newStreamTestThreads();
+        final String name = "runStreamThroughputTest_parallelTests";
+        if (threads <= 1) {
+            return Executors.newCachedThreadPool(name);
+        } else {
+            return Executors.newFixedThreadPool(name, threads);
         }
     }
 
