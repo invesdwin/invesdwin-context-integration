@@ -33,6 +33,17 @@ public class UnixDomainSocketChannelTest extends SocketChannelTest {
     }
 
     @Override
+    public void testNioSocketThroughput() throws InterruptedException {
+        if (OperatingSystem.isWindows()) {
+            //not supported on windows
+            return;
+        }
+        final SocketAddress channelAddress = java.net.UnixDomainSocketAddress
+                .of(newFile("channel", true, FileChannelType.UNIX_SOCKET).getAbsolutePath());
+        runNioSocketThroughputTest(channelAddress);
+    }
+
+    @Override
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         final StandardProtocolFamily protocolFamily = StandardProtocolFamily.UNIX;
