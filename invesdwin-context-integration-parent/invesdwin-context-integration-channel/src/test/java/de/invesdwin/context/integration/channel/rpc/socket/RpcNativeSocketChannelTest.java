@@ -58,8 +58,9 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
 
     protected void runRpcTest(final RpcLatencyChannelTest test, final SocketAddress address,
             final RpcTestServiceMode mode) throws InterruptedException {
+        final boolean lowLatency = true;
         final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
-                new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
+                new SocketSynchronousChannelServer(address, getMaxMessageSize(), lowLatency)) {
             private final AtomicInteger index = new AtomicInteger();
 
             @Override
@@ -72,7 +73,6 @@ public class RpcNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
-        final boolean lowLatency = true;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
         test.runRpcPerformanceTest(serverAcceptor, clientEndpointFactory, mode);

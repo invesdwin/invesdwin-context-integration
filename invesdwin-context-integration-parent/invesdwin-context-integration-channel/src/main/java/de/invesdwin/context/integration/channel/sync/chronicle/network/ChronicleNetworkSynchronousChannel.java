@@ -39,7 +39,7 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketChannelOpening;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    protected boolean lowLatency;
+    protected final boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;

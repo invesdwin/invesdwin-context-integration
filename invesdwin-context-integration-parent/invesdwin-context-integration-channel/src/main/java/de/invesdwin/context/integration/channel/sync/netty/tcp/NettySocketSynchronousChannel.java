@@ -44,7 +44,7 @@ public class NettySocketSynchronousChannel implements Closeable {
     protected final int socketSize;
     protected final InetSocketAddress socketAddress;
     protected final boolean server;
-    protected boolean lowLatency;
+    protected final boolean lowLatency;
     protected final NettySocketSynchronousChannelFinalizer finalizer;
     private volatile boolean socketChannelOpening;
 

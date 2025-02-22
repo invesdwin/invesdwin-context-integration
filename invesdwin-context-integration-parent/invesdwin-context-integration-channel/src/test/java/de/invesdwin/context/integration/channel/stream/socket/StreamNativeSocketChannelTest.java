@@ -30,10 +30,11 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testStreamLatency() throws InterruptedException {
+        final boolean lowLatency = true;
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
-                new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
+                new SocketSynchronousChannelServer(address, getMaxMessageSize(), lowLatency)) {
             private final AtomicInteger index = new AtomicInteger();
 
             @Override
@@ -46,7 +47,6 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
-        final boolean lowLatency = true;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
         new StreamLatencyChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);
@@ -54,10 +54,11 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testStreamThroughput() throws InterruptedException {
+        final boolean lowLatency = false;
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);
         final ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession> serverAcceptor = new ATransformingSynchronousReader<SocketSynchronousChannel, ISynchronousEndpointSession>(
-                new SocketSynchronousChannelServer(address, getMaxMessageSize())) {
+                new SocketSynchronousChannelServer(address, getMaxMessageSize(), lowLatency)) {
             private final AtomicInteger index = new AtomicInteger();
 
             @Override
@@ -70,7 +71,6 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
                         ImmutableSynchronousEndpoint.of(requestReader, responseWriter), acceptedClientChannel);
             }
         };
-        final boolean lowLatency = false;
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
         new StreamThroughputChannelTest(this).runStreamPerformanceTest(serverAcceptor, clientEndpointFactory);

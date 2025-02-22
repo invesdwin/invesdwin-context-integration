@@ -35,7 +35,7 @@ public class DatagramSynchronousChannel implements ISessionlessSynchronousChanne
     protected final SocketAddress socketAddress;
     protected SocketAddress otherSocketAddress;
     protected final boolean server;
-    protected boolean lowLatency;
+    protected final boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;

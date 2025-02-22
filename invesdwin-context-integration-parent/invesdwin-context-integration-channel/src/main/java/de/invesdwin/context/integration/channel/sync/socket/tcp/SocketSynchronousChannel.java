@@ -32,7 +32,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
     protected volatile boolean socketChannelOpening;
     protected final SocketAddress socketAddress;
     protected final boolean server;
-    protected boolean lowLatency;
+    protected final boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
     private volatile boolean readerRegistered;
@@ -55,6 +55,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
             throws IOException {
         this.socketAddress = server.socketAddress;
         this.server = false;
+        this.lowLatency = server.isLowLatency();
         this.estimatedMaxMessageSize = server.getEstimatedMaxMessageSize();
         this.socketSize = newSocketSize(estimatedMaxMessageSize);
         this.finalizer = new SocketSynchronousChannelFinalizer();

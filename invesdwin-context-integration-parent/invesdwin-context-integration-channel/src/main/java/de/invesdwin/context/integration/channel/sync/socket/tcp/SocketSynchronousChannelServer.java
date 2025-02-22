@@ -17,11 +17,14 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
 
     protected final int estimatedMaxMessageSize;
     protected final SocketAddress socketAddress;
+    protected final boolean lowLatency;
     private final SocketSynchronousChannelFinalizer finalizer;
 
-    public SocketSynchronousChannelServer(final SocketAddress socketAddress, final int estimatedMaxMessageSize) {
+    public SocketSynchronousChannelServer(final SocketAddress socketAddress, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
         this.socketAddress = socketAddress;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
+        this.lowLatency = lowLatency;
         this.finalizer = new SocketSynchronousChannelFinalizer();
         finalizer.register(this);
     }
@@ -36,6 +39,10 @@ public class SocketSynchronousChannelServer implements ISynchronousReader<Socket
 
     public ServerSocketChannel getServerSocketChannel() {
         return finalizer.serverSocketChannel;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
     }
 
     @Override
