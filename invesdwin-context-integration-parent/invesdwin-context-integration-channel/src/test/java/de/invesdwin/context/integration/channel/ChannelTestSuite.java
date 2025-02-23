@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.rpc.RpcChannelTestSuite;
 import de.invesdwin.context.integration.channel.stream.StreamChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
+import de.invesdwin.context.integration.channel.sync.batch.BatchChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
 import de.invesdwin.context.integration.channel.sync.chronicle.ChronicleChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
@@ -35,10 +36,11 @@ import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBCh
         ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
         CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
-        CompressionChannelTest.class, StreamCompressionChannelTest.class, CryptoChannelTestSuite.class,
-        SocketChannelTestSuite.class, NettyChannelTestSuite.class, MinaChannelTestSuite.class,
-        ChronicleChannelTestSuite.class, KafkaChannelTest.class, TimeSeriesDBChannelTest.class,
-        StreamChannelTestSuite.class, RpcChannelTestSuite.class })
+        BatchChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
+        CryptoChannelTestSuite.class, SocketChannelTestSuite.class, NettyChannelTestSuite.class,
+        MinaChannelTestSuite.class, ChronicleChannelTestSuite.class, KafkaChannelTest.class,
+        TimeSeriesDBChannelTest.class, StreamChannelTestSuite.class, RpcChannelTestSuite.class })
+
 @Immutable
 public class ChannelTestSuite {
 
