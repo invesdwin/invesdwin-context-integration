@@ -267,7 +267,7 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
             final IoRunnable[] ioRunnablesArray = ioRunnables.asArray(IO_RUNNABLE_EMPTY_ARRAY);
             for (int i = 0; i < ioRunnablesArray.length; i++) {
                 final IoRunnable ioRunnable = ioRunnablesArray[i];
-                if (ioRunnable.serverSessions.size() <= createIoThreadSessionThreshold) {
+                if (ioRunnable.serverSessions.size() < createIoThreadSessionThreshold) {
                     //no need to increase io runnables
                     return;
                 }

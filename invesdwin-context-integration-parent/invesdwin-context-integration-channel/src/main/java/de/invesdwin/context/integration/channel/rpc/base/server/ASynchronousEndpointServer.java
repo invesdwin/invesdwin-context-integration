@@ -57,7 +57,10 @@ import de.invesdwin.util.time.duration.Duration;
 public abstract class ASynchronousEndpointServer implements ISynchronousEndpointServer {
 
     public static final int DEFAULT_MAX_IO_THREAD_COUNT = 4;
-    public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 2;
+    /**
+     * per default use available threads aggressively to have best performance for low session counts
+     */
+    public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 1;
     public static final WrappedExecutorService DEFAULT_IO_EXECUTOR = Executors
             .newCachedThreadPool(ASynchronousEndpointServer.class.getSimpleName() + "_IO")
             .setDynamicThreadName(false);
@@ -442,7 +445,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
                 final IoRunnable[] ioRunnablesArray = ioRunnablesCopy.asArray(IO_RUNNABLE_EMPTY_ARRAY);
                 for (int i = 0; i < ioRunnablesArray.length; i++) {
                     final IoRunnable ioRunnable = ioRunnablesArray[i];
-                    if (ioRunnable.serverSessions.size() <= createIoThreadSessionThreshold) {
+                    if (ioRunnable.serverSessions.size() < createIoThreadSessionThreshold) {
                         //no need to increase io runnables
                         return;
                     }
