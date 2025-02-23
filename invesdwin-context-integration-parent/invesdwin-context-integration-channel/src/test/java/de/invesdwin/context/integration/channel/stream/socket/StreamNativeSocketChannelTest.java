@@ -73,7 +73,21 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
         };
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
-        new StreamThroughputChannelTest(this).runStreamThroughputTest(serverAcceptor, clientEndpointFactory);
+        new StreamThroughputChannelTest(this) {
+            //uncomment this to enable batching
+            //            @Override
+            //            public ISynchronousReader<IByteBufferProvider> newStreamSynchronousEndpointClientReader(
+            //                    final StreamSynchronousEndpointClientChannel channel) {
+            //                return new BatchSynchronousReader(super.newStreamSynchronousEndpointClientReader(channel));
+            //            }
+            //
+            //            @Override
+            //            public ISynchronousWriter<IByteBufferProvider> newStreamSynchronousEndpointClientWriter(
+            //                    final StreamSynchronousEndpointClientChannel channel) {
+            //                return new BatchSynchronousWriter(super.newStreamSynchronousEndpointClientWriter(channel), 100000, 10,
+            //                        Duration.ONE_MINUTE);
+            //            }
+        }.runStreamThroughputTest(serverAcceptor, clientEndpointFactory);
     }
 
 }

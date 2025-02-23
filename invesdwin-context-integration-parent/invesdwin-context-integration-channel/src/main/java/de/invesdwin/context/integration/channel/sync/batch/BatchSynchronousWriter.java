@@ -24,7 +24,7 @@ public class BatchSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     private final ISynchronousWriter<IByteBufferProvider> delegate;
     private final int maxBatchMessageLength;
     private final int maxBatchMessageCount;
-    private final Duration maxBatchMessageInterval;
+    private final Duration batchFlushInterval;
 
     private long batchStartNanos;
     private int batchCount;
@@ -34,11 +34,11 @@ public class BatchSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     private IByteBuffer exceedingMessage;
 
     public BatchSynchronousWriter(final ISynchronousWriter<IByteBufferProvider> delegate,
-            final int maxBatchMessageLength, final int maxBatchMessageCount, final Duration maxBatchMessageInterval) {
+            final int maxBatchMessageLength, final int maxBatchMessageCount, final Duration batchFlushInterval) {
         this.delegate = delegate;
         this.maxBatchMessageLength = maxBatchMessageLength;
         this.maxBatchMessageCount = maxBatchMessageCount;
-        this.maxBatchMessageInterval = maxBatchMessageInterval;
+        this.batchFlushInterval = batchFlushInterval;
     }
 
     public int getMaxBatchMessageLength() {
@@ -112,8 +112,13 @@ public class BatchSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     }
 
     protected boolean shouldFlushBatchByTime() {
-        if (maxBatchMessageInterval != null
-                && maxBatchMessageInterval.isLessThanOrEqualToNanos(System.nanoTime() - batchStartNanos)) {
+        /*
+         * TODO: we should use a scheduled thread (similar to heartbeat executor in ) that flushes batches even when no
+         * further writes are performed on the outside. that way latency pinpong test will work even if batch size is
+         * greater than 1. Though delegate thread safety needs to be considered.
+         */
+        if (batchFlushInterval != null
+                && batchFlushInterval.isLessThanOrEqualToNanos(System.nanoTime() - batchStartNanos)) {
             return true;
         }
         return false;
