@@ -29,6 +29,10 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
         implements IStreamSynchronousEndpointServer {
 
+    /**
+     * per default use available threads aggressively to have best performance for low session counts
+     */
+    public static final int DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD = 1;
     public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SESSION = 100;
     public static final int DEFAULT_MAX_SUCCESSIVE_PUSH_COUNT_PER_SUBSCRIPTION = 50;
 
@@ -72,6 +76,11 @@ public class StreamSynchronousEndpointServer extends ASynchronousEndpointServer
     @Override
     protected WrappedExecutorService newWorkExecutor() {
         return DEFAULT_WORK_EXECUTOR;
+    }
+
+    @Override
+    protected int newCreateIoThreadSessionThreshold() {
+        return DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
     }
 
     @Override
