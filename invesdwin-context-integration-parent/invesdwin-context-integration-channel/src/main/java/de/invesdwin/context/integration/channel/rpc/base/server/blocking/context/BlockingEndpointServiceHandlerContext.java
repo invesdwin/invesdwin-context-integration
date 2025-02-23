@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandler;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerContext;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousReaderSpinLoop;
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWriterSpinLoop;
@@ -78,7 +79,10 @@ public class BlockingEndpointServiceHandlerContext extends BroadcastingCloseable
             } else {
                 result.awaitDone();
                 if (result.isDelayedWriteResponse()) {
-                    result.getContext().write(result.getResponse().asBuffer());
+                    final EagerSerializingServiceSynchronousCommand<Object> response = result.getResponse();
+                    if (response.hasMessage()) {
+                        result.getContext().write(response.asBuffer());
+                    }
                 }
                 result.close();
             }

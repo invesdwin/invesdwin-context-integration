@@ -207,7 +207,9 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         if (processResponseFuture != null) {
             if (isProcessResponseFutureDone()) {
                 if (delayedWriteResponse) {
-                    responseWriter.write(responseHolder);
+                    if (responseHolder.hasMessage()) {
+                        responseWriter.write(responseHolder);
+                    }
                     delayedWriteResponse = false;
                 }
                 //keep flushing until finished and ready for next write
@@ -312,7 +314,9 @@ public class SingleplexingStreamSynchronousEndpointServerSession
                 delayedWriteResponse = true;
                 processResponseFuture = future;
             } else {
-                responseWriter.write(responseHolder);
+                if (responseHolder.hasMessage()) {
+                    responseWriter.write(responseHolder);
+                }
                 processResponseFuture = NullFuture.getInstance();
             }
         } else {
@@ -342,12 +346,14 @@ public class SingleplexingStreamSynchronousEndpointServerSession
                         return new APostProcessingFuture<Object>(future) {
                             @Override
                             protected Object onSuccess(final Object value) throws ExecutionException {
-                                try {
-                                    responseWriter.write(responseHolder);
-                                } catch (final EOFException e) {
-                                    close();
-                                } catch (final IOException e) {
-                                    throw new RuntimeException(e);
+                                if (responseHolder.hasMessage()) {
+                                    try {
+                                        responseWriter.write(responseHolder);
+                                    } catch (final EOFException e) {
+                                        close();
+                                    } catch (final IOException e) {
+                                        throw new RuntimeException(e);
+                                    }
                                 }
                                 return null;
                             }
@@ -360,7 +366,9 @@ public class SingleplexingStreamSynchronousEndpointServerSession
                             }
                         };
                     } else {
-                        responseWriter.write(responseHolder);
+                        if (responseHolder.hasMessage()) {
+                            responseWriter.write(responseHolder);
+                        }
                         return null;
                     }
                 } catch (final IOException e) {

@@ -5,6 +5,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
+import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -104,7 +105,11 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
                     final ProcessResponseResult nextPollingResult = pollingResult.getNext();
                     if (pollingResult.isDone()) {
                         if (pollingResult.isDelayedWriteResponse()) {
-                            pollingResult.getContext().write(pollingResult.getResponse().asBuffer());
+                            final EagerSerializingServiceSynchronousCommand<Object> response = pollingResult
+                                    .getResponse();
+                            if (response.hasMessage()) {
+                                pollingResult.getContext().write(response.asBuffer());
+                            }
                         }
                         pollingQueue.remove(pollingResult);
                         changed = true;

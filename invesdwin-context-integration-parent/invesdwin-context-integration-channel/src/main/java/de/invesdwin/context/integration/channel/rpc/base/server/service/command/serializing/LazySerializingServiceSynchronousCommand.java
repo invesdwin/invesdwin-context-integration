@@ -5,7 +5,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
@@ -18,7 +17,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     protected int sequence;
     protected IByteBufferProvider messageBuffer;
     protected ICloseableByteBufferProvider closeableMessageBuffer;
-    protected ISerde<M> messageSerde = NullSerde.get();
+    protected ISerde<M> messageSerde;
     protected M message;
 
     @Override
@@ -75,6 +74,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
 
     @Override
     public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        assert hasMessage();
         buffer.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, getService());
         buffer.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, getMethod());
         buffer.putInt(ServiceSynchronousCommandSerde.SEQUENCE_INDEX, getSequence());
@@ -90,6 +90,11 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     }
 
     @Override
+    public boolean hasMessage() {
+        return messageSerde != null || messageBuffer != null;
+    }
+
+    @Override
     public void close() {
         if (messageBuffer != null) {
             if (closeableMessageBuffer != null) {
@@ -98,7 +103,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
             }
             messageBuffer = null;
         } else {
-            messageSerde = NullSerde.get();
+            messageSerde = null;
             message = null; //free memory
         }
     }

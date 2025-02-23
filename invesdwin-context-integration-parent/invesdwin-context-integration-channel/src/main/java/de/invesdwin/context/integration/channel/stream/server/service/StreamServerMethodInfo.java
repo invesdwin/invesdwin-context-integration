@@ -50,6 +50,12 @@ public enum StreamServerMethodInfo {
             return manager.put(service, message);
         }
 
+        @Override
+        protected boolean isSendEmptyResponseOnSuccess() {
+            //no response needed in success case
+            return false;
+        }
+
     },
     SUBSCRIBE(false) {
         @Override
@@ -234,14 +240,13 @@ public enum StreamServerMethodInfo {
             final IServiceSynchronousCommand<IByteBufferProvider> request,
             final ISerializingServiceSynchronousCommand<Object> response) {
         final int serviceId = request.getService();
-        response.setService(serviceId);
-        response.setSequence(request.getSequence());
+        final int requestSequence = request.getSequence();
         try {
             final IStreamSynchronousEndpointService service = getService(manager, serviceId, request.getMessage());
             if (service == null) {
                 response.setService(serviceId);
                 response.setMethod(IServiceSynchronousCommand.ERROR_METHOD_ID);
-                response.setSequence(request.getSequence());
+                response.setSequence(requestSequence);
                 response.setMessage(IServiceSynchronousCommand.ERROR_RESPONSE_SERDE_OBJ,
                         "service not found: " + serviceId);
                 return null;
@@ -256,22 +261,22 @@ public enum StreamServerMethodInfo {
                     return new APostProcessingFuture<Object>(futureResult) {
                         @Override
                         protected Object onSuccess(final Object value) throws ExecutionException, InterruptedException {
-                            handleResult(response, futureResult.get());
+                            handleResult(serviceId, requestSequence, response, futureResult.get());
                             return null;
                         }
 
                         @Override
                         protected ExecutionException onError(final ExecutionException exc) {
-                            handleException(sessionId, request, response, exc);
+                            handleException(serviceId, requestSequence, request, response, exc, sessionId);
                             return null;
                         }
                     };
                 }
             }
-            handleResult(response, result);
+            handleResult(serviceId, requestSequence, response, result);
             return null;
         } catch (final Throwable t) {
-            handleException(sessionId, request, response, t);
+            handleException(serviceId, requestSequence, request, response, t, sessionId);
             return null;
         }
     }
@@ -279,17 +284,30 @@ public enum StreamServerMethodInfo {
     protected abstract Object invoke(IStreamSessionManager manager, IStreamSynchronousEndpointService service,
             boolean future, IByteBufferProvider message) throws Exception;
 
-    private void handleResult(final ISerializingServiceSynchronousCommand<Object> response, final Object result) {
+    private void handleResult(final int serviceId, final int requestSequence,
+            final ISerializingServiceSynchronousCommand<Object> response, final Object result) {
+        response.setService(serviceId);
+        response.setSequence(requestSequence);
         response.setMethod(getMethodId());
         if (result == null) {
-            response.setMessageBuffer(EmptyByteBuffer.INSTANCE);
+            if (isSendEmptyResponseOnSuccess()) {
+                response.setMessageBuffer(EmptyByteBuffer.INSTANCE);
+            }
         } else {
             response.setCloseableMessageBuffer((ICloseableByteBufferProvider) result);
         }
     }
 
-    private void handleException(final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
-            final ISerializingServiceSynchronousCommand<Object> response, final Throwable t) {
+    protected boolean isSendEmptyResponseOnSuccess() {
+        //TODO add this capability for void responses to rpc interface via another annotation (and find a better name?)
+        return true;
+    }
+
+    private void handleException(final int serviceId, final int requestSequence,
+            final IServiceSynchronousCommand<IByteBufferProvider> request,
+            final ISerializingServiceSynchronousCommand<Object> response, final Throwable t, final String sessionId) {
+        response.setService(serviceId);
+        response.setSequence(requestSequence);
         final boolean shouldRetry = Retries.shouldRetry(t);
         final LoggedRuntimeException loggedException = Err.process(new RemoteExecutionException("sessionId=["
                 + sessionId + "], serviceId=[" + request.getService() + "]" + ", methodId=[" + getMethodId() + ":"

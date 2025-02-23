@@ -134,7 +134,11 @@ public class StreamAsynchronousEndpointServerHandler
                 pollingQueueProvider.addToPollingQueue(result);
                 return null;
             } else {
-                return response.asBuffer();
+                if (response.hasMessage()) {
+                    return response.asBuffer();
+                } else {
+                    return null;
+                }
             }
         } else {
             final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
@@ -206,7 +210,9 @@ public class StreamAsynchronousEndpointServerHandler
                 pollingQueueProvider.addToPollingQueue(result);
                 return future;
             } else {
-                result.getContext().write(response.asBuffer());
+                if (response.hasMessage()) {
+                    result.getContext().write(response.asBuffer());
+                }
                 result.close();
                 return null;
             }

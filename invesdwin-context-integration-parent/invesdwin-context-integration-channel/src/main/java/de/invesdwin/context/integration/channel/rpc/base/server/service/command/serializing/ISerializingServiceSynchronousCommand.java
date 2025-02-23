@@ -19,6 +19,8 @@ public interface ISerializingServiceSynchronousCommand<M> extends IServiceSynchr
 
     void setCloseableMessageBuffer(ICloseableByteBufferProvider messageBuffer);
 
+    boolean hasMessage();
+
     @Override
     void close();
 

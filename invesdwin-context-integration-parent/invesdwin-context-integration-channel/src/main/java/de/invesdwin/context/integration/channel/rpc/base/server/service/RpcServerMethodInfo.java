@@ -74,8 +74,8 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
     @SuppressWarnings("unchecked")
     public Future<Object> invoke(final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
             final ISerializingServiceSynchronousCommand<Object> response) {
-        response.setService(request.getService());
-        response.setSequence(request.getSequence());
+        final int serviceId = request.getService();
+        final int requestSequence = request.getSequence();
         try {
             final Object[] args = requestSerde.fromBuffer(request.getMessage());
             final Object result = invoke(service.getServiceImplementation(), args);
@@ -85,35 +85,40 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
                     return new APostProcessingFuture<Object>(futureResult) {
                         @Override
                         protected Object onSuccess(final Object value) throws ExecutionException, InterruptedException {
-                            handleResult(response, args, futureResult.get());
+                            handleResult(serviceId, requestSequence, response, args, futureResult.get());
                             return null;
                         }
 
                         @Override
                         protected ExecutionException onError(final ExecutionException exc) {
-                            handleException(sessionId, request, response, exc);
+                            handleException(serviceId, requestSequence, request, response, exc, sessionId);
                             return null;
                         }
                     };
                 }
             }
-            handleResult(response, args, result);
+            handleResult(serviceId, requestSequence, response, args, result);
             return null;
         } catch (final Throwable t) {
-            handleException(sessionId, request, response, t);
+            handleException(serviceId, requestSequence, request, response, t, sessionId);
             return null;
         }
     }
 
-    private void handleResult(final ISerializingServiceSynchronousCommand<Object> response, final Object[] args,
-            final Object result) {
+    private void handleResult(final int serviceId, final int requestSequence,
+            final ISerializingServiceSynchronousCommand<Object> response, final Object[] args, final Object result) {
+        response.setService(serviceId);
+        response.setSequence(requestSequence);
         response.setMethod(methodId);
         final ISerde<Object> resultSerde = responseSerdeProvider.getSerde(args);
         response.setMessage(resultSerde, result);
     }
 
-    private void handleException(final String sessionId, final IServiceSynchronousCommand<IByteBufferProvider> request,
-            final ISerializingServiceSynchronousCommand<Object> response, final Throwable t) {
+    private void handleException(final int serviceId, final int requestSequence,
+            final IServiceSynchronousCommand<IByteBufferProvider> request,
+            final ISerializingServiceSynchronousCommand<Object> response, final Throwable t, final String sessionId) {
+        response.setService(serviceId);
+        response.setSequence(requestSequence);
         final boolean shouldRetry = Retries.shouldRetry(t);
         final LoggedRuntimeException loggedException = Err.process(
                 new RemoteExecutionException("sessionId=[" + sessionId + "], serviceId=[" + request.getService() + ":"

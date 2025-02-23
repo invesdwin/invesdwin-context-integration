@@ -17,6 +17,7 @@ public interface ISynchronousEndpointSession extends Closeable {
 
     Duration DEFAULT_REQUEST_TIMEOUT = new Duration(3, FTimeUnit.MINUTES);
     Duration DEFAULT_REQUEST_WAIT_INTERVAL = new Duration(1, FTimeUnit.SECONDS);
+    Duration DEFAULT_POLLING_REQUEST_WAIT_INTERVAL = new Duration(1, FTimeUnit.MILLISECONDS);
     Duration DEFAULT_HEARTBEAT_INTERVAL = new Duration(30, FTimeUnit.SECONDS);
     Duration DEFAULT_HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
 
@@ -28,6 +29,10 @@ public interface ISynchronousEndpointSession extends Closeable {
 
     default Duration getRequestWaitInterval() {
         return DEFAULT_REQUEST_WAIT_INTERVAL;
+    }
+
+    default Duration getPollingRequestWaitInterval() {
+        return DEFAULT_POLLING_REQUEST_WAIT_INTERVAL;
     }
 
     default Duration getHeartbeatInterval() {

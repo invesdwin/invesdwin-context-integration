@@ -72,7 +72,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     private final Int2ObjectOpenHashMap<MultiplexingSynchronousEndpointClientSessionResponse> writtenRequests = new Int2ObjectOpenHashMap<>();
     private final LoopInterruptedCheck requestWaitIntervalLoopInterruptedCheck;
     private final LoopInterruptedCheck requestTimeoutLoopInterruptedCheck;
-    private final ThrottleSpinWait throttle;
+    private final BlockingHandleLockedSpinWait blockingHandleLockedSpinWait;
     private volatile boolean closed;
 
     public MultiplexingSynchronousEndpointClientSession(final ISynchronousEndpointSession endpointSession) {
@@ -92,7 +92,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         this.requestWaitIntervalLoopInterruptedCheck = new LoopInterruptedCheck(
                 endpointSession.getRequestWaitInterval());
         this.requestTimeoutLoopInterruptedCheck = new LoopInterruptedCheck(endpointSession.getRequestWaitInterval());
-        this.throttle = new ThrottleSpinWait();
+        this.blockingHandleLockedSpinWait = new BlockingHandleLockedSpinWait();
         this.heartbeatFuture = HEARTBEAT_EXECUTOR.scheduleWithFixedDelay(this::maybeSendHeartbeat,
                 endpointSession.getHeartbeatInterval().longValue(), endpointSession.getHeartbeatInterval().longValue(),
                 endpointSession.getHeartbeatInterval().getTimeUnit().timeUnitValue());
@@ -118,7 +118,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)
                     && requestWriterSpinWait.getWriter().writeFlushed()
                     && requestWriterSpinWait.getWriter().writeReady()) {
-                writeAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1, EmptyByteBuffer.INSTANCE);
+                readyWriteAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1,
+                        EmptyByteBuffer.INSTANCE, getDefaultRequestTimeout(), System.nanoTime());
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -206,7 +207,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     if (requestWriterSpinWait.getWriter().writeFlushed()
                             && requestWriterSpinWait.getWriter().writeReady()) {
                         //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
-                        writeAndFlushLocked(serviceId, methodId, requestSequence, request);
+                        pollingReadyWriteAndFlushLocked(serviceId, methodId, requestSequence, request, requestTimeout,
+                                System.nanoTime(), unexpectedMessageListener);
                         return null;
                     }
                 } catch (RemoteExecutionException | RetryLaterRuntimeException e) {
@@ -222,7 +224,6 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 }
             }
         }
-        //TODO: maybe don't init a response for poll requests that have sequence 0 which will never be sent by server?
         final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                 .borrowObject();
         response.setOuterActive();
@@ -232,10 +233,17 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 //since we could not write it immediately, add it to the queue
                 response.setPushedWithoutRequest();
                 writeRequests.add(response);
-                //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
+                /*
+                 * fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
+                 * 
+                 * though if there is no other request, we have to poll non-blocking for potential responses so that the
+                 * response buffer does not stay full
+                 */
+                maybePollForResponsesNonBlocking(unexpectedMessageListener);
                 return null;
+            } else {
+                return waitForResponseBlocking(unexpectedMessageListener, response);
             }
-            return waitForResponseBlocking(unexpectedMessageListener, response);
         } catch (final TimeoutException | RemoteExecutionException | RetryLaterRuntimeException
                 | AbortRequestException e) {
             response.close();
@@ -246,6 +254,17 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
+    protected void maybePollForResponsesNonBlocking(final IUnexpectedMessageListener unexpectedMessageListener)
+            throws Exception, FastEOFException, TimeoutException {
+        if (lock.tryLock()) {
+            try {
+                pollForResponsesNonBlockingLocked(unexpectedMessageListener);
+            } finally {
+                lock.unlock();
+            }
+        }
+    }
+
     private ICloseableByteBufferProvider waitForResponseBlocking(
             final IUnexpectedMessageListener unexpectedMessageListener,
             final MultiplexingSynchronousEndpointClientSessionResponse response)
@@ -253,7 +272,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (activePolling.compareAndSet(false, true)) {
             //take over the job of the activePolling thread and handle other requests while polling
             try {
-                return requestActivePolling(unexpectedMessageListener, response, response);
+                return requestActivePollingBlocking(unexpectedMessageListener, response, response);
             } finally {
                 activePolling.set(false);
             }
@@ -278,12 +297,28 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                     if (activePolling.compareAndSet(false, true)) {
                         //take over the job of the other activePolling thread that just go finished
                         try {
-                            return requestActivePolling(unexpectedMessageListener, response, null);
+                            return requestActivePollingBlocking(unexpectedMessageListener, response, null);
                         } finally {
                             activePolling.set(false);
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private void pollForResponsesNonBlockingLocked(final IUnexpectedMessageListener unexpectedMessageListener)
+            throws Exception, FastEOFException, TimeoutException {
+        if (activePolling.compareAndSet(false, true)) {
+            //take over the job of the activePolling thread and handle other requests while polling
+            try {
+                maybeCheckOtherRequestTimeouts();
+                boolean handled;
+                do {
+                    handled = handleLocked(unexpectedMessageListener, null);
+                } while (handled);
+            } finally {
+                activePolling.set(false);
             }
         }
     }
@@ -349,7 +384,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         streamSequenceCounter.set(sequence);
     }
 
-    private MultiplexingSynchronousEndpointClientSessionResponse requestActivePolling(
+    private MultiplexingSynchronousEndpointClientSessionResponse requestActivePollingBlocking(
             final IUnexpectedMessageListener unexpectedMessageListener,
             final MultiplexingSynchronousEndpointClientSessionResponse outer,
             final MultiplexingSynchronousEndpointClientSessionResponse pollingOuter) throws Exception {
@@ -362,12 +397,13 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             maybeSendHeartbeatLocked();
         }
         try {
-            throttle.unexpectedMessageListener = unexpectedMessageListener;
-            throttle.outer = outer;
-            throttle.pollingOuter = pollingOuter;
+            blockingHandleLockedSpinWait.unexpectedMessageListener = unexpectedMessageListener;
+            blockingHandleLockedSpinWait.outer = outer;
+            blockingHandleLockedSpinWait.pollingOuter = pollingOuter;
             while (true) {
                 try {
-                    if (!throttle.awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
+                    if (!blockingHandleLockedSpinWait.awaitFulfill(System.nanoTime(),
+                            endpointSession.getRequestWaitInterval())) {
                         maybeCheckRequestTimeouts(outer);
                     } else if (outer.isCompleted()) {
                         return outer;
@@ -390,9 +426,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             }
             throw new RetryLaterRuntimeException(t);
         } finally {
-            throttle.pollingOuter = null;
-            throttle.outer = null;
-            throttle.unexpectedMessageListener = null;
+            blockingHandleLockedSpinWait.pollingOuter = null;
+            blockingHandleLockedSpinWait.outer = null;
+            blockingHandleLockedSpinWait.unexpectedMessageListener = null;
             lock.unlock();
         }
     }
@@ -409,10 +445,25 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
+    private void maybeCheckOtherRequestTimeouts() throws InterruptedException, FastEOFException, TimeoutException {
+        //only check heartbeat interval when there is no more work or when the requestWaitInterval is reached
+        if (requestTimeoutLoopInterruptedCheck.check()) {
+            if (isClosed()) {
+                closeLocked();
+                throw FastEOFException.getInstance("closed");
+            }
+            checkOtherRequestTimeouts();
+        }
+    }
+
     @SuppressWarnings("resource")
     private void checkRequestTimeouts(final MultiplexingSynchronousEndpointClientSessionResponse outer)
             throws TimeoutException {
         throwIfRequestTimeout(outer);
+        checkOtherRequestTimeouts();
+    }
+
+    private void checkOtherRequestTimeouts() {
         if (!writeRequests.isEmpty()) {
             MultiplexingSynchronousEndpointClientSessionResponse writeRequest = writeRequests.peek();
             while (writeRequest != null) {
@@ -646,14 +697,36 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         lastHeartbeatNanos = System.nanoTime();
     }
 
-    private void writeAndFlushLocked(final int serviceId, final int methodId, final int requestSequence,
-            final IByteBufferProvider request) throws Exception {
+    private void readyWriteAndFlushLocked(final int serviceId, final int methodId, final int requestSequence,
+            final IByteBufferProvider request, final Duration requestTimeout, final long waitingSinceNanos)
+            throws Exception {
         try {
             writeLocked(serviceId, methodId, requestSequence, request);
             if (!requestWriterSpinWait.writeFlushed()
                     .awaitFulfill(System.nanoTime(), endpointSession.getRequestTimeout())) {
                 throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                         serviceId, methodId, requestSequence, endpointSession.getRequestTimeout());
+            }
+        } finally {
+            requestHolder.close(); //free memory
+        }
+    }
+
+    private void pollingReadyWriteAndFlushLocked(final int serviceId, final int methodId, final int requestSequence,
+            final IByteBufferProvider request, final Duration requestTimeout, final long waitingSinceNanos,
+            final IUnexpectedMessageListener unexpectedMessageListener) throws Exception {
+        try {
+            writeLocked(serviceId, methodId, requestSequence, request);
+            if (!requestWriterSpinWait.getWriter().writeFlushed()) {
+                pollForResponsesNonBlockingLocked(unexpectedMessageListener);
+            }
+            if (!requestWriterSpinWait.writeFlushed()
+                    .awaitFulfill(System.nanoTime(), endpointSession.getPollingRequestWaitInterval())) {
+                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                    throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
+                            serviceId, methodId, requestSequence, requestTimeout);
+                }
+                pollForResponsesNonBlockingLocked(unexpectedMessageListener);
             }
         } finally {
             requestHolder.close(); //free memory
@@ -669,7 +742,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         }
     }
 
-    private final class ThrottleSpinWait extends ASpinWait {
+    private final class BlockingHandleLockedSpinWait extends ASpinWait {
 
         private MultiplexingSynchronousEndpointClientSessionResponse outer;
         private MultiplexingSynchronousEndpointClientSessionResponse pollingOuter;

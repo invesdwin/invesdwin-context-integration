@@ -11,6 +11,7 @@ import org.agrona.concurrent.ManyToOneConcurrentLinkedQueue;
 
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
+import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.EagerSerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing.ISerializingServiceSynchronousCommand;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.ISynchronousEndpointServerSession;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
@@ -288,7 +289,10 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                 final ProcessResponseResult nextPollingResult = pollingResult.getNext();
                 if (pollingResult.isDone()) {
                     if (pollingResult.isDelayedWriteResponse()) {
-                        writeQueue.add(pollingResult);
+                        final EagerSerializingServiceSynchronousCommand<Object> response = pollingResult.getResponse();
+                        if (response.hasMessage()) {
+                            writeQueue.add(pollingResult);
+                        }
                     }
                     pollingQueue.remove(pollingResult);
                 }
@@ -351,7 +355,9 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                     result.setDelayedWriteResponse(true);
                     pollingQueue.add(result);
                 } else {
-                    writeQueue.add(result);
+                    if (result.getResponse().hasMessage()) {
+                        writeQueue.add(result);
+                    }
                 }
             } else {
                 final int maxPendingWorkCountPerSession = server.getMaxPendingWorkCountPerSession();
@@ -422,7 +428,9 @@ public class MultiplexingStreamSynchronousEndpointServerSession
                 pollingQueueAsyncAdds.add(result);
                 return future;
             } else {
-                writeQueue.add(result);
+                if (response.hasMessage()) {
+                    writeQueue.add(result);
+                }
                 return null;
             }
         }

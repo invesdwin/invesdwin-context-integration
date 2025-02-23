@@ -6,7 +6,6 @@ import java.util.concurrent.TimeoutException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.AbortRequestException;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.unexpected.IUnexpectedMessageListener;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -51,8 +50,9 @@ public interface ISynchronousEndpointClientSession extends Closeable {
 
     default void poll(final Duration timeout, final IUnexpectedMessageListener pollUnexpectedMessageListener)
             throws TimeoutException, AbortRequestException {
-        Assertions.checkNull(request(INVALID_POLL_ONLY_ID, INVALID_POLL_ONLY_ID, INVALID_POLL_ONLY_ID, null, false,
-                timeout, true, pollUnexpectedMessageListener));
+        final ICloseableByteBufferProvider result = request(INVALID_POLL_ONLY_ID, INVALID_POLL_ONLY_ID,
+                INVALID_POLL_ONLY_ID, null, false, timeout, true, pollUnexpectedMessageListener);
+        assert result == null;
     }
 
 }

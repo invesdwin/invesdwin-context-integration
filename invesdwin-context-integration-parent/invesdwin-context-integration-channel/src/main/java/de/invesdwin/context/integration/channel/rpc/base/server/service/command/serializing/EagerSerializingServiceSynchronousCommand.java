@@ -16,7 +16,7 @@ public class EagerSerializingServiceSynchronousCommand<M> implements ISerializin
 
     //direct buffer for outgoing information into a transport
     protected final IByteBuffer buffer = ByteBuffers.allocateDirectExpandable();
-    protected int messageSize;
+    protected int messageSize = Integer.MIN_VALUE;
 
     @Override
     public int getService() {
@@ -78,17 +78,24 @@ public class EagerSerializingServiceSynchronousCommand<M> implements ISerializin
 
     @Override
     public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
+        assert hasMessage();
         final int length = ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageSize;
         buffer.putBytesTo(0, this.buffer, length);
         return length;
     }
 
     @Override
+    public boolean hasMessage() {
+        return messageSize >= 0;
+    }
+
+    @Override
     public void close() {
-        messageSize = 0;
+        messageSize = Integer.MIN_VALUE;
     }
 
     public IByteBuffer asBuffer() {
+        assert hasMessage();
         return buffer.sliceTo(ServiceSynchronousCommandSerde.MESSAGE_INDEX + messageSize);
     }
 

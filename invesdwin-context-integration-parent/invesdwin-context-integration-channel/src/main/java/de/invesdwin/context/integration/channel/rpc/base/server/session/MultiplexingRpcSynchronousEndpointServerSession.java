@@ -193,7 +193,10 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
                 final ProcessResponseResult nextPollingResult = pollingResult.getNext();
                 if (pollingResult.isDone()) {
                     if (pollingResult.isDelayedWriteResponse()) {
-                        writeQueue.add(pollingResult);
+                        final ISerializingServiceSynchronousCommand<Object> response = pollingResult.getResponse();
+                        if (response.hasMessage()) {
+                            writeQueue.add(pollingResult);
+                        }
                     }
                     pollingQueue.remove(pollingResult);
                 }
@@ -267,7 +270,9 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
                     result.setDelayedWriteResponse(true);
                     pollingQueue.add(result);
                 } else {
-                    writeQueue.add(result);
+                    if (result.getResponse().hasMessage()) {
+                        writeQueue.add(result);
+                    }
                 }
             } else {
                 final int maxPendingWorkCountPerSession = parent.getMaxPendingWorkCountPerSession();
@@ -338,7 +343,9 @@ public class MultiplexingRpcSynchronousEndpointServerSession implements ISynchro
                 pollingQueueAsyncAdds.add(result);
                 return future;
             } else {
-                writeQueue.add(result);
+                if (response.hasMessage()) {
+                    writeQueue.add(result);
+                }
                 return null;
             }
         }
