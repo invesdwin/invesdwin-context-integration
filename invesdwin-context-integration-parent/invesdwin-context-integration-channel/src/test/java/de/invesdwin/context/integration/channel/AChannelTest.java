@@ -67,6 +67,9 @@ public abstract class AChannelTest extends ATest {
         PIPE_STREAMING,
         PIPE_NATIVE,
         PIPE,
+        FILE_STREAMING,
+        FILE_NATIVE,
+        FILE,
         MAPPED,
         BLOCKING_MAPPED,
         UNIX_SOCKET;
@@ -89,6 +92,9 @@ public abstract class AChannelTest extends ATest {
         Assertions.checkFalse(file.exists(), "%s", file);
         if (type == FileChannelType.UNIX_SOCKET) {
             return file;
+        } else if (type == FileChannelType.FILE || type == FileChannelType.FILE_STREAMING
+                || type == FileChannelType.FILE_NATIVE) {
+            Files.touchQuietly(file);
         } else if (type == FileChannelType.PIPE || type == FileChannelType.PIPE_STREAMING
                 || type == FileChannelType.PIPE_NATIVE) {
             if (SynchronousChannels.isNamedPipeSupported() && !OperatingSystem.isWindows()) {
@@ -141,11 +147,11 @@ public abstract class AChannelTest extends ATest {
     }
 
     public ISynchronousReader<IByteBufferProvider> newReader(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE_NATIVE) {
+        if (pipes == FileChannelType.PIPE_NATIVE || pipes == FileChannelType.FILE_NATIVE) {
             return new NativePipeSynchronousReader(file, getMaxMessageSize());
-        } else if (pipes == FileChannelType.PIPE_STREAMING) {
+        } else if (pipes == FileChannelType.PIPE_STREAMING || pipes == FileChannelType.FILE_STREAMING) {
             return new StreamingPipeSynchronousReader(file, getMaxMessageSize());
-        } else if (pipes == FileChannelType.PIPE) {
+        } else if (pipes == FileChannelType.PIPE || pipes == FileChannelType.FILE) {
             return new PipeSynchronousReader(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousReader(file, getMaxMessageSize());
@@ -161,11 +167,11 @@ public abstract class AChannelTest extends ATest {
     }
 
     public ISynchronousWriter<IByteBufferProvider> newWriter(final File file, final FileChannelType pipes) {
-        if (pipes == FileChannelType.PIPE_NATIVE) {
+        if (pipes == FileChannelType.PIPE_NATIVE || pipes == FileChannelType.FILE_NATIVE) {
             return new NativePipeSynchronousWriter(file, getMaxMessageSize());
-        } else if (pipes == FileChannelType.PIPE_STREAMING) {
+        } else if (pipes == FileChannelType.PIPE_STREAMING || pipes == FileChannelType.FILE_STREAMING) {
             return new StreamingPipeSynchronousWriter(file, getMaxMessageSize());
-        } else if (pipes == FileChannelType.PIPE) {
+        } else if (pipes == FileChannelType.PIPE || pipes == FileChannelType.FILE) {
             return new PipeSynchronousWriter(file, getMaxMessageSize());
         } else if (pipes == FileChannelType.MAPPED) {
             return new MappedSynchronousWriter(file, getMaxMessageSize());
