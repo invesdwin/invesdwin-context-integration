@@ -7,6 +7,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -14,7 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousChannel
+public class StreamingPipeSynchronousReader extends APipeSynchronousChannel
         implements ISynchronousReader<IByteBufferProvider>, IByteBufferProvider {
 
     private FileInputStream in;
@@ -40,6 +41,9 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
 
     @Override
     public boolean hasNext() throws IOException {
+        if (in == null) {
+            throw FastEOFException.getInstance("already closed");
+        }
         try {
             return in.available() >= MESSAGE_INDEX;
         } catch (final IOException e) {
@@ -72,9 +76,11 @@ public class StreamingPipeSynchronousReader extends AStreamingPipeSynchronousCha
             dst.putBytesTo(0, in, MESSAGE_INDEX);
             final int size = dst.getInt(SIZE_INDEX);
             dst.putBytesTo(0, in, size);
-            if (ClosedByteBuffer.isClosed(dst, 0, size)) {
-                close();
-                throw FastEOFException.getInstance("closed by other side");
+            if (closeMessageEnabled) {
+                if (ClosedByteBuffer.isClosed(dst, 0, size)) {
+                    close();
+                    throw FastEOFException.getInstance("closed by other side");
+                }
             }
             return size;
         } catch (final IOException e) {

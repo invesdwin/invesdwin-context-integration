@@ -40,10 +40,12 @@ public class PipeSynchronousWriter extends APipeSynchronousChannel implements IS
     @Override
     public void close() throws IOException {
         if (out != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (closeMessageEnabled) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             try {
                 out.close();

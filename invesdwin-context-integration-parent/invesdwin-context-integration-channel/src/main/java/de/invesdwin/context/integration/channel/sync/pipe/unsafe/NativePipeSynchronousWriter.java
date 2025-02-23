@@ -30,8 +30,8 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     private int position;
     private int remaining;
 
-    public NativePipeSynchronousWriter(final File file, final int maxMessageSize) {
-        super(file, maxMessageSize);
+    public NativePipeSynchronousWriter(final File file, final int estimatedMaxMessageSize) {
+        super(file, estimatedMaxMessageSize);
     }
 
     @Override
@@ -47,10 +47,12 @@ public class NativePipeSynchronousWriter extends APipeSynchronousChannel
     @Override
     public void close() throws IOException {
         if (out != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (closeMessageEnabled) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             try {
                 out.close();

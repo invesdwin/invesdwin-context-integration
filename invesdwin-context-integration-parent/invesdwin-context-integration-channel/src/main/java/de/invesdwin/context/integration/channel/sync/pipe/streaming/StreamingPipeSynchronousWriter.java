@@ -7,15 +7,16 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.pipe.APipeSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
-import de.invesdwin.util.streams.buffer.bytes.extend.ArrayExpandableByteBuffer;
 
 @NotThreadSafe
-public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousChannel
+public class StreamingPipeSynchronousWriter extends APipeSynchronousChannel
         implements ISynchronousWriter<IByteBufferProvider> {
 
     private FileOutputStream out;
@@ -29,17 +30,19 @@ public class StreamingPipeSynchronousWriter extends AStreamingPipeSynchronousCha
     @Override
     public void open() throws IOException {
         out = new FileOutputStream(file, true);
-        buffer = new ArrayExpandableByteBuffer(fileSize);
+        buffer = ByteBuffers.allocateDirectExpandable(fileSize);
         messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MESSAGE_INDEX);
     }
 
     @Override
     public void close() throws IOException {
         if (out != null) {
-            try {
-                writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
-            } catch (final Throwable t) {
-                //ignore
+            if (closeMessageEnabled) {
+                try {
+                    writeAndFlushIfPossible(ClosedByteBuffer.INSTANCE);
+                } catch (final Throwable t) {
+                    //ignore
+                }
             }
             try {
                 out.close();

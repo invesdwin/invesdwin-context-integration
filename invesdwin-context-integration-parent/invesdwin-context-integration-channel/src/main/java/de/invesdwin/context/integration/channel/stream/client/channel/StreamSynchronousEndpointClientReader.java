@@ -76,6 +76,9 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
         if (polledMessage != null) {
             return true;
         }
+        if (client == null) {
+            throw FastEOFException.getInstance("already closed");
+        }
         //TODO: support polling with 0 timeout inside of the client (only 1 cycle)
         return client.poll(pollTimeout);
     }

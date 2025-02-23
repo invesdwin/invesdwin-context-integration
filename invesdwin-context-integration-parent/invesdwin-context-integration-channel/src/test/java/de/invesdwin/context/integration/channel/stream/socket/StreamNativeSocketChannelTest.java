@@ -23,6 +23,7 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
@@ -54,6 +55,7 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
 
     @Test
     public void testStreamThroughput() throws InterruptedException {
+        Throwables.setDebugStackTraceEnabled(true);
         final boolean lowLatency = false;
         final int port = NetworkUtil.findAvailableTcpPort();
         final InetSocketAddress address = new InetSocketAddress("localhost", port);

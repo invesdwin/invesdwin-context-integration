@@ -35,7 +35,7 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.lo
 import de.invesdwin.context.integration.channel.stream.server.sessionless.StreamSessionlessSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.timeseriesdb.service.TimeSeriesDBStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.integration.channel.sync.pipe.service.PipeStreamSynchronousEndpointServiceFactory;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -52,7 +52,7 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
     public static final int STREAM_CLIENT_TRANSPORTS = AChannelTest.DEBUG ? 1 : 2;
     public static final boolean STREAM_CLIENT_LAZY = true;
     public static final int STREAM_TEST_THREADS = 1;
-    public static final IStreamSynchronousEndpointServiceFactory STREAM_SERVICE_FACTORY = TimeSeriesDBStreamSynchronousEndpointServiceFactory.INSTANCE;
+    public static final IStreamSynchronousEndpointServiceFactory STREAM_SERVICE_FACTORY = PipeStreamSynchronousEndpointServiceFactory.INSTANCE;
     public static final boolean VERBOSE_DEBUG = false;
 
     public StreamLatencyChannelTest(final AChannelTest parent) {

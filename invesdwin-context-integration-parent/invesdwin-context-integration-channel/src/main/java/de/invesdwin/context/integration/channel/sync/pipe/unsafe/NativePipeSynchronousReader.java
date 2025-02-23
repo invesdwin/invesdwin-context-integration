@@ -30,8 +30,8 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
     private int bufferOffset = 0;
     private int messageTargetPosition = 0;
 
-    public NativePipeSynchronousReader(final File file, final int maxMessageSize) {
-        super(file, maxMessageSize);
+    public NativePipeSynchronousReader(final File file, final int estimatedMaxMessageSize) {
+        super(file, estimatedMaxMessageSize);
     }
 
     @Override
@@ -111,9 +111,11 @@ public class NativePipeSynchronousReader extends APipeSynchronousChannel
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         final int size = messageTargetPosition - bufferOffset - MESSAGE_INDEX;
-        if (ClosedByteBuffer.isClosed(buffer, bufferOffset + MESSAGE_INDEX, size)) {
-            close();
-            throw FastEOFException.getInstance("closed by other side");
+        if (closeMessageEnabled) {
+            if (ClosedByteBuffer.isClosed(buffer, bufferOffset + MESSAGE_INDEX, size)) {
+                close();
+                throw FastEOFException.getInstance("closed by other side");
+            }
         }
 
         final IByteBuffer message = buffer.slice(bufferOffset + MESSAGE_INDEX, size);

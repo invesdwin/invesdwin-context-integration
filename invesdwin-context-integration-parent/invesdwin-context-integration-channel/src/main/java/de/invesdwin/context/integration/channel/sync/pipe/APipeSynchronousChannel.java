@@ -17,11 +17,17 @@ public abstract class APipeSynchronousChannel implements ISynchronousChannel {
     protected final File file;
     protected final int estimatedMaxMessageSize;
     protected final int fileSize;
+    protected final boolean closeMessageEnabled;
 
     public APipeSynchronousChannel(final File file, final int estimatedMaxMessageSize) {
         this.file = file;
         this.estimatedMaxMessageSize = estimatedMaxMessageSize;
         this.fileSize = estimatedMaxMessageSize + MESSAGE_INDEX;
+        this.closeMessageEnabled = newCloseMessageEnabled();
+    }
+
+    protected boolean newCloseMessageEnabled() {
+        return true;
     }
 
 }
