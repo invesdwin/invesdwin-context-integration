@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactor
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResult;
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
@@ -145,7 +146,11 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public String getSessionId() {
-            return sessionId;
+            if (remoteAddressOverride != null) {
+                return remoteAddressOverride.toString();
+            } else {
+                return sessionId;
+            }
         }
 
         @Override
@@ -230,7 +235,8 @@ public class NettyDatagramAsynchronousChannel implements IAsynchronousChannel {
 
         @Override
         public IAsynchronousHandlerContext<IByteBufferProvider> asImmutable() {
-            return this;
+            Assertions.checkNotNull(remoteAddressOverride);
+            return new Context(ch, socketSize, remoteAddressOverride);
         }
 
         @Override

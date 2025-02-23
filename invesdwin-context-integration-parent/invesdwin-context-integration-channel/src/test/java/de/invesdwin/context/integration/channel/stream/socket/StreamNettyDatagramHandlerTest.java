@@ -11,12 +11,11 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.async.IAsynchronousChannel;
 import de.invesdwin.context.integration.channel.async.netty.udp.NettyDatagramAsynchronousChannel;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.ISynchronousEndpointFactory;
-import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
 import de.invesdwin.context.integration.channel.stream.StreamLatencyChannelTest;
 import de.invesdwin.context.integration.channel.stream.server.async.StreamAsynchronousEndpointServerHandlerFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.NettyDatagramSynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.netty.udp.NettySharedDatagramEndpointFactory;
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
+import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramEndpointFactory;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -43,25 +42,25 @@ public class StreamNettyDatagramHandlerTest extends AChannelTest {
             }
         };
         //netty shared bootstrap
-        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramEndpointFactory(
-                type, address, getMaxMessageSize(), lowLatency) {
-            @Override
-            protected int newClientWorkerGroupThreadCount() {
-                return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;
-            }
-        };
+        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettySharedDatagramEndpointFactory(
+        //                type, address, getMaxMessageSize(), lowLatency) {
+        //            @Override
+        //            protected int newClientWorkerGroupThreadCount() {
+        //                return StreamLatencyChannelTest.STREAM_CLIENT_TRANSPORTS;
+        //            }
+        //        };
         //netty no shared bootstrap
         //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NettyDatagramEndpointFactory(
         //                type, address, false, getMaxMessageSize(), lowLatency);
         //fastest
-        //        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
-        //                address, false, getMaxMessageSize(), lowLatency);
+        final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeDatagramEndpointFactory(
+                address, false, getMaxMessageSize(), lowLatency);
         new StreamLatencyChannelTest(this).runStreamHandlerLatencyTest(serverFactory, clientEndpointFactory);
     }
 
     @Override
     public int getMaxMessageSize() {
-        return super.getMaxMessageSize() + ServiceSynchronousCommandSerde.MESSAGE_INDEX;
+        return 42;
     }
 
 }
