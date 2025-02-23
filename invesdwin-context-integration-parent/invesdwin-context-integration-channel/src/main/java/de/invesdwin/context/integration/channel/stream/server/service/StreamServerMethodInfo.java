@@ -284,7 +284,7 @@ public enum StreamServerMethodInfo {
         if (result == null) {
             response.setMessageBuffer(EmptyByteBuffer.INSTANCE);
         } else {
-            response.setMessageBuffer((ICloseableByteBufferProvider) result);
+            response.setCloseableMessageBuffer((ICloseableByteBufferProvider) result);
         }
     }
 

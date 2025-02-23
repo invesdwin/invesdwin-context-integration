@@ -1,16 +1,14 @@
 package de.invesdwin.context.integration.channel.rpc.base.server.service.command.serializing;
 
-import java.io.Closeable;
-
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.ServiceSynchronousCommandSerde;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.basic.NullSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 
 @NotThreadSafe
 public class LazySerializingServiceSynchronousCommand<M> implements ISerializingServiceSynchronousCommand<M> {
@@ -19,6 +17,7 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     protected int method;
     protected int sequence;
     protected IByteBufferProvider messageBuffer;
+    protected ICloseableByteBufferProvider closeableMessageBuffer;
     protected ISerde<M> messageSerde = NullSerde.get();
     protected M message;
 
@@ -69,6 +68,12 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     }
 
     @Override
+    public void setCloseableMessageBuffer(final ICloseableByteBufferProvider messageBuffer) {
+        setMessageBuffer(messageBuffer);
+        this.closeableMessageBuffer = messageBuffer;
+    }
+
+    @Override
     public int toBuffer(final ISerde<IByteBufferProvider> messageSerde, final IByteBuffer buffer) {
         buffer.putInt(ServiceSynchronousCommandSerde.SERVICE_INDEX, getService());
         buffer.putInt(ServiceSynchronousCommandSerde.METHOD_INDEX, getMethod());
@@ -87,9 +92,9 @@ public class LazySerializingServiceSynchronousCommand<M> implements ISerializing
     @Override
     public void close() {
         if (messageBuffer != null) {
-            if (messageBuffer instanceof Closeable) {
-                final Closeable cMessageBuffer = (Closeable) messageBuffer;
-                Closeables.closeQuietly(cMessageBuffer);
+            if (closeableMessageBuffer != null) {
+                closeableMessageBuffer.close();
+                closeableMessageBuffer = null;
             }
             messageBuffer = null;
         } else {
