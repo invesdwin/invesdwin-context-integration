@@ -36,6 +36,7 @@ import de.invesdwin.context.integration.channel.stream.server.sessionless.Stream
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.pipe.service.PipeStreamSynchronousEndpointServiceFactory;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -351,8 +352,10 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(testFutures.next());
                 }
             }
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            testExecutor.shutdown();
+            testExecutor.shutdownNow();
             testExecutor.awaitTermination();
             for (int i = 0; i < serverClients.length; i++) {
                 Closeables.closeQuietly(serverClients[i]);

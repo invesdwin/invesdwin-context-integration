@@ -26,6 +26,7 @@ import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueu
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -110,8 +111,10 @@ public class ThroughputChannelTest {
             final ListenableFuture<?> senderFuture = executor.submit(senderTask);
             receiverTask.run();
             Futures.get(senderFuture);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            executor.shutdown();
+            executor.shutdownNow();
             executor.awaitTermination();
         }
     }

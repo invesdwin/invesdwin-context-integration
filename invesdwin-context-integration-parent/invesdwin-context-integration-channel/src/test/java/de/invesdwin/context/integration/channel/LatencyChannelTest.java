@@ -6,8 +6,6 @@ import java.io.OutputStream;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -33,6 +31,7 @@ import de.invesdwin.context.integration.channel.sync.queue.blocking.BlockingQueu
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousReaderSpinWait;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -78,10 +77,10 @@ public class LatencyChannelTest {
             //            }
             openFuture.get(AChannelTest.MAX_WAIT_DURATION.longValue(),
                     AChannelTest.MAX_WAIT_DURATION.getTimeUnit().timeUnitValue());
-        } catch (ExecutionException | TimeoutException | IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            executor.shutdown();
+            executor.shutdownNow();
             executor.awaitTermination();
             Closeables.closeQuietly(serverChannel);
             Closeables.closeQuietly(clientChannel);
@@ -169,8 +168,10 @@ public class LatencyChannelTest {
             final ListenableFuture<?> serverFuture = executor.submit(serverTask);
             clientTask.run();
             Futures.get(serverFuture);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            executor.shutdown();
+            executor.shutdownNow();
             executor.awaitTermination();
         }
     }

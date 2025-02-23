@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.channel.rpc.base;
 
-import java.io.IOException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
@@ -26,6 +25,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestS
 import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcTestServiceMode;
 import de.invesdwin.context.integration.channel.rpc.base.server.sessionless.RpcSessionlessSynchronousEndpointServer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.iterable.buffer.BufferingIterator;
 import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
@@ -86,10 +86,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
@@ -134,10 +134,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
@@ -190,10 +190,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
@@ -235,10 +235,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
@@ -282,10 +282,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);
@@ -335,10 +335,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             Closeables.closeQuietly(client);
             Closeables.closeQuietly(serverChannel);
@@ -381,10 +381,10 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                     Futures.getNoInterrupt(clientFutures.next());
                 }
             }
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
+        } catch (final Throwable t) {
+            throw Err.process(t);
         } finally {
-            clientExecutor.shutdown();
+            clientExecutor.shutdownNow();
             clientExecutor.awaitTermination();
             for (int i = 0; i < clients.length; i++) {
                 Closeables.closeQuietly(clients[i]);

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.report;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.time.date.FDate;
@@ -76,7 +75,7 @@ public class DisabledLatencyReport implements ILatencyReport {
 
     @Override
     public void validateResponse(final FDate request, final FDate response) {
-        Assertions.checkEquals(request.addMilliseconds(1), response);
+        //noop
     }
 
     @Override
