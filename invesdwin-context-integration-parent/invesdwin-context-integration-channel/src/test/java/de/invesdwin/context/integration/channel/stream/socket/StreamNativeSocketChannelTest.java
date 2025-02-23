@@ -84,8 +84,8 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
             //            @Override
             //            public ISynchronousWriter<IByteBufferProvider> newStreamSynchronousEndpointClientWriter(
             //                    final StreamSynchronousEndpointClientChannel channel) {
-            //                return new BatchSynchronousWriter(super.newStreamSynchronousEndpointClientWriter(channel), 100000, 10,
-            //                        Duration.ONE_MINUTE);
+            //                return new BatchSynchronousWriter(super.newStreamSynchronousEndpointClientWriter(channel), 1024 * 1024,
+            //                        Integer.MAX_VALUE, Duration.ONE_MINUTE);
             //            }
         }.runStreamThroughputTest(serverAcceptor, clientEndpointFactory);
     }
