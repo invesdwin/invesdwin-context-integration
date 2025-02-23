@@ -79,6 +79,11 @@ public class DisabledLatencyReport implements ILatencyReport {
     }
 
     @Override
+    public void validateOrder(final FDate prevValue, final FDate nextValue) {
+        //noop
+    }
+
+    @Override
     public void close() {}
 
 }

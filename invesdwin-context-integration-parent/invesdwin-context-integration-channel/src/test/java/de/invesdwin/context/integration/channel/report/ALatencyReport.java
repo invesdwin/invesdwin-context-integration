@@ -120,6 +120,11 @@ public abstract class ALatencyReport implements ILatencyReport {
     }
 
     @Override
+    public void validateOrder(final FDate prevValue, final FDate nextValue) {
+        //noop
+    }
+
+    @Override
     public void close() {
         Closeables.closeQuietly(out);
     }

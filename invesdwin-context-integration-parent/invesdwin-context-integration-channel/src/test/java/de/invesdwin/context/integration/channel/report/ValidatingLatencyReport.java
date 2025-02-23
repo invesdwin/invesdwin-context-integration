@@ -16,4 +16,11 @@ public class ValidatingLatencyReport extends DisabledLatencyReport {
         Assertions.checkEquals(request.addMilliseconds(1), response);
     }
 
+    @Override
+    public void validateOrder(final FDate prevValue, final FDate nextValue) {
+        if (prevValue != null && !prevValue.isBeforeNotNullSafe(nextValue)) {
+            Assertions.assertThat(prevValue).isBefore(nextValue);
+        }
+    }
+
 }

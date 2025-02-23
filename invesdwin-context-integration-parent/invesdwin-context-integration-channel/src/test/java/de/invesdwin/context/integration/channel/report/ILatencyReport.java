@@ -27,4 +27,6 @@ public interface ILatencyReport extends Closeable {
 
     void validateResponse(FDate request, FDate response);
 
+    void validateOrder(FDate prevValue, FDate nextValue);
+
 }

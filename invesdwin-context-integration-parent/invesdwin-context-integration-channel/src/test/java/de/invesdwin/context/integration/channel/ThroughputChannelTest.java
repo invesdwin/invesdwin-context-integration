@@ -170,9 +170,7 @@ public class ThroughputChannelTest {
                             log.write(("receiver channel in [" + readMessage + "]\n").getBytes());
                         }
                         Assertions.checkNotNull(readMessage);
-                        if (prevValue != null) {
-                            Assertions.checkTrue(prevValue.isBefore(readMessage));
-                        }
+                        latencyReportMessageReceived.validateOrder(prevValue, readMessage);
                         prevValue = readMessage;
                         count++;
                     }

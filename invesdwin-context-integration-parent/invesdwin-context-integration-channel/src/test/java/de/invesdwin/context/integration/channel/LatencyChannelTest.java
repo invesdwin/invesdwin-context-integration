@@ -444,9 +444,7 @@ public class LatencyChannelTest {
             }
             Assertions.checkNotNull(response);
             latencyReportRequestResponseRoundtrip.validateResponse(request, response);
-            if (prevValue != null && !prevValue.isBefore(response)) {
-                Assertions.assertThat(prevValue).isBefore(response);
-            }
+            latencyReportRequestResponseRoundtrip.validateOrder(prevValue, response);
             prevValue = response;
             count++;
             if (count > AChannelTest.MESSAGE_COUNT) {
