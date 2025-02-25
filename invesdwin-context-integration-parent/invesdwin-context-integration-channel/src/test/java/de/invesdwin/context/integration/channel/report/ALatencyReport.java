@@ -5,14 +5,20 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.html.distribution.DistributionMeasure;
+import de.invesdwin.context.integration.html.distribution.HtmlDistributionReport;
+import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.math.decimal.Decimal;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.IFDateProvider;
 import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
@@ -28,10 +34,12 @@ public abstract class ALatencyReport implements ILatencyReport {
 
     };
 
+    private final String name;
     private final File file;
     private final OutputStream out;
 
     public ALatencyReport(final String name) {
+        this.name = name;
         this.file = newFile(name);
         try {
             Files.forceMkdirParent(file);
@@ -127,6 +135,11 @@ public abstract class ALatencyReport implements ILatencyReport {
     @Override
     public void close() {
         Closeables.closeQuietly(out);
+        final List<Decimal> values = new ArrayList<>();
+        //TODO: angelo read csv file and fill values (ignore first header line)
+        final DistributionMeasure measure = new DistributionMeasure(name, newHeader(), values, false, 0);
+        final File htmlFile = new File(newFolder(), name + ".html");
+        new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
     }
 
 }
