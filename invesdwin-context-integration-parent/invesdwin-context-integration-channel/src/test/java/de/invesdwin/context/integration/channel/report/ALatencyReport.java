@@ -64,7 +64,7 @@ public abstract class ALatencyReport implements ILatencyReport {
     protected abstract String newLatencyHeader();
 
     protected File newFile(final String name) {
-        return new File(newFolder(), name + ".txt");
+        return new File(newFolder(), name + ".csv");
     }
 
     protected File newFolder() {
