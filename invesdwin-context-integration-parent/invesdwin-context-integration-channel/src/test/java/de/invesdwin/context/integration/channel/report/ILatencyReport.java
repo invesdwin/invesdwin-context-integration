@@ -14,10 +14,10 @@ public interface ILatencyReport extends Closeable {
 
     IFDateProvider newArrivalTimestamp();
 
-    void measureLatency(FDate message, FDate arrivalTimestamp);
+    void measureLatency(int index, FDate message, FDate arrivalTimestamp);
 
-    default void measureLatency(final FDate message) {
-        measureLatency(message, newArrivalTimestamp().asFDate());
+    default void measureLatency(final int index, final FDate message) {
+        measureLatency(index, message, newArrivalTimestamp().asFDate());
     }
 
     boolean isMeasuringLatency();

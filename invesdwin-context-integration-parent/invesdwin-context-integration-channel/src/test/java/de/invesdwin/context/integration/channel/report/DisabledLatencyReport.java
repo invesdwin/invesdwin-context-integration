@@ -64,12 +64,12 @@ public class DisabledLatencyReport implements ILatencyReport {
     }
 
     @Override
-    public void measureLatency(final FDate message) {
+    public void measureLatency(final int index, final FDate message) {
         //noop
     }
 
     @Override
-    public void measureLatency(final FDate message, final FDate arrivalTimestamp) {
+    public void measureLatency(final int index, final FDate message, final FDate arrivalTimestamp) {
         //noop
     }
 

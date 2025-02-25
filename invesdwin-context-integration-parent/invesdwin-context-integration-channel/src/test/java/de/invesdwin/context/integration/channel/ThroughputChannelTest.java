@@ -165,7 +165,7 @@ public class ThroughputChannelTest {
                         }
                         final FDate readMessage = readSpinWait.waitForRead(AChannelTest.MAX_WAIT_DURATION);
                         channelReader.readFinished();
-                        latencyReportMessageReceived.measureLatency(readMessage);
+                        latencyReportMessageReceived.measureLatency(count, readMessage);
                         if (AChannelTest.DEBUG) {
                             log.write(("receiver channel in [" + readMessage + "]\n").getBytes());
                         }
@@ -234,7 +234,7 @@ public class ThroughputChannelTest {
                             final IFDateProvider requestProvider = values.next();
                             final FDate value = requestProvider.asFDate();
                             writeSpinWait.waitForWrite(value, AChannelTest.MAX_WAIT_DURATION);
-                            latencyReportMessageSent.measureLatency(value);
+                            latencyReportMessageSent.measureLatency(count, value);
                             if (AChannelTest.DEBUG) {
                                 log.write(("sender channel out [" + value + "]\n").getBytes());
                             }

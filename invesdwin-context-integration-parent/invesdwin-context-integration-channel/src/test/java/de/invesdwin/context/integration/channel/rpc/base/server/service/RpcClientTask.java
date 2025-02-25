@@ -33,8 +33,8 @@ public class RpcClientTask implements Runnable {
         this(new Log(LatencyClientTask.class), client, clientId, mode);
     }
 
-    public RpcClientTask(final Log log, final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
-            final RpcTestServiceMode mode) {
+    public RpcClientTask(final Log log, final IRpcSynchronousEndpointClient<IRpcTestService> client,
+            final String clientId, final RpcTestServiceMode mode) {
         this(Slf4jStream.of(log).asInfo(), client, clientId, mode);
     }
 
@@ -73,8 +73,8 @@ public class RpcClientTask implements Runnable {
                     final FDate response = mode.request(client.getService(), request);
                     final FDate arrivalTimestamp = latencyReportRequestResponseRoundtrip.newArrivalTimestamp()
                             .asFDate();
-                    latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
-                    latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
+                    latencyReportResponseReceived.measureLatency(count, response, arrivalTimestamp);
+                    latencyReportRequestResponseRoundtrip.measureLatency(count, request, arrivalTimestamp);
                     if (AChannelTest.DEBUG) {
                         log.write((clientId + ": client response in [" + response + "]\n").getBytes());
                     }

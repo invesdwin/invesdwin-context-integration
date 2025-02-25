@@ -33,7 +33,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
     private final int rpcClientThreads;
     private final OutputStream log;
     private final LoopInterruptedCheck loopCheck;
-    private final AtomicInteger countHolder = new AtomicInteger();
+    private final AtomicInteger countHolder;
     private Instant writesStart;
     private final ILatencyReport latencyReportRequestReceived;
 
@@ -51,9 +51,10 @@ public class RpcTestService implements IRpcTestService, Closeable {
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
+        this.countHolder = new AtomicInteger(-AChannelTest.WARMUP_MESSAGE_COUNT * rpcClientThreads);
     }
 
-    private FDate handleRequest(final FDate request) throws IOException {
+    private FDate handleRequest(final FDate request, final FDate arrivalTimestamp) throws IOException {
         if (writesStart == null) {
             synchronized (this) {
                 if (writesStart == null) {
@@ -70,7 +71,11 @@ public class RpcTestService implements IRpcTestService, Closeable {
         if (AChannelTest.DEBUG) {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
-        final int count = countHolder.incrementAndGet();
+        final int countBefore = countHolder.getAndIncrement();
+        if (arrivalTimestamp != null) {
+            latencyReportRequestReceived.measureLatency(countBefore, request, arrivalTimestamp);
+        }
+        final int count = countBefore + 1;
         if (loopCheck.checkNoInterrupt()) {
             AChannelTest.printProgress(log, "Writes", writesStart, count,
                     AChannelTest.MESSAGE_COUNT * rpcClientThreads);
@@ -80,8 +85,8 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     @Override
     public FDate requestDefault(final FDate date) throws IOException {
-        latencyReportRequestReceived.measureLatency(date);
-        return handleRequest(date);
+        final FDate arrivalTimestamp = latencyReportRequestReceived.newArrivalTimestamp().asFDate();
+        return handleRequest(date, arrivalTimestamp);
     }
 
     @Override
@@ -131,8 +136,8 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     @Override
     public Future<FDate> requestAsyncDefault(final FDate date) throws IOException {
-        latencyReportRequestReceived.measureLatency(date);
-        return ASYNC_EXECUTOR.submit(() -> handleRequest(date));
+        final FDate arrivalTimestamp = latencyReportRequestReceived.newArrivalTimestamp().asFDate();
+        return ASYNC_EXECUTOR.submit(() -> handleRequest(date, arrivalTimestamp));
     }
 
     @Override

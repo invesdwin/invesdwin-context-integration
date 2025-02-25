@@ -238,15 +238,15 @@ public class LatencyChannelTest {
                             final IFDateProvider requestProvider = values.next();
                             final FDate request = requestProvider.asFDate();
                             writeSpinWait.waitForWrite(request, AChannelTest.MAX_WAIT_DURATION);
-                            latencyReportRequestSent.measureLatency(request);
+                            latencyReportRequestSent.measureLatency(count, request);
                             if (AChannelTest.DEBUG) {
                                 log.write("client request out\n".getBytes());
                             }
                             final FDate response = readSpinWait.waitForRead(AChannelTest.MAX_WAIT_DURATION);
                             responseReader.readFinished();
                             final FDate arrivalTimestamp = latencyReportRoundtrip.newArrivalTimestamp().asFDate();
-                            latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
-                            latencyReportRoundtrip.measureLatency(request, arrivalTimestamp);
+                            latencyReportResponseReceived.measureLatency(count, response, arrivalTimestamp);
+                            latencyReportRoundtrip.measureLatency(count, request, arrivalTimestamp);
                             if (AChannelTest.DEBUG) {
                                 log.write(("client response in [" + response + "]\n").getBytes());
                             }
@@ -338,13 +338,13 @@ public class LatencyChannelTest {
                         }
                         final FDate request = readSpinWait.waitForRead(AChannelTest.MAX_WAIT_DURATION);
                         requestReader.readFinished();
-                        latencyReportRequestReceived.measureLatency(request);
+                        latencyReportRequestReceived.measureLatency(count, request);
                         if (AChannelTest.DEBUG) {
                             log.write("server request in\n".getBytes());
                         }
                         final FDate response = latencyReportResponseSent.newResponseMessage(request).asFDate();
                         writeSpinWait.waitForWrite(response, AChannelTest.MAX_WAIT_DURATION);
-                        latencyReportResponseSent.measureLatency(response);
+                        latencyReportResponseSent.measureLatency(count, response);
                         if (AChannelTest.DEBUG) {
                             log.write(("server response out [" + response + "]\n").getBytes());
                         }
@@ -434,8 +434,8 @@ public class LatencyChannelTest {
                 readsStart = new Instant();
             }
             final FDate arrivalTimestamp = latencyReportRequestResponseRoundtrip.newArrivalTimestamp().asFDate();
-            latencyReportResponseReceived.measureLatency(response, arrivalTimestamp);
-            latencyReportRequestResponseRoundtrip.measureLatency(request, arrivalTimestamp);
+            latencyReportResponseReceived.measureLatency(count, response, arrivalTimestamp);
+            latencyReportRequestResponseRoundtrip.measureLatency(count, request, arrivalTimestamp);
             if (AChannelTest.DEBUG) {
                 log.write("client request out\n".getBytes());
             }

@@ -19,7 +19,7 @@ public class LocalLatencyReport extends ALatencyReport {
     }
 
     @Override
-    protected String newHeader() {
+    protected String newLatencyHeader() {
         return "ns";
     }
 

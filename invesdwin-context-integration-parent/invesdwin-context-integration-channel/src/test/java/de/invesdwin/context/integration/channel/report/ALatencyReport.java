@@ -26,6 +26,8 @@ import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
 @NotThreadSafe
 public abstract class ALatencyReport implements ILatencyReport {
 
+    private static final String CSV_SEPARATOR = "\t";
+
     private final IFDateProvider messageProvider = new IFDateProvider() {
         @Override
         public FDate asFDate() {
@@ -52,13 +54,14 @@ public abstract class ALatencyReport implements ILatencyReport {
             throw new RuntimeException(e);
         }
         try {
-            out.write((newHeader() + "\n").getBytes());
+            final String headerLine = "index" + CSV_SEPARATOR + newLatencyHeader() + "\n";
+            out.write(headerLine.getBytes());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected abstract String newHeader();
+    protected abstract String newLatencyHeader();
 
     protected File newFile(final String name) {
         return new File(newFolder(), name + ".txt");
@@ -109,9 +112,10 @@ public abstract class ALatencyReport implements ILatencyReport {
     }
 
     @Override
-    public void measureLatency(final FDate message, final FDate arrivalTimestamp) {
+    public void measureLatency(final int index, final FDate message, final FDate arrivalTimestamp) {
         try {
-            out.write(((arrivalTimestamp.millisValue() - message.millisValue()) + "\n").getBytes());
+            final String line = index + CSV_SEPARATOR + (arrivalTimestamp.millisValue() - message.millisValue()) + "\n";
+            out.write(line.getBytes());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -136,8 +140,12 @@ public abstract class ALatencyReport implements ILatencyReport {
     public void close() {
         Closeables.closeQuietly(out);
         final List<Decimal> values = new ArrayList<>();
-        //TODO: angelo read csv file and fill values (ignore first header line)
-        final DistributionMeasure measure = new DistributionMeasure(name, newHeader(), values, false, 0);
+        /*
+         * TODO: angelo read csv file and fill values (ignore first header line); also ignore indexes < 0 because those
+         * are warmup messages (we leave them in the csv file so we have all the data, but we want to skip those in the
+         * report)
+         */
+        final DistributionMeasure measure = new DistributionMeasure(name, newLatencyHeader(), values, false, 0);
         final File htmlFile = new File(newFolder(), name + ".html");
         new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
     }
