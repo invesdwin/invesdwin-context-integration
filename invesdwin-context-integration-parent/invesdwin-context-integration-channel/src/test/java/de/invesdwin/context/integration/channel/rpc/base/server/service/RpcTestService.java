@@ -56,7 +56,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
 
     private FDate handleRequest(final FDate request, final FDate arrivalTimestamp) throws IOException {
         final int countBefore = countHolder.getAndIncrement();
-        if (writesStart == null && countBefore == 0) {
+        if (countBefore == 0) {
             //don't count in connection establishment
             writesStart = new Instant();
         }
