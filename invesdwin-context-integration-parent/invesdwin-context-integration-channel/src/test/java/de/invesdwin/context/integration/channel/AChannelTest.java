@@ -255,7 +255,8 @@ public abstract class AChannelTest extends ATest {
         boolean closeMessageReceived = false;
         try {
             final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(reader);
-            readSpinWait.waitForRead(MAX_WAIT_DURATION);
+            final FDate read = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+            throw new IllegalStateException("exception exppected but instead got: " + read);
         } catch (final EOFException e) {
             closeMessageReceived = true;
         } catch (final Exception e) {
