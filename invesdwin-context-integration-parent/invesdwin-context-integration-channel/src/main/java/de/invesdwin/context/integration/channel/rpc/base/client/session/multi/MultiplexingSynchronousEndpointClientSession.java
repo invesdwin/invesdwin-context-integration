@@ -185,6 +185,16 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         return endpointSession.getRequestTimeout();
     }
 
+    private Duration getRequestWaitInterval(final Duration requestTimeout) {
+        final Duration requestWaitInterval = endpointSession.getRequestWaitInterval();
+        return requestWaitInterval.orLower(requestTimeout);
+    }
+
+    private Duration getPollingRequestWaitInterval(final Duration requestTimeout) {
+        final Duration pollingRequestWaitInterval = endpointSession.getPollingRequestWaitInterval();
+        return pollingRequestWaitInterval.orLower(requestTimeout);
+    }
+
     /**
      * Only the active polling request will use its unexpectedMessageListener. All others with only use it if they
      * become the polling request. Otherwise it gets ignored. If multiple requests should be notified, a broadcasting
@@ -285,7 +295,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             }
             while (true) {
                 if (response.getCompletedSpinWait()
-                        .awaitFulfill(System.nanoTime(), endpointSession.getRequestWaitInterval())) {
+                        .awaitFulfill(System.nanoTime(), getRequestWaitInterval(response.getRequestTimeout()))) {
                     if (response.isCompleted()) {
                         //the other thread finished our work for us
                         return response;
@@ -403,7 +413,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             while (true) {
                 try {
                     if (!blockingHandleLockedSpinWait.awaitFulfill(System.nanoTime(),
-                            endpointSession.getRequestWaitInterval())) {
+                            getRequestWaitInterval(outer.getRequestTimeout()))) {
                         maybeCheckRequestTimeouts(outer);
                     } else if (outer.isCompleted()) {
                         return outer;
@@ -702,10 +712,9 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             throws Exception {
         try {
             writeLocked(serviceId, methodId, requestSequence, request);
-            if (!requestWriterSpinWait.writeFlushed()
-                    .awaitFulfill(System.nanoTime(), endpointSession.getRequestTimeout())) {
+            if (!requestWriterSpinWait.writeFlushed().awaitFulfill(System.nanoTime(), requestTimeout)) {
                 throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
-                        serviceId, methodId, requestSequence, endpointSession.getRequestTimeout());
+                        serviceId, methodId, requestSequence, request);
             }
         } finally {
             requestHolder.close(); //free memory
@@ -721,7 +730,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 pollForResponsesNonBlockingLocked(unexpectedMessageListener);
             }
             if (!requestWriterSpinWait.writeFlushed()
-                    .awaitFulfill(System.nanoTime(), endpointSession.getPollingRequestWaitInterval())) {
+                    .awaitFulfill(System.nanoTime(), getPollingRequestWaitInterval(requestTimeout))) {
                 if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);
@@ -738,7 +747,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         if (request.isRequestTimeout()) {
             throw FastTimeoutException.getInstance("Request timeout exceeded for [%s:%s:%s]: %s",
                     request.getServiceId(), request.getMethodId(), request.getRequestSequence(),
-                    endpointSession.getRequestTimeout());
+                    request.getRequestTimeout());
         }
     }
 
