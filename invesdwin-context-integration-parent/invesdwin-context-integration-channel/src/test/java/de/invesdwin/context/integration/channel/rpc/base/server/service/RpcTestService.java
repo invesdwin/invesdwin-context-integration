@@ -55,13 +55,10 @@ public class RpcTestService implements IRpcTestService, Closeable {
     }
 
     private FDate handleRequest(final FDate request, final FDate arrivalTimestamp) throws IOException {
-        if (writesStart == null) {
-            synchronized (this) {
-                if (writesStart == null) {
-                    //don't count in connection establishment
-                    writesStart = new Instant();
-                }
-            }
+        final int countBefore = countHolder.getAndIncrement();
+        if (countBefore == 0) {
+            //don't count in connection establishment
+            writesStart = new Instant();
         }
         if (AChannelTest.DEBUG) {
             log.write("server request in\n".getBytes());
@@ -71,7 +68,6 @@ public class RpcTestService implements IRpcTestService, Closeable {
         if (AChannelTest.DEBUG) {
             log.write(("server response out [" + response + "]\n").getBytes());
         }
-        final int countBefore = countHolder.getAndIncrement();
         if (arrivalTimestamp != null) {
             latencyReportRequestReceived.measureLatency(countBefore, request, arrivalTimestamp);
         }
