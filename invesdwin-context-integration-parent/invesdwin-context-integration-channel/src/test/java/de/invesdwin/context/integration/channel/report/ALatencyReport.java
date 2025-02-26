@@ -20,6 +20,7 @@ import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.math.decimal.Decimal;
 import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.date.IFDateProvider;
 import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
 
@@ -54,14 +55,18 @@ public abstract class ALatencyReport implements ILatencyReport {
             throw new RuntimeException(e);
         }
         try {
-            final String headerLine = "index" + CSV_SEPARATOR + newLatencyHeader() + "\n";
+            final String headerLine = "index" + CSV_SEPARATOR + newMeasureTimeUnit().getShortName() + "\n";
             out.write(headerLine.getBytes());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
-    protected abstract String newLatencyHeader();
+    protected abstract FTimeUnit newMeasureTimeUnit();
+
+    protected FTimeUnit newReportTimeUnit() {
+        return FTimeUnit.MICROSECONDS;
+    }
 
     protected File newFile(final String name) {
         return new File(newFolder(), name + ".txt");
@@ -72,7 +77,7 @@ public abstract class ALatencyReport implements ILatencyReport {
     }
 
     protected File newBaseFolder() {
-        return ContextProperties.getCacheDirectory();
+        return ContextProperties.getLogDirectory();
     }
 
     protected abstract long newTimestamp();
@@ -140,14 +145,32 @@ public abstract class ALatencyReport implements ILatencyReport {
     public void close() {
         Closeables.closeQuietly(out);
         final List<Decimal> values = new ArrayList<>();
-        /*
-         * TODO: angelo read csv file and fill values (ignore first header line); also ignore indexes < 0 because those
-         * are warmup messages (we leave them in the csv file so we have all the data, but we want to skip those in the
-         * report)
-         */
-        final DistributionMeasure measure = new DistributionMeasure(name, newLatencyHeader(), values, false, 0);
-        final File htmlFile = new File(newFolder(), name + ".html");
-        new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
+        final FTimeUnit measureTimeUnit = newMeasureTimeUnit();
+        final FTimeUnit reportTimeUnit = newReportTimeUnit();
+        try {
+            final List<String> lines = Files.readAllLines(file.toPath());
+            for (int i = 1; i < lines.size(); i++) {
+                final String line = lines.get(i);
+                final String[] tokens = line.split(CSV_SEPARATOR);
+                final int index = Integer.parseInt(tokens[0]);
+                if (index < 0) {
+                    continue;
+                }
+                final long latencyValueRaw = Long.parseLong(tokens[1]);
+                final double latencyValue = reportTimeUnit.asFractional()
+                        .convert(latencyValueRaw, measureTimeUnit.asFractional());
+                values.add(Decimal.valueOf(latencyValue));
+            }
+            if (!values.isEmpty()) {
+                final DistributionMeasure measure = new DistributionMeasure(name, reportTimeUnit.getShortName(), values,
+                        false, Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit)).getDecimalDigits());
+                final File htmlFile = new File(newFolder(), name + ".html");
+                new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
+            }
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
 }

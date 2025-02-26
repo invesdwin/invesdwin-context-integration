@@ -2,6 +2,8 @@ package de.invesdwin.context.integration.channel.report;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.util.time.date.FTimeUnit;
+
 @NotThreadSafe
 public class DistributedLatencyReport extends ALatencyReport {
 
@@ -15,8 +17,8 @@ public class DistributedLatencyReport extends ALatencyReport {
     }
 
     @Override
-    protected String newLatencyHeader() {
-        return "ms";
+    protected FTimeUnit newMeasureTimeUnit() {
+        return FTimeUnit.MILLISECONDS;
     }
 
 }
