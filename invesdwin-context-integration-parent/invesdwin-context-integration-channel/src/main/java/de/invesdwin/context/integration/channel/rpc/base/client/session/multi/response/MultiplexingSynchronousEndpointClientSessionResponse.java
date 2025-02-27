@@ -29,6 +29,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     private IByteBufferProvider request;
     private boolean closeRequest;
     private Duration requestTimeout;
+    private Duration requestWaitInterval;
     private AtomicBoolean activePolling;
     private volatile boolean completed;
     private final IByteBuffer response = ByteBuffers.allocateDirectExpandable();
@@ -82,13 +83,14 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
 
     public void init(final int serviceId, final int methodId, final int requestSequence,
             final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
-            final AtomicBoolean activePolling) {
+            final Duration requestWaitInterval, final AtomicBoolean activePolling) {
         this.serviceId = serviceId;
         this.methodId = methodId;
         this.requestSequence = requestSequence;
         this.request = request;
         this.closeRequest = closeRequest;
         this.requestTimeout = requestTimeout;
+        this.requestWaitInterval = requestWaitInterval;
         this.activePolling = activePolling;
         this.waitingSinceNanos = System.nanoTime();
     }
@@ -121,6 +123,10 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
 
     public Duration getRequestTimeout() {
         return requestTimeout;
+    }
+
+    public Duration getRequestWaitInterval() {
+        return requestWaitInterval;
     }
 
     public boolean isRequestTimeout() {
@@ -213,6 +219,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         request = null;
         closeRequest = false;
         requestTimeout = null;
+        requestWaitInterval = null;
         completed = false;
         responseSize = 0;
         activePolling = null;

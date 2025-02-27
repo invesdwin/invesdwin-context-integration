@@ -185,14 +185,14 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
         return endpointSession.getRequestTimeout();
     }
 
-    private Duration getRequestWaitInterval(final Duration requestTimeout) {
-        final Duration requestWaitInterval = endpointSession.getRequestWaitInterval();
+    private Duration getRequestWaitInterval(final Duration requestTimeout, final boolean waitForResponse) {
+        final Duration requestWaitInterval;
+        if (waitForResponse) {
+            requestWaitInterval = endpointSession.getRequestWaitInterval();
+        } else {
+            requestWaitInterval = endpointSession.getPollingRequestWaitInterval();
+        }
         return requestWaitInterval.orLower(requestTimeout);
-    }
-
-    private Duration getPollingRequestWaitInterval(final Duration requestTimeout) {
-        final Duration pollingRequestWaitInterval = endpointSession.getPollingRequestWaitInterval();
-        return pollingRequestWaitInterval.orLower(requestTimeout);
     }
 
     /**
@@ -205,6 +205,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             final IByteBufferProvider request, final boolean closeRequest, final Duration requestTimeout,
             final boolean waitForResponse, final IUnexpectedMessageListener unexpectedMessageListener)
             throws TimeoutException, AbortRequestException {
+        final Duration requestWaitInterval = getRequestWaitInterval(requestTimeout, waitForResponse);
         if (!waitForResponse) {
             if (request == null) {
                 //just send a heartbeat if needed
@@ -218,7 +219,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                             && requestWriterSpinWait.getWriter().writeReady()) {
                         //fire and forget, another blocking request might receive an answer in the unexpectedMessageListener
                         pollingReadyWriteAndFlushLocked(serviceId, methodId, requestSequence, request, requestTimeout,
-                                System.nanoTime(), unexpectedMessageListener);
+                                requestWaitInterval, System.nanoTime(), unexpectedMessageListener);
                         return null;
                     }
                 } catch (RemoteExecutionException | RetryLaterRuntimeException e) {
@@ -238,7 +239,8 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 .borrowObject();
         response.setOuterActive();
         try {
-            response.init(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout, activePolling);
+            response.init(serviceId, methodId, requestSequence, request, closeRequest, requestTimeout,
+                    requestWaitInterval, activePolling);
             if (!waitForResponse) {
                 //since we could not write it immediately, add it to the queue
                 response.setPushedWithoutRequest();
@@ -295,7 +297,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             }
             while (true) {
                 if (response.getCompletedSpinWait()
-                        .awaitFulfill(System.nanoTime(), getRequestWaitInterval(response.getRequestTimeout()))) {
+                        .awaitFulfill(System.nanoTime(), response.getRequestWaitInterval())) {
                     if (response.isCompleted()) {
                         //the other thread finished our work for us
                         return response;
@@ -412,8 +414,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             blockingHandleLockedSpinWait.pollingOuter = pollingOuter;
             while (true) {
                 try {
-                    if (!blockingHandleLockedSpinWait.awaitFulfill(System.nanoTime(),
-                            getRequestWaitInterval(outer.getRequestTimeout()))) {
+                    if (!blockingHandleLockedSpinWait.awaitFulfill(System.nanoTime(), outer.getRequestWaitInterval())) {
                         maybeCheckRequestTimeouts(outer);
                     } else if (outer.isCompleted()) {
                         return outer;
@@ -621,7 +622,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 final MultiplexingSynchronousEndpointClientSessionResponse pushedWithoutRequest = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                         .borrowObject();
                 pushedWithoutRequest.init(responseService, responseMethod, responseSequence, null, false,
-                        getDefaultRequestTimeout(), activePolling);
+                        getDefaultRequestTimeout(), null, activePolling);
                 pushedWithoutRequest.setPushedWithoutRequest();
                 pushedWithoutRequest.responseCompleted(responseMessage);
                 writtenRequests.put(responseSequence, pushedWithoutRequest);
@@ -722,15 +723,14 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
     }
 
     private void pollingReadyWriteAndFlushLocked(final int serviceId, final int methodId, final int requestSequence,
-            final IByteBufferProvider request, final Duration requestTimeout, final long waitingSinceNanos,
-            final IUnexpectedMessageListener unexpectedMessageListener) throws Exception {
+            final IByteBufferProvider request, final Duration requestTimeout, final Duration requestWaitInterval,
+            final long waitingSinceNanos, final IUnexpectedMessageListener unexpectedMessageListener) throws Exception {
         try {
             writeLocked(serviceId, methodId, requestSequence, request);
             if (!requestWriterSpinWait.getWriter().writeFlushed()) {
                 pollForResponsesNonBlockingLocked(unexpectedMessageListener);
             }
-            if (!requestWriterSpinWait.writeFlushed()
-                    .awaitFulfill(System.nanoTime(), getPollingRequestWaitInterval(requestTimeout))) {
+            if (!requestWriterSpinWait.writeFlushed().awaitFulfill(System.nanoTime(), requestWaitInterval)) {
                 if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);

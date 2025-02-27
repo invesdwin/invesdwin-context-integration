@@ -95,7 +95,7 @@ public class BlockingStreamSynchronousEndpointClient implements IStreamSynchrono
                 throws AbortRequestException {
             final MultiplexingSynchronousEndpointClientSessionResponse response = MultiplexingSynchronousEndpointClientSessionResponsePool.INSTANCE
                     .borrowObject();
-            response.init(serviceId, methodId, streamSequence, null, false, null, null);
+            response.init(serviceId, methodId, streamSequence, null, false, null, null, null);
             try {
                 response.responseCompleted(message);
             } catch (final IOException e) {
