@@ -175,8 +175,10 @@ public abstract class ALatencyReport implements ILatencyReport {
                 values.add(Decimal.valueOf(latencyValue));
             }
             if (!values.isEmpty()) {
+                final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))
+                        .getWholeNumberDigits();
                 final DistributionMeasure measure = new DistributionMeasure(name, reportTimeUnit.getShortName(), values,
-                        false, Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit)).getDecimalDigits());
+                        false, decimalPlaces);
                 final File htmlFile = new File(newFolder(), name + ".html");
                 new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
             }
