@@ -42,7 +42,7 @@ public class DefaultStreamSessionManagerSubscription
         this.service = service;
         this.notifiedSubscriptions = notifiedSubscriptions;
         //ignore notifications during construction
-        this.notified = new AtomicBoolean(true);
+        this.notified = new AtomicBoolean(false);
         final ISynchronousReader<IByteBufferProvider> subscription = service.subscribe(this, parameters);
         Assertions.checkNotNull(subscription);
         final ReadFinishedDelegateSynchronousReader<IByteBufferProvider> reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(
@@ -50,15 +50,15 @@ public class DefaultStreamSessionManagerSubscription
         reader.open();
         final boolean hasNext = reader.hasNext();
         this.reader = reader;
-        //now allow notifications to go through
-        notified.set(false);
-        //notify immediately if a message is available
         if (hasNext) {
             onPut();
         }
     }
 
     public boolean handle() throws IOException {
+        if (reader == null) {
+            return false;
+        }
         if (!reader.isReadFinished()) {
             //last message from this reader is still being written to the client in the sessoion, wait for that to be finished
             throw FastNoSuchElementException.getInstance("reader.isReadFinished is false");

@@ -46,7 +46,7 @@ public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
 
     @Override
     public int getMaxMessageSize() {
-        return 4015;
+        return 4303;
     }
 
 }
