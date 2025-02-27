@@ -213,7 +213,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 return null;
             }
             //try to write immediately, otherwise add to queue
-            if (lock.tryLock()) {
+            if (writeRequests.isEmpty() && lock.tryLock()) {
                 try {
                     if (requestWriterSpinWait.getWriter().writeFlushed()
                             && requestWriterSpinWait.getWriter().writeReady()) {
@@ -328,7 +328,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
                 boolean handled;
                 do {
                     handled = handleLocked(unexpectedMessageListener, null);
-                } while (handled);
+                } while (handled || !writeRequests.isEmpty());
             } finally {
                 activePolling.set(false);
             }
@@ -730,7 +730,7 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
             if (!requestWriterSpinWait.getWriter().writeFlushed()) {
                 pollForResponsesNonBlockingLocked(unexpectedMessageListener);
             }
-            if (!requestWriterSpinWait.writeFlushed().awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+            while (!requestWriterSpinWait.writeFlushed().awaitFulfill(System.nanoTime(), requestWaitInterval)) {
                 if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);
