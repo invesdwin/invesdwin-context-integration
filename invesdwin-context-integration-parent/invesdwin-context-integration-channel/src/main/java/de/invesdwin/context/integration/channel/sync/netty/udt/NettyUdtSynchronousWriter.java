@@ -38,6 +38,7 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
             writer = () -> {
+                //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
                 future = channel.getUdtChannel().writeAndFlush(udtMessage);
             };
         } else {

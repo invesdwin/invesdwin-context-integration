@@ -84,6 +84,7 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
         final int size = message.getBuffer(messageBuffer);
         buffer.putInt(MinaSocketSynchronousChannel.SIZE_INDEX, size);
         buf.limit(MinaSocketSynchronousChannel.MESSAGE_INDEX + size);
+        //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
         future = channel.getIoSession().write(buf);
     }
 

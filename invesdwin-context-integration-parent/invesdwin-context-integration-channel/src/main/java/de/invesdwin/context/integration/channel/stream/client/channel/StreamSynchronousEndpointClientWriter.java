@@ -62,6 +62,7 @@ public class StreamSynchronousEndpointClientWriter implements ISynchronousWriter
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
+        //TODO: implement a variant that works without a copy
         final ICloseableByteBuffer messageCopy = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject();
         final int length = message.getBuffer(messageCopy);
         client.put(channel.getServiceId(), messageCopy.sliceTo(length));

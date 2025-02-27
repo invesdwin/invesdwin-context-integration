@@ -46,6 +46,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
                 });
             }
             writer = (message) -> {
+                //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
                 future = channel.getSocketChannel().writeAndFlush(buf);
             };
         } else {

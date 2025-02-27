@@ -43,11 +43,16 @@ public class DefaultStreamSessionManagerSubscription
         this.notifiedSubscriptions = notifiedSubscriptions;
         final ISynchronousReader<IByteBufferProvider> subscription = service.subscribe(this, parameters);
         Assertions.checkNotNull(subscription);
-        this.reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(subscription);
-        this.reader.open();
+        final ReadFinishedDelegateSynchronousReader<IByteBufferProvider> reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(
+                subscription);
+        reader.open();
+        this.reader = reader;
     }
 
     public boolean handle() throws IOException {
+        if (reader == null) {
+            return false;
+        }
         if (!reader.isReadFinished()) {
             //last message from this reader is still being written to the client in the sessoion, wait for that to be finished
             throw FastNoSuchElementException.getInstance("reader.isReadFinished is false");

@@ -68,6 +68,7 @@ public class DarpcClientSynchronousWriter implements ISynchronousWriter<IByteBuf
     public void write(final IByteBufferProvider message) throws IOException {
         final int size = message.getBuffer(requestMessage);
         request.getMessage().putInt(DarpcClientSynchronousChannel.SIZE_INDEX, size);
+        //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
         future = stream.request(request, response, true);
     }
 
