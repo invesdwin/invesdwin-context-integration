@@ -161,6 +161,8 @@ public abstract class ALatencyReport implements ILatencyReport {
         final FTimeUnit measureTimeUnit = newMeasureTimeUnit();
         final FTimeUnit reportTimeUnit = newReportTimeUnit();
         try {
+            final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))
+                    .getWholeNumberDigits();
             final List<String> lines = Files.readAllLines(file.toPath());
             for (int i = 1; i < lines.size(); i++) {
                 final String line = lines.get(i);
@@ -172,14 +174,12 @@ public abstract class ALatencyReport implements ILatencyReport {
                 final long latencyValueRaw = Long.parseLong(tokens[1]);
                 final double latencyValue = reportTimeUnit.asFractional()
                         .convert(latencyValueRaw, measureTimeUnit.asFractional());
-                values.add(Decimal.valueOf(latencyValue));
+                values.add(Decimal.valueOf(latencyValue).round(decimalPlaces));
             }
             if (!values.isEmpty()) {
-                final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))
-                        .getWholeNumberDigits();
+                final File htmlFile = new File(newFolder(), name + ".html");
                 final DistributionMeasure measure = new DistributionMeasure(name, reportTimeUnit.getShortName(), values,
                         false, decimalPlaces);
-                final File htmlFile = new File(newFolder(), name + ".html");
                 new HtmlDistributionReport().writeReport(htmlFile, Arrays.asList(measure));
             }
         } catch (final IOException e) {
