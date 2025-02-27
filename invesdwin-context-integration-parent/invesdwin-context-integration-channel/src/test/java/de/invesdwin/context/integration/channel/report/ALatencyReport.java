@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.io.FastBufferedOutputStream;
 @NotThreadSafe
 public abstract class ALatencyReport implements ILatencyReport {
 
+    private static String folderNameOverride = null;
     private static final String CSV_SEPARATOR = "\t";
 
     private final IFDateProvider messageProvider = new IFDateProvider() {
@@ -62,6 +63,14 @@ public abstract class ALatencyReport implements ILatencyReport {
         }
     }
 
+    public static void setFolderNameOverride(final String folderNameOverride) {
+        ALatencyReport.folderNameOverride = folderNameOverride;
+    }
+
+    public static String getFolderNameOverride() {
+        return folderNameOverride;
+    }
+
     protected abstract FTimeUnit newMeasureTimeUnit();
 
     protected FTimeUnit newReportTimeUnit() {
@@ -73,7 +82,11 @@ public abstract class ALatencyReport implements ILatencyReport {
     }
 
     protected File newFolder() {
-        return new File(newBaseFolder(), getClass().getSimpleName());
+        if (folderNameOverride != null) {
+            return new File(newBaseFolder(), folderNameOverride);
+        } else {
+            return new File(newBaseFolder(), getClass().getSimpleName());
+        }
     }
 
     protected File newBaseFolder() {
@@ -170,7 +183,6 @@ public abstract class ALatencyReport implements ILatencyReport {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-
     }
 
 }
