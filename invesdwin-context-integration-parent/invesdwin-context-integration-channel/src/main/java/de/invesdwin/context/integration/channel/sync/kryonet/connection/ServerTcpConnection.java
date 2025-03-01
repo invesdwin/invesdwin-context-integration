@@ -20,7 +20,7 @@ public class ServerTcpConnection implements IKryonetConnection {
 
     @Override
     public void close() throws IOException {
-        server.close();
+        server.stop();
     }
 
     @Override
@@ -35,7 +35,7 @@ public class ServerTcpConnection implements IKryonetConnection {
 
     @Override
     public void update() throws IOException {
-        server.update(0);
+        server.update(250);
     }
 
 }
