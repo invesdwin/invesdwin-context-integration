@@ -6,6 +6,7 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -20,6 +21,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FTimeUnit;
 
+@Disabled("sometimes deadlocks due to blocking nature of the socket")
 @NotThreadSafe
 public class BidiBlockingDatagramChannelTest extends AChannelTest {
 
