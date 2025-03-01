@@ -56,13 +56,17 @@ public class NettyDatagramSynchronousReader implements ISynchronousReader<IByteB
 
     @Override
     public boolean hasNext() throws IOException {
-        if (reader.polledValue != null) {
+        final Reader readerCopy = reader;
+        if (readerCopy == null) {
+            throw FastEOFException.getInstance("already closed");
+        }
+        if (readerCopy.polledValue != null) {
             return true;
         }
-        final ByteBuf polledValueBuf = reader.polledValues.poll();
+        final ByteBuf polledValueBuf = readerCopy.polledValues.poll();
         if (polledValueBuf != null) {
-            reader.polledValueBuffer.setDelegate(polledValueBuf);
-            reader.polledValue = reader.polledValueBuffer.slice(0, polledValueBuf.writerIndex());
+            readerCopy.polledValueBuffer.setDelegate(polledValueBuf);
+            readerCopy.polledValue = readerCopy.polledValueBuffer.slice(0, polledValueBuf.writerIndex());
             return true;
         } else {
             return false;

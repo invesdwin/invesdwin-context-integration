@@ -53,14 +53,18 @@ public class MinaSocketSynchronousReader implements ISynchronousReader<IByteBuff
 
     @Override
     public boolean hasNext() throws IOException {
-        if (reader.polledValue != null) {
+        final Reader readerCopy = reader;
+        if (readerCopy == null) {
+            throw FastEOFException.getInstance("already closed");
+        }
+        if (readerCopy.polledValue != null) {
             return true;
         }
-        final IoBuffer polledValueBuf = reader.polledValues.poll();
+        final IoBuffer polledValueBuf = readerCopy.polledValues.poll();
         if (polledValueBuf != null) {
-            reader.polledValueBuffer.wrap(polledValueBuf.buf());
-            reader.polledValueBuf = polledValueBuf;
-            reader.polledValue = reader.polledValueBuffer.slice(0, polledValueBuf.limit());
+            readerCopy.polledValueBuffer.wrap(polledValueBuf.buf());
+            readerCopy.polledValueBuf = polledValueBuf;
+            readerCopy.polledValue = readerCopy.polledValueBuffer.slice(0, polledValueBuf.limit());
             return true;
         } else {
             return false;
