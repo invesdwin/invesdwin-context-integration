@@ -75,7 +75,7 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
     }
 
     protected File newBaseFolder() {
-        return new File(ContextProperties.getCacheDirectory(),
+        return new File(ContextProperties.TEMP_DIRECTORY,
                 TimeSeriesDBStreamSynchronousEndpointService.class.getSimpleName());
     }
 

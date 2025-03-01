@@ -113,8 +113,7 @@ public class PipeStreamSynchronousEndpointService implements IStreamSynchronousE
     }
 
     protected File newBaseFolder() {
-        return new File(ContextProperties.getCacheDirectory(),
-                PipeStreamSynchronousEndpointService.class.getSimpleName());
+        return new File(ContextProperties.TEMP_DIRECTORY, PipeStreamSynchronousEndpointService.class.getSimpleName());
     }
 
     @Override
