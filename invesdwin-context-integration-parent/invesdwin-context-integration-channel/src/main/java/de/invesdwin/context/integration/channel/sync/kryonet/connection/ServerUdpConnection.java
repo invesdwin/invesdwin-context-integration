@@ -35,7 +35,7 @@ public class ServerUdpConnection implements IKryonetConnection {
 
     @Override
     public void update() throws IOException {
-        server.update(250);
+        server.update(0);
     }
 
 }
