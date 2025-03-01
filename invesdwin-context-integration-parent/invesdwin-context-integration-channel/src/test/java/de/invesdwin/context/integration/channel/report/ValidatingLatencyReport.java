@@ -18,8 +18,10 @@ public class ValidatingLatencyReport extends DisabledLatencyReport {
 
     @Override
     public void validateOrder(final FDate prevValue, final FDate nextValue) {
-        if (prevValue != null && !prevValue.isBeforeNotNullSafe(nextValue)) {
-            Assertions.assertThat(prevValue).isBefore(nextValue);
+        if (prevValue != null && prevValue.millisValue() + 1 != nextValue.millisValue()) {
+            final long distance = nextValue.millisValue() - prevValue.millisValue();
+            throw new IllegalStateException("nextValue [" + nextValue + "] should be 1ms after prevValue [" + prevValue
+                    + "] but it is " + distance + "ms after");
         }
     }
 
