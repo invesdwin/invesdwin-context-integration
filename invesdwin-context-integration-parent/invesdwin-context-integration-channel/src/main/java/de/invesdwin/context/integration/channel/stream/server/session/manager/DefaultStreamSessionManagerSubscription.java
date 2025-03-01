@@ -29,7 +29,7 @@ public class DefaultStreamSessionManagerSubscription
     private final ReadFinishedDelegateSynchronousReader<IByteBufferProvider> reader;
     private DefaultStreamSessionManagerSubscription next;
     private DefaultStreamSessionManagerSubscription prev;
-    private final AtomicBoolean notified;
+    private final AtomicBoolean notified = new AtomicBoolean();
     private int burstMessages = 0;
 
     public DefaultStreamSessionManagerSubscription(final IStreamSessionManager manager,
@@ -41,8 +41,6 @@ public class DefaultStreamSessionManagerSubscription
         this.server = session.getServer();
         this.service = service;
         this.notifiedSubscriptions = notifiedSubscriptions;
-        //ignore notifications during construction
-        this.notified = new AtomicBoolean(false);
         final ISynchronousReader<IByteBufferProvider> subscription = service.subscribe(this, parameters);
         Assertions.checkNotNull(subscription);
         final ReadFinishedDelegateSynchronousReader<IByteBufferProvider> reader = new ReadFinishedDelegateSynchronousReader<IByteBufferProvider>(
