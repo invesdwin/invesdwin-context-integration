@@ -94,6 +94,7 @@ public class DefaultStreamSessionManagerSubscription
             if (notified.compareAndSet(true, false)) {
                 synchronized (notifiedSubscriptions) {
                     Assertions.checkTrue(notifiedSubscriptions.remove(this));
+                    notified.set(false);
                 }
             }
         }
@@ -108,6 +109,7 @@ public class DefaultStreamSessionManagerSubscription
         if (notified.compareAndSet(true, false)) {
             synchronized (notifiedSubscriptions) {
                 Assertions.checkTrue(notifiedSubscriptions.remove(this));
+                notified.set(false);
             }
         }
         reader.close();
@@ -118,6 +120,7 @@ public class DefaultStreamSessionManagerSubscription
         if (notified.compareAndSet(false, true)) {
             synchronized (notifiedSubscriptions) {
                 Assertions.checkTrue(notifiedSubscriptions.add(this));
+                notified.set(true);
             }
         }
     }
