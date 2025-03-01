@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.pipe.service;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -29,8 +30,11 @@ import de.invesdwin.util.time.date.FDate;
 @ThreadSafe
 public class PipeStreamSynchronousEndpointService implements IStreamSynchronousEndpointService {
 
+    private static final AtomicInteger UNIQUE_IDS = new AtomicInteger();
+
     //TODO: somehow enabled compression causes reader to throw EOFException after first read
     private static final CompressionMode DEFAULT_COMPRESSION_MODE = CompressionMode.NONE;
+    private final int uniqueId;
     private final int serviceId;
     private final String topic;
     private final IFastIterableSet<IStreamSynchronousEndpointServiceListener> listeners = ILockCollectionFactory
@@ -42,6 +46,7 @@ public class PipeStreamSynchronousEndpointService implements IStreamSynchronousE
     private final CompressionMode compressionMode;
 
     public PipeStreamSynchronousEndpointService(final int serviceId, final String topic, final IProperties properties) {
+        this.uniqueId = UNIQUE_IDS.incrementAndGet();
         this.serviceId = serviceId;
         this.topic = topic;
         this.file = newFile(topic);
@@ -109,7 +114,7 @@ public class PipeStreamSynchronousEndpointService implements IStreamSynchronousE
     }
 
     protected File newFile(final String topic) {
-        return new File(newBaseFolder(), Files.normalizePath(topic));
+        return new File(newBaseFolder(), Files.normalizePath(uniqueId + "_" + topic));
     }
 
     protected File newBaseFolder() {
@@ -180,7 +185,11 @@ public class PipeStreamSynchronousEndpointService implements IStreamSynchronousE
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(serviceId).addValue(topic).toString();
+        return Objects.toStringHelper(this)
+                .add("uniqueId", uniqueId)
+                .add("serviceId", serviceId)
+                .add("topic", topic)
+                .toString();
     }
 
 }
