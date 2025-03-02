@@ -74,19 +74,53 @@ public class StreamNativeSocketChannelTest extends AChannelTest {
         final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory = new NativeSocketEndpointFactory(
                 address, false, getMaxMessageSize(), lowLatency);
         new StreamThroughputChannelTest(this) {
-            //uncomment this to enable batching
+            //            //uncomment this to enable batching
             //            @Override
             //            public ISynchronousReader<IByteBufferProvider> newStreamSynchronousEndpointClientReader(
             //                    final StreamSynchronousEndpointClientChannel channel) {
-            //                return new BatchSynchronousReader(super.newStreamSynchronousEndpointClientReader(channel));
+            //                return wrapOutsideBatching(new BatchSynchronousReader(
+            //                        wrapInsideBatching(super.newStreamSynchronousEndpointClientReader(channel))));
             //            }
             //
             //            @Override
             //            public ISynchronousWriter<IByteBufferProvider> newStreamSynchronousEndpointClientWriter(
             //                    final StreamSynchronousEndpointClientChannel channel) {
-            //                return new BatchSynchronousWriter(super.newStreamSynchronousEndpointClientWriter(channel), 1024 * 1024,
-            //                        Integer.MAX_VALUE, Duration.ONE_MINUTE);
+            //                return wrapOutsideBatching(new BatchSynchronousWriter(
+            //                        wrapInsideBatching(super.newStreamSynchronousEndpointClientWriter(channel)), 1024 * 1024,
+            //                        Integer.MAX_VALUE, Duration.ONE_MINUTE));
             //            }
+            //
+            //            //uncomments variants here to add compression
+            //
+            //            private ISynchronousWriter<IByteBufferProvider> wrapInsideBatching(
+            //                    final ISynchronousWriter<IByteBufferProvider> writer) {
+            //                return writer;
+            //                //return new StreamCompressionSynchronousWriter(writer, newCompressionFactory());
+            //                //return new CompressionSynchronousWriter(writer, newCompressionFactory());
+            //            }
+            //
+            //            private ISynchronousReader<IByteBufferProvider> wrapInsideBatching(
+            //                    final ISynchronousReader<IByteBufferProvider> reader) {
+            //                return reader;
+            //                //return new StreamCompressionSynchronousReader(reader, newCompressionFactory());
+            //                //return new CompressionSynchronousReader(reader, newCompressionFactory());
+            //            }
+            //
+            //            private ISynchronousWriter<IByteBufferProvider> wrapOutsideBatching(final BatchSynchronousWriter writer) {
+            //                return writer;
+            //                //                return new StreamCompressionSynchronousWriter(writer, newCompressionFactory());
+            //                //                return new CompressionSynchronousWriter(writer, newCompressionFactory());
+            //            }
+            //
+            //            private ISynchronousReader<IByteBufferProvider> wrapOutsideBatching(final BatchSynchronousReader reader) {
+            //                return reader;
+            //                //                return new StreamCompressionSynchronousReader(reader, newCompressionFactory());
+            //                //                return new CompressionSynchronousReader(reader, newCompressionFactory());
+            //            }
+            //
+            //            //            private ICompressionFactory newCompressionFactory() {
+            //            //                return CompressionMode.FAST.newCompressionFactory();
+            //            //            }
         }.runStreamThroughputTest(serverAcceptor, clientEndpointFactory);
     }
 
