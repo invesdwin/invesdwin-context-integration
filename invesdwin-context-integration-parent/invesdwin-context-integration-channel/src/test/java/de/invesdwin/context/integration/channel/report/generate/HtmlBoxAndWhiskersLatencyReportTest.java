@@ -31,8 +31,6 @@ public class HtmlBoxAndWhiskersLatencyReportTest extends ATest {
     @Test
     public void generate() throws IOException {
         final FTimeUnit reportTimeUnit = FTimeUnit.MILLISECONDS;
-        final FTimeUnit measureTimeUnit = FTimeUnit.NANOSECONDS;
-        final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit)).getWholeNumberDigits();
 
         final File baseFolder = new File(ContextProperties.getLogDirectory(),
                 HtmlBoxAndWhiskersLatencyReportTest.class.getSimpleName());
@@ -50,6 +48,9 @@ public class HtmlBoxAndWhiskersLatencyReportTest extends ATest {
             final List<String> lines = Files.readAllLines(csvFile.toPath());
 
             final List<Decimal> measures = new ArrayList<>();
+            final FTimeUnit measureTimeUnit = FTimeUnit.valueOfAlias(lines.get(0));
+            final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))
+                    .getWholeNumberDigits();
             for (int i = 1; i < lines.size(); i++) {
                 final String line = lines.get(i);
                 final String[] tokens = line.split(CSV_SEPARATOR);

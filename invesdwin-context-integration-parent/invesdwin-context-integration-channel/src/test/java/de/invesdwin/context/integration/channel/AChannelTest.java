@@ -251,11 +251,11 @@ public abstract class AChannelTest extends ATest {
         };
     }
 
-    public void assertCloseMessageArrived(final ISynchronousReader<FDate> reader) {
+    public void assertCloseMessageArrived(final ISynchronousReader<?> reader) {
         boolean closeMessageReceived = false;
         try {
-            final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(reader);
-            final FDate read = readSpinWait.waitForRead(MAX_WAIT_DURATION);
+            final SynchronousReaderSpinWait<?> readSpinWait = new SynchronousReaderSpinWait<>(reader);
+            final Object read = readSpinWait.waitForRead(MAX_WAIT_DURATION);
             throw new IllegalStateException("exception expected but instead got: " + read);
         } catch (final EOFException e) {
             closeMessageReceived = true;
