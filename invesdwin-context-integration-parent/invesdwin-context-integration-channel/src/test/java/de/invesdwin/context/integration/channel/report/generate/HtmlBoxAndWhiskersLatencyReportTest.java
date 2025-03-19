@@ -16,11 +16,8 @@ import de.invesdwin.context.integration.html.distribution.DistributionMeasure;
 import de.invesdwin.context.integration.html.distribution.box.HtmlDistributionBoxAndWhiskerReport;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.collections.Collections;
-import de.invesdwin.util.collections.list.Lists;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.math.decimal.Decimal;
-import de.invesdwin.util.math.decimal.scaled.Percent;
-import de.invesdwin.util.math.decimal.scaled.PercentScale;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
@@ -46,9 +43,20 @@ public class HtmlBoxAndWhiskersLatencyReportTest extends ATest {
 
         for (final File csvFile : fileObjects) {
             final List<String> lines = Files.readAllLines(csvFile.toPath());
-
             final List<Decimal> measures = new ArrayList<>();
-            final FTimeUnit measureTimeUnit = FTimeUnit.valueOfAlias(lines.get(0));
+            if (lines.isEmpty()) {
+                log.info(csvFile.getName() + ": skipped empty");
+                continue;
+            }
+            final String firstLine = lines.get(0);
+            final String[] firstLineTokens = firstLine.split(CSV_SEPARATOR);
+            if (firstLineTokens.length != 2) {
+                if (lines.isEmpty()) {
+                    log.info(csvFile.getName() + ": skipped not two columns: " + firstLineTokens.length);
+                    continue;
+                }
+            }
+            final FTimeUnit measureTimeUnit = FTimeUnit.valueOfAlias(firstLineTokens[1]);
             final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))
                     .getWholeNumberDigits();
             for (int i = 1; i < lines.size(); i++) {
@@ -70,8 +78,8 @@ public class HtmlBoxAndWhiskersLatencyReportTest extends ATest {
             }
             log.info(csvFile.getName() + ": " + measures.size());
             Collections.sort(measures);
-            final int removeLength = (int) (measures.size() * new Percent(5, PercentScale.PERCENT).getRate());
-            Lists.removeRange(measures, measures.size() - removeLength, measures.size());
+            //final int removeLength = (int) (measures.size() * new Percent(5, PercentScale.PERCENT).getRate());
+            //Lists.removeRange(measures, measures.size() - removeLength, measures.size());
             final String sampleName = Files.removeExtension(csvFile.getName());
             final DistributionMeasure measure = new DistributionMeasure(sampleName, "ms", measures, false, 2);
             samples.add(measure);

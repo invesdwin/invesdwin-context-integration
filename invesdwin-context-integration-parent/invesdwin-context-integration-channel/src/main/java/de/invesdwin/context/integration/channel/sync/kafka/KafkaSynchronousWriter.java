@@ -48,6 +48,8 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
+        // for batching purposes with 256KB batch
+//        kafkaProps.put(ProducerConfig.BATCH_SIZE_CONFIG, "262144");
         return kafkaProps;
     }
 
