@@ -138,7 +138,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousWriter implements I
                 return false;
             }
             try {
-                final int size = buffer.getBuffer(bufferClaimBuffer);
+                buffer.getBytes(0, bufferClaimBuffer, 0, size);
                 //tell the other side that the actual message might be smaller than the maxMessageSize that was claimed
                 bufferClaim.reservedValue(size);
                 bufferClaim.commit();
