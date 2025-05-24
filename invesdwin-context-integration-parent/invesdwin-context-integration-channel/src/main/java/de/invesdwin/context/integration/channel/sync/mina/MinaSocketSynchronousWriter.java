@@ -11,7 +11,6 @@ import org.apache.mina.core.buffer.SimpleBufferAllocator;
 import org.apache.mina.core.future.WriteFuture;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.concurrent.pool.AAgronaObjectPool;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -22,6 +21,10 @@ import io.netty.util.concurrent.FastThreadLocal;
 @NotThreadSafe
 public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
+    /**
+     * This needs to be a static field, or else the thread locals inside of the CachedBufferAllocate might accumulate.
+     */
+    public static final CachedBufferAllocator DEFAULT_STREAMING_BUFFER_ALLOCATOR = new CachedBufferAllocator();
     public static final FastThreadLocal<UnsafeByteBuffer> BUFFER_ALLOC_HOLDER = new FastThreadLocal<UnsafeByteBuffer>() {
         @Override
         protected UnsafeByteBuffer initialValue() throws Exception {
@@ -48,14 +51,18 @@ public class MinaSocketSynchronousWriter implements ISynchronousWriter<IByteBuff
         channel.open(null, false);
         this.buffer = new UnsafeByteBuffer(buf.buf());
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, MinaSocketSynchronousChannel.MESSAGE_INDEX);
-        this.bufAllocator = newAsyncWriteBufferAllocator();
+        if (channel.isStreaming()) {
+            this.bufAllocator = newStreamingBufferAllocator();
+        } else {
+            this.bufAllocator = null;
+        }
     }
 
     /**
      * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
      */
-    protected IoBufferAllocator newAsyncWriteBufferAllocator() {
-        return new CachedBufferAllocator(AAgronaObjectPool.DEFAULT_MAX_POOL_SIZE, channel.getSocketSize());
+    protected IoBufferAllocator newStreamingBufferAllocator() {
+        return DEFAULT_STREAMING_BUFFER_ALLOCATOR;
     }
 
     @Override

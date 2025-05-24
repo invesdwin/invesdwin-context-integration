@@ -81,6 +81,13 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
         return lowLatency;
     }
 
+    /**
+     * Override to disable streaming if it does not work correctly (e.g. with Tls transports)
+     */
+    public boolean isStreaming() {
+        return true;
+    }
+
     public boolean isReaderRegistered() {
         return readerRegistered;
     }

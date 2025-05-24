@@ -72,13 +72,17 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
         }
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
-        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getSocketChannel());
+        if (channel.isStreaming()) {
+            this.bufAllocator = newStreamingByteBufAllocator(channel.getSocketChannel());
+        } else {
+            this.bufAllocator = null;
+        }
     }
 
     /**
      * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
      */
-    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final SocketChannel socketChannel) {
+    protected ByteBufAllocator newStreamingByteBufAllocator(final SocketChannel socketChannel) {
         return socketChannel.alloc();
     }
 

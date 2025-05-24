@@ -22,6 +22,12 @@ public class TlsNettySocketChannelTest extends NettySocketChannelTest {
         return new TlsNettySocketSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency) {
 
             @Override
+            public boolean isStreaming() {
+                //dunno why this does not work in this test
+                return false;
+            }
+
+            @Override
             protected ITransportLayerSecurityProvider newTransportLayerSecurityProvider(final ByteBufAllocator alloc) {
                 return new NettyDerivedKeyTransportLayerSecurityProvider(socketAddress, server) {
                     @Override
@@ -34,10 +40,10 @@ public class TlsNettySocketChannelTest extends NettySocketChannelTest {
                         return socketAddress.getHostName();
                     }
 
-                    //            @Override
-                    //            protected SslProvider getSslProvider() {
-                    //                return SslProvider.OPENSSL;
-                    //            }
+                    //                    @Override
+                    //                    protected SslProvider getEngineSslProvider() {
+                    //                        return SslProvider.OPENSSL;
+                    //                    }
                 };
             }
         };

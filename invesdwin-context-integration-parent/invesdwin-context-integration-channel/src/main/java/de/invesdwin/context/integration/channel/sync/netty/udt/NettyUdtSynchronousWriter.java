@@ -60,13 +60,17 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyUdtSynchronousChannel.MESSAGE_INDEX);
         this.udtMessage = new UdtMessage(buf);
-        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getUdtChannel());
+        if (channel.isStreaming()) {
+            this.bufAllocator = newStreamingByteBufAllocator(channel.getUdtChannel());
+        } else {
+            this.bufAllocator = null;
+        }
     }
 
     /**
      * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
      */
-    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final UdtChannel datagramChannel) {
+    protected ByteBufAllocator newStreamingByteBufAllocator(final UdtChannel datagramChannel) {
         return datagramChannel.alloc();
     }
 

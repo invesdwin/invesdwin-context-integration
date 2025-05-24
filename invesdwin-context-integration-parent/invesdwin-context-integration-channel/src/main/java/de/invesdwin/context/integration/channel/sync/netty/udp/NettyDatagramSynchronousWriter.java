@@ -66,13 +66,17 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             //client immediately knows where to send requests to
             this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
         }
-        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getDatagramChannel());
+        if (channel.isStreaming()) {
+            this.bufAllocator = newStreamingByteBufAllocator(channel.getDatagramChannel());
+        } else {
+            this.bufAllocator = null;
+        }
     }
 
     /**
      * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
      */
-    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final DatagramChannel datagramChannel) {
+    protected ByteBufAllocator newStreamingByteBufAllocator(final DatagramChannel datagramChannel) {
         //        return datagramChannel.alloc();
         return null;
     }
