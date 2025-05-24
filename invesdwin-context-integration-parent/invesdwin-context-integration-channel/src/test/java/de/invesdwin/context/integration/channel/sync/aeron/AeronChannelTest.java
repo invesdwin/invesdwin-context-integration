@@ -13,6 +13,7 @@ import de.invesdwin.context.integration.channel.ThroughputChannelTest.Throughput
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.aeron.writer.AeronSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -47,13 +48,13 @@ public class AeronChannelTest extends AChannelTest {
             throws InterruptedException {
         final AeronInstance instance = new AeronInstance(mode);
         try {
-            final ISynchronousWriter<IByteBufferProvider> responseWriter = new AeronSynchronousWriter(instance,
+            final ISynchronousWriter<IByteBufferProvider> responseWriter = newAeronSynchronousWriter(instance,
                     responseChannel, responseStreamId);
             final ISynchronousReader<IByteBufferProvider> requestReader = new AeronSynchronousReader(instance,
                     requestChannel, requestStreamId);
             final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                     newSerdeWriter(responseWriter));
-            final ISynchronousWriter<IByteBufferProvider> requestWriter = new AeronSynchronousWriter(instance,
+            final ISynchronousWriter<IByteBufferProvider> requestWriter = newAeronSynchronousWriter(instance,
                     requestChannel, requestStreamId);
             final ISynchronousReader<IByteBufferProvider> responseReader = new AeronSynchronousReader(instance,
                     responseChannel, responseStreamId);
@@ -86,7 +87,7 @@ public class AeronChannelTest extends AChannelTest {
             throws InterruptedException {
         final AeronInstance instance = new AeronInstance(mode);
         try {
-            final ISynchronousWriter<IByteBufferProvider> senderWriter = new AeronSynchronousWriter(instance, channel,
+            final ISynchronousWriter<IByteBufferProvider> senderWriter = newAeronSynchronousWriter(instance, channel,
                     channeltreamId);
             final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(senderWriter));
             final ISynchronousReader<IByteBufferProvider> receiverReader = new AeronSynchronousReader(instance, channel,
@@ -97,6 +98,14 @@ public class AeronChannelTest extends AChannelTest {
         } finally {
             Assertions.checkTrue(instance.isClosed());
         }
+    }
+
+    protected ISynchronousWriter<IByteBufferProvider> newAeronSynchronousWriter(final AeronInstance instance,
+            final String requestChannel, final int requestStreamId) {
+        //        return new AeronTryOfferSynchronousWriter(instance, requestChannel, requestStreamId);
+        //        return new AeronTryClaimDynamicSynchronousWriter(instance, requestChannel, requestStreamId);
+        //        return new AeronTryClaimFixedSynchronousWriter(instance, requestChannel, requestStreamId, requestStreamId);
+        return new AeronSynchronousWriter(instance, requestChannel, requestStreamId, getMaxMessageSize());
     }
 
 }
