@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.channel.sync.kafka;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 import java.util.Properties;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -34,6 +35,7 @@ public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferPro
     private Consumer<java.nio.ByteBuffer, IByteBufferProvider> consumer;
     private Iterator<ConsumerRecord<java.nio.ByteBuffer, IByteBufferProvider>> recordsIterator = EmptyCloseableIterator
             .getInstance();
+    private IByteBuffer message;
 
     public KafkaSynchronousReader(final String bootstratServersConfig, final String topic) {
         this.bootstratServersConfig = bootstratServersConfig;
@@ -67,30 +69,39 @@ public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferPro
 
     @Override
     public boolean hasNext() throws IOException {
-        //TODO: maybe directly use next instead of hasNext and null the value in readFinished
-        final boolean hasNext = recordsIterator.hasNext();
-        if (hasNext) {
+        if (message != null) {
             return true;
         }
-        final ConsumerRecords<java.nio.ByteBuffer, IByteBufferProvider> records = consumer
-                .poll(pollTimeout.javaTimeValue());
-        if (records.isEmpty()) {
-            recordsIterator = EmptyCloseableIterator.getInstance();
-            return false;
-        } else {
-            recordsIterator = records.iterator();
+        try {
+            message = recordsIterator.next().value().asBuffer();
             return true;
+        } catch (final NoSuchElementException e) {
+            final ConsumerRecords<java.nio.ByteBuffer, IByteBufferProvider> records = consumer
+                    .poll(pollTimeout.javaTimeValue());
+            if (records.isEmpty()) {
+                recordsIterator = EmptyCloseableIterator.getInstance();
+                return false;
+            } else {
+                recordsIterator = records.iterator();
+                try {
+                    message = recordsIterator.next().value().asBuffer();
+                    return true;
+                } catch (final NoSuchElementException e2) {
+                    return false;
+                }
+            }
         }
     }
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final IByteBuffer message = recordsIterator.next().value().asBuffer();
-        if (ClosedByteBuffer.isClosed(message)) {
+        final IByteBuffer messageCopy = message;
+        message = null;
+        if (ClosedByteBuffer.isClosed(messageCopy)) {
             close();
             throw FastEOFException.getInstance("closed by other side");
         }
-        return message;
+        return messageCopy;
     }
 
     @Override
