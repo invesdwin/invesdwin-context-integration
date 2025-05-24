@@ -9,23 +9,35 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.util.concurrent.FastThreadLocal;
 
 @NotThreadSafe
 public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
+
+    public static final FastThreadLocal<NettyDelegateByteBuffer> BUFFER_ALLOC_HOLDER = new FastThreadLocal<NettyDelegateByteBuffer>() {
+        @Override
+        protected NettyDelegateByteBuffer initialValue() throws Exception {
+            return new NettyDelegateByteBuffer();
+        }
+    };
 
     private NettySocketSynchronousChannel channel;
     private ByteBuf buf;
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
-    private Consumer<IByteBufferProvider> writer;
+    private Consumer<ByteBuf> writer;
     private ChannelFuture future;
+    private ByteBufAllocator bufAllocator;
 
     public NettySocketSynchronousWriter(final NettySocketSynchronousChannel channel) {
         this.channel = channel;
@@ -46,8 +58,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
                 });
             }
             writer = (message) -> {
-                //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
-                future = channel.getSocketChannel().writeAndFlush(buf);
+                future = channel.getSocketChannel().writeAndFlush(message);
             };
         } else {
             channel.open(null);
@@ -55,12 +66,20 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getSocketChannel());
             writer = (message) -> {
-                channel.getSocketChannel().unsafe().write(buf, FakeChannelPromise.INSTANCE);
+                channel.getSocketChannel().unsafe().write(message, FakeChannelPromise.INSTANCE);
                 channel.getSocketChannel().unsafe().flush();
             };
         }
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettySocketSynchronousChannel.MESSAGE_INDEX);
+        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getSocketChannel());
+    }
+
+    /**
+     * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
+     */
+    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final SocketChannel socketChannel) {
+        return socketChannel.alloc();
     }
 
     protected boolean isSafeWriter(final NettySocketSynchronousChannel channel) {
@@ -85,6 +104,7 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
             buffer = null;
             messageBuffer = null;
             writer = null;
+            bufAllocator = null;
         }
         if (channel != null) {
             channel.close();
@@ -94,6 +114,13 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
 
     @Override
     public boolean writeReady() throws IOException {
+        if (bufAllocator != null) {
+            return true;
+        }
+        return isFutureDone();
+    }
+
+    private boolean isFutureDone() {
         if (future == null) {
             return true;
         }
@@ -116,12 +143,29 @@ public class NettySocketSynchronousWriter implements ISynchronousWriter<IByteBuf
     }
 
     private void writeFuture(final IByteBufferProvider message) throws IOException {
-        buf.setIndex(0, 0); //reset indexes
-        final int size = message.getBuffer(messageBuffer);
-        buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
-        buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
-        buf.retain(); //keep retain count up
-        writer.accept(message);
+        if (isFutureDone()) {
+            buf.setIndex(0, 0); //reset indexes
+            final int size = message.getBuffer(messageBuffer);
+            buffer.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+            buf.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+            buf.retain(); //keep retain count up
+            writer.accept(buf);
+        } else {
+            final ByteBuf bufAlloc = bufAllocator.directBuffer(channel.getSocketSize());
+            bufAlloc.setIndex(0, 0); //reset indexes
+            final NettyDelegateByteBuffer bufferAlloc = BUFFER_ALLOC_HOLDER.get();
+            try {
+                bufferAlloc.setDelegate(bufAlloc);
+                final IByteBuffer messageBufferAlloc = bufferAlloc
+                        .sliceFrom(NettySocketSynchronousChannel.MESSAGE_INDEX);
+                final int size = message.getBuffer(messageBufferAlloc);
+                bufferAlloc.putInt(NettySocketSynchronousChannel.SIZE_INDEX, size);
+                bufAlloc.setIndex(0, NettySocketSynchronousChannel.MESSAGE_INDEX + size);
+                channel.getSocketChannel().writeAndFlush(bufAlloc);
+            } finally {
+                bufferAlloc.setDelegate(null);
+            }
+        }
     }
 
 }

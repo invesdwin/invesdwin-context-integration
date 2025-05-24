@@ -1,20 +1,25 @@
 package de.invesdwin.context.integration.channel.sync.netty.udp;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.socket.DatagramChannel;
 import io.netty.channel.socket.DatagramPacket;
 
 @NotThreadSafe
@@ -25,8 +30,9 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private DatagramPacket datagramPacket;
-    private Runnable writer;
+    private Consumer<DatagramPacket> writer;
     private ChannelFuture future;
+    private ByteBufAllocator bufAllocator;
 
     public NettyDatagramSynchronousWriter(final NettyDatagramSynchronousChannel channel) {
         this.channel = channel;
@@ -40,16 +46,15 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
         }, null);
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
-            writer = () -> {
-                //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
-                future = channel.getDatagramChannel().writeAndFlush(datagramPacket);
+            writer = (packet) -> {
+                future = channel.getDatagramChannel().writeAndFlush(packet);
             };
         } else {
             channel.getDatagramChannel().deregister();
             channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getDatagramChannel());
-            writer = () -> {
-                channel.getDatagramChannel().unsafe().write(datagramPacket, FakeChannelPromise.INSTANCE);
+            writer = (packet) -> {
+                channel.getDatagramChannel().unsafe().write(packet, FakeChannelPromise.INSTANCE);
                 channel.getDatagramChannel().unsafe().flush();
             };
         }
@@ -61,6 +66,15 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             //client immediately knows where to send requests to
             this.datagramPacket = new DatagramPacket(buf, channel.getSocketAddress());
         }
+        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getDatagramChannel());
+    }
+
+    /**
+     * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
+     */
+    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final DatagramChannel datagramChannel) {
+        //        return datagramChannel.alloc();
+        return null;
     }
 
     protected boolean isSafeWriter(final NettyDatagramSynchronousChannel channel) {
@@ -91,6 +105,7 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
             messageBuffer = null;
             datagramPacket = null;
             writer = null;
+            bufAllocator = null;
         }
         if (channelCopy != null) {
             channelCopy.close();
@@ -100,6 +115,13 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
 
     @Override
     public boolean writeReady() throws IOException {
+        if (bufAllocator != null) {
+            return true;
+        }
+        return isFutureDone();
+    }
+
+    private boolean isFutureDone() {
         if (future == null) {
             return true;
         }
@@ -122,21 +144,39 @@ public class NettyDatagramSynchronousWriter implements ISynchronousWriter<IByteB
     }
 
     private void writeFuture(final IByteBufferProvider message) throws IOException {
-        if (datagramPacket == null) {
-            //server needs to know where to respond to
-            this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
-        } else if (channel.isMultipleClientsAllowed()
-                && !datagramPacket.recipient().equals(channel.getOtherSocketAddress())) {
-            this.datagramPacket.release();
-            this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
-        }
+        if (isFutureDone()) {
+            if (datagramPacket == null) {
+                //server needs to know where to respond to
+                this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
+            } else if (channel.isMultipleClientsAllowed()
+                    && !datagramPacket.recipient().equals(channel.getOtherSocketAddress())) {
+                this.datagramPacket.release();
+                this.datagramPacket = new DatagramPacket(buf, channel.getOtherSocketAddress());
+            }
 
-        buf.setIndex(0, 0); //reset indexes
-        final int size = message.getBuffer(messageBuffer);
-        buffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
-        buf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
-        datagramPacket.retain(); //keep retain count up
-        writer.run();
+            buf.setIndex(0, 0); //reset indexes
+            final int size = message.getBuffer(messageBuffer);
+            buffer.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
+            buf.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
+            datagramPacket.retain(); //keep retain count up
+            writer.accept(datagramPacket);
+        } else {
+            final ByteBuf bufAlloc = bufAllocator.directBuffer(channel.getSocketSize());
+            final DatagramPacket datagramPacketAlloc = new DatagramPacket(bufAlloc, channel.getOtherSocketAddress());
+            bufAlloc.setIndex(0, 0); //reset indexes
+            final NettyDelegateByteBuffer bufferAlloc = NettySocketSynchronousWriter.BUFFER_ALLOC_HOLDER.get();
+            try {
+                bufferAlloc.setDelegate(bufAlloc);
+                final IByteBuffer messageBufferAlloc = bufferAlloc
+                        .sliceFrom(NettyDatagramSynchronousChannel.MESSAGE_INDEX);
+                final int size = message.getBuffer(messageBufferAlloc);
+                bufferAlloc.putInt(NettyDatagramSynchronousChannel.SIZE_INDEX, size);
+                bufAlloc.setIndex(0, NettyDatagramSynchronousChannel.MESSAGE_INDEX + size);
+                channel.getDatagramChannel().writeAndFlush(datagramPacketAlloc);
+            } finally {
+                bufferAlloc.setDelegate(null);
+            }
+        }
     }
 
 }

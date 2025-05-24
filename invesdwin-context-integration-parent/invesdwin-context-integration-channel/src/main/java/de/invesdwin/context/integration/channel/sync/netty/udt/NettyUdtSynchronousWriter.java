@@ -1,19 +1,24 @@
 package de.invesdwin.context.integration.channel.sync.netty.udt;
 
 import java.io.IOException;
+import java.util.function.Consumer;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.netty.FakeChannelPromise;
 import de.invesdwin.context.integration.channel.sync.netty.FakeEventLoop;
+import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.NettyDelegateByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.delegate.slice.SlicedFromDelegateByteBuffer;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.udt.UdtChannel;
 import io.netty.channel.udt.UdtMessage;
 
 @NotThreadSafe
@@ -24,8 +29,9 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
     private NettyDelegateByteBuffer buffer;
     private SlicedFromDelegateByteBuffer messageBuffer;
     private UdtMessage udtMessage;
-    private Runnable writer;
+    private Consumer<UdtMessage> writer;
     private ChannelFuture future;
+    private ByteBufAllocator bufAllocator;
 
     public NettyUdtSynchronousWriter(final NettyUdtSynchronousChannel channel) {
         this.channel = channel;
@@ -37,16 +43,15 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
         channel.open(null);
         final boolean safeWriter = isSafeWriter(channel);
         if (safeWriter) {
-            writer = () -> {
-                //TODO: implement a writer that can push messages without waiting on the future (just allocate more buffers)
-                future = channel.getUdtChannel().writeAndFlush(udtMessage);
+            writer = (message) -> {
+                future = channel.getUdtChannel().writeAndFlush(message);
             };
         } else {
             channel.getUdtChannel().deregister();
             channel.closeBootstrapAsync();
             FakeEventLoop.INSTANCE.register(channel.getUdtChannel());
-            writer = () -> {
-                channel.getUdtChannel().unsafe().write(udtMessage, FakeChannelPromise.INSTANCE);
+            writer = (message) -> {
+                channel.getUdtChannel().unsafe().write(message, FakeChannelPromise.INSTANCE);
                 channel.getUdtChannel().unsafe().flush();
             };
         }
@@ -55,6 +60,14 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
         this.buffer = new NettyDelegateByteBuffer(buf);
         this.messageBuffer = new SlicedFromDelegateByteBuffer(buffer, NettyUdtSynchronousChannel.MESSAGE_INDEX);
         this.udtMessage = new UdtMessage(buf);
+        this.bufAllocator = newAsyncWriteByteBufAllocator(channel.getUdtChannel());
+    }
+
+    /**
+     * Return null to disable async writing, waiting for each message to be flushed before accepting another message.
+     */
+    protected ByteBufAllocator newAsyncWriteByteBufAllocator(final UdtChannel datagramChannel) {
+        return datagramChannel.alloc();
     }
 
     protected boolean isSafeWriter(final NettyUdtSynchronousChannel channel) {
@@ -80,6 +93,7 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
             messageBuffer = null;
             udtMessage = null;
             writer = null;
+            bufAllocator = null;
         }
         if (channel != null) {
             channel.close();
@@ -89,6 +103,13 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
 
     @Override
     public boolean writeReady() throws IOException {
+        if (bufAllocator != null) {
+            return true;
+        }
+        return isFutureDone();
+    }
+
+    private boolean isFutureDone() {
         if (future == null) {
             return true;
         }
@@ -111,12 +132,29 @@ public class NettyUdtSynchronousWriter implements ISynchronousWriter<IByteBuffer
     }
 
     private void writeFuture(final IByteBufferProvider message) throws IOException {
-        buf.setIndex(0, 0); //reset indexes
-        final int size = message.getBuffer(messageBuffer);
-        buffer.putInt(NettyUdtSynchronousChannel.SIZE_INDEX, size);
-        buf.setIndex(0, NettyUdtSynchronousChannel.MESSAGE_INDEX + size);
-        udtMessage.retain(); //keep retain count up
-        writer.run();
+        if (isFutureDone()) {
+            buf.setIndex(0, 0); //reset indexes
+            final int size = message.getBuffer(messageBuffer);
+            buffer.putInt(NettyUdtSynchronousChannel.SIZE_INDEX, size);
+            buf.setIndex(0, NettyUdtSynchronousChannel.MESSAGE_INDEX + size);
+            udtMessage.retain(); //keep retain count up
+            writer.accept(udtMessage);
+        } else {
+            final ByteBuf bufAlloc = bufAllocator.directBuffer(channel.getSocketSize());
+            final UdtMessage udtMessageAlloc = new UdtMessage(bufAlloc);
+            bufAlloc.setIndex(0, 0); //reset indexes
+            final NettyDelegateByteBuffer bufferAlloc = NettySocketSynchronousWriter.BUFFER_ALLOC_HOLDER.get();
+            try {
+                bufferAlloc.setDelegate(bufAlloc);
+                final IByteBuffer messageBufferAlloc = bufferAlloc.sliceFrom(NettyUdtSynchronousChannel.MESSAGE_INDEX);
+                final int size = message.getBuffer(messageBufferAlloc);
+                bufferAlloc.putInt(NettyUdtSynchronousChannel.SIZE_INDEX, size);
+                bufAlloc.setIndex(0, NettyUdtSynchronousChannel.MESSAGE_INDEX + size);
+                channel.getUdtChannel().writeAndFlush(udtMessageAlloc);
+            } finally {
+                bufferAlloc.setDelegate(null);
+            }
+        }
     }
 
 }
