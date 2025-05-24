@@ -18,10 +18,11 @@ import io.aeron.logbuffer.BufferClaim;
 public class AeronSynchronousWriter extends AAeronSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private static final int DISABLED_SIZE = -1;
-    private final int fixedLength;
-    private Publication publication;
+    protected final int fixedLength;
+    protected Publication publication;
     private IByteBuffer buffer;
     private int size;
+    private int maxPayloadLength;
     private boolean alwaysFixedLength;
     private BufferClaim bufferClaim;
     private IByteBuffer bufferClaimBuffer;
@@ -33,12 +34,16 @@ public class AeronSynchronousWriter extends AAeronSynchronousWriter implements I
         this.fixedLength = ByteBuffers.newAllocateFixedLength(fixedLength);
     }
 
+    public int getFixedLength() {
+        return fixedLength;
+    }
+
     @Override
     public void open() throws IOException {
         super.open();
         this.publication = aeron.addExclusivePublication(channel, streamId);
-        this.alwaysFixedLength = fixedLength != ByteBuffers.EXPANDABLE_LENGTH
-                && publication.maxPayloadLength() >= fixedLength;
+        this.maxPayloadLength = newMaxPayloadLength(publication);
+        this.alwaysFixedLength = isAlwaysFixedLength(fixedLength, maxPayloadLength);
         this.connected = false;
         this.buffer = ByteBuffers.allocateDirectExpandable();
         this.bufferClaim = new BufferClaim();
@@ -46,6 +51,14 @@ public class AeronSynchronousWriter extends AAeronSynchronousWriter implements I
                 .sliceFrom(bufferClaim.offset());
         this.tryClaimResult = false;
         this.size = DISABLED_SIZE;
+    }
+
+    protected int newMaxPayloadLength(final Publication publication) {
+        return publication.maxPayloadLength();
+    }
+
+    protected boolean isAlwaysFixedLength(final int fixedLength, final int maxPayloadLength) {
+        return fixedLength != ByteBuffers.EXPANDABLE_LENGTH && maxPayloadLength >= fixedLength;
     }
 
     @Override
@@ -118,7 +131,7 @@ public class AeronSynchronousWriter extends AAeronSynchronousWriter implements I
             return true;
         } else if (size == DISABLED_SIZE) {
             return true;
-        } else if (size <= publication.maxPayloadLength()) {
+        } else if (size <= maxPayloadLength) {
             //use dynamic try claim
             final long result = publication.tryClaim(size, bufferClaim);
             if (!handleResult(result)) {
