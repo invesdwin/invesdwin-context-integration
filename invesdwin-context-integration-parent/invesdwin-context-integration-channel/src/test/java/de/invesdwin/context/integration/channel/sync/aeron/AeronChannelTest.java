@@ -104,7 +104,7 @@ public class AeronChannelTest extends AChannelTest {
             final String requestChannel, final int requestStreamId) {
         //        return new AeronTryOfferSynchronousWriter(instance, requestChannel, requestStreamId);
         //        return new AeronTryClaimDynamicSynchronousWriter(instance, requestChannel, requestStreamId);
-        //        return new AeronTryClaimFixedSynchronousWriter(instance, requestChannel, requestStreamId, requestStreamId);
+        //        return new AeronTryClaimFixedSynchronousWriter(instance, requestChannel, requestStreamId, getMaxMessageSize());
         return new AeronSynchronousWriter(instance, requestChannel, requestStreamId, getMaxMessageSize());
     }
 
