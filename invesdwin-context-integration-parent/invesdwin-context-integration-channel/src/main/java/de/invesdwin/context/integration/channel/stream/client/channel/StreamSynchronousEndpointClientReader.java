@@ -32,6 +32,9 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
         this.pollTimeout = newPollTimeout();
     }
 
+    /**
+     * Here one can also define Duration.ZERO to do non-blocking polling.
+     */
     protected Duration newPollTimeout() {
         return DEFAULT_POLL_TIMEOUT;
     }
@@ -79,7 +82,6 @@ public class StreamSynchronousEndpointClientReader implements ISynchronousReader
         if (client == null) {
             throw FastEOFException.getInstance("already closed");
         }
-        //TODO: support polling with 0 timeout inside of the client (only 1 cycle)
         return client.poll(pollTimeout);
     }
 
