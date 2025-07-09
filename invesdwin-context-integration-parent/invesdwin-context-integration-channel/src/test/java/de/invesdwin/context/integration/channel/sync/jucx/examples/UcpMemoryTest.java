@@ -4,9 +4,6 @@ import static java.nio.file.StandardOpenOption.CREATE;
 import static java.nio.file.StandardOpenOption.DELETE_ON_CLOSE;
 import static java.nio.file.StandardOpenOption.READ;
 import static java.nio.file.StandardOpenOption.WRITE;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -28,6 +25,7 @@ import org.openucx.jucx.ucp.UcpRemoteKey;
 import org.openucx.jucx.ucp.UcpWorker;
 import org.openucx.jucx.ucp.UcpWorkerParams;
 
+import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Files;
 
@@ -49,14 +47,14 @@ public class UcpMemoryTest extends UcxTest {
         final UcpMemory mmapedMemory = context.memoryMap(
                 new UcpMemMapParams().setAddress(UcxUtils.getAddress(buf)).setLength(MEM_SIZE).nonBlocking());
 
-        assertEquals(mmapedMemory.getAddress(), UcxUtils.getAddress(buf));
+        Assertions.checkEquals(mmapedMemory.getAddress(), UcxUtils.getAddress(buf));
 
         // 3. Test allocation
         final UcpMemory allocatedMemory = context.memoryMap(new UcpMemMapParams().allocate()
                 .setProtection(UcpConstants.UCP_MEM_MAP_PROT_LOCAL_READ)
                 .setLength(MEM_SIZE)
                 .nonBlocking());
-        assertEquals(allocatedMemory.getLength(), MEM_SIZE);
+        Assertions.checkEquals(allocatedMemory.getLength(), MEM_SIZE);
 
         allocatedMemory.deregister();
         mmapedMemory.deregister();
@@ -70,8 +68,8 @@ public class UcpMemoryTest extends UcxTest {
         final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(MEM_SIZE);
         final UcpMemory mem = context.registerMemory(buf);
         final java.nio.ByteBuffer rkeyBuffer = mem.getRemoteKeyBuffer();
-        assertTrue(rkeyBuffer.capacity() > 0);
-        assertTrue(mem.getAddress() > 0);
+        Assertions.checkTrue(rkeyBuffer.capacity() > 0);
+        Assertions.checkTrue(mem.getAddress() > 0);
         mem.deregister();
         context.close();
     }
@@ -86,7 +84,7 @@ public class UcpMemoryTest extends UcxTest {
         final java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocateDirect(MEM_SIZE);
         final UcpMemory mem = context.registerMemory(buf);
         final UcpRemoteKey rkey = endpoint.unpackRemoteKey(mem.getRemoteKeyBuffer());
-        assertNotNull(rkey.getNativeId());
+        Assertions.checkNotNull(rkey.getNativeId());
 
         Collections.addAll(resources, context, worker1, worker2, endpoint, mem, rkey);
         closeResources();
