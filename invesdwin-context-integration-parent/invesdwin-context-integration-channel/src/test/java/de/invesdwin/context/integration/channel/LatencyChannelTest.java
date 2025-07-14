@@ -203,6 +203,7 @@ public class LatencyChannelTest {
 
         @Override
         public void run() {
+            boolean error = false;
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
@@ -264,12 +265,17 @@ public class LatencyChannelTest {
                     }
                     Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
                     AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, AChannelTest.MESSAGE_COUNT);
+                } catch (final Throwable t) {
+                    error = true;
+                    throw Err.process(t);
                 } finally {
                     if (AChannelTest.DEBUG) {
                         log.write("client close request writer\n".getBytes());
                     }
                     requestWriter.close();
-                    parent.assertCloseMessageArrived(responseReader);
+                    if (!error) {
+                        parent.assertCloseMessageArrived(responseReader);
+                    }
                     if (AChannelTest.DEBUG) {
                         log.write("client close response reader\n".getBytes());
                     }
@@ -312,6 +318,7 @@ public class LatencyChannelTest {
 
         @Override
         public void run() {
+            boolean error = false;
             try {
                 final SynchronousReaderSpinWait<FDate> readSpinWait = new SynchronousReaderSpinWait<>(requestReader);
                 final SynchronousWriterSpinWait<FDate> writeSpinWait = new SynchronousWriterSpinWait<>(responseWriter);
@@ -355,12 +362,17 @@ public class LatencyChannelTest {
                     }
                     Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
                     AChannelTest.printProgress(log, "WritesFinished", writesStart, count, AChannelTest.MESSAGE_COUNT);
+                } catch (final Throwable t) {
+                    error = true;
+                    throw Err.process(t);
                 } finally {
                     if (AChannelTest.DEBUG) {
                         log.write("server close response writer\n".getBytes());
                     }
                     responseWriter.close();
-                    parent.assertCloseMessageArrived(requestReader);
+                    if (!error) {
+                        parent.assertCloseMessageArrived(requestReader);
+                    }
                     if (AChannelTest.DEBUG) {
                         log.write("server close request reader\n".getBytes());
                     }
