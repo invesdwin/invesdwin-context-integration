@@ -14,8 +14,8 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class FlushingKafkaSynchronousWriter extends KafkaSynchronousWriter {
 
-    public FlushingKafkaSynchronousWriter(final String bootstratServersConfig, final String topic) {
-        super(bootstratServersConfig, topic);
+    public FlushingKafkaSynchronousWriter(final String bootstrapServersConfig, final String topic) {
+        super(bootstrapServersConfig, topic);
     }
 
     @Override
