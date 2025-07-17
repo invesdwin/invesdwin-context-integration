@@ -35,15 +35,14 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
             }
         }
     };
-    protected final String bootstratServersConfig;
+    protected final String bootstrapServersConfig;
     protected final String topic;
     protected boolean flush;
     protected Producer<byte[], byte[]> producer;
     protected final byte[] key;
 
-    //constructor with serverconfig, topic to send messages to and key
-    public KafkaSynchronousWriter(final String bootstratServersConfig, final String topic, final boolean flush) {
-        this.bootstratServersConfig = bootstratServersConfig;
+    public KafkaSynchronousWriter(final String bootstrapServersConfig, final String topic, final boolean flush) {
+        this.bootstrapServersConfig = bootstrapServersConfig;
         this.topic = topic;
         this.flush = flush;
         this.key = newKey().getBytes();
@@ -63,7 +62,7 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
 
     private Properties newProducerProperties() {
         final Properties kafkaProps = new Properties();
-        kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
+        kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServersConfig);
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         // for batching purposes with 256KB batch

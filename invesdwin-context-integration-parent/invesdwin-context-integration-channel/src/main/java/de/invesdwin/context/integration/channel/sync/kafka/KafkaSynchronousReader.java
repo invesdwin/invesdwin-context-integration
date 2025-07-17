@@ -28,15 +28,15 @@ import de.invesdwin.util.time.duration.Duration;
 public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
 
     public static final Duration DEFAULT_POLL_TIMEOUT = StreamSynchronousEndpointClientReader.DEFAULT_POLL_TIMEOUT;
-    private final String bootstratServersConfig;
+    private final String bootstrapServersConfig;
     private final String topic;
     private final Duration pollTimeout;
     private Consumer<java.nio.ByteBuffer, IByteBufferProvider> consumer;
     private Iterator<ConsumerRecord<java.nio.ByteBuffer, IByteBufferProvider>> recordsIterator = EmptyCloseableIterator
             .getInstance();
 
-    public KafkaSynchronousReader(final String bootstratServersConfig, final String topic) {
-        this.bootstratServersConfig = bootstratServersConfig;
+    public KafkaSynchronousReader(final String bootstrapServersConfig, final String topic) {
+        this.bootstrapServersConfig = bootstrapServersConfig;
         this.topic = topic;
         this.pollTimeout = newPollTimeout();
     }
@@ -48,7 +48,7 @@ public class KafkaSynchronousReader implements ISynchronousReader<IByteBufferPro
     @Override
     public void open() throws IOException {
         final Properties props = new Properties();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstratServersConfig);
+        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServersConfig);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "invesdwin");
         props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteBufferDeserializer.class.getName());
