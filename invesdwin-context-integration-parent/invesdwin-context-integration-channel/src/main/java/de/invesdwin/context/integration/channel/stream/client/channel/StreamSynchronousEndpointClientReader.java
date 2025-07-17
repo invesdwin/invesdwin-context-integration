@@ -18,7 +18,7 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class StreamSynchronousEndpointClientReader implements ISynchronousReader<IByteBufferProvider> {
 
-    public static final Duration DEFAULT_POLL_TIMEOUT = Duration.ONE_MILLISECOND;
+    public static final Duration DEFAULT_POLL_TIMEOUT = Duration.ZERO; //non-blocking per default
     private final StreamSynchronousEndpointClientChannel channel;
     private final boolean closeMessageEnabled;
     private final Duration pollTimeout;

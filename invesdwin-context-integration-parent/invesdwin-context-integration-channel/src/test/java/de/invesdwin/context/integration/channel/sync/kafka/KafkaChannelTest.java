@@ -37,6 +37,7 @@ import de.invesdwin.util.time.duration.Duration;
 @NotThreadSafe
 public class KafkaChannelTest extends AChannelTest {
 
+    private static final Duration POLL_TIMEOUT = Duration.ZERO;
     private static final boolean TMPFS = false;
     private static final boolean TRANSIENT = false;
 
@@ -101,33 +102,17 @@ public class KafkaChannelTest extends AChannelTest {
         final String requestTopic = "testKafkaLatency_request";
         createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
         createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
-        runKafkaLatencyTest(responseTopic, requestTopic, Duration.ZERO);
-    }
-
-    @Test
-    public void testBlockingKafkaLatency() throws InterruptedException {
-        final String responseTopic = "testBlockingKafkaLatency_response";
-        final String requestTopic = "testBlockingKafkaLatency_request";
-        createTopic(KAFKACONTAINER.getBootstrapServers(), responseTopic);
-        createTopic(KAFKACONTAINER.getBootstrapServers(), requestTopic);
-        runKafkaLatencyTest(responseTopic, requestTopic, Duration.ONE_MILLISECOND);
+        runKafkaLatencyTest(responseTopic, requestTopic);
     }
 
     @Test
     public void testKafkaThroughput() throws InterruptedException {
         final String topic = "testKafkaThroughput_chanel";
         createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
-        runKafkaThroughputTest(topic, Duration.ZERO);
+        runKafkaThroughputTest(topic);
     }
 
-    @Test
-    public void testBlockingKafkaThroughput() throws InterruptedException {
-        final String topic = "testBlockingKafkaThroughput_topic";
-        createTopic(KAFKACONTAINER.getBootstrapServers(), topic);
-        runKafkaThroughputTest(topic, Duration.ONE_MILLISECOND);
-    }
-
-    protected void runKafkaThroughputTest(final String topic, final Duration pollTimeout) throws InterruptedException {
+    protected void runKafkaThroughputTest(final String topic) throws InterruptedException {
         final boolean flush = false;
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), topic, flush));
@@ -136,15 +121,15 @@ public class KafkaChannelTest extends AChannelTest {
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), topic) {
                     @Override
                     protected Duration newPollTimeout() {
-                        return pollTimeout;
+                        return POLL_TIMEOUT;
                     }
                 });
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
         new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
     }
 
-    protected void runKafkaLatencyTest(final String responseTopic, final String requestTopic,
-            final Duration pollTimeout) throws InterruptedException {
+    protected void runKafkaLatencyTest(final String responseTopic, final String requestTopic)
+            throws InterruptedException {
         final boolean flush = true;
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(KAFKACONTAINER.getBootstrapServers(), responseTopic, flush));
@@ -152,7 +137,7 @@ public class KafkaChannelTest extends AChannelTest {
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), requestTopic) {
                     @Override
                     protected Duration newPollTimeout() {
-                        return pollTimeout;
+                        return POLL_TIMEOUT;
                     }
                 });
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
@@ -162,7 +147,7 @@ public class KafkaChannelTest extends AChannelTest {
                 new KafkaSynchronousReader(KAFKACONTAINER.getBootstrapServers(), responseTopic) {
                     @Override
                     protected Duration newPollTimeout() {
-                        return pollTimeout;
+                        return POLL_TIMEOUT;
                     }
                 });
         final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
@@ -171,13 +156,9 @@ public class KafkaChannelTest extends AChannelTest {
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
             final String requestTopic, final boolean flush) {
-        if (flush) {
-            //flushing on each message should theoretically send the messages slightly earlier in the latency test
-            return new FlushingKafkaSynchronousWriter(bootstrapServers, requestTopic);
-        } else {
-            //non-flushing should be faster for the throughput test
-            return new KafkaSynchronousWriter(bootstrapServers, requestTopic);
-        }
+        //flushing on each message should theoretically send the messages slightly earlier in the latency test
+        //non-flushing should be faster for the throughput test
+        return new KafkaSynchronousWriter(bootstrapServers, requestTopic, flush);
     }
 
 }

@@ -177,6 +177,22 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
+		    <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client</artifactId>
+            <scope>provided</scope>
+		</dependency>
+		<dependency>
+			<!-- pulsar-client-admin-original depends on an jersey 2.x with javax api while we are on jersey 3.x with jakarta api, thus we use shaded admin client instead -->
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client-admin</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>pulsar</artifactId>
+    		<scope>test</scope>
+		</dependency>                                                                                                           
+		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-persistence-timeseriesdb</artifactId>
 			<scope>provided</scope>

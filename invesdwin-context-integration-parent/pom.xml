@@ -72,7 +72,8 @@
 		<!-- cxf does not yet support jakarta EE 9:
 		https://issues.apache.org/jira/browse/CXF-8371 -->
 		<version.cxf>3.5.4</version.cxf>
-		<version.jersey>3.1.0</version.jersey>
+		<version.jersey>3.1.10</version.jersey>
+		<version.jakarta.ws.rs>3.1.0</version.jakarta.ws.rs>
 		<version.xmlsec>3.0.3</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
 		<version.ftp4j>1.7.3</version.ftp4j>
@@ -103,7 +104,8 @@
 		<version.openmpi>4.1.4</version.openmpi>
 		<version.mpjexpress>0.44</version.mpjexpress>
 		<version.mvapich2-j>2.3.7</version.mvapich2-j>
-		<version.testcontainers>1.20.2</version.testcontainers>
+		<version.testcontainers>1.21.3</version.testcontainers>
+		<version.pulsar>4.0.5</version.pulsar>
 		<version.disni>2.1</version.disni>
 		<version.darpc>1.9</version.darpc>
 		<version.jucx>1.14.100</version.jucx>
@@ -528,6 +530,21 @@
 				<version>${version.jersey}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.glassfish.jersey.core</groupId>
+				<artifactId>jersey-client</artifactId>
+				<version>${version.jersey}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.glassfish.jersey.core</groupId>
+				<artifactId>jersey-common</artifactId>
+				<version>${version.jersey}</version>
+			</dependency>
+			<dependency>
+			    <groupId>jakarta.ws.rs</groupId>
+			    <artifactId>jakarta.ws.rs-api</artifactId>
+			    <version>${version.jakarta.ws.rs}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.jboss.shrinkwrap.resolver</groupId>
 				<artifactId>shrinkwrap-resolver-impl-maven</artifactId>
 				<version>${version.shrinkwrap-resolver}</version>
@@ -804,6 +821,22 @@
 				<artifactId>kafka</artifactId>
 				<version>${version.testcontainers}</version>
 			</dependency>
+			<dependency>
+			    <groupId>org.apache.pulsar</groupId>
+	            <artifactId>pulsar-client</artifactId>
+	            <version>${version.pulsar}</version>
+			</dependency>
+			<dependency>
+	            <groupId>org.apache.pulsar</groupId>
+	            <artifactId>pulsar-client-admin</artifactId>
+	            <version>${version.pulsar}</version>
+	        </dependency>
+	        <dependency>
+	            <groupId>org.testcontainers</groupId>
+	            <artifactId>pulsar</artifactId>
+	    		<version>${version.testcontainers}</version>
+	    		<scope>test</scope>
+			</dependency>                 
 			<dependency>
 				<groupId>org.openucx</groupId>
 				<artifactId>jucx</artifactId>

@@ -153,6 +153,7 @@ public class ThroughputChannelTest {
                 if (AChannelTest.DEBUG) {
                     log.write("receiver open channel reader\n".getBytes());
                 }
+                final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
                 channelReader.open();
                 try {
                     readsStart = new Instant();
@@ -172,6 +173,9 @@ public class ThroughputChannelTest {
                         Assertions.checkNotNull(readMessage);
                         latencyReportMessageReceived.validateOrder(prevValue, readMessage);
                         prevValue = readMessage;
+                        if (loopCheck.checkNoInterrupt()) {
+                            AChannelTest.printProgress(log, "Reads", readsStart, count, AChannelTest.MESSAGE_COUNT);
+                        }
                         count++;
                     }
                     Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
