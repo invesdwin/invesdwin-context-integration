@@ -34,7 +34,7 @@ import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
-import de.invesdwin.util.streams.ADelegateOutputStream;
+import de.invesdwin.util.streams.delegate.ADelegateOutputStream;
 import de.invesdwin.util.time.date.FDate;
 import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 
