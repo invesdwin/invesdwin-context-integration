@@ -825,11 +825,23 @@
 			    <groupId>org.apache.pulsar</groupId>
 	            <artifactId>pulsar-client</artifactId>
 	            <version>${version.pulsar}</version>
+	            <exclusions>
+	            	<exclusion>
+	            		<groupId>javax.validation</groupId>
+	            		<artifactId>validation-api</artifactId>
+	            	</exclusion>
+	            </exclusions>
 			</dependency>
 			<dependency>
 	            <groupId>org.apache.pulsar</groupId>
 	            <artifactId>pulsar-client-admin</artifactId>
 	            <version>${version.pulsar}</version>
+	            <exclusions>
+	            	<exclusion>
+	            		<groupId>javax.validation</groupId>
+	            		<artifactId>validation-api</artifactId>
+	            	</exclusion>
+	            </exclusions>
 	        </dependency>
 	        <dependency>
 	            <groupId>org.testcontainers</groupId>
