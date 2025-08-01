@@ -75,6 +75,14 @@ public abstract class AChannelTest extends ATest {
         UNIX_SOCKET;
     }
 
+    public int getMessageCount() {
+        return MESSAGE_COUNT;
+    }
+
+    public int getWarmupMessageCount() {
+        return WARMUP_MESSAGE_COUNT;
+    }
+
     public static String findLocalNetworkAddress() {
         for (final InetAddress localAddress : NetworkUtil.getLocalAddresses()) {
             final String localNetworkIp = localAddress.getHostAddress();

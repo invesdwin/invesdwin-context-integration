@@ -32,9 +32,9 @@ public class NettyUdtHandlerTest extends AChannelTest {
         final NettyUdtSynchronousChannel clientChannel = new NettyUdtSynchronousChannel(type, address, false,
                 getMaxMessageSize());
         final NettyUdtAsynchronousChannel serverHandler = new NettyUdtAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory(this)), false);
         final NettyUdtAsynchronousChannel clientHandler = new NettyUdtAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory(this)), false);
         new LatencyChannelTest(this).runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

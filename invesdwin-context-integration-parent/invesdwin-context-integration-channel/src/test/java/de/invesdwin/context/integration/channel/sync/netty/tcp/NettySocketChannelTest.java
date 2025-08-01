@@ -62,7 +62,7 @@ public class NettySocketChannelTest extends AChannelTest {
         final boolean lowLatency = false;
         final ISynchronousWriter<IByteBufferProvider> channelWriter = new NettySocketSynchronousWriter(
                 newNettySocketChannel(type, channelAddress, true, getMaxMessageSize(), lowLatency));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, newSerdeWriter(channelWriter));
         final ISynchronousReader<IByteBufferProvider> channelReader = new NettySocketSynchronousReader(
                 newNettySocketChannel(type, channelAddress, false, getMaxMessageSize(), lowLatency));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(channelReader));

@@ -33,9 +33,9 @@ public class NettyDatagramHandlerTest extends AChannelTest {
         final NettyDatagramSynchronousChannel clientChannel = new NettyDatagramSynchronousChannel(type, address, false,
                 getMaxMessageSize(), lowLatency);
         final NettyDatagramAsynchronousChannel serverHandler = new NettyDatagramAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory(this)), false);
         final NettyDatagramAsynchronousChannel clientHandler = new NettyDatagramAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory(this)), false);
         new LatencyChannelTest(this).runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

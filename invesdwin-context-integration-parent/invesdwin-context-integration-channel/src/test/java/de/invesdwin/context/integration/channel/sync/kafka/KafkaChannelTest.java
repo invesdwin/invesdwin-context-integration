@@ -45,7 +45,7 @@ public class KafkaChannelTest extends AKafkaChannelTest {
         final boolean flush = false;
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
                 newKafkaSynchronousWriter(bootstrapServers, topic, flush));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
                 new KafkaSynchronousReader(bootstrapServers, topic) {
                     @Override

@@ -32,9 +32,9 @@ public class MinaSocketHandlerTest extends AChannelTest {
         final MinaSocketSynchronousChannel clientChannel = newMinaSocketChannel(type, address, false,
                 getMaxMessageSize());
         final MinaSocketAsynchronousChannel serverHandler = new MinaSocketAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory(this)), false);
         final MinaSocketAsynchronousChannel clientHandler = new MinaSocketAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory(this)), false);
         new LatencyChannelTest(this).runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

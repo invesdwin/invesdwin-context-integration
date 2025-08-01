@@ -59,7 +59,7 @@ public class NativeDatagramChannelTest extends AChannelTest {
         final boolean lowLatency = false;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = new NativeDatagramSynchronousWriter(
                 newDatagramSynchronousChannel(channelAddress, false, getMaxMessageSize(), lowLatency));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(responseWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, newSerdeWriter(responseWriter));
         final ISynchronousReader<IByteBufferProvider> responseReader = new NativeDatagramSynchronousReader(
                 newDatagramSynchronousChannel(channelAddress, true, getMaxMessageSize(), lowLatency));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(responseReader));

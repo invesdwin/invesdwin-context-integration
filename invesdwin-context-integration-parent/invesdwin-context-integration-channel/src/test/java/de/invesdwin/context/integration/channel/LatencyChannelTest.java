@@ -207,7 +207,7 @@ public class LatencyChannelTest {
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
-                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                int count = -parent.getWarmupMessageCount();
                 final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
                 final ILatencyReport latencyReportRequestSent = latencyReportFactory
                         .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
@@ -231,7 +231,7 @@ public class LatencyChannelTest {
                     try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRoundtrip
                             .newRequestMessages()
                             .iterator()) {
-                        while (count < AChannelTest.MESSAGE_COUNT) {
+                        while (count < parent.getMessageCount()) {
                             if (count == 0) {
                                 //don't count in connection establishment
                                 readsStart = new Instant();
@@ -259,12 +259,12 @@ public class LatencyChannelTest {
                             count++;
                         }
                     } catch (final FastEOFException e) {
-                        if (count != AChannelTest.MESSAGE_COUNT) {
+                        if (count != parent.getMessageCount()) {
                             throw e;
                         }
                     }
-                    Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
-                    AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, AChannelTest.MESSAGE_COUNT);
+                    Assertions.checkEquals(parent.getMessageCount(), count);
+                    AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, parent.getMessageCount());
                 } catch (final Throwable t) {
                     error = true;
                     throw Err.process(t);
@@ -326,7 +326,7 @@ public class LatencyChannelTest {
                         .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
                 final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
                         .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
-                int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+                int count = -parent.getWarmupMessageCount();
                 final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
                 if (AChannelTest.DEBUG) {
                     log.write("server open request reader\n".getBytes());
@@ -338,7 +338,7 @@ public class LatencyChannelTest {
                 responseWriter.open();
                 Instant writesStart = new Instant();
                 try {
-                    while (count < AChannelTest.MESSAGE_COUNT) {
+                    while (count < parent.getMessageCount()) {
                         if (count == 0) {
                             //don't count in connection establishment
                             writesStart = new Instant();
@@ -356,12 +356,12 @@ public class LatencyChannelTest {
                             log.write(("server response out [" + response + "]\n").getBytes());
                         }
                         if (loopCheck.checkNoInterrupt()) {
-                            AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.MESSAGE_COUNT);
+                            AChannelTest.printProgress(log, "Writes", writesStart, count, parent.getMessageCount());
                         }
                         count++;
                     }
-                    Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
-                    AChannelTest.printProgress(log, "WritesFinished", writesStart, count, AChannelTest.MESSAGE_COUNT);
+                    Assertions.checkEquals(parent.getMessageCount(), count);
+                    AChannelTest.printProgress(log, "WritesFinished", writesStart, count, parent.getMessageCount());
                 } catch (final Throwable t) {
                     error = true;
                     throw Err.process(t);
@@ -389,15 +389,22 @@ public class LatencyChannelTest {
 
     public static class LatencyClientHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
+        private final AChannelTest parent;
+
+        public LatencyClientHandlerFactory(final AChannelTest parent) {
+            this.parent = parent;
+        }
+
         @Override
         public IAsynchronousHandler<FDate, FDate> newHandler() {
-            return new LatencyClientHandler();
+            return new LatencyClientHandler(parent);
         }
 
     }
 
     public static class LatencyClientHandler implements IAsynchronousHandler<FDate, FDate> {
 
+        private final AChannelTest parent;
         private final OutputStream log;
         private Instant readsStart;
         private int count;
@@ -407,15 +414,16 @@ public class LatencyChannelTest {
         private ILatencyReport latencyReportRequestResponseRoundtrip;
         private FDate request;
 
-        public LatencyClientHandler() {
-            this(new Log(LatencyClientHandler.class));
+        public LatencyClientHandler(final AChannelTest parent) {
+            this(parent, new Log(LatencyClientHandler.class));
         }
 
-        public LatencyClientHandler(final Log log) {
-            this(Slf4jStream.of(log).asInfo());
+        public LatencyClientHandler(final AChannelTest parent, final Log log) {
+            this(parent, Slf4jStream.of(log).asInfo());
         }
 
-        public LatencyClientHandler(final OutputStream log) {
+        public LatencyClientHandler(final AChannelTest parent, final OutputStream log) {
+            this.parent = parent;
             this.log = log;
         }
 
@@ -423,7 +431,7 @@ public class LatencyChannelTest {
         public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             readsStart = new Instant();
             prevValue = null;
-            count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            count = -parent.getWarmupMessageCount();
 
             final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
             latencyReportResponseReceived = latencyReportFactory.newLatencyReport(
@@ -459,7 +467,7 @@ public class LatencyChannelTest {
             latencyReportRequestResponseRoundtrip.validateOrder(prevValue, response);
             prevValue = response;
             count++;
-            if (count > AChannelTest.MESSAGE_COUNT) {
+            if (count > parent.getMessageCount()) {
                 throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
             }
             request = values.next().asFDate();
@@ -473,11 +481,11 @@ public class LatencyChannelTest {
 
         @Override
         public void close() throws IOException {
-            Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+            Assertions.checkEquals(parent.getMessageCount(), count);
             if (AChannelTest.DEBUG) {
                 log.write("client close handler\n".getBytes());
             }
-            AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, AChannelTest.MESSAGE_COUNT);
+            AChannelTest.printProgress(log, "ReadsFinished", readsStart, count, parent.getMessageCount());
             latencyReportResponseReceived.close();
             latencyReportResponseReceived = null;
             latencyReportRequestResponseRoundtrip.close();
@@ -488,37 +496,45 @@ public class LatencyChannelTest {
 
     public static class LatencyServerHandlerFactory extends AsynchronousHandlerFactorySupport<FDate, FDate> {
 
+        private final AChannelTest parent;
+
+        public LatencyServerHandlerFactory(final AChannelTest parent) {
+            this.parent = parent;
+        }
+
         @Override
         public IAsynchronousHandler<FDate, FDate> newHandler() {
-            return new LatencyServerHandler();
+            return new LatencyServerHandler(parent);
         }
 
     }
 
     public static class LatencyServerHandler implements IAsynchronousHandler<FDate, FDate> {
 
+        private final AChannelTest parent;
         private final OutputStream log;
         private Instant writesStart;
         private int count;
         private final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
         private ILatencyReport latencyReportRequestReceived;
 
-        public LatencyServerHandler() {
-            this(new Log(LatencyServerHandler.class));
+        public LatencyServerHandler(final AChannelTest parent) {
+            this(parent, new Log(LatencyServerHandler.class));
         }
 
-        public LatencyServerHandler(final Log log) {
-            this(Slf4jStream.of(log).asInfo());
+        public LatencyServerHandler(final AChannelTest parent, final Log log) {
+            this(parent, Slf4jStream.of(log).asInfo());
         }
 
-        public LatencyServerHandler(final OutputStream log) {
+        public LatencyServerHandler(final AChannelTest parent, final OutputStream log) {
+            this.parent = parent;
             this.log = log;
         }
 
         @Override
         public FDate open(final IAsynchronousHandlerContext<FDate> context) throws IOException {
             writesStart = new Instant();
-            count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+            count = -parent.getWarmupMessageCount();
             this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY.newLatencyReport(
                     "latencyHandler/1_" + LatencyServerHandler.class.getSimpleName() + "_requestReceived");
 
@@ -548,9 +564,9 @@ public class LatencyChannelTest {
                 }
                 count++;
                 if (loopCheck.checkNoInterrupt()) {
-                    AChannelTest.printProgress(log, "Writes", writesStart, count, AChannelTest.MESSAGE_COUNT);
+                    AChannelTest.printProgress(log, "Writes", writesStart, count, parent.getMessageCount());
                 }
-                if (count > AChannelTest.MESSAGE_COUNT) {
+                if (count > parent.getMessageCount()) {
                     throw FastEOFException.getInstance("MESSAGE_COUNT exceeded");
                 }
                 return response;
@@ -566,8 +582,8 @@ public class LatencyChannelTest {
 
         @Override
         public void close() throws IOException {
-            Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
-            AChannelTest.printProgress(log, "WritesFinished", writesStart, count, AChannelTest.MESSAGE_COUNT);
+            Assertions.checkEquals(parent.getMessageCount(), count);
+            AChannelTest.printProgress(log, "WritesFinished", writesStart, count, parent.getMessageCount());
             if (AChannelTest.DEBUG) {
                 log.write("server close handler\n".getBytes());
             }

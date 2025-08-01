@@ -65,7 +65,7 @@ public class SocketChannelTest extends AChannelTest {
         final boolean lowLatency = false;
         final ISynchronousWriter<IByteBufferProvider> responseWriter = newSocketSynchronousWriter(
                 newSocketSynchronousChannel(channelAddress, true, getMaxMessageSize(), lowLatency));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(responseWriter));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, newSerdeWriter(responseWriter));
         final ISynchronousReader<IByteBufferProvider> responseReader = newSocketSynchronousReader(
                 newSocketSynchronousChannel(channelAddress, false, getMaxMessageSize(), lowLatency));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(responseReader));

@@ -89,7 +89,7 @@ public class AeronChannelTest extends AChannelTest {
         try {
             final ISynchronousWriter<IByteBufferProvider> senderWriter = newAeronSynchronousWriter(instance, channel,
                     channeltreamId);
-            final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(senderWriter));
+            final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, newSerdeWriter(senderWriter));
             final ISynchronousReader<IByteBufferProvider> receiverReader = new AeronSynchronousReader(instance, channel,
                     channeltreamId);
             final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this,

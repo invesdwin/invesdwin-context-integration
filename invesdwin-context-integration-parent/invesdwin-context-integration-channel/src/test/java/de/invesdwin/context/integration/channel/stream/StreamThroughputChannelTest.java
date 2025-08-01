@@ -375,7 +375,7 @@ public class StreamThroughputChannelTest extends ThroughputChannelTest {
                 clientClient, channelTopic, null);
         final ISynchronousWriter<FDate> senderChannelWriter = AChannelTest
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(senderChannel));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(senderChannelWriter);
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(parent, senderChannelWriter);
         final StreamSynchronousEndpointClientChannel receiverChannel = newStreamSynchronousEndpointClientChannel(
                 serverClient, channelTopic, null);
         final ISynchronousReader<FDate> receiverChannelReader = AChannelTest

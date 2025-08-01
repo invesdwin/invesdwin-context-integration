@@ -33,9 +33,9 @@ public class NettySocketHandlerTest extends AChannelTest {
         final NettySocketSynchronousChannel clientChannel = newNettySocketChannel(type, address, false,
                 getMaxMessageSize(), lowLatency);
         final NettySocketAsynchronousChannel serverHandler = new NettySocketAsynchronousChannel(serverChannel,
-                newSerdeHandlerFactory(new LatencyServerHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyServerHandlerFactory(this)), false);
         final NettySocketAsynchronousChannel clientHandler = new NettySocketAsynchronousChannel(clientChannel,
-                newSerdeHandlerFactory(new LatencyClientHandlerFactory()), false);
+                newSerdeHandlerFactory(new LatencyClientHandlerFactory(this)), false);
         new LatencyChannelTest(this).runHandlerLatencyTest(serverHandler, clientHandler);
     }
 

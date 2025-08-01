@@ -98,7 +98,7 @@ public class TimeSeriesDBChannelTest extends AChannelTest {
             final TimeSeriesDBSynchronousChannel channel = newTimeSeriesDBSynchronousChannel(responseFile,
                     MAX_MESSAGE_SIZE);
             final ISynchronousWriter<IByteBufferProvider> channelWriter = new TimeSeriesDBSynchronousWriter(channel);
-            final ThroughputSenderTask senderTask = new ThroughputSenderTask(newSerdeWriter(channelWriter));
+            final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, newSerdeWriter(channelWriter));
             final ISynchronousReader<IByteBufferProvider> channelReader = new TimeSeriesDBSynchronousReader(channel);
             final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, newSerdeReader(channelReader));
             new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);

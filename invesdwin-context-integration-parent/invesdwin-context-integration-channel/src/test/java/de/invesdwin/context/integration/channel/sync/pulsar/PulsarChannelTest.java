@@ -28,7 +28,7 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Testcontainers
 @NotThreadSafe
-public class PulsarSynchronousChannelTest extends AChannelTest {
+public class PulsarChannelTest extends AChannelTest {
     @Container
     private static final PulsarContainer PULSAR_CONTAINER = newPulsarContainer();
     private static final boolean BLOCKING = false;
@@ -102,75 +102,75 @@ public class PulsarSynchronousChannelTest extends AChannelTest {
 
     @Test
     public void testPulsarLatencyConsumer() throws InterruptedException {
-        final String newPulsarBrokerUrl = newPulsarBrokerUrl();
+        final String pulsarBrokerUrl = newPulsarBrokerUrl();
         final String responseTopic = "testPulsarLatencyConsumer_response";
         final String requestTopic = "testPulsarLatencyConsumer_request";
         try (PulsarAdmin admin = newAdmin()) {
             createTopic(admin, responseTopic);
             createTopic(admin, requestTopic);
         }
-        runPulsarLatencyTest(newPulsarBrokerUrl, responseTopic, requestTopic, false);
+        runPulsarLatencyTest(pulsarBrokerUrl, responseTopic, requestTopic, false);
     }
 
     @Test
     public void testPulsarLatencyReader() throws InterruptedException {
-        final String newPulsarBrokerUrl = newPulsarBrokerUrl();
+        final String pulsarBrokerUrl = newPulsarBrokerUrl();
         final String responseTopic = "testPulsarLatencyReader_response";
         final String requestTopic = "testPulsarLatencyReader_request";
         try (PulsarAdmin admin = newAdmin()) {
             createTopic(admin, responseTopic);
             createTopic(admin, requestTopic);
         }
-        runPulsarLatencyTest(newPulsarBrokerUrl, responseTopic, requestTopic, true);
+        runPulsarLatencyTest(pulsarBrokerUrl, responseTopic, requestTopic, true);
     }
 
     @Test
     public void testPulsarThroughputConsumer() throws InterruptedException {
-        final String newPulsarBrokerUrl = newPulsarBrokerUrl();
+        final String pulsarBrokerUrl = newPulsarBrokerUrl();
         final String topic = "testPulsarThroughputConsumer_channel";
         try (PulsarAdmin admin = newAdmin()) {
             createTopic(admin, topic);
         }
-        runPulsarThroughputTest(newPulsarBrokerUrl, topic, false);
+        runPulsarThroughputTest(pulsarBrokerUrl, topic, false);
     }
 
     @Test
     public void testPulsarThroughputReader() throws InterruptedException {
-        final String newPulsarBrokerUrl = newPulsarBrokerUrl();
+        final String pulsarBrokerUrl = newPulsarBrokerUrl();
         final String topic = "testPulsarThroughputReader_channel";
         try (PulsarAdmin admin = newAdmin()) {
             createTopic(admin, topic);
         }
-        runPulsarThroughputTest(newPulsarBrokerUrl, topic, true);
+        runPulsarThroughputTest(pulsarBrokerUrl, topic, true);
     }
 
-    protected void runPulsarThroughputTest(final String newPulsarBrokerUrl, final String topic, final boolean useReader)
+    protected void runPulsarThroughputTest(final String pulsarBrokerUrl, final String topic, final boolean useReader)
             throws InterruptedException {
         final boolean flush = true;
 
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
-                newPulsarProducerSynchronousWriter(new PulsarSynchronousChannel(newPulsarBrokerUrl), topic, flush));
-        final ThroughputSenderTask senderTask = new ThroughputSenderTask(channelWriter);
+                newPulsarProducerSynchronousWriter(new PulsarSynchronousChannel(pulsarBrokerUrl), topic, flush));
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
-                newPulsarSynchronousReader(new PulsarSynchronousChannel(newPulsarBrokerUrl), topic, useReader));
+                newPulsarSynchronousReader(new PulsarSynchronousChannel(pulsarBrokerUrl), topic, useReader));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
         new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
     }
 
-    protected void runPulsarLatencyTest(final String newPulsarBrokerUrl, final String responseTopic,
+    protected void runPulsarLatencyTest(final String pulsarBrokerUrl, final String responseTopic,
             final String requestTopic, final boolean useReader) throws InterruptedException {
         final boolean flush = true;
         final ISynchronousReader<FDate> requestReader = newSerdeReader(
-                newPulsarSynchronousReader(new PulsarSynchronousChannel(newPulsarBrokerUrl), requestTopic, useReader));
+                newPulsarSynchronousReader(new PulsarSynchronousChannel(pulsarBrokerUrl), requestTopic, useReader));
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(newPulsarProducerSynchronousWriter(
-                new PulsarSynchronousChannel(newPulsarBrokerUrl), responseTopic, flush));
+                new PulsarSynchronousChannel(pulsarBrokerUrl), responseTopic, flush));
 
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
-                newPulsarSynchronousReader(new PulsarSynchronousChannel(newPulsarBrokerUrl), responseTopic, useReader));
+                newPulsarSynchronousReader(new PulsarSynchronousChannel(pulsarBrokerUrl), responseTopic, useReader));
 
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
-        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(newPulsarProducerSynchronousWriter(
-                new PulsarSynchronousChannel(newPulsarBrokerUrl), requestTopic, flush));
+        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
+                newPulsarProducerSynchronousWriter(new PulsarSynchronousChannel(pulsarBrokerUrl), requestTopic, flush));
 
         final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
