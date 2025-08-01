@@ -23,23 +23,27 @@ import de.invesdwin.util.time.date.IFDateProvider;
 @NotThreadSafe
 public class RpcClientTask implements Runnable {
 
+    private final AChannelTest parent;
     private final OutputStream log;
     private final IRpcSynchronousEndpointClient<IRpcTestService> client;
     private final String clientId;
     private final RpcTestServiceMode mode;
 
-    public RpcClientTask(final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
+    public RpcClientTask(final AChannelTest parent, final IRpcSynchronousEndpointClient<IRpcTestService> client,
+            final String clientId, final RpcTestServiceMode mode) {
+        this(parent, new Log(LatencyClientTask.class), client, clientId, mode);
+    }
+
+    public RpcClientTask(final AChannelTest parent, final Log log,
+            final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
-        this(new Log(LatencyClientTask.class), client, clientId, mode);
+        this(parent, Slf4jStream.of(log).asInfo(), client, clientId, mode);
     }
 
-    public RpcClientTask(final Log log, final IRpcSynchronousEndpointClient<IRpcTestService> client,
-            final String clientId, final RpcTestServiceMode mode) {
-        this(Slf4jStream.of(log).asInfo(), client, clientId, mode);
-    }
-
-    public RpcClientTask(final OutputStream log, final IRpcSynchronousEndpointClient<IRpcTestService> client,
-            final String clientId, final RpcTestServiceMode mode) {
+    public RpcClientTask(final AChannelTest parent, final OutputStream log,
+            final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
+            final RpcTestServiceMode mode) {
+        this.parent = parent;
         this.log = log;
         this.client = client;
         this.clientId = clientId;
@@ -48,7 +52,7 @@ public class RpcClientTask implements Runnable {
 
     @Override
     public void run() {
-        int count = -AChannelTest.WARMUP_MESSAGE_COUNT;
+        int count = -parent.getWarmupMessageCount();
         Instant readsStart = new Instant();
         FDate prevValue = null;
         final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
@@ -60,7 +64,7 @@ public class RpcClientTask implements Runnable {
             try (ICloseableIterator<? extends IFDateProvider> values = latencyReportRequestResponseRoundtrip
                     .newRequestMessages()
                     .iterator()) {
-                while (count < AChannelTest.MESSAGE_COUNT) {
+                while (count < parent.getMessageCount()) {
                     if (count == 0) {
                         //don't count in connection establishment
                         readsStart = new Instant();
@@ -92,10 +96,9 @@ public class RpcClientTask implements Runnable {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-        Assertions.checkEquals(AChannelTest.MESSAGE_COUNT, count);
+        Assertions.checkEquals(parent.getMessageCount(), count);
         try {
-            AChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, count,
-                    AChannelTest.MESSAGE_COUNT);
+            AChannelTest.printProgress(log, clientId + ": ReadsFinished", readsStart, count, parent.getMessageCount());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

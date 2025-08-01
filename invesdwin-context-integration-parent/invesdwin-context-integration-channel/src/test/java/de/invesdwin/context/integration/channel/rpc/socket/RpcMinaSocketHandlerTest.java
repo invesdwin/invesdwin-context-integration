@@ -47,7 +47,7 @@ public class RpcMinaSocketHandlerTest extends AChannelTest {
             final Duration duration = start.toDuration();
             log.warn("%s.%s: Finished after %s with %s (with connection establishment)",
                     RpcTestServiceMode.class.getSimpleName(), mode, duration,
-                    new ProcessedEventsRateString(MESSAGE_COUNT * test.newRpcClientThreads(), duration));
+                    new ProcessedEventsRateString(getMessageCount() * test.newRpcClientThreads(), duration));
         }
     }
 

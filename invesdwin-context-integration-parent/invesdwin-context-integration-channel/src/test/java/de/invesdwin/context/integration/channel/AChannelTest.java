@@ -83,6 +83,10 @@ public abstract class AChannelTest extends ATest {
         return WARMUP_MESSAGE_COUNT;
     }
 
+    public int getFlushInterval() {
+        return FLUSH_INTERVAL;
+    }
+
     public static String findLocalNetworkAddress() {
         for (final InetAddress localAddress : NetworkUtil.getLocalAddresses()) {
             final String localNetworkIp = localAddress.getHostAddress();
@@ -246,7 +250,7 @@ public abstract class AChannelTest extends ATest {
     }
 
     public static LoopInterruptedCheck newLoopInterruptedCheck() {
-        return newLoopInterruptedCheck(FLUSH_INTERVAL);
+        return newLoopInterruptedCheck(getFlushInterval());
     }
 
     public static LoopInterruptedCheck newLoopInterruptedCheck(final int flushInterval) {

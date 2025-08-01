@@ -30,6 +30,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
     private static final WrappedExecutorService ASYNC_EXECUTOR = Executors
             .newFixedThreadPool(RpcTestService.class.getSimpleName() + "_ASYNC", 1)
             .setDynamicThreadName(false);
+    private final AChannelTest parent;
     private final int rpcClientThreads;
     private final OutputStream log;
     private final LoopInterruptedCheck loopCheck;
@@ -37,21 +38,22 @@ public class RpcTestService implements IRpcTestService, Closeable {
     private Instant writesStart;
     private final ILatencyReport latencyReportRequestReceived;
 
-    public RpcTestService(final int rpcClientThreads) {
-        this(rpcClientThreads, new Log(RpcTestService.class));
+    public RpcTestService(final AChannelTest parent, final int rpcClientThreads) {
+        this(parent, rpcClientThreads, new Log(RpcTestService.class));
     }
 
-    public RpcTestService(final int rpcClientThreads, final Log log) {
-        this(rpcClientThreads, Slf4jStream.of(log).asInfo());
+    public RpcTestService(final AChannelTest parent, final int rpcClientThreads, final Log log) {
+        this(parent, rpcClientThreads, Slf4jStream.of(log).asInfo());
     }
 
-    public RpcTestService(final int rpcClientThreads, final OutputStream log) {
+    public RpcTestService(final AChannelTest parent, final int rpcClientThreads, final OutputStream log) {
+        this.parent = parent;
         this.rpcClientThreads = rpcClientThreads;
-        this.loopCheck = AChannelTest.newLoopInterruptedCheck(AChannelTest.FLUSH_INTERVAL * rpcClientThreads);
+        this.loopCheck = AChannelTest.newLoopInterruptedCheck(parent.getFlushInterval() * rpcClientThreads);
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
-        this.countHolder = new AtomicInteger(-AChannelTest.WARMUP_MESSAGE_COUNT * rpcClientThreads);
+        this.countHolder = new AtomicInteger(-parent.getWarmupMessageCount() * rpcClientThreads);
     }
 
     private FDate handleRequest(final FDate request, final FDate arrivalTimestamp) throws IOException {
@@ -73,8 +75,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
         }
         final int count = countBefore + 1;
         if (loopCheck.checkNoInterrupt()) {
-            AChannelTest.printProgress(log, "Writes", writesStart, count,
-                    AChannelTest.MESSAGE_COUNT * rpcClientThreads);
+            AChannelTest.printProgress(log, "Writes", writesStart, count, parent.getMessageCount() * rpcClientThreads);
         }
         return response;
     }

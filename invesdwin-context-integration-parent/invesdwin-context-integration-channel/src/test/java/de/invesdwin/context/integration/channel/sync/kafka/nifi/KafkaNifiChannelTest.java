@@ -36,7 +36,7 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
     @Container
     protected static final NifiContainer NIFI_CONTAINER = newNifiContainer();
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
-    private int messageCountOverride;
+    private int messageCountOverride = super.getMessageCount();
 
     protected static NifiContainer newNifiContainer() {
         return new NifiContainer();
@@ -58,7 +58,7 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
 
     @Test
     public void testKafkaNifiLatency() throws InterruptedException {
-        messageCountOverride = Integers.min(super.getMessageCount(), 20); //test is too slow otherwise
+        messageCountOverride = Integers.min(super.getMessageCount(), 200); //test is too slow otherwise
         final String bootstrapServers = KAFKA_CONTAINER.getBootstrapServers();
         try {
             final String flowJson = newFlowFileForKafka(
