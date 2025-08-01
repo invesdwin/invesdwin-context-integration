@@ -24,7 +24,6 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.kafka.AKafkaChannelTest;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousWriter;
-import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -36,7 +35,6 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
     @Container
     protected static final NifiContainer NIFI_CONTAINER = newNifiContainer();
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
-    private int messageCountOverride = super.getMessageCount();
 
     protected static NifiContainer newNifiContainer() {
         return new NifiContainer();
@@ -51,14 +49,8 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
         }
     }
 
-    @Override
-    public int getMessageCount() {
-        return messageCountOverride;
-    }
-
     @Test
     public void testKafkaNifiLatency() throws InterruptedException {
-        messageCountOverride = Integers.min(super.getMessageCount(), 200); //test is too slow otherwise
         final String bootstrapServers = KAFKA_CONTAINER.getBootstrapServers();
         try {
             final String flowJson = newFlowFileForKafka(
@@ -77,7 +69,6 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
 
     @Test
     public void testKafkaNifiThroughput() throws InterruptedException {
-        messageCountOverride = super.getMessageCount();
         final String bootstrapServers = KAFKA_CONTAINER.getBootstrapServers();
         try {
             final String flowJson = newFlowFileForKafka(
