@@ -64,7 +64,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         serverChannel.register(IRpcTestService.class, service);
         final IRpcSynchronousEndpointClient<IRpcTestService> client = new DefaultRpcSynchronousEndpointClient<>(
                 new MultipleMultiplexingSynchronousEndpointClientSessionPool(
@@ -80,7 +80,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
+                    clientFutures
+                            .add(clientExecutor.submit(new RpcClientTask(parent, client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
                     Futures.getNoInterrupt(clientFutures.next());
@@ -107,7 +108,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
                 return RPC_CLIENT_TRANSPORTS;
             }
         };
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         serverChannel.register(IRpcTestService.class, service);
         final IRpcSynchronousEndpointClient<IRpcTestService>[] clients = new IRpcSynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
         for (int i = 0; i < clients.length; i++) {
@@ -123,8 +124,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(
-                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    clientFutures.add(clientExecutor
+                            .submit(new RpcClientTask(parent, clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
                     if (curClient >= clients.length) {
                         curClient = 0;
@@ -167,7 +168,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IRpcSynchronousEndpointClient<IRpcTestService> client = new DefaultRpcSynchronousEndpointClient<>(
@@ -184,7 +185,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
+                    clientFutures
+                            .add(clientExecutor.submit(new RpcClientTask(parent, client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
                     Futures.getNoInterrupt(clientFutures.next());
@@ -207,7 +209,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IRpcSynchronousEndpointClient<IRpcTestService>[] clients = new IRpcSynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
@@ -224,8 +226,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(
-                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    clientFutures.add(clientExecutor
+                            .submit(new RpcClientTask(parent, clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
                     if (curClient >= clients.length) {
                         curClient = 0;
@@ -254,7 +256,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final IAsynchronousChannel serverChannel = serverFactory.apply(handlerFactory);
         final IRpcSynchronousEndpointClient<IRpcTestService>[] clients = new IRpcSynchronousEndpointClient[RPC_CLIENT_TRANSPORTS];
@@ -271,8 +273,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(
-                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    clientFutures.add(clientExecutor
+                            .submit(new RpcClientTask(parent, clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
                     if (curClient >= clients.length) {
                         curClient = 0;
@@ -311,7 +313,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final RpcSessionlessSynchronousEndpointServer serverChannel = new RpcSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
@@ -329,7 +331,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             serverChannel.open();
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(clientExecutor.submit(new RpcClientTask(client, String.valueOf(i + 1), mode)));
+                    clientFutures
+                            .add(clientExecutor.submit(new RpcClientTask(parent, client, String.valueOf(i + 1), mode)));
                 }
                 while (clientFutures.hasNext()) {
                     Futures.getNoInterrupt(clientFutures.next());
@@ -352,7 +355,7 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             final ISynchronousEndpointFactory<IByteBufferProvider, IByteBufferProvider> clientEndpointFactory,
             final RpcTestServiceMode mode) throws InterruptedException {
         final RpcAsynchronousEndpointServerHandlerFactory handlerFactory = new RpcAsynchronousEndpointServerHandlerFactory();
-        final RpcTestService service = new RpcTestService(newRpcClientThreads());
+        final RpcTestService service = new RpcTestService(parent, newRpcClientThreads());
         handlerFactory.register(IRpcTestService.class, service);
         final RpcSessionlessSynchronousEndpointServer serverChannel = new RpcSessionlessSynchronousEndpointServer(
                 serverEndpointFactory, handlerFactory);
@@ -370,8 +373,8 @@ public class RpcLatencyChannelTest extends LatencyChannelTest {
             int curClient = 0;
             try (IBufferingIterator<Future<?>> clientFutures = new BufferingIterator<>()) {
                 for (int i = 0; i < newRpcClientThreads(); i++) {
-                    clientFutures.add(
-                            clientExecutor.submit(new RpcClientTask(clients[curClient], String.valueOf(i + 1), mode)));
+                    clientFutures.add(clientExecutor
+                            .submit(new RpcClientTask(parent, clients[curClient], String.valueOf(i + 1), mode)));
                     curClient++;
                     if (curClient >= clients.length) {
                         curClient = 0;

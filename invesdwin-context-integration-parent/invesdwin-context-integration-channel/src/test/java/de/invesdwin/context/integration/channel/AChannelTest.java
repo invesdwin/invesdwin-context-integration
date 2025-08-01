@@ -200,20 +200,20 @@ public abstract class AChannelTest extends ATest {
         return new SerdeAsynchronousHandlerFactory<FDate, FDate>(handler, serde, serde, MAX_MESSAGE_SIZE);
     }
 
-    public static ISynchronousReader<FDate> newSerdeReader(final ISynchronousReader<IByteBufferProvider> reader) {
+    public ISynchronousReader<FDate> newSerdeReader(final ISynchronousReader<IByteBufferProvider> reader) {
         final ISerde<FDate> serde = newSerde();
         final SerdeSynchronousReader<FDate> commandReader = new SerdeSynchronousReader<FDate>(reader, serde);
         return commandReader;
     }
 
-    public static ISynchronousWriter<FDate> newSerdeWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
+    public ISynchronousWriter<FDate> newSerdeWriter(final ISynchronousWriter<IByteBufferProvider> writer) {
         final ISerde<FDate> serde = newSerde();
         final SerdeSynchronousWriter<FDate> commandWriter = new SerdeSynchronousWriter<FDate>(writer, serde,
                 MAX_MESSAGE_SIZE);
         return commandWriter;
     }
 
-    protected static ISerde<FDate> newSerde() {
+    protected ISerde<FDate> newSerde() {
         final ISerde<FDate> serde = FDateSerde.GET;
         if (SIMULATED_ADDITONAL_MESSAGE_SIZE > 0) {
             //random
@@ -249,7 +249,7 @@ public abstract class AChannelTest extends ATest {
                         .getBytes());
     }
 
-    public static LoopInterruptedCheck newLoopInterruptedCheck() {
+    public LoopInterruptedCheck newLoopInterruptedCheck() {
         return newLoopInterruptedCheck(getFlushInterval());
     }
 

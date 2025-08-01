@@ -154,7 +154,7 @@ public class ThroughputChannelTest {
                 if (AChannelTest.DEBUG) {
                     log.write("receiver open channel reader\n".getBytes());
                 }
-                final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+                final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 channelReader.open();
                 try {
                     readsStart = new Instant();
@@ -228,7 +228,7 @@ public class ThroughputChannelTest {
                     log.write("sender open channel writer\n".getBytes());
                 }
                 int count = -parent.getWarmupMessageCount();
-                final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+                final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 channelWriter.open();
                 try {
                     Instant writesStart = new Instant();

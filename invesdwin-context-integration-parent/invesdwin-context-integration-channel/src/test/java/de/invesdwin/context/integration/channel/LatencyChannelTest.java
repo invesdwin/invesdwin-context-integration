@@ -327,7 +327,7 @@ public class LatencyChannelTest {
                 final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
                         .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
                 int count = -parent.getWarmupMessageCount();
-                final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+                final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 if (AChannelTest.DEBUG) {
                     log.write("server open request reader\n".getBytes());
                 }
@@ -515,7 +515,7 @@ public class LatencyChannelTest {
         private final OutputStream log;
         private Instant writesStart;
         private int count;
-        private final LoopInterruptedCheck loopCheck = AChannelTest.newLoopInterruptedCheck();
+        private final LoopInterruptedCheck loopCheck;
         private ILatencyReport latencyReportRequestReceived;
 
         public LatencyServerHandler(final AChannelTest parent) {
@@ -529,6 +529,7 @@ public class LatencyChannelTest {
         public LatencyServerHandler(final AChannelTest parent, final OutputStream log) {
             this.parent = parent;
             this.log = log;
+            this.loopCheck = parent.newLoopInterruptedCheck();
         }
 
         @Override

@@ -382,18 +382,18 @@ public class StreamLatencyChannelTest extends LatencyChannelTest {
                 serverClient, requestTopic, null);
         final StreamSynchronousEndpointClientChannel serverResponseChannel = newStreamSynchronousEndpointClientChannel(
                 serverClient, responseTopic, null);
-        final ISynchronousReader<FDate> serverRequestReader = AChannelTest
+        final ISynchronousReader<FDate> serverRequestReader = parent
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(serverRequestChannel));
-        final ISynchronousWriter<FDate> serverResponseWriter = AChannelTest
+        final ISynchronousWriter<FDate> serverResponseWriter = parent
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(serverResponseChannel));
         final LatencyServerTask serverTask = new LatencyServerTask(parent, serverRequestReader, serverResponseWriter);
         final StreamSynchronousEndpointClientChannel clientRequestChannel = newStreamSynchronousEndpointClientChannel(
                 clientClient, requestTopic, null);
         final StreamSynchronousEndpointClientChannel clientResponseChannel = newStreamSynchronousEndpointClientChannel(
                 clientClient, responseTopic, null);
-        final ISynchronousWriter<FDate> clientRequestWriter = AChannelTest
+        final ISynchronousWriter<FDate> clientRequestWriter = parent
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(clientRequestChannel));
-        final ISynchronousReader<FDate> clientResponseReader = AChannelTest
+        final ISynchronousReader<FDate> clientResponseReader = parent
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(clientResponseChannel));
         final LatencyClientTask clientTask = new LatencyClientTask(parent, clientRequestWriter, clientResponseReader);
         try {

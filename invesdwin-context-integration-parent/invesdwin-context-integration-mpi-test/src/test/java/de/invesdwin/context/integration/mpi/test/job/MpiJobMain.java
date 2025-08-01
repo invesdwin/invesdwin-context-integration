@@ -138,10 +138,10 @@ public class MpiJobMain extends AMain {
         };
         switch (MPI.rank()) {
         case 0:
-            final ISynchronousWriter<FDate> requestWriter = AChannelTest
-                    .newSerdeWriter(MPI.newSendWriter(1, 0, AChannelTest.MAX_MESSAGE_SIZE));
-            final ISynchronousReader<FDate> responseReader = AChannelTest
-                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
+            final ISynchronousWriter<FDate> requestWriter = parent
+                    .newSerdeWriter(MPI.newSendWriter(1, 0, parent.getMaxMessageSize()));
+            final ISynchronousReader<FDate> responseReader = parent
+                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), parent.getMaxMessageSize()));
             try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyClientTask.class)) {
                 new LatencyClientTask(parent, log, requestWriter, responseReader).run();
             } catch (final IOException e) {
@@ -149,10 +149,10 @@ public class MpiJobMain extends AMain {
             }
             break;
         case 1:
-            final ISynchronousReader<FDate> requestReader = AChannelTest
-                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), AChannelTest.MAX_MESSAGE_SIZE));
-            final ISynchronousWriter<FDate> responseWriter = AChannelTest
-                    .newSerdeWriter(MPI.newSendWriter(0, 0, AChannelTest.MAX_MESSAGE_SIZE));
+            final ISynchronousReader<FDate> requestReader = parent
+                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), parent.getMaxMessageSize()));
+            final ISynchronousWriter<FDate> responseWriter = parent
+                    .newSerdeWriter(MPI.newSendWriter(0, 0, parent.getMaxMessageSize()));
             try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyServerTask.class)) {
                 new LatencyServerTask(parent, log, requestReader, responseWriter).run();
             } catch (final IOException e) {

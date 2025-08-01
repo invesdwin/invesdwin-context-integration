@@ -373,12 +373,12 @@ public class StreamThroughputChannelTest extends ThroughputChannelTest {
         final String channelTopic = "channel" + topicSuffix;
         final StreamSynchronousEndpointClientChannel senderChannel = newStreamSynchronousEndpointClientChannel(
                 clientClient, channelTopic, null);
-        final ISynchronousWriter<FDate> senderChannelWriter = AChannelTest
+        final ISynchronousWriter<FDate> senderChannelWriter = parent
                 .newSerdeWriter(newStreamSynchronousEndpointClientWriter(senderChannel));
         final ThroughputSenderTask senderTask = new ThroughputSenderTask(parent, senderChannelWriter);
         final StreamSynchronousEndpointClientChannel receiverChannel = newStreamSynchronousEndpointClientChannel(
                 serverClient, channelTopic, null);
-        final ISynchronousReader<FDate> receiverChannelReader = AChannelTest
+        final ISynchronousReader<FDate> receiverChannelReader = parent
                 .newSerdeReader(newStreamSynchronousEndpointClientReader(receiverChannel));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(parent, receiverChannelReader);
         try {
