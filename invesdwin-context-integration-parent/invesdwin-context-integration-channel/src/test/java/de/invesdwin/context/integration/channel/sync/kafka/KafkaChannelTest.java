@@ -26,17 +26,17 @@ public class KafkaChannelTest extends AKafkaChannelTest {
     public void testKafkaLatency() throws InterruptedException {
         final String responseTopic = "testKafkaLatency_response";
         final String requestTopic = "testKafkaLatency_request";
-        final String bootstrapServers = KAFKA_CONTAINER.getBootstrapServers();
-        KafkaContainerForNifi.createTopic(bootstrapServers, responseTopic);
-        KafkaContainerForNifi.createTopic(bootstrapServers, requestTopic);
+        final String bootstrapServers = kafkaContainer.getBootstrapServers();
+        KafkaContainer.createTopic(bootstrapServers, responseTopic);
+        KafkaContainer.createTopic(bootstrapServers, requestTopic);
         runKafkaLatencyTest(bootstrapServers, responseTopic, requestTopic);
     }
 
     @Test
     public void testKafkaThroughput() throws InterruptedException {
         final String topic = "testKafkaThroughput_channel";
-        final String bootstrapServers = KAFKA_CONTAINER.getBootstrapServers();
-        KafkaContainerForNifi.createTopic(bootstrapServers, topic);
+        final String bootstrapServers = kafkaContainer.getBootstrapServers();
+        KafkaContainer.createTopic(bootstrapServers, topic);
         runKafkaThroughputTest(bootstrapServers, topic);
     }
 

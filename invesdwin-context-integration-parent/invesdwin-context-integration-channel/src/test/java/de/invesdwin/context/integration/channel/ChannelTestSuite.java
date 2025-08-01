@@ -20,6 +20,7 @@ import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTes
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaChannelTest;
 import de.invesdwin.context.integration.channel.sync.kafka.nifi.KafkaNifiChannelTest;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
 import de.invesdwin.context.integration.channel.sync.lmax.LmaxChannelTest;
 import de.invesdwin.context.integration.channel.sync.mina.MinaChannelTestSuite;
@@ -41,7 +42,7 @@ import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBCh
         BatchChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
         CryptoChannelTestSuite.class, SocketChannelTestSuite.class, NettyChannelTestSuite.class,
         MinaChannelTestSuite.class, ChronicleChannelTestSuite.class, KafkaChannelTest.class, KafkaNifiChannelTest.class,
-        PulsarChannelTest.class, TimeSeriesDBChannelTest.class, RpcChannelTestSuite.class,
+        RedpandaChannelTest.class, PulsarChannelTest.class, TimeSeriesDBChannelTest.class, RpcChannelTestSuite.class,
         StreamChannelTestSuite.class })
 
 @Immutable

@@ -14,7 +14,6 @@ import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.NewTopic;
 import org.testcontainers.images.builder.Transferable;
-import org.testcontainers.kafka.KafkaContainer;
 import org.testcontainers.kafka.KafkaHelperAccessor;
 import org.testcontainers.utility.DockerImageName;
 
@@ -31,18 +30,19 @@ import de.invesdwin.util.math.decimal.scaled.ByteSizeScale;
  * gateway.
  */
 @NotThreadSafe
-public class KafkaContainerForNifi extends KafkaContainer {
+public class KafkaContainer extends org.testcontainers.kafka.KafkaContainer
+        implements IKafkaContainer<org.testcontainers.kafka.KafkaContainer> {
     private String bootstrapServersOverride;
 
-    public KafkaContainerForNifi() {
+    public KafkaContainer() {
         this("apache/kafka:3.8.0");
     }
 
-    public KafkaContainerForNifi(final String imageName) {
+    public KafkaContainer(final String imageName) {
         this(DockerImageName.parse(imageName));
     }
 
-    public KafkaContainerForNifi(final DockerImageName dockerImageName) {
+    public KafkaContainer(final DockerImageName dockerImageName) {
         super(dockerImageName);
     }
 
@@ -91,7 +91,7 @@ public class KafkaContainerForNifi extends KafkaContainer {
         }
     }
 
-    public KafkaContainerForNifi setEnvTransient() {
+    public KafkaContainer setEnvTransient() {
         withEnv("KAFKA_LOG_RETENTION_MS", "1");
         return this;
     }

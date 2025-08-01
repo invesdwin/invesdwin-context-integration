@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.kafka;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.kafka.KafkaContainer;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
@@ -15,10 +14,10 @@ public abstract class AKafkaChannelTest extends AChannelTest {
     protected static final boolean TMPFS = false;
     protected static final boolean TRANSIENT = false;
     @Container
-    protected static final KafkaContainer KAFKA_CONTAINER = newKafkaContainer();
+    protected final IKafkaContainer<?> kafkaContainer = newKafkaContainer();
 
-    protected static KafkaContainer newKafkaContainer() {
-        final KafkaContainerForNifi container = new KafkaContainerForNifi();
+    protected IKafkaContainer<?> newKafkaContainer() {
+        final KafkaContainer container = new KafkaContainer();
         if (TRANSIENT) {
             container.setEnvTransient();
         }
@@ -31,14 +30,15 @@ public abstract class AKafkaChannelTest extends AChannelTest {
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        KafkaContainerForNifi.deleteAllTopics(KAFKA_CONTAINER.getBootstrapServers());
-        log.info("kafka container %s", KAFKA_CONTAINER.getBootstrapServers());
+        KafkaContainer.deleteAllTopics(kafkaContainer.getBootstrapServers());
+        log.info("Using Container %s", kafkaContainer.getClass().getName());
+        log.info(" container %s", kafkaContainer.getBootstrapServers());
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        KafkaContainerForNifi.deleteAllTopics(KAFKA_CONTAINER.getBootstrapServers());
+        KafkaContainer.deleteAllTopics(kafkaContainer.getBootstrapServers());
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
