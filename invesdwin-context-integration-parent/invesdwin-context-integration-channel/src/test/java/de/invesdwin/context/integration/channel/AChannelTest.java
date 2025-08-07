@@ -11,8 +11,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.channel.async.IAsynchronousHandlerFactory;
 import de.invesdwin.context.integration.channel.async.serde.SerdeAsynchronousHandlerFactory;
-import de.invesdwin.context.integration.channel.report.DisabledLatencyReportFactory;
 import de.invesdwin.context.integration.channel.report.ILatencyReportFactory;
+import de.invesdwin.context.integration.channel.report.ValidatingLatencyReportFactory;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
@@ -58,10 +58,10 @@ public abstract class AChannelTest extends ATest {
     public static final int SIMULATED_ADDITONAL_MESSAGE_SIZE = 0;
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;
-    public static final int MESSAGE_COUNT = DEBUG ? 10 : 5_000_000;
+    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1_000;
     public static final int FLUSH_INTERVAL = Math.max(10, MESSAGE_COUNT / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
-    public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = DisabledLatencyReportFactory.INSTANCE;
+    public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = ValidatingLatencyReportFactory.INSTANCE;
 
     public enum FileChannelType {
         PIPE_STREAMING,
