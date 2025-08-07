@@ -8,10 +8,9 @@ import org.junit.platform.suite.api.Suite;
 import de.invesdwin.context.integration.channel.sync.kafka.confluent.ConfluentCommunityChannelTest;
 import de.invesdwin.context.integration.channel.sync.kafka.nifi.KafkaNifiChannelTest;
 import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaChannelTest;
-import de.invesdwin.context.integration.channel.sync.pulsar.PulsarChannelTest;
 
 @Suite
-@SelectClasses({ KafkaChannelTest.class, KafkaNifiChannelTest.class, RedpandaChannelTest.class, PulsarChannelTest.class,
+@SelectClasses({ KafkaChannelTest.class, KafkaNifiChannelTest.class, RedpandaChannelTest.class,
         ConfluentCommunityChannelTest.class })
 
 @Immutable
