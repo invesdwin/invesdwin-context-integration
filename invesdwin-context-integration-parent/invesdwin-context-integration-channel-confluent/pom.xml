@@ -1,0 +1,51 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>de.invesdwin</groupId>
+		<artifactId>invesdwin-context-integration-parent</artifactId>
+		<version>1.0.3-SNAPSHOT</version>
+	</parent>
+	<artifactId>invesdwin-context-integration-channel-confluent</artifactId>
+	<packaging>jar</packaging>
+
+	<!-- 
+		Confluent repackages kafka into its own jars which collides with the official kafka jars. 
+		Also confluent is a commercial tool that should be separated and not used in normal code.
+	-->
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>de/invesdwin/context/integration/channel/sync/kafka/confluent/ConfluentChannelTestSuite.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<dependencies>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+		    <groupId>com.github.testcontainers-all-things-kafka</groupId>
+		    <artifactId>cp-testcontainers</artifactId>
+		    <scope>test</scope>
+		</dependency>
+		<dependency>
+		    <groupId>io.confluent</groupId>
+		    <artifactId>kafka-avro-serializer</artifactId>
+		    <scope>test</scope>
+		</dependency>
+	</dependencies>
+</project>

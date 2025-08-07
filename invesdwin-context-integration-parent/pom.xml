@@ -48,6 +48,7 @@
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-gpl</module>
+		<module>invesdwin-context-integration-channel-confluent</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
@@ -105,6 +106,8 @@
 		<version.mpjexpress>0.44</version.mpjexpress>
 		<version.mvapich2-j>2.3.7</version.mvapich2-j>
 		<version.testcontainers>1.21.3</version.testcontainers>
+		<version.cp-testcontainers>v0.2.1</version.cp-testcontainers>
+		<version.confluent>8.0.0</version.confluent>
 		<version.pulsar>4.0.5</version.pulsar>
 		<version.disni>2.1</version.disni>
 		<version.darpc>1.9</version.darpc>
@@ -820,6 +823,16 @@
 				<groupId>org.testcontainers</groupId>
 				<artifactId>kafka</artifactId>
 				<version>${version.testcontainers}</version>
+			</dependency>
+			<dependency>
+			    <groupId>com.github.testcontainers-all-things-kafka</groupId>
+			    <artifactId>cp-testcontainers</artifactId>
+			    <version>${version.cp-testcontainers}</version>
+			</dependency>
+			<dependency>
+			    <groupId>io.confluent</groupId>
+			    <artifactId>kafka-avro-serializer</artifactId>
+			    <version>${version.confluent}</version>
 			</dependency>
 			<dependency>
 			    <groupId>org.apache.pulsar</groupId>
