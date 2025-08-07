@@ -44,6 +44,7 @@ public class PulsarProducerSynchronousWriter implements ISynchronousWriter<IByte
     protected final boolean flush;
     protected final boolean blocking;
     protected Producer<byte[]> producer;
+    protected final byte[] key;
 
     public PulsarProducerSynchronousWriter(final PulsarSynchronousChannel channel, final String topic,
             final boolean flush, final boolean blocking) {
@@ -51,6 +52,14 @@ public class PulsarProducerSynchronousWriter implements ISynchronousWriter<IByte
         this.topic = topic;
         this.flush = flush;
         this.blocking = blocking;
+        this.key = newKey();
+    }
+
+    /**
+     * Null keys are actually faster than giving it a key.
+     */
+    protected byte[] newKey() {
+        return null;
     }
 
     @Override
@@ -89,13 +98,15 @@ public class PulsarProducerSynchronousWriter implements ISynchronousWriter<IByte
 
     @Override
     public boolean writeReady() throws IOException {
-        //checks if writer was made and isnt null
         return producer != null;
     }
 
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final TypedMessageBuilder<byte[]> msg = producer.newMessage().value(message.asBuffer().asByteArrayCopy());
+        if (key != null) {
+            msg.keyBytes(key);
+        }
         if (blocking && flush) {
             msg.send();
             producer.flush();

@@ -15,7 +15,6 @@ import org.apache.kafka.common.serialization.ByteArraySerializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -45,12 +44,14 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
         this.bootstrapServersConfig = bootstrapServersConfig;
         this.topic = topic;
         this.flush = flush;
-        this.key = newKey().getBytes();
+        this.key = newKey();
     }
 
-    //method to create a random key id
-    protected String newKey() {
-        return UUIDs.newPseudoRandomUUID();
+    /**
+     * Null keys are actually faster than giving it a key.
+     */
+    protected byte[] newKey() {
+        return null;
     }
 
     @Override
@@ -65,8 +66,16 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
         kafkaProps.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServersConfig);
         kafkaProps.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
         kafkaProps.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class.getName());
-        // for batching purposes with 256KB batch
-        //        kafkaProps.put(ProducerConfig.BATCH_SIZE_CONFIG, "262144");
+        //        FOR LATENCY
+        //kafkaProps.put(ProducerConfig.ACKS_CONFIG, "0");
+        //kafkaProps.put(ProducerConfig.LINGER_MS_CONFIG, "0");
+        //kafkaProps.put(ProducerConfig.BATCH_SIZE_CONFIG, "0");
+        //kafkaProps.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4");
+        //
+        //FOR THROUGHPUT
+        //kafkaProps.put(ProducerConfig.ACKS_CONFIG, "1");
+        //kafkaProps.put(ProducerConfig.BATCH_SIZE_CONFIG, "65536");
+        //kafkaProps.put(ProducerConfig.LINGER_MS_CONFIG, "10");
         return kafkaProps;
     }
 
@@ -82,7 +91,6 @@ public class KafkaSynchronousWriter implements ISynchronousWriter<IByteBufferPro
 
     @Override
     public boolean writeReady() throws IOException {
-        //checks if writer was made and isnt null
         return producer != null;
     }
 

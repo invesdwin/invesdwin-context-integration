@@ -86,7 +86,6 @@ public class PulsarConsumerSynchronousReader implements ISynchronousReader<IByte
     @Override
     public IByteBufferProvider readMessage() throws IOException {
         consumer.acknowledgeCumulativeAsync(message);
-
         final IByteBuffer msg = message.getValue().asBuffer();
         if (ClosedByteBuffer.isClosed(msg)) {
             close();
