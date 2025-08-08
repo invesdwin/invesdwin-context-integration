@@ -12,7 +12,7 @@ public class ConfluentCommunityChannelTest extends KafkaChannelTest {
 
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
-        return null;
+        return new ConfluentCommunityContainer();
     }
 
     @Test

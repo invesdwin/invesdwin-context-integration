@@ -10,9 +10,11 @@ import de.invesdwin.context.integration.channel.sync.kafka.KafkaChannelTest;
 @NotThreadSafe
 public class ConfluentCommercialChannelTest extends KafkaChannelTest {
 
+    private static final boolean SCHEMA_FACTORY = true;
+
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
-        return null;
+        return new ConfluentCommercialContainer(SCHEMA_FACTORY);
     }
 
     @Test
