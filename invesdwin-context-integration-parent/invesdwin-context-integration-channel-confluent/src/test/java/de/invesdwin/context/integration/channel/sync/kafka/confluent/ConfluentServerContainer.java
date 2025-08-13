@@ -12,6 +12,9 @@ public class ConfluentServerContainer extends net.christophschubert.cp.testconta
         implements IKafkaContainer<KafkaContainer> {
 
     public static final String REPOSITORY = "confluentinc";
+    /**
+     * confluent 8.0.0 does not start with cp-testcontainers yet, maybe the project needs to be updated to make it work
+     */
     public static final String TAG = "7.8.3";
 
     public ConfluentServerContainer() {
