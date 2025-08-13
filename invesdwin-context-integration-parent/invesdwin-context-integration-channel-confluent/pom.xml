@@ -38,6 +38,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-docker</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
 		    <groupId>com.github.testcontainers-all-things-kafka</groupId>
 		    <artifactId>cp-testcontainers</artifactId>
 		    <scope>test</scope>

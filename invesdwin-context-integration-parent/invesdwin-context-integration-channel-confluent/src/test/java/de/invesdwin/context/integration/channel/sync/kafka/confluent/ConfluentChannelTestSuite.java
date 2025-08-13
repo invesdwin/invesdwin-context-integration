@@ -6,7 +6,7 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({ ConfluentCommercialChannelTest.class })
+@SelectClasses({ ConfluentServerChannelTest.class, SchemaRegistryTest.class })
 @Immutable
 public class ConfluentChannelTestSuite {
 
