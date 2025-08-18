@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.jppf.server.test.internal;
 import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Named;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -20,6 +19,7 @@ import de.invesdwin.context.test.stub.StubSupport;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
+import jakarta.inject.Named;
 
 @Named
 @NotThreadSafe
@@ -72,7 +72,10 @@ public class JPPFServerTestStub extends StubSupport {
     }
 
     @Override
-    public void tearDownOnce(final ATest test) throws Exception {
+    public void tearDownOnce(final ATest test, final TestContext ctx) throws Exception {
+        if (!ctx.isFinished()) {
+            return;
+        }
         maybeStopLastServer();
     }
 

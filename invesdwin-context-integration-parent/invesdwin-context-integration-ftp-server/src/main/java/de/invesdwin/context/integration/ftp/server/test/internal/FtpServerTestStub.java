@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ftp.server.test.internal;
 import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Named;
 
 import org.apache.ftpserver.FtpServer;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
@@ -21,6 +20,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
+import jakarta.inject.Named;
 
 @Named
 @NotThreadSafe
@@ -69,7 +69,10 @@ public class FtpServerTestStub extends StubSupport {
     }
 
     @Override
-    public void tearDownOnce(final ATest test) throws Exception {
+    public void tearDownOnce(final ATest test, final TestContext ctx) throws Exception {
+        if (!ctx.isFinished()) {
+            return;
+        }
         maybeStopLastServer();
     }
 
