@@ -2,7 +2,8 @@ package de.invesdwin.context.integration.jppf.server.test.internal;
 
 import java.util.List;
 
-import javax.annotation.concurrent.NotThreadSafe;
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
 
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
@@ -22,10 +23,11 @@ import de.invesdwin.util.shutdown.ShutdownHookManager;
 import jakarta.inject.Named;
 
 @Named
-@NotThreadSafe
+@ThreadSafe
 public class JPPFServerTestStub extends StubSupport {
 
-    private static volatile ConfiguredJPPFServer lastServer;
+    @GuardedBy("this.class")
+    private static ConfiguredJPPFServer lastServer;
 
     static {
         ShutdownHookManager.register(new IShutdownHook() {
@@ -41,8 +43,6 @@ public class JPPFServerTestStub extends StubSupport {
         //invoke that stub before this one
         new JPPFNodeTestStub().setUpContextLocations(test, locations);
 
-        //if for some reason the tearDownOnce was not executed on the last test (maybe maven killed it?), then try to stop here aswell
-        maybeStopLastServer();
         final JPPFServerTest annotation = Reflections.getAnnotation(test, JPPFServerTest.class);
         if (annotation != null) {
             if (annotation.value()) {
@@ -60,14 +60,23 @@ public class JPPFServerTestStub extends StubSupport {
     @Override
     public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
         ctx.deactivateBean(JPPFNodeTestStub.class);
+        if (ctx.isPreMergedContext()) {
+            return;
+        }
+        //if for some reason the tearDownOnce was not executed on the last test (maybe maven killed it?), then try to stop here aswell
+        maybeStopLastServer();
     }
 
     @Override
     public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
-        try {
-            JPPFServerTestStub.lastServer = MergedContext.getInstance().getBean(ConfiguredJPPFServer.class);
-        } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
-            //ignore
+        synchronized (JPPFServerTestStub.class) {
+            if (JPPFServerTestStub.lastServer == null) {
+                try {
+                    JPPFServerTestStub.lastServer = MergedContext.getInstance().getBean(ConfiguredJPPFServer.class);
+                } catch (final NoSuchBeanDefinitionException e) { //SUPPRESS CHECKSTYLE empty block
+                    //ignore
+                }
+            }
         }
     }
 
@@ -79,7 +88,7 @@ public class JPPFServerTestStub extends StubSupport {
         maybeStopLastServer();
     }
 
-    private static void maybeStopLastServer() throws Exception {
+    private static synchronized void maybeStopLastServer() throws Exception {
         if (lastServer != null) {
             lastServer.stop();
             lastServer = null;
