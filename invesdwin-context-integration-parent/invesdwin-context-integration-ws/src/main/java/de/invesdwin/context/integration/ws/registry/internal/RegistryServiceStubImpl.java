@@ -20,7 +20,7 @@ import de.invesdwin.util.time.date.FDate;
 @ThreadSafe
 public class RegistryServiceStubImpl implements IRegistryService {
 
-    private static boolean enabled = true;
+    private static volatile boolean enabled = true;
     private static final Map<String, URI> SERVICENAME_ACCESSURI_OVERRIDES = new ConcurrentHashMap<String, URI>();
     private final ASynchronizedFastIterableDelegateSet<ServiceBinding> registeredBindings = new ASynchronizedFastIterableDelegateSet<ServiceBinding>() {
         @Override

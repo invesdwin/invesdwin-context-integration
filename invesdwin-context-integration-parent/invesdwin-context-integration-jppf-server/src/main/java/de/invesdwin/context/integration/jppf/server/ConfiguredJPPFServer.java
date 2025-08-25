@@ -5,7 +5,6 @@ import java.net.URI;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
-import jakarta.inject.Inject;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
@@ -38,6 +37,7 @@ import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
+import jakarta.inject.Inject;
 
 @ThreadSafe
 public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook, IShutdownHook {

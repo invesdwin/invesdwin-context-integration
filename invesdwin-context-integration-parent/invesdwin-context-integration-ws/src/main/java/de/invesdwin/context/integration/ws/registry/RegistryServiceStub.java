@@ -22,7 +22,10 @@ public class RegistryServiceStub extends StubSupport {
     }
 
     @Override
-    public void tearDownOnce(final ATest test) throws Exception {
+    public void tearDownOnce(final ATest test, final TestContext ctx) {
+        if (!ctx.isFinishedGlobal()) {
+            return;
+        }
         setEnabled(true);
     }
 
