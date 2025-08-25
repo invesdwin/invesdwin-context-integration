@@ -1,0 +1,28 @@
+version: "3.8"
+
+services:
+  redpanda:
+    image: redpandadata/redpanda:latest
+    command:
+      - redpanda start
+      - --smp 1
+      - --overprovisioned
+      - --node-id 0
+      - --kafka-addr PLAINTEXT://0.0.0.0:9092,INTERNAL://0.0.0.0:29092
+      - --advertise-kafka-addr PLAINTEXT://localhost:9092,INTERNAL://redpanda:29092
+    ports:
+      - "9092:9092"
+
+  console:
+    image: docker.redpanda.com/redpandadata/console:latest
+    depends_on:
+      - redpanda
+    ports:
+      - "8080:8080"
+    environment:
+      CONFIG_FILEPATH: /tmp/config.yml
+      CONSOLE_CONFIG_FILE: |
+        kafka:
+          brokers: ["redpanda:29092"]  # talks to internal listener
+    entrypoint: /bin/sh
+    command: -c "echo \"$$CONSOLE_CONFIG_FILE\" > /tmp/config.yml; /app/console"

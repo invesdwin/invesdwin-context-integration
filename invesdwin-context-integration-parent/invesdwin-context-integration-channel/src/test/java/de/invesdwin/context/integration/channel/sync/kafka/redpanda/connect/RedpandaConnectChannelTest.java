@@ -1,0 +1,144 @@
+package de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect;
+
+import javax.annotation.concurrent.NotThreadSafe;
+
+import org.junit.jupiter.api.Test;
+import org.testcontainers.junit.jupiter.Container;
+import org.testcontainers.junit.jupiter.Testcontainers;
+
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.kafka.KafkaContainer;
+import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousReader;
+import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousWriter;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.duration.Duration;
+
+// TODO: remove these duplicates, just reuse KafkaContainer.createTopic and deleteAllTopics
+
+@Testcontainers
+@NotThreadSafe
+public class RedpandaConnectChannelTest extends AChannelTest {
+
+    @Container
+    protected static final RedpandaConsoleContainer CONSOLE_CONTAINER = new RedpandaConsoleContainer();
+    //TODO: check if @Container starts/stops Startables for us, if not just call stop manually in tearDown
+    @Container
+    protected static final RedpandaConnectBridges CONNECT_BRIDGES = new RedpandaConnectBridges();
+
+    private static String bootstrapServers;
+    private static final Duration POLL_TIMEOUT = Duration.ZERO;
+
+    @Override
+    public void setUp() throws Exception {
+        super.setUp();
+        bootstrapServers = RedpandaConsoleContainer.getBootstrapServers();
+        KafkaContainer.deleteAllTopics(bootstrapServers);
+    }
+
+    @Override
+    public void tearDown() throws Exception {
+        super.tearDown();
+        KafkaContainer.deleteAllTopics(bootstrapServers);
+        //TODO:have the list of bridge containers in the test, stop them here
+    }
+
+    @Test
+    public void testKafkaRedpandaConnectThroughput() throws Exception {
+        final String inputTopic = "throughput_input";
+        final String outputTopic = "throughput_output";
+
+        KafkaContainer.createTopic(bootstrapServers, inputTopic);
+        KafkaContainer.createTopic(bootstrapServers, outputTopic);
+
+        CONNECT_BRIDGES.startBridge(inputTopic, outputTopic);
+
+        runKafkaThroughputTest(inputTopic, outputTopic, bootstrapServers);
+    }
+
+    @Test
+    public void testKafkaRedpandaConnectLatency() throws Exception {
+        final String requestInputTopic = "latency_request_in";
+        final String requestOutputTopic = "latency_request_out";
+        final String responseInputTopic = "latency_response_in";
+        final String responseOutputTopic = "latency_response_out";
+
+        KafkaContainer.createTopic(bootstrapServers, requestInputTopic);
+        KafkaContainer.createTopic(bootstrapServers, requestOutputTopic);
+        KafkaContainer.createTopic(bootstrapServers, responseInputTopic);
+        KafkaContainer.createTopic(bootstrapServers, responseOutputTopic);
+
+        CONNECT_BRIDGES.startBridge(requestInputTopic, requestOutputTopic);
+        CONNECT_BRIDGES.startBridge(responseInputTopic, responseOutputTopic);
+
+        runKafkaLatencyTest(responseInputTopic, requestInputTopic, responseOutputTopic, requestOutputTopic,
+                bootstrapServers);
+    }
+
+    private void runKafkaThroughputTest(final String inputTopic, final String outputTopic,
+            final String bootstrapServers) throws InterruptedException {
+        final boolean flush = false;
+
+        final ISynchronousWriter<FDate> writer = newSerdeWriter(
+                newKafkaSynchronousWriter(bootstrapServers, inputTopic, flush));
+
+        final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, writer);
+
+        final ISynchronousReader<FDate> reader = newSerdeReader(
+                new KafkaSynchronousReader(bootstrapServers, outputTopic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return POLL_TIMEOUT;
+                    }
+                });
+
+        final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, reader);
+        new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
+    }
+
+    private void runKafkaLatencyTest(final String responseInputTopic, final String requestInputTopic,
+            final String responseOutputTopic, final String requestOutputTopic, final String bootstrapServers)
+            throws InterruptedException {
+        final boolean flush = true;
+
+        final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(bootstrapServers, responseInputTopic, flush));
+
+        final ISynchronousReader<FDate> requestReader = newSerdeReader(
+                new KafkaSynchronousReader(bootstrapServers, requestOutputTopic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return POLL_TIMEOUT;
+                    }
+                });
+
+        final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
+
+        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
+                newKafkaSynchronousWriter(bootstrapServers, requestInputTopic, flush));
+
+        final ISynchronousReader<FDate> responseReader = newSerdeReader(
+                new KafkaSynchronousReader(bootstrapServers, responseOutputTopic) {
+                    @Override
+                    protected Duration newPollTimeout() {
+                        return POLL_TIMEOUT;
+                    }
+                });
+
+        final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
+    }
+
+    protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
+            final String topic, final boolean flush) {
+        return new KafkaSynchronousWriter(bootstrapServers, topic, flush);
+    }
+}

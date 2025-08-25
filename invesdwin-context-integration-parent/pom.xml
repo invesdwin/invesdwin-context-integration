@@ -109,6 +109,8 @@
 		<version.cp-testcontainers>v0.2.1</version.cp-testcontainers>
 		<version.confluent>7.8.3</version.confluent>
 		<version.pulsar>4.0.5</version.pulsar>
+		<version.lettuce>6.8.0.RELEASE</version.lettuce>
+		<version.jedis>6.1.0</version.jedis>
 		<version.disni>2.1</version.disni>
 		<version.darpc>1.9</version.darpc>
 		<version.jucx>1.14.100</version.jucx>
@@ -834,6 +836,16 @@
 			    <artifactId>kafka-avro-serializer</artifactId>
 			    <version>${version.confluent}</version>
 			</dependency>
+			<dependency>
+			   <groupId>io.lettuce</groupId>
+               <artifactId>lettuce-core</artifactId>
+               <version>${version.lettuce}</version>
+            </dependency>
+            <dependency>
+               <groupId>redis.clients</groupId>
+               <artifactId>jedis</artifactId>
+               <version>${version.jedis}</version>
+            </dependency>
 			<dependency>
 			    <groupId>org.apache.pulsar</groupId>
 	            <artifactId>pulsar-client</artifactId>
