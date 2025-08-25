@@ -53,11 +53,14 @@ public class NifiContainer extends GenericContainer<NifiContainer> {
         setPortBindings(portBindings);
     }
 
-    public void setupFlow(final String flowJson) throws IOException, JsonProcessingException, JsonMappingException {
-        final String nifiServer = "https://localhost:" + getExposedPorts().get(0); //UI Address
-        log.info("nifi container %s/nifi/", nifiServer);
+    @Override
+    public void start() {
+        super.start();
+        log.info("NiFi website: %s", getNifiWebsiteUrl());
+    }
 
-        final String nifiRestApi = nifiServer + "/nifi-api"; //nifi rest api url
+    public void setupFlow(final String flowJson) throws IOException, JsonProcessingException, JsonMappingException {
+        final String nifiRestApi = getNifiRestApiUrl(); //nifi rest api url
 
         final String authToken = getAuthToken(nifiRestApi);
         //log.info("Auth Token obtained.");
@@ -88,6 +91,18 @@ public class NifiContainer extends GenericContainer<NifiContainer> {
         }
         final JsonNode revisionNode = getLatestRevision(nifiRestApi, authToken, mapper, newProcessGroupId);
         startFlow(nifiRestApi, authToken, newProcessGroupId, revisionNode);
+    }
+
+    public String getNifiServerAddress() {
+        return "https://localhost:" + getExposedPorts().get(0);
+    }
+
+    public String getNifiRestApiUrl() {
+        return getNifiServerAddress() + "/nifi-api";
+    }
+
+    public String getNifiWebsiteUrl() {
+        return getNifiServerAddress() + "/nifi/";
     }
 
     protected JsonNode getLatestRevision(final String nifiRestApi, final String authToken, final ObjectMapper mapper,

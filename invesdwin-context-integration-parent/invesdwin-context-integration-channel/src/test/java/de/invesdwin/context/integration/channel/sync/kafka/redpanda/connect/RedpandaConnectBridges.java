@@ -14,19 +14,23 @@ import org.apache.commons.io.IOUtils;
 import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.builder.Transferable;
-import org.testcontainers.lifecycle.Startable;
 import org.testcontainers.utility.DockerImageName;
 
-import de.invesdwin.context.log.Log;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectBridges;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 
 // TODO: extend DockerComposeContainer, not GenericContainer
 // TODO: make this a separate container only for redpanda connect, which then works both with kafka and redpanda and
 // confluent
 @NotThreadSafe
-public class RedpandaConnectBridges implements Startable {
-    private final Log log = new Log(this);
+public class RedpandaConnectBridges implements IKafkaConnectBridges {
 
+    private final IKafkaContainer<?> kafkaContainer;
     private final List<GenericContainer<?>> bridges = new ArrayList<>();
+
+    public RedpandaConnectBridges(final IKafkaContainer<?> kafkaContainer) {
+        this.kafkaContainer = kafkaContainer;
+    }
 
     @Override
     public void start() {}
@@ -35,6 +39,7 @@ public class RedpandaConnectBridges implements Startable {
     public void stop() {
         for (final GenericContainer<?> bridge : bridges) {
             try {
+                System.out.println("stopping bridge");
                 bridge.stop();
             } catch (final Exception ignore) {
             }
@@ -42,12 +47,12 @@ public class RedpandaConnectBridges implements Startable {
         bridges.clear();
     }
 
-    public GenericContainer<?> startBridge(final String inputTopic, final String outputTopic) throws IOException {
-        final String bootstrap = getBootstrapServers();
+    @Override
+    public GenericContainer<?> startBridge(final String inputTopic, final String outputTopic) {
         final String uuid = java.util.UUID.randomUUID().toString();
 
         final String template = readResourceAsString("connect-bridge.yaml");
-        final String yamlConfig = template.replace("${BOOTSTRAP}", bootstrap)
+        final String yamlConfig = template.replace("${BOOTSTRAP}", kafkaContainer.getBootstrapServers())
                 .replace("${IN_TOPIC}", inputTopic)
                 .replace("${OUT_TOPIC}", outputTopic)
                 .replace("${UUID}", uuid);
@@ -66,14 +71,12 @@ public class RedpandaConnectBridges implements Startable {
         return bridgeContainer;
     }
 
-    private static String getBootstrapServers() {
-        return RedpandaConsoleContainer.getBootstrapServers();
-    }
-
-    private static String readResourceAsString(final String nameInSamePackage) throws IOException {
+    private static String readResourceAsString(final String nameInSamePackage) {
         final URL url = RedpandaConnectBridges.class.getResource(nameInSamePackage);
         try (InputStream in = url.openStream()) {
             return IOUtils.toString(in, Charset.defaultCharset());
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
@@ -15,9 +14,13 @@ import de.invesdwin.context.integration.channel.ThroughputChannelTest.Throughput
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.kafka.AKafkaChannelTest;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectBridges;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaContainer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -26,28 +29,38 @@ import de.invesdwin.util.time.duration.Duration;
 
 @Testcontainers
 @NotThreadSafe
-public class RedpandaConnectChannelTest extends AChannelTest {
+public class RedpandaConnectChannelTest extends AKafkaChannelTest {
 
-    @Container
-    protected static final RedpandaConsoleContainer CONSOLE_CONTAINER = new RedpandaConsoleContainer();
+    private static final Duration POLL_TIMEOUT = Duration.ZERO;
     //TODO: check if @Container starts/stops Startables for us, if not just call stop manually in tearDown
     @Container
-    protected static final RedpandaConnectBridges CONNECT_BRIDGES = new RedpandaConnectBridges();
+    protected final IKafkaConnectBridges connectBridges = newKafkaConnectBridges();
+    @Container
+    protected final RedpandaConsoleContainer consoleContainer = newRedpandaConsoleContainer();
 
-    private static String bootstrapServers;
-    private static final Duration POLL_TIMEOUT = Duration.ZERO;
+    @Override
+    protected IKafkaContainer<?> newKafkaContainer() {
+        return new RedpandaContainer();
+    }
+
+    private IKafkaConnectBridges newKafkaConnectBridges() {
+        return new RedpandaConnectBridges(kafkaContainer);
+    }
+
+    private RedpandaConsoleContainer newRedpandaConsoleContainer() {
+        return new RedpandaConsoleContainer(kafkaContainer);
+    }
 
     @Override
     public void setUp() throws Exception {
         super.setUp();
-        bootstrapServers = RedpandaConsoleContainer.getBootstrapServers();
-        KafkaContainer.deleteAllTopics(bootstrapServers);
+        KafkaContainer.deleteAllTopics(kafkaContainer.getBootstrapServers());
     }
 
     @Override
     public void tearDown() throws Exception {
         super.tearDown();
-        KafkaContainer.deleteAllTopics(bootstrapServers);
+        KafkaContainer.deleteAllTopics(kafkaContainer.getBootstrapServers());
         //TODO:have the list of bridge containers in the test, stop them here
     }
 
@@ -56,12 +69,12 @@ public class RedpandaConnectChannelTest extends AChannelTest {
         final String inputTopic = "throughput_input";
         final String outputTopic = "throughput_output";
 
-        KafkaContainer.createTopic(bootstrapServers, inputTopic);
-        KafkaContainer.createTopic(bootstrapServers, outputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), inputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), outputTopic);
 
-        CONNECT_BRIDGES.startBridge(inputTopic, outputTopic);
+        connectBridges.startBridge(inputTopic, outputTopic);
 
-        runKafkaThroughputTest(inputTopic, outputTopic, bootstrapServers);
+        runKafkaThroughputTest(inputTopic, outputTopic, kafkaContainer.getBootstrapServers());
     }
 
     @Test
@@ -71,16 +84,16 @@ public class RedpandaConnectChannelTest extends AChannelTest {
         final String responseInputTopic = "latency_response_in";
         final String responseOutputTopic = "latency_response_out";
 
-        KafkaContainer.createTopic(bootstrapServers, requestInputTopic);
-        KafkaContainer.createTopic(bootstrapServers, requestOutputTopic);
-        KafkaContainer.createTopic(bootstrapServers, responseInputTopic);
-        KafkaContainer.createTopic(bootstrapServers, responseOutputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), requestInputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), requestOutputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), responseInputTopic);
+        KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), responseOutputTopic);
 
-        CONNECT_BRIDGES.startBridge(requestInputTopic, requestOutputTopic);
-        CONNECT_BRIDGES.startBridge(responseInputTopic, responseOutputTopic);
+        connectBridges.startBridge(requestInputTopic, requestOutputTopic);
+        connectBridges.startBridge(responseInputTopic, responseOutputTopic);
 
         runKafkaLatencyTest(responseInputTopic, requestInputTopic, responseOutputTopic, requestOutputTopic,
-                bootstrapServers);
+                kafkaContainer.getBootstrapServers());
     }
 
     private void runKafkaThroughputTest(final String inputTopic, final String outputTopic,
@@ -137,6 +150,7 @@ public class RedpandaConnectChannelTest extends AChannelTest {
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
+    @Override
     protected ISynchronousWriter<IByteBufferProvider> newKafkaSynchronousWriter(final String bootstrapServers,
             final String topic, final boolean flush) {
         return new KafkaSynchronousWriter(bootstrapServers, topic, flush);
