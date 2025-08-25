@@ -19,9 +19,6 @@ import org.testcontainers.utility.DockerImageName;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 
-// TODO: extend DockerComposeContainer, not GenericContainer
-// TODO: make this a separate container only for redpanda connect, which then works both with kafka and redpanda and
-// confluent
 @NotThreadSafe
 public class RedpandaConnectBridges implements IKafkaConnectBridges {
 
@@ -39,7 +36,6 @@ public class RedpandaConnectBridges implements IKafkaConnectBridges {
     public void stop() {
         for (final GenericContainer<?> bridge : bridges) {
             try {
-                System.out.println("stopping bridge");
                 bridge.stop();
             } catch (final Exception ignore) {
             }

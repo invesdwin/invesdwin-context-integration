@@ -21,22 +21,27 @@ import de.invesdwin.context.integration.channel.sync.kafka.KafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaContainer;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.console.RedpandaConsoleContainer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
 
-// TODO: remove these duplicates, just reuse KafkaContainer.createTopic and deleteAllTopics
+// TODO: create a KafkaConnectBridges and KafkaConnectChannelTest
+// TODO: extends KafkaConnectChannelTest for Redpanda and replace KafkaContainer with RedpandaContainer and
+// KafkaConnectBridges wth RedpandaConnectBridges
+// TODO: crate ConfluentConnectBridges (ideally expending KafkaConnectBridges and just replacing the image name) and
+// ConfluentConnectChannelTest (might have to do the host/gateway ip address and bootstrapServers without PLAINTEXT://
+// prefix workarounds as well)
 
 @Testcontainers
 @NotThreadSafe
 public class RedpandaConnectChannelTest extends AKafkaChannelTest {
 
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
-    //TODO: check if @Container starts/stops Startables for us, if not just call stop manually in tearDown
+    @Container
+    protected final RedpandaConsoleContainer redpandaConsoleContainer = newRedpandaConsoleContainer();
     @Container
     protected final IKafkaConnectBridges connectBridges = newKafkaConnectBridges();
-    @Container
-    protected final RedpandaConsoleContainer consoleContainer = newRedpandaConsoleContainer();
 
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
@@ -61,7 +66,6 @@ public class RedpandaConnectChannelTest extends AKafkaChannelTest {
     public void tearDown() throws Exception {
         super.tearDown();
         KafkaContainer.deleteAllTopics(kafkaContainer.getBootstrapServers());
-        //TODO:have the list of bridge containers in the test, stop them here
     }
 
     @Test
