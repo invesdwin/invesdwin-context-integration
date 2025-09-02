@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect;
+package de.invesdwin.context.integration.channel.sync.kafka.connect;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,21 +19,23 @@ import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
-import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
-public class RedpandaConnectBridges implements IKafkaBridges {
+public class KafkaKcatBridges implements IKafkaBridges {
 
     private final IKafkaContainer<?> kafkaContainer;
     private final List<GenericContainer<?>> bridges = new ArrayList<>();
+    private Network network;
 
-    public RedpandaConnectBridges(final IKafkaContainer<?> kafkaContainer) {
+    public KafkaKcatBridges(final IKafkaContainer<?> kafkaContainer) {
         this.kafkaContainer = kafkaContainer;
     }
 
     //CHECKSTYLE:OFF
     @Override
     public IKafkaBridges withNetwork(final Network network) {
+        //CHECKSTYLE:ON
+        this.network = network;
         return this;
     }
 
@@ -56,8 +58,7 @@ public class RedpandaConnectBridges implements IKafkaBridges {
         final String uuid = java.util.UUID.randomUUID().toString();
 
         final String template = readResourceAsString("connect-bridge.yaml");
-        final String yamlConfig = template
-                .replace("${BOOTSTRAP}", Strings.removeStart(kafkaContainer.getBootstrapServers(), "PLAINTEXT://"))
+        final String yamlConfig = template.replace("${BOOTSTRAP}", kafkaContainer.getBootstrapServers())
                 .replace("${IN_TOPIC}", inputTopic)
                 .replace("${OUT_TOPIC}", outputTopic)
                 .replace("${UUID}", uuid);
@@ -65,12 +66,11 @@ public class RedpandaConnectBridges implements IKafkaBridges {
         @SuppressWarnings("resource")
         final GenericContainer<?> bridgeContainer = new GenericContainer<>(
                 DockerImageName.parse("docker.redpanda.com/redpandadata/connect:latest"))
-                        .withNetworkMode("host")
+                        .withNetwork(network)
                         .withCopyToContainer(Transferable.of(yamlConfig.getBytes(StandardCharsets.UTF_8)),
                                 "/connect.yaml")
                         .withCommand("run", "/connect.yaml")
-                        .waitingFor(Wait.forLogMessage(".*Listening for HTTP requests at: http://0.0.0.0:4195.*", 1));
-        //.waitingFor(Wait.forLogMessage(".*Input type .* is now active.*", 1));
+                        .waitingFor(Wait.forLogMessage(".*Input type .* is now active.*", 1));
 
         bridgeContainer.start();
         bridges.add(bridgeContainer);
@@ -78,7 +78,7 @@ public class RedpandaConnectBridges implements IKafkaBridges {
     }
 
     private static String readResourceAsString(final String nameInSamePackage) {
-        final URL url = RedpandaConnectBridges.class.getResource(nameInSamePackage);
+        final URL url = KafkaKcatBridges.class.getResource(nameInSamePackage);
         try (InputStream in = url.openStream()) {
             return IOUtils.toString(in, Charset.defaultCharset());
         } catch (final IOException e) {

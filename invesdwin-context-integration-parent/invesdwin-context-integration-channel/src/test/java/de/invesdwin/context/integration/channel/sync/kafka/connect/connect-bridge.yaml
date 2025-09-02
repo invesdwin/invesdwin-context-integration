@@ -1,0 +1,18 @@
+input:
+  kafka_franz:
+    seed_brokers: ["${BOOTSTRAP}"]
+    topics: ["${IN_TOPIC}"]
+    consumer_group: "rpconnect-bridge-${UUID}"
+    start_from_oldest: true
+
+pipeline:
+  threads: 1
+  processors:
+    - bloblang: 'root = this'
+
+output:
+  kafka_franz:
+    seed_brokers: ["${BOOTSTRAP}"]
+    topic: "${OUT_TOPIC}"
+    max_in_flight: 1
+    idempotent_write: true

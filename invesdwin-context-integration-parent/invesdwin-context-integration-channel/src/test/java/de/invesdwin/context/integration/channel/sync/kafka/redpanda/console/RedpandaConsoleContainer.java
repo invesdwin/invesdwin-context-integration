@@ -6,6 +6,7 @@ import org.testcontainers.containers.GenericContainer;
 
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
 public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleContainer> {
@@ -24,7 +25,8 @@ public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleCo
     protected void configure() {
         super.configure();
         withExposedPorts(CONSOLE_PORT);
-        withEnv("KAFKA_BROKERS", kafkaContainer.getBootstrapServers());
+        final String g = Strings.removeStart(kafkaContainer.getBootstrapServers(), "PLAINTEXT://");
+        withEnv("KAFKA_BROKERS", g);
     }
 
     @Override

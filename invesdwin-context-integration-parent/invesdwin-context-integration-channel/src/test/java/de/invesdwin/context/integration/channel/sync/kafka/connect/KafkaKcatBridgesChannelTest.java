@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect;
+package de.invesdwin.context.integration.channel.sync.kafka.connect;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -15,44 +15,51 @@ import de.invesdwin.context.integration.channel.ThroughputChannelTest.Throughput
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.kafka.AKafkaChannelTest;
-import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectBridges;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.kafka.KafkaSynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaContainer;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect.RedpandaConnectBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.redpanda.console.RedpandaConsoleContainer;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
 
-// TODO: create a KafkaConnectBridges and KafkaConnectChannelTest
-// TODO: extends KafkaConnectChannelTest for Redpanda and replace KafkaContainer with RedpandaContainer and
-// KafkaConnectBridges wth RedpandaConnectBridges
-// TODO: crate ConfluentConnectBridges (ideally expending KafkaConnectBridges and just replacing the image name) and
+// TODO: extend KafkaConnectChannelTest for Redpanda and replace KafkaContainer with RedpandaContainer and
+// use RedpandaConnectBridges also directly in KafkaConnectChannelTest (until we find a replacement)DONE
+// TODO: create a ConfluentConnectChannelTest that integrates confluents kafka connect and schema registry with redpanda
+// console; for now using RedpandaConnectBridges (extending the KafkaConnectChannelTest similar to
+// RedpandaConnectChannelTest)
+// TODO: create ConfluentConnectBridges (ideally expending KafkaConnectBridges and just replacing the image name) and
 // ConfluentConnectChannelTest (might have to do the host/gateway ip address and bootstrapServers without PLAINTEXT://
-// prefix workarounds as well)
+// prefix workarounds as well) (postponed until we find kafka connect bridges similar to redpanda connect)
+// TODO: create a KafkaConnectBridges and KafkaConnectChannelTest (postponed until we find kafka connect bridges similar
+// to redpanda connect)
 
 @Testcontainers
 @NotThreadSafe
-public class RedpandaConnectChannelTest extends AKafkaChannelTest {
+public class KafkaKcatBridgesChannelTest extends AKafkaChannelTest {
 
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
     @Container
     protected final RedpandaConsoleContainer redpandaConsoleContainer = newRedpandaConsoleContainer();
     @Container
-    protected final IKafkaConnectBridges connectBridges = newKafkaConnectBridges();
+    protected final IKafkaBridges kafkaBridges = newKafkaBridges();
+    private final Log log = new Log(this);
 
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
-        return new RedpandaContainer();
+
+        return new KafkaContainer();
     }
 
-    private IKafkaConnectBridges newKafkaConnectBridges() {
+    protected IKafkaBridges newKafkaBridges() {
         return new RedpandaConnectBridges(kafkaContainer);
     }
 
-    private RedpandaConsoleContainer newRedpandaConsoleContainer() {
+    protected RedpandaConsoleContainer newRedpandaConsoleContainer() {
         return new RedpandaConsoleContainer(kafkaContainer);
     }
 
@@ -76,8 +83,7 @@ public class RedpandaConnectChannelTest extends AKafkaChannelTest {
         KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), inputTopic);
         KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), outputTopic);
 
-        connectBridges.startBridge(inputTopic, outputTopic);
-
+        kafkaBridges.startBridge(inputTopic, outputTopic);
         runKafkaThroughputTest(inputTopic, outputTopic, kafkaContainer.getBootstrapServers());
     }
 
@@ -93,14 +99,14 @@ public class RedpandaConnectChannelTest extends AKafkaChannelTest {
         KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), responseInputTopic);
         KafkaContainer.createTopic(kafkaContainer.getBootstrapServers(), responseOutputTopic);
 
-        connectBridges.startBridge(requestInputTopic, requestOutputTopic);
-        connectBridges.startBridge(responseInputTopic, responseOutputTopic);
+        kafkaBridges.startBridge(requestInputTopic, requestOutputTopic);
+        kafkaBridges.startBridge(responseInputTopic, responseOutputTopic);
 
         runKafkaLatencyTest(responseInputTopic, requestInputTopic, responseOutputTopic, requestOutputTopic,
                 kafkaContainer.getBootstrapServers());
     }
 
-    private void runKafkaThroughputTest(final String inputTopic, final String outputTopic,
+    protected void runKafkaThroughputTest(final String inputTopic, final String outputTopic,
             final String bootstrapServers) throws InterruptedException {
         final boolean flush = false;
 

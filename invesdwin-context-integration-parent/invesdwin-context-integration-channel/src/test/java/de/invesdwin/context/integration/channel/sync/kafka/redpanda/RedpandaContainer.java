@@ -30,7 +30,8 @@ public class RedpandaContainer extends org.testcontainers.redpanda.RedpandaConta
 
     @Override
     public String getBootstrapServers() {
-        return Strings.removeStart(super.getBootstrapServers(), "PLAINTEXT://");
+        final String b = super.getBootstrapServers();
+        return Strings.removeStart(b, "PLAINTEXT://");
     }
 
     @Override
