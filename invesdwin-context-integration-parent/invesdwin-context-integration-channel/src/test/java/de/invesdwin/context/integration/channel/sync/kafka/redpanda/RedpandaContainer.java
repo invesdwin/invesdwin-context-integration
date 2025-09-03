@@ -14,11 +14,12 @@ import de.invesdwin.util.lang.string.Strings;
 @NotThreadSafe
 public class RedpandaContainer extends org.testcontainers.redpanda.RedpandaContainer
         implements IKafkaContainer<org.testcontainers.redpanda.RedpandaContainer> {
+    public static final String TAG = "v25.2.2";
     private String hostOverride;
     private String bootstrapServersOverride;
 
     public RedpandaContainer() {
-        super(DockerImageName.parse("redpandadata/redpanda:v25.2.2"));
+        super(DockerImageName.parse("redpandadata/redpanda:" + TAG));
     }
 
     @SuppressWarnings("deprecation")
