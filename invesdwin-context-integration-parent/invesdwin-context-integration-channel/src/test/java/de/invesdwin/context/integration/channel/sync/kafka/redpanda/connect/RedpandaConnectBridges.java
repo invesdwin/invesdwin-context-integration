@@ -19,7 +19,6 @@ import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
-import de.invesdwin.context.integration.channel.sync.kafka.redpanda.RedpandaContainer;
 import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
@@ -65,7 +64,7 @@ public class RedpandaConnectBridges implements IKafkaBridges {
 
         @SuppressWarnings("resource")
         final GenericContainer<?> bridgeContainer = new GenericContainer<>(
-                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:" + RedpandaContainer.TAG))
+                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4"))
                         .withNetworkMode("host")
                         .withCopyToContainer(Transferable.of(yamlConfig.getBytes(StandardCharsets.UTF_8)),
                                 "/connect.yaml")
