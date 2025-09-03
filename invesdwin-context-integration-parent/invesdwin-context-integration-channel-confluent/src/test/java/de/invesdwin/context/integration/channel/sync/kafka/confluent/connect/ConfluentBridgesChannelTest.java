@@ -3,43 +3,63 @@ package de.invesdwin.context.integration.channel.sync.kafka.confluent.connect;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.Network;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.confluent.ConfluentServerContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.confluent.SchemaRegistryContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.connect.KafkaKcatBridgesChannelTest;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect.RedpandaConnectBridges;
+import de.invesdwin.context.integration.channel.sync.kafka.redpanda.console.RedpandaConsoleContainer;
 
 @Testcontainers
 @NotThreadSafe
 public class ConfluentBridgesChannelTest extends KafkaKcatBridgesChannelTest {
-//    private static final Network NETWORK = Network.newNetwork();
-    //private static final KafkaContainer K = new KafkaContainer();
-//    @Container
-//    protected final SchemaRegistryContainer schemaRegistryContainer = newSchemaRegistryContainer();
-
-    //
-    protected SchemaRegistryContainer newSchemaRegistryContainer() {
-        return new SchemaRegistryContainer((ConfluentServerContainer) kafkaContainer, NETWORK);
-    }
+    @Container
+    protected ConfluentConnectContainer connectContainer = newConnectContainer();
+    @Container
+    protected SchemaRegistryContainer schemaRegistryContainer = newSchemaRegistryContainer();
 
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
-        final ConfluentServerContainer kafkaContainer = new ConfluentServerContainer();
-        return kafkaContainer;
+        return new ConfluentServerContainer();
+    }
+
+    protected ConfluentConnectContainer newConnectContainer() {
+        final ConfluentConnectContainer connectContainer = new ConfluentConnectContainer(
+                (ConfluentServerContainer) kafkaContainer, null);
+        redpandaConsoleContainer.setKafkaConnectContainer(connectContainer);
+        return connectContainer;
+    }
+
+    private SchemaRegistryContainer newSchemaRegistryContainer() {
+        final SchemaRegistryContainer schemaRegistryContainer = new SchemaRegistryContainer(
+                (ConfluentServerContainer) kafkaContainer, null);
+        redpandaConsoleContainer.setSchemaRegistryContainer(schemaRegistryContainer);
+        return schemaRegistryContainer;
+    }
+
+    @Override
+    protected RedpandaConsoleContainer newRedpandaConsoleContainer() {
+        return new RedpandaConsoleContainer(kafkaContainer);
+    }
+
+    @Override
+    protected IKafkaBridges newKafkaBridges() {
+        return new RedpandaConnectBridges(kafkaContainer);
     }
 
     @Override
     @Test
-    public void testKafkaRedpandaConnectThroughput() throws Exception {
-        super.testKafkaRedpandaConnectThroughput();
+    public void testKafkaBridgesThroughput() throws Exception {
+        super.testKafkaBridgesThroughput();
     }
 
     @Override
     @Test
-    public void testKafkaRedpandaConnectLatency() throws Exception {
-        super.testKafkaRedpandaConnectLatency();
+    public void testKafkaBridgesLatency() throws Exception {
+        super.testKafkaBridgesLatency();
     }
 }

@@ -15,6 +15,11 @@ public class KafkaConnectContainerAccessor extends net.christophschubert.cp.test
         super(imageName, bootstrap, network);
     }
 
+    @Override
+    protected CPTestContainer<KafkaConnectContainer> withProperty(final String property, final Object value) {
+        return super.withProperty(property, value);
+    }
+
     public KafkaContainer getBootstrap() {
         return bootstrap;
     }

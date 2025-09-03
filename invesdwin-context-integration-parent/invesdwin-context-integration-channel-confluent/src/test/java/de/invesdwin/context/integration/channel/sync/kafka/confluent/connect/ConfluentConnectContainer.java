@@ -1,32 +1,32 @@
-package de.invesdwin.context.integration.channel.sync.kafka.confluent;
+package de.invesdwin.context.integration.channel.sync.kafka.confluent.connect;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.utility.DockerImageName;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
 import com.github.dockerjava.api.model.NetworkSettings;
 
-import de.invesdwin.context.integration.channel.sync.kafka.ISchemaRegistryContainer;
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectContainer;
 import de.invesdwin.util.assertions.Assertions;
+import net.christophschubert.cp.testcontainers.KafkaConnectContainerAccessor;
 
 @NotThreadSafe
-public class SchemaRegistryContainer extends net.christophschubert.cp.testcontainers.SchemaRegistryContainerAccessor
-        implements ISchemaRegistryContainer<net.christophschubert.cp.testcontainers.SchemaRegistryContainer> {
-
+public class ConfluentConnectContainer extends KafkaConnectContainerAccessor
+        implements IKafkaConnectContainer<net.christophschubert.cp.testcontainers.KafkaConnectContainer> {
     private String hostOverride;
 
-    public SchemaRegistryContainer(final ConfluentServerContainer bootstrap, final Network network) {
-        super(DockerImageName
-                .parse(ConfluentServerContainer.REPOSITORY + "/cp-schema-registry:" + ConfluentServerContainer.TAG),
-                bootstrap, network);
+    public ConfluentConnectContainer(final KafkaContainer bootstrap, final Network network) {
+        super(DockerImageName.parse("confluentinc/cp-kafka-connect:7.2.15"), bootstrap, network);
+        dependsOn(bootstrap);
     }
 
     @Override
     protected void configure() {
         super.configure();
-        withProperty("kafkastore.bootstrap.servers", getBootstrap().getBootstrapServers());
+        withProperty("bootstrap.servers", getBootstrap().getBootstrapServers());
     }
 
     @SuppressWarnings("deprecation")
@@ -45,7 +45,8 @@ public class SchemaRegistryContainer extends net.christophschubert.cp.testcontai
     }
 
     @Override
-    public String getSchemaRegistryUrl() {
+    public String getKafkaConnectUrl() {
         return getBaseUrl();
     }
+
 }

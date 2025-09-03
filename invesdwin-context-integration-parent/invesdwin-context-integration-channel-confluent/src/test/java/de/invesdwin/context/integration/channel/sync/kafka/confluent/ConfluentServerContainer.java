@@ -9,6 +9,7 @@ import com.github.dockerjava.api.model.NetworkSettings;
 
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.lang.string.Strings;
 
 @SuppressWarnings("deprecation")
 @NotThreadSafe
@@ -21,22 +22,38 @@ public class ConfluentServerContainer extends net.christophschubert.cp.testconta
      */
     public static final String TAG = "7.8.3";
     private String hostOverride;
+    private String bootstrapServersOverride;
 
     public ConfluentServerContainer() {
         super(REPOSITORY, TAG);
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     protected void containerIsStarting(final InspectContainerResponse containerInfo) {
         final NetworkSettings networkSettings = containerInfo.getNetworkSettings();
+        //relay communication over port forwarding from host computer
         this.hostOverride = networkSettings.getGateway();
-
         super.containerIsStarting(containerInfo);
+        /*
+         * other services connect without a protocol definition, though inside containerisStarting the protocol
+         * definition is needed for advertisedListeners
+         */
+        this.bootstrapServersOverride = Strings.removeStart(super.getBootstrapServers(), "PLAINTEXT://");
     }
 
     @Override
     public String getHost() {
         Assertions.checkNotNull(hostOverride);
         return hostOverride;
+    }
+
+    @Override
+    public String getBootstrapServers() {
+        if (bootstrapServersOverride != null) {
+            return bootstrapServersOverride;
+        } else {
+            return super.getBootstrapServers();
+        }
     }
 }

@@ -31,13 +31,13 @@ public class ConfluentConnectChannelTest extends KafkaKcatBridgesChannelTest {
 
     @Override
     @Test
-    public void testKafkaRedpandaConnectThroughput() throws Exception {
-        super.testKafkaRedpandaConnectThroughput();
+    public void testKafkaBridgesThroughput() throws Exception {
+        super.testKafkaBridgesThroughput();
     }
 
     @Override
     @Test
-    public void testKafkaRedpandaConnectLatency() throws Exception {
-        super.testKafkaRedpandaConnectLatency();
+    public void testKafkaBridgesLatency() throws Exception {
+        super.testKafkaBridgesLatency();
     }
 }

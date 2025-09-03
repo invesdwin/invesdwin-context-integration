@@ -4,9 +4,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.testcontainers.containers.GenericContainer;
 
+import de.invesdwin.context.integration.channel.sync.kafka.IKafkaConnectContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
+import de.invesdwin.context.integration.channel.sync.kafka.ISchemaRegistryContainer;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
 public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleContainer> {
@@ -14,6 +15,8 @@ public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleCo
     private static final int CONSOLE_PORT = 8080;
     private final Log log = new Log(this);
     private final IKafkaContainer<?> kafkaContainer;
+    private ISchemaRegistryContainer<?> schemaRegistryContainer;
+    private IKafkaConnectContainer<?> kafkaConnectContainer;
 
     public RedpandaConsoleContainer(final IKafkaContainer<?> kafkaContainer) {
         super("docker.redpanda.com/redpandadata/console:v3.2.0");
@@ -25,8 +28,38 @@ public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleCo
     protected void configure() {
         super.configure();
         withExposedPorts(CONSOLE_PORT);
-        final String g = Strings.removeStart(kafkaContainer.getBootstrapServers(), "PLAINTEXT://");
-        withEnv("KAFKA_BROKERS", g);
+        /*
+         * each setting from the config file is exposed as an env variable:
+         * https://github.com/redpanda-data/console/blob/master/docs/config/console.yaml
+         */
+        withEnv("KAFKA_BROKERS", kafkaContainer.getBootstrapServers());
+        if (schemaRegistryContainer != null) {
+            withEnv("SCHEMAREGISTRY_ENABLED", "true");
+            withEnv("SCHEMAREGISTRY_URLS", schemaRegistryContainer.getSchemaRegistryUrl());
+        }
+        if (kafkaConnectContainer != null) {
+            withEnv("KAFKACONNECT_ENABLED", "true");
+            withEnv("KAFKACONNECT_CLUSTERS_NAME", "local");
+            withEnv("KAFKACONNECT_CLUSTERS_URL", kafkaConnectContainer.getKafkaConnectUrl());
+        }
+    }
+
+    public void setSchemaRegistryContainer(final ISchemaRegistryContainer<?> schemaRegistryContainer) {
+        dependsOn(schemaRegistryContainer);
+        this.schemaRegistryContainer = schemaRegistryContainer;
+    }
+
+    public ISchemaRegistryContainer<?> getSchemaRegistryContainer() {
+        return schemaRegistryContainer;
+    }
+
+    public void setKafkaConnectContainer(final IKafkaConnectContainer<?> kafkaConnectContainer) {
+        dependsOn(kafkaConnectContainer);
+        this.kafkaConnectContainer = kafkaConnectContainer;
+    }
+
+    public IKafkaConnectContainer<?> getKafkaConnectContainer() {
+        return kafkaConnectContainer;
     }
 
     @Override
@@ -40,4 +73,5 @@ public class RedpandaConsoleContainer extends GenericContainer<RedpandaConsoleCo
         return String.format("http://%s:%s", getHost(), getMappedPort(CONSOLE_PORT));
         //CHECKSTYLE:ON
     }
+
 }

@@ -51,7 +51,6 @@ public class KafkaKcatBridgesChannelTest extends AKafkaChannelTest {
 
     @Override
     protected IKafkaContainer<?> newKafkaContainer() {
-
         return new KafkaContainer();
     }
 
@@ -76,7 +75,7 @@ public class KafkaKcatBridgesChannelTest extends AKafkaChannelTest {
     }
 
     @Test
-    public void testKafkaRedpandaConnectThroughput() throws Exception {
+    public void testKafkaBridgesThroughput() throws Exception {
         final String inputTopic = "throughput_input";
         final String outputTopic = "throughput_output";
 
@@ -88,7 +87,7 @@ public class KafkaKcatBridgesChannelTest extends AKafkaChannelTest {
     }
 
     @Test
-    public void testKafkaRedpandaConnectLatency() throws Exception {
+    public void testKafkaBridgesLatency() throws Exception {
         final String requestInputTopic = "latency_request_in";
         final String requestOutputTopic = "latency_request_out";
         final String responseInputTopic = "latency_response_in";

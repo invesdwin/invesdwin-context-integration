@@ -19,4 +19,9 @@ public class SchemaRegistryContainerAccessor extends net.christophschubert.cp.te
         return bootstrap;
     }
 
+    @Override
+    protected CPTestContainer<SchemaRegistryContainer> withProperty(final String property, final Object value) {
+        return super.withProperty(property, value);
+    }
+
 }
