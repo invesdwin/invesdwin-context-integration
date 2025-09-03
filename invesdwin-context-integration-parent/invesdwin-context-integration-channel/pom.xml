@@ -188,6 +188,12 @@
             <scope>provided</scope>
 		</dependency>
 		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<!-- transient dependency of ByteBufferProviderPulsarSchema -->
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
 			<!-- pulsar-client-admin-original depends on an jersey 2.x with javax api while we are on jersey 3.x with jakarta api, thus we use shaded admin client instead -->
             <groupId>org.apache.pulsar</groupId>
             <artifactId>pulsar-client-admin</artifactId>
