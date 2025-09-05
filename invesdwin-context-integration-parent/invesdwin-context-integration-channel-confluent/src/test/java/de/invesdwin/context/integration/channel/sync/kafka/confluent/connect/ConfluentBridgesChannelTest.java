@@ -6,12 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import de.invesdwin.context.integration.channel.sync.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.IKafkaContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.confluent.ConfluentServerContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.confluent.SchemaRegistryContainer;
 import de.invesdwin.context.integration.channel.sync.kafka.connect.KafkaKcatBridgesChannelTest;
-import de.invesdwin.context.integration.channel.sync.kafka.redpanda.connect.RedpandaConnectBridges;
 import de.invesdwin.context.integration.channel.sync.kafka.redpanda.console.RedpandaConsoleContainer;
 
 @Testcontainers
@@ -46,10 +44,10 @@ public class ConfluentBridgesChannelTest extends KafkaKcatBridgesChannelTest {
         return new RedpandaConsoleContainer(kafkaContainer);
     }
 
-    @Override
-    protected IKafkaBridges newKafkaBridges() {
-        return new RedpandaConnectBridges(kafkaContainer);
-    }
+    //    @Override
+    //    protected IKafkaBridges newKafkaBridges() {
+    //        return new RedpandaConnectBridges(kafkaContainer);
+    //    }
 
     @Override
     @Test

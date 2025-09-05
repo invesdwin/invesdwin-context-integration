@@ -64,7 +64,7 @@ public class RedpandaConnectBridges implements IKafkaBridges {
 
         @SuppressWarnings("resource")
         final GenericContainer<?> bridgeContainer = new GenericContainer<>(
-                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4"))
+                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4.63.0"))
                         .withNetworkMode("host")
                         .withCopyToContainer(Transferable.of(yamlConfig.getBytes(StandardCharsets.UTF_8)),
                                 "/connect.yaml")
