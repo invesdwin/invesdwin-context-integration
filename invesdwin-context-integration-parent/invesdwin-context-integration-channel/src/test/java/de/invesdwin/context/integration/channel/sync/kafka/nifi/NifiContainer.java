@@ -150,13 +150,17 @@ public class NifiContainer extends GenericContainer<NifiContainer> {
 
         final String enableUrl = nifiRestApi + "/controller-services/" + serviceId;
 
-        URIs.connect(enableUrl)
-                .putHeader("Authorization", "Bearer " + authToken)
-                .setMethod(IURIsConnect.PUT)
-                .setContentType("application/json")
-                .setBody(enableRequest.toString())
-                .setTrustManager(DisabledX509Trustmanager.INSTANCE)
-                .downloadThrowing();
+        try {
+            URIs.connect(enableUrl)
+                    .putHeader("Authorization", "Bearer " + authToken)
+                    .setMethod(IURIsConnect.PUT)
+                    .setContentType("application/json")
+                    .setBody(enableRequest.toString())
+                    .setTrustManager(DisabledX509Trustmanager.INSTANCE)
+                    .downloadThrowing();
+        } catch (final Throwable t) {
+            log.error("Unable to start controller service %s. Maybe it is stateless? %s", serviceId, t.toString());
+        }
     }
 
     protected String getControllerServices(final String nifiRestApi, final String authToken,

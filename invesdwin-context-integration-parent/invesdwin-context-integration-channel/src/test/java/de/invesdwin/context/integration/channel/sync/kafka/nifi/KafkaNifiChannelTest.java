@@ -34,16 +34,27 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
 
     @Container
     protected static final NifiContainer NIFI_CONTAINER = newNifiContainer();
+    private static final boolean STATELESS = false;
+    private static final boolean EXACTLY_ONCE = false;
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
 
     protected static NifiContainer newNifiContainer() {
         return new NifiContainer();
     }
 
+    /*
+     * exactly once requires DeliveryGuarantee=GuaranteeReplicatedDelivery which is achieved via acks=all in the json
+     * file. exactly once semantics with kafka requires stateless process group in nifi to function correctly
+     */
     public static String newFlowFileForKafka(final Resource flowResource, final String bootstrapServers) {
         try (InputStream in = flowResource.getInputStream()) {
             final String jsonStr = IOUtils.toString(in, StandardCharsets.UTF_8);
-            return jsonStr.replace("{KAFKA_INTERNAL_BOOTSTRAP_SERVERS}", bootstrapServers);
+            return jsonStr.replace("{KAFKA_INTERNAL_BOOTSTRAP_SERVERS}", bootstrapServers)
+                    .replace("{STATELESS_SCHEDULED_STATE}", STATELESS ? "DISABLED" : "ENABLED")
+                    .replace("{STATELESS_EXECUTION_ENGINE}", STATELESS ? "STATELESS" : "INHERITED")
+                    .replace("{EXACTLY_ONCE_ACKS}", EXACTLY_ONCE ? "all" : "0")
+                    .replace("{EXACTLY_ONCE_TRANSACTIONS_ENABLED}", EXACTLY_ONCE ? "true" : "false")
+                    .replace("{EXACTLY_ONCE_COMMIT_OFFSETS}", EXACTLY_ONCE ? "false" : "true");
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
