@@ -36,6 +36,7 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
     protected static final NifiContainer NIFI_CONTAINER = newNifiContainer();
     private static final boolean STATELESS = false;
     private static final boolean EXACTLY_ONCE = false;
+    private static final int PARALLEL_TASKS_COUNT = 1;
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
 
     protected static NifiContainer newNifiContainer() {
@@ -54,7 +55,8 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
                     .replace("{STATELESS_EXECUTION_ENGINE}", STATELESS ? "STATELESS" : "INHERITED")
                     .replace("{EXACTLY_ONCE_ACKS}", EXACTLY_ONCE ? "all" : "0")
                     .replace("{EXACTLY_ONCE_TRANSACTIONS_ENABLED}", EXACTLY_ONCE ? "true" : "false")
-                    .replace("{EXACTLY_ONCE_COMMIT_OFFSETS}", EXACTLY_ONCE ? "false" : "true");
+                    .replace("{EXACTLY_ONCE_COMMIT_OFFSETS}", EXACTLY_ONCE ? "false" : "true")
+                    .replace("{PARALLEL_TASKS_COUNT}", String.valueOf(PARALLEL_TASKS_COUNT));
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }

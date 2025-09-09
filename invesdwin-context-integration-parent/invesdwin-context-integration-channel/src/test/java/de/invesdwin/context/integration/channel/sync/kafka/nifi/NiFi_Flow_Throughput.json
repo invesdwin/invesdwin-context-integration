@@ -206,7 +206,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [
           "success",
           "failure"
@@ -390,7 +390,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [],
         "scheduledState": "ENABLED",
         "retryCount": 10,
@@ -583,7 +583,7 @@
     "defaultBackPressureDataSizeThreshold": "1 GB",
     "scheduledState": "ENABLED",
     "executionEngine": "{STATELESS_EXECUTION_ENGINE}",
-    "maxConcurrentTasks": 1,
+    "maxConcurrentTasks": {PARALLEL_TASKS_COUNT},
     "statelessFlowTimeout": "1 min",
     "flowFileConcurrency": "UNBOUNDED",
     "flowFileOutboundPolicy": "STREAM_WHEN_AVAILABLE",
