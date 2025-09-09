@@ -34,8 +34,8 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
 
     @Container
     protected static final NifiContainer NIFI_CONTAINER = newNifiContainer();
-    private static final boolean STATELESS = false;
-    private static final boolean EXACTLY_ONCE = false;
+    private static final boolean STATELESS = true;
+    private static final boolean EXACTLY_ONCE = true;
     private static final int PARALLEL_TASKS_COUNT = 1;
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
 

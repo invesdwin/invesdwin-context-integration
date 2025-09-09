@@ -28,7 +28,7 @@
         },
         "properties": {
           "compression.type": "none",
-          "acks": "0",
+          "acks": "{EXACTLY_ONCE_ACKS}",
           "Message Demarcator": null,
           "Kafka Key Attribute Encoding": "utf-8",
           "Record Reader": null,
@@ -206,7 +206,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [
           "success",
           "failure"
@@ -236,7 +236,7 @@
         },
         "properties": {
           "compression.type": "none",
-          "acks": "0",
+          "acks": "{EXACTLY_ONCE_ACKS}",
           "Message Demarcator": null,
           "Kafka Key Attribute Encoding": "utf-8",
           "Record Reader": null,
@@ -253,7 +253,7 @@
           "Failure Strategy": "Route to Failure",
           "partitioner.class": "org.apache.kafka.clients.producer.internals.DefaultPartitioner",
           "Record Writer": null,
-          "Transactions Enabled": "false",
+          "Transactions Enabled": "{EXACTLY_ONCE_TRANSACTIONS_ENABLED}",
           "Message Key Field": null,
           "FlowFile Attribute Header Pattern": null
         },
@@ -414,7 +414,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [
           "success",
           "failure"
@@ -444,7 +444,7 @@
         },
         "properties": {
           "Topics": "testKafkaNifiLatency_requestInput",
-          "Commit Offsets": "true",
+          "Commit Offsets": "{EXACTLY_ONCE_COMMIT_OFFSETS}",
           "Header Name Pattern": null,
           "Key Format": "byte-array",
           "Key Record Reader": null,
@@ -598,7 +598,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [],
         "scheduledState": "ENABLED",
         "retryCount": 10,
@@ -625,7 +625,7 @@
         },
         "properties": {
           "Topics": "testKafkaNifiLatency_responseInput",
-          "Commit Offsets": "true",
+          "Commit Offsets": "{EXACTLY_ONCE_COMMIT_OFFSETS}",
           "Header Name Pattern": null,
           "Key Format": "byte-array",
           "Key Record Reader": null,
@@ -779,7 +779,7 @@
         "yieldDuration": "1 millis",
         "bulletinLevel": "WARN",
         "runDurationMillis": 0,
-        "concurrentlySchedulableTaskCount": 1,
+        "concurrentlySchedulableTaskCount": {PARALLEL_TASKS_COUNT},
         "autoTerminatedRelationships": [],
         "scheduledState": "ENABLED",
         "retryCount": 10,
@@ -997,7 +997,7 @@
             }
           }
         ],
-        "scheduledState": "DISABLED",
+        "scheduledState": "{STATELESS_SCHEDULED_STATE}",
         "bulletinLevel": "WARN",
         "componentType": "CONTROLLER_SERVICE",
         "groupIdentifier": "0847759b-d0e7-360a-91aa-8098a95437cf"
@@ -1008,7 +1008,7 @@
     "defaultBackPressureDataSizeThreshold": "1 GB",
     "scheduledState": "ENABLED",
     "executionEngine": "INHERITED",
-    "maxConcurrentTasks": 1,
+    "maxConcurrentTasks": {PARALLEL_TASKS_COUNT},
     "statelessFlowTimeout": "1 min",
     "flowFileConcurrency": "UNBOUNDED",
     "flowFileOutboundPolicy": "STREAM_WHEN_AVAILABLE",
