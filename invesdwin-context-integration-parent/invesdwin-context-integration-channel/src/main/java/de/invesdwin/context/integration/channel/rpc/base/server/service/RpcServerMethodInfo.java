@@ -42,6 +42,10 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
         this.methodId = methodId;
         this.method = method;
         this.methodHandle = mhLookup.unreflect(method);
+        /*
+         * an alternative to reflection might be mhLookup.unreflect(method).asFixedArity() and always calling via
+         * invokeWithArguments, though dunno if that would be much faster or stable
+         */
         this.reflectionFallback = method.isVarArgs();
         this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
         this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
