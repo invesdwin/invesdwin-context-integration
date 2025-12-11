@@ -30,7 +30,7 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
     private final int methodId;
     private final Method method;
     private final MethodHandle methodHandle;
-    private boolean reflectionFallback;
+    private final boolean reflectionFallback;
     private final ISerde<Object[]> requestSerde;
     private final IResponseSerdeProvider responseSerdeProvider;
     private final boolean blocking;
@@ -42,6 +42,7 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
         this.methodId = methodId;
         this.method = method;
         this.methodHandle = mhLookup.unreflect(method);
+        this.reflectionFallback = method.isVarArgs();
         this.requestSerde = serdeLookupConfig.getRequestLookup().lookup(method);
         this.responseSerdeProvider = serdeLookupConfig.getResponseLookup().lookup(method);
         this.blocking = RpcSynchronousEndpointService.isBlocking(method, false);
@@ -153,25 +154,20 @@ public class RpcServerMethodInfo implements IServiceMethodInfo {
             if (params == null) {
                 return methodHandle.invoke(targetObject);
             }
-            try {
-                switch (params.length) {
-                case 0:
-                    return methodHandle.invoke(targetObject);
-                case 1:
-                    return methodHandle.invoke(targetObject, params[0]);
-                case 2:
-                    return methodHandle.invoke(targetObject, params[0], params[1]);
-                case 3:
-                    return methodHandle.invoke(targetObject, params[0], params[1], params[2]);
-                default:
-                    final Object[] args = new Object[params.length + 1];
-                    System.arraycopy(params, 0, args, 1, params.length);
-                    args[0] = targetObject;
-                    return methodHandle.invokeWithArguments(args);
-                }
-            } catch (final ClassCastException t) {
-                reflectionFallback = true;
-                return method.invoke(targetObject, params);
+            switch (params.length) {
+            case 0:
+                return methodHandle.invoke(targetObject);
+            case 1:
+                return methodHandle.invoke(targetObject, params[0]);
+            case 2:
+                return methodHandle.invoke(targetObject, params[0], params[1]);
+            case 3:
+                return methodHandle.invoke(targetObject, params[0], params[1], params[2]);
+            default:
+                final Object[] args = new Object[params.length + 1];
+                System.arraycopy(params, 0, args, 1, params.length);
+                args[0] = targetObject;
+                return methodHandle.invokeWithArguments(args);
             }
         }
     }
