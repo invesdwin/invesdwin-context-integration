@@ -27,6 +27,11 @@
 			<groupId>jakarta.jms</groupId>
 			<artifactId>jakarta.jms-api</artifactId>
 		</dependency>
+		<dependency>
+			<!-- upperbound deps -->
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-core</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>

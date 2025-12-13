@@ -85,6 +85,11 @@
 			<groupId>com.sun.xml.messaging.saaj</groupId>
 			<artifactId>saaj-impl</artifactId>
 		</dependency>
+		<dependency>
+			<!-- upperbound deps -->
+		    <groupId>org.eclipse.angus</groupId>
+		    <artifactId>angus-activation</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>
