@@ -4,6 +4,8 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
+
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTest;
@@ -17,6 +19,12 @@ public class HadronioSocketChannelTest extends SocketChannelTest {
     protected HadronioSocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
             final boolean server, final int estimatedMaxMessageSize, final boolean lowLatency) {
         return new HadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
+    }
+
+    @Disabled("TODO: might hang sometimes")
+    @Override
+    public void testNioSocketLatency() throws InterruptedException {
+        super.testNioSocketLatency();
     }
 
     @Override

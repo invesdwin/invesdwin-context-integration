@@ -7,6 +7,7 @@ import java.nio.charset.Charset;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
@@ -31,6 +32,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.Instant;
 
+@Disabled("TODO: need to make the bootstrap not depend on higher java class files again")
 @NotThreadSafe
 @Testcontainers
 public class MpjExpressYarnTest extends AMpiTest {
