@@ -10,7 +10,7 @@
 
 	<batch:job-repository id="jobRepository" data-source="batchDataSource" transaction-manager="batchTransactionManager" isolation-level-for-create="REPEATABLE_READ" />
 
-	<bean name="jobLauncher" class="org.springframework.batch.core.launch.support.SimpleJobLauncher">
+	<bean name="jobLauncher" class="org.springframework.batch.core.launch.support.TaskExecutorJobLauncher">
 		<property name="taskExecutor">
 			<bean class="org.springframework.core.task.support.TaskExecutorAdapter">
 				<constructor-arg>
