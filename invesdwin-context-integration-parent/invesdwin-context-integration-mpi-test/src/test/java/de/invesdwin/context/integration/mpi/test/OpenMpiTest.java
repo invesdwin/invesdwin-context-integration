@@ -5,6 +5,7 @@ import java.nio.charset.Charset;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
@@ -14,6 +15,7 @@ import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.util.lang.Files;
 
+@Disabled("TODO: need to make sure the correct java lib and PATH is setup again")
 @NotThreadSafe
 public class OpenMpiTest extends AMpiTest {
 
