@@ -108,7 +108,7 @@
 		<version.testcontainers>1.21.3</version.testcontainers>
 		<version.cp-testcontainers>v0.2.1</version.cp-testcontainers>
 		<version.confluent>7.8.3</version.confluent>
-		<version.pulsar>4.0.5</version.pulsar>
+		<version.pulsar>4.1.2</version.pulsar>
 		<version.lettuce>6.8.0.RELEASE</version.lettuce>
 		<version.jedis>6.1.0</version.jedis>
 		<version.disni>2.1</version.disni>
