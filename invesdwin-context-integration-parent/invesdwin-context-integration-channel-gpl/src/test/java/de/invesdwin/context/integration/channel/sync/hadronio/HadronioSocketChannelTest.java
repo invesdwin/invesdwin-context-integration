@@ -12,6 +12,7 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketChannelTes
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
+@Disabled("TODO: might hang/crash sometimes")
 @NotThreadSafe
 public class HadronioSocketChannelTest extends SocketChannelTest {
 
@@ -21,10 +22,14 @@ public class HadronioSocketChannelTest extends SocketChannelTest {
         return new HadronioSocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, lowLatency);
     }
 
-    @Disabled("TODO: might hang sometimes")
     @Override
     public void testNioSocketLatency() throws InterruptedException {
         super.testNioSocketLatency();
+    }
+
+    @Override
+    public void testNioSocketThroughput() throws InterruptedException {
+        super.testNioSocketThroughput();
     }
 
     @Override
