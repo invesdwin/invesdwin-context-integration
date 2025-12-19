@@ -1007,7 +1007,7 @@
     "defaultBackPressureObjectThreshold": 10000,
     "defaultBackPressureDataSizeThreshold": "1 GB",
     "scheduledState": "ENABLED",
-    "executionEngine": "INHERITED",
+    "executionEngine": "{STATELESS_EXECUTION_ENGINE}",
     "maxConcurrentTasks": {PARALLEL_TASKS_COUNT},
     "statelessFlowTimeout": "1 min",
     "flowFileConcurrency": "UNBOUNDED",
