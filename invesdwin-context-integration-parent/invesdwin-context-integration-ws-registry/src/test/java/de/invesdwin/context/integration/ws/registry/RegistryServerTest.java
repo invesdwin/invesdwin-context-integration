@@ -17,7 +17,7 @@ import de.invesdwin.context.integration.ws.registry.internal.persistence.Service
 import de.invesdwin.context.integration.ws.registry.internal.persistence.ServiceBindingEntity;
 import de.invesdwin.context.integration.ws.registry.publication.XsdWebServicePublicationTest;
 import de.invesdwin.context.persistence.jpa.test.APersistenceTest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.context.webserver.test.WebserverTest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.uri.URIs;
@@ -45,7 +45,7 @@ public class RegistryServerTest extends APersistenceTest {
     }
 
     @Override
-    public void setUpContext(final TestContext ctx) throws Exception {
+    public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
         publicationTest.setUpContext(ctx);
         ctx.deactivateBean(RegistryServiceStub.class);

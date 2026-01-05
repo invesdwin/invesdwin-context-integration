@@ -3,16 +3,16 @@ package de.invesdwin.context.integration.ftp;
 import java.net.URI;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Inject;
 
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
+import jakarta.inject.Inject;
 
 @NotThreadSafe
 public class FtpFileChannelTest extends ATest {
@@ -21,7 +21,7 @@ public class FtpFileChannelTest extends ATest {
     private FtpServerDestinationProvider destinationProvider;
 
     @Override
-    public void setUpContext(final TestContext ctx) throws Exception {
+    public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
         ctx.deactivateBean(RegistryServiceStub.class);
     }

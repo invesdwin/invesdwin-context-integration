@@ -12,7 +12,8 @@ import de.invesdwin.context.beans.init.locations.PositionedResource;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;
 import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.context.test.stub.StubSupport;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
@@ -48,7 +49,7 @@ public class JPPFNodeTestStub extends StubSupport {
     }
 
     @Override
-    public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
+    public void setUpContext(final ATest test, final ITestContextSetup ctx) throws Exception {
         if (ctx.isPreMergedContext()) {
             return;
         }
@@ -57,7 +58,7 @@ public class JPPFNodeTestStub extends StubSupport {
     }
 
     @Override
-    public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
+    public void setUpOnce(final ATest test, final ITestContext ctx) throws Exception {
         synchronized (JPPFNodeTestStub.class) {
             if (JPPFNodeTestStub.lastNode == null) {
                 try {
@@ -70,7 +71,7 @@ public class JPPFNodeTestStub extends StubSupport {
     }
 
     @Override
-    public void tearDownOnce(final ATest test, final TestContext ctx) throws Exception {
+    public void tearDownOnce(final ATest test, final ITestContext ctx) throws Exception {
         if (!ctx.isFinishedGlobal()) {
             return;
         }
