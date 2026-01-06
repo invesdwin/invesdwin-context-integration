@@ -105,7 +105,7 @@
 		<version.openmpi>4.1.4</version.openmpi>
 		<version.mpjexpress>0.44</version.mpjexpress>
 		<version.mvapich2-j>2.3.7</version.mvapich2-j>
-		<version.testcontainers>1.21.3</version.testcontainers>
+		<version.testcontainers>2.0.3</version.testcontainers>
 		<version.cp-testcontainers>v0.2.1</version.cp-testcontainers>
 		<version.confluent>7.8.3</version.confluent>
 		<version.pulsar>4.1.2</version.pulsar>
@@ -818,12 +818,12 @@
 			</dependency>
 			<dependency>
 				<groupId>org.testcontainers</groupId>
-				<artifactId>junit-jupiter</artifactId>
+				<artifactId>testcontainers-junit-jupiter</artifactId>
 				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.testcontainers</groupId>
-				<artifactId>kafka</artifactId>
+				<artifactId>testcontainers-kafka</artifactId>
 				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
@@ -870,7 +870,7 @@
 	        </dependency>
 	        <dependency>
 	            <groupId>org.testcontainers</groupId>
-	            <artifactId>pulsar</artifactId>
+	            <artifactId>testcontainers-pulsar</artifactId>
 	    		<version>${version.testcontainers}</version>
 	    		<scope>test</scope>
 			</dependency>                 
