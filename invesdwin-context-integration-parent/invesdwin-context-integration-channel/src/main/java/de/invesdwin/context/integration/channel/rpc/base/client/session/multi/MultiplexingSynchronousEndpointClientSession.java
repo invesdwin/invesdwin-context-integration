@@ -199,6 +199,15 @@ public class MultiplexingSynchronousEndpointClientSession implements ISynchronou
      * Only the active polling request will use its unexpectedMessageListener. All others with only use it if they
      * become the polling request. Otherwise it gets ignored. If multiple requests should be notified, a broadcasting
      * listener should be used for all requests.
+     * 
+     * TODO: currently a Timeout will potentially cause messages to be skipped? We need to make this more robust so that
+     * the messages can be retried properly while staying in sequence.
+     * 
+     * TODO: implement a heartbeat thread that keeps the connection alive and keeps flushing writeRequest when no client
+     * is active (e.g. all are non-blocking). Responses also need to be polled during that time similar to how a
+     * blocking writer would do it for unknown responses. Maybe a clients only listens for unknown response listener to
+     * get responses pushed. As soon as a blocking client arrives the heartbeat should give control over to that thread?
+     * Or maybe just keep an IO thread that delegates all the time to reduce thread switching overhead?
      */
     @Override
     public ICloseableByteBufferProvider request(final int serviceId, final int methodId, final int requestSequence,
