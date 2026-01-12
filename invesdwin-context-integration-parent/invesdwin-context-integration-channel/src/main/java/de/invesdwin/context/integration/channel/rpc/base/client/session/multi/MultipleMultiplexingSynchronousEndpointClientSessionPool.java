@@ -15,8 +15,10 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynch
 import de.invesdwin.context.integration.channel.rpc.base.server.ASynchronousEndpointServer;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableList;
+import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -34,6 +36,8 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
     public static final int DEFAULT_MAX_SESSIONS_COUNT = ASynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
     public static final int DEFAULT_CREATE_SESSION_REQUEST_THRESHOLD = ASynchronousEndpointServer.DEFAULT_CREATE_IO_THREAD_SESSION_THRESHOLD;
 
+    private static final IObjectPool<WrappedScheduledExecutorService> SCHEDULED_EXECUTOR_POOL = ATimeoutObjectPool.SCHEDULED_EXECUTOR_POOL;
+
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
     private final int maxSessionsCount;
     private final int createSessionRequestThreshold;
@@ -41,6 +45,8 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
     private final IFastIterableList<Session> sessions;
     @GuardedBy("sessions")
     private volatile Future<?> scheduledFuture;
+    @GuardedBy("sessions")
+    private WrappedScheduledExecutorService scheduledExecutor;
     private volatile boolean closed;
     private final ILock createSessionLock;
 
@@ -61,7 +67,6 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
         this.createSessionLock = ILockCollectionFactory.getInstance(true)
                 .newLock(MultipleMultiplexingSynchronousEndpointClientSessionPool.class.getSimpleName()
                         + "_CREATE_SESSION_LOCK");
-        ATimeoutObjectPool.ACTIVE_POOLS.incrementAndGet();
     }
 
     protected int newMaxSessionsCount() {
@@ -152,9 +157,10 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
                 final Session newSession = new Session(endpointSession);
                 if (scheduledFuture == null) {
                     final Duration heartbeatInterval = endpointSession.getHeartbeatInterval();
-                    scheduledFuture = ATimeoutObjectPool.getScheduledExecutor()
-                            .scheduleAtFixedRate(new CheckHeartbeatRunnable(), heartbeatInterval.longValue(),
-                                    heartbeatInterval.longValue(), heartbeatInterval.getTimeUnit().timeUnitValue());
+                    this.scheduledExecutor = SCHEDULED_EXECUTOR_POOL.borrowObject();
+                    this.scheduledFuture = scheduledExecutor.scheduleAtFixedRate(new CheckHeartbeatRunnable(),
+                            heartbeatInterval.longValue(), heartbeatInterval.longValue(),
+                            heartbeatInterval.getTimeUnit().timeUnitValue());
                 }
                 sessions.add(newSession);
             }
@@ -170,9 +176,15 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
     @Override
     public void clear() {
         synchronized (this) {
-            if (scheduledFuture != null) {
-                scheduledFuture.cancel(true);
+            final Future<?> scheduledFutureCopy = scheduledFuture;
+            if (scheduledFutureCopy != null) {
+                scheduledFutureCopy.cancel(true);
                 scheduledFuture = null;
+            }
+            final WrappedScheduledExecutorService scheduledExecutorCopy = scheduledExecutor;
+            if (scheduledExecutorCopy != null) {
+                SCHEDULED_EXECUTOR_POOL.returnObject(scheduledExecutorCopy);
+                scheduledExecutor = null;
             }
             for (int i = 0; i < sessions.size(); i++) {
                 final Session session = sessions.get(i);
@@ -198,8 +210,6 @@ public class MultipleMultiplexingSynchronousEndpointClientSessionPool
                 closed = true;
                 clear();
                 endpointSessionFactory.close();
-                ATimeoutObjectPool.ACTIVE_POOLS.decrementAndGet();
-                ATimeoutObjectPool.maybeCloseScheduledExecutor();
             }
         }
     }
