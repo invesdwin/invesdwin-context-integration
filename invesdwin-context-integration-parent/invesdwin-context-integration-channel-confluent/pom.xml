@@ -43,6 +43,10 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.testcontainers</groupId>
+			<artifactId>testcontainers-kafka</artifactId>
+		</dependency>
+		<dependency>
 		    <groupId>com.github.testcontainers-all-things-kafka</groupId>
 		    <artifactId>cp-testcontainers</artifactId>
 		    <scope>test</scope>

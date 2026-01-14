@@ -15,7 +15,8 @@ import de.invesdwin.context.integration.jppf.server.ConfiguredJPPFServer;
 import de.invesdwin.context.integration.jppf.server.JPPFServerContextLocation;
 import de.invesdwin.context.integration.jppf.server.test.JPPFServerTest;
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.context.test.stub.StubSupport;
 import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
@@ -58,7 +59,7 @@ public class JPPFServerTestStub extends StubSupport {
     }
 
     @Override
-    public void setUpContext(final ATest test, final TestContext ctx) throws Exception {
+    public void setUpContext(final ATest test, final ITestContextSetup ctx) throws Exception {
         ctx.deactivateBean(JPPFNodeTestStub.class);
         if (ctx.isPreMergedContext()) {
             return;
@@ -68,7 +69,7 @@ public class JPPFServerTestStub extends StubSupport {
     }
 
     @Override
-    public void setUpOnce(final ATest test, final TestContext ctx) throws Exception {
+    public void setUpOnce(final ATest test, final ITestContext ctx) throws Exception {
         synchronized (JPPFServerTestStub.class) {
             if (JPPFServerTestStub.lastServer == null) {
                 try {
@@ -81,7 +82,7 @@ public class JPPFServerTestStub extends StubSupport {
     }
 
     @Override
-    public void tearDownOnce(final ATest test, final TestContext ctx) throws Exception {
+    public void tearDownOnce(final ATest test, final ITestContext ctx) throws Exception {
         if (!ctx.isFinishedGlobal()) {
             return;
         }

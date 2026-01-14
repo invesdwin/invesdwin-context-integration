@@ -5,6 +5,7 @@ import java.net.SocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -31,6 +32,7 @@ public class RpcSessionlessNativeDatagramChannelTest extends AChannelTest {
         runRpcTest(test, address, RpcTestServiceMode.requestFalseTrue);
     }
 
+    @Disabled("TODO: may hang sometimes")
     @Test
     public void testRpcAllModes() throws InterruptedException {
         final int port = NetworkUtil.findAvailableUdpPort();

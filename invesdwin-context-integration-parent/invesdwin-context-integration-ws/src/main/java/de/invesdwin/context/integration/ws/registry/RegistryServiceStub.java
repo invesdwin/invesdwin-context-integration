@@ -6,7 +6,8 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.ws.registry.internal.RegistryServiceStubImpl;
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.context.test.stub.StubSupport;
 import jakarta.inject.Named;
 
@@ -15,14 +16,14 @@ import jakarta.inject.Named;
 public class RegistryServiceStub extends StubSupport {
 
     @Override
-    public void setUpContext(final ATest test, final TestContext ctx) {
+    public void setUpContext(final ATest test, final ITestContextSetup ctx) {
         if (isEnabled()) {
             ctx.replaceBean(IRegistryService.class, RegistryServiceStubImpl.class);
         }
     }
 
     @Override
-    public void tearDownOnce(final ATest test, final TestContext ctx) {
+    public void tearDownOnce(final ATest test, final ITestContext ctx) {
         if (!ctx.isFinishedGlobal()) {
             return;
         }

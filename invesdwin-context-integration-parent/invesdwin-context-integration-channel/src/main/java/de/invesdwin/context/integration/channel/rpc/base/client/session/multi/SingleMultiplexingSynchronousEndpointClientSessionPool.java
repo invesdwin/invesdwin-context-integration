@@ -8,7 +8,9 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchronousEndpointClientSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.rpc.base.endpoint.session.ISynchronousEndpointSessionFactory;
+import de.invesdwin.util.concurrent.WrappedScheduledExecutorService;
 import de.invesdwin.util.concurrent.pool.ICloseableObjectPool;
+import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.concurrent.pool.timeout.ATimeoutObjectPool;
 import de.invesdwin.util.time.duration.Duration;
 
@@ -21,16 +23,19 @@ import de.invesdwin.util.time.duration.Duration;
 public class SingleMultiplexingSynchronousEndpointClientSessionPool
         implements ICloseableObjectPool<ISynchronousEndpointClientSession> {
 
+    private static final IObjectPool<WrappedScheduledExecutorService> SCHEDULED_EXECUTOR_POOL = ATimeoutObjectPool.SCHEDULED_EXECUTOR_POOL;
+
     private final ISynchronousEndpointSessionFactory endpointSessionFactory;
     private volatile boolean closed;
     private MultiplexingSynchronousEndpointClientSession singleSession;
     @GuardedBy("this")
     private volatile Future<?> scheduledFuture;
+    @GuardedBy("this")
+    private volatile WrappedScheduledExecutorService scheduledExecutor;
 
     public SingleMultiplexingSynchronousEndpointClientSessionPool(
             final ISynchronousEndpointSessionFactory endpointSessionFactory) {
         this.endpointSessionFactory = endpointSessionFactory;
-        ATimeoutObjectPool.ACTIVE_POOLS.incrementAndGet();
     }
 
     public boolean isActive() {
@@ -44,12 +49,19 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
     @Override
     public void clear() {
         synchronized (this) {
-            if (scheduledFuture != null) {
-                scheduledFuture.cancel(true);
+            final Future<?> scheduledFutureCopy = scheduledFuture;
+            if (scheduledFutureCopy != null) {
+                scheduledFutureCopy.cancel(true);
                 scheduledFuture = null;
             }
-            if (singleSession != null) {
-                singleSession.close();
+            final WrappedScheduledExecutorService scheduledExecutorCopy = scheduledExecutor;
+            if (scheduledExecutorCopy != null) {
+                SCHEDULED_EXECUTOR_POOL.returnObject(scheduledExecutorCopy);
+                scheduledExecutor = null;
+            }
+            final MultiplexingSynchronousEndpointClientSession singleSessionCopy = singleSession;
+            if (singleSessionCopy != null) {
+                singleSessionCopy.close();
                 singleSession = null;
             }
         }
@@ -70,9 +82,10 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
                     singleSession = new MultiplexingSynchronousEndpointClientSession(endpointSession);
                     final Duration heartbeatInterval = endpointSession.getHeartbeatInterval();
                     if (scheduledFuture == null) {
-                        scheduledFuture = ATimeoutObjectPool.getScheduledExecutor()
-                                .scheduleAtFixedRate(new CheckHeartbeatRunnable(), heartbeatInterval.longValue(),
-                                        heartbeatInterval.longValue(), heartbeatInterval.getTimeUnit().timeUnitValue());
+                        this.scheduledExecutor = SCHEDULED_EXECUTOR_POOL.borrowObject();
+                        scheduledFuture = scheduledExecutor.scheduleAtFixedRate(new CheckHeartbeatRunnable(),
+                                heartbeatInterval.longValue(), heartbeatInterval.longValue(),
+                                heartbeatInterval.getTimeUnit().timeUnitValue());
                     }
                 }
             }
@@ -105,8 +118,6 @@ public class SingleMultiplexingSynchronousEndpointClientSessionPool
                 closed = true;
                 clear();
                 endpointSessionFactory.close();
-                ATimeoutObjectPool.ACTIVE_POOLS.decrementAndGet();
-                ATimeoutObjectPool.maybeCloseScheduledExecutor();
             }
         }
     }

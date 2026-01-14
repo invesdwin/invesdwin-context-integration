@@ -5,7 +5,6 @@ import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Inject;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.batch.core.BatchStatus;
@@ -14,8 +13,9 @@ import org.springframework.batch.core.StepExecution;
 
 import de.invesdwin.context.integration.batch.internal.DisabledBatchJobTestContext;
 import de.invesdwin.context.persistence.jpa.test.APersistenceTest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.util.assertions.Assertions;
+import jakarta.inject.Inject;
 
 // @ContextConfiguration(inheritLocations = false, locations = { APersistenceTest.CTX_TEST_SERVER })
 @NotThreadSafe
@@ -25,7 +25,7 @@ public class BatchJobTest extends APersistenceTest {
     private IJobService jobService;
 
     @Override
-    public void setUpContext(final TestContext ctx) throws Exception {
+    public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
         ctx.deactivateBean(DisabledBatchJobTestContext.class);
     }

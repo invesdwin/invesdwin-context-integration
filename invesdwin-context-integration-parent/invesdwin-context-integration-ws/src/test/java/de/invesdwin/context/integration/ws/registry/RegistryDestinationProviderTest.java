@@ -5,7 +5,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.context.test.TestContext;
+import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.util.assertions.Assertions;
 import jakarta.inject.Inject;
 
@@ -16,7 +16,7 @@ public class RegistryDestinationProviderTest extends ATest {
     private RegistryDestinationProvider destinationProvider;
 
     @Override
-    public void setUpContext(final TestContext ctx) throws Exception {
+    public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
         ctx.deactivateBean(RegistryServiceStub.class);
         ctx.activateBean(RegistryDestinationProvider.class);

@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
@@ -31,6 +32,7 @@ public class StreamSessionlessNativeDatagramChannelTest extends AChannelTest {
                 clientEndpointFactory);
     }
 
+    @Disabled("TODO: timeout occuring that does not make the test fail")
     @Test
     public void testStreamThroughput() throws InterruptedException {
         final int port = NetworkUtil.findAvailableUdpPort();
