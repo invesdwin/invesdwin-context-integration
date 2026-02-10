@@ -7,13 +7,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.concurrent.ASynchronizedFastIterableDelegateSet;
 import de.invesdwin.util.time.date.FDate;
 
@@ -21,7 +21,8 @@ import de.invesdwin.util.time.date.FDate;
 public class RegistryServiceStubImpl implements IRegistryService {
 
     private static volatile boolean enabled = true;
-    private static final Map<String, URI> SERVICENAME_ACCESSURI_OVERRIDES = new ConcurrentHashMap<String, URI>();
+    private static final Map<String, URI> SERVICENAME_ACCESSURI_OVERRIDES = ILockCollectionFactory.getInstance(true)
+            .newConcurrentMap();
     private final ASynchronizedFastIterableDelegateSet<ServiceBinding> registeredBindings = new ASynchronizedFastIterableDelegateSet<ServiceBinding>() {
         @Override
         protected Set<ServiceBinding> newDelegate() {

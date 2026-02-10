@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
@@ -63,7 +62,9 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     private final int maxSuccessivePushCountPerSession;
     private final int maxSuccessivePushCountPerSubscription;
-    private final Map<String, StreamAsynchronousEndpointServerHandlerSession> sessionId_sessionManager = new ConcurrentHashMap<>();
+    private final Map<String, StreamAsynchronousEndpointServerHandlerSession> sessionId_sessionManager = ILockCollectionFactory
+            .getInstance(true)
+            .newConcurrentMap();
     @GuardedBy("this")
     private IFastIterableList<IoRunnable> ioRunnables;
     private final int maxIoThreadCount;
