@@ -25,12 +25,12 @@ import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousC
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
-import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
+import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 
 @NotThreadSafe
 public class MinaSocketAsynchronousChannel implements IAsynchronousChannel {

@@ -25,10 +25,10 @@ import de.invesdwin.context.security.crypto.random.CryptoRandomGenerators;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureKey;
 import de.invesdwin.context.security.crypto.verification.signature.SignatureVerificationFactory;
 import de.invesdwin.context.security.crypto.verification.signature.algorithm.ISignatureAlgorithm;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.closeable.Closeables;
 
 /**
  * This implementation achieves forward security and non-repudiation even if the pre shared pepper and password are

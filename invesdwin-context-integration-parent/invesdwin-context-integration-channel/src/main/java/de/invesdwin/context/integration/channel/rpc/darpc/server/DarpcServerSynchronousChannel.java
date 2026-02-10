@@ -22,8 +22,8 @@ import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcMessage;
 import de.invesdwin.context.integration.channel.rpc.darpc.RdmaRpcService;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 

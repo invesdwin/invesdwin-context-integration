@@ -11,8 +11,8 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.context.integration.channel.rpc.base.server.session.result.ProcessResponseResultPool;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.attributes.AttributesMap;
-import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 
 @NotThreadSafe
 public final class ImmutableSessionlessHandlerContext extends BroadcastingCloseable

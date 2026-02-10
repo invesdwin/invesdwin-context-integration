@@ -13,8 +13,8 @@ import org.apache.pulsar.client.impl.schema.BytesSchema;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 
 @ThreadSafe
 public class PulsarSynchronousChannel implements ISynchronousChannel {

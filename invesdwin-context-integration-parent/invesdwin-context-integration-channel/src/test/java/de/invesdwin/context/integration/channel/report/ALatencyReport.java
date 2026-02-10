@@ -16,9 +16,9 @@ import de.invesdwin.context.integration.html.distribution.HtmlDistributionReport
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.iterable.ICloseableIterable;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.math.decimal.Decimal;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.date.IFDateProvider;

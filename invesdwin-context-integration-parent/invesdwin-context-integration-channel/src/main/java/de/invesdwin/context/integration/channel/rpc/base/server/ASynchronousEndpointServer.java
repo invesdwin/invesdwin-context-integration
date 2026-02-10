@@ -24,8 +24,8 @@ import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 

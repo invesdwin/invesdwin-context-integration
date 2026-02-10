@@ -14,13 +14,13 @@ import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousRe
 import de.invesdwin.context.integration.channel.sync.spinwait.loop.SynchronousWriterSpinLoop;
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
-import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.extend.UnsafeByteBuffer;
+import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe

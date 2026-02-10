@@ -17,8 +17,8 @@ import de.invesdwin.context.integration.channel.rpc.base.endpoint.sessionless.IS
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe

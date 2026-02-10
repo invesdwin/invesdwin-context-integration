@@ -18,8 +18,8 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.IS
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.circular.CircularGenericArrayQueue;
-import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
