@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.rpc.base.client.handler;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.annotation.concurrent.Immutable;
@@ -12,6 +11,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.RpcSynch
 import de.invesdwin.norva.beanpath.annotation.Hidden;
 import de.invesdwin.norva.beanpath.spi.ABeanPathProcessor;
 import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.ImmutableFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
@@ -29,7 +29,7 @@ public final class RpcSynchronousEndpointClientHandler implements InvocationHand
         this.client = client;
         this.serviceId = RpcSynchronousEndpointService.newServiceId(client.getServiceInterface());
         final Method[] methods = Reflections.getUniqueDeclaredMethods(client.getServiceInterface());
-        this.method_methodInfo = new HashMap<>(methods.length);
+        this.method_methodInfo = ILockCollectionFactory.getInstance(false).newMap(methods.length);
         for (int i = 0; i < methods.length; i++) {
             final Method method = methods[i];
             if (Reflections.getAnnotation(method, Hidden.class) != null) {

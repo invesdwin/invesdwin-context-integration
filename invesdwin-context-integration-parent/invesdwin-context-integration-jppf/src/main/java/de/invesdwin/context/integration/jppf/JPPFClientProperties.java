@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.jppf;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.concurrent.Immutable;
@@ -13,6 +12,7 @@ import org.jppf.utils.configuration.JPPFProperty;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.context.system.properties.SystemProperties;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 
 @Immutable
 public final class JPPFClientProperties {
@@ -39,7 +39,7 @@ public final class JPPFClientProperties {
             props.set(JPPFProperties.RESOURCE_CACHE_DIR, ContextProperties.TEMP_DIRECTORY.getAbsolutePath());
         }
         //override values as defined in distribution/user properties
-        final Set<String> visitedProperties = new HashSet<>();
+        final Set<String> visitedProperties = ILockCollectionFactory.getInstance(false).newSet();
         for (final JPPFProperty<?> property : JPPFProperties.allProperties()) {
             final String key = property.getName();
             visitedProperties.add(key);

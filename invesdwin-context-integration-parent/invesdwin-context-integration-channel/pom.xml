@@ -82,11 +82,6 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.jctools</groupId>
-			<artifactId>jctools-core</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.conversantmedia</groupId>
 			<artifactId>disruptor</artifactId>
 			<scope>provided</scope>

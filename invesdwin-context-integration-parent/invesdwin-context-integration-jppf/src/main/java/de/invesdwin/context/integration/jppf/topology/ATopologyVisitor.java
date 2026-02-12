@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.jppf.topology;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -12,6 +11,8 @@ import org.jppf.client.monitoring.topology.TopologyManager;
 import org.jppf.client.monitoring.topology.TopologyNode;
 import org.jppf.client.monitoring.topology.TopologyPeer;
 
+import de.invesdwin.util.collections.factory.pool.set.ICloseableSet;
+import de.invesdwin.util.collections.factory.pool.set.PooledSet;
 import de.invesdwin.util.error.UnknownArgumentException;
 
 @Immutable
@@ -19,23 +20,24 @@ public abstract class ATopologyVisitor {
 
     public void process(final TopologyManager manager) {
         // iterate over the discovered drivers
-        final Set<String> duplicateDriverUuidFilter = new HashSet<>();
-        final Set<String> duplicateNodeUuidFilter = new HashSet<>();
-        for (final TopologyDriver driver : manager.getDrivers()) {
-            processComponents(manager, driver, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
-            //discover hidden nodes that are only accessible via node forwarding
-            final List<TopologyNode> hiddenNodes = TopologyDrivers.discoverHiddenNodes(driver);
-            for (final TopologyNode hiddenNode : hiddenNodes) {
-                processComponents(manager, hiddenNode, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
+        try (ICloseableSet<String> duplicateDriverUuidFilter = PooledSet.getInstance();
+                ICloseableSet<String> duplicateNodeUuidFilter = PooledSet.getInstance()) {
+            for (final TopologyDriver driver : manager.getDrivers()) {
+                processComponents(manager, driver, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
+                //discover hidden nodes that are only accessible via node forwarding
+                final List<TopologyNode> hiddenNodes = TopologyDrivers.discoverHiddenNodes(driver);
+                for (final TopologyNode hiddenNode : hiddenNodes) {
+                    processComponents(manager, hiddenNode, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
+                }
             }
-        }
-        /*
-         * Sometimes nodes are not listed properly under drivers (maybe a race condition), but instead only appear in
-         * the nodes list. So we iterate over that as well. Duplicate UUID filter saves us from visiting them more than
-         * once.
-         */
-        for (final TopologyNode node : manager.getNodes()) {
-            processComponents(manager, node, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
+            /*
+             * Sometimes nodes are not listed properly under drivers (maybe a race condition), but instead only appear
+             * in the nodes list. So we iterate over that as well. Duplicate UUID filter saves us from visiting them
+             * more than once.
+             */
+            for (final TopologyNode node : manager.getNodes()) {
+                processComponents(manager, node, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
+            }
         }
     }
 

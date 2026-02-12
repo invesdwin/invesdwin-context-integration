@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.batch.internal;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -17,6 +16,7 @@ import de.invesdwin.context.beans.init.PreMergedContext;
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @NotThreadSafe
@@ -29,7 +29,7 @@ public class BatchContextIgnoringJobLoader extends DefaultJobLoader {
         super.afterPropertiesSet();
         final Map<String, IDisabledBatchContext> beansOfType = PreMergedContext.getInstance()
                 .getBeansOfType(IDisabledBatchContext.class);
-        disabledBatchContextResourceNames = new HashSet<String>();
+        disabledBatchContextResourceNames = ILockCollectionFactory.getInstance(false).newSet();
         for (final IDisabledBatchContext bean : beansOfType.values()) {
             final Set<String> resourceNames = bean.getResourceNames();
             if (resourceNames != null) {

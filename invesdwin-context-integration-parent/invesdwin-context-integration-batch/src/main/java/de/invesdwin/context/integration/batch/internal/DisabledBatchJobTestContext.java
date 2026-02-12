@@ -1,13 +1,12 @@
 package de.invesdwin.context.integration.batch.internal;
 
-import java.util.HashSet;
 import java.util.Set;
 
 import javax.annotation.concurrent.Immutable;
-import jakarta.inject.Named;
 
 import de.invesdwin.context.integration.batch.IDisabledBatchContext;
-import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import jakarta.inject.Named;
 
 /**
  * To prevent tests from failing when another project references invesdwin-context-integration-batch without having the
@@ -23,7 +22,8 @@ public class DisabledBatchJobTestContext implements IDisabledBatchContext {
 
     @Override
     public Set<String> getResourceNames() {
-        return new HashSet<String>(Arrays.asList("ctx.batch.test.job.1.xml", "ctx.batch.test.job.2.xml"));
+        return ILockCollectionFactory.getInstance(false)
+                .newImmutableSet("ctx.batch.test.job.1.xml", "ctx.batch.test.job.2.xml");
     }
 
 }

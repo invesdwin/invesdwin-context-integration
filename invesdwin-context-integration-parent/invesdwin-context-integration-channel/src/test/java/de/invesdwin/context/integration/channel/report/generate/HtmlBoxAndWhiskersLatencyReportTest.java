@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.report.generate;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,6 +15,7 @@ import de.invesdwin.context.integration.html.distribution.DistributionMeasure;
 import de.invesdwin.context.integration.html.distribution.box.HtmlDistributionBoxAndWhiskerReport;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.math.decimal.Decimal;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -36,7 +36,8 @@ public class HtmlBoxAndWhiskersLatencyReportTest extends ATest {
 
         final File samplesFolder = new File(baseFolder, "samples");
 
-        final Map<String, List<DistributionMeasure>> measure_samples = new LinkedHashMap<>();
+        final Map<String, List<DistributionMeasure>> measure_samples = ILockCollectionFactory.getInstance(false)
+                .newLinkedMap();
         final List<DistributionMeasure> samples = new ArrayList<>();
 
         final File[] fileObjects = samplesFolder.listFiles();

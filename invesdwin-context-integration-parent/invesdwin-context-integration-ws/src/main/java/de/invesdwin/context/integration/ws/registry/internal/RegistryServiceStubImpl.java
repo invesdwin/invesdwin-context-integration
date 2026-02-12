@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ws.registry.internal;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +25,7 @@ public class RegistryServiceStubImpl implements IRegistryService {
     private final ASynchronizedFastIterableDelegateSet<ServiceBinding> registeredBindings = new ASynchronizedFastIterableDelegateSet<ServiceBinding>() {
         @Override
         protected Set<ServiceBinding> newDelegate() {
-            return new LinkedHashSet<ServiceBinding>();
+            return ILockCollectionFactory.getInstance(false).newLinkedSet();
         }
     };
 
