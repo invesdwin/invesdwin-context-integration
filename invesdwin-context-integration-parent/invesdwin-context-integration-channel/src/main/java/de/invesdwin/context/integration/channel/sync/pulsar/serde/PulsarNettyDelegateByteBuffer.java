@@ -20,7 +20,7 @@ import org.agrona.MutableDirectBuffer;
 import org.apache.pulsar.shade.io.netty.buffer.ByteBuf;
 import org.apache.pulsar.shade.io.netty.buffer.Unpooled;
 
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.error.UnknownArgumentException;

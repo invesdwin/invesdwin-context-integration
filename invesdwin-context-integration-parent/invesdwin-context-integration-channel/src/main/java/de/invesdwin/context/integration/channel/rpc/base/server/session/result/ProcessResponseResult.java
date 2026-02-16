@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.service.command.
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe

@@ -10,7 +10,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.session.result.P
 import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
