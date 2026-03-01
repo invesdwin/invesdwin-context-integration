@@ -132,7 +132,7 @@ public class SerdeAsynchronousHandler<I, O>
 
         @Override
         public Future<?> write(final O output) {
-            try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
+            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
                 final int length = outputSerde.toBuffer(buffer, output);
                 return delegate.write(buffer.sliceTo(length));
             }

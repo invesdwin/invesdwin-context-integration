@@ -148,7 +148,7 @@ public class CommandAsynchronousHandler<I, O>
 
         @Override
         public Future<?> write(final ISynchronousCommand<O> output) {
-            try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
+            try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
                 buffer.putInt(SynchronousCommandSerde.TYPE_INDEX, output.getType());
                 buffer.putInt(SynchronousCommandSerde.SEQUENCE_INDEX, output.getSequence());
                 final int messageLength = outputSerde.toBuffer(buffer.sliceFrom(SynchronousCommandSerde.MESSAGE_INDEX),
