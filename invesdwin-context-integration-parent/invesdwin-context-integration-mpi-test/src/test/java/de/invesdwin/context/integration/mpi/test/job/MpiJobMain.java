@@ -96,7 +96,7 @@ public class MpiJobMain extends AMain {
                 bcastWriter.open();
                 final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
                         .borrowObject(bcastWriter);
-                try (ICloseableByteBuffer buffer = ByteBuffers.DIRECT_EXPANDABLE_POOL.borrowObject()) {
+                try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
                     buffer.putInt(0, bcastValue);
                     bcastWriterSpinWait.waitForWrite(buffer.slice(0, Integer.BYTES),
                             ContextProperties.DEFAULT_NETWORK_TIMEOUT);
