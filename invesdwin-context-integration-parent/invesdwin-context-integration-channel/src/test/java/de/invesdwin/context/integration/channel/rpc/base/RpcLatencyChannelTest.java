@@ -31,8 +31,8 @@ import de.invesdwin.util.collections.iterable.buffer.IBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.Futures;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.closeable.Closeables;
 
 @NotThreadSafe
 public class RpcLatencyChannelTest extends LatencyChannelTest {

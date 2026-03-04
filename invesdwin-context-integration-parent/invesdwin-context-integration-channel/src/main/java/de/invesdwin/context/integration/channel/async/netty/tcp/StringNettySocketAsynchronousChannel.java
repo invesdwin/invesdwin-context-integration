@@ -16,11 +16,11 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchr
 import de.invesdwin.util.collections.attributes.AttributesMap;
 import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.concurrent.future.ThrowableFuture;
-import de.invesdwin.util.lang.BroadcastingCloseable;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ReusableByteBufInputStream;
+import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.buffer.ByteBuf;

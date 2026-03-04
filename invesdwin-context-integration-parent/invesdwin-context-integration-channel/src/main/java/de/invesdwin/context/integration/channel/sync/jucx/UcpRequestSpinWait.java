@@ -6,7 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.openucx.jucx.ucp.UcpRequest;
 
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe

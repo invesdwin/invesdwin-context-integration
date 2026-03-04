@@ -9,6 +9,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.stream.client.IStreamSynchronousEndpointClient;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.compression.CompressionMode;
+import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.time.date.FDate;
 
 @ThreadSafe
@@ -94,7 +95,7 @@ public class StreamSynchronousEndpointClientChannel implements ISynchronousChann
         }
         final Integer valueFixedLength = getValueFixedLength();
         if (valueFixedLength != null) {
-            if (params.isEmpty()) {
+            if (Strings.isEmpty(params)) {
                 params.append("?");
             } else {
                 params.append("&");

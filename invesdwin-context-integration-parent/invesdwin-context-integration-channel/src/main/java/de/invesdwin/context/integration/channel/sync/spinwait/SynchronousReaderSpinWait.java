@@ -6,7 +6,7 @@ import java.util.concurrent.TimeoutException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastTimeoutException;
 import de.invesdwin.util.time.duration.Duration;
 

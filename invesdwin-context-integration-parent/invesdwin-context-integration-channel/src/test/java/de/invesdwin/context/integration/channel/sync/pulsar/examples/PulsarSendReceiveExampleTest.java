@@ -22,9 +22,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.test.ATest;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.lang.string.ProcessedEventsRateString;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;

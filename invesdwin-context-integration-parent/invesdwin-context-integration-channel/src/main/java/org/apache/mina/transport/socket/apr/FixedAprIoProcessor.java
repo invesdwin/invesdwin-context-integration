@@ -14,7 +14,6 @@
 package org.apache.mina.transport.socket.apr;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
@@ -34,6 +33,8 @@ import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+
 /**
  * TODO: remove as soon as this PR is merged and released: https://github.com/apache/mina/pull/37
  */
@@ -41,7 +42,7 @@ import org.apache.tomcat.jni.Status;
 public final class FixedAprIoProcessor extends AbstractPollingIoProcessor<AprSession> {
     private static final int POLLSET_SIZE = 1024;
 
-    private final Map<Long, AprSession> allSessions = new HashMap<Long, AprSession>(POLLSET_SIZE);
+    private final Map<Long, AprSession> allSessions = ILockCollectionFactory.getInstance(false).newMap(POLLSET_SIZE);
 
     private final Object wakeupLock = new Object();
 

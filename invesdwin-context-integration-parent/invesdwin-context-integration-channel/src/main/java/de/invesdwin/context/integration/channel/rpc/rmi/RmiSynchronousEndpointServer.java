@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.channel.rpc.base.server.blocking.ABlocki
 import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.ArrayBlockingEndpointService;
 import de.invesdwin.context.integration.channel.rpc.base.server.service.blocking.IArrayBlockingEndpointService;
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.streams.closeable.Closeables;
 
 @SuppressWarnings("deprecation")
 @NotThreadSafe

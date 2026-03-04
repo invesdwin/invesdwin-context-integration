@@ -22,8 +22,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.jucx.type.IJucxTransportType;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe

@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.ws.registry.publication;
 import java.net.URI;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -15,6 +14,7 @@ import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.lang.uri.URIs;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -31,7 +31,7 @@ public class WebServicePublicationManager implements IStartupHook {
     private List<IWebServicePublication> publications;
 
     private volatile boolean started;
-    private final Map<String, URI> serviceName_accessUri = new ConcurrentHashMap<String, URI>();
+    private final Map<String, URI> serviceName_accessUri = ILockCollectionFactory.getInstance(true).newConcurrentMap();
 
     public void registerPublication(final IWebServicePublication publication) {
         publications.add(publication);

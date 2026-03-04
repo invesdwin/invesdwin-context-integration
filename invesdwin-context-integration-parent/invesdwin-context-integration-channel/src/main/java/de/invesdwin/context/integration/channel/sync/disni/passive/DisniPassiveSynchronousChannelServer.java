@@ -15,8 +15,8 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniPassiveRdmaEndpoint;
 import de.invesdwin.context.integration.channel.sync.disni.passive.endpoint.DisniPassiveRdmaEndpointFactory;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 

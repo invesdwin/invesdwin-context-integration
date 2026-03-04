@@ -2,8 +2,6 @@ package de.invesdwin.context.integration.jppf.client;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeoutException;
@@ -32,6 +30,7 @@ import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.list.Lists;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -169,7 +168,7 @@ public class JPPFProcessingThreadsCounter {
     private Map<String, String> sortInfos(final Map<String, String> infos) {
         final List<String> sortedUUIDs = new ArrayList<>(infos.keySet());
         Collections.sort(sortedUUIDs);
-        final Map<String, String> sortedInfos = new LinkedHashMap<>();
+        final Map<String, String> sortedInfos = ILockCollectionFactory.getInstance(false).newLinkedMap();
         for (final String uuid : sortedUUIDs) {
             sortedInfos.put(uuid, infos.get(uuid));
         }
@@ -178,8 +177,8 @@ public class JPPFProcessingThreadsCounter {
 
     private Triple<List<Integer>, Map<String, String>, Map<String, String>> countProcessingThreads() {
         final List<Integer> processingThreads = new ArrayList<>();
-        final Map<String, String> nodeInfos = new HashMap<String, String>();
-        final Map<String, String> driverInfos = new HashMap<String, String>();
+        final Map<String, String> nodeInfos = ILockCollectionFactory.getInstance(false).newMap();
+        final Map<String, String> driverInfos = ILockCollectionFactory.getInstance(false).newMap();
         if (JPPFClientProperties.LOCAL_EXECUTION_ENABLED) {
             final int threads = JPPFClientProperties.LOCAL_EXECUTION_THREADS;
             final String uuid = topologyManager.getJPPFClient().getUuid();

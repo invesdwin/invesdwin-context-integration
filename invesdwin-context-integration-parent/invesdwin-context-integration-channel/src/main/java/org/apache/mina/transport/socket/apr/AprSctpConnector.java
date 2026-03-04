@@ -3,8 +3,6 @@ package org.apache.mina.transport.socket.apr;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Queue;
@@ -30,6 +28,8 @@ import org.apache.tomcat.jni.Pool;
 import org.apache.tomcat.jni.Socket;
 import org.apache.tomcat.jni.Status;
 
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+
 /**
  * {@link IoConnector} for APR based socket transport (TCP/IP).
  * 
@@ -46,7 +46,8 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
 
     private static final int POLLSET_SIZE = 1024;
 
-    private final Map<Long, ConnectionRequest> requests = new HashMap<Long, ConnectionRequest>(POLLSET_SIZE);
+    private final Map<Long, ConnectionRequest> requests = ILockCollectionFactory.getInstance(false)
+            .newMap(POLLSET_SIZE);
 
     private final Object wakeupLock = new Object();
 
@@ -62,7 +63,7 @@ public final class AprSctpConnector extends AbstractPollingIoConnector<AprSessio
 
     private final Queue<Long> polledHandles = new ConcurrentLinkedQueue<Long>();
 
-    private final Set<Long> failedHandles = new HashSet<Long>(POLLSET_SIZE);
+    private final Set<Long> failedHandles = ILockCollectionFactory.getInstance(false).newSet(POLLSET_SIZE);
 
     private volatile java.nio.ByteBuffer dummyBuffer;
 

@@ -9,8 +9,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.error.FastEOFException;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 
 @NotThreadSafe
 public class SocketSynchronousChannelServer implements ISynchronousReader<SocketSynchronousChannel> {

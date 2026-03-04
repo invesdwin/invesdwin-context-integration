@@ -21,7 +21,7 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.lang.Closeables;
+import de.invesdwin.util.streams.closeable.Closeables;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 

@@ -4,7 +4,6 @@ import java.io.Closeable;
 import java.io.EOFException;
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeoutException;
 
@@ -31,13 +30,13 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.IFastIterableList;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.concurrent.loop.ASpinWait;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
+import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.MaintenanceIntervalException;
 import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -63,7 +62,9 @@ public class StreamAsynchronousEndpointServerHandlerFactory extends AAsynchronou
     private final IStreamSynchronousEndpointServiceFactory serviceFactory;
     private final int maxSuccessivePushCountPerSession;
     private final int maxSuccessivePushCountPerSubscription;
-    private final Map<String, StreamAsynchronousEndpointServerHandlerSession> sessionId_sessionManager = new ConcurrentHashMap<>();
+    private final Map<String, StreamAsynchronousEndpointServerHandlerSession> sessionId_sessionManager = ILockCollectionFactory
+            .getInstance(true)
+            .newConcurrentMap();
     @GuardedBy("this")
     private IFastIterableList<IoRunnable> ioRunnables;
     private final int maxIoThreadCount;

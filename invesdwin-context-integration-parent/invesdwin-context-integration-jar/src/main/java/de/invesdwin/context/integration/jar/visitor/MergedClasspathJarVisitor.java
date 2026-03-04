@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.jar.visitor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -22,6 +21,7 @@ import org.apache.maven.plugins.shade.resource.XmlAppendingTransformer;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.lang.reflection.Reflections;
 
 @NotThreadSafe
@@ -56,7 +56,7 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
     private static final String[] MERGED_XML_RESOURCES = { "META-INF/web-fragment.xml", "META-INF/aop.xml",
             "META-INF/wsdl.plugin.xml" };
 
-    private final Set<String> duplicateResourcesFilter = new HashSet<String>();
+    private final Set<String> duplicateResourcesFilter = ILockCollectionFactory.getInstance(false).newSet();
 
     private final JarOutputStream jarOut;
     private final IMergedClasspathJarFilter filter;

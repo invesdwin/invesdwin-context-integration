@@ -29,13 +29,13 @@ import de.invesdwin.util.concurrent.pool.IObjectPool;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.error.FastTimeoutException;
 import de.invesdwin.util.error.Throwables;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe

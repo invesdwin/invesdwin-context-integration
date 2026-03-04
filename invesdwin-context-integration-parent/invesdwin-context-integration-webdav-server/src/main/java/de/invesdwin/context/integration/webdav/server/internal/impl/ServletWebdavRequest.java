@@ -4,13 +4,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.Principal;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import jakarta.servlet.http.HttpServletRequest;
 import net.sf.webdav.spi.WebdavRequest;
 
@@ -41,7 +41,7 @@ public class ServletWebdavRequest implements WebdavRequest {
     @Override
     public Set<String> getHeaderNames() {
         final ArrayList<String> list = Collections.list(req.getHeaderNames());
-        return new HashSet<String>(list);
+        return ILockCollectionFactory.getInstance(false).newSet(list);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class ServletWebdavRequest implements WebdavRequest {
     @Override
     public Set<String> getAttributeNames() {
         final ArrayList<String> list = Collections.list(req.getAttributeNames());
-        return new HashSet<String>(list);
+        return ILockCollectionFactory.getInstance(false).newSet(list);
     }
 
     @Override
@@ -64,7 +64,7 @@ public class ServletWebdavRequest implements WebdavRequest {
     @Override
     public Set<String> getParameterNames() {
         final ArrayList<String> list = Collections.list(req.getParameterNames());
-        return new HashSet<String>(list);
+        return ILockCollectionFactory.getInstance(false).newSet(list);
     }
 
     @Override

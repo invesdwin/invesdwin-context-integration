@@ -15,8 +15,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousChannel;
-import de.invesdwin.util.lang.Closeables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe

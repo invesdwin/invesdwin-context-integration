@@ -81,11 +81,10 @@
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
 		<version.sardine>5.11-inv</version.sardine>
-		<version.shrinkwrap-resolver>3.3.0</version.shrinkwrap-resolver>
+		<version.shrinkwrap-resolver>3.3.4</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
-		<version.jctools>3.3.0</version.jctools>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
 		<version.aeron>1.44.1</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
@@ -116,8 +115,8 @@
 		<version.jucx>1.14.100</version.jucx>
 		<version.hadronio>0.3.3-inv</version.hadronio>
 		<version.jgroups>5.2.14.Final</version.jgroups>
-		<version.embedded-maven>2.3.2</version.embedded-maven>
-		<version.sisu>0.9.0.M2</version.sisu>
+		<version.embedded-maven>2.4.39</version.embedded-maven>
+		<version.sisu>0.9.0.M4</version.sisu>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -558,6 +557,10 @@
 						<groupId>javax.annotation</groupId>
 						<artifactId>javax.annotation-api</artifactId>
 					</exclusion>
+					<exclusion>
+						<groupId>javax.enterprise</groupId>
+						<artifactId>cdi-api</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -708,11 +711,6 @@
 				<groupId>com.lmax</groupId>
 				<artifactId>disruptor</artifactId>
 				<version>${version.lmax-disruptor}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.jctools</groupId>
-				<artifactId>jctools-core</artifactId>
-				<version>${version.jctools}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.conversantmedia</groupId>
