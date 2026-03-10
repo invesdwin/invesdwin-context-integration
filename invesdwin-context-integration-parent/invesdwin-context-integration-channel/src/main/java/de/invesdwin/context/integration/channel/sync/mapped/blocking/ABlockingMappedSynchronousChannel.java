@@ -50,7 +50,7 @@ public abstract class ABlockingMappedSynchronousChannel implements ISynchronousC
     public void open() throws IOException {
         final int fileSize = maxMessageSize + MESSAGE_INDEX;
         try {
-            this.mem = IMemoryMappedFile.map(file, 0L, IMemoryMappedFile.roundTo4096(fileSize), false, true);
+            this.mem = IMemoryMappedFile.map(file, 0L, IMemoryMappedFile.roundToBlockSize(fileSize), false, true);
             this.buffer = new UnsafeByteBuffer(mem.addressOffset(), Integers.checkedCast(mem.capacity()));
         } catch (final Exception e) {
             throw new IOException("Unable to open file: " + file, e);
