@@ -17,7 +17,7 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.IS
 import de.invesdwin.context.integration.channel.stream.server.session.manager.IStreamSynchronousEndpointSession;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.collections.circular.CircularGenericArrayQueue;
+import de.invesdwin.util.collections.array.primitive.circular.CircularGenericPrimitiveArrayQueue;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
 import de.invesdwin.util.time.duration.Duration;
@@ -39,7 +39,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private final IStreamSessionManager manager;
     private long lastHeartbeatNanos = System.nanoTime();
     @GuardedBy("self")
-    private final CircularGenericArrayQueue<Future<?>> pendingWrites;
+    private final CircularGenericPrimitiveArrayQueue<Future<?>> pendingWrites;
     @GuardedBy("pendingWrites")
     private int streamSequenceCounter = 0;
 
@@ -52,7 +52,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         this.heartbeatTimeout = server.getHeartbeatTimeout();
         this.requestTimeout = server.getRequestTimeout();
         this.manager = server.newManager(this);
-        this.pendingWrites = new CircularGenericArrayQueue<Future<?>>(server.getMaxSuccessivePushCountPerSession());
+        this.pendingWrites = new CircularGenericPrimitiveArrayQueue<Future<?>>(server.getMaxSuccessivePushCountPerSession());
     }
 
     @Override
