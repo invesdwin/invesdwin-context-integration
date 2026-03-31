@@ -19,7 +19,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
 
     private ExcerptAppender appender;
     private final ChronicleDelegateByteBuffer wrappedBuffer = new ChronicleDelegateByteBuffer(
-            ChronicleDelegateByteBuffer.EMPTY_BYTES);
+            ChronicleDelegateByteBuffer.EMPTY_BYTES, false);
 
     public ChronicleQueueSynchronousWriter(final File file) {
         super(file);

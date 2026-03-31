@@ -31,7 +31,7 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
         this.tailer = queue.createTailer();
         //chronicle uses direct buffers per default
         this.bytes = net.openhft.chronicle.bytes.Bytes.elasticByteBuffer();
-        this.buffer = new ChronicleDelegateByteBuffer(bytes);
+        this.buffer = new ChronicleDelegateByteBuffer(bytes, false);
     }
 
     @Override
@@ -39,6 +39,7 @@ public class ChronicleQueueSynchronousReader extends AChronicleQueueSynchronousC
         if (tailer != null) {
             tailer.close();
             tailer = null;
+            bytes.releaseLast();
             bytes = null;
             buffer = null;
         }

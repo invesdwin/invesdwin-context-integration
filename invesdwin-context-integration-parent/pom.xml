@@ -86,13 +86,13 @@
 		<version.reactive-streams>1.0.4</version.reactive-streams>
 		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
-		<version.aeron>1.44.1</version.aeron>
+		<version.aeron>1.50.4</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
 		<version.jnanomsg>0.4.5</version.jnanomsg>
 		<version.nng-java>1.4.0-inv</version.nng-java>
 		<version.jzmq-api>0.2.0</version.jzmq-api>
 		<version.kryonet>2.22.9</version.kryonet>
-		<version.chronicle-affinity>3.27ea0</version.chronicle-affinity>
+		<version.chronicle-affinity>2026.2</version.chronicle-affinity>
 		<version.chronicle-network>2.24ea15</version.chronicle-network>
 		<version.axon>4.5.11</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
