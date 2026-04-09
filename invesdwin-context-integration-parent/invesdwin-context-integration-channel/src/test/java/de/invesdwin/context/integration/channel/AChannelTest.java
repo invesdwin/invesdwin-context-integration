@@ -41,6 +41,7 @@ import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.add.AddUndefinedBytesDelegateSerde;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
+import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -59,7 +60,7 @@ public abstract class AChannelTest extends ATest {
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;
     public static final int MESSAGE_COUNT = DEBUG ? 10 : 1_000_000_000;
-    public static final int FLUSH_INTERVAL = Math.max(10, MESSAGE_COUNT / 10);
+    public static final int FLUSH_INTERVAL = Integers.max(10, MESSAGE_COUNT / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = ValidatingLatencyReportFactory.INSTANCE;
 

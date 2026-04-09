@@ -135,7 +135,7 @@ public class ConnectionSizingClientQueueListener implements ClientQueueListener 
         final int jobsCount = ConnectionSizingClientQueueListener.queuedJobsCount
                 + ConnectionSizingClientQueueListener.activeJobsCount;
         final int nodesCountMultiplied = (int) (nodesCount * MAX_CONNECTIONS_PER_NODE_MULTIPLIER);
-        return Integers.max(1, Math.min(jobsCount, nodesCountMultiplied), nodesCount);
+        return Integers.max(1, Integers.min(jobsCount, nodesCountMultiplied), nodesCount);
     }
 
     private static void logConnectionsChanged(final int connectionsBefore, final int connectionsAfter) {
