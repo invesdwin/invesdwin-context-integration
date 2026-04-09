@@ -17,6 +17,8 @@ import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucp.UcpRemoteKey;
 import org.openucx.jucx.ucp.UcpRequest;
 
+import de.invesdwin.util.math.Longs;
+
 public class UcxReadBWBenchmarkReceiver extends UcxBenchmark {
 
     public static void main(final String[] args) throws Exception {
@@ -63,7 +65,7 @@ public class UcxReadBWBenchmarkReceiver extends UcxBenchmark {
         final UcpMemory recvMemory = context.memoryMap(allocationParams);
         resources.push(recvMemory);
         final ByteBuffer data = UcxUtils.getByteBufferView(recvMemory.getAddress(),
-                Math.min(Integer.MAX_VALUE, totalSize));
+                Longs.min(Integer.MAX_VALUE, totalSize));
         for (int i = 0; i < numIterations; i++) {
             final int iterNum = i;
             final UcpRequest getRequest = endpoint.getNonBlocking(remoteAddress, remoteKey, recvMemory.getAddress(),
