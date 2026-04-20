@@ -13,6 +13,8 @@ import org.openucx.jucx.ucp.UcpEndpointParams;
 import org.openucx.jucx.ucp.UcpMemory;
 import org.openucx.jucx.ucs.UcsConstants;
 
+import de.invesdwin.util.math.Longs;
+
 public class UcxReadBWBenchmarkSender extends UcxBenchmark {
 
     public static void main(final String[] args) throws Exception {
@@ -34,7 +36,8 @@ public class UcxReadBWBenchmarkSender extends UcxBenchmark {
 
         final UcpMemory memory = context.memoryMap(allocationParams);
         resources.push(memory);
-        final ByteBuffer data = UcxUtils.getByteBufferView(memory.getAddress(), Math.min(Integer.MAX_VALUE, totalSize));
+        final ByteBuffer data = UcxUtils.getByteBufferView(memory.getAddress(),
+                Longs.min(Integer.MAX_VALUE, totalSize));
 
         // Send worker and memory address and Rkey to receiver.
         final ByteBuffer rkeyBuffer = memory.getRemoteKeyBuffer();

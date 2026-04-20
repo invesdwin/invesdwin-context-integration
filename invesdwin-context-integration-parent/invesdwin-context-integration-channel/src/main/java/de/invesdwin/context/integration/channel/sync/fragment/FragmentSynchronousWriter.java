@@ -75,7 +75,7 @@ public class FragmentSynchronousWriter implements ISynchronousWriter<IByteBuffer
     public void write(final IByteBufferProvider message) throws IOException {
         this.message = message.asBuffer();
         final double fragmentCountDouble = Doubles.divide(this.message.capacity(), maxPayloadLength);
-        final double fragmentCountDoubleRounded = Math.ceil(fragmentCountDouble);
+        final double fragmentCountDoubleRounded = Doubles.ceil(fragmentCountDouble);
         if (fragmentCountDouble > Byte.MAX_VALUE) {
             throw new IllegalStateException("fragmentCount [" + fragmentCountDoubleRounded + "] should not exceed ["
                     + Byte.MAX_VALUE + "]. Please increase the maxMessageLength [" + maxMessageLength

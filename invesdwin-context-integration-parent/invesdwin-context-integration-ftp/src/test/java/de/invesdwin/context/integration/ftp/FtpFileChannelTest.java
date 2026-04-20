@@ -4,7 +4,6 @@ import java.net.URI;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
@@ -12,6 +11,7 @@ import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.ITestContextSetup;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.math.random.PseudoRandomGenerator;
 import jakarta.inject.Inject;
 
 @NotThreadSafe
@@ -73,8 +73,9 @@ public class FtpFileChannelTest extends ATest {
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
 
+        final PseudoRandomGenerator randomGenerator = new PseudoRandomGenerator();
         for (int i = 0; i < 20; i++) {
-            final int random = RandomUtils.nextInt(0, 7);
+            final int random = randomGenerator.nextInt(0, 7);
             switch (random) {
             case 0:
                 log.info("download");
