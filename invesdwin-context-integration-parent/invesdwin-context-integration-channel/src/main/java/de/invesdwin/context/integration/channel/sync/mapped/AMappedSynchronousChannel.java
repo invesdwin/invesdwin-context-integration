@@ -52,7 +52,8 @@ public abstract class AMappedSynchronousChannel implements ISynchronousChannel {
     public void open() throws IOException {
         final int fileSize = maxMessageSize + MESSAGE_INDEX;
         try {
-            this.mem = IMemoryMappedFile.map(true, file, 0L, IMemoryMappedFile.roundToBlockSize(fileSize), false);
+            this.mem = IMemoryMappedFile.map(true, file, 0L, IMemoryMappedFile.roundToBlockSize(fileSize), false,
+                    false);
             this.buffer = new UnsafeByteBuffer(mem.addressOffset(), Integers.checkedCast(mem.capacity()));
         } catch (final Exception e) {
             throw new IOException("Unable to open file: " + file, e);
