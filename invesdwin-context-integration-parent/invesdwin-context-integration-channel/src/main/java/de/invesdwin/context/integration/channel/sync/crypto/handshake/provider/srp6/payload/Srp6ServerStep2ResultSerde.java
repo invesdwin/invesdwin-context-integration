@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
 @Immutable
@@ -14,16 +13,6 @@ public final class Srp6ServerStep2ResultSerde implements ISerde<Srp6ServerStep2R
     public static final Srp6ServerStep2ResultSerde INSTANCE = new Srp6ServerStep2ResultSerde();
 
     private Srp6ServerStep2ResultSerde() {}
-
-    @Override
-    public Srp6ServerStep2Result fromBytes(final byte[] bytes) {
-        return SerdeBaseMethods.fromBytes(this, bytes);
-    }
-
-    @Override
-    public byte[] toBytes(final Srp6ServerStep2Result obj) {
-        return SerdeBaseMethods.toBytes(this, obj);
-    }
 
     @Override
     public Srp6ServerStep2Result fromBuffer(final IByteBuffer buffer) {

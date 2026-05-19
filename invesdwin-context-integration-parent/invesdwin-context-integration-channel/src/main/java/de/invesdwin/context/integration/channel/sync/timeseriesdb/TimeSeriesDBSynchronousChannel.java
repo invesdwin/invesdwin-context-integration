@@ -137,7 +137,7 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
 
         @Override
         public FDate extractStartTime(final IndexedByteBuffer value) {
-            return value.getTime();
+            return value.getIndex();
         }
 
         @Override
@@ -157,7 +157,7 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
 
         @Override
         public FDate extractEndTime(final IndexedByteBuffer value) {
-            return value.getTime();
+            return value.getIndex();
         }
 
         @Override

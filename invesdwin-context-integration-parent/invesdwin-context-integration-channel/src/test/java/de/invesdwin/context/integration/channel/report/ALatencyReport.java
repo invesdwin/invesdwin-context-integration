@@ -33,7 +33,7 @@ public abstract class ALatencyReport implements ILatencyReport {
     private final IFDateProvider messageProvider = new IFDateProvider() {
         @Override
         public FDate asFDate() {
-            return new FDate(newTimestamp());
+            return new FDate(newTimestamp(), 0);
         }
 
     };
