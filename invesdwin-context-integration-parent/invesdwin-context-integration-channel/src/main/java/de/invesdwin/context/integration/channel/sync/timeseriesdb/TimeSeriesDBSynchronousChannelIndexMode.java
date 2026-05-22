@@ -22,7 +22,7 @@ public enum TimeSeriesDBSynchronousChannelIndexMode {
     INDEX {
         @Override
         public FDate nextIndex(final FDate lastIndex) {
-            return lastIndex.addMilliseconds(1);
+            return lastIndex.addPicoseconds(1);
         }
     };
 
