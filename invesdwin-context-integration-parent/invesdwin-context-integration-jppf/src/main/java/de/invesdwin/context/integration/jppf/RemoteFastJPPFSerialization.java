@@ -34,12 +34,12 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         }
     };
 
-    private static volatile FDate lastRefreshTrigger = new FDate();
+    private static volatile FDate lastRefreshTrigger = FDate.now();
 
     public RemoteFastJPPFSerialization() {}
 
     public static void refresh() {
-        lastRefreshTrigger = new FDate();
+        lastRefreshTrigger = FDate.now();
     }
 
     @Override
@@ -74,12 +74,12 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
     private static final class RefreshingCoderReference {
 
         private DefaultCoder coder = new DefaultCoder();
-        private FDate lastRefresh = new FDate();
+        private FDate lastRefresh = FDate.now();
 
         public DefaultCoder get() {
             if (lastRefresh.isBefore(lastRefreshTrigger)) {
                 coder = new DefaultCoder();
-                lastRefresh = new FDate();
+                lastRefresh = FDate.now();
             }
             return coder;
         }

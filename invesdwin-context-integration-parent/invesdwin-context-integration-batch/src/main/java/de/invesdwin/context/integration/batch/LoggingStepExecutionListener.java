@@ -27,7 +27,7 @@ public class LoggingStepExecutionListener implements StepExecutionListener {
         log.info("Finished step [%s.%s] after %s: %s", stepExecution.getJobExecution().getJobInstance().getJobName(),
                 stepExecution.getStepName(),
                 new Duration(FDate.valueOf(stepExecution.getStartTime()),
-                        FDates.min(FDate.valueOf(stepExecution.getEndTime()), new FDate())),
+                        FDates.min(FDate.valueOf(stepExecution.getEndTime()), FDate.now())),
                 stepExecution.getSummary());
         return null;
     }

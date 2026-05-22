@@ -134,7 +134,7 @@ public class JPPFProcessingThreadsCounter {
     }
 
     public synchronized void refresh() {
-        lastRefresh = new FDate(); //prevent recursion
+        lastRefresh = FDate.now(); //prevent recursion
 
         final int processingThreadsCountBefore = getSumProcessingThreadsCount();
         final int nodesCountBefore = getNodesCount();
@@ -162,7 +162,7 @@ public class JPPFProcessingThreadsCounter {
         ConnectionSizingClientQueueListener.maybeIncreaseConnectionsCount(topologyManager.getJPPFClient(),
                 getNodesCount());
 
-        lastRefresh = new FDate();
+        lastRefresh = FDate.now();
     }
 
     private Map<String, String> sortInfos(final Map<String, String> infos) {
