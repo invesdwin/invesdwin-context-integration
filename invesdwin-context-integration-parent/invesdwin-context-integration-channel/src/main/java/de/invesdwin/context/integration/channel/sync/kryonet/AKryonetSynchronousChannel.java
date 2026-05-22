@@ -18,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.kryonet.connection.ClientUd
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.IKryonetConnection;
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.ServerTcpConnection;
 import de.invesdwin.context.integration.channel.sync.kryonet.connection.ServerUdpConnection;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -64,13 +65,13 @@ public abstract class AKryonetSynchronousChannel implements ISynchronousChannel 
             final Client client = new Client(8192, 2048, ByteBufferMessageSerialization.INSTANCE);
             client.start();
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (true) {
                 try {
                     client.connect(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS, address, tcpPort, udpPort);
                     break;
                 } catch (final IOException e) {
-                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                    if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                         try {
                             getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {

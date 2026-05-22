@@ -36,6 +36,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -50,7 +51,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
     @GuardedBy("lock")
     private SynchronousReaderSpinWait<IServiceSynchronousCommand<IByteBufferProvider>> responseReaderSpinWait;
     @GuardedBy("lock")
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     private final AtomicInteger requestSequenceCounter = new AtomicInteger();
     private final AtomicInteger streamSequenceCounter = new AtomicInteger();
     private final ILock lock;
@@ -100,12 +101,12 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
 
     private void maybeSendHeartbeatLocked() {
         try {
-            if (endpointSession.getHeartbeatInterval().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos)
+            if (endpointSession.getHeartbeatInterval().isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos)
                     && requestWriterSpinWait.getWriter().writeFlushed()
                     && requestWriterSpinWait.getWriter().writeReady()) {
                 final Duration requestTimeout = getDefaultRequestTimeout();
                 readyWriteAndFlushLocked(IServiceSynchronousCommand.HEARTBEAT_SERVICE_ID, -1, -1,
-                        EmptyByteBuffer.INSTANCE, false, requestTimeout, requestTimeout, System.nanoTime());
+                        EmptyByteBuffer.INSTANCE, false, requestTimeout, requestTimeout, FDateNanos.elapsedNanos());
             }
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -188,7 +189,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
         final Duration requestWaitInterval = getRequestWaitInterval(requestTimeout, waitForResponse);
         lock.lock();
         try {
-            final long waitingSinceNanos = System.nanoTime();
+            final long waitingSinceNanos = FDateNanos.elapsedNanos();
             if (request == null) {
                 //just send a heartbeat if needed
                 maybeSendHeartbeatLocked();
@@ -242,7 +243,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 if (isClosed()) {
                     throw FastEOFException.getInstance("closed");
                 }
-                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                if (requestTimeout.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request timeout exceeded for [%s:%s:%s]: %s", serviceId,
                             methodId, requestSequence, requestTimeout);
                 }
@@ -409,7 +410,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             if (isClosed()) {
                 throw FastEOFException.getInstance("closed");
             }
-            if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+            if (requestTimeout.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - waitingSinceNanos)) {
                 throw FastTimeoutException.getInstance("Request write ready timeout exceeded for [%s:%s:%s]: %s",
                         serviceId, methodId, requestSequence, requestTimeout);
             }
@@ -427,12 +428,12 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
             requestHolder.setSequence(requestSequence);
             requestHolder.setMessage(request);
             requestWriterSpinWait.getWriter().write(requestHolder);
-            lastHeartbeatNanos = System.nanoTime();
+            lastHeartbeatNanos = FDateNanos.elapsedNanos();
             while (!requestWriterSpinWait.writeFlushed().awaitFulfill(waitingSinceNanos, requestWaitInterval)) {
                 if (isClosed()) {
                     throw FastEOFException.getInstance("closed");
                 }
-                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                if (requestTimeout.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);
                 }
@@ -462,14 +463,14 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 if (isClosed()) {
                     throw FastEOFException.getInstance("closed");
                 }
-                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                if (requestTimeout.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write ready timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);
                 }
                 pollForResponsesNonBlocking(unexpectedMessageListener);
             }
             requestWriterSpinWait.getWriter().write(requestHolder);
-            lastHeartbeatNanos = System.nanoTime();
+            lastHeartbeatNanos = FDateNanos.elapsedNanos();
             if (!requestWriterSpinWait.getWriter().writeFlushed()) {
                 pollForResponsesNonBlocking(unexpectedMessageListener);
             }
@@ -477,7 +478,7 @@ public class SingleplexingSynchronousEndpointClientSession implements ISynchrono
                 if (isClosed()) {
                     throw FastEOFException.getInstance("closed");
                 }
-                if (requestTimeout.isLessThanOrEqualToNanos(System.nanoTime() - waitingSinceNanos)) {
+                if (requestTimeout.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - waitingSinceNanos)) {
                     throw FastTimeoutException.getInstance("Request write flush timeout exceeded for [%s:%s:%s]: %s",
                             serviceId, methodId, requestSequence, requestTimeout);
                 }

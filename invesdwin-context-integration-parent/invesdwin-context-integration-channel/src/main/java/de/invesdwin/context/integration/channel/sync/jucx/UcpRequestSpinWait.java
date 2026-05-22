@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.openucx.jucx.ucp.UcpRequest;
 
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -26,7 +27,7 @@ public class UcpRequestSpinWait extends ASpinWait {
     public void waitForRequest(final UcpRequest request, final Duration timeout) throws IOException {
         try {
             init(request);
-            awaitFulfill(System.nanoTime(), timeout);
+            awaitFulfill(FDateNanos.elapsedNanos(), timeout);
         } catch (final IOException e) {
             throw e;
         } catch (final Throwable t) {

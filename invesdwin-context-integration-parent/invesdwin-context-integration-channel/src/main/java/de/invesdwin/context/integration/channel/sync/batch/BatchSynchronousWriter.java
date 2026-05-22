@@ -8,6 +8,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -68,7 +69,7 @@ public class BatchSynchronousWriter implements ISynchronousWriter<IByteBufferPro
     private void reset() {
         batchBufferPosition = PAYLOADLENGTH_INDEX;
         batchCount = 0;
-        batchStartNanos = System.nanoTime();
+        batchStartNanos = FDateNanos.elapsedNanos();
     }
 
     @Override
@@ -118,7 +119,7 @@ public class BatchSynchronousWriter implements ISynchronousWriter<IByteBufferPro
          * greater than 1. Though delegate thread safety needs to be considered.
          */
         if (batchFlushInterval != null
-                && batchFlushInterval.isLessThanOrEqualToNanos(System.nanoTime() - batchStartNanos)) {
+                && batchFlushInterval.isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - batchStartNanos)) {
             return true;
         }
         return false;

@@ -24,6 +24,7 @@ import de.invesdwin.util.streams.buffer.bytes.EmptyByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.pool.PooledFastByteArrayOutputStream;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -131,7 +132,8 @@ public class TlsHandshaker {
                 final java.nio.ByteBuffer iApp;
                 if (hs == HandshakeStatus.NEED_UNWRAP) {
                     try {
-                        if (!underlyingReaderSpinWait.hasNext().awaitFulfill(System.nanoTime(), handshakeTimeout)) {
+                        if (!underlyingReaderSpinWait.hasNext()
+                                .awaitFulfill(FDateNanos.elapsedNanos(), handshakeTimeout)) {
                             if (protocol.isHandshakeTimeoutRecoveryEnabled()) {
                                 //CHECKSTYLE:OFF
                                 if (handshakeTimeoutRecoveryTries != null) {

@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.netty.tcp.NettySocketSynchr
 import de.invesdwin.context.integration.channel.sync.netty.udp.type.INettyDatagramChannelType;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 import io.netty.bootstrap.Bootstrap;
 import io.netty.bootstrap.BootstrapConfig;
@@ -239,7 +240,7 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
         try {
             //init bootstrap
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (activeCount.get() > 0) {
                 try {
                     final ChannelFuture sync = channelFactory.get().sync();
@@ -253,7 +254,7 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
                         internalClose();
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -279,10 +280,10 @@ public class NettyDatagramSynchronousChannel implements ISessionlessSynchronousC
     private void awaitDatagramChannel() throws IOException {
         try {
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (!multipleClientsAllowed && (finalizer.datagramChannel == null || datagramChannelOpening)
                     && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

@@ -36,6 +36,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -315,7 +316,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
         try {
             //init bootstrap
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (activeCount.get() > 0) {
                 try {
                     sessionFactory.run();
@@ -323,7 +324,7 @@ public class MinaSocketSynchronousChannel implements Closeable {
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
                         internalClose();
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -349,10 +350,10 @@ public class MinaSocketSynchronousChannel implements Closeable {
     private void awaitIoSession() throws IOException {
         try {
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             //wait for channel
             while (!multipleClientsAllowed && (finalizer.session == null || sessionOpening) && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

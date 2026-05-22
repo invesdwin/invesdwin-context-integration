@@ -16,6 +16,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.DerivedKeyTransportLayerSecurityProvider;
 import de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.provider.ITransportLayerSecurityProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -72,7 +73,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                 //use getSocket().startHandshake(); after sending some unencrypted messages (though beware of MITM stripTls attacks)
             } else {
                 final Duration connectTimeout = getConnectTimeout();
-                final long startNanos = System.nanoTime();
+                final long startNanos = FDateNanos.elapsedNanos();
                 while (true) {
                     try {
                         finalizer.socket = new Socket();
@@ -87,7 +88,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                     } catch (final ConnectException e) {
                         finalizer.socket.close();
                         finalizer.socket = null;
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -112,7 +113,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                 tlsProvider.onSocketConnected(sslSocket);
             } else {
                 final Duration connectTimeout = getConnectTimeout();
-                final long startNanos = System.nanoTime();
+                final long startNanos = FDateNanos.elapsedNanos();
                 final SSLSocketFactory socketFactory = context.getSocketFactory();
                 while (true) {
                     try {
@@ -125,7 +126,7 @@ public class TlsBlockingSocketSynchronousChannel extends BlockingSocketSynchrono
                     } catch (final ConnectException e) {
                         finalizer.socket.close();
                         finalizer.socket = null;
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {

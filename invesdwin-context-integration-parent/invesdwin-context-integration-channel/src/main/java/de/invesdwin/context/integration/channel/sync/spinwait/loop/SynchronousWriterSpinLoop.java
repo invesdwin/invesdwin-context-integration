@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastTimeoutException;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -35,20 +36,20 @@ public class SynchronousWriterSpinLoop<M> {
      */
     public void spinForWrite(final M message, final Duration timeout) throws IOException {
         try {
-            long startNanos = System.nanoTime();
+            long startNanos = FDateNanos.elapsedNanos();
             while (!writer.writeReady()) {
                 if (loopInterruptedCheck.checkNoInterrupt()) {
-                    if (timeout.isLessThanNanos(System.nanoTime() - startNanos)) {
+                    if (timeout.isLessThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                         onTimeout("Write message ready timeout exceeded", timeout, startNanos);
                     }
                 }
                 ASpinWait.onSpinWaitStatic();
             }
             writer.write(message);
-            startNanos = System.nanoTime();
+            startNanos = FDateNanos.elapsedNanos();
             while (!writer.writeFlushed()) {
                 if (loopInterruptedCheck.checkNoInterrupt()) {
-                    if (timeout.isLessThanNanos(System.nanoTime() - startNanos)) {
+                    if (timeout.isLessThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                         onTimeout("Write message flush timeout exceeded", timeout, startNanos);
                     }
                 }

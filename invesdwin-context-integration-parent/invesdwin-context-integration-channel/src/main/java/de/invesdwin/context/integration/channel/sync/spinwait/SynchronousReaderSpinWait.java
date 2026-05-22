@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastTimeoutException;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -39,7 +40,7 @@ public class SynchronousReaderSpinWait<M> {
 
     public M waitForRead(final Duration timeout) throws IOException {
         try {
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (!hasNext().awaitFulfill(startNanos, timeout)) {
                 onTimeout("Read message hasNext timeout exceeded", timeout, startNanos);
             }

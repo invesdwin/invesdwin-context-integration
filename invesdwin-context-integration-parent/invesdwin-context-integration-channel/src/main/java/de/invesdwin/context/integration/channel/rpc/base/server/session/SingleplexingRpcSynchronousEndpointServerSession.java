@@ -27,6 +27,7 @@ import de.invesdwin.util.concurrent.future.NullFuture;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -45,7 +46,7 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     private boolean delayedWriteResponse = false;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     private Future<Object> processResponseFuture;
 
     public SingleplexingRpcSynchronousEndpointServerSession(final RpcSynchronousEndpointServer parent,
@@ -138,7 +139,7 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
             }
         }
         if (requestReader.hasNext()) {
-            lastHeartbeatNanos = System.nanoTime();
+            lastHeartbeatNanos = FDateNanos.elapsedNanos();
             dispatchProcessResponse();
             return true;
         } else {
@@ -178,7 +179,7 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
         if (endpointSession == null) {
             return true;
         }
-        return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return heartbeatTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     /**
@@ -189,7 +190,7 @@ public class SingleplexingRpcSynchronousEndpointServerSession implements ISynchr
         if (isClosed()) {
             return true;
         }
-        return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return requestTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     private void dispatchProcessResponse() throws IOException {

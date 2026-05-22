@@ -30,6 +30,7 @@ import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -49,7 +50,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     private boolean delayedWriteResponse = false;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     private Future<Object> processResponseFuture;
     private ISynchronousReader<IByteBufferProvider> readFinishedReader;
     private final IStreamSessionManager manager;
@@ -234,7 +235,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
             return false;
         }
         if (requestReader.hasNext()) {
-            lastHeartbeatNanos = System.nanoTime();
+            lastHeartbeatNanos = FDateNanos.elapsedNanos();
             dispatchProcessResponse();
             return true;
         } else {
@@ -274,7 +275,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         if (endpointSession == null) {
             return true;
         }
-        return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return heartbeatTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     /**
@@ -285,7 +286,7 @@ public class SingleplexingStreamSynchronousEndpointServerSession
         if (isClosed()) {
             return true;
         }
-        return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return requestTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     private void dispatchProcessResponse() throws IOException {

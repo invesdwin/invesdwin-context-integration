@@ -4,6 +4,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 
 /**
  * This report uses nano precision based on cpu clock in the JVM. Using this measure between processes will not work as
@@ -18,7 +19,7 @@ public class LocalLatencyReport extends ALatencyReport {
 
     @Override
     protected FDate newTimestamp() {
-        return new FDate(System.nanoTime());
+        return new FDate(FDateNanos.elapsedNanos());
     }
 
 }

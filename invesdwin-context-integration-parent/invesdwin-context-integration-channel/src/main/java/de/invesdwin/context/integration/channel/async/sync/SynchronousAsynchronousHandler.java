@@ -10,6 +10,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.spinwait.SynchronousWriterSpinWait;
 import de.invesdwin.util.error.FastEOFException;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -22,7 +23,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     private final ISynchronousWriter<I> inputWriter;
     private final SynchronousWriterSpinWait<I> writerSpinWait;
     private final Duration timeout;
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
 
     /**
      * Wrap inputReader in a BlockingSynchronousReader if a response should be guaranteed.
@@ -55,7 +56,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
     }
 
     public boolean isHeartbeatTimeout() {
-        return timeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return timeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     @Override
@@ -63,7 +64,7 @@ public class SynchronousAsynchronousHandler<I, O> implements IAsynchronousHandle
         //maybe block here
         writerSpinWait.waitForWrite(input, timeout);
         if (outputReader.hasNext()) {
-            lastHeartbeatNanos = System.nanoTime();
+            lastHeartbeatNanos = FDateNanos.elapsedNanos();
             return outputReader.readMessage();
         } else {
             return null;
