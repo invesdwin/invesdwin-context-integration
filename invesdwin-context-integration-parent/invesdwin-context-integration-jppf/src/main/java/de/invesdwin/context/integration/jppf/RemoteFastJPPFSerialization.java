@@ -77,7 +77,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         private FDate lastRefresh = FDate.now();
 
         public DefaultCoder get() {
-            if (lastRefresh.isBefore(lastRefreshTrigger)) {
+            if (lastRefresh.isBeforeNotNullSafe(lastRefreshTrigger)) {
                 coder = new DefaultCoder();
                 lastRefresh = FDate.now();
             }
