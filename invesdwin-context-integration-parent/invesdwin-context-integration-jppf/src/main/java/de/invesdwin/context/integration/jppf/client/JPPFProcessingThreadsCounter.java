@@ -49,7 +49,7 @@ public class JPPFProcessingThreadsCounter {
 
     public static final String WEBDAV_DIRECTORY = JPPFProcessingThreadsCounter.class.getSimpleName();
     public static final String WEBDAV_CONTENT_SEPARATOR = ";";
-    public static final String WEBDAV_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_MS;
+    public static final String WEBDAV_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_PS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
     public static final String DRIVER_HEARTBEAT_FILE_PREFIX = "driver_";
     public static final String NODE_HEARTBEAT_FILE_PREFIX = "node_";
@@ -134,7 +134,7 @@ public class JPPFProcessingThreadsCounter {
     }
 
     public synchronized void refresh() {
-        lastRefresh = new FDate(); //prevent recursion
+        lastRefresh = FDate.now(); //prevent recursion
 
         final int processingThreadsCountBefore = getSumProcessingThreadsCount();
         final int nodesCountBefore = getNodesCount();
@@ -162,7 +162,7 @@ public class JPPFProcessingThreadsCounter {
         ConnectionSizingClientQueueListener.maybeIncreaseConnectionsCount(topologyManager.getJPPFClient(),
                 getNodesCount());
 
-        lastRefresh = new FDate();
+        lastRefresh = FDate.now();
     }
 
     private Map<String, String> sortInfos(final Map<String, String> infos) {

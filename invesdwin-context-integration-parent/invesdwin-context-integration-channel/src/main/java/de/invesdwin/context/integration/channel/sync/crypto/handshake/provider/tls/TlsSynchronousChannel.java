@@ -22,6 +22,7 @@ import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -302,7 +303,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
             inboundApplicationDataBuffer = null;
         }
 
-        final long startNanos = System.nanoTime();
+        final long startNanos = FDateNanos.elapsedNanos();
         engine.closeOutbound();
         try {
             //signal close to the other side for faster exit
@@ -312,7 +313,7 @@ public class TlsSynchronousChannel implements ISynchronousChannel {
                 } catch (final InterruptedException e) {
                     throw new IOException(e);
                 }
-                if (handshakeTimeout.isLessThanNanos(System.nanoTime() - startNanos)) {
+                if (handshakeTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     throw new TimeoutException("Close handshake timeout exceeded");
                 }
             }

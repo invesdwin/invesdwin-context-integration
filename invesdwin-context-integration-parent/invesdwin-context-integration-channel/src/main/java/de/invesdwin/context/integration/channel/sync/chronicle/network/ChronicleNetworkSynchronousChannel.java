@@ -19,6 +19,7 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.Blockin
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocket;
 import net.openhft.chronicle.network.tcp.ChronicleServerSocketChannel;
@@ -130,7 +131,7 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
                 finalizer.socket = finalizer.socketChannel.socket();
             } else {
                 final Duration connectTimeout = getConnectTimeout();
-                final long startNanos = System.nanoTime();
+                final long startNanos = FDateNanos.elapsedNanos();
                 while (true) {
                     finalizer.socketChannel = type.newSocketChannel(SocketChannel.open());
                     try {
@@ -141,7 +142,7 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
                         finalizer.socketChannel.close();
                         finalizer.socketChannel = null;
                         finalizer.socket = null;
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -181,9 +182,9 @@ public class ChronicleNetworkSynchronousChannel implements ISynchronousChannel {
         try {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

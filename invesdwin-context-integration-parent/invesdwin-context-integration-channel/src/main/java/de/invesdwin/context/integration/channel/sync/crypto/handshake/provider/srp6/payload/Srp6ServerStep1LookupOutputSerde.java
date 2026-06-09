@@ -5,7 +5,6 @@ import java.math.BigInteger;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.marshallers.serde.basic.ByteArraySerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -17,16 +16,6 @@ public final class Srp6ServerStep1LookupOutputSerde implements ISerde<Srp6Server
     private final ByteArraySerde delegate = ByteArraySerde.getInstance(2);
 
     private Srp6ServerStep1LookupOutputSerde() {}
-
-    @Override
-    public Srp6ServerStep1LookupOutput fromBytes(final byte[] bytes) {
-        return SerdeBaseMethods.fromBytes(this, bytes);
-    }
-
-    @Override
-    public byte[] toBytes(final Srp6ServerStep1LookupOutput obj) {
-        return SerdeBaseMethods.toBytes(this, obj);
-    }
 
     @Override
     public Srp6ServerStep1LookupOutput fromBuffer(final IByteBuffer buffer) {

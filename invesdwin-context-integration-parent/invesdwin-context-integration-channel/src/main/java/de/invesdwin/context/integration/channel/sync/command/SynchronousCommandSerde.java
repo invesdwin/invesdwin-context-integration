@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.sync.command;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -50,16 +49,6 @@ public class SynchronousCommandSerde<M> implements ISerde<ISynchronousCommand<M>
         } else {
             return fixedLength;
         }
-    }
-
-    @Override
-    public ISynchronousCommand<M> fromBytes(final byte[] bytes) {
-        return SerdeBaseMethods.fromBytes(this, bytes);
-    }
-
-    @Override
-    public byte[] toBytes(final ISynchronousCommand<M> obj) {
-        return SerdeBaseMethods.toBytes(this, obj);
     }
 
     @Override

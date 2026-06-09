@@ -3,11 +3,11 @@ package de.invesdwin.context.integration.channel.report;
 import javax.annotation.concurrent.Immutable;
 
 @Immutable
-public final class LocalLatencyReportFactory implements ILatencyReportFactory {
+public final class LocalNanosLatencyReportFactory implements ILatencyReportFactory {
 
-    public static final LocalLatencyReportFactory INSTANCE = new LocalLatencyReportFactory();
+    public static final LocalNanosLatencyReportFactory INSTANCE = new LocalNanosLatencyReportFactory();
 
-    private LocalLatencyReportFactory() {}
+    private LocalNanosLatencyReportFactory() {}
 
     @Override
     public ILatencyReport newLatencyReport(final String name) {

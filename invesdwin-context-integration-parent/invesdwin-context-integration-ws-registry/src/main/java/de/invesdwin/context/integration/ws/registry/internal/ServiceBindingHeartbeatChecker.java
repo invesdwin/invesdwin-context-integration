@@ -14,6 +14,7 @@ import de.invesdwin.context.integration.ws.registry.internal.persistence.Service
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateMillis;
 import de.invesdwin.util.time.duration.Duration;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -46,7 +47,7 @@ public class ServiceBindingHeartbeatChecker implements IStartupHook {
                 serviceBindingDao.delete(b);
             } else {
                 final long heartbeatTimestamp = heartbeat.millisValue();
-                final boolean shouldBeDiscarded = System.currentTimeMillis()
+                final boolean shouldBeDiscarded = FDateMillis.nowMillis()
                         - heartbeatTimestamp > IntegrationWsProperties.SERVICE_BINDING_HEARTBEAT_PURGE_INTERVAL_MILLIS;
                 if (shouldBeDiscarded) {
                     log.warn(

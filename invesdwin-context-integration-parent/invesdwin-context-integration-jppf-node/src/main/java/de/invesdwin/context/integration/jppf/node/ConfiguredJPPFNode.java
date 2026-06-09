@@ -147,7 +147,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             try {
                 final String nodeUuid = node.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
-                final FDate heartbeat = new FDate();
+                final FDate heartbeat = FDate.now();
                 final String content = nodeUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);

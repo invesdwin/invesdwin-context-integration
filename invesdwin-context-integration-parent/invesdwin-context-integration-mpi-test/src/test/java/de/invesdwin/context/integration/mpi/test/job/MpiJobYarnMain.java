@@ -26,6 +26,7 @@ import de.invesdwin.util.concurrent.lock.FileChannelLock;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.time.date.millis.FDateMillis;
 
 @NotThreadSafe
 public final class MpiJobYarnMain {
@@ -105,7 +106,7 @@ public final class MpiJobYarnMain {
             if (OPENJDK_EXTRACTED_FOLDER.exists() && !javaTarGz.exists()) {
                 return OPENJDK_EXTRACTED_FOLDER;
             }
-            long started = System.currentTimeMillis();
+            long started = FDateMillis.nowMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started downloading [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -120,10 +121,10 @@ public final class MpiJobYarnMain {
             Files.moveFileQuietly(javaTarGzPart, javaTarGz);
             //CHECKSTYLE:OFF
             System.out.println(
-                    "Finished downloading [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
+                    "Finished downloading [" + javaTarGz + "] after " + (FDateMillis.nowMillis() - started) + " ms");
             //CHECKSTYLE:ON
 
-            started = System.currentTimeMillis();
+            started = FDateMillis.nowMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started extracting [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -133,7 +134,7 @@ public final class MpiJobYarnMain {
             Files.deleteQuietly(javaTarGz);
             //CHECKSTYLE:OFF
             System.out.println(
-                    "Finished extracting [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
+                    "Finished extracting [" + javaTarGz + "] after " + (FDateMillis.nowMillis() - started) + " ms");
             //CHECKSTYLE:ON
             return OPENJDK_EXTRACTED_FOLDER;
         } catch (final IOException e) {

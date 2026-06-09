@@ -27,6 +27,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.closeable.Closeables;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -269,7 +270,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
                     if (requestWaitLoopInterruptedCheck.check()) {
                         if (handledOverall) {
                             //update server thread heartbeat timestamp
-                            lastHeartbeatNanos = System.nanoTime();
+                            lastHeartbeatNanos = FDateNanos.elapsedNanos();
                         }
                         //maybe check heartbeat and maybe accept more clients
                         throw MaintenanceIntervalException.getInstance("check heartbeat");
@@ -282,7 +283,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
         private volatile Future<?> future;
         private final IFastIterableList<IoRunnable> ioRunnablesCopy;
         @GuardedBy("volatile because primary runnable checks the heartbeat of the other runnables")
-        private volatile long lastHeartbeatNanos = System.nanoTime();
+        private volatile long lastHeartbeatNanos = FDateNanos.elapsedNanos();
 
         private IoRunnable(final int ioRunnableId) {
             this.ioRunnableId = ioRunnableId;
@@ -310,7 +311,8 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
         }
 
         public boolean isEmptyAndHeartbeatTimeout() {
-            return serverSessions.isEmpty() && heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+            return serverSessions.isEmpty()
+                    && heartbeatTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
         }
 
         @Override
@@ -357,7 +359,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
                 FTimeUnit.MILLISECONDS.sleep(1);
             } else {
                 try {
-                    if (!throttle.awaitFulfill(System.nanoTime(), requestWaitInterval)) {
+                    if (!throttle.awaitFulfill(FDateNanos.elapsedNanos(), requestWaitInterval)) {
                         maybeCheckHeartbeat();
                     }
                 } catch (final MaintenanceIntervalException e) {
@@ -479,7 +481,7 @@ public abstract class ASynchronousEndpointServer implements ISynchronousEndpoint
             }
             ioRunnablesArray[minSessionsIndex].serverSessions.add(newServerSession(endpointSession));
             //update heartbeat because a new session got created
-            ioRunnablesArray[minSessionsIndex].lastHeartbeatNanos = System.nanoTime();
+            ioRunnablesArray[minSessionsIndex].lastHeartbeatNanos = FDateNanos.elapsedNanos();
             final int activeSessions = activeSessionsOverall.incrementAndGet();
             if (initialMaxPendingWorkCountPerSession < 0) {
                 updateMaxPendingCountPerSession(activeSessions);

@@ -33,17 +33,19 @@ public abstract class ALatencyReport implements ILatencyReport {
     private final IFDateProvider messageProvider = new IFDateProvider() {
         @Override
         public FDate asFDate() {
-            return new FDate(newTimestamp());
+            return newTimestamp();
         }
 
     };
 
     private final String name;
+    private final FTimeUnit measureTimeUnit;
     private final File file;
     private final OutputStream out;
 
-    public ALatencyReport(final String name) {
+    public ALatencyReport(final String name, final FTimeUnit measureTimeUnit) {
         this.name = name;
+        this.measureTimeUnit = measureTimeUnit;
         this.file = newFile(name);
         try {
             Files.forceMkdirParent(file);
@@ -56,7 +58,7 @@ public abstract class ALatencyReport implements ILatencyReport {
             throw new RuntimeException(e);
         }
         try {
-            final String headerLine = "index" + CSV_SEPARATOR + newMeasureTimeUnit().getShortName() + "\n";
+            final String headerLine = "index" + CSV_SEPARATOR + measureTimeUnit.getShortName() + "\n";
             out.write(headerLine.getBytes());
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -70,8 +72,6 @@ public abstract class ALatencyReport implements ILatencyReport {
     public static String getFolderNameOverride() {
         return folderNameOverride;
     }
-
-    protected abstract FTimeUnit newMeasureTimeUnit();
 
     protected FTimeUnit newReportTimeUnit() {
         return FTimeUnit.MICROSECONDS;
@@ -93,7 +93,7 @@ public abstract class ALatencyReport implements ILatencyReport {
         return ContextProperties.getLogDirectory();
     }
 
-    protected abstract long newTimestamp();
+    protected abstract FDate newTimestamp();
 
     @Override
     public IFDateProvider newArrivalTimestamp() {
@@ -158,7 +158,6 @@ public abstract class ALatencyReport implements ILatencyReport {
     public void close() {
         Closeables.closeQuietly(out);
         final List<Decimal> values = new ArrayList<>();
-        final FTimeUnit measureTimeUnit = newMeasureTimeUnit();
         final FTimeUnit reportTimeUnit = newReportTimeUnit();
         try {
             final int decimalPlaces = Decimal.valueOf(measureTimeUnit.convert(1, reportTimeUnit))

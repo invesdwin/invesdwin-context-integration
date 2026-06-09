@@ -161,7 +161,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             try {
                 final String driverUuid = driver.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
-                final FDate heartbeat = new FDate();
+                final FDate heartbeat = FDate.now();
                 final String content = driverUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);

@@ -10,12 +10,9 @@ import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
-import de.invesdwin.util.time.date.FDates;
 
 @NotThreadSafe
 public class StreamSynchronousEndpointClientWriter implements ISynchronousWriter<IByteBufferProvider> {
-
-    public static final long CLOSED_INDEX = FDates.MAX_DATE.millisValue();
 
     private final StreamSynchronousEndpointClientChannel channel;
     private final boolean closeMessageEnabled;

@@ -16,6 +16,7 @@ import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousC
 import de.invesdwin.util.concurrent.Threads;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 
@@ -127,7 +128,7 @@ public final class MinaNativeDatagramClientOpener {
         final long[] polledSockets = new long[MinaNativeDatagramServerOpener.POLLSET_SIZE << 1];
         final LongList polledHandles = new LongArrayList();
 
-        final long startNanos = System.nanoTime();
+        final long startNanos = FDateNanos.elapsedNanos();
         while (polledHandles.isEmpty()) {
             final int ret = select(channel, pollset, polledSockets, polledHandles);
             if (ret < 0) {
@@ -135,7 +136,7 @@ public final class MinaNativeDatagramClientOpener {
             }
             if (polledHandles.isEmpty()) {
                 if (Threads.isInterrupted()
-                        || channel.getConnectTimeout().isLessThanNanos(System.nanoTime() - startNanos)) {
+                        || channel.getConnectTimeout().isLessThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     throw new RuntimeException("timeout exceeded");
                 }
                 try {
