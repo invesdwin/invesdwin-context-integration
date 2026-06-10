@@ -1,8 +1,6 @@
 # https://github.com/rancavil/hadoop-single-node-cluster
 # https://mygit.th-deg.de/mh11395/hadoop-single-node-cluster/-/tree/master
-
-#we expect most clusters to still run on java 8, so we test against that
-FROM eclipse-temurin:8-jdk-jammy
+FROM eclipse-temurin:17-jdk-noble
 RUN apt-get update -y \
     && export DEBIAN_FRONTEND=noninteractive && apt-get install -y --no-install-recommends \
         sudo \
@@ -17,7 +15,7 @@ USER hduser
 RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && chmod 0600 ~/.ssh/authorized_keys
 
 ENV HADOOP_HOME /home/hduser/hadoop
-COPY hadoop-*.tar.gz .
+COPY hadoop-*.tar.gz ./
 RUN cat hadoop-*.tar.gz \
   | gunzip \
   | tar -x -C /home/hduser/ \

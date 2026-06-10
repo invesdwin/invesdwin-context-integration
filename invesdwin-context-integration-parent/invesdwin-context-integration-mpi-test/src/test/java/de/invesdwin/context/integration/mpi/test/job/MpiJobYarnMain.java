@@ -31,7 +31,7 @@ import de.invesdwin.util.time.date.millis.FDateMillis;
 @NotThreadSafe
 public final class MpiJobYarnMain {
 
-    private static final String OPENJDK_VERSION = "17.0.6_10";
+    private static final String OPENJDK_VERSION = "21.0.11_10";
     private static final String OPENJDK_DOWNLOAD_URL;
     private static final File OPENJDK_FOLDER;
     private static final File OPENJDK_EXTRACTED_FOLDER;
@@ -41,8 +41,9 @@ public final class MpiJobYarnMain {
         OPENJDK_FOLDER = new File(ContextProperties.getHomeDirectory(), "openjdk" + OPENJDK_VERSION);
         final String folderVersion = OPENJDK_VERSION.replace("_", "+");
         OPENJDK_EXTRACTED_FOLDER = new File(OPENJDK_FOLDER, "jdk-" + folderVersion);
-        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-"
-                + URIs.encode(folderVersion) + "/OpenJDK17U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
+
+        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-"
+                + URIs.encode(folderVersion) + "/OpenJDK21U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
     private MpiJobYarnMain() {}
