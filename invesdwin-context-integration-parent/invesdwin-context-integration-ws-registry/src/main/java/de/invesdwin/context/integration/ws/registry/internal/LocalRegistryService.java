@@ -7,8 +7,6 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.concurrent.ThreadSafe;
-import jakarta.inject.Inject;
-import jakarta.inject.Named;
 
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +18,8 @@ import de.invesdwin.context.integration.ws.registry.internal.persistence.Service
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.time.date.FDate;
+import jakarta.inject.Inject;
+import jakarta.inject.Named;
 
 @ThreadSafe
 @Named
@@ -36,10 +36,10 @@ public class LocalRegistryService implements IRegistryService {
         final ServiceBindingEntity example = ServiceBindingEntity.valueOf(serviceName, accessUri);
         final ServiceBindingEntity existing = serviceBindingDao.findOne(example);
         if (existing != null) {
-            existing.setUpdated(new FDate());
+            existing.setUpdated(FDate.now());
             return serviceBindingDao.save(existing).toServiceBinding();
         } else {
-            example.setCreated(new FDate());
+            example.setCreated(FDate.now());
             example.setUpdated(example.getCreated());
             return serviceBindingDao.save(example).toServiceBinding();
         }
@@ -54,7 +54,7 @@ public class LocalRegistryService implements IRegistryService {
         final ServiceBindingEntity existing = serviceBindingDao.findOne(example);
         serviceBindingDao.delete(existing);
         final ServiceBinding deleted = existing.toServiceBinding();
-        deleted.setDeleted(new FDate().jodaTimeValue().toDateTime());
+        deleted.setDeleted(FDate.now().jodaTimeValue().toDateTime());
         return deleted;
     }
 

@@ -8,6 +8,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastTimeoutException;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -54,12 +55,12 @@ public class SynchronousWriterSpinWait<M> {
 
     public void waitForWrite(final M message, final Duration timeout) throws IOException {
         try {
-            long startNanos = System.nanoTime();
+            long startNanos = FDateNanos.elapsedNanos();
             while (!writeReady().awaitFulfill(startNanos, timeout)) {
                 onTimeout("Write message ready timeout exceeded", timeout, startNanos);
             }
             writer.write(message);
-            startNanos = System.nanoTime();
+            startNanos = FDateNanos.elapsedNanos();
             while (!writeFlushed().awaitFulfill(startNanos, timeout)) {
                 onTimeout("Write message flush timeout exceeded", timeout, startNanos);
             }

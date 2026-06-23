@@ -61,7 +61,7 @@ public class RegistryServiceStubImpl implements IRegistryService {
             if (binding.getName().equals(serviceName)
                     && binding.getAccessUri().toString().equals(accessUri.toString())) {
                 Assertions.assertThat(registeredBindings.remove(binding)).isTrue();
-                binding.setDeleted(new FDate().jodaTimeValue().toDateTime());
+                binding.setDeleted(FDate.now().jodaTimeValue().toDateTime());
                 return binding;
             }
         }

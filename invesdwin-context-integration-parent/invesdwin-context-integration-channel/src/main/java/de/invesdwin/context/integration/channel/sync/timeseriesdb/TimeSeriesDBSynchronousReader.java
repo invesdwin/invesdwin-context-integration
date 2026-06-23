@@ -21,7 +21,7 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
 
     private final TimeSeriesDBSynchronousChannel channel;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
-    private long lastIndex = newFromIndex();
+    private FDate lastIndex = newFromIndex();
     private ICloseableIterator<IndexedByteBuffer> readRange;
     private FDate readRangeToIndex;
     private IndexedByteBuffer message;
@@ -32,8 +32,8 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
         this.closeMessageEnabled = channel.isCloseMessageEnabled();
     }
 
-    protected long newFromIndex() {
-        return FDates.MIN_DATE.millisValue();
+    protected FDate newFromIndex() {
+        return FDates.MIN_DATE;
     }
 
     @Override
@@ -76,11 +76,12 @@ public class TimeSeriesDBSynchronousReader implements ISynchronousReader<IByteBu
 
     private void readFirst() {
         readRangeToIndex = database.getLatestValueKey(channel.getHashKey(), FDates.MAX_DATE);
-        if (readRangeToIndex == null || readRangeToIndex.millisValue() <= lastIndex) {
+        if (readRangeToIndex == null || readRangeToIndex.isBeforeOrEqualToNotNullSafe(lastIndex)) {
             //no additional data available yet
             return;
         }
-        readRange = database.rangeValues(channel.getHashKey(), new FDate(lastIndex + 1), readRangeToIndex).iterator();
+        readRange = database.rangeValues(channel.getHashKey(), lastIndex.addPicoseconds(1), readRangeToIndex)
+                .iterator();
         try {
             message = readRange.next();
         } catch (final NoSuchElementException e1) {

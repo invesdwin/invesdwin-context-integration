@@ -32,7 +32,7 @@ public class DisabledLatencyReport implements ILatencyReport {
 
                     @Override
                     public IFDateProvider next() {
-                        cur = cur.addMilliseconds(1);
+                        cur = cur.addPicoseconds(1);
                         return cur;
                     }
 
@@ -50,7 +50,7 @@ public class DisabledLatencyReport implements ILatencyReport {
 
     @Override
     public FDate newResponseMessage(final FDate request) {
-        return request.addMilliseconds(1);
+        return request.addPicoseconds(1);
     }
 
     @Override

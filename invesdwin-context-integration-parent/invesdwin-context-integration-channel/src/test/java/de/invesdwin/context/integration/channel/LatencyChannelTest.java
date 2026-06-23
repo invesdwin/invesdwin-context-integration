@@ -253,7 +253,7 @@ public class LatencyChannelTest {
                             }
                             latencyReportRoundtrip.validateResponse(request, response);
                             if (prevValue != null) {
-                                Assertions.checkTrue(prevValue.isBefore(response));
+                                Assertions.checkTrue(prevValue.isBeforeNotNullSafe(response));
                             }
                             prevValue = response;
                             count++;

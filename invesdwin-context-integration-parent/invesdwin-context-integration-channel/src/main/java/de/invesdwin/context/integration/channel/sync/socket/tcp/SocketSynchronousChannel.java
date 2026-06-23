@@ -17,6 +17,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.blocking.BlockingSocketSynchronousChannel;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -148,7 +149,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                 }
             } else {
                 final Duration connectTimeout = getConnectTimeout();
-                final long startNanos = System.nanoTime();
+                final long startNanos = FDateNanos.elapsedNanos();
                 while (true) {
                     finalizer.socketChannel = newSocketChannel();
                     try {
@@ -162,7 +163,7 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
                             finalizer.socket.close();
                             finalizer.socket = null;
                         }
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -209,9 +210,9 @@ public class SocketSynchronousChannel implements ISynchronousChannel {
         try {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while ((finalizer.socketChannel == null || socketChannelOpening) && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

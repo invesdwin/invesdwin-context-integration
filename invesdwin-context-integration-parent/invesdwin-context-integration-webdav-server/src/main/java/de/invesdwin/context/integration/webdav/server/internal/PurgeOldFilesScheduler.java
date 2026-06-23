@@ -30,7 +30,7 @@ public class PurgeOldFilesScheduler implements IStartupHook {
                 || !WebdavServerProperties.WORKING_DIRECTORY.exists()) {
             return;
         }
-        final FDate threshold = new FDate().subtract(WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
+        final FDate threshold = FDate.now().subtract(WebdavServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
         final Iterator<File> filesToDelete = Files.iterateFiles(WebdavServerProperties.WORKING_DIRECTORY,
                 new AgeFileFilter(threshold.dateValue(), true), new NotFileFilter(
                         new NameFileFilter(WebdavClientProperties.PROTECTED_FOLDER_NAME, IOCase.INSENSITIVE)));

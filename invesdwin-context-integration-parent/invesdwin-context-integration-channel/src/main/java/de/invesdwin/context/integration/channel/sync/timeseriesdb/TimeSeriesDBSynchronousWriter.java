@@ -17,12 +17,12 @@ import de.invesdwin.util.time.date.FDates;
 @NotThreadSafe
 public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    public static final long CLOSED_INDEX = FDates.MAX_DATE.millisValue();
+    public static final FDate CLOSED_INDEX = FDates.MAX_DATE;
 
     private final TimeSeriesDBSynchronousChannel channel;
     private final TimeSeriesDBSynchronousChannelIndexMode indexMode;
     private final boolean closeMessageEnabled;
-    private long lastIndex = Long.MIN_VALUE;
+    private FDate lastIndex = FDates.MIN_DATE;
     private ALiveSegmentedTimeSeriesDB<String, IndexedByteBuffer> database;
 
     public TimeSeriesDBSynchronousWriter(final TimeSeriesDBSynchronousChannel channel) {
@@ -39,7 +39,7 @@ public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBu
         if (lastTime == null) {
             lastIndex = indexMode.initialIndex();
         } else {
-            lastIndex = lastTime.millisValue();
+            lastIndex = lastTime;
         }
     }
 
@@ -58,7 +58,7 @@ public class TimeSeriesDBSynchronousWriter implements ISynchronousWriter<IByteBu
                 database.putNextLiveValue(channel.getHashKey(), new IndexedByteBuffer(CLOSED_INDEX, message));
             }
 
-            lastIndex = Long.MIN_VALUE;
+            lastIndex = FDates.MIN_DATE;
             database = null;
             channel.close();
         }

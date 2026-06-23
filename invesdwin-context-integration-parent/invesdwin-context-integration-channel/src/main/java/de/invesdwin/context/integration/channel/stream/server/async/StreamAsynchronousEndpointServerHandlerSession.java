@@ -20,6 +20,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.array.primitive.circular.CircularGenericPrimitiveArrayQueue;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.closeable.BroadcastingCloseable;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -37,7 +38,7 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     private final Duration heartbeatTimeout;
     private final Duration requestTimeout;
     private final IStreamSessionManager manager;
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     @GuardedBy("self")
     private final CircularGenericPrimitiveArrayQueue<Future<?>> pendingWrites;
     @GuardedBy("pendingWrites")
@@ -52,7 +53,8 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
         this.heartbeatTimeout = server.getHeartbeatTimeout();
         this.requestTimeout = server.getRequestTimeout();
         this.manager = server.newManager(this);
-        this.pendingWrites = new CircularGenericPrimitiveArrayQueue<Future<?>>(server.getMaxSuccessivePushCountPerSession());
+        this.pendingWrites = new CircularGenericPrimitiveArrayQueue<Future<?>>(
+                server.getMaxSuccessivePushCountPerSession());
     }
 
     @Override
@@ -145,14 +147,14 @@ public class StreamAsynchronousEndpointServerHandlerSession extends Broadcasting
     }
 
     public boolean isHeartbeatTimeout() {
-        return getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return getHeartbeatTimeout().isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     public boolean isRequestTimeout() {
         if (isClosed()) {
             return true;
         }
-        return getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return getRequestTimeout().isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     public Duration getHeartbeatTimeout() {

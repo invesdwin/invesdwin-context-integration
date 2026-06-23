@@ -29,6 +29,7 @@ import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 
 /**
  * A sessionless server is used for datagram connections that do not track individual connections for each client.
@@ -130,7 +131,7 @@ public abstract class ASessionlessSynchronousEndpointServer implements ISynchron
         public void run() {
             try {
                 while (true) {
-                    throttle.awaitFulfill(System.nanoTime(), handlerFactory.getRequestWaitInterval());
+                    throttle.awaitFulfill(FDateNanos.elapsedNanos(), handlerFactory.getRequestWaitInterval());
                 }
             } catch (final Throwable t) {
                 if (Throwables.isCausedByInterrupt(t)) {

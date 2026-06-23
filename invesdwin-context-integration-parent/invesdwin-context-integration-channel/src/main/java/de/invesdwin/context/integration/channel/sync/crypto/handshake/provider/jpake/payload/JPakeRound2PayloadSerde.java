@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.agreement.jpake.JPAKERound2Payload;
 
 import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.marshallers.serde.basic.ByteArraySerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -20,16 +19,6 @@ public final class JPakeRound2PayloadSerde implements ISerde<JPAKERound2Payload>
     private final ByteArraySerde delegate = ByteArraySerde.getInstance(null);
 
     private JPakeRound2PayloadSerde() {}
-
-    @Override
-    public JPAKERound2Payload fromBytes(final byte[] bytes) {
-        return SerdeBaseMethods.fromBytes(this, bytes);
-    }
-
-    @Override
-    public byte[] toBytes(final JPAKERound2Payload obj) {
-        return SerdeBaseMethods.toBytes(this, obj);
-    }
 
     @Override
     public JPAKERound2Payload fromBuffer(final IByteBuffer buffer) {

@@ -15,6 +15,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -92,7 +93,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
         this.requestTimeout = requestTimeout;
         this.requestWaitInterval = requestWaitInterval;
         this.activePolling = activePolling;
-        this.waitingSinceNanos = System.nanoTime();
+        this.waitingSinceNanos = FDateNanos.elapsedNanos();
     }
 
     public void setPushedWithoutRequest() {
@@ -130,7 +131,7 @@ public class MultiplexingSynchronousEndpointClientSessionResponse
     }
 
     public boolean isRequestTimeout() {
-        return getRequestTimeout().isLessThanOrEqualToNanos(System.nanoTime() - getWaitingSinceNanos());
+        return getRequestTimeout().isLessThanOrEqualToNanos(FDateNanos.elapsedNanos() - getWaitingSinceNanos());
     }
 
     public boolean isCompleted() {

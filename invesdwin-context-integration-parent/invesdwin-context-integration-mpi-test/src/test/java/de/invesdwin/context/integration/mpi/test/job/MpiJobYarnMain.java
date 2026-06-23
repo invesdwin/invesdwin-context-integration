@@ -26,11 +26,12 @@ import de.invesdwin.util.concurrent.lock.FileChannelLock;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.time.date.millis.FDateMillis;
 
 @NotThreadSafe
 public final class MpiJobYarnMain {
 
-    private static final String OPENJDK_VERSION = "17.0.6_10";
+    private static final String OPENJDK_VERSION = "21.0.11_10";
     private static final String OPENJDK_DOWNLOAD_URL;
     private static final File OPENJDK_FOLDER;
     private static final File OPENJDK_EXTRACTED_FOLDER;
@@ -40,8 +41,9 @@ public final class MpiJobYarnMain {
         OPENJDK_FOLDER = new File(ContextProperties.getHomeDirectory(), "openjdk" + OPENJDK_VERSION);
         final String folderVersion = OPENJDK_VERSION.replace("_", "+");
         OPENJDK_EXTRACTED_FOLDER = new File(OPENJDK_FOLDER, "jdk-" + folderVersion);
-        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-"
-                + URIs.encode(folderVersion) + "/OpenJDK17U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
+
+        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-"
+                + URIs.encode(folderVersion) + "/OpenJDK21U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
     private MpiJobYarnMain() {}
@@ -105,7 +107,7 @@ public final class MpiJobYarnMain {
             if (OPENJDK_EXTRACTED_FOLDER.exists() && !javaTarGz.exists()) {
                 return OPENJDK_EXTRACTED_FOLDER;
             }
-            long started = System.currentTimeMillis();
+            long started = FDateMillis.nowMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started downloading [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -120,10 +122,10 @@ public final class MpiJobYarnMain {
             Files.moveFileQuietly(javaTarGzPart, javaTarGz);
             //CHECKSTYLE:OFF
             System.out.println(
-                    "Finished downloading [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
+                    "Finished downloading [" + javaTarGz + "] after " + (FDateMillis.nowMillis() - started) + " ms");
             //CHECKSTYLE:ON
 
-            started = System.currentTimeMillis();
+            started = FDateMillis.nowMillis();
             //CHECKSTYLE:OFF
             System.out.println("Started extracting [" + javaTarGz + "]");
             //CHECKSTYLE:ON
@@ -133,7 +135,7 @@ public final class MpiJobYarnMain {
             Files.deleteQuietly(javaTarGz);
             //CHECKSTYLE:OFF
             System.out.println(
-                    "Finished extracting [" + javaTarGz + "] after " + (System.currentTimeMillis() - started) + " ms");
+                    "Finished extracting [" + javaTarGz + "] after " + (FDateMillis.nowMillis() - started) + " ms");
             //CHECKSTYLE:ON
             return OPENJDK_EXTRACTED_FOLDER;
         } catch (final IOException e) {

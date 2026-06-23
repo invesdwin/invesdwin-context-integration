@@ -15,6 +15,7 @@ import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator.INode
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 
 @NotThreadSafe
 public class ProcessResponseResult implements INode<ProcessResponseResult>, Closeable {
@@ -161,7 +162,7 @@ public class ProcessResponseResult implements INode<ProcessResponseResult>, Clos
             };
         }
         try {
-            doneSpinWait.awaitFulfill(System.nanoTime());
+            doneSpinWait.awaitFulfill(FDateNanos.elapsedNanos());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }

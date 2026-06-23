@@ -54,7 +54,7 @@ public class JobService implements IJobService {
                     && (lastJobExecution.isRunning() || lastJobExecution.getStatus() == BatchStatus.UNKNOWN
                             || lastJobExecution.getStatus() == BatchStatus.FAILED)) {
                 updateUnknownStepExecutionsToFailed(lastJobExecution);
-                lastJobExecution.setEndTime(new FDate().javaTimeValue());
+                lastJobExecution.setEndTime(FDate.now().javaTimeValue());
                 lastJobExecution.setStatus(BatchStatus.FAILED);
                 jobRepository.update(lastJobExecution);
                 executionId = jobOperator.restart(lastJobExecution.getId());

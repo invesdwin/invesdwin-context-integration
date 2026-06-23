@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.channel.rpc.base.server.service.command
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.util.marshallers.serde.ISerde;
-import de.invesdwin.util.marshallers.serde.SerdeBaseMethods;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 
@@ -53,16 +52,6 @@ public class ServiceSynchronousCommandSerde<M> implements ISerde<IServiceSynchro
         } else {
             return fixedLength;
         }
-    }
-
-    @Override
-    public IServiceSynchronousCommand<M> fromBytes(final byte[] bytes) {
-        return SerdeBaseMethods.fromBytes(this, bytes);
-    }
-
-    @Override
-    public byte[] toBytes(final IServiceSynchronousCommand<M> obj) {
-        return SerdeBaseMethods.toBytes(this, obj);
     }
 
     @Override

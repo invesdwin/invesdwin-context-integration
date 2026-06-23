@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
 import de.invesdwin.util.error.FastTimeoutException;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -35,10 +36,10 @@ public class SynchronousReaderSpinLoop<M> {
      */
     public M spinForRead(final Duration timeout) throws IOException {
         try {
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (!reader.hasNext()) {
                 if (loopInterruptedCheck.checkNoInterrupt()) {
-                    if (timeout.isLessThanNanos(System.nanoTime() - startNanos)) {
+                    if (timeout.isLessThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                         onTimeout("Read message hasNext timeout exceeded", timeout, startNanos);
                     }
                 }

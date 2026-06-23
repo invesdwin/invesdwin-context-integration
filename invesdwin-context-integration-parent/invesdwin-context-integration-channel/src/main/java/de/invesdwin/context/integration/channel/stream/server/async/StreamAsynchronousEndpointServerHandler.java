@@ -20,6 +20,7 @@ import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 
 @NotThreadSafe
 public class StreamAsynchronousEndpointServerHandler
@@ -27,7 +28,7 @@ public class StreamAsynchronousEndpointServerHandler
 
     private final StreamAsynchronousEndpointServerHandlerFactory parent;
     private final LazyDeserializingServiceSynchronousCommand<IByteBufferProvider> requestHolder = new LazyDeserializingServiceSynchronousCommand<>();
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     private final IPollingQueueProvider pollingQueueProvider;
     private volatile boolean closed;
 
@@ -61,7 +62,7 @@ public class StreamAsynchronousEndpointServerHandler
     }
 
     public boolean isHeartbeatTimeout() {
-        return parent.getHeartbeatTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return parent.getHeartbeatTimeout().isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     /**
@@ -75,13 +76,13 @@ public class StreamAsynchronousEndpointServerHandler
         if (isClosed()) {
             return true;
         }
-        return parent.getRequestTimeout().isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return parent.getRequestTimeout().isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     @Override
     public IByteBufferProvider handle(final IAsynchronousHandlerContext<IByteBufferProvider> context,
             final IByteBufferProvider input) throws IOException {
-        lastHeartbeatNanos = System.nanoTime();
+        lastHeartbeatNanos = FDateNanos.elapsedNanos();
         final StreamAsynchronousEndpointServerHandlerSession session = parent.getOrCreateSession(context);
         session.setLastHeartbeatNanos(lastHeartbeatNanos);
 

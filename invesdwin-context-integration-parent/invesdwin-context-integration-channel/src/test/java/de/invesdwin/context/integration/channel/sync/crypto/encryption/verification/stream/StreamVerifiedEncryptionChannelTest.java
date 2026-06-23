@@ -45,7 +45,7 @@ public class StreamVerifiedEncryptionChannelTest extends AChannelTest {
 
     @Override
     public int getMaxMessageSize() {
-        return 52;
+        return 56;
     }
 
 }

@@ -85,7 +85,7 @@ public class RpcClientTask implements Runnable {
                     Assertions.checkNotNull(response);
                     latencyReportRequestResponseRoundtrip.validateResponse(request, response);
                     if (prevValue != null) {
-                        Assertions.checkTrue(prevValue.isBefore(response));
+                        Assertions.checkTrue(prevValue.isBeforeNotNullSafe(response));
                     }
                     prevValue = response;
                     count++;

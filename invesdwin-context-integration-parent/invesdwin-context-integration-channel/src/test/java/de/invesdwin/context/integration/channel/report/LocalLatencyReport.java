@@ -2,7 +2,9 @@ package de.invesdwin.context.integration.channel.report;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 
 /**
  * This report uses nano precision based on cpu clock in the JVM. Using this measure between processes will not work as
@@ -12,17 +14,12 @@ import de.invesdwin.util.time.date.FTimeUnit;
 public class LocalLatencyReport extends ALatencyReport {
 
     public LocalLatencyReport(final String name) {
-        super(name);
+        super(name, FTimeUnit.NANOSECONDS);
     }
 
     @Override
-    protected long newTimestamp() {
-        return System.nanoTime();
-    }
-
-    @Override
-    protected FTimeUnit newMeasureTimeUnit() {
-        return FTimeUnit.NANOSECONDS;
+    protected FDate newTimestamp() {
+        return new FDate(FDateNanos.elapsedNanos());
     }
 
 }

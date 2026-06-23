@@ -36,7 +36,7 @@ public class StreamCompressionChannelTest extends AChannelTest {
 
     @Override
     public int getMaxMessageSize() {
-        return 33;
+        return 37;
     }
 
 }

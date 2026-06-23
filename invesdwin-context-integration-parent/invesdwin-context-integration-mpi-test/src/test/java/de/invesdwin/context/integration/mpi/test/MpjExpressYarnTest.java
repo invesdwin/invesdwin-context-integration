@@ -7,7 +7,6 @@ import java.nio.charset.Charset;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
@@ -32,7 +31,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.Instant;
 
-@Disabled("TODO: need to make the bootstrap not depend on higher java class files again")
+// @Disabled("TODO: need to make the bootstrap not depend on higher java class files again")
 @NotThreadSafe
 @Testcontainers
 public class MpjExpressYarnTest extends AMpiTest {
@@ -43,7 +42,7 @@ public class MpjExpressYarnTest extends AMpiTest {
     private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
     private static final boolean HADOOP_EXPOSE_HOST = false;
-    private static final String HADOOP_VERSION = "3.4.1";
+    private static final String HADOOP_VERSION = "3.5.0";
     private static final File HADOOP_DOCKER_FOLDER = new File("mpj/hadoop/");
     private static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
     @Container

@@ -2,32 +2,33 @@ package de.invesdwin.context.integration.channel.sync.timeseriesdb;
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FDates;
 
 @Immutable
 public enum TimeSeriesDBSynchronousChannelIndexMode {
     TIME {
         @Override
-        public long nextIndex(final long lastIndex) {
-            final long nowMillis = System.currentTimeMillis();
-            if (lastIndex < nowMillis) {
-                return nowMillis;
+        public FDate nextIndex(final FDate lastIndex) {
+            final FDate now = FDate.now();
+            if (lastIndex.isBeforeNotNullSafe(now)) {
+                return now;
             } else {
                 //increment milliseconds for multiple messages at the same timestamp
-                return lastIndex + 1;
+                return lastIndex.addPicoseconds(1);
             }
         }
     },
     INDEX {
         @Override
-        public long nextIndex(final long lastIndex) {
-            return lastIndex + 1;
+        public FDate nextIndex(final FDate lastIndex) {
+            return lastIndex.addPicoseconds(1);
         }
     };
 
-    public abstract long nextIndex(long lastIndex);
+    public abstract FDate nextIndex(FDate lastIndex);
 
-    public long initialIndex() {
-        return FDates.MIN_DATE.millisValue();
+    public FDate initialIndex() {
+        return FDates.MIN_DATE;
     }
 }

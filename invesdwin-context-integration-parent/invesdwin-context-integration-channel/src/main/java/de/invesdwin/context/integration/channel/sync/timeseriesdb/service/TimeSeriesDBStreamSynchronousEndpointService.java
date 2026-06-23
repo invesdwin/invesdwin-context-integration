@@ -117,9 +117,9 @@ public class TimeSeriesDBStreamSynchronousEndpointService implements IStreamSync
         if (listeners.add(listener)) {
             return new TimeSeriesDBSynchronousReader(channel) {
                 @Override
-                protected long newFromIndex() {
+                protected FDate newFromIndex() {
                     if (fromTimestamp != null) {
-                        return fromTimestamp.millisValue();
+                        return fromTimestamp;
                     } else {
                         return super.newFromIndex();
                     }

@@ -46,7 +46,7 @@ public class ConfiguredDriverConnectionStrategy implements DriverConnectionStrat
             if (queue.isEmpty() || new Duration(lastRefresh).isGreaterThan(REFRESH_INTERVAL)) {
                 queue.clear();
                 queue.addAll(discoverConnections());
-                lastRefresh = new FDate();
+                lastRefresh = FDate.now();
             }
             final DriverConnectionInfo info = queue.poll();
             return info;

@@ -11,6 +11,7 @@ import de.invesdwin.util.collections.iterable.buffer.NodeBufferingIterator;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.loop.spinwait.ASpinWait;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -50,14 +51,14 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
                 return maybePollResults();
             }
         };
-        private long lastChangeNanos = System.nanoTime();
+        private long lastChangeNanos = FDateNanos.elapsedNanos();
         private final NodeBufferingIterator<ProcessResponseResult> pollingQueue = new NodeBufferingIterator<>();
 
         @Override
         public void run() {
             try {
                 while (true) {
-                    if (!spinWait.awaitFulfill(System.nanoTime(), Duration.ONE_MINUTE)) {
+                    if (!spinWait.awaitFulfill(FDateNanos.elapsedNanos(), Duration.ONE_MINUTE)) {
                         if (maybeClosePollingExecutor()) {
                             return;
                         }
@@ -85,7 +86,7 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
 
         private boolean isTimeout() {
             return pollingQueue.isEmpty() && POLLING_QUEUE_ADDS.isEmpty()
-                    && Duration.TEN_MINUTES.isLessThanNanos(System.nanoTime() - lastChangeNanos);
+                    && Duration.TEN_MINUTES.isLessThanNanos(FDateNanos.elapsedNanos() - lastChangeNanos);
         }
 
         private boolean maybePollResults() {
@@ -96,7 +97,7 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
                     pollingQueue.add(addPollingResult);
                     changed = true;
                     addPollingResult = POLLING_QUEUE_ADDS.poll();
-                    lastChangeNanos = System.nanoTime();
+                    lastChangeNanos = FDateNanos.elapsedNanos();
                 }
             }
             if (!pollingQueue.isEmpty()) {
@@ -114,7 +115,7 @@ public final class AsyncPollingQueueProvider implements IPollingQueueProvider {
                         pollingQueue.remove(pollingResult);
                         changed = true;
                         pollingResult.close();
-                        lastChangeNanos = System.nanoTime();
+                        lastChangeNanos = FDateNanos.elapsedNanos();
                     }
                     pollingResult = nextPollingResult;
                 }

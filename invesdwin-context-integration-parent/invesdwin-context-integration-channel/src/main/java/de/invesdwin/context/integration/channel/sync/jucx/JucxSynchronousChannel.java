@@ -40,6 +40,7 @@ import de.invesdwin.util.math.random.RandomAdapter;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @NotThreadSafe
@@ -246,7 +247,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         }
         ucpEndpointOpening = true;
         final Duration connectTimeout = getConnectTimeout();
-        final long startNanos = System.nanoTime();
+        final long startNanos = FDateNanos.elapsedNanos();
         try {
             finalizer.ucpContext = new UcpContext(newUcpContextParams());
             finalizer.closeables.push(finalizer.ucpContext);
@@ -264,7 +265,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                     } catch (final Exception e) {
                         throw new IOException(e);
                     }
-                    if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                    if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                         try {
                             getMaxConnectRetryDelay().sleepRandom();
                         } catch (final InterruptedException e1) {
@@ -295,7 +296,7 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
                             finalizer.ucpEndpoint = null;
                         }
                         errorUcxCallback.reset();
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -374,9 +375,9 @@ public class JucxSynchronousChannel implements ISynchronousChannel {
         try {
             //wait for channel
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while ((finalizer.ucpEndpoint == null || ucpEndpointOpening) && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

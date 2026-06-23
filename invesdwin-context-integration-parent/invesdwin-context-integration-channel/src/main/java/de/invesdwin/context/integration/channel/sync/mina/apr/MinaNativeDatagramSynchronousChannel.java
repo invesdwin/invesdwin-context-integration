@@ -18,6 +18,7 @@ import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
 import de.invesdwin.context.integration.channel.sync.mina.MinaSocketSynchronousChannel;
 import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
@@ -145,7 +146,7 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
         try {
             //init bootstrap
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             while (activeCount.get() > 0) {
                 try {
                     sessionFactory.run();
@@ -153,7 +154,7 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
                 } catch (final Throwable t) {
                     if (activeCount.get() > 0) {
                         internalClose();
-                        if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                        if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                             try {
                                 getMaxConnectRetryDelay().sleepRandom();
                             } catch (final InterruptedException e1) {
@@ -179,10 +180,10 @@ public class MinaNativeDatagramSynchronousChannel implements Closeable {
     private void awaitFileDescriptor() throws IOException {
         try {
             final Duration connectTimeout = getConnectTimeout();
-            final long startNanos = System.nanoTime();
+            final long startNanos = FDateNanos.elapsedNanos();
             //wait for channel
             while ((finalizer.fd == 0 || sessionOpening) && activeCount.get() > 0) {
-                if (connectTimeout.isGreaterThanNanos(System.nanoTime() - startNanos)) {
+                if (connectTimeout.isGreaterThanNanos(FDateNanos.elapsedNanos() - startNanos)) {
                     getWaitInterval().sleep();
                 } else {
                     throw new ConnectException("Connection timeout");

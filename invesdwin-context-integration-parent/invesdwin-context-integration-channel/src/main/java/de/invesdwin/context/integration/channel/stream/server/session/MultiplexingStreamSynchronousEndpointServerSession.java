@@ -36,6 +36,7 @@ import de.invesdwin.util.error.Throwables;
 import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.marshallers.serde.ByteBufferProviderSerde;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.millis.FDateNanos;
 import de.invesdwin.util.time.duration.Duration;
 
 /**
@@ -53,7 +54,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
     private ISynchronousReader<IServiceSynchronousCommand<IByteBufferProvider>> requestReader;
     private ISynchronousWriter<IServiceSynchronousCommand<IByteBufferProvider>> responseWriter;
     @GuardedBy("volatile not needed because the same request runnable thread writes and reads this field only")
-    private long lastHeartbeatNanos = System.nanoTime();
+    private long lastHeartbeatNanos = FDateNanos.elapsedNanos();
     /*
      * We don't use a bounded sized queue here because one slow client might otherwise block worker threads that could
      * still work on other tasks for other clients. PendingCount check will just
@@ -254,7 +255,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         }
         try {
             if (requestReader.hasNext()) {
-                lastHeartbeatNanos = System.nanoTime();
+                lastHeartbeatNanos = FDateNanos.elapsedNanos();
 
                 final ProcessResponseResult result = ProcessResponseResultPool.INSTANCE.borrowObject();
                 try {
@@ -313,7 +314,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
 
     @Override
     public boolean isHeartbeatTimeout() {
-        return heartbeatTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return heartbeatTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     /**
@@ -324,7 +325,7 @@ public class MultiplexingStreamSynchronousEndpointServerSession
         if (isClosed()) {
             return true;
         }
-        return requestTimeout.isLessThanNanos(System.nanoTime() - lastHeartbeatNanos);
+        return requestTimeout.isLessThanNanos(FDateNanos.elapsedNanos() - lastHeartbeatNanos);
     }
 
     private void dispatchProcessResponse(final ProcessResponseResult result) throws IOException {
