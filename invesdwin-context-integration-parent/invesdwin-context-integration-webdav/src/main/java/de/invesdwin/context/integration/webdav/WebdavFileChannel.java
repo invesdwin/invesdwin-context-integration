@@ -285,7 +285,11 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     public synchronized List<DavResource> list() {
         assertConnected();
         try {
-            return finalizer.webdavClient.list(getDirectoryUrl());
+            final List<DavResource> list = finalizer.webdavClient.list(getDirectoryUrl());
+            if (!list.isEmpty() && list.get(0).getPath().endsWith(Strings.putSuffix(this.directory, "/"))) {
+                list.remove(0);
+            }
+            return list;
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return null;
