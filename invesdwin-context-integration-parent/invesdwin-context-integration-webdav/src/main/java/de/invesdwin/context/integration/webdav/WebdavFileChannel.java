@@ -157,7 +157,6 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             Assertions.checkNull(finalizer.webdavClient, "Already connected");
             finalizer.webdavClient = login();
             finalizer.webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
-            maybeCreateDirectory();
             finalizer.register(this);
         } catch (final Throwable e) {
             close();
