@@ -365,10 +365,6 @@
 				<version>${version.spring-integration}</version>
 				<exclusions>
 					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
 						<artifactId>stax-api</artifactId>
 						<groupId>javax.xml.stream</groupId>
 					</exclusion>
@@ -407,6 +403,10 @@
 						<artifactId>ehcache-core</artifactId>
 						<groupId>net.sf.ehcache</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -420,10 +420,6 @@
 				<version>${version.spring-ws}</version>
 				<exclusions>
 					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
 						<groupId>com.sun.xml.bind</groupId>
 						<artifactId>jaxb-impl</artifactId>
 					</exclusion>
@@ -433,12 +429,6 @@
 				<groupId>org.apache.activemq</groupId>
 				<artifactId>artemis-jakarta-server</artifactId>
 				<version>${version.artemis}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>jakarta.jms</groupId>
@@ -544,9 +534,9 @@
 				<version>${version.jersey}</version>
 			</dependency>
 			<dependency>
-			    <groupId>jakarta.ws.rs</groupId>
-			    <artifactId>jakarta.ws.rs-api</artifactId>
-			    <version>${version.jakarta.ws.rs}</version>
+				<groupId>jakarta.ws.rs</groupId>
+				<artifactId>jakarta.ws.rs-api</artifactId>
+				<version>${version.jakarta.ws.rs}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.shrinkwrap.resolver</groupId>
@@ -560,6 +550,10 @@
 					<exclusion>
 						<groupId>javax.enterprise</groupId>
 						<artifactId>cdi-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -701,6 +695,12 @@
 				<groupId>org.commonjava.web</groupId>
 				<artifactId>webdav-handler-common</artifactId>
 				<version>${version.webdav-handler}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>log4j-over-slf4j</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>com.github.lookfirst</groupId>
@@ -825,53 +825,53 @@
 				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
-			    <groupId>com.github.testcontainers-all-things-kafka</groupId>
-			    <artifactId>cp-testcontainers</artifactId>
-			    <version>${version.cp-testcontainers}</version>
+				<groupId>com.github.testcontainers-all-things-kafka</groupId>
+				<artifactId>cp-testcontainers</artifactId>
+				<version>${version.cp-testcontainers}</version>
 			</dependency>
 			<dependency>
-			    <groupId>io.confluent</groupId>
-			    <artifactId>kafka-avro-serializer</artifactId>
-			    <version>${version.confluent}</version>
+				<groupId>io.confluent</groupId>
+				<artifactId>kafka-avro-serializer</artifactId>
+				<version>${version.confluent}</version>
 			</dependency>
 			<dependency>
-			   <groupId>io.lettuce</groupId>
-               <artifactId>lettuce-core</artifactId>
-               <version>${version.lettuce}</version>
-            </dependency>
-            <dependency>
-               <groupId>redis.clients</groupId>
-               <artifactId>jedis</artifactId>
-               <version>${version.jedis}</version>
-            </dependency>
-			<dependency>
-			    <groupId>org.apache.pulsar</groupId>
-	            <artifactId>pulsar-client</artifactId>
-	            <version>${version.pulsar}</version>
-	            <exclusions>
-	            	<exclusion>
-	            		<groupId>javax.validation</groupId>
-	            		<artifactId>validation-api</artifactId>
-	            	</exclusion>
-	            </exclusions>
+				<groupId>io.lettuce</groupId>
+				<artifactId>lettuce-core</artifactId>
+				<version>${version.lettuce}</version>
 			</dependency>
 			<dependency>
-	            <groupId>org.apache.pulsar</groupId>
-	            <artifactId>pulsar-client-admin</artifactId>
-	            <version>${version.pulsar}</version>
-	            <exclusions>
-	            	<exclusion>
-	            		<groupId>javax.validation</groupId>
-	            		<artifactId>validation-api</artifactId>
-	            	</exclusion>
-	            </exclusions>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.testcontainers</groupId>
-	            <artifactId>testcontainers-pulsar</artifactId>
-	    		<version>${version.testcontainers}</version>
-	    		<scope>test</scope>
-			</dependency>                 
+				<groupId>redis.clients</groupId>
+				<artifactId>jedis</artifactId>
+				<version>${version.jedis}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.pulsar</groupId>
+				<artifactId>pulsar-client</artifactId>
+				<version>${version.pulsar}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.pulsar</groupId>
+				<artifactId>pulsar-client-admin</artifactId>
+				<version>${version.pulsar}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-pulsar</artifactId>
+				<version>${version.testcontainers}</version>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.openucx</groupId>
 				<artifactId>jucx</artifactId>
