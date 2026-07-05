@@ -1,0 +1,9 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="org.apache.activemq" level="ERROR" additivity="false">
+            <AppenderRef ref="integration" />
+        </Logger>
+    </Loggers>
+
+</Configuration>

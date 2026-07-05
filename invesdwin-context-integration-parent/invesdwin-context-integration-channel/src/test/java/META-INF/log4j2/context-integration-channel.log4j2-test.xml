@@ -1,0 +1,7 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="de.invesdwin.context.integration.channel.sync.crypto.handshake.provider.tls.TlsHandshaker" level="INFO" additivity="true" />
+    </Loggers>
+
+</Configuration>

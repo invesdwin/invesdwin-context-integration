@@ -30,6 +30,10 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-maven-plugin</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.maven.plugins</groupId>

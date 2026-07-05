@@ -1,7 +1,0 @@
-<configuration>
-
-	<logger name="org.testcontainers" additivity="true" level="INFO">
-	</logger>
-
-
-</configuration>

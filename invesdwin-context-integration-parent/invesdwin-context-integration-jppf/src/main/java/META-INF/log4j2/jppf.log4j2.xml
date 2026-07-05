@@ -1,0 +1,47 @@
+<Configuration>
+
+	<Loggers>
+		<Logger name="org.jppf" additivity="false" level="INFO">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+
+		<Logger name="javax.management.remote" additivity="false" level="ERROR">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+
+		<Logger name="org.jppf.nio.StateTransitionTask" additivity="false" level="ERROR">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+
+		<Logger name="org.jppf.utils.JPPFDefaultUncaughtExceptionHandler" additivity="false" level="DEBUG">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+
+		<Logger name="org.jppf.server.nio.classloader.node.NodeClassNioServer" additivity="false" level="ERROR">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+
+		<Logger name="org.jppf.server.nio.nodeserver.NodeNioServer" additivity="false" level="ERROR">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+	</Loggers>
+
+</Configuration>
