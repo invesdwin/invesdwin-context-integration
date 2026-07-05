@@ -1,0 +1,11 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="org.testcontainers" level="TRACE" additivity="true" />
+        
+        <Logger name="org.testcontainers.shaded.com.github.dockerjava.core.exec.InspectContainerCmdExec" level="INFO" additivity="true" />
+        
+        <Logger name="org.testcontainers.shaded.com.github.dockerjava.core.command.AbstrDockerCmd" level="INFO" additivity="true" />
+    </Loggers>
+
+</Configuration>

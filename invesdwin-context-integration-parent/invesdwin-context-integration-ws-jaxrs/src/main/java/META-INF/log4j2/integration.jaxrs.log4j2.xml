@@ -1,0 +1,9 @@
+<Configuration>
+
+	<Loggers>
+		<Logger
+			name="org.glassfish.jersey.server.spring.SpringComponentProvider"
+			level="OFF" additivity="false" />
+	</Loggers>
+
+</Configuration>

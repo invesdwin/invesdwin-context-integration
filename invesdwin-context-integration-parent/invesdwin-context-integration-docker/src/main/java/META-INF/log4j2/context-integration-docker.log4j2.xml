@@ -1,0 +1,7 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="org.testcontainers" level="INFO" additivity="true" />
+    </Loggers>
+
+</Configuration>
