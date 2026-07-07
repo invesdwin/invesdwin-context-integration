@@ -3,10 +3,10 @@ package de.invesdwin.context.integration.webdav.server.internal.impl;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import jakarta.servlet.ServletConfig;
-import net.sf.webdav.spi.WebdavConfig;
+import net.sf.webdav.spi.IWebdavConfig;
 
 @NotThreadSafe
-public class ServletInitWebdavConfig implements WebdavConfig {
+public class ServletInitWebdavConfig implements IWebdavConfig {
 
     public static final String GLOBAL_CONFIG_PREFIX = "dav.";
 

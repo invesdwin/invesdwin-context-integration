@@ -692,21 +692,6 @@
 				<version>${version.reactive-streams}</version>
 			</dependency>
 			<dependency>
-				<groupId>org.commonjava.web</groupId>
-				<artifactId>webdav-handler-common</artifactId>
-				<version>${version.webdav-handler}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>org.slf4j</groupId>
-						<artifactId>log4j-over-slf4j</artifactId>
-					</exclusion>
-					<exclusion>
-						<groupId>ch.qos.logback</groupId>
-						<artifactId>logback-classic</artifactId>
-					</exclusion>
-				</exclusions>
-			</dependency>
-			<dependency>
 				<groupId>com.github.lookfirst</groupId>
 				<artifactId>sardine</artifactId>
 				<version>${version.sardine}</version>

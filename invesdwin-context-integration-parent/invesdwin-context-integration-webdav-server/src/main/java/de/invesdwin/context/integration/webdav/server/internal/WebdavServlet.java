@@ -19,7 +19,7 @@ import net.sf.webdav.exceptions.WebdavException;
 import net.sf.webdav.impl.LocalFileSystemStore;
 import net.sf.webdav.spi.IMimeTyper;
 import net.sf.webdav.spi.IWebdavStore;
-import net.sf.webdav.spi.WebdavConfig;
+import net.sf.webdav.spi.IWebdavConfig;
 
 /**
  * Adapted from:
@@ -39,7 +39,7 @@ public class WebdavServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private WebdavService dav;
-    private WebdavConfig davConfig;
+    private IWebdavConfig davConfig;
     private IWebdavStore store;
     private IMimeTyper mimeTyper;
 
@@ -94,7 +94,7 @@ public class WebdavServlet extends HttpServlet {
         return new ServletMimeTyper(getServletConfig().getServletContext());
     }
 
-    protected WebdavConfig initWebdavConfig() throws WebdavException {
+    protected IWebdavConfig initWebdavConfig() throws WebdavException {
         return new ServletInitWebdavConfig(getServletConfig());
     }
 

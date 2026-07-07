@@ -8,10 +8,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import jakarta.servlet.http.HttpServletResponse;
 import net.sf.webdav.WebdavStatus;
-import net.sf.webdav.spi.WebdavResponse;
+import net.sf.webdav.spi.IWebdavResponse;
 
 @NotThreadSafe
-public class ServletWebdavResponse implements WebdavResponse {
+public class ServletWebdavResponse implements IWebdavResponse {
 
     private final HttpServletResponse resp;
 

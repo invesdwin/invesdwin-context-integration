@@ -12,10 +12,10 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import jakarta.servlet.http.HttpServletRequest;
-import net.sf.webdav.spi.WebdavRequest;
+import net.sf.webdav.spi.IWebdavRequest;
 
 @NotThreadSafe
-public class ServletWebdavRequest implements WebdavRequest {
+public class ServletWebdavRequest implements IWebdavRequest {
 
     private final HttpServletRequest req;
 
