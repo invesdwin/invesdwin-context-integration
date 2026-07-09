@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.rpc.base.client.session.ISynchro
 import de.invesdwin.context.integration.channel.rpc.base.server.service.command.IServiceSynchronousCommand;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.log.ILogLevel;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -22,7 +23,7 @@ public class LoggingDelegateUnexpectedMessageListener implements IUnexpectedMess
     private final IUnexpectedMessageListener delegate;
 
     private final Log log;
-    private final LogLevel logLevel;
+    private final ILogLevel logLevel;
 
     public LoggingDelegateUnexpectedMessageListener(final IUnexpectedMessageListener delegate) {
         this(delegate, DEFAULT_LOG);
@@ -33,7 +34,7 @@ public class LoggingDelegateUnexpectedMessageListener implements IUnexpectedMess
     }
 
     public LoggingDelegateUnexpectedMessageListener(final IUnexpectedMessageListener delegate, final Log log,
-            final LogLevel logLevel) {
+            final ILogLevel logLevel) {
         this.delegate = delegate;
         this.log = log;
         this.logLevel = logLevel;

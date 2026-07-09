@@ -8,8 +8,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
 import de.invesdwin.context.log.Log;
@@ -17,6 +15,8 @@ import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.concurrent.future.ImmutableFuture;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
+import de.invesdwin.util.log.LogLevel;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
@@ -43,7 +43,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
     }
 
     public RpcTestService(final AChannelTest parent, final int rpcClientThreads, final Log log) {
-        this(parent, rpcClientThreads, Slf4jStream.of(log).asInfo());
+        this(parent, rpcClientThreads, new LogLevelOutputStream(LogLevel.INFO, log));
     }
 
     public RpcTestService(final AChannelTest parent, final int rpcClientThreads, final OutputStream log) {

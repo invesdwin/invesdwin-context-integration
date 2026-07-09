@@ -8,8 +8,6 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.AChannelTest.FileChannelType;
@@ -35,7 +33,9 @@ import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.IFDateProvider;
@@ -132,7 +132,7 @@ public class ThroughputChannelTest {
 
         public ThroughputReceiverTask(final AChannelTest parent, final Log log,
                 final ISynchronousReader<FDate> channelReader) {
-            this(parent, Slf4jStream.of(log).asInfo(), channelReader);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), channelReader);
         }
 
         public ThroughputReceiverTask(final AChannelTest parent, final OutputStream log,
@@ -207,7 +207,7 @@ public class ThroughputChannelTest {
 
         public ThroughputSenderTask(final AChannelTest parent, final Log log,
                 final ISynchronousWriter<FDate> channelWriter) {
-            this(parent, Slf4jStream.of(log).asInfo(), channelWriter);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), channelWriter);
         }
 
         public ThroughputSenderTask(final AChannelTest parent, final OutputStream log,

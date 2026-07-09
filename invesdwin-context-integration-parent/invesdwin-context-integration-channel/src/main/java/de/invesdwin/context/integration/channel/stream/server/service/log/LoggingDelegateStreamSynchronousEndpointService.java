@@ -9,6 +9,7 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.IProperties;
+import de.invesdwin.util.log.ILogLevel;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -21,7 +22,7 @@ public class LoggingDelegateStreamSynchronousEndpointService implements IStreamS
     private final IStreamSynchronousEndpointService delegate;
 
     private final Log log;
-    private final LogLevel logLevel;
+    private final ILogLevel logLevel;
     private final String id;
 
     public LoggingDelegateStreamSynchronousEndpointService(final IStreamSynchronousEndpointService delegate) {
@@ -34,7 +35,7 @@ public class LoggingDelegateStreamSynchronousEndpointService implements IStreamS
     }
 
     public LoggingDelegateStreamSynchronousEndpointService(final IStreamSynchronousEndpointService delegate,
-            final Log log, final LogLevel logLevel) {
+            final Log log, final ILogLevel logLevel) {
         this.delegate = delegate;
         this.log = log;
         this.logLevel = logLevel;

@@ -9,8 +9,6 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.AChannelTest.FileChannelType;
@@ -41,8 +39,10 @@ import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -190,7 +190,7 @@ public class LatencyChannelTest {
 
         public LatencyClientTask(final AChannelTest parent, final Log log,
                 final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
-            this(parent, Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), requestWriter, responseReader);
         }
 
         public LatencyClientTask(final AChannelTest parent, final OutputStream log,
@@ -305,7 +305,7 @@ public class LatencyChannelTest {
 
         public LatencyServerTask(final AChannelTest parent, final Log log,
                 final ISynchronousReader<FDate> requestReader, final ISynchronousWriter<FDate> responseWriter) {
-            this(parent, Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), requestReader, responseWriter);
         }
 
         public LatencyServerTask(final AChannelTest parent, final OutputStream log,
@@ -419,7 +419,7 @@ public class LatencyChannelTest {
         }
 
         public LatencyClientHandler(final AChannelTest parent, final Log log) {
-            this(parent, Slf4jStream.of(log).asInfo());
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log));
         }
 
         public LatencyClientHandler(final AChannelTest parent, final OutputStream log) {
@@ -523,7 +523,7 @@ public class LatencyChannelTest {
         }
 
         public LatencyServerHandler(final AChannelTest parent, final Log log) {
-            this(parent, Slf4jStream.of(log).asInfo());
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log));
         }
 
         public LatencyServerHandler(final AChannelTest parent, final OutputStream log) {

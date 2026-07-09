@@ -7,6 +7,7 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.lang.Objects;
+import de.invesdwin.util.log.ILogLevel;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBufferProvider;
 import de.invesdwin.util.time.duration.Duration;
@@ -20,7 +21,7 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
     private final IStreamSynchronousEndpointClient delegate;
 
     private final Log log;
-    private final LogLevel logLevel;
+    private final ILogLevel logLevel;
     private String id;
 
     public LoggingDelegateStreamSynchronousEndpointClient(final IStreamSynchronousEndpointClient delegate) {
@@ -33,7 +34,7 @@ public class LoggingDelegateStreamSynchronousEndpointClient implements IStreamSy
     }
 
     public LoggingDelegateStreamSynchronousEndpointClient(final IStreamSynchronousEndpointClient delegate,
-            final Log log, final LogLevel logLevel) {
+            final Log log, final ILogLevel logLevel) {
         this.delegate = delegate;
         this.log = log;
         this.logLevel = logLevel;
