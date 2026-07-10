@@ -17,8 +17,12 @@ import io.netty.util.concurrent.FastThreadLocal;
 
 /**
  * http://www.jppf.org/doc/5.2/index.php?title=Specifying_alternate_serialization_schemes
+ * 
+ * WARNING: this causes e.g. the JMX CONNECT response to miss the connectionId. Also DefaultJPPFSerialization suffers
+ * from class loader issues on more recent JVMs. Thus DefaultJavaSerialization seems to be the best option right now.
  */
 @Immutable
+@Deprecated
 public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     static {
@@ -36,12 +40,15 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
 
     private static volatile FDate lastRefreshTrigger = FDate.now();
 
+    @Deprecated
     public RemoteFastJPPFSerialization() {}
 
+    @Deprecated
     public static void refresh() {
         lastRefreshTrigger = FDate.now();
     }
 
+    @Deprecated
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
         try {
@@ -53,6 +60,7 @@ public class RemoteFastJPPFSerialization implements JPPFSerialization {
         }
     }
 
+    @Deprecated
     @Override
     public Object deserialize(final InputStream is) throws Exception {
         try {
