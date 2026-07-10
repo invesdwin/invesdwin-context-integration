@@ -22,7 +22,9 @@ public abstract class ATopologyVisitor {
         // iterate over the discovered drivers
         try (ICloseableSet<String> duplicateDriverUuidFilter = PooledSet.getInstance();
                 ICloseableSet<String> duplicateNodeUuidFilter = PooledSet.getInstance()) {
-            for (final TopologyDriver driver : manager.getDrivers()) {
+            final List<TopologyDriver> drivers = manager.getDrivers();
+            for (int i = 0; i < drivers.size(); i++) {
+                final TopologyDriver driver = drivers.get(i);
                 processComponents(manager, driver, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
                 //discover hidden nodes that are only accessible via node forwarding
                 final List<TopologyNode> hiddenNodes = TopologyDrivers.discoverHiddenNodes(driver);
@@ -35,7 +37,9 @@ public abstract class ATopologyVisitor {
              * in the nodes list. So we iterate over that as well. Duplicate UUID filter saves us from visiting them
              * more than once.
              */
-            for (final TopologyNode node : manager.getNodes()) {
+            final List<TopologyNode> nodes = manager.getNodes();
+            for (int i = 0; i < nodes.size(); i++) {
+                final TopologyNode node = nodes.get(i);
                 processComponents(manager, node, duplicateDriverUuidFilter, duplicateNodeUuidFilter);
             }
         }

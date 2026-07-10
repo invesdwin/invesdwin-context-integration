@@ -18,6 +18,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
@@ -150,11 +151,13 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         }
         if (node != null) {
             try {
+                final String hostname = IntegrationProperties.HOSTNAME;
                 final String nodeUuid = node.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
                 final FDate heartbeat = FDate.now();
-                final String content = nodeUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                final String content = hostname + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
+                        + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
+                        + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
                 synchronized (this) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);

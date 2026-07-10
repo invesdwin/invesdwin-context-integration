@@ -23,7 +23,7 @@ import org.jppf.serialization.JPPFCompositeSerialization;
 import de.invesdwin.context.integration.compression.lz4.LZ4Streams;
 
 @Immutable
-public class HighLZ4Serialization extends JPPFCompositeSerialization {
+public class FastLZ4Serialization extends JPPFCompositeSerialization {
     @Override
     public void serialize(final Object o, final OutputStream os) throws Exception {
         try (OutputStream lz4os = LZ4Streams.newFastLZ4OutputStream(os)) {
@@ -40,6 +40,6 @@ public class HighLZ4Serialization extends JPPFCompositeSerialization {
 
     @Override
     public String getName() {
-        return "HighLZ4";
+        return "FastLZ4";
     }
 }

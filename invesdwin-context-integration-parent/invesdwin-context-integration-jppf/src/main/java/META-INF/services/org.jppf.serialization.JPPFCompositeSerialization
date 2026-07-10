@@ -1,1 +1,2 @@
 de.invesdwin.context.integration.jppf.internal.HighLZ4Serialization
+de.invesdwin.context.integration.jppf.internal.FastLZ4Serialization

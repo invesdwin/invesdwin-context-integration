@@ -7,7 +7,7 @@
 			<AppenderRef ref="common" />
 			<AppenderRef ref="error" />
 		</Logger>
-
+		
 		<Logger name="javax.management.remote" additivity="false" level="ERROR">
 			<AppenderRef ref="stdout" />
 			<AppenderRef ref="stderr" />
@@ -37,6 +37,21 @@
 		</Logger>
 
 		<Logger name="org.jppf.server.nio.nodeserver.NodeNioServer" additivity="false" level="ERROR">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+		
+		<!-- disable spamming of EOFExceptions during communication -->
+		<Logger name="org.jppf.nio.acceptor.AcceptorNioServer" additivity="false" level="OFF">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+		
+		<Logger name="org.jppf.client.balancer.ChannelWrapperRemoteAsync" additivity="false" level="OFF">
 			<AppenderRef ref="stdout" />
 			<AppenderRef ref="stderr" />
 			<AppenderRef ref="common" />

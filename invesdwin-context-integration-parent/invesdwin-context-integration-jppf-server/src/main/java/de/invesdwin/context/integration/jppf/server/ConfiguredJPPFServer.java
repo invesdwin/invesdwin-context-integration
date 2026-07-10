@@ -23,6 +23,7 @@ import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.jppf.node.ConfiguredJPPFNode;
 import de.invesdwin.context.integration.jppf.node.JPPFNodeContextLocation;
@@ -159,11 +160,13 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         }
         if (driver != null) {
             try {
+                final String hostname = IntegrationProperties.HOSTNAME;
                 final String driverUuid = driver.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
                 final FDate heartbeat = FDate.now();
-                final String content = driverUuid + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + processingThreads + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                final String content = hostname + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + driverUuid
+                        + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
+                        + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
                 synchronized (this) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);

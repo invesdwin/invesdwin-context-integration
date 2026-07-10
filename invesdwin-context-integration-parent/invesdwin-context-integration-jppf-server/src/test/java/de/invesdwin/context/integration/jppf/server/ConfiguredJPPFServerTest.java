@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.jppf.server;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Inject;
 
 import org.jppf.server.node.local.JPPFLocalNode;
 import org.jppf.server.node.remote.JPPFRemoteNode;
@@ -13,6 +12,8 @@ import de.invesdwin.context.integration.jppf.node.test.JPPFNodeTest;
 import de.invesdwin.context.integration.jppf.server.test.JPPFServerTest;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.time.date.FTimeUnit;
+import jakarta.inject.Inject;
 
 @JPPFServerTest
 @JPPFNodeTest
@@ -33,6 +34,7 @@ public class ConfiguredJPPFServerTest extends ATest {
         } else {
             Assertions.assertThat(node.getNode()).isInstanceOf(JPPFRemoteNode.class);
         }
+        FTimeUnit.SECONDS.sleepNoInterrupt(5);
         Assertions.checkNotNull(ConfiguredJPPFClient.getInstance());
     }
 
