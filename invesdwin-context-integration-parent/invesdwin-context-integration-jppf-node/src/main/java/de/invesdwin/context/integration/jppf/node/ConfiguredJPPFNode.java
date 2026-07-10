@@ -109,19 +109,24 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 //ignore
             }
 
-            runner.shutdown();
+            final NodeRunner runnerCopy = runner;
+            if (runnerCopy != null) {
+                runnerCopy.shutdown();
+            }
             try {
                 NODE_EXECUTOR.awaitPendingCountZero();
             } catch (final InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
-            final Invoker<AbstractJPPFClassLoader> classLoaderField = Reflections.field("classLoader")
-                    .ofType(AbstractJPPFClassLoader.class)
-                    .in(NodeRunner.class);
-            final AbstractJPPFClassLoader classLoader = classLoaderField.get();
-            if (classLoader != null) {
-                classLoader.close();
-                classLoaderField.set(null);
+            if (runnerCopy != null) {
+                final Invoker<AbstractJPPFClassLoader> classLoaderField = Reflections.field("classLoader")
+                        .ofType(AbstractJPPFClassLoader.class)
+                        .in(runnerCopy);
+                final AbstractJPPFClassLoader classLoader = classLoaderField.get();
+                if (classLoader != null) {
+                    classLoader.close();
+                    classLoaderField.set(null);
+                }
             }
             node = null;
             runner = null;
