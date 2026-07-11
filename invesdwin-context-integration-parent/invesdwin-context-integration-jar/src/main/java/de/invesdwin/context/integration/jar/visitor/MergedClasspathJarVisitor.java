@@ -16,7 +16,6 @@ import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer;
 import org.apache.maven.plugins.shade.resource.AppendingTransformer;
 import org.apache.maven.plugins.shade.resource.ComponentsXmlResourceTransformer;
-import org.apache.maven.plugins.shade.resource.ManifestResourceTransformer;
 import org.apache.maven.plugins.shade.resource.PluginXmlResourceTransformer;
 import org.apache.maven.plugins.shade.resource.ResourceTransformer;
 import org.apache.maven.plugins.shade.resource.ServicesResourceTransformer;
@@ -134,9 +133,9 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
         //        <Multi-Release>true</Multi-Release>
         //    </manifestEntries>
         //</transformer>
-        final ManifestResourceTransformer manifestResourceTransformer = new ManifestResourceTransformer();
-        manifestResourceTransformer.setManifestEntries(MANIFEST_ENTRIES);
-        transformers.add(manifestResourceTransformer);
+        //        final ManifestResourceTransformer manifestResourceTransformer = new ManifestResourceTransformer();
+        //        manifestResourceTransformer.setManifestEntries(MANIFEST_ENTRIES);
+        //        transformers.add(manifestResourceTransformer);
     }
 
     @Override

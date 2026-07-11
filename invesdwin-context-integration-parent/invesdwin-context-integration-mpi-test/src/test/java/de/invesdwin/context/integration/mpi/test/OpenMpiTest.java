@@ -8,12 +8,13 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.ProcessExecutor;
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 
 @Disabled("TODO: need to make sure the correct java lib and PATH is setup again")
 @NotThreadSafe
@@ -33,8 +34,8 @@ public class OpenMpiTest extends AMpiTest {
         new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
                 .exitValueNormal()
-                .redirectOutput(Slf4jStream.of(getClass()).asInfo())
-                .redirectError(Slf4jStream.of(getClass()).asWarn())
+                .redirectOutput(new LogLevelOutputStream(LogLevel.INFO, log))
+                .redirectError(new LogLevelOutputStream(LogLevel.WARN, log))
                 .execute();
     }
 

@@ -10,27 +10,27 @@ import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
-import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
+import de.invesdwin.context.integration.mpi.test.job.NoMpiJobMainJar;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.log.LogLevelOutputStream;
 
 @NotThreadSafe
-public class SlurmSbatchOpenMpiTest extends AMpiTest {
+public class NoOpenMpiTest extends AMpiTest {
 
     @Test
     public void test() throws Throwable {
-        final File scriptTemplate = new File("mpj/slurm_sbatch_openmpi_test_template.sh");
+        final File scriptTemplate = new File("mpj/openmpi_test_template.sh");
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
-        script = script.replace("{WORKDIR}", ContextProperties.getCacheDirectory().getAbsolutePath());
         script = script.replace("{ARGS}",
-                " java -jar "
-                        + new MpiJobMainJar(MergedClasspathJarFilter.DEFAULT).getResource().getFile().getAbsolutePath()
-                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
-        final File scriptFile = new File(ContextProperties.getCacheDirectory(), "slurm_sbatch_openmpi_test.sh");
+                "-np 2 java -jar "
+                        + new NoMpiJobMainJar(MergedClasspathJarFilter.MPI).getResource().getFile().getAbsolutePath()
+                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""
+                        + " --size $OMPI_COMM_WORLD_SIZE --rank $OMPI_COMM_WORLD_RANK");
+        final File scriptFile = new File(ContextProperties.getCacheDirectory(), "openmpi_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
-        new ProcessExecutor().command("sbatch", "--wait", scriptFile.getAbsolutePath())
+        new ProcessExecutor().command("sh", scriptFile.getAbsolutePath())
                 .destroyOnExit()
                 .exitValueNormal()
                 .redirectOutput(new LogLevelOutputStream(LogLevel.INFO, log))

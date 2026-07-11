@@ -68,11 +68,12 @@ public final class MpiJobYarnMain {
             for (int i = 0; i < args.length; i++) {
                 commands.add(args[i]);
             }
+            final Slf4jStream stream = Slf4jStream.of(MpiJobYarnMain.class);
             new ProcessExecutor().command(commands)
                     .destroyOnExit()
                     .exitValueNormal()
-                    .redirectOutput(Slf4jStream.of(MpiJobYarnMain.class).asInfo())
-                    .redirectError(Slf4jStream.of(MpiJobYarnMain.class).asWarn())
+                    .redirectOutput(stream.asInfo())
+                    .redirectError(stream.asWarn())
                     .environment(System.getenv())
                     .stopper(new ProcessStopper() {
                         @Override

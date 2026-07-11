@@ -11,8 +11,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
-import org.zeroturnaround.exec.stream.slf4j.Slf4jOutputStream;
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
@@ -33,11 +31,13 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.BroadcastingOutputStream;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.ICloseableByteBuffer;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 
@@ -165,7 +165,7 @@ public class MpiJobMain extends AMain {
     }
 
     private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
-        final Slf4jOutputStream log = Slf4jStream.of(taskClass).asInfo();
+        final LogLevelOutputStream log = new LogLevelOutputStream(LogLevel.INFO, new Log(taskClass));
         if (logDir == null) {
             return log;
         }
