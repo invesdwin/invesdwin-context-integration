@@ -10,6 +10,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.lang.Files;
@@ -27,7 +28,9 @@ public class MpjExpressTest extends AMpiTest {
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{ARGS}",
                 "-np 2 -jar "
-                        + new MpiJobMainJar(MergedClasspathJarFilter.MPI).getResource().getFile().getAbsolutePath()
+                        + new MpiJobMainJar(MergedClasspathJarFilter.MPI, MpiJobMain.class).getResource()
+                                .getFile()
+                                .getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpress_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());

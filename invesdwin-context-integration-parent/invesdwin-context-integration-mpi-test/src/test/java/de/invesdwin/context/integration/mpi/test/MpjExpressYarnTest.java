@@ -21,6 +21,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
 import de.invesdwin.context.log.Log;
@@ -133,7 +134,9 @@ public class MpjExpressYarnTest extends AMpiTest {
         args.append(" -wdir \"");
         args.append(workDir.getAbsolutePath());
         args.append("\" -jar ");
-        args.append(new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN3).getResource().getFile().getAbsolutePath());
+        args.append(new MpiJobMainJar(MergedClasspathJarFilter.MPI_YARN3, MpiJobMain.class).getResource()
+                .getFile()
+                .getAbsolutePath());
         args.append(" ");
         args.append(MpiJobYarnMain.class.getName());
         script = script.replace("{ARGS}", args.toString());

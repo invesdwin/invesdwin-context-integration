@@ -20,9 +20,11 @@ import de.invesdwin.util.time.Instant;
 public final class MpiJobMainJar extends MergedClasspathJar {
 
     private final Log log = new Log(this);
+    private final Class<?> mainClass;
 
-    public MpiJobMainJar(final IMergedClasspathJarFilter filter) {
+    public MpiJobMainJar(final IMergedClasspathJarFilter filter, final Class<?> mainClass) {
         super(filter);
+        this.mainClass = mainClass;
     }
 
     @Override
@@ -38,13 +40,13 @@ public final class MpiJobMainJar extends MergedClasspathJar {
         final Manifest manifest = new Manifest();
         final Attributes global = manifest.getMainAttributes();
         global.put(Attributes.Name.MANIFEST_VERSION, "1.0");
-        global.put(Attributes.Name.MAIN_CLASS, MpiJobMain.class.getName());
+        global.put(Attributes.Name.MAIN_CLASS, mainClass.getName());
         return new JarOutputStream(fos, manifest);
     }
 
     @Override
     protected File newFile() {
-        return new File(ContextProperties.getCacheDirectory(), MpiJobMain.class.getSimpleName() + ".jar");
+        return new File(ContextProperties.getCacheDirectory(), mainClass.getSimpleName() + ".jar");
     }
 
 }

@@ -10,7 +10,8 @@ import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
-import de.invesdwin.context.integration.mpi.test.job.NoMpiJobMainJar;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
+import de.invesdwin.context.integration.mpi.test.job.NoMpiJobMain;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.log.LogLevelOutputStream;
@@ -26,11 +27,12 @@ public class NoOpenMpiTest extends AMpiTest {
          */
         final File jobTemplate = new File("mpj/job_test_template.sh");
         String job = Files.readFileToString(jobTemplate, Charset.defaultCharset());
-        job = job.replace("{ARGS}",
-                "java -jar "
-                        + new NoMpiJobMainJar(MergedClasspathJarFilter.MPI).getResource().getFile().getAbsolutePath()
-                        + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""
-                        + " --size $OMPI_COMM_WORLD_SIZE --rank $OMPI_COMM_WORLD_RANK");
+        job = job.replace("{ARGS}", "java -jar "
+                + new MpiJobMainJar(MergedClasspathJarFilter.MPI, NoMpiJobMain.class).getResource()
+                        .getFile()
+                        .getAbsolutePath()
+                + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""
+                + " --size $OMPI_COMM_WORLD_SIZE --rank $OMPI_COMM_WORLD_RANK");
         final File jobFile = new File(ContextProperties.getCacheDirectory(), "job_test.sh");
         Files.writeStringToFile(jobFile, job, Charset.defaultCharset());
 
