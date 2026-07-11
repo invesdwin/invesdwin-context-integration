@@ -70,7 +70,6 @@ public class NoMpiJobMain extends AMain {
     private void test() {
         Assertions.assertThat(rank).isBetween(0, 1);
         testPerformance();
-        System.out.println("finished " + rank);
     }
 
     private void testPerformance() {

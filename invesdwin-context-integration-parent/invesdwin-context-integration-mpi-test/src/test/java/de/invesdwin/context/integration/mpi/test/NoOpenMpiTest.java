@@ -20,13 +20,23 @@ public class NoOpenMpiTest extends AMpiTest {
 
     @Test
     public void test() throws Throwable {
-        final File scriptTemplate = new File("mpj/openmpi_test_template.sh");
-        String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
-        script = script.replace("{ARGS}",
-                "-np 2 java -jar "
+        /**
+         * we use a script to do the environment variable conversion, alternatively the job itself could read the env
+         * variables, but those are different depending on the MPI or scheduler implementation used.
+         */
+        final File jobTemplate = new File("mpj/job_test_template.sh");
+        String job = Files.readFileToString(jobTemplate, Charset.defaultCharset());
+        job = job.replace("{ARGS}",
+                "java -jar "
                         + new NoMpiJobMainJar(MergedClasspathJarFilter.MPI).getResource().getFile().getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""
                         + " --size $OMPI_COMM_WORLD_SIZE --rank $OMPI_COMM_WORLD_RANK");
+        final File jobFile = new File(ContextProperties.getCacheDirectory(), "job_test.sh");
+        Files.writeStringToFile(jobFile, job, Charset.defaultCharset());
+
+        final File scriptTemplate = new File("mpj/openmpi_test_template.sh");
+        String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
+        script = script.replace("{ARGS}", "-np 2 sh " + jobFile.getAbsolutePath());
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "openmpi_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());
 
