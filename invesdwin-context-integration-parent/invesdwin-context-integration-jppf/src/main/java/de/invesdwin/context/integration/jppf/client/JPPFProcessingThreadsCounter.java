@@ -31,6 +31,8 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
+import de.invesdwin.util.collections.factory.pool.map.ICloseableMap;
+import de.invesdwin.util.collections.factory.pool.map.linked.PooledLinkedMap;
 import de.invesdwin.util.collections.list.Lists;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -208,46 +210,63 @@ public class JPPFProcessingThreadsCounter {
             }
         }.process(topologyManager);
         if (driverInfos.size() > 0) {
-            for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
-                try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
-                    channel.connect();
-                    final List<DavResource> listFiles = channel.listFiles();
-                    if (listFiles != null && !listFiles.isEmpty()) {
+            processHeartbeats(processingThreads, nodeInfos, driverInfos);
+        }
+        return Triple.of(processingThreads, nodeInfos, driverInfos);
+    }
+
+    private void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> nodeInfos,
+            final Map<String, String> driverInfos) {
+        for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
+            try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
+                channel.connect();
+                final List<DavResource> listFiles = channel.listFiles();
+                if (listFiles != null && !listFiles.isEmpty()) {
+                    try (ICloseableMap<String, HeartbeatInfo> hostname_heartbeatinfo = PooledLinkedMap.getInstance()) {
                         for (int i = 0; i < listFiles.size(); i++) {
                             final DavResource file = listFiles.get(i);
-                            processHeartbeat(processingThreads, nodeInfos, driverInfos, channel, file);
+                            processHeartbeat(hostname_heartbeatinfo, channel, file);
+                        }
+
+                        for (final HeartbeatInfo heartbeatInfo : hostname_heartbeatinfo.values()) {
+                            if (heartbeatInfo.isDriver()) {
+                                if (!driverInfos.containsKey(heartbeatInfo.getUuid())) {
+                                    driverInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":offline");
+                                }
+                            } else if (heartbeatInfo.isNode()) {
+                                if (!nodeInfos.containsKey(heartbeatInfo.getUuid())) {
+                                    nodeInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
+                                            + heartbeatInfo.getProcessingThreadsCount() + ":offline");
+                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
+                                }
+                            }
                         }
                     }
                 }
             }
         }
-        return Triple.of(processingThreads, nodeInfos, driverInfos);
     }
 
-    private void processHeartbeat(final List<Integer> processingThreads, final Map<String, String> nodeInfos,
-            final Map<String, String> driverInfos, final WebdavFileChannel channel, final DavResource file) {
+    private void processHeartbeat(final Map<String, HeartbeatInfo> hostname_heartbeatInfo,
+            final WebdavFileChannel channel, final DavResource file) {
         channel.setFilename(file.getName());
         final byte[] content = channel.download();
         if (content != null && content.length > 0) {
             final String contentStr = new String(content);
             final String[] split = Strings.splitPreserveAllTokens(contentStr, WEBDAV_CONTENT_SEPARATOR);
-            if (split.length == 3) {
-                final String uuid = split[0];
-                final Integer processingThreadsCount = Integer.valueOf(split[1]);
-                final FDate heartbeat = FDate.valueOf(split[2], WEBDAV_CONTENT_DATEFORMAT);
+            if (split.length == 4) {
+                final String hostname = split[0];
+                final String uuid = split[1];
+                final Integer processingThreadsCount = Integer.valueOf(split[2]);
+                final FDate heartbeat = FDate.valueOf(split[3], WEBDAV_CONTENT_DATEFORMAT);
                 if (new Duration(heartbeat).isGreaterThan(HEARTBEAT_TIMEOUT)) {
                     channel.delete();
                     return;
                 }
-                if (file.getName().startsWith(DRIVER_HEARTBEAT_FILE_PREFIX)) {
-                    if (!driverInfos.containsKey(uuid)) {
-                        driverInfos.put(uuid, uuid + ":offline");
-                    }
-                } else if (file.getName().startsWith(NODE_HEARTBEAT_FILE_PREFIX)) {
-                    if (!nodeInfos.containsKey(uuid)) {
-                        nodeInfos.put(uuid, uuid + ":" + processingThreadsCount + ":offline");
-                        processingThreads.add(processingThreadsCount);
-                    }
+                final HeartbeatInfo existing = hostname_heartbeatInfo.get(hostname);
+                if (existing == null || heartbeat.isAfterNotNullSafe(existing.getHeartbeat())) {
+                    hostname_heartbeatInfo.put(hostname,
+                            new HeartbeatInfo(hostname, uuid, processingThreadsCount, heartbeat, file.getName()));
                 }
             }
         }
@@ -370,6 +389,47 @@ public class JPPFProcessingThreadsCounter {
             }
             firstRun = false;
         } while ((getDriversCount() < minimumDriversCount || getNodesCount() < minimumNodesCount));
+    }
+
+    private static final class HeartbeatInfo {
+        private final String hostname;
+        private final String uuid;
+        private final Integer processingThreadsCount;
+        private final FDate heartbeat;
+        private final String fileName;
+
+        private HeartbeatInfo(final String hostname, final String uuid, final Integer processingThreadsCount,
+                final FDate heartbeat, final String fileName) {
+            this.hostname = hostname;
+            this.uuid = uuid;
+            this.processingThreadsCount = processingThreadsCount;
+            this.heartbeat = heartbeat;
+            this.fileName = fileName;
+        }
+
+        public String getHostname() {
+            return hostname;
+        }
+
+        public String getUuid() {
+            return uuid;
+        }
+
+        public Integer getProcessingThreadsCount() {
+            return processingThreadsCount;
+        }
+
+        public FDate getHeartbeat() {
+            return heartbeat;
+        }
+
+        public boolean isDriver() {
+            return fileName.startsWith(DRIVER_HEARTBEAT_FILE_PREFIX);
+        }
+
+        public boolean isNode() {
+            return fileName.startsWith(NODE_HEARTBEAT_FILE_PREFIX);
+        }
     }
 
 }
