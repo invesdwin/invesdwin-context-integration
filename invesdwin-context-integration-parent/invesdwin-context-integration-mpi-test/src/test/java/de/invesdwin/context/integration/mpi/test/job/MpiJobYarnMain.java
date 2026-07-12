@@ -28,6 +28,10 @@ import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
+/**
+ * Use this job to upgrade from an older java version to a newer one. This might be needed on hadoop clusters that run
+ * on older JVMs.
+ */
 @NotThreadSafe
 public final class MpiJobYarnMain {
 

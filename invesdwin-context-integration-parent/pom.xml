@@ -45,6 +45,7 @@
 		<module>invesdwin-context-integration-maven</module>
 		<module>invesdwin-context-integration-jar</module>
 		<module>invesdwin-context-integration-docker</module>
+		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-gpl</module>
@@ -117,6 +118,7 @@
 		<version.jgroups>5.2.14.Final</version.jgroups>
 		<version.embedded-maven>2.4.39</version.embedded-maven>
 		<version.sisu>0.9.0.M4</version.sisu>
+		<version.hadoop>3.5.0</version.hadoop>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -285,6 +287,17 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-docker</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-hadoop</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-hadoop</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
 			</dependency>
@@ -928,6 +941,16 @@
 				<groupId>org.eclipse.sisu</groupId>
 				<artifactId>org.eclipse.sisu.plexus</artifactId>
 				<version>${version.sisu}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-client-api</artifactId>
+				<version>${version.hadoop}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-client-runtime</artifactId>
+				<version>${version.hadoop}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
