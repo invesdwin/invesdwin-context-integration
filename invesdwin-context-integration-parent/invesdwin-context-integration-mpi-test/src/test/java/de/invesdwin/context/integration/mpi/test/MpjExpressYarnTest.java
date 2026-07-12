@@ -23,7 +23,6 @@ import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
-import de.invesdwin.context.integration.mpi.test.job.MpiJobYarnMain;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.assertions.Assertions;
@@ -70,6 +69,8 @@ public class MpjExpressYarnTest extends AMpiTest {
         }
         //fs.defaultFS - The name of the default file system.
         container.withFixedExposedPort(9000, 9000);
+        //DataNode data transfer port (Hadoop 3.x)
+        container.withFixedExposedPort(9866, 9866);
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
         container.withFixedExposedPort(8032, 8032);
         container.setWaitStrategy(new DockerHealthcheckWaitStrategy());
@@ -138,7 +139,7 @@ public class MpjExpressYarnTest extends AMpiTest {
                 .getFile()
                 .getAbsolutePath());
         args.append(" ");
-        args.append(MpiJobYarnMain.class.getName());
+        args.append(MpiJobMain.class.getName());
         script = script.replace("{ARGS}", args.toString());
         final File scriptFile = new File(ContextProperties.getCacheDirectory(), "mpjexpressyarn_test.sh");
         Files.writeStringToFile(scriptFile, script, Charset.defaultCharset());

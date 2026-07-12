@@ -32,6 +32,8 @@ spec:
               protocol: TCP
             - containerPort: 9864
               protocol: TCP
+            - containerPort: 9866
+              protocol: TCP
             - containerPort: 9870
               protocol: TCP
             - containerPort: 10020
