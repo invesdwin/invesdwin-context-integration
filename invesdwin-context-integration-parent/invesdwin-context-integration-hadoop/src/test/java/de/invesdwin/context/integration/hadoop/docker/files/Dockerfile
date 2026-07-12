@@ -43,6 +43,7 @@ HEALTHCHECK --interval=5s --timeout=3s --retries=15 \
   CMD curl -f http://localhost:9870/ && curl -f http://localhost:8088/ || exit 1
 
 EXPOSE 50090 8020 9000 9864 9866 9867 9870 10020 19888 8088 8030 8031 8032 8033 8040 8042 22
+EXPOSE 49000-49005
 
 WORKDIR /usr/local/bin
 RUN sudo ln -s ${HADOOP_HOME}/etc/hadoop/docker-entrypoint.sh .

@@ -9,6 +9,10 @@ die_func() {
 trap die_func TERM
 trap die_func INT
 
+echo "127.0.0.1 $(hostname)" | sudo tee -a /etc/hosts
+export YARN_NODEMANAGER_HOSTNAME=localhost
+export YARN_RESOURCEMANAGER_HOSTNAME=localhost
+
 if [ ! -d "/tmp/hadoop-hduser/dfs/name" ]; then
         $HADOOP_HOME/bin/hdfs namenode -format
 fi

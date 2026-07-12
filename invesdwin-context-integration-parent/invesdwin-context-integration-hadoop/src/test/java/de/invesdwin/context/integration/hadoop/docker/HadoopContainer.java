@@ -61,6 +61,9 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
             withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
         }
 
+        withFixedExposedPort(49000, 49000);
+        withFixedExposedPort(49001, 49001);
+
         //logs are available at: http://localhost:9870/logs/
     }
 

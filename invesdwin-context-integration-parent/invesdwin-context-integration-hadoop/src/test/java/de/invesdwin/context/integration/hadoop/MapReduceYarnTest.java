@@ -40,6 +40,10 @@ public class MapReduceYarnTest extends ATest {
         // Point to the services defined in docker-compose
         conf.set("fs.defaultFS", "hdfs://localhost:9000");
         conf.set("yarn.resourcemanager.address", "localhost:8032");
+        conf.set("yarn.nodemanager.hostname", "localhost");
+        conf.set("yarn.nodemanager.address", "localhost:8041");
+        conf.set("yarn.nodemanager.webapp.address", "localhost:8042");
+        conf.set("yarn.app.mapreduce.am.job.client.port-range", "49000-49005");
         conf.set("mapreduce.framework.name", "yarn");
 
         // Optional: Ensure cross-platform staging works smoothly inside Docker
