@@ -10,9 +10,13 @@ import org.apache.hadoop.conf.Configuration;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.core.io.Resource;
+import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.FixedHostPortGenericContainer;
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+
+import com.github.dockerjava.api.DockerClient;
+import com.github.dockerjava.api.exception.NotFoundException;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.beans.init.PreMergedContext;
@@ -36,6 +40,7 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
     private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
     private static final boolean HADOOP_EXPOSE_HOST = false;
+    private static final boolean FORCE_BUILD_DOCKER_IMAGE = false;
 
     @SuppressWarnings("deprecation")
     public HadoopContainer() {
@@ -74,10 +79,33 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
         }
 
         maybeDownloadAndExtractHadoop();
-        final String imageName = new ImageFromDockerfile(HadoopContainer.class.getSimpleName().toLowerCase())
+
+        final String targetImageName = "invesdwin/hadoop-single-node:" + HADOOP_VERSION;
+        if (FORCE_BUILD_DOCKER_IMAGE) {
+            LOG.info("Forcing build of Docker image [%s]...", targetImageName);
+            return buildDockerImage(targetImageName);
+        } else {
+            final DockerClient dockerClient = DockerClientFactory.lazyClient();
+            try {
+                // 1. Check if the image already exists in the local Docker daemon
+                dockerClient.inspectImageCmd(targetImageName).exec();
+                LOG.info("Found cached Docker image: [%s]. Skipping build.", targetImageName);
+                return targetImageName;
+            } catch (final NotFoundException e) {
+                // 2. If it doesn't exist, build it
+                LOG.info("Docker image [%s] not found. Building it now...", targetImageName);
+                return buildDockerImage(targetImageName);
+            }
+        }
+    }
+
+    private static String buildDockerImage(final String targetImageName) {
+        final String generatedImageName = new ImageFromDockerfile(targetImageName, false)
                 .withFileFromPath(".", HADOOP_DOCKER_FOLDER.toPath())
                 .get();
-        return imageName;
+
+        // Note: ImageFromDockerfile automatically tags it with the name we provided
+        return generatedImageName;
     }
 
     private static void maybeDownloadAndExtractHadoop() {
