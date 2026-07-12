@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.core.io.Resource;
@@ -128,6 +129,24 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
 
     public File getHadoopFolder() {
         return HADOOP_FOLDER;
+    }
+
+    public Configuration newConfiguration() {
+        final Configuration conf = new Configuration();
+        // Point to the services defined in docker-compose
+        conf.set("fs.defaultFS", "hdfs://localhost:9000");
+        conf.set("yarn.resourcemanager.address", "localhost:8032");
+        conf.set("yarn.nodemanager.hostname", "localhost");
+        conf.set("yarn.nodemanager.address", "localhost:8041");
+        conf.set("yarn.nodemanager.webapp.address", "localhost:8042");
+        conf.set("yarn.app.mapreduce.am.job.client.port-range", "49000-49005");
+        conf.set("mapreduce.framework.name", "yarn");
+
+        // Optional: Ensure cross-platform staging works smoothly inside Docker
+        conf.set("yarn.app.mapreduce.am.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
+        conf.set("mapreduce.map.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
+        conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
+        return conf;
     }
 
 }

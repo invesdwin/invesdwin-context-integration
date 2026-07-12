@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.job;
+package de.invesdwin.context.integration.hadoop.test.simple.job;
 
 import java.io.IOException;
 

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop;
+package de.invesdwin.context.integration.hadoop.test.simple;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -22,7 +22,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.integration.hadoop.docker.HadoopContainer;
-import de.invesdwin.context.integration.hadoop.job.LineCountJob;
+import de.invesdwin.context.integration.hadoop.test.simple.job.LineCountJob;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
@@ -30,32 +30,14 @@ import de.invesdwin.util.assertions.Assertions;
 
 @NotThreadSafe
 @Testcontainers
-public class MapReduceYarnTest extends ATest {
+public class SimpleMapReduceTest extends ATest {
 
     @Container
     private static final HadoopContainer HADOOP = new HadoopContainer();
 
-    private Configuration newConfiguration() {
-        final Configuration conf = new Configuration();
-        // Point to the services defined in docker-compose
-        conf.set("fs.defaultFS", "hdfs://localhost:9000");
-        conf.set("yarn.resourcemanager.address", "localhost:8032");
-        conf.set("yarn.nodemanager.hostname", "localhost");
-        conf.set("yarn.nodemanager.address", "localhost:8041");
-        conf.set("yarn.nodemanager.webapp.address", "localhost:8042");
-        conf.set("yarn.app.mapreduce.am.job.client.port-range", "49000-49005");
-        conf.set("mapreduce.framework.name", "yarn");
-
-        // Optional: Ensure cross-platform staging works smoothly inside Docker
-        conf.set("yarn.app.mapreduce.am.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
-        conf.set("mapreduce.map.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
-        conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
-        return conf;
-    }
-
     @Test
-    public void testMapReduceJobExecution() throws Exception {
-        final Configuration conf = newConfiguration();
+    public void test() throws Exception {
+        final Configuration conf = HADOOP.newConfiguration();
         final FileSystem fs = FileSystem.get(conf);
 
         // 1. Prepare Input Data on HDFS
