@@ -24,7 +24,7 @@ public class MpjExpressTest extends AMpiTest {
     public void test() throws Throwable {
         final File scriptTemplate = new File("mpj/mpjexpress_test_template.sh");
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
-        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
+        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44_kevinmilner").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{ARGS}",
                 "-np 2 -jar "

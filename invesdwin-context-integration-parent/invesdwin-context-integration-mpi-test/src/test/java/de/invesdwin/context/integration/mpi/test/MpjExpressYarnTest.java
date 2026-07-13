@@ -34,7 +34,7 @@ public class MpjExpressYarnTest extends AMpiTest {
 
         final File scriptTemplate = new File("mpj/mpjexpressyarn_test_template.sh");
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
-        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
+        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44_kevinmilner").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{HADOOP_HOME}", HADOOP.getHadoopFolder().getAbsolutePath());
         final StringBuilder args = new StringBuilder();

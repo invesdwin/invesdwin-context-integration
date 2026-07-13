@@ -26,7 +26,7 @@ public class SlurmSbatchMpjExpressTest extends AMpiTest {
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
 
         script = script.replace("{WORKDIR}", ContextProperties.getCacheDirectory().getAbsolutePath());
-        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44").getAbsolutePath());
+        script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44_kevinmilner").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
         script = script.replace("{ARGS}",
                 " -jar " + new MergedClasspathJar(MergedClasspathJarFilter.MPI, MpiJobMain.class).getResource()
