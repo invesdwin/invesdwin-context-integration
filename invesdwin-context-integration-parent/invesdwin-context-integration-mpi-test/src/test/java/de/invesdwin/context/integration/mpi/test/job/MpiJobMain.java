@@ -91,6 +91,23 @@ public class MpiJobMain extends AMain {
         final int bcastValue = Integer.MAX_VALUE;
         switch (MPI.rank()) {
         case 0:
+            try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
+                    AChannelTest.MAX_MESSAGE_SIZE)) {
+                bcastWriter.open();
+                final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
+                        .borrowObject(bcastWriter);
+                try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
+                    buffer.putInt(0, bcastValue);
+                    bcastWriterSpinWait.waitForWrite(buffer.slice(0, Integer.BYTES),
+                            ContextProperties.DEFAULT_NETWORK_TIMEOUT);
+                } finally {
+                    SynchronousWriterSpinWaitPool.returnObject(bcastWriterSpinWait);
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+            break;
+        case 1:
             try (ISynchronousReader<IByteBufferProvider> bcastReader = MPI.newBcastReader(0,
                     AChannelTest.MAX_MESSAGE_SIZE)) {
                 bcastReader.open();
@@ -110,23 +127,6 @@ public class MpiJobMain extends AMain {
                 throw new RuntimeException(e1);
             }
             break;
-        case 1:
-            try (ISynchronousWriter<IByteBufferProvider> bcastWriter = MPI.newBcastWriter(0,
-                    AChannelTest.MAX_MESSAGE_SIZE)) {
-                bcastWriter.open();
-                final SynchronousWriterSpinWait<IByteBufferProvider> bcastWriterSpinWait = SynchronousWriterSpinWaitPool
-                        .borrowObject(bcastWriter);
-                try (ICloseableByteBuffer buffer = ByteBuffers.EXPANDABLE_POOL.borrowObject()) {
-                    buffer.putInt(0, bcastValue);
-                    bcastWriterSpinWait.waitForWrite(buffer.slice(0, Integer.BYTES),
-                            ContextProperties.DEFAULT_NETWORK_TIMEOUT);
-                } finally {
-                    SynchronousWriterSpinWaitPool.returnObject(bcastWriterSpinWait);
-                }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            break;
         default:
             throw UnknownArgumentException.newInstance(int.class, MPI.rank());
         }
@@ -138,23 +138,23 @@ public class MpiJobMain extends AMain {
         };
         switch (MPI.rank()) {
         case 0:
-            final ISynchronousReader<FDate> requestReader = parent
-                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), parent.getMaxMessageSize()));
-            final ISynchronousWriter<FDate> responseWriter = parent
-                    .newSerdeWriter(MPI.newSendWriter(0, 0, parent.getMaxMessageSize()));
-            try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyServerTask.class)) {
-                new LatencyServerTask(parent, log, requestReader, responseWriter).run();
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            break;
-        case 1:
             final ISynchronousWriter<FDate> requestWriter = parent
                     .newSerdeWriter(MPI.newSendWriter(1, 0, parent.getMaxMessageSize()));
             final ISynchronousReader<FDate> responseReader = parent
                     .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), parent.getMaxMessageSize()));
             try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyClientTask.class)) {
                 new LatencyClientTask(parent, log, requestWriter, responseReader).run();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
+            }
+            break;
+        case 1:
+            final ISynchronousReader<FDate> requestReader = parent
+                    .newSerdeReader(MPI.newRecvReader(MPI.anySource(), MPI.anyTag(), parent.getMaxMessageSize()));
+            final ISynchronousWriter<FDate> responseWriter = parent
+                    .newSerdeWriter(MPI.newSendWriter(0, 0, parent.getMaxMessageSize()));
+            try (OutputStream log = newLog(MPI.rank(), MPI.size(), LatencyServerTask.class)) {
+                new LatencyServerTask(parent, log, requestReader, responseWriter).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
             }
