@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.test.simple;
+package de.invesdwin.context.integration.hadoop.test.mapreduce.simple;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -22,7 +22,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.integration.hadoop.docker.HadoopContainer;
-import de.invesdwin.context.integration.hadoop.test.simple.job.LineCountJob;
+import de.invesdwin.context.integration.hadoop.test.mapreduce.simple.job.LineCountJob;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
@@ -37,7 +37,7 @@ public class SimpleMapReduceTest extends ATest {
 
     @Test
     public void test() throws Exception {
-        final Configuration conf = HADOOP.newConfiguration();
+        final Configuration conf = HADOOP.newHadoopConfiguration();
         final FileSystem fs = FileSystem.get(conf);
 
         // 1. Prepare Input Data on HDFS

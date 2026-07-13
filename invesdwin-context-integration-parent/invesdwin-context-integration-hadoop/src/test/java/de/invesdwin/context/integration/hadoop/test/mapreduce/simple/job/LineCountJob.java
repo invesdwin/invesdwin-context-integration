@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.test.simple.job;
+package de.invesdwin.context.integration.hadoop.test.mapreduce.simple.job;
 
 import java.io.IOException;
 

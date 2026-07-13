@@ -33,7 +33,7 @@ import de.invesdwin.util.time.date.millis.FDateMillis;
  * on older JVMs.
  */
 @NotThreadSafe
-public final class MpiJobYarnMain {
+public final class MpiJobJvmUpgradeMain {
 
     private static final String OPENJDK_VERSION = "21.0.11_10";
     private static final String OPENJDK_DOWNLOAD_URL;
@@ -50,7 +50,7 @@ public final class MpiJobYarnMain {
                 + URIs.encode(folderVersion) + "/OpenJDK21U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
-    private MpiJobYarnMain() {}
+    private MpiJobJvmUpgradeMain() {}
 
     public static void main(final String[] args) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -72,7 +72,7 @@ public final class MpiJobYarnMain {
             for (int i = 0; i < args.length; i++) {
                 commands.add(args[i]);
             }
-            final Slf4jStream stream = Slf4jStream.of(MpiJobYarnMain.class);
+            final Slf4jStream stream = Slf4jStream.of(MpiJobJvmUpgradeMain.class);
             new ProcessExecutor().command(commands)
                     .destroyOnExit()
                     .exitValueNormal()
