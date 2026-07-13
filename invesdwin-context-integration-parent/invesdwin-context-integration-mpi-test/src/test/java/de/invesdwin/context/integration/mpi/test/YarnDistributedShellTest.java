@@ -68,8 +68,8 @@ public class YarnDistributedShellTest extends ATest {
 
         final String str_1_2 = Files.readFileToStringNoThrow(log_1_2, Charset.defaultCharset());
         final String str_2_2 = Files.readFileToStringNoThrow(log_2_2, Charset.defaultCharset());
-        Assertions.assertThat(str_1_2).contains("WritesFinished: ").contains(" 100% ");
-        Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains(" 100% ");
+        Assertions.assertThat(str_1_2).contains("WritesFinished: ").contains("(100%)");
+        Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains("(100%)");
     }
 
     public void runDistributedShellViaProcess(final Path hdfsJobJarPath, final Path hdfsJobScriptPath)
