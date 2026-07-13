@@ -79,21 +79,6 @@ public class YarnJobMain extends AMain {
         final File serverAddressFile = new File(logDir.getParentFile(), "serverAddress.txt");
         switch (rank) {
         case 0: {
-            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressFile);
-            final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(serverAddress, false,
-                    parent.getMaxMessageSize());
-            final ISynchronousWriter<FDate> requestWriter = parent
-                    .newSerdeWriter(new NativeSocketSynchronousWriter(clientChannel));
-            final ISynchronousReader<FDate> responseReader = parent
-                    .newSerdeReader(new NativeSocketSynchronousReader(clientChannel));
-            try (OutputStream log = newLog(rank, size, LatencyClientTask.class)) {
-                new LatencyClientTask(parent, log, requestWriter, responseReader).run();
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
-            }
-            break;
-        }
-        case 1: {
             final String serverHostname = NetworkUtil.getHostname();
             final int serverPort = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress serverAddress = new InetSocketAddress(serverHostname, serverPort);
@@ -118,6 +103,21 @@ public class YarnJobMain extends AMain {
                 }
             } finally {
                 Files.deleteQuietly(serverAddressFile);
+            }
+            break;
+        }
+        case 1: {
+            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressFile);
+            final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(serverAddress, false,
+                    parent.getMaxMessageSize());
+            final ISynchronousWriter<FDate> requestWriter = parent
+                    .newSerdeWriter(new NativeSocketSynchronousWriter(clientChannel));
+            final ISynchronousReader<FDate> responseReader = parent
+                    .newSerdeReader(new NativeSocketSynchronousReader(clientChannel));
+            try (OutputStream log = newLog(rank, size, LatencyClientTask.class)) {
+                new LatencyClientTask(parent, log, requestWriter, responseReader).run();
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
             break;
         }
