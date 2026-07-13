@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.MpiJobMain;
-import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.log.LogLevelOutputStream;
@@ -26,7 +26,7 @@ public class SlurmSbatchOpenMpiTest extends AMpiTest {
         script = script.replace("{WORKDIR}", ContextProperties.getCacheDirectory().getAbsolutePath());
         script = script.replace("{ARGS}",
                 " java -jar "
-                        + new MpiJobMainJar(MergedClasspathJarFilter.DEFAULT, MpiJobMain.class).getResource()
+                        + new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, MpiJobMain.class).getResource()
                                 .getFile()
                                 .getAbsolutePath()
                         + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\"");

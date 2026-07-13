@@ -41,13 +41,8 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
 
-/**
- * This job works without dependending on any MPI implementation, it just requires some env vars passed as arguments and
- * a shared file system to share the server address between the client and server. Such jobs can be used with any MPI
- * implementation regardless if they provide a java library or not.
- */
 @NotThreadSafe
-public class NoMpiJobMain extends AMain {
+public class YarnJobMain extends AMain {
 
     private static final boolean BOOTSTRAP = true;
 
@@ -63,7 +58,7 @@ public class NoMpiJobMain extends AMain {
     @Option(help = true, name = "-r", aliases = "--rank", usage = "Defines the rank of this process")
     protected int rank;
 
-    public NoMpiJobMain(final String[] args) {
+    public YarnJobMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
 
@@ -81,7 +76,7 @@ public class NoMpiJobMain extends AMain {
         final AChannelTest parent = new AChannelTest() {
         };
         //logDir should be shared between all processes, e.g. a shared file system
-        final File serverAddressFile = new File(logDir, "serverAddress.txt");
+        final File serverAddressFile = new File(logDir.getParentFile(), "serverAddress.txt");
         switch (rank) {
         case 0: {
             final String serverHostname = NetworkUtil.getHostname();
@@ -89,6 +84,7 @@ public class NoMpiJobMain extends AMain {
             final InetSocketAddress serverAddress = new InetSocketAddress(serverHostname, serverPort);
             final String serverAddressStr = serverHostname + ":" + serverPort;
             try {
+                Files.forceMkdir(logDir);
                 Files.writeStringToFile(serverAddressFile, serverAddressStr, Charset.defaultCharset());
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -162,7 +158,7 @@ public class NoMpiJobMain extends AMain {
 
     public static void main(final String[] args) {
         try {
-            new NoMpiJobMain(args).run();
+            new YarnJobMain(args).run();
         } catch (final Throwable t) {
             Err.process(t);
         }
