@@ -7,7 +7,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.core.io.Resource;
@@ -67,9 +66,9 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
             //https://stackoverflow.com/a/60740997
             withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
         }
-        for (int i = 49000; i <= 49005; i++) {
-            withFixedExposedPort(i, i);
-        }
+
+        withFixedExposedPort(49000, 49000);
+        withFixedExposedPort(49001, 49001);
 
         //logs are available at: http://localhost:9870/logs/
     }
@@ -160,36 +159,22 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
         return HADOOP_FOLDER;
     }
 
-    public String getHadoopVersion() {
-        return HADOOP_VERSION;
-    }
-
-    public Configuration newHadoopConfiguration() {
+    public Configuration newConfiguration() {
         final Configuration conf = new Configuration();
-        putProperties(conf);
-        return conf;
-    }
-
-    public YarnConfiguration newYarnConfiguration() {
-        //CHECKSTYLE:OFF
-        System.setProperty("hadoop.home.dir", getHadoopFolder().getAbsolutePath());
-        //CHECKSTYLE:ON
-        final YarnConfiguration conf = new YarnConfiguration();
-        putProperties(conf);
-        return conf;
-    }
-
-    private void putProperties(final Configuration conf) {
+        // Point to the services defined in docker-compose
         conf.set("fs.defaultFS", "hdfs://localhost:9000");
         conf.set("yarn.resourcemanager.address", "localhost:8032");
         conf.set("yarn.nodemanager.hostname", "localhost");
         conf.set("yarn.nodemanager.address", "localhost:8041");
         conf.set("yarn.nodemanager.webapp.address", "localhost:8042");
-        conf.set("mapreduce.framework.name", "yarn");
         conf.set("yarn.app.mapreduce.am.job.client.port-range", "49000-49005");
+        conf.set("mapreduce.framework.name", "yarn");
+
+        // Optional: Ensure cross-platform staging works smoothly inside Docker
         conf.set("yarn.app.mapreduce.am.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.map.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
+        return conf;
     }
 
 }

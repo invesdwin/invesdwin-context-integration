@@ -1,6 +1,0 @@
-#!/usr/bin/env bash
-
-SIZE=$OMPI_COMM_WORLD_SIZE
-RANK=$OMPI_COMM_WORLD_RANK
-
-{ARGS}

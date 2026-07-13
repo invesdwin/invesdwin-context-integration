@@ -9,8 +9,8 @@ import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.mpi.test.job.MpiJobMainJar;
 import de.invesdwin.context.integration.mpi.test.job.NoMpiJobMain;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;
@@ -25,15 +25,15 @@ public class NoOpenMpiTest extends AMpiTest {
          * we use a script to do the environment variable conversion, alternatively the job itself could read the env
          * variables, but those are different depending on the MPI or scheduler implementation used.
          */
-        final File jobTemplate = new File("mpj/job/openmpi_job_template.sh");
+        final File jobTemplate = new File("mpj/job_test_template.sh");
         String job = Files.readFileToString(jobTemplate, Charset.defaultCharset());
         job = job.replace("{ARGS}", "java -jar "
-                + new MergedClasspathJar(MergedClasspathJarFilter.MPI, NoMpiJobMain.class).getResource()
+                + new MpiJobMainJar(MergedClasspathJarFilter.MPI, NoMpiJobMain.class).getResource()
                         .getFile()
                         .getAbsolutePath()
                 + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""
-                + " --size $SIZE --rank $RANK");
-        final File jobFile = new File(ContextProperties.getCacheDirectory(), "openmpi_job.sh");
+                + " --size $OMPI_COMM_WORLD_SIZE --rank $OMPI_COMM_WORLD_RANK");
+        final File jobFile = new File(ContextProperties.getCacheDirectory(), "job_test.sh");
         Files.writeStringToFile(jobFile, job, Charset.defaultCharset());
 
         final File scriptTemplate = new File("mpj/openmpi_test_template.sh");

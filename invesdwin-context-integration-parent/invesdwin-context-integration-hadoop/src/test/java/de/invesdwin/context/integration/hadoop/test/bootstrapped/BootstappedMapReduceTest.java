@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.test.mapreduce.bootstrapped;
+package de.invesdwin.context.integration.hadoop.test.bootstrapped;
 
 import java.io.OutputStream;
 import java.nio.charset.Charset;
@@ -21,8 +21,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.integration.hadoop.docker.HadoopContainer;
-import de.invesdwin.context.integration.hadoop.test.mapreduce.bootstrapped.job.HadoopTestJobMapper;
-import de.invesdwin.context.integration.hadoop.test.mapreduce.bootstrapped.job.HadoopTestJobReducer;
+import de.invesdwin.context.integration.hadoop.test.bootstrapped.job.HadoopTestJobMapper;
+import de.invesdwin.context.integration.hadoop.test.bootstrapped.job.HadoopTestJobReducer;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
@@ -50,7 +50,7 @@ public class BootstappedMapReduceTest extends ATest {
         //            Assertions.assertThat(cleanup.call()).isNull();
         //        }
 
-        final Configuration conf = HADOOP.newHadoopConfiguration();
+        final Configuration conf = HADOOP.newConfiguration();
         final FileSystem fs = FileSystem.get(conf);
 
         // 1. Prepare Input Data on HDFS

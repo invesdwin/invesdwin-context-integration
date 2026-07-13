@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.test.mapreduce.bootstrapped.job;
+package de.invesdwin.context.integration.hadoop.test.bootstrapped.job;
 
 import javax.annotation.concurrent.Immutable;
 
