@@ -51,13 +51,7 @@
 
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-hadoop</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-hadoop</artifactId>
-			<type>test-jar</type>
+			<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>

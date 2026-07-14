@@ -7,22 +7,30 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-hadoop</artifactId>
+	<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
 	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration</artifactId>
+			<artifactId>invesdwin-context-integration-hadoop</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-hadoop</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
 		</dependency>
 	
 		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-client-api</artifactId>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-jar</artifactId>
 		</dependency>
+
 		<dependency>
-			<groupId>org.apache.hadoop</groupId>
-			<artifactId>hadoop-client-runtime</artifactId>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-docker</artifactId>
 		</dependency>
 	</dependencies>
 
