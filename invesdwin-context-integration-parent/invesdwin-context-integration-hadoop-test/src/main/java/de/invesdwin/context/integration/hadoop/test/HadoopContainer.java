@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.hadoop.docker;
+package de.invesdwin.context.integration.hadoop.test;
 
 import java.io.File;
 import java.io.IOException;

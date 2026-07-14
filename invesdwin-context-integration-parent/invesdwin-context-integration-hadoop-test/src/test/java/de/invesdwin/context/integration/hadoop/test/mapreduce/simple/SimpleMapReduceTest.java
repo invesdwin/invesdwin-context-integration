@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import de.invesdwin.context.integration.hadoop.docker.HadoopContainer;
+import de.invesdwin.context.integration.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.hadoop.test.mapreduce.simple.job.LineCountJob;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
