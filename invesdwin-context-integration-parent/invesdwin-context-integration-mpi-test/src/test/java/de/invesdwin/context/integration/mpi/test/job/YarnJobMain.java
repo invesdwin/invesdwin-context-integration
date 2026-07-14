@@ -85,6 +85,7 @@ public class YarnJobMain extends AMain {
         final Configuration conf = new Configuration();
         final FileSystem fs;
         try {
+            // this falls back to a local filesystem if HDFS is not available
             fs = FileSystem.get(conf);
         } catch (final IOException e) {
             throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);

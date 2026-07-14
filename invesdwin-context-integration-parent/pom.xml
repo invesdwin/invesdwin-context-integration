@@ -47,6 +47,7 @@
 		<module>invesdwin-context-integration-docker</module>
 		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-hadoop-test</module>
+		<module>invesdwin-context-integration-spark</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-gpl</module>
@@ -75,7 +76,7 @@
 		<!-- cxf does not yet support jakarta EE 9:
 		https://issues.apache.org/jira/browse/CXF-8371 -->
 		<version.cxf>3.5.4</version.cxf>
-		<version.jersey>3.1.10</version.jersey>
+		<version.jersey>3.1.11</version.jersey>
 		<version.jakarta.ws.rs>3.1.0</version.jakarta.ws.rs>
 		<version.xmlsec>4.0.4</version.xmlsec>
 		<version.jppf>6.2</version.jppf>
@@ -120,6 +121,7 @@
 		<version.embedded-maven>2.4.39</version.embedded-maven>
 		<version.sisu>0.9.0.M4</version.sisu>
 		<version.hadoop>3.5.0</version.hadoop>
+		<version.spark>4.2.0-preview5</version.spark>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -306,6 +308,17 @@
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
@@ -966,6 +979,25 @@
 					<exclusion>
 						<groupId>org.ehcache</groupId>
 						<artifactId>ehcache</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-core_2.13</artifactId>
+				<version>${version.spark}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jul-to-slf4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>com.esotericsoftware</groupId>
+						<artifactId>minlog</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>

@@ -71,5 +71,10 @@
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-spark</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
