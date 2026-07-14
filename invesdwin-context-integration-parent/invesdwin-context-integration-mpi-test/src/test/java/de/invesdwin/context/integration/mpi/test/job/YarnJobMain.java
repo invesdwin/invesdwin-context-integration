@@ -12,6 +12,12 @@ import java.nio.charset.Charset;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -32,7 +38,6 @@ import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
-import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.BroadcastingOutputStream;
@@ -75,20 +80,35 @@ public class YarnJobMain extends AMain {
     private void testPerformance() {
         final AChannelTest parent = new AChannelTest() {
         };
-        //logDir should be shared between all processes, e.g. a shared file system
-        final File serverAddressFile = new File(logDir.getParentFile(), "serverAddress.txt");
+
+        // 1. Initialize Hadoop FileSystem
+        final Configuration conf = new Configuration();
+        final FileSystem fs;
+        try {
+            fs = FileSystem.get(conf);
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);
+        }
+
+        // 2. Define the HDFS Path (using the path string from logDir)
+        final Path serverAddressFile = new Path(logDir.getParentFile().getPath(), "serverAddress.txt");
+
         switch (rank) {
         case 0: {
             final String serverHostname = NetworkUtil.getHostname();
             final int serverPort = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress serverAddress = new InetSocketAddress(serverHostname, serverPort);
             final String serverAddressStr = serverHostname + ":" + serverPort;
+
             try {
-                Files.forceMkdir(logDir);
-                Files.writeStringToFile(serverAddressFile, serverAddressStr, Charset.defaultCharset());
+                // Write Address to HDFS
+                try (FSDataOutputStream out = fs.create(serverAddressFile, true)) {
+                    out.write(serverAddressStr.getBytes(Charset.defaultCharset()));
+                }
             } catch (final IOException e) {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to write server address to HDFS", e);
             }
+
             try {
                 final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(serverAddress, true,
                         parent.getMaxMessageSize());
@@ -102,12 +122,19 @@ public class YarnJobMain extends AMain {
                     throw new RuntimeException(e);
                 }
             } finally {
-                Files.deleteQuietly(serverAddressFile);
+                // Clean up HDFS file after server shuts down
+                try {
+                    fs.delete(serverAddressFile, false);
+                } catch (final IOException e) {
+                    // Ignore or log cleanup failure
+                }
             }
             break;
         }
         case 1: {
-            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressFile);
+            // Pass the HDFS Path and FileSystem instance to the waiter
+            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressFile, fs);
+
             final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(serverAddress, false,
                     parent.getMaxMessageSize());
             final ISynchronousWriter<FDate> requestWriter = parent
@@ -126,19 +153,35 @@ public class YarnJobMain extends AMain {
         }
     }
 
-    private InetSocketAddress waitForServerAddress(final File serverAddressFile) {
+    private InetSocketAddress waitForServerAddress(final Path serverAddressFile, final FileSystem fs) {
         final Instant start = new Instant();
-        while (!serverAddressFile.exists()) {
-            FTimeUnit.MILLISECONDS.sleepNoInterrupt(1);
-            if (start.isGreaterThan(ContextProperties.DEFAULT_NETWORK_TIMEOUT)) {
-                throw new RuntimeException("Timeout waiting for server address file");
+        try {
+            // Check HDFS for file existence
+            while (!fs.exists(serverAddressFile)) {
+
+                // CRITICAL: Do not poll HDFS every 1ms. 500ms protects the NameNode.
+                FTimeUnit.MILLISECONDS.sleepNoInterrupt(500);
+
+                if (start.isGreaterThan(ContextProperties.DEFAULT_NETWORK_TIMEOUT)) {
+                    throw new RuntimeException("Timeout waiting for server address file in HDFS");
+                }
             }
+
+            // Read the file from HDFS
+            final String serverAddressStr;
+            try (FSDataInputStream in = fs.open(serverAddressFile)) {
+                serverAddressStr = IOUtils.toString(in, Charset.defaultCharset());
+            }
+
+            final String[] serverAddressStrSplit = Strings.splitPreserveAllTokens(serverAddressStr, ":");
+            final String serverHostname = serverAddressStrSplit[0];
+            final int serverPort = Integer.parseInt(serverAddressStrSplit[1]);
+
+            return new InetSocketAddress(serverHostname, serverPort);
+
+        } catch (final IOException e) {
+            throw new RuntimeException("Error reading server address from HDFS", e);
         }
-        final String serverAddressStr = Files.readFileToStringNoThrow(serverAddressFile, Charset.defaultCharset());
-        final String[] serverAddressStrSplit = Strings.splitPreserveAllTokens(serverAddressStr, ":");
-        final String serverHostname = serverAddressStrSplit[0];
-        final int serverPort = Integer.parseInt(serverAddressStrSplit[1]);
-        return new InetSocketAddress(serverHostname, serverPort);
     }
 
     protected SocketSynchronousChannel newSocketSynchronousChannel(final SocketAddress socketAddress,
