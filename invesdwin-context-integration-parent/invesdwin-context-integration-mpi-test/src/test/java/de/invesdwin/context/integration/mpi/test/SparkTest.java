@@ -47,8 +47,8 @@ public class SparkTest extends ATest {
                 if (iterator.hasNext()) {
                     final int rank = iterator.next();
 
-                    final String[] args = { "-s", String.valueOf(numContainers), "-r", String.valueOf(rank), "-l",
-                            logDirStr };
+                    final String[] args = { "--size", String.valueOf(numContainers), "--rank", String.valueOf(rank),
+                            "--logDir", logDirStr };
 
                     // Execute logic
                     new YarnJobMain(args).run();
