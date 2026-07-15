@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-axon</artifactId>
+	<artifactId>invesdwin-context-integration-channel-axon</artifactId>
 	<packaging>jar</packaging>
 
 	<build>

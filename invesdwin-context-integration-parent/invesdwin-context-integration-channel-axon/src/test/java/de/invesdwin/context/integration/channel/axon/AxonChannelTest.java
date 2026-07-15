@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.axon.channel;
+package de.invesdwin.context.integration.channel.axon;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -14,6 +14,9 @@ import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServer
 import de.invesdwin.context.integration.channel.ThroughputChannelTest;
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
+import de.invesdwin.context.integration.channel.axon.AxonSynchronousChannel;
+import de.invesdwin.context.integration.channel.axon.AxonSynchronousReader;
+import de.invesdwin.context.integration.channel.axon.AxonSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;

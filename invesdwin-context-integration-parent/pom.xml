@@ -20,7 +20,6 @@
 	</licenses>
 	<modules>
 		<module>invesdwin-context-integration-amqp</module>
-		<module>invesdwin-context-integration-axon</module>
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
 		<module>invesdwin-context-integration-jppf</module>
@@ -50,8 +49,9 @@
 		<module>invesdwin-context-integration-spark</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
-		<module>invesdwin-context-integration-channel-gpl</module>
+		<module>invesdwin-context-integration-channel-hadronio</module>
 		<module>invesdwin-context-integration-channel-confluent</module>
+		<module>invesdwin-context-integration-channel-axon</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
@@ -150,11 +150,6 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-amqp</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-axon</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -332,7 +327,12 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-channel-gpl</artifactId>
+				<artifactId>invesdwin-context-integration-channel-hadronio</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-axon</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
