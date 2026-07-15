@@ -160,19 +160,20 @@ public class PulsarChannelTest extends AChannelTest {
     protected void runPulsarLatencyTest(final String pulsarBrokerUrl, final String responseTopic,
             final String requestTopic, final boolean useReader) throws InterruptedException {
         final boolean flush = true;
+        final PulsarSynchronousChannel serverChannel = new PulsarSynchronousChannel(pulsarBrokerUrl);
         final ISynchronousReader<FDate> requestReader = newSerdeReader(
-                newPulsarSynchronousReader(new PulsarSynchronousChannel(pulsarBrokerUrl), requestTopic, useReader));
-        final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(newPulsarProducerSynchronousWriter(
-                new PulsarSynchronousChannel(pulsarBrokerUrl), responseTopic, flush));
-
-        final ISynchronousReader<FDate> responseReader = newSerdeReader(
-                newPulsarSynchronousReader(new PulsarSynchronousChannel(pulsarBrokerUrl), responseTopic, useReader));
-
+                newPulsarSynchronousReader(serverChannel, requestTopic, useReader));
+        final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
+                newPulsarProducerSynchronousWriter(serverChannel, responseTopic, flush));
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
-        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
-                newPulsarProducerSynchronousWriter(new PulsarSynchronousChannel(pulsarBrokerUrl), requestTopic, flush));
 
+        final PulsarSynchronousChannel clientChannel = new PulsarSynchronousChannel(pulsarBrokerUrl);
+        final ISynchronousReader<FDate> responseReader = newSerdeReader(
+                newPulsarSynchronousReader(clientChannel, responseTopic, useReader));
+        final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
+                newPulsarProducerSynchronousWriter(clientChannel, requestTopic, flush));
         final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
+
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 

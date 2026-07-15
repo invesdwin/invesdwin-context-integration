@@ -28,7 +28,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration</artifactId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
 		</dependency>
 
 		<dependency>
@@ -46,13 +46,14 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.awaitility</groupId>
-			<artifactId>awaitility</artifactId>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-docker</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-docker</artifactId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
+			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

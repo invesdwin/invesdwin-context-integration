@@ -35,6 +35,10 @@ public class PulsarSynchronousChannel implements ISynchronousChannel {
         finalizer.register(this);
     }
 
+    public String getServiceUrl() {
+        return serviceUrl;
+    }
+
     protected PulsarClient newPulsarClient() throws PulsarClientException {
         return newPulsarClientBuilder().build();
     }
