@@ -122,6 +122,7 @@
 		<version.sisu>0.9.0.M4</version.sisu>
 		<version.hadoop>3.5.0</version.hadoop>
 		<version.spark>4.2.0-preview5</version.spark>
+		<version.awaitility>4.3.0</version.awaitility>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -143,13 +144,6 @@
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-security-parent</artifactId>
 				<version>${project.version.invesdwin-context-security}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.axonframework</groupId>
-				<artifactId>axon-bom</artifactId>
-				<version>${version.axon}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -1005,6 +999,26 @@
 				<groupId>org.apache.spark</groupId>
 				<artifactId>spark-launcher_2.13</artifactId>
 				<version>${version.spark}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.awaitility</groupId>
+				<artifactId>awaitility</artifactId>
+				<version>${version.awaitility}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-configuration</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-server-connector</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-test</artifactId>
+				<version>${version.axon}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
