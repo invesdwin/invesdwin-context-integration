@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.redis;
+package de.invesdwin.context.integration.channel.sync.redis.examples;
 
 import java.util.List;
 import java.util.Map;

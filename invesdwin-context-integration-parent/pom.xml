@@ -50,8 +50,11 @@
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-hadronio</module>
-		<module>invesdwin-context-integration-channel-confluent</module>
+		<module>invesdwin-context-integration-channel-pulsar</module>
+		<module>invesdwin-context-integration-channel-kafka</module>
+		<module>invesdwin-context-integration-channel-kafka-confluent</module>
 		<module>invesdwin-context-integration-channel-axon</module>
+		<module>invesdwin-context-integration-channel-redis</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
@@ -332,7 +335,33 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-pulsar</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-kafka</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-kafka</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-confluent</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-channel-axon</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-redis</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -837,6 +866,11 @@
 			<dependency>
 				<groupId>org.testcontainers</groupId>
 				<artifactId>testcontainers-kafka</artifactId>
+				<version>${version.testcontainers}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-redpanda</artifactId>
 				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>

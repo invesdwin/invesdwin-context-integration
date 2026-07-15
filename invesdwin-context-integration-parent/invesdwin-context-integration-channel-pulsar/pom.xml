@@ -1,0 +1,67 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<parent>
+		<groupId>de.invesdwin</groupId>
+		<artifactId>invesdwin-context-integration-parent</artifactId>
+		<version>1.0.3-SNAPSHOT</version>
+	</parent>
+	<artifactId>invesdwin-context-integration-channel-pulsar</artifactId>
+	<packaging>jar</packaging>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<includes>
+						<include>de/invesdwin/context/integration/channel/sync/pulsar/PulsarChannelTestSuite.java</include>
+					</includes>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<dependencies>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.protobuf</groupId>
+			<artifactId>protobuf-java</artifactId>
+			<!-- transient dependency of ByteBufferProviderPulsarSchema -->
+		</dependency>
+		<dependency>
+			<!-- pulsar-client-admin-original depends on a jersey 2.x with javax api while we are on jersey 3.x with jakarta api, thus we use shaded admin client instead -->
+            <groupId>org.apache.pulsar</groupId>
+            <artifactId>pulsar-client-admin</artifactId>
+            <scope>test</scope>
+		</dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-pulsar</artifactId>
+    		<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-docker</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
+			<type>test-jar</type>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
+
+</project>

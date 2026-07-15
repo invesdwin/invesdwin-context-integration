@@ -157,78 +157,20 @@
 			<scope>provided</scope>
 		</dependency>
 		<dependency>
-			<groupId>org.jgroups</groupId>
-			<artifactId>jgroups</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
 			<groupId>com.ibm.darpc</groupId>
 			<artifactId>darpc</artifactId>
 			<scope>provided</scope>
-		</dependency>
-		<dependency>
-             <groupId>org.testcontainers</groupId>
-             <artifactId>redpanda</artifactId>
-             <version>1.19.8</version>
-             <scope>provided</scope>
-        </dependency>
-		<dependency>
-			<groupId>org.apache.kafka</groupId>
-			<artifactId>kafka-clients</artifactId>
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-		    <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client</artifactId>
-            <scope>provided</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.google.protobuf</groupId>
-			<artifactId>protobuf-java</artifactId>
-			<!-- transient dependency of ByteBufferProviderPulsarSchema -->
-			<scope>provided</scope>
-		</dependency>
-		<dependency>
-			<!-- pulsar-client-admin-original depends on an jersey 2.x with javax api while we are on jersey 3.x with jakarta api, thus we use shaded admin client instead -->
-            <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client-admin</artifactId>
-            <scope>test</scope>
-		</dependency>
-        <dependency>
-            <groupId>org.testcontainers</groupId>
-            <artifactId>testcontainers-pulsar</artifactId>
-    		<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-persistence-timeseriesdb</artifactId>
 			<scope>provided</scope>
 		</dependency>
+		<!-- TODO -->
 		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-docker</artifactId>
-			<scope>test</scope>
+			<groupId>org.jgroups</groupId>
+			<artifactId>jgroups</artifactId>
+			<scope>provided</scope>
 		</dependency>
-		<dependency>
-            <groupId>io.lettuce</groupId>
-            <artifactId>lettuce-core</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>redis.clients</groupId>
-            <artifactId>jedis</artifactId>
-            <scope>test</scope>
-        </dependency>
-		<dependency>
-			<groupId>org.testcontainers</groupId>
-			<artifactId>testcontainers-kafka</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.httpcomponents.client5</groupId>
-			<artifactId>httpclient5</artifactId>
-			<scope>test</scope>
-		</dependency>
-		
 	</dependencies>
 </project>
