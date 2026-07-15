@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.axon;
+package de.invesdwin.context.integration.channel.sync.axon;
 
 import java.io.Serializable;
 
