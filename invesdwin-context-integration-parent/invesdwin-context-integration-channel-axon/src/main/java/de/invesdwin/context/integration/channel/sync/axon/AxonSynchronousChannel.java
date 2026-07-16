@@ -95,7 +95,16 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
     }
 
     protected Builder newAxonServerConfigurationBuilder() {
-        return AxonServerConfiguration.builder().servers(serverUrl);
+        return AxonServerConfiguration.builder().servers(serverUrl).context(newContext());
+    }
+
+    /**
+     * If you have axon enterprise, you can define a different context for each channel to separate the events (though
+     * this requires provisioning via e.g. ContextAdminServiceGrpc. Otherwise you have to use the default context and
+     * separate the messages in the reader/writer.
+     */
+    protected String newContext() {
+        return "default";
     }
 
     @Override

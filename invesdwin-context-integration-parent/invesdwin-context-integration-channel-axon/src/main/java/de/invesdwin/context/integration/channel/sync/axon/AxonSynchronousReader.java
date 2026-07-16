@@ -22,12 +22,12 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
 
     public static final Duration DEFAULT_POLL_TIMEOUT = StreamSynchronousEndpointClientReader.DEFAULT_POLL_TIMEOUT;
 
-    private final AxonSynchronousChannel channel;
-    private final Duration pollTimeout;
-    private final String topic;
+    protected final AxonSynchronousChannel channel;
+    protected final Duration pollTimeout;
+    protected final String topic;
 
-    private BlockingStream<TrackedEventMessage<?>> eventStream;
-    private TrackedEventMessage<?> currentMessage;
+    protected BlockingStream<TrackedEventMessage<?>> stream;
+    protected TrackedEventMessage<?> currentMessage;
 
     public AxonSynchronousReader(final AxonSynchronousChannel channel, final String topic) {
         this.channel = channel;
@@ -46,15 +46,22 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
     @Override
     public void open() throws IOException {
         channel.open();
-        final TrackingToken token = channel.getConfiguration().eventStore().createTailToken();
-        eventStream = channel.getConfiguration().eventStore().openStream(token);
+        stream = openStream();
+    }
+
+    protected BlockingStream<TrackedEventMessage<?>> openStream() {
+        return channel.getConfiguration().eventStore().openStream(newTrackingToken());
+    }
+
+    protected TrackingToken newTrackingToken() {
+        return channel.getConfiguration().eventStore().createTailToken();
     }
 
     @Override
     public void close() throws IOException {
-        if (eventStream != null) {
-            eventStream.close();
-            eventStream = null;
+        if (stream != null) {
+            stream.close();
+            stream = null;
         }
         channel.close();
     }
@@ -65,10 +72,9 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
             return true;
         }
         try {
-            if (eventStream.hasNextAvailable(pollTimeout.intValue(), pollTimeout.getTimeUnit().timeUnitValue())) {
-                final TrackedEventMessage<?> message = eventStream.nextAvailable();
-
-                if (this.topic.equals(message.getMetaData().get("topic"))) {
+            if (stream.hasNextAvailable(pollTimeout.intValue(), pollTimeout.getTimeUnit().timeUnitValue())) {
+                final TrackedEventMessage<?> message = stream.nextAvailable();
+                if (isMessageValid(message)) {
                     currentMessage = message;
                     return true;
                 }
@@ -78,6 +84,13 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
             throw new IOException("Polling interrupted", e);
         }
         return false;
+    }
+
+    protected boolean isMessageValid(final TrackedEventMessage<?> message) {
+        if (topic == null) {
+            return true;
+        }
+        return this.topic.equals(message.getMetaData().get("topic"));
     }
 
     @Override

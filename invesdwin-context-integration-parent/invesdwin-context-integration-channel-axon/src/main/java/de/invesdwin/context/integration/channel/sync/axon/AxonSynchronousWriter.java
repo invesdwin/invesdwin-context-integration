@@ -7,6 +7,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.axonframework.eventhandling.EventMessage;
 import org.axonframework.eventhandling.GenericEventMessage;
+import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.collections.Collections;
@@ -16,9 +17,10 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    private final AxonSynchronousChannel channel;
-    private final String topic;
-    private Map<String, String> metaData;
+    protected final AxonSynchronousChannel channel;
+    protected final String topic;
+    protected Map<String, String> metaData;
+    protected EventStore eventStore;
 
     public AxonSynchronousWriter(final AxonSynchronousChannel channel, final String topic) {
         this.channel = channel;
@@ -32,7 +34,16 @@ public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProv
     @Override
     public void open() throws IOException {
         channel.open();
-        this.metaData = Collections.singletonMap("topic", topic);
+        this.metaData = newMetaData();
+        this.eventStore = channel.getConfiguration().eventStore();
+    }
+
+    protected Map<String, String> newMetaData() {
+        if (topic == null) {
+            return Collections.emptyMap();
+        } else {
+            return Collections.singletonMap("topic", topic);
+        }
     }
 
     @Override
@@ -41,6 +52,7 @@ public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProv
             write(ClosedByteBuffer.INSTANCE);
             channel.close();
             metaData = null;
+            eventStore = null;
         }
     }
 
@@ -49,12 +61,16 @@ public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProv
         return channel.getConfiguration() != null;
     }
 
+    @SuppressWarnings("null")
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final byte[] bytes = message.asBuffer().asByteArrayCopy();
-        final EventMessage<Object> eventMessage = GenericEventMessage.asEventMessage(new AxonChannelMessage(bytes))
-                .withMetaData(metaData);
-        channel.getConfiguration().eventStore().publish(eventMessage);
+        final EventMessage<Object> eventMessage = newEventMessage(bytes);
+        eventStore.publish(eventMessage);
+    }
+
+    protected EventMessage<Object> newEventMessage(final byte[] bytes) {
+        return GenericEventMessage.asEventMessage(new AxonChannelMessage(bytes)).withMetaData(metaData);
     }
 
     @Override

@@ -57,13 +57,21 @@ public class PulsarReaderSynchronousReader implements ISynchronousReader<IByteBu
         return client.newReader(ByteBufferProviderPulsarSchema.of())
                 .topic(topic)
                 .readerName(newReaderName())
-                .subscriptionName(UUIDs.newPseudoRandomUUID())
-                .startMessageId(MessageId.earliest)
+                .subscriptionName(newSubscriptionName())
+                .startMessageId(newStartMessageId())
                 .poolMessages(true);
     }
 
-    protected String newReaderName() {
+    protected String newSubscriptionName() {
         return UUIDs.newPseudoRandomUUID();
+    }
+
+    protected MessageId newStartMessageId() {
+        return MessageId.earliest;
+    }
+
+    protected String newReaderName() {
+        return newSubscriptionName();
     }
 
     @Override
