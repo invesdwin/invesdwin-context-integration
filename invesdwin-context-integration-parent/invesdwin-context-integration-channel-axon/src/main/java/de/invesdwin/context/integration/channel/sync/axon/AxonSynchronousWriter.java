@@ -61,16 +61,16 @@ public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProv
         return channel.getConfiguration() != null;
     }
 
-    @SuppressWarnings("null")
     @Override
     public void write(final IByteBufferProvider message) throws IOException {
         final byte[] bytes = message.asBuffer().asByteArrayCopy();
-        final EventMessage<Object> eventMessage = newEventMessage(bytes);
+        final EventMessage<byte[]> eventMessage = newEventMessage(bytes);
         eventStore.publish(eventMessage);
     }
 
-    protected EventMessage<Object> newEventMessage(final byte[] bytes) {
-        return GenericEventMessage.asEventMessage(new AxonChannelMessage(bytes)).withMetaData(metaData);
+    @SuppressWarnings("null")
+    protected EventMessage<byte[]> newEventMessage(final byte[] bytes) {
+        return new GenericEventMessage<byte[]>(bytes, metaData);
     }
 
     @Override

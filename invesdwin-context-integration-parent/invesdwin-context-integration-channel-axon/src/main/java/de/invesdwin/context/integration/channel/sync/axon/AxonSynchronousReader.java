@@ -95,8 +95,8 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
 
     @Override
     public IByteBufferProvider readMessage() throws IOException {
-        final AxonChannelMessage payload = (AxonChannelMessage) currentMessage.getPayload();
-        final IByteBuffer msg = ByteBuffers.wrap(payload.getBytes());
+        final byte[] payload = (byte[]) currentMessage.getPayload();
+        final IByteBuffer msg = ByteBuffers.wrap(payload);
         if (ClosedByteBuffer.isClosed(msg)) {
             close();
             throw FastEOFException.getInstance("Closed by other side");

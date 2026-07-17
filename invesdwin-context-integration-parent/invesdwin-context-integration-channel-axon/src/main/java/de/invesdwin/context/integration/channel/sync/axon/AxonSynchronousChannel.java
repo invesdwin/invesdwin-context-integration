@@ -14,11 +14,9 @@ import org.axonframework.config.Configuration;
 import org.axonframework.config.Configurer;
 import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-
-import com.thoughtworks.xstream.XStream;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.axon.serde.ByteArrayAxonSerializer;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 
 @ThreadSafe
@@ -74,10 +72,7 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
     }
 
     protected Serializer newSerializer() {
-        final XStream xStream = new XStream();
-        xStream.allowTypes(new Class[] { AxonChannelMessage.class });
-        final Serializer serializer = XStreamSerializer.builder().xStream(xStream).build();
-        return serializer;
+        return ByteArrayAxonSerializer.INSTANCE;
     }
 
     protected AxonServerConnectionManager newAxonServerConnectionManager(
