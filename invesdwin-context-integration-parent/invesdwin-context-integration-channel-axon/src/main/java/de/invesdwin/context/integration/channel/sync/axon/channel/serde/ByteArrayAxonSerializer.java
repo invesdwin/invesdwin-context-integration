@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.axon.serde;
+package de.invesdwin.context.integration.channel.sync.axon.channel.serde;
 
 import javax.annotation.concurrent.Immutable;
 

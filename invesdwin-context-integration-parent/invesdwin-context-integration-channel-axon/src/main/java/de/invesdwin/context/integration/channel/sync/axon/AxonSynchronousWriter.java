@@ -10,6 +10,7 @@ import org.axonframework.eventhandling.GenericEventMessage;
 import org.axonframework.eventsourcing.eventstore.EventStore;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.channel.sync.axon.channel.AAxonSynchronousChannel;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -17,12 +18,12 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 @NotThreadSafe
 public class AxonSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
-    protected final AxonSynchronousChannel channel;
+    protected final AAxonSynchronousChannel channel;
     protected final String topic;
     protected Map<String, String> metaData;
     protected EventStore eventStore;
 
-    public AxonSynchronousWriter(final AxonSynchronousChannel channel, final String topic) {
+    public AxonSynchronousWriter(final AAxonSynchronousChannel channel, final String topic) {
         this.channel = channel;
         this.topic = topic;
     }

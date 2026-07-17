@@ -10,6 +10,7 @@ import org.axonframework.eventhandling.TrackingToken;
 
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.axon.channel.AAxonSynchronousChannel;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
@@ -22,14 +23,14 @@ public class AxonSynchronousReader implements ISynchronousReader<IByteBufferProv
 
     public static final Duration DEFAULT_POLL_TIMEOUT = StreamSynchronousEndpointClientReader.DEFAULT_POLL_TIMEOUT;
 
-    protected final AxonSynchronousChannel channel;
+    protected final AAxonSynchronousChannel channel;
     protected final Duration pollTimeout;
     protected final String topic;
 
     protected BlockingStream<TrackedEventMessage<?>> stream;
     protected TrackedEventMessage<?> currentMessage;
 
-    public AxonSynchronousReader(final AxonSynchronousChannel channel, final String topic) {
+    public AxonSynchronousReader(final AAxonSynchronousChannel channel, final String topic) {
         this.channel = channel;
         this.topic = topic;
         this.pollTimeout = newPollTimeout();

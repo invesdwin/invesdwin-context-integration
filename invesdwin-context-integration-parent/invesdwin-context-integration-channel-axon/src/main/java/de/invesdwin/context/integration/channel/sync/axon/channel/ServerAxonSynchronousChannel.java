@@ -1,13 +1,8 @@
-package de.invesdwin.context.integration.channel.sync.axon;
+package de.invesdwin.context.integration.channel.sync.axon.channel;
 
-import java.io.IOException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
-import org.axonframework.axonserver.connector.AxonServerConfiguration.Builder;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.config.Configuration;
@@ -16,25 +11,15 @@ import org.axonframework.config.DefaultConfigurer;
 import org.axonframework.serialization.Serializer;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.context.integration.channel.sync.axon.serde.ByteArrayAxonSerializer;
-import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
+import de.invesdwin.context.integration.channel.sync.axon.channel.serde.ByteArrayAxonSerializer;
 
 @ThreadSafe
-public class AxonSynchronousChannel implements ISynchronousChannel {
+public class ServerAxonSynchronousChannel extends AAxonSynchronousChannel implements ISynchronousChannel {
 
     private final String serverUrl;
-    @GuardedBy("this for modification")
-    private final AtomicInteger activeCount = new AtomicInteger();
-    private final AxonSynchronousChannelFinalizer finalizer;
 
-    public AxonSynchronousChannel(final String serverUrl) {
+    public ServerAxonSynchronousChannel(final String serverUrl) {
         this.serverUrl = serverUrl;
-        this.finalizer = new AxonSynchronousChannelFinalizer();
-        finalizer.register(this);
-    }
-
-    public Configuration getConfiguration() {
-        return finalizer.configuration;
     }
 
     public String getServerUrl() {
@@ -42,14 +27,6 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
     }
 
     @Override
-    public synchronized void open() throws IOException {
-        if (activeCount.incrementAndGet() != 1) {
-            return;
-        }
-        finalizer.configuration = newConfiguration();
-        finalizer.configuration.start();
-    }
-
     protected Configuration newConfiguration() {
         // Configure connection specifically for this isolated context
         final AxonServerConfiguration axonServerConfiguration = newAxonServerConfiguration();
@@ -71,16 +48,12 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
         return configurer.buildConfiguration();
     }
 
-    protected Serializer newSerializer() {
-        return ByteArrayAxonSerializer.INSTANCE;
-    }
-
     protected AxonServerConnectionManager newAxonServerConnectionManager(
             final AxonServerConfiguration axonServerConfiguration) {
         return newAxonServerConnectionManagerBuilder(axonServerConfiguration).build();
     }
 
-    protected org.axonframework.axonserver.connector.AxonServerConnectionManager.Builder newAxonServerConnectionManagerBuilder(
+    protected AxonServerConnectionManager.Builder newAxonServerConnectionManagerBuilder(
             final AxonServerConfiguration axonServerConfiguration) {
         return AxonServerConnectionManager.builder().axonServerConfiguration(axonServerConfiguration);
     }
@@ -89,8 +62,12 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
         return newAxonServerConfigurationBuilder().build();
     }
 
-    protected Builder newAxonServerConfigurationBuilder() {
+    protected AxonServerConfiguration.Builder newAxonServerConfigurationBuilder() {
         return AxonServerConfiguration.builder().servers(serverUrl).context(newContext());
+    }
+
+    protected Serializer newSerializer() {
+        return ByteArrayAxonSerializer.INSTANCE;
     }
 
     /**
@@ -102,38 +79,4 @@ public class AxonSynchronousChannel implements ISynchronousChannel {
         return "default";
     }
 
-    @Override
-    public synchronized void close() throws IOException {
-        final int activeCountBefore = activeCount.get();
-        if (activeCountBefore > 0) {
-            activeCount.decrementAndGet();
-        }
-        if (activeCountBefore == 1) {
-            finalizer.close();
-        }
-    }
-
-    private static final class AxonSynchronousChannelFinalizer extends AWarningFinalizer {
-
-        private volatile Configuration configuration;
-
-        @Override
-        protected void clean() {
-            final Configuration configCopy = configuration;
-            if (configCopy != null) {
-                configuration = null;
-                configCopy.shutdown();
-            }
-        }
-
-        @Override
-        protected boolean isCleaned() {
-            return configuration == null;
-        }
-
-        @Override
-        public boolean isThreadLocal() {
-            return false;
-        }
-    }
 }
