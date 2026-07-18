@@ -37,33 +37,36 @@ public abstract class AAxonChannelTest extends AChannelTest {
     }
 
     protected void runAxonThroughputTest(final String topic) throws InterruptedException {
+        final boolean lowLatency = false;
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
-                newAxonSynchronousWriter(getAxonSynchronousChannel(false, topic), topic));
+                newAxonSynchronousWriter(getAxonSynchronousChannel(false, topic, lowLatency), topic));
         final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
-                newAxonSynchronousReader(getAxonSynchronousChannel(true, topic), topic));
+                newAxonSynchronousReader(getAxonSynchronousChannel(true, topic, lowLatency), topic));
         final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
         new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
     }
 
     protected void runAxonLatencyTest(final String responseTopic, final String requestTopic, final boolean useReader)
             throws InterruptedException {
+        final boolean lowLatency = true;
         final ISynchronousReader<FDate> requestReader = newSerdeReader(
-                newAxonSynchronousReader(getAxonSynchronousChannel(true, requestTopic), requestTopic));
+                newAxonSynchronousReader(getAxonSynchronousChannel(true, requestTopic, lowLatency), requestTopic));
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
-                newAxonSynchronousWriter(getAxonSynchronousChannel(true, responseTopic), responseTopic));
+                newAxonSynchronousWriter(getAxonSynchronousChannel(true, responseTopic, lowLatency), responseTopic));
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
 
         final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
-                newAxonSynchronousWriter(getAxonSynchronousChannel(false, requestTopic), requestTopic));
+                newAxonSynchronousWriter(getAxonSynchronousChannel(false, requestTopic, lowLatency), requestTopic));
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
-                newAxonSynchronousReader(getAxonSynchronousChannel(false, responseTopic), responseTopic));
+                newAxonSynchronousReader(getAxonSynchronousChannel(false, responseTopic, lowLatency), responseTopic));
         final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
 
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
     }
 
-    protected abstract AAxonSynchronousChannel getAxonSynchronousChannel(boolean server, String topic);
+    protected abstract AAxonSynchronousChannel getAxonSynchronousChannel(boolean server, String topic,
+            boolean lowLatency);
 
     protected ISynchronousReader<IByteBufferProvider> newAxonSynchronousReader(final AAxonSynchronousChannel channel,
             final String topic) {

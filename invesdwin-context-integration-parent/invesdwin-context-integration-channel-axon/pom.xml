@@ -29,6 +29,16 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-channel</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-persistence-jpa</artifactId>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-persistence-jpa-hibernate</artifactId>
+			<scope>test</scope>
+		</dependency>
 
 		<dependency>
 			<groupId>org.axonframework</groupId>
@@ -37,6 +47,10 @@
 		<dependency>
 			<groupId>org.axonframework</groupId>
 			<artifactId>axon-server-connector</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.axonframework</groupId>
+			<artifactId>axon-spring</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.axonframework</groupId>

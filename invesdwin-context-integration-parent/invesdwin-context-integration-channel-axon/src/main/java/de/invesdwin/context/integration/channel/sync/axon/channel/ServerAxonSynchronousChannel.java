@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.channel.sync.axon.channel;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.axonframework.axonserver.connector.AxonServerConfiguration;
+import org.axonframework.axonserver.connector.AxonServerConfiguration.Builder;
 import org.axonframework.axonserver.connector.AxonServerConnectionManager;
 import org.axonframework.axonserver.connector.event.axon.AxonServerEventStore;
 import org.axonframework.config.Configuration;
@@ -38,14 +39,24 @@ public class ServerAxonSynchronousChannel extends AAxonSynchronousChannel implem
                 .configureEventSerializer(c -> serializer)
                 .registerComponent(AxonServerConfiguration.class, c -> axonServerConfiguration)
                 .registerComponent(AxonServerConnectionManager.class, c -> connectionManager)
-                .configureEventStore(c -> AxonServerEventStore.builder()
-                        .configuration(axonServerConfiguration)
-                        .platformConnectionManager(connectionManager)
-                        .snapshotFilter(c.snapshotFilter())
-                        .eventSerializer(c.serializer())
-                        .snapshotSerializer(c.serializer())
-                        .build());
+                .configureEventStore(c -> newAxonEventStore(axonServerConfiguration, connectionManager, c));
         return configurer.buildConfiguration();
+    }
+
+    protected AxonServerEventStore newAxonEventStore(final AxonServerConfiguration axonServerConfiguration,
+            final AxonServerConnectionManager connectionManager, final Configuration configuration) {
+        return newAxonServerEventStoreBuilder(axonServerConfiguration, connectionManager, configuration).build();
+    }
+
+    protected AxonServerEventStore.Builder newAxonServerEventStoreBuilder(
+            final AxonServerConfiguration axonServerConfiguration, final AxonServerConnectionManager connectionManager,
+            final Configuration configuration) {
+        return AxonServerEventStore.builder()
+                .configuration(axonServerConfiguration)
+                .platformConnectionManager(connectionManager)
+                .snapshotFilter(configuration.snapshotFilter())
+                .eventSerializer(configuration.serializer())
+                .snapshotSerializer(configuration.serializer());
     }
 
     protected AxonServerConnectionManager newAxonServerConnectionManager(
@@ -63,7 +74,12 @@ public class ServerAxonSynchronousChannel extends AAxonSynchronousChannel implem
     }
 
     protected AxonServerConfiguration.Builder newAxonServerConfigurationBuilder() {
-        return AxonServerConfiguration.builder().servers(serverUrl).context(newContext());
+        Builder builder = AxonServerConfiguration.builder().servers(serverUrl);
+        final String context = newContext();
+        if (context != null) {
+            builder = builder.context(context);
+        }
+        return builder;
     }
 
     protected Serializer newSerializer() {
@@ -76,7 +92,7 @@ public class ServerAxonSynchronousChannel extends AAxonSynchronousChannel implem
      * separate the messages in the reader/writer.
      */
     protected String newContext() {
-        return "default";
+        return null;
     }
 
 }

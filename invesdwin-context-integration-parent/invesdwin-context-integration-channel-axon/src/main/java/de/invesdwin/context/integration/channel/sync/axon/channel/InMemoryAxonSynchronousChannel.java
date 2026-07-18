@@ -10,16 +10,22 @@ import org.axonframework.eventsourcing.eventstore.EmbeddedEventStore.Builder;
 import org.axonframework.eventsourcing.eventstore.EventStorageEngine;
 import org.axonframework.eventsourcing.eventstore.inmemory.InMemoryEventStorageEngine;
 import org.axonframework.serialization.Serializer;
-import org.axonframework.serialization.xml.XStreamSerializer;
-
-import com.thoughtworks.xstream.XStream;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
+import de.invesdwin.context.integration.channel.sync.axon.channel.serde.ByteArrayAxonSerializer;
 
 @ThreadSafe
 public class InMemoryAxonSynchronousChannel extends AAxonSynchronousChannel implements ISynchronousChannel {
 
-    public InMemoryAxonSynchronousChannel() {}
+    private final boolean lowLatency;
+
+    public InMemoryAxonSynchronousChannel(final boolean lowLatency) {
+        this.lowLatency = lowLatency;
+    }
+
+    public boolean isLowLatency() {
+        return lowLatency;
+    }
 
     @Override
     protected Configuration newConfiguration() {
@@ -40,7 +46,15 @@ public class InMemoryAxonSynchronousChannel extends AAxonSynchronousChannel impl
     }
 
     protected Builder newEmbeddedEventStoreBuilder() {
-        return EmbeddedEventStore.builder().storageEngine(newEventStorageEngine()).fetchDelay(1);
+        return EmbeddedEventStore.builder().storageEngine(newEventStorageEngine()).fetchDelay(newFetchDelayMillis());
+    }
+
+    protected long newFetchDelayMillis() {
+        if (lowLatency) {
+            return 0;
+        } else {
+            return 1;
+        }
     }
 
     protected EventStorageEngine newEventStorageEngine() {
@@ -48,18 +62,7 @@ public class InMemoryAxonSynchronousChannel extends AAxonSynchronousChannel impl
     }
 
     protected Serializer newSerializer() {
-        final XStream xStream = new XStream();
-        final Serializer serializer = XStreamSerializer.builder().xStream(xStream).build();
-        return serializer;
-    }
-
-    /**
-     * If you have axon enterprise, you can define a different context for each channel to separate the events (though
-     * this requires provisioning via e.g. ContextAdminServiceGrpc. Otherwise you have to use the default context and
-     * separate the messages in the reader/writer.
-     */
-    protected String newContext() {
-        return "default";
+        return ByteArrayAxonSerializer.INSTANCE;
     }
 
 }

@@ -24,6 +24,7 @@ public class ServerAxonChannelTest extends AAxonChannelTest {
         }
     };
 
+    @SuppressWarnings("resource")
     private static AxonServerContainer newAxonServerContainer() {
         return new AxonServerContainer().withAxonServerName("axonserver-test").withAxonServerHostname("localhost");
     }
@@ -33,7 +34,8 @@ public class ServerAxonChannelTest extends AAxonChannelTest {
     }
 
     @Override
-    protected AAxonSynchronousChannel getAxonSynchronousChannel(final boolean server, final String topic) {
+    protected AAxonSynchronousChannel getAxonSynchronousChannel(final boolean server, final String topic,
+            final boolean lowLatency) {
         //        return new ServerAxonSynchronousChannel(newAxonUrl());
         return server_channel.get(server);
     }

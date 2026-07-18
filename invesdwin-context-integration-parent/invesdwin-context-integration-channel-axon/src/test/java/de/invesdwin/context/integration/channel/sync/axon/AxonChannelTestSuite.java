@@ -6,7 +6,7 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 @Suite
-@SelectClasses({ ServerAxonChannelTest.class, InMemoryAxonChannelTest.class })
+@SelectClasses({ ServerAxonChannelTest.class, InMemoryAxonChannelTest.class, JpaAxonChannelTest.class })
 @Immutable
 public class AxonChannelTestSuite {
 
