@@ -147,7 +147,7 @@ public class ThroughputChannelTest {
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
                 final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
                         "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
@@ -227,7 +227,7 @@ public class ThroughputChannelTest {
                 if (AChannelTest.DEBUG) {
                     log.write("sender open channel writer\n".getBytes());
                 }
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 channelWriter.open();
                 try {

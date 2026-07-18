@@ -17,12 +17,12 @@ public interface ILatencyReport extends Closeable {
     /**
      * negative index is a warmup message, actual messages start at index 0
      */
-    void measureLatency(int index, FDate message, FDate arrivalTimestamp);
+    void measureLatency(long index, FDate message, FDate arrivalTimestamp);
 
     /**
      * negative index is a warmup message, actual messages start at index 0
      */
-    default void measureLatency(final int index, final FDate message) {
+    default void measureLatency(final long index, final FDate message) {
         measureLatency(index, message, newArrivalTimestamp().asFDate());
     }
 

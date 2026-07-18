@@ -130,7 +130,7 @@ public abstract class ALatencyReport implements ILatencyReport {
     }
 
     @Override
-    public void measureLatency(final int index, final FDate message, final FDate arrivalTimestamp) {
+    public void measureLatency(final long index, final FDate message, final FDate arrivalTimestamp) {
         try {
             final String line = index + CSV_SEPARATOR + (arrivalTimestamp.millisValue() - message.millisValue()) + "\n";
             out.write(line.getBytes());

@@ -52,7 +52,7 @@ public class RpcClientTask implements Runnable {
 
     @Override
     public void run() {
-        int count = -parent.getWarmupMessageCount();
+        long count = -parent.getWarmupMessageCount();
         Instant readsStart = new Instant();
         FDate prevValue = null;
         final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;

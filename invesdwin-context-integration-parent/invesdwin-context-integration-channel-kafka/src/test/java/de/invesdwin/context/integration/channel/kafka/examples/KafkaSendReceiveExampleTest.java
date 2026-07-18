@@ -44,7 +44,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
     private static final String TOPIC_NAME = "helloworldtopic6";// name of kafka topic
     private static final String MESSAGE = "helloworldtest"; //message to be sent
     private static final String KEY = "key1"; //partition key, messages with the same key go to the same partition
-    private static final int NUMOFEVENTS = AChannelTest.MESSAGE_COUNT;
+    private static final long NUMOFEVENTS = AChannelTest.MESSAGE_COUNT;
 
     @Container
     private static final KafkaContainer KAFKACONTAINER = new KafkaContainer(
@@ -133,7 +133,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
         final Producer<String, String> producer = createProducer();// creates a producer using kafka's methods
         final Instant startMessaging = new Instant();
         try {
-            for (int i = 0; i < NUMOFEVENTS; i++) {
+            for (long i = 0; i < NUMOFEVENTS; i++) {
                 final ProducerRecord<String, String> recordToSend = new ProducerRecord<>(TOPIC_NAME, KEY, MESSAGE + i);
                 producer.send(recordToSend, (recordMetadata, e) -> {
                     // code for logging the messages
@@ -168,7 +168,7 @@ public class KafkaSendReceiveExampleTest extends ATest {
         final LoopInterruptedCheck loopCheck = new LoopInterruptedCheck(Duration.ONE_SECOND);
 
         try {
-            int i = 0;
+            long i = 0;
             String receivedText = null;
             ConsumerRecords<String, String> records = null;
             //Continuously polls to check for messages to retrieve from the broker until NUMOFEVENTS messages have been pooled

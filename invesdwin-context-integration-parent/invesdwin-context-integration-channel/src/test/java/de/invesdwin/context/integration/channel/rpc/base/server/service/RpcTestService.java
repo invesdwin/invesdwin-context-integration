@@ -4,7 +4,7 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -34,7 +34,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
     private final int rpcClientThreads;
     private final OutputStream log;
     private final LoopInterruptedCheck loopCheck;
-    private final AtomicInteger countHolder;
+    private final AtomicLong countHolder;
     private Instant writesStart;
     private final ILatencyReport latencyReportRequestReceived;
 
@@ -53,11 +53,11 @@ public class RpcTestService implements IRpcTestService, Closeable {
         this.log = log;
         this.latencyReportRequestReceived = AChannelTest.LATENCY_REPORT_FACTORY
                 .newLatencyReport("rpc/1_" + RpcTestService.class.getSimpleName() + "_requestReceived");
-        this.countHolder = new AtomicInteger(-parent.getWarmupMessageCount() * rpcClientThreads);
+        this.countHolder = new AtomicLong(-parent.getWarmupMessageCount() * rpcClientThreads);
     }
 
     private FDate handleRequest(final FDate request, final FDate arrivalTimestamp) throws IOException {
-        final int countBefore = countHolder.getAndIncrement();
+        final long countBefore = countHolder.getAndIncrement();
         if (countBefore == 0) {
             //don't count in connection establishment
             writesStart = new Instant();
@@ -73,7 +73,7 @@ public class RpcTestService implements IRpcTestService, Closeable {
         if (arrivalTimestamp != null) {
             latencyReportRequestReceived.measureLatency(countBefore, request, arrivalTimestamp);
         }
-        final int count = countBefore + 1;
+        final long count = countBefore + 1;
         if (loopCheck.checkNoInterrupt()) {
             AChannelTest.printProgress(log, "Writes", writesStart, count, parent.getMessageCount() * rpcClientThreads);
         }

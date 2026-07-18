@@ -37,7 +37,7 @@ public class RedisSendReceiveExampleTest extends ATest {
     private static final String GROUP_NAME = "test_consumer_group";
     private static final String CONSUMER_ID = "c1";
     private static final String MESSAGE = "helloworldtest";
-    private static final int NUMOFEVENTS = AChannelTest.MESSAGE_COUNT;
+    private static final long NUMOFEVENTS = AChannelTest.MESSAGE_COUNT;
 
     @Container
     private static final GenericContainer<?> REDIS = new GenericContainer<>(DockerImageName.parse("redis:7.2-alpine"))
@@ -91,7 +91,7 @@ public class RedisSendReceiveExampleTest extends ATest {
 
         final Instant startMessaging = new Instant();
 
-        for (int i = 0; i < NUMOFEVENTS; i++) {
+        for (long i = 0; i < NUMOFEVENTS; i++) {
             stream.xadd(STREAM_NAME, Map.of("msg", MESSAGE + i));
         }
 
@@ -109,7 +109,7 @@ public class RedisSendReceiveExampleTest extends ATest {
 
         consumerReady.set(true);
 
-        int i = 0;
+        long i = 0;
         while (i < NUMOFEVENTS) {
             final List<StreamMessage<String, String>> msgs = stream.xreadgroup(Consumer.from(GROUP_NAME, CONSUMER_ID),
                     XReadArgs.Builder.block(200).count(32), XReadArgs.StreamOffset.lastConsumed(STREAM_NAME));

@@ -207,7 +207,7 @@ public class LatencyChannelTest {
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
                 final ILatencyReport latencyReportRequestSent = latencyReportFactory
                         .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
@@ -326,7 +326,7 @@ public class LatencyChannelTest {
                         .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
                 final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
                         .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 if (AChannelTest.DEBUG) {
                     log.write("server open request reader\n".getBytes());
@@ -407,7 +407,7 @@ public class LatencyChannelTest {
         private final AChannelTest parent;
         private final OutputStream log;
         private Instant readsStart;
-        private int count;
+        private long count;
         private ICloseableIterator<? extends IFDateProvider> values;
         private FDate prevValue;
         private ILatencyReport latencyReportResponseReceived;
@@ -514,7 +514,7 @@ public class LatencyChannelTest {
         private final AChannelTest parent;
         private final OutputStream log;
         private Instant writesStart;
-        private int count;
+        private long count;
         private final LoopInterruptedCheck loopCheck;
         private ILatencyReport latencyReportRequestReceived;
 

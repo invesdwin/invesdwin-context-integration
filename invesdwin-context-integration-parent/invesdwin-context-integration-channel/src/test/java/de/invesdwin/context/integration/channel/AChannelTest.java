@@ -41,7 +41,7 @@ import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.marshallers.serde.ISerde;
 import de.invesdwin.util.marshallers.serde.add.AddUndefinedBytesDelegateSerde;
 import de.invesdwin.util.marshallers.serde.basic.FDateSerde;
-import de.invesdwin.util.math.Integers;
+import de.invesdwin.util.math.Longs;
 import de.invesdwin.util.math.decimal.scaled.Percent;
 import de.invesdwin.util.math.decimal.scaled.PercentScale;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -54,13 +54,13 @@ import de.invesdwin.util.time.duration.Duration;
 public abstract class AChannelTest extends ATest {
 
     //one warmup/connect message
-    public static final int WARMUP_MESSAGE_COUNT = 1;
+    public static final long WARMUP_MESSAGE_COUNT = 1;
     public static final boolean DEBUG = false;
     public static final int SIMULATED_ADDITONAL_MESSAGE_SIZE = 0;
     public static final int MIN_MESSAGE_SIZE = FDateSerde.FIXED_LENGTH;
     public static final int MAX_MESSAGE_SIZE = MIN_MESSAGE_SIZE + SIMULATED_ADDITONAL_MESSAGE_SIZE;
-    public static final int MESSAGE_COUNT = DEBUG ? 10 : 1_000;
-    public static final int FLUSH_INTERVAL = Integers.max(10, MESSAGE_COUNT / 10);
+    public static final long MESSAGE_COUNT = DEBUG ? 10 : 1_000;
+    public static final long FLUSH_INTERVAL = Longs.max(10, MESSAGE_COUNT / 10);
     public static final Duration MAX_WAIT_DURATION = new Duration(10, DEBUG ? FTimeUnit.DAYS : FTimeUnit.SECONDS);
     public static final ILatencyReportFactory LATENCY_REPORT_FACTORY = ValidatingLatencyReportFactory.INSTANCE;
 
@@ -76,15 +76,15 @@ public abstract class AChannelTest extends ATest {
         UNIX_SOCKET;
     }
 
-    public int getMessageCount() {
+    public long getMessageCount() {
         return MESSAGE_COUNT;
     }
 
-    public int getWarmupMessageCount() {
+    public long getWarmupMessageCount() {
         return WARMUP_MESSAGE_COUNT;
     }
 
-    public int getFlushInterval() {
+    public long getFlushInterval() {
         return FLUSH_INTERVAL;
     }
 
@@ -230,8 +230,8 @@ public abstract class AChannelTest extends ATest {
         }
     }
 
-    public static void printProgress(final OutputStream log, final String action, final Instant start, final int count,
-            final int maxCount) throws IOException {
+    public static void printProgress(final OutputStream log, final String action, final Instant start, final long count,
+            final long maxCount) throws IOException {
         //TODO: printProgress should be able to count messages aggregated over parallel tests as tests as possible in Stream latency/throughput tests
         if (count < 0) {
             //skip on warmup messages
@@ -254,7 +254,7 @@ public abstract class AChannelTest extends ATest {
         return newLoopInterruptedCheck(getFlushInterval());
     }
 
-    public static LoopInterruptedCheck newLoopInterruptedCheck(final int flushInterval) {
+    public static LoopInterruptedCheck newLoopInterruptedCheck(final long flushInterval) {
         //        return new CountingLoopInterruptedCheck(flushInterval);
         return new LoopInterruptedCheck(Duration.ONE_SECOND) {
             @Override
