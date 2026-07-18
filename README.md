@@ -299,14 +299,18 @@ Process*   Mapped Memory (tmpfs)                    Records:  6,711.41/ms    => 
 PersistentThread     AxonJpa (hsqldb:file)          Records:    280.50/s     =>
 PersistentNetwork    AxonServer (docker)            Records:  2,886.69/s     =>
 PersistentThread     AxonJpa (hsqldb:mem)           Records:  8,032.53/s     =>
-PersistentThread     AxonInMemory                   Records:    589.92/ms    => 
+PersistentThread     AxonInMemory                   Records:    589.92/ms    =>
+PersistentProcess    ChronicleQueue (tmpfs)         Records:        => 
+PersistentProcess    ChronicleQueue                 Records:        => 
 ```
 2026 Latency Benchmarks (Intel Core Ultra 9 275HX, Java 17)
 ```
 PersistentThread     AxonJpa (hsqldb:file)          Records:    152.68/s     =>
 PersistentNetwork    AxonServer (docker)            Records:    866.70/s     =>
 PersistentThread     AxonJpa (hsqldb:mem)           Records:  2,754.93/s     =>
-PersistentThread     AxonInMemory                   Records:    193.23/ms    => 
+PersistentThread     AxonInMemory                   Records:    193.23/ms    =>
+PersistentProcess    ChronicleQueue                 Records:        => 
+PersistentProcess    ChronicleQueue (tmpfs)         Records:       => 
 ```
 - **Dynamic Client/Server**: you could utilize (e.g.) RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endpoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
 - **Cryptography**: there are some channel implementations with which [invesdwin-context-security-crypto](https://github.com/invesdwin/invesdwin-context-security/#crypto-module) encryption (`StreamEncryptionChannelFactory` for e.g. AES) and verification (`StreamVerifiedEncryptionChannelFactory` for e.g. AES+HMAC; `StreamVerifiedChannelFactory` for checksums, digests, macs, or signatures without encryption) can be added to the communication. There is also a `HandshakeChannelFactory` with providers for secure key exchanges using DH, ECDH, JPake, or SRP6 to negotiate the encryption and verification channels automatically. There is also a TLS and DTLS provider using SSLEngine (JDK and Netty(-TcNative)) that can be used with any underlying transport (not only TCP or UDP). Here some benchmarks with various security providers (2022, Core i9-12900HX with SSD, Java 17, handshake not included in measured time, measuring records or round trips per millisecond, so multiply by 2 to get the messages per millisecond):
