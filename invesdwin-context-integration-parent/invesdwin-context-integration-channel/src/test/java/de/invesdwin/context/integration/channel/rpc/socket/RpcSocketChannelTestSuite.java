@@ -8,8 +8,7 @@ import org.junit.platform.suite.api.Suite;
 import de.invesdwin.context.integration.channel.rpc.socket.sessionless.RpcSessionlessChannelTestSuite;
 
 @Suite
-@SelectClasses({ RpcNativeSocketChannelTest.class, RpcMinaSocketHandlerTest.class, RpcMinaDatagramHandlerTest.class,
-        RpcSessionlessChannelTestSuite.class })
+@SelectClasses({ RpcNativeSocketChannelTest.class, RpcSessionlessChannelTestSuite.class })
 @Immutable
 public class RpcSocketChannelTestSuite {
 
