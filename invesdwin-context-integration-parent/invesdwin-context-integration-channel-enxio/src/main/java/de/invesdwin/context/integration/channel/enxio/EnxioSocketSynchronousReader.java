@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.enxio;
+package de.invesdwin.context.integration.channel.enxio;
 
 import java.io.FileDescriptor;
 import java.io.IOException;

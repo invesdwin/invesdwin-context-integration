@@ -51,6 +51,7 @@
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-netty</module>
 		<module>invesdwin-context-integration-channel-mina</module>
+		<module>invesdwin-context-integration-channel-enxio</module>
 		<module>invesdwin-context-integration-channel-hadronio</module>
 		<module>invesdwin-context-integration-channel-pulsar</module>
 		<module>invesdwin-context-integration-channel-kafka</module>
@@ -339,6 +340,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-channel-mina</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-enxio</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>

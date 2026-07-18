@@ -83,11 +83,7 @@
 			<artifactId>jnetrobust-samples</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>com.github.jnr</groupId>
-			<artifactId>jnr-enxio</artifactId>
-			<scope>provided</scope>
-		</dependency>
+		
 		<dependency>
 			<groupId>org.openucx</groupId>
 			<artifactId>jucx</artifactId>

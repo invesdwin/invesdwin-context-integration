@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.enxio;
+package de.invesdwin.context.integration.channel.enxio;
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -18,27 +18,29 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
 @NotThreadSafe
-public class BidiEnxioSocketChannelTest extends AChannelTest {
+public class EnxioSocketChannelTest extends AChannelTest {
 
     @Test
-    public void testBidiNioSocketPerformance() throws InterruptedException {
-        final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("localhost", port);
-        runNioSocketPerformanceTest(address);
+    public void testNativeSocketPerformance() throws InterruptedException {
+        final int[] ports = NetworkUtil.findAvailableTcpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
+        runNativeSocketPerformanceTest(responseAddress, requestAddress);
     }
 
-    protected void runNioSocketPerformanceTest(final SocketAddress address) throws InterruptedException {
+    protected void runNativeSocketPerformanceTest(final SocketAddress responseAddress,
+            final SocketAddress requestAddress) throws InterruptedException {
         final boolean lowLatency = true;
-        final SocketSynchronousChannel serverChannel = newSocketSynchronousChannel(address, true, getMaxMessageSize(),
-                lowLatency);
-        final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(address, false, getMaxMessageSize(),
-                lowLatency);
-        final ISynchronousWriter<IByteBufferProvider> responseWriter = new EnxioSocketSynchronousWriter(serverChannel);
-        final ISynchronousReader<IByteBufferProvider> requestReader = new EnxioSocketSynchronousReader(serverChannel);
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new EnxioSocketSynchronousWriter(
+                newSocketSynchronousChannel(responseAddress, true, getMaxMessageSize(), lowLatency));
+        final ISynchronousReader<IByteBufferProvider> requestReader = new EnxioSocketSynchronousReader(
+                newSocketSynchronousChannel(requestAddress, true, getMaxMessageSize(), lowLatency));
         final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                 newSerdeWriter(responseWriter));
-        final ISynchronousWriter<IByteBufferProvider> requestWriter = new EnxioSocketSynchronousWriter(clientChannel);
-        final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(clientChannel);
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new EnxioSocketSynchronousWriter(
+                newSocketSynchronousChannel(requestAddress, false, getMaxMessageSize(), lowLatency));
+        final ISynchronousReader<IByteBufferProvider> responseReader = new EnxioSocketSynchronousReader(
+                newSocketSynchronousChannel(responseAddress, false, getMaxMessageSize(), lowLatency));
         final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                 newSerdeReader(responseReader));
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
