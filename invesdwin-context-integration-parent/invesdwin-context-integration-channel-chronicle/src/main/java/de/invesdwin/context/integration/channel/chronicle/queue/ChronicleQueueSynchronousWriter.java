@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.chronicle.queue;
+package de.invesdwin.context.integration.channel.chronicle.queue;
 
 import java.io.File;
 import java.io.IOException;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.chronicle.network;
+package de.invesdwin.context.integration.channel.chronicle.network;
 
 import java.io.IOException;
 

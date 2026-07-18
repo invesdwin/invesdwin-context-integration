@@ -11,7 +11,6 @@ import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
 import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
 import de.invesdwin.context.integration.channel.sync.batch.BatchChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
-import de.invesdwin.context.integration.channel.sync.chronicle.ChronicleChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.compression.stream.StreamCompressionChannelTest;
 import de.invesdwin.context.integration.channel.sync.conversant.ConversantChannelTest;
@@ -34,8 +33,8 @@ import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBCh
         CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         BatchChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
-        CryptoChannelTestSuite.class, SocketChannelTestSuite.class, ChronicleChannelTestSuite.class,
-        TimeSeriesDBChannelTest.class, RpcChannelTestSuite.class, StreamChannelTestSuite.class })
+        CryptoChannelTestSuite.class, SocketChannelTestSuite.class, TimeSeriesDBChannelTest.class,
+        RpcChannelTestSuite.class, StreamChannelTestSuite.class })
 
 @Immutable
 public class ChannelTestSuite {

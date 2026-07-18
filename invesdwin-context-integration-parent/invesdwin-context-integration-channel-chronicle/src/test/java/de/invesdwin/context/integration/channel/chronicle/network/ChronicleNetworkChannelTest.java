@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.chronicle.network;
+package de.invesdwin.context.integration.channel.chronicle.network;
 
 import java.net.InetSocketAddress;
 
@@ -10,9 +10,9 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 

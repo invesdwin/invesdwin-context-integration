@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.sync.chronicle.network;
+package de.invesdwin.context.integration.channel.chronicle.network;
 
 import java.io.IOException;
 import java.net.ConnectException;
@@ -12,9 +12,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import de.invesdwin.context.integration.channel.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.SynchronousChannels;
-import de.invesdwin.context.integration.channel.sync.chronicle.network.type.ChronicleSocketChannelType;
 import de.invesdwin.context.integration.channel.sync.socket.udp.blocking.BlockingDatagramSynchronousChannel;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import de.invesdwin.util.math.Integers;
