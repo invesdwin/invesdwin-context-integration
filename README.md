@@ -116,7 +116,7 @@ The abstraction in **invesdwin-context-integration-channel** has its origin in t
 - **ASpinWait**:  the channel implementations are non-blocking by themselves (Named Pipes are normally blocking, but the implementation uses them in a non-blocking way, while Memory Mapping is per default non-blocking). This causes the problem of how one should wait on a reader without causing delays from sleeps or causing CPU load from spinning. This problem is solved by `ASpinWait`. It first spins when things are rolling and falls back to a fast sleep interval when communication has cooled down (similar to what `java.util.concurrent.SynchronousQueue` does between threads). The actual timings can be fully customized. To keep CPU usage to a minimum, spins can be disabled entirely in favour of waits/sleeps. To use this class, just override the `isConditionFulfilled()` method by calling `reader.hasNext()`.
 - **Performance**: here are some performance measurements against in-process queue implementations using one channel for requests and another separate one for responses, thus each record (of 10,000,000), each involving two messages (becoming 20,000,000), is passed between two threads (one simulating a server and the other one a client). This shows that memory mapping might even be useful as a faster alternative to queues for inter-thread-communication besides it being designed for inter-process-communication (as long as the serialization is cheap):
 
-Old Benchmarks (2016, Core i7-4790K with SSD, Java 8):
+2016 Latency Benchmarks (Core i7-4790K with SSD, Java 8):
 ```
 DatagramSocket (loopback)  Records:    111.01/ms  in  90.078s    => ~60% slower than Named Pipes
 ArrayDeque (synced)        Records:    127.26/ms  in  78.579s    => ~50% slower than Named Pipes
@@ -126,7 +126,7 @@ LinkedBlockingQueue        Records:  1,988.47/ms  in   5.029s    => ~7 times as 
 Mapped Memory              Records:  3,214.40/ms  in   3.111s    => ~11 times as fast as than Named Pipes
 Mapped Memory (tmpfs)      Records:  4,237.29/ms  in   2.360s    => ~15 times as fast as than Named Pipes
 ```
-New Benchmarks (2021, Core i9-9900k with SSD, Java 17, [mitigations=off](https://unix.stackexchange.com/a/554922); best in class marked by `*`):
+2021 Latency Benchmarks (Core i9-9900k with SSD, Java 17, [mitigations=off](https://unix.stackexchange.com/a/554922); best in class marked by `*`):
 ```
 Network    NettyDatagramOio (loopback)              Records:      1.00/s     => ~99.99% slower (threading model unsuitable)
 Network    NettySocketOio (loopback)                Records:      1.01/s     => ~99.99% slower (threading model unsuitable)
@@ -293,6 +293,20 @@ Thread     AgronaOneToOneRingBuffer (SafeCopy)      Records:  4,831.85/ms    => 
 Thread     AgronaOneToOneRingBuffer (ZeroCopy)      Records:  4,893.33/ms    => ~45.9 times as fast
 Process    Mapped Memory                            Records:  6,521.46/ms    => ~61.2 times as fast
 Process*   Mapped Memory (tmpfs)                    Records:  6,711.41/ms    => ~63 times as fast
+```
+2026 Throughput Benchmarks (Intel Core Ultra 9 275HX, Java 17)
+```
+PersistentThread     AxonJpa (hsqldb:file)          Records:    280.50/s     =>
+PersistentNetwork    AxonServer (docker)            Records:  2,886.69/s     =>
+PersistentThread     AxonJpa (hsqldb:mem)           Records:  8,032.53/s     =>
+PersistentThread     AxonInMemory                   Records:    589.92/ms    => 
+```
+2026 Latency Benchmarks (Intel Core Ultra 9 275HX, Java 17)
+```
+PersistentThread     AxonJpa (hsqldb:file)          Records:    152.68/s     =>
+PersistentNetwork    AxonServer (docker)            Records:    866.70/s     =>
+PersistentThread     AxonJpa (hsqldb:mem)           Records:  2,754.93/s     =>
+PersistentThread     AxonInMemory                   Records:    193.23/ms    => 
 ```
 - **Dynamic Client/Server**: you could utilize (e.g.) RMI with its service registry on localhost  (or something similar) to make processes become master/slave dynamically with failover when the master process exits. Just let each process race to become the master (first one wins) and let all other processes fallback to being slaves and connecting to the master. The RMI service provides mechanisms to setup the synchronous channels (by handing out pipe files) and the communication will then continue faster via your chosen channel implementation (RMI is slower because it uses the default java serialization and the TCP/IP communication causes undesired overhead). When the master process exits, the clients should just race again to get a new master nominated. To also handle clients disappearing, one should implement timeouts via a heartbeat that clients regularly send to the server to detect missing clients and a response timeout on the client so it detects a missing server. This is just for being bullet-proof, the endpoints should normally notify the other end when they close a channel, but this might fail when a process exits abnormally (see [SIGKILL](https://en.wikipedia.org/wiki/Unix_signal#SIGKILL)).
 - **Cryptography**: there are some channel implementations with which [invesdwin-context-security-crypto](https://github.com/invesdwin/invesdwin-context-security/#crypto-module) encryption (`StreamEncryptionChannelFactory` for e.g. AES) and verification (`StreamVerifiedEncryptionChannelFactory` for e.g. AES+HMAC; `StreamVerifiedChannelFactory` for checksums, digests, macs, or signatures without encryption) can be added to the communication. There is also a `HandshakeChannelFactory` with providers for secure key exchanges using DH, ECDH, JPake, or SRP6 to negotiate the encryption and verification channels automatically. There is also a TLS and DTLS provider using SSLEngine (JDK and Netty(-TcNative)) that can be used with any underlying transport (not only TCP or UDP). Here some benchmarks with various security providers (2022, Core i9-12900HX with SSD, Java 17, handshake not included in measured time, measuring records or round trips per millisecond, so multiply by 2 to get the messages per millisecond):
