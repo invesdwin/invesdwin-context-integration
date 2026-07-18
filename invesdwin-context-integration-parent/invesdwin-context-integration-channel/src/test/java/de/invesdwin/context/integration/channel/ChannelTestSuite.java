@@ -7,8 +7,6 @@ import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.channel.rpc.RpcChannelTestSuite;
 import de.invesdwin.context.integration.channel.stream.StreamChannelTestSuite;
-import de.invesdwin.context.integration.channel.sync.aeron.AeronChannelTest;
-import de.invesdwin.context.integration.channel.sync.agrona.AgronaChannelTest;
 import de.invesdwin.context.integration.channel.sync.batch.BatchChannelTest;
 import de.invesdwin.context.integration.channel.sync.bufferingiterator.BufferingIteratorChannelTest;
 import de.invesdwin.context.integration.channel.sync.compression.CompressionChannelTest;
@@ -17,7 +15,6 @@ import de.invesdwin.context.integration.channel.sync.conversant.ConversantChanne
 import de.invesdwin.context.integration.channel.sync.crypto.CryptoChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.fragment.FragmentChannelTest;
 import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
-import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
 import de.invesdwin.context.integration.channel.sync.lmax.LmaxChannelTest;
 import de.invesdwin.context.integration.channel.sync.pipe.PipeChannelTest;
 import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeChannelTest;
@@ -28,9 +25,8 @@ import de.invesdwin.context.integration.channel.sync.socket.SocketChannelTestSui
 import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBChannelTest;
 
 @Suite
-@SelectClasses({ AeronChannelTest.class, AgronaChannelTest.class, BufferingIteratorChannelTest.class,
-        ConversantChannelTest.class, JctoolsChannelTest.class, KryonetChannelTest.class, LmaxChannelTest.class,
-        CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
+@SelectClasses({ BufferingIteratorChannelTest.class, ConversantChannelTest.class, JctoolsChannelTest.class,
+        LmaxChannelTest.class, CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         BatchChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
         CryptoChannelTestSuite.class, SocketChannelTestSuite.class, TimeSeriesDBChannelTest.class,

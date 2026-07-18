@@ -7,7 +7,7 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-channel-jgroups</artifactId>
+	<artifactId>invesdwin-context-integration-channel-nng</artifactId>
 	<packaging>jar</packaging>
 
 	<build>
@@ -17,7 +17,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<includes>
-						<include>de/invesdwin/context/integration/channel/jgroups/JgroupsChannelTestSuite.java</include>
+						<include>de/invesdwin/context/integration/channel/nng/NngChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>
@@ -31,8 +31,8 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jgroups</groupId>
-			<artifactId>jgroups</artifactId>
+			<groupId>io.sisu</groupId>
+			<artifactId>nng-java</artifactId>
 		</dependency>
 
 		<dependency>
