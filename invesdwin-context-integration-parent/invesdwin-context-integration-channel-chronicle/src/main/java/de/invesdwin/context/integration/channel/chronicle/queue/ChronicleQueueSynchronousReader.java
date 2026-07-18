@@ -12,6 +12,7 @@ import de.invesdwin.util.streams.buffer.bytes.IByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.buffer.bytes.delegate.ChronicleDelegateByteBuffer;
 import net.openhft.chronicle.queue.ExcerptTailer;
+import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
 public class ChronicleQueueSynchronousReader implements ISynchronousReader<IByteBufferProvider> {
@@ -48,16 +49,15 @@ public class ChronicleQueueSynchronousReader implements ISynchronousReader<IByte
 
     @Override
     public boolean hasNext() throws IOException {
-        //        try (DocumentContext doc = tailer.readingDocument()) {
-        //            if (!doc.isPresent()) {
-        //                return false;
-        //            }
-        //            final net.openhft.chronicle.bytes.Bytes<?> wireBytes = doc.wire().bytes();
-        //            bytes.clear();
-        //            bytes.write(wireBytes);
-        //            return true;
-        //        }
-        return tailer.readBytes(bytes);
+        try (DocumentContext doc = tailer.readingDocument()) {
+            if (!doc.isPresent()) {
+                return false;
+            }
+            final net.openhft.chronicle.bytes.Bytes<?> wireBytes = doc.wire().bytes();
+            bytes.clear();
+            bytes.write(wireBytes);
+            return true;
+        }
     }
 
     @Override
