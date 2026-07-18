@@ -8,7 +8,6 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
-import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import net.openhft.chronicle.queue.ChronicleQueue;
 import net.openhft.chronicle.queue.RollCycles;
@@ -40,10 +39,7 @@ public class ChronicleQueueSynchronousChannel implements ISynchronousChannel {
 
     protected ChronicleQueue newQueue() {
         try {
-            return SingleChronicleQueueBuilder.binary(finalizer.file)
-                    .rollCycle(RollCycles.FIVE_MINUTELY)
-                    .storeFileListener((cycle, file) -> Files.deleteQuietly(file))
-                    .build();
+            return SingleChronicleQueueBuilder.binary(finalizer.file).rollCycle(RollCycles.FIVE_MINUTELY).build();
         } catch (final Exception e) {
             throw new RuntimeException("Unable to open file: " + finalizer.file, e);
         }
