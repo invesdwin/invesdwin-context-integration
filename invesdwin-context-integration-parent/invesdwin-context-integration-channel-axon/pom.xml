@@ -17,7 +17,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<includes>
-						<include>de/invesdwin/context/integration/channel/sync/axon/AxonChannelTestSuite.java</include>
+						<include>de/invesdwin/context/integration/channel/axon/AxonChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>

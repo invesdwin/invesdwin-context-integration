@@ -17,7 +17,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<includes>
-						<include>de/invesdwin/context/integration/channel/sync/kafka/KafkaChannelTestSuite.java</include>
+						<include>de/invesdwin/context/integration/channel/kafka/KafkaChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>

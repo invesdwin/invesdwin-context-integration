@@ -1,0 +1,62 @@
+package de.invesdwin.context.integration.channel.netty.sync.udp.unsafe;
+
+import java.net.InetSocketAddress;
+
+import javax.annotation.concurrent.NotThreadSafe;
+
+import org.junit.jupiter.api.Test;
+
+import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
+import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.netty.sync.udp.NettyDatagramSynchronousChannel;
+import de.invesdwin.context.integration.channel.netty.sync.udp.type.INettyDatagramChannelType;
+import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
+import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.context.integration.network.NetworkUtil;
+import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import io.netty.channel.unix.UnixChannel;
+
+@NotThreadSafe
+public class NettyNativeDatagramChannelTest extends AChannelTest {
+
+    @Test
+    public void testNettyNativeDatagramChannelPerformance() throws InterruptedException {
+        final INettyDatagramChannelType type = INettyDatagramChannelType.getDefault();
+        if (!UnixChannel.class.isAssignableFrom(type.getClientChannelType())) {
+            //not supported on windows
+            return;
+        }
+        final int[] ports = NetworkUtil.findAvailableUdpPorts(2);
+        final InetSocketAddress responseAddress = new InetSocketAddress("localhost", ports[0]);
+        final InetSocketAddress requestAddress = new InetSocketAddress("localhost", ports[1]);
+        runNettyNativeDatagramChannelPerformanceTest(type, responseAddress, requestAddress);
+    }
+
+    private void runNettyNativeDatagramChannelPerformanceTest(final INettyDatagramChannelType type,
+            final InetSocketAddress responseAddress, final InetSocketAddress requestAddress)
+            throws InterruptedException {
+        final boolean lowLatency = true;
+        final ISynchronousWriter<IByteBufferProvider> responseWriter = new NettyNativeDatagramSynchronousWriter(
+                newNettyDatagramChannel(type, responseAddress, false, getMaxMessageSize(), lowLatency));
+        final ISynchronousReader<IByteBufferProvider> requestReader = new NettyNativeDatagramSynchronousReader(
+                newNettyDatagramChannel(type, requestAddress, true, getMaxMessageSize(), lowLatency));
+        final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
+                newSerdeWriter(responseWriter));
+        final ISynchronousWriter<IByteBufferProvider> requestWriter = new NettyNativeDatagramSynchronousWriter(
+                newNettyDatagramChannel(type, requestAddress, false, getMaxMessageSize(), lowLatency));
+        final ISynchronousReader<IByteBufferProvider> responseReader = new NettyNativeDatagramSynchronousReader(
+                newNettyDatagramChannel(type, responseAddress, true, getMaxMessageSize(), lowLatency));
+        final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
+                newSerdeReader(responseReader));
+        new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
+    }
+
+    protected NettyDatagramSynchronousChannel newNettyDatagramChannel(final INettyDatagramChannelType type,
+            final InetSocketAddress socketAddress, final boolean server, final int estimatedMaxMessageSize,
+            final boolean lowLatency) {
+        return new NettyDatagramSynchronousChannel(type, socketAddress, server, estimatedMaxMessageSize, lowLatency);
+    }
+
+}

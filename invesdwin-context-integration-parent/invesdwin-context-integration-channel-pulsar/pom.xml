@@ -17,7 +17,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<includes>
-						<include>de/invesdwin/context/integration/channel/sync/pulsar/PulsarChannelTestSuite.java</include>
+						<include>de/invesdwin/context/integration/channel/pulsar/PulsarChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>

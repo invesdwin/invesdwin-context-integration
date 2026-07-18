@@ -8,8 +8,7 @@ import org.junit.platform.suite.api.Suite;
 import de.invesdwin.context.integration.channel.stream.socket.sessionless.StreamSessionlessChannelTestSuite;
 
 @Suite
-@SelectClasses({ StreamNativeSocketChannelTest.class, StreamNettyDatagramHandlerTest.class,
-        StreamNettySocketHandlerTest.class, StreamSessionlessChannelTestSuite.class })
+@SelectClasses({ StreamNativeSocketChannelTest.class, StreamSessionlessChannelTestSuite.class })
 
 @Immutable
 public class StreamSocketChannelTestSuite {

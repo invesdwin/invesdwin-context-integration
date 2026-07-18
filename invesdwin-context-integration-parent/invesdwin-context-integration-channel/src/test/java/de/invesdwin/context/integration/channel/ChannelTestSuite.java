@@ -21,7 +21,6 @@ import de.invesdwin.context.integration.channel.sync.jctools.JctoolsChannelTest;
 import de.invesdwin.context.integration.channel.sync.kryonet.KryonetChannelTest;
 import de.invesdwin.context.integration.channel.sync.lmax.LmaxChannelTest;
 import de.invesdwin.context.integration.channel.sync.mina.MinaChannelTestSuite;
-import de.invesdwin.context.integration.channel.sync.netty.NettyChannelTestSuite;
 import de.invesdwin.context.integration.channel.sync.pipe.PipeChannelTest;
 import de.invesdwin.context.integration.channel.sync.pipe.streaming.StreamingPipeChannelTest;
 import de.invesdwin.context.integration.channel.sync.pipe.unsafe.NativePipeChannelTest;
@@ -36,9 +35,9 @@ import de.invesdwin.context.integration.channel.sync.timeseriesdb.TimeSeriesDBCh
         CompressionChannelTest.class, PipeChannelTest.class, StreamingPipeChannelTest.class,
         NativePipeChannelTest.class, QueueChannelTest.class, ReferenceChannelTest.class, FragmentChannelTest.class,
         BatchChannelTest.class, CompressionChannelTest.class, StreamCompressionChannelTest.class,
-        CryptoChannelTestSuite.class, SocketChannelTestSuite.class, NettyChannelTestSuite.class,
-        MinaChannelTestSuite.class, ChronicleChannelTestSuite.class, TimeSeriesDBChannelTest.class,
-        RpcChannelTestSuite.class, StreamChannelTestSuite.class })
+        CryptoChannelTestSuite.class, SocketChannelTestSuite.class, MinaChannelTestSuite.class,
+        ChronicleChannelTestSuite.class, TimeSeriesDBChannelTest.class, RpcChannelTestSuite.class,
+        StreamChannelTestSuite.class })
 
 @Immutable
 public class ChannelTestSuite {

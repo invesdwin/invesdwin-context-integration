@@ -25,7 +25,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<includes>
-						<include>de/invesdwin/context/integration/channel/sync/hadronio/HadronioChannelTestSuite.java</include>
+						<include>de/invesdwin/context/integration/channel/hadronio/HadronioChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>
@@ -34,7 +34,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-channel</artifactId>
+			<artifactId>invesdwin-context-integration-channel-netty</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>de.invesdwin</groupId>

@@ -49,6 +49,7 @@
 		<module>invesdwin-context-integration-spark</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
+		<module>invesdwin-context-integration-channel-netty</module>
 		<module>invesdwin-context-integration-channel-hadronio</module>
 		<module>invesdwin-context-integration-channel-pulsar</module>
 		<module>invesdwin-context-integration-channel-kafka</module>
@@ -327,6 +328,11 @@
 				<artifactId>invesdwin-context-integration-channel</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-netty</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>

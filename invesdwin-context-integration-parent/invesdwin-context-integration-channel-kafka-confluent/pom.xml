@@ -25,7 +25,7 @@
 				<configuration>
 					<includes>
 						<include>
-							de/invesdwin/context/integration/channel/sync/kafka/confluent/ConfluentChannelTestSuite.java</include>
+							de/invesdwin/context/integration/channel/kafka/confluent/ConfluentChannelTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>
