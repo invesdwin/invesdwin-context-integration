@@ -10,17 +10,21 @@ import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
+import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.time.date.FDate;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 
 @NotThreadSafe
 public class ChronicleQueueChannelTest extends AChannelTest {
 
     @Test
-    public void testChroniclePerformance() throws InterruptedException {
+    public void testLatency() throws InterruptedException {
         final boolean tmpfs = false;
         final FileChannelType pipes = FileChannelType.MAPPED;
         final File requestFile = newFile("testChroniclePerformance_request" + SingleChronicleQueue.SUFFIX, tmpfs,
@@ -29,11 +33,11 @@ public class ChronicleQueueChannelTest extends AChannelTest {
         final File responseFile = newFile("testChroniclePerformance_response" + SingleChronicleQueue.SUFFIX, tmpfs,
                 pipes);
         Files.deleteQuietly(responseFile);
-        runChroniclePerformanceTest(requestFile, responseFile);
+        runLatencyTest(requestFile, responseFile);
     }
 
     @Test
-    public void testChroniclePerformanceWithTmpfs() throws InterruptedException {
+    public void testLatencyWithTmpfs() throws InterruptedException {
         final boolean tmpfs = true;
         final FileChannelType pipes = FileChannelType.MAPPED;
         final File requestFile = newFile("testChroniclePerformanceWithTmpfs_request" + SingleChronicleQueue.SUFFIX,
@@ -42,28 +46,62 @@ public class ChronicleQueueChannelTest extends AChannelTest {
         final File responseFile = newFile("testChroniclePerformanceWithTmpfs_response" + SingleChronicleQueue.SUFFIX,
                 tmpfs, pipes);
         Files.deleteQuietly(responseFile);
-        runChroniclePerformanceTest(requestFile, responseFile);
+        runLatencyTest(requestFile, responseFile);
     }
 
-    private void runChroniclePerformanceTest(final File requestFile, final File responseFile)
-            throws InterruptedException {
+    private void runLatencyTest(final File requestFile, final File responseFile) throws InterruptedException {
         try {
+            final ChronicleQueueSynchronousChannel requestChannel = new ChronicleQueueSynchronousChannel(requestFile);
+            final ChronicleQueueSynchronousChannel responseChannel = new ChronicleQueueSynchronousChannel(responseFile);
             final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleQueueSynchronousWriter(
-                    responseFile);
+                    responseChannel);
             final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleQueueSynchronousReader(
-                    requestFile);
+                    requestChannel);
             final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                     newSerdeWriter(responseWriter));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleQueueSynchronousWriter(
-                    requestFile);
+                    requestChannel);
             final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
-                    responseFile);
+                    responseChannel);
             final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                     newSerdeReader(responseReader));
             new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
         } finally {
             Files.deleteQuietly(requestFile);
             Files.deleteQuietly(responseFile);
+        }
+    }
+
+    @Test
+    public void testChronicleThroughput() throws InterruptedException {
+        final boolean tmpfs = false;
+        final FileChannelType pipes = FileChannelType.MAPPED;
+        final File file = newFile("testChroniclePerformance_file" + SingleChronicleQueue.SUFFIX, tmpfs, pipes);
+        Files.deleteQuietly(file);
+        runThroughputTest(file);
+    }
+
+    @Test
+    public void testChronicleThroughputWithTmpfs() throws InterruptedException {
+        final boolean tmpfs = true;
+        final FileChannelType pipes = FileChannelType.MAPPED;
+        final File file = newFile("testChroniclePerformanceWithTmpfs_file" + SingleChronicleQueue.SUFFIX, tmpfs, pipes);
+        Files.deleteQuietly(file);
+        runThroughputTest(file);
+    }
+
+    private void runThroughputTest(final File file) throws InterruptedException {
+        try {
+            final ChronicleQueueSynchronousChannel channel = new ChronicleQueueSynchronousChannel(file);
+            final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
+                    new ChronicleQueueSynchronousWriter(channel));
+            final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
+            final ISynchronousReader<FDate> channelReader = newSerdeReader(
+                    new ChronicleQueueSynchronousReader(channel));
+            final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
+            new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
+        } finally {
+            Files.deleteQuietly(file);
         }
     }
 

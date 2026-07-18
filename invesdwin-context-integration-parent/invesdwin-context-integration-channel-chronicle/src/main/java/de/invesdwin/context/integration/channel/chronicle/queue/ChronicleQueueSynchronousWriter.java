@@ -1,34 +1,35 @@
 package de.invesdwin.context.integration.channel.chronicle.queue;
 
-import java.io.File;
 import java.io.IOException;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
-import de.invesdwin.util.math.Integers;
 import de.invesdwin.util.streams.buffer.bytes.ClosedByteBuffer;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
-import de.invesdwin.util.streams.buffer.bytes.delegate.ChronicleDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.bytes.delegate.MemoryDelegateByteBuffer;
+import de.invesdwin.util.streams.buffer.memory.ICloseableMemoryBuffer;
+import de.invesdwin.util.streams.buffer.memory.delegate.ChronicleDelegateMemoryBuffer;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.wire.DocumentContext;
 
 @NotThreadSafe
-public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousChannel
-        implements ISynchronousWriter<IByteBufferProvider> {
+public class ChronicleQueueSynchronousWriter implements ISynchronousWriter<IByteBufferProvider> {
 
     private ExcerptAppender appender;
-    private final ChronicleDelegateByteBuffer wrappedBuffer = new ChronicleDelegateByteBuffer(
-            ChronicleDelegateByteBuffer.EMPTY_BYTES, false);
+    private final ChronicleDelegateMemoryBuffer wrappedBuffer = new ChronicleDelegateMemoryBuffer(
+            ChronicleDelegateMemoryBuffer.EMPTY_BYTES, false);
+    private final MemoryDelegateByteBuffer wrappedByteBuffer = new MemoryDelegateByteBuffer(wrappedBuffer);
+    private final ChronicleQueueSynchronousChannel channel;
 
-    public ChronicleQueueSynchronousWriter(final File file) {
-        super(file);
+    public ChronicleQueueSynchronousWriter(final ChronicleQueueSynchronousChannel channel) {
+        this.channel = channel;
     }
 
     @Override
     public void open() throws IOException {
-        super.open();
-        appender = queue.createAppender();
+        channel.open();
+        appender = channel.getQueue().createAppender();
     }
 
     @Override
@@ -38,7 +39,7 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
             appender.close();
             appender = null;
         }
-        super.close();
+        channel.close();
     }
 
     @Override
@@ -51,8 +52,10 @@ public class ChronicleQueueSynchronousWriter extends AChronicleQueueSynchronousC
         try (DocumentContext doc = appender.writingDocument()) {
             final net.openhft.chronicle.bytes.Bytes<?> bytes = doc.wire().bytes();
             wrappedBuffer.setDelegate(bytes);
-            final int position = Integers.checkedCast(bytes.writePosition());
-            final int length = message.getBuffer(wrappedBuffer.sliceFrom(position));
+            final long position = bytes.writePosition();
+            final ICloseableMemoryBuffer slice = wrappedBuffer.sliceFrom(position);
+            wrappedByteBuffer.setDelegate(slice);
+            final long length = message.getBuffer(wrappedByteBuffer);
             bytes.writePosition(position + length);
         }
     }
