@@ -104,11 +104,5 @@
 			<artifactId>invesdwin-context-persistence-timeseriesdb</artifactId>
 			<scope>provided</scope>
 		</dependency>
-		<!-- TODO -->
-		<dependency>
-			<groupId>org.jgroups</groupId>
-			<artifactId>jgroups</artifactId>
-			<scope>provided</scope>
-		</dependency>
 	</dependencies>
 </project>
