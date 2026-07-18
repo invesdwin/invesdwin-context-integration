@@ -39,7 +39,7 @@ public class ChronicleQueueSynchronousChannel implements ISynchronousChannel {
 
     protected ChronicleQueue newQueue() {
         try {
-            return SingleChronicleQueueBuilder.binary(finalizer.file).rollCycle(RollCycles.FIVE_MINUTELY).build();
+            return SingleChronicleQueueBuilder.binary(finalizer.file).rollCycle(RollCycles.DEFAULT).build();
         } catch (final Exception e) {
             throw new RuntimeException("Unable to open file: " + finalizer.file, e);
         }
