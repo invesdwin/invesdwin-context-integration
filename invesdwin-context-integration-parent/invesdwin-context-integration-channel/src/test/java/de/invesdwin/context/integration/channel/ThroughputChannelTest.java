@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
@@ -189,8 +188,8 @@ public class ThroughputChannelTest {
                     channelReader.close();
                     latencyReportMessageReceived.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
     }
@@ -262,8 +261,8 @@ public class ThroughputChannelTest {
                     channelWriter.close();
                     latencyReportMessageSent.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 

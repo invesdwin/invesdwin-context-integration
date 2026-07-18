@@ -284,8 +284,8 @@ public class LatencyChannelTest {
                     latencyReportResponseReceived.close();
                     latencyReportRoundtrip.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 
@@ -380,8 +380,8 @@ public class LatencyChannelTest {
                     latencyReportRequestReceived.close();
                     latencyReportResponseSent.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 
