@@ -60,6 +60,7 @@
 		<module>invesdwin-context-integration-channel-axon</module>
 		<module>invesdwin-context-integration-channel-chronicle</module>
 		<module>invesdwin-context-integration-channel-redis</module>
+		<module>invesdwin-context-integration-channel-jucx</module>
 		<module>invesdwin-context-integration-rmi</module>
 		<module>invesdwin-context-integration-mpi</module>
 		<module>invesdwin-context-integration-mpi-openmpi</module>
@@ -392,6 +393,11 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-channel-redis</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jucx</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
