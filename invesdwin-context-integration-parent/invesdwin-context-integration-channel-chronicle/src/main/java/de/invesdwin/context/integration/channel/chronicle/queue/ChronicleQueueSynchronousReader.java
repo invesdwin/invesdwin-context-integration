@@ -58,6 +58,7 @@ public class ChronicleQueueSynchronousReader implements ISynchronousReader<IByte
             bytes.write(wireBytes);
             return true;
         }
+        //        return tailer.readBytes(bytes);
     }
 
     @Override
