@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.channel.chronicle.queue;
+package de.invesdwin.context.integration.channel.chronicle.queue.rollcycle;
 
 import javax.annotation.concurrent.Immutable;
 
@@ -7,7 +7,7 @@ import net.openhft.chronicle.queue.rollcycles.RollCycleArithmetic;
 
 /**
  * A custom roll cycle combining the 5-minute rotation of FIVE_MINUTELY with the massive sequence capacity of
- * LARGE_DAILY.
+ * LARGE_DAILY. Useful for throughput testing.
  */
 @Immutable
 public final class LargeFiveMinutelyRollCycle implements RollCycle {
