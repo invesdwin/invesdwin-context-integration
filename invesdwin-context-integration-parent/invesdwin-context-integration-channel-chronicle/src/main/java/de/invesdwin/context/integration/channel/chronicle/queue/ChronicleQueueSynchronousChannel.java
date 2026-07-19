@@ -10,7 +10,6 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.util.lang.finalizer.AWarningFinalizer;
 import net.openhft.chronicle.queue.ChronicleQueue;
-import net.openhft.chronicle.queue.RollCycles;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
 
 @ThreadSafe
@@ -39,7 +38,11 @@ public class ChronicleQueueSynchronousChannel implements ISynchronousChannel {
 
     protected ChronicleQueue newQueue() {
         try {
-            return SingleChronicleQueueBuilder.binary(finalizer.file).rollCycle(RollCycles.DEFAULT).build();
+            return SingleChronicleQueueBuilder.binary(finalizer.file)
+                    //test rollovers by using this fast roll cycle and immediate deletion of previous file
+                    //                    .rollCycle(LargeOneMinutelyRollCycle.INSTANCE)
+                    //                    .storeFileListener((cycle, file) -> Files.deleteQuietly(file))
+                    .build();
         } catch (final Exception e) {
             throw new RuntimeException("Unable to open file: " + finalizer.file, e);
         }
