@@ -51,18 +51,16 @@ public class ChronicleQueueChannelTest extends AChannelTest {
 
     private void runLatencyTest(final File requestFile, final File responseFile) throws InterruptedException {
         try {
-            final ChronicleQueueSynchronousChannel requestChannel = new ChronicleQueueSynchronousChannel(requestFile);
-            final ChronicleQueueSynchronousChannel responseChannel = new ChronicleQueueSynchronousChannel(responseFile);
             final ISynchronousWriter<IByteBufferProvider> responseWriter = new ChronicleQueueSynchronousWriter(
-                    responseChannel);
+                    new ChronicleQueueSynchronousChannel(responseFile));
             final ISynchronousReader<IByteBufferProvider> requestReader = new ChronicleQueueSynchronousReader(
-                    requestChannel);
+                    new ChronicleQueueSynchronousChannel(requestFile));
             final LatencyServerTask serverTask = new LatencyServerTask(this, newSerdeReader(requestReader),
                     newSerdeWriter(responseWriter));
             final ISynchronousWriter<IByteBufferProvider> requestWriter = new ChronicleQueueSynchronousWriter(
-                    requestChannel);
+                    new ChronicleQueueSynchronousChannel(requestFile));
             final ISynchronousReader<IByteBufferProvider> responseReader = new ChronicleQueueSynchronousReader(
-                    responseChannel);
+                    new ChronicleQueueSynchronousChannel(responseFile));
             final LatencyClientTask clientTask = new LatencyClientTask(this, newSerdeWriter(requestWriter),
                     newSerdeReader(responseReader));
             new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
@@ -92,12 +90,11 @@ public class ChronicleQueueChannelTest extends AChannelTest {
 
     private void runThroughputTest(final File file) throws InterruptedException {
         try {
-            final ChronicleQueueSynchronousChannel channel = new ChronicleQueueSynchronousChannel(file);
             final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
-                    new ChronicleQueueSynchronousWriter(channel));
+                    new ChronicleQueueSynchronousWriter(new ChronicleQueueSynchronousChannel(file)));
             final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
             final ISynchronousReader<FDate> channelReader = newSerdeReader(
-                    new ChronicleQueueSynchronousReader(channel));
+                    new ChronicleQueueSynchronousReader(new ChronicleQueueSynchronousChannel(file)));
             final ThroughputReceiverTask receiverTask = new ThroughputReceiverTask(this, channelReader);
             new ThroughputChannelTest(this).runThroughputTest(senderTask, receiverTask);
         } finally {
