@@ -1,7 +1,9 @@
 package net.sf.webdav.locking;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -20,33 +22,41 @@ public class ResourceLocks implements IResourceLocks {
 
     private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(ResourceLocks.class);
 
-    protected int cleanupCounter = 0;
+    protected AtomicInteger cleanupCounter = new AtomicInteger();
 
     /**
      * keys: path value: LockedObject from that path Concurrent access can occur
      */
-    protected Hashtable<String, LockedObject> locks = new Hashtable<String, LockedObject>();
+    //CHECKSTYLE:OFF
+    protected final Map<String, LockedObject> locks = new ConcurrentHashMap<String, LockedObject>();
+    //CHECKSTYLE:ON
 
     /**
      * keys: id value: LockedObject from that id Concurrent access can occur
      */
-    protected Hashtable<String, LockedObject> locksByID = new Hashtable<String, LockedObject>();
+    //CHECKSTYLE:OFF
+    protected final Map<String, LockedObject> locksByID = new ConcurrentHashMap<String, LockedObject>();
+    //CHECKSTYLE:ON
 
     /**
      * keys: path value: Temporary LockedObject from that path Concurrent access can occur
      */
-    protected Hashtable<String, LockedObject> tempLocks = new Hashtable<String, LockedObject>();
+    //CHECKSTYLE:OFF
+    protected final Map<String, LockedObject> tempLocks = new ConcurrentHashMap<String, LockedObject>();
+    //CHECKSTYLE:ON
 
     /**
      * keys: id value: Temporary LockedObject from that id Concurrent access can occur
      */
-    protected Hashtable<String, LockedObject> tempLocksByID = new Hashtable<String, LockedObject>();
+    //CHECKSTYLE:OFF
+    protected final Map<String, LockedObject> tempLocksByID = new ConcurrentHashMap<String, LockedObject>();
+    //CHECKSTYLE:ON
 
     // REMEMBER TO REMOVE UNUSED LOCKS FROM THE HASHTABLE AS WELL
 
-    protected LockedObject root = null;
+    protected volatile LockedObject root = null;
 
-    protected LockedObject tempRoot = null;
+    protected volatile LockedObject tempRoot = null;
 
     /**
      * after creating this much LockedObjects, a cleanup deletes unused LockedObjects
@@ -78,18 +88,18 @@ public class ResourceLocks implements IResourceLocks {
         if (lo.checkLocks(exclusive, depth)) {
 
             lo.exclusive = exclusive;
-            lo.lockDepth = depth;
+            lo.lockDepth.set(depth);
             //CHECKSTYLE:OFF
-            lo.expiresAt = System.currentTimeMillis() + (timeout * 1000);
+            lo.expiresAt.set(System.currentTimeMillis() + (timeout * 1000));
             //CHECKSTYLE:ON
             if (lo.parent != null) {
-                lo.parent.expiresAt = lo.expiresAt;
+                lo.parent.expiresAt.set(lo.expiresAt.get());
                 if (lo.parent.equals(this.root)) {
                     final LockedObject rootLo = getLockedObjectByPath(transaction, this.root.getPath());
-                    rootLo.expiresAt = lo.expiresAt;
+                    rootLo.expiresAt.set(lo.expiresAt.get());
                 } else if (lo.parent.equals(this.tempRoot)) {
                     final LockedObject tempRootLo = getTempLockedObjectByPath(transaction, this.tempRoot.getPath());
-                    tempRootLo.expiresAt = lo.expiresAt;
+                    tempRootLo.expiresAt.set(lo.expiresAt.get());
                 }
             }
             if (lo.addLockedObjectOwner(owner)) {
@@ -126,8 +136,8 @@ public class ResourceLocks implements IResourceLocks {
                 return false;
             }
 
-            if (this.cleanupCounter > this.cleanupLimit) {
-                this.cleanupCounter = 0;
+            if (this.cleanupCounter.get() > this.cleanupLimit) {
+                this.cleanupCounter.set(0);
                 cleanLockedObjects(transaction, this.root, !this.temporary);
             }
         }
@@ -150,8 +160,8 @@ public class ResourceLocks implements IResourceLocks {
             LOG.trace("net.sf.webdav.locking.ResourceLocks.unlock(): no lock for path " + path);
         }
 
-        if (this.cleanupCounter > this.cleanupLimit) {
-            this.cleanupCounter = 0;
+        if (this.cleanupCounter.get() > this.cleanupLimit) {
+            this.cleanupCounter.set(0);
             cleanLockedObjects(transaction, this.tempRoot, this.temporary);
         }
 
@@ -162,23 +172,23 @@ public class ResourceLocks implements IResourceLocks {
     @Override
     public void checkTimeouts(final ITransaction transaction, final boolean temporary) {
         if (!temporary) {
-            final Enumeration<LockedObject> lockedObjects = this.locks.elements();
-            while (lockedObjects.hasMoreElements()) {
-                final LockedObject currentLockedObject = lockedObjects.nextElement();
+            final Iterator<LockedObject> lockedObjects = this.locks.values().iterator();
+            while (lockedObjects.hasNext()) {
+                final LockedObject currentLockedObject = lockedObjects.next();
 
                 //CHECKSTYLE:OFF
-                if (currentLockedObject.expiresAt < System.currentTimeMillis()) {
+                if (currentLockedObject.expiresAt.get() < System.currentTimeMillis()) {
                     //CHECKSTYLE:ON
                     currentLockedObject.removeLockedObject();
                 }
             }
         } else {
-            final Enumeration<LockedObject> lockedObjects = this.tempLocks.elements();
-            while (lockedObjects.hasMoreElements()) {
-                final LockedObject currentLockedObject = lockedObjects.nextElement();
+            final Iterator<LockedObject> lockedObjects = this.tempLocks.values().iterator();
+            while (lockedObjects.hasNext()) {
+                final LockedObject currentLockedObject = lockedObjects.next();
 
                 //CHECKSTYLE:OFF
-                if (currentLockedObject.expiresAt < System.currentTimeMillis()) {
+                if (currentLockedObject.expiresAt.get() < System.currentTimeMillis()) {
                     //CHECKSTYLE:ON
                     currentLockedObject.removeTempLockedObject();
                 }
@@ -299,7 +309,6 @@ public class ResourceLocks implements IResourceLocks {
      * @return if cleaned
      */
     private boolean cleanLockedObjects(final ITransaction transaction, final LockedObject lo, final boolean temporary) {
-
         if (lo.children == null) {
             if (lo.owner == null) {
                 if (temporary) {

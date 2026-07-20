@@ -1,6 +1,8 @@
 package net.sf.webdav.locking;
 
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -19,34 +21,34 @@ public class LockedObject {
      * Describing the depth of a locked collection. If the locked resource is not a collection, depth is 0 / doesn't
      * matter.
      */
-    protected int lockDepth;
+    protected final AtomicInteger lockDepth = new AtomicInteger();
 
     /**
      * Describing the timeout of a locked object (ms)
      */
-    protected long expiresAt;
+    protected final AtomicLong expiresAt = new AtomicLong();
 
     /**
      * owner of the lock. shared locks can have multiple owners. is null if no owner is present
      */
-    protected String[] owner = null;
+    protected volatile String[] owner = null;
 
     /**
      * children of that lock
      */
-    protected LockedObject[] children = null;
+    protected volatile LockedObject[] children = null;
 
-    protected LockedObject parent = null;
+    protected volatile LockedObject parent = null;
 
     /**
      * weather the lock is exclusive or not. if owner=null the exclusive value doesn't matter
      */
-    protected boolean exclusive = false;
+    protected volatile boolean exclusive = false;
 
     /**
      * weather the lock is a write or read lock
      */
-    protected String type = null;
+    protected volatile String type = null;
 
     private final ResourceLocks resourceLocks;
 
@@ -74,7 +76,7 @@ public class LockedObject {
             this.resourceLocks.tempLocks.put(path, this);
             this.resourceLocks.tempLocksByID.put(this.id, this);
         }
-        this.resourceLocks.cleanupCounter++;
+        this.resourceLocks.cleanupCounter.incrementAndGet();
     }
 
     /**
@@ -85,27 +87,27 @@ public class LockedObject {
      * @return true if the owner was added, false otherwise
      */
     public boolean addLockedObjectOwner(final String owner) {
-
-        if (this.owner == null) {
-            this.owner = new String[1];
+        String[] ownerCopy = this.owner;
+        if (ownerCopy == null) {
+            ownerCopy = new String[1];
         } else {
-
-            final int size = this.owner.length;
+            final int size = ownerCopy.length;
             final String[] newLockObjectOwner = new String[size + 1];
 
             // check if the owner is already here (that should actually not
             // happen)
             for (int i = 0; i < size; i++) {
-                if (this.owner[i].equals(owner)) {
+                if (ownerCopy[i].equals(owner)) {
                     return false;
                 }
             }
 
-            System.arraycopy(this.owner, 0, newLockObjectOwner, 0, size);
-            this.owner = newLockObjectOwner;
+            System.arraycopy(ownerCopy, 0, newLockObjectOwner, 0, size);
+            ownerCopy = newLockObjectOwner;
         }
 
-        this.owner[this.owner.length - 1] = owner;
+        ownerCopy[this.owner.length - 1] = owner;
+        this.owner = ownerCopy;
         return true;
     }
 
@@ -118,25 +120,26 @@ public class LockedObject {
     public void removeLockedObjectOwner(final String owner) {
 
         try {
-            if (this.owner != null) {
-                final int size = this.owner.length;
+            String[] ownerCopy = this.owner;
+            if (ownerCopy != null) {
+                final int size = ownerCopy.length;
                 for (int i = 0; i < size; i++) {
                     // check every owner if it is the requested one
-                    if (this.owner[i].equals(owner)) {
+                    if (ownerCopy[i].equals(owner)) {
                         // remove the owner
                         final String[] newLockedObjectOwner = new String[size - 1];
                         for (int j = 0; j < (size - 1); j++) {
                             if (j < i) {
-                                newLockedObjectOwner[j] = this.owner[j];
+                                newLockedObjectOwner[j] = ownerCopy[j];
                             } else {
-                                newLockedObjectOwner[j] = this.owner[j + 1];
+                                newLockedObjectOwner[j] = ownerCopy[j + 1];
                             }
                         }
+                        ownerCopy = newLockedObjectOwner;
                         this.owner = newLockedObjectOwner;
-
                     }
                 }
-                if (this.owner.length == 0) {
+                if (ownerCopy.length == 0) {
                     this.owner = null;
                 }
             }
@@ -152,14 +155,18 @@ public class LockedObject {
      *            new child
      */
     public void addChild(final LockedObject newChild) {
-        if (this.children == null) {
-            this.children = new LockedObject[0];
+        LockedObject[] childrenCopy = this.children;
+        if (childrenCopy == null) {
+            childrenCopy = new LockedObject[1];
+            childrenCopy[0] = newChild;
+        } else {
+            final int size = childrenCopy.length;
+            final LockedObject[] newChildren = new LockedObject[size + 1];
+            System.arraycopy(childrenCopy, 0, newChildren, 0, size);
+            childrenCopy = newChildren;
+            newChildren[size] = newChild;
         }
-        final int size = this.children.length;
-        final LockedObject[] newChildren = new LockedObject[size + 1];
-        System.arraycopy(this.children, 0, newChildren, 0, size);
-        newChildren[size] = newChild;
-        this.children = newChildren;
+        this.children = childrenCopy;
     }
 
     /**
@@ -169,15 +176,16 @@ public class LockedObject {
     public void removeLockedObject() {
         if (this != this.resourceLocks.root && !this.getPath().equals("/")) {
 
-            final int size = this.parent.children.length;
+            final LockedObject[] parentChildrenCopy = this.parent.children;
+            final int size = parentChildrenCopy.length;
             for (int i = 0; i < size; i++) {
-                if (this.parent.children[i].equals(this)) {
+                if (parentChildrenCopy[i].equals(this)) {
                     final LockedObject[] newChildren = new LockedObject[size - 1];
                     for (int i2 = 0; i2 < (size - 1); i2++) {
                         if (i2 < i) {
-                            newChildren[i2] = this.parent.children[i2];
+                            newChildren[i2] = parentChildrenCopy[i2];
                         } else {
-                            newChildren[i2] = this.parent.children[i2 + 1];
+                            newChildren[i2] = parentChildrenCopy[i2 + 1];
                         }
                     }
                     if (newChildren.length != 0) {
@@ -278,9 +286,9 @@ public class LockedObject {
      *            depth
      */
     private boolean checkChildren(final boolean exclusive, final int depth) {
-        if (this.children == null) {
+        final LockedObject[] childrenCopy = this.children;
+        if (childrenCopy == null) {
             // a file
-
             return this.owner == null || !(this.exclusive || exclusive);
         } else {
             // a folder
@@ -290,9 +298,9 @@ public class LockedObject {
 
                 if (depth != 0) {
                     boolean canLock = true;
-                    final int limit = this.children.length;
+                    final int limit = childrenCopy.length;
                     for (int i = 0; i < limit; i++) {
-                        if (!this.children[i].checkChildren(exclusive, depth - 1)) {
+                        if (!childrenCopy[i].checkChildren(exclusive, depth - 1)) {
                             canLock = false;
                         }
                     }
@@ -316,7 +324,7 @@ public class LockedObject {
      */
     public void refreshTimeout(final int timeout) {
         //CHECKSTYLE:OFF
-        this.expiresAt = System.currentTimeMillis() + (timeout * 1000);
+        this.expiresAt.set(System.currentTimeMillis() + (timeout * 1000));
         //CHECKSTYLE:ON
     }
 
@@ -327,7 +335,7 @@ public class LockedObject {
      */
     public long getTimeoutMillis() {
         //CHECKSTYLE:OFF
-        return (this.expiresAt - System.currentTimeMillis());
+        return (this.expiresAt.get() - System.currentTimeMillis());
         //CHECKSTYLE:ON
     }
 
@@ -337,9 +345,10 @@ public class LockedObject {
      * @return true if timeout has passed
      */
     public boolean hasExpired() {
-        if (this.expiresAt != 0) {
+        final long expiresAtCopy = this.expiresAt.get();
+        if (expiresAtCopy != 0) {
             //CHECKSTYLE:OFF
-            return (System.currentTimeMillis() > this.expiresAt);
+            return (System.currentTimeMillis() > expiresAtCopy);
             //CHECKSTYLE:ON
         } else {
             return true;
@@ -415,7 +424,7 @@ public class LockedObject {
      * @return depth
      */
     public int getLockDepth() {
-        return this.lockDepth;
+        return this.lockDepth.get();
     }
 
 }

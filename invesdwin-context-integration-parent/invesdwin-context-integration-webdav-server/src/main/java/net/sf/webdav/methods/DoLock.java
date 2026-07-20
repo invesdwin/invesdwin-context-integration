@@ -10,8 +10,8 @@ import static net.sf.webdav.WebdavStatus.SC_OK;
 import static net.sf.webdav.WebdavStatus.SC_PRECONDITION_FAILED;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.parsers.DocumentBuilder;
@@ -80,7 +80,9 @@ public class DoLock extends AWebdavMethod {
             this.path = getRelativePath(req);
             this.parentPath = getParentPath(getCleanPath(this.path));
 
-            final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
 
             if (!checkLocks(transaction, req, resp, this.resourceLocks, this.path)) {
                 errorList.put(this.path, SC_LOCKED);
@@ -470,7 +472,7 @@ public class DoLock extends AWebdavMethod {
             throws IOException {
 
         //CHECKSTYLE:OFF
-        final HashMap<String, String> namespaces = new HashMap<String, String>();
+        final Map<String, String> namespaces = new LinkedHashMap<String, String>();
         //CHECKSTYLE:ON
         namespaces.put("DAV:", "D");
 
@@ -567,7 +569,9 @@ public class DoLock extends AWebdavMethod {
      */
     private void sendLockFailError(final ITransaction transaction, final IWebdavRequest req, final IWebdavResponse resp)
             throws IOException {
-        final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+        //CHECKSTYLE:OFF
+        final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+        //CHECKSTYLE:ON
         errorList.put(this.path, SC_LOCKED);
         sendReport(req, resp, errorList);
     }

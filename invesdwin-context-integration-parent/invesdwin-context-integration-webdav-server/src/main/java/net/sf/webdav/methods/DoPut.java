@@ -9,7 +9,8 @@ import static net.sf.webdav.WebdavStatus.SC_NOT_FOUND;
 import static net.sf.webdav.WebdavStatus.SC_NO_CONTENT;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -59,7 +60,9 @@ public class DoPut extends AWebdavMethod {
 
             this.userAgent = req.getHeader("User-Agent");
 
-            final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
 
             if (!checkLocks(transaction, req, resp, this.resourceLocks, parentPath)) {
                 errorList.put(parentPath, SC_LOCKED);
@@ -96,7 +99,7 @@ public class DoPut extends AWebdavMethod {
     }
 
     private void executeLocked(final ITransaction transaction, final IWebdavRequest req, final IWebdavResponse resp,
-            final String path, final String parentPath, final Hashtable<String, WebdavStatus> errorList)
+            final String path, final String parentPath, final Map<String, WebdavStatus> errorList)
             throws WebdavException, IOException {
         final StoredObject parentSo = this.store.getStoredObject(transaction, parentPath);
         if (parentPath != null && parentSo != null && parentSo.isResource()) {

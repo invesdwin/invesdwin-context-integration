@@ -2,7 +2,7 @@ package net.sf.webdav.util;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
@@ -150,7 +150,7 @@ public final class RequestUtil {
 
     public static Map<Double, String> parseQualityHeader(final String header) {
         //CHECKSTYLE:OFF
-        final Map<Double, String> parsed = new HashMap<Double, String>();
+        final Map<Double, String> parsed = new LinkedHashMap<Double, String>();
         //CHECKSTYLE:ON
         for (final String str : header.split(",")) {
             final String[] arr = str.trim().replace("-", "_").split(";");

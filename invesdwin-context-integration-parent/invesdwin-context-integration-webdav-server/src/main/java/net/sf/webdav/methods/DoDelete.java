@@ -6,7 +6,8 @@ import static net.sf.webdav.WebdavStatus.SC_LOCKED;
 import static net.sf.webdav.WebdavStatus.SC_NOT_FOUND;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -49,7 +50,9 @@ public class DoDelete extends AWebdavMethod {
             final String path = getRelativePath(req);
             final String parentPath = getParentPath(getCleanPath(path));
 
-            Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
 
             if (!checkLocks(transaction, req, resp, this.resourceLocks, parentPath)) {
                 errorList.put(parentPath, SC_LOCKED);
@@ -68,7 +71,9 @@ public class DoDelete extends AWebdavMethod {
             //CHECKSTYLE:ON
             if (this.resourceLocks.lock(transaction, path, tempLockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
                 try {
-                    errorList = new Hashtable<String, WebdavStatus>();
+                    if (!errorList.isEmpty()) {
+                        errorList.clear();
+                    }
                     deleteResource(transaction, path, errorList, req, resp);
                     if (!errorList.isEmpty()) {
                         sendReport(req, resp, errorList);
@@ -110,7 +115,7 @@ public class DoDelete extends AWebdavMethod {
      *             when an error occurs while sending the response
      */
     public void deleteResource(final ITransaction transaction, final String path,
-            final Hashtable<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
+            final Map<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
             throws IOException, WebdavException {
 
         resp.setStatus(WebdavStatus.SC_NO_CONTENT);
@@ -158,7 +163,7 @@ public class DoDelete extends AWebdavMethod {
      *             if an error in the underlying store occurs
      */
     private void deleteFolder(final ITransaction transaction, final String path,
-            final Hashtable<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
+            final Map<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
             throws WebdavException {
 
         String[] children = this.store.getChildrenNames(transaction, path);

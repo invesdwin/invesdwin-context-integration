@@ -2,7 +2,8 @@ package net.sf.webdav;
 
 import java.io.IOException;
 import java.security.Principal;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -27,10 +28,10 @@ import net.sf.webdav.methods.DoUnlock;
 import net.sf.webdav.methods.IWebdavMethod;
 import net.sf.webdav.spi.IMimeTyper;
 import net.sf.webdav.spi.ITransaction;
-import net.sf.webdav.spi.IWebdavStore;
 import net.sf.webdav.spi.IWebdavConfig;
 import net.sf.webdav.spi.IWebdavRequest;
 import net.sf.webdav.spi.IWebdavResponse;
+import net.sf.webdav.spi.IWebdavStore;
 
 /**
  * Adapted from https://github.com/Commonjava/webdav-handler (https://github.com/subes/webdav-handler)
@@ -46,7 +47,7 @@ public class WebdavService {
     private final IWebdavStore store;
 
     //CHECKSTYLE:OFF
-    private final HashMap<String, IWebdavMethod> methodMap = new HashMap<String, IWebdavMethod>();
+    private final Map<String, IWebdavMethod> methodMap = new LinkedHashMap<String, IWebdavMethod>();
     //CHECKSTYLE:ON
 
     public WebdavService(final IWebdavConfig config, final IWebdavStore store, final IMimeTyper mimeTyper) {

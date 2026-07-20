@@ -9,10 +9,10 @@ import static net.sf.webdav.WebdavStatus.SC_OK;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.xml.parsers.DocumentBuilder;
@@ -126,7 +126,7 @@ public class DoPropfind extends AWebdavMethod {
                 }
 
                 //CHECKSTYLE:OFF
-                final HashMap<String, String> namespaces = new HashMap<String, String>();
+                final Map<String, String> namespaces = new LinkedHashMap<String, String>();
                 //CHECKSTYLE:ON
                 namespaces.put("DAV:", "D");
 
@@ -161,7 +161,9 @@ public class DoPropfind extends AWebdavMethod {
                 this.resourceLocks.unlockTemporaryLockedObjects(transaction, path, tempLockOwner);
             }
         } else {
-            final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
             errorList.put(path, SC_LOCKED);
             sendReport(req, resp, errorList);
         }

@@ -8,7 +8,8 @@ import static net.sf.webdav.WebdavStatus.SC_METHOD_NOT_ALLOWED;
 import static net.sf.webdav.WebdavStatus.SC_NOT_FOUND;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -117,7 +118,9 @@ public class DoCopy extends AWebdavMethod {
             return false;
         }
 
-        Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+        //CHECKSTYLE:OFF
+        final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+        //CHECKSTYLE:ON
         final String parentDestinationPath = getParentPath(getCleanPath(destinationPath));
 
         if (!checkLocks(transaction, req, resp, this.resourceLocks, parentDestinationPath)) {
@@ -147,62 +150,69 @@ public class DoCopy extends AWebdavMethod {
         //CHECKSTYLE:ON
 
         if (this.resourceLocks.lock(transaction, destinationPath, lockOwner, false, 0, TEMP_TIMEOUT, TEMPORARY)) {
-            StoredObject copySo = null;
-            StoredObject destinationSo = null;
-            try {
-                copySo = this.store.getStoredObject(transaction, path);
-                // Retrieve the resources
-                if (copySo == null) {
-                    resp.sendError(SC_NOT_FOUND);
-                    return false;
-                }
-
-                if (copySo.isNullResource()) {
-                    final String methodsAllowed = ADeterminableMethod.determineMethodsAllowed(copySo);
-                    resp.addHeader("Allow", methodsAllowed);
-                    resp.sendError(SC_METHOD_NOT_ALLOWED);
-                    return false;
-                }
-
-                errorList = new Hashtable<String, WebdavStatus>();
-
-                destinationSo = this.store.getStoredObject(transaction, destinationPath);
-
-                if (overwrite) {
-
-                    // Delete destination resource, if it exists
-                    if (destinationSo != null) {
-                        this.doDelete.deleteResource(transaction, destinationPath, errorList, req, resp);
-
-                    } else {
-                        resp.setStatus(WebdavStatus.SC_CREATED);
-                    }
-                } else {
-
-                    // If the destination exists, then it's a conflict
-                    if (destinationSo != null) {
-                        resp.sendError(WebdavStatus.SC_PRECONDITION_FAILED);
-                        return false;
-                    } else {
-                        resp.setStatus(WebdavStatus.SC_CREATED);
-                    }
-
-                }
-                copy(transaction, path, destinationPath, errorList, req, resp);
-
-                if (!errorList.isEmpty()) {
-                    sendReport(req, resp, errorList);
-                }
-
-            } finally {
-                this.resourceLocks.unlockTemporaryLockedObjects(transaction, destinationPath, lockOwner);
-            }
+            return copyResourceLocked(transaction, req, resp, destinationPath, path, errorList, overwrite, lockOwner);
         } else {
             resp.sendError(SC_INTERNAL_SERVER_ERROR);
             return false;
         }
-        return true;
+    }
 
+    private boolean copyResourceLocked(final ITransaction transaction, final IWebdavRequest req,
+            final IWebdavResponse resp, final String destinationPath, final String path,
+            final Map<String, WebdavStatus> errorList, final boolean overwrite, final String lockOwner)
+            throws WebdavException, IOException {
+        StoredObject copySo = null;
+        StoredObject destinationSo = null;
+        try {
+            copySo = this.store.getStoredObject(transaction, path);
+            // Retrieve the resources
+            if (copySo == null) {
+                resp.sendError(SC_NOT_FOUND);
+                return false;
+            }
+
+            if (copySo.isNullResource()) {
+                final String methodsAllowed = ADeterminableMethod.determineMethodsAllowed(copySo);
+                resp.addHeader("Allow", methodsAllowed);
+                resp.sendError(SC_METHOD_NOT_ALLOWED);
+                return false;
+            }
+
+            if (!errorList.isEmpty()) {
+                errorList.clear();
+            }
+
+            destinationSo = this.store.getStoredObject(transaction, destinationPath);
+
+            if (overwrite) {
+
+                // Delete destination resource, if it exists
+                if (destinationSo != null) {
+                    this.doDelete.deleteResource(transaction, destinationPath, errorList, req, resp);
+
+                } else {
+                    resp.setStatus(WebdavStatus.SC_CREATED);
+                }
+            } else {
+
+                // If the destination exists, then it's a conflict
+                if (destinationSo != null) {
+                    resp.sendError(WebdavStatus.SC_PRECONDITION_FAILED);
+                    return false;
+                } else {
+                    resp.setStatus(WebdavStatus.SC_CREATED);
+                }
+
+            }
+            copy(transaction, path, destinationPath, errorList, req, resp);
+
+            if (!errorList.isEmpty()) {
+                sendReport(req, resp, errorList);
+            }
+            return true;
+        } finally {
+            this.resourceLocks.unlockTemporaryLockedObjects(transaction, destinationPath, lockOwner);
+        }
     }
 
     /**
@@ -224,7 +234,7 @@ public class DoCopy extends AWebdavMethod {
      * @throws IOException
      */
     private void copy(final ITransaction transaction, final String sourcePath, final String destinationPath,
-            final Hashtable<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
+            final Map<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
             throws WebdavException, IOException {
 
         final StoredObject sourceSo = this.store.getStoredObject(transaction, sourcePath);
@@ -267,7 +277,7 @@ public class DoCopy extends AWebdavMethod {
      *             if an error in the underlying store occurs
      */
     private void copyFolder(final ITransaction transaction, final String srcPath, final String destPath,
-            final Hashtable<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
+            final Map<String, WebdavStatus> errorList, final IWebdavRequest req, final IWebdavResponse resp)
             throws WebdavException {
         final String sourcePath = getCleanPath(srcPath);
         final String destinationPath = getCleanPath(destPath);

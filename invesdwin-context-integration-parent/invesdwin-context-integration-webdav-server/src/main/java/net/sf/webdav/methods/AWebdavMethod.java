@@ -15,10 +15,10 @@ package net.sf.webdav.methods;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.TimeZone;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -362,7 +362,7 @@ public abstract class AWebdavMethod implements IWebdavMethod {
      *            List of error to be displayed
      */
     protected void sendReport(final IWebdavRequest req, final IWebdavResponse resp,
-            final Hashtable<String, WebdavStatus> errorList) throws IOException {
+            final Map<String, WebdavStatus> errorList) throws IOException {
 
         resp.setStatus(WebdavStatus.SC_MULTI_STATUS);
 
@@ -370,7 +370,7 @@ public abstract class AWebdavMethod implements IWebdavMethod {
         // String relativePath = getRelativePath(req);
 
         //CHECKSTYLE:OFF
-        final HashMap<String, String> namespaces = new HashMap<String, String>();
+        final Map<String, String> namespaces = new LinkedHashMap<String, String>();
         //CHECKSTYLE:ON
         namespaces.put("DAV:", "D");
 
@@ -379,10 +379,10 @@ public abstract class AWebdavMethod implements IWebdavMethod {
 
         generatedXML.writeElement("DAV::multistatus", XMLWriter.OPENING);
 
-        final Enumeration<String> pathList = errorList.keys();
-        while (pathList.hasMoreElements()) {
+        final Iterator<String> pathList = errorList.keySet().iterator();
+        while (pathList.hasNext()) {
 
-            final String errorPath = pathList.nextElement();
+            final String errorPath = pathList.next();
             final int errorCode = errorList.get(errorPath).code();
 
             generatedXML.writeElement("DAV::response", XMLWriter.OPENING);

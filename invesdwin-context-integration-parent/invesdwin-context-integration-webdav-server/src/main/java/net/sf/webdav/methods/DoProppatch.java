@@ -9,9 +9,9 @@ import static net.sf.webdav.WebdavStatus.SC_NOT_FOUND;
 import static net.sf.webdav.WebdavStatus.SC_OK;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Vector;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -66,7 +66,9 @@ public class DoProppatch extends AWebdavMethod {
         final String path = getRelativePath(req);
         final String parentPath = getParentPath(getCleanPath(path));
 
-        final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+        //CHECKSTYLE:OFF
+        final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+        //CHECKSTYLE:ON
 
         if (!checkLocks(transaction, req, resp, this.resourceLocks, parentPath)) {
             errorList.put(parentPath, SC_LOCKED);
@@ -106,7 +108,6 @@ public class DoProppatch extends AWebdavMethod {
     private void executeLocked(final ITransaction transaction, final IWebdavRequest req, final IWebdavResponse resp,
             final String pPath) throws WebdavException, IOException {
         String path = pPath;
-        final Hashtable<String, WebdavStatus> errorList;
         final StoredObject so;
         final LockedObject lo;
         so = this.store.getStoredObject(transaction, path);
@@ -128,7 +129,9 @@ public class DoProppatch extends AWebdavMethod {
 
         if (lo != null && lo.isExclusive()) {
             // Object on specified path is LOCKED
-            errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
             errorList.put(path, SC_LOCKED);
             sendReport(req, resp, errorList);
             return;
@@ -171,7 +174,7 @@ public class DoProppatch extends AWebdavMethod {
         final List<String> toset;
         final List<String> toremove;
         //CHECKSTYLE:OFF
-        final HashMap<String, String> namespaces = new HashMap<String, String>();
+        final Map<String, String> namespaces = new LinkedHashMap<String, String>();
         //CHECKSTYLE:ON
         namespaces.put("DAV:", "D");
 

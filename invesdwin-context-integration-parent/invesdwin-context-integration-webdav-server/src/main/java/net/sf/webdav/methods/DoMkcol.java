@@ -1,7 +1,8 @@
 package net.sf.webdav.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -43,7 +44,9 @@ public class DoMkcol extends AWebdavMethod {
             final String path = getRelativePath(req);
             final String parentPath = getParentPath(getCleanPath(path));
 
-            final Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
 
             if (!checkLocks(transaction, req, resp, this.resourceLocks, parentPath)) {
                 // TODO remove
@@ -104,7 +107,7 @@ public class DoMkcol extends AWebdavMethod {
     }
 
     private void executeAlreadyExists(final ITransaction transaction, final IWebdavRequest req,
-            final IWebdavResponse resp, final String path, final Hashtable<String, WebdavStatus> errorList,
+            final IWebdavResponse resp, final String path, final Map<String, WebdavStatus> errorList,
             final StoredObject so) throws IOException {
         // object already exists
         if (so.isNullResource()) {

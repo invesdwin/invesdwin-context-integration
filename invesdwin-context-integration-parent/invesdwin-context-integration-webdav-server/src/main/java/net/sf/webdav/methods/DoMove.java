@@ -1,7 +1,8 @@
 package net.sf.webdav.methods;
 
 import java.io.IOException;
-import java.util.Hashtable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -44,7 +45,9 @@ public class DoMove extends AWebdavMethod {
             LOG.trace("-- " + this.getClass().getName());
 
             final String sourcePath = getRelativePath(req);
-            Hashtable<String, WebdavStatus> errorList = new Hashtable<String, WebdavStatus>();
+            //CHECKSTYLE:OFF
+            final Map<String, WebdavStatus> errorList = new LinkedHashMap<String, WebdavStatus>();
+            //CHECKSTYLE:ON
 
             if (!checkLocks(transaction, req, resp, this.resourceLocks, sourcePath)) {
                 errorList.put(sourcePath, WebdavStatus.SC_LOCKED);
@@ -72,8 +75,9 @@ public class DoMove extends AWebdavMethod {
                 try {
 
                     if (this.doCopy.copyResource(transaction, req, resp)) {
-
-                        errorList = new Hashtable<String, WebdavStatus>();
+                        if (!errorList.isEmpty()) {
+                            errorList.clear();
+                        }
                         this.doDelete.deleteResource(transaction, sourcePath, errorList, req, resp);
                         if (!errorList.isEmpty()) {
                             sendReport(req, resp, errorList);
