@@ -106,7 +106,7 @@ public class LockedObject {
             ownerCopy = newLockObjectOwner;
         }
 
-        ownerCopy[this.owner.length - 1] = owner;
+        ownerCopy[ownerCopy.length - 1] = owner;
         this.owner = ownerCopy;
         return true;
     }
