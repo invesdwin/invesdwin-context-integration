@@ -62,6 +62,7 @@ public class SparkStandaloneTest extends ATest {
 
                 .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS))
                 .setConf("spark.executor.cores", "1")
+                .setConf("spark.executor.extraJavaOptions", "-Duser.home=/tmp")
 
                 .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", localLogDir.getAbsolutePath())
                 .startApplication(new SparkAppHandle.Listener() {

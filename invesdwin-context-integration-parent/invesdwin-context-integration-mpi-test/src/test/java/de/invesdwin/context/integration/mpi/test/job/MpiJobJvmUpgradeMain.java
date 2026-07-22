@@ -35,7 +35,8 @@ import de.invesdwin.util.time.date.millis.FDateMillis;
 @NotThreadSafe
 public final class MpiJobJvmUpgradeMain {
 
-    private static final String OPENJDK_VERSION = "21.0.11_10";
+    private static final String OPENJDK_MAJOR_VERSION = "21";
+    private static final String OPENJDK_VERSION = OPENJDK_MAJOR_VERSION + ".0.11_10";
     private static final String OPENJDK_DOWNLOAD_URL;
     private static final File OPENJDK_FOLDER;
     private static final File OPENJDK_EXTRACTED_FOLDER;
@@ -46,8 +47,9 @@ public final class MpiJobJvmUpgradeMain {
         final String folderVersion = OPENJDK_VERSION.replace("_", "+");
         OPENJDK_EXTRACTED_FOLDER = new File(OPENJDK_FOLDER, "jdk-" + folderVersion);
 
-        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-"
-                + URIs.encode(folderVersion) + "/OpenJDK21U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
+        OPENJDK_DOWNLOAD_URL = "https://github.com/adoptium/temurin" + OPENJDK_MAJOR_VERSION
+                + "-binaries/releases/download/jdk-" + URIs.encode(folderVersion) + "/OpenJDK" + OPENJDK_MAJOR_VERSION
+                + "U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
     private MpiJobJvmUpgradeMain() {}
@@ -94,8 +96,9 @@ public final class MpiJobJvmUpgradeMain {
     }
 
     private static File maybeDownloadAndExtractJava17() {
-        for (final String potentialJavaHome : new String[] { "/usr/lib/jvm/java-17-openjdk-amd64",
-                "/usr/lib/jvm/java-17-openjdk" }) {
+        for (final String potentialJavaHome : new String[] {
+                "/usr/lib/jvm/java-" + OPENJDK_MAJOR_VERSION + "-openjdk-amd64",
+                "/usr/lib/jvm/java-" + OPENJDK_MAJOR_VERSION + "-openjdk" }) {
             final File f = new File(potentialJavaHome);
             if (f.exists()) {
                 return f;
