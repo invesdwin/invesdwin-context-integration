@@ -6,6 +6,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.spark.deploy.master.Master;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -22,10 +23,16 @@ import de.invesdwin.util.time.Instant;
 @NotThreadSafe
 public class SparkContainer extends GenericContainer<SparkContainer> {
 
+    private static final int WEBUI_PORT = 8080;
+
+    private static final int MASTER_PORT = 7077;
+
     private static final Log LOG = new Log(SparkContainer.class);
 
     private static final String SPARK_VERSION = "4.2.0";
-    private static final DockerImageName SPARK_IMAGE = DockerImageName.parse("bitnami/spark:" + SPARK_VERSION);
+
+    // 1. Switch to the official Apache Spark Docker image
+    private static final DockerImageName SPARK_IMAGE = DockerImageName.parse("apache/spark:" + SPARK_VERSION);
 
     private static final String SPARK_PACKAGE = "spark-" + SPARK_VERSION + "-bin-hadoop3";
     private static final File SPARK_CONTAINER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
@@ -34,15 +41,10 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
 
     public SparkContainer() {
         super(SPARK_IMAGE);
-
         // Expose Spark Master Port and Web UI
-        withExposedPorts(7077, 8080);
-
-        // Configure as a Standalone Master node
-        withEnv("SPARK_MODE", "master");
-
-        // Wait for the master to be ready
-        waitingFor(Wait.forLogMessage(".*Master: Starting Spark master at.*", 1));
+        withExposedPorts(MASTER_PORT, WEBUI_PORT);
+        withCommand("/opt/spark/bin/spark-class", Master.class.getName(), "--host", "0.0.0.0");
+        waitingFor(Wait.forHttp("/").forPort(8080));
     }
 
     public String getMasterUrl() {
