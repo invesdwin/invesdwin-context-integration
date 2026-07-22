@@ -6,7 +6,6 @@ import java.io.IOException;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.spark.deploy.master.Master;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -24,14 +23,11 @@ import de.invesdwin.util.time.Instant;
 public class SparkContainer extends GenericContainer<SparkContainer> {
 
     private static final int WEBUI_PORT = 8080;
-
     private static final int MASTER_PORT = 7077;
 
     private static final Log LOG = new Log(SparkContainer.class);
 
     private static final String SPARK_VERSION = "4.2.0";
-
-    // 1. Switch to the official Apache Spark Docker image
     private static final DockerImageName SPARK_IMAGE = DockerImageName.parse("apache/spark:" + SPARK_VERSION);
 
     private static final String SPARK_PACKAGE = "spark-" + SPARK_VERSION + "-bin-hadoop3";
@@ -41,14 +37,26 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
 
     public SparkContainer() {
         super(SPARK_IMAGE);
+
         // Expose Spark Master Port and Web UI
         withExposedPorts(MASTER_PORT, WEBUI_PORT);
-        withCommand("/opt/spark/bin/spark-class", Master.class.getName(), "--host", "0.0.0.0");
-        waitingFor(Wait.forHttp("/").forPort(8080));
+
+        // Launch Master in background, then launch Worker connected to local Master
+        withCommand("/bin/sh", "-c",
+                "/opt/spark/bin/spark-class " + org.apache.spark.deploy.master.Master.class.getName()
+                        + " --host 0.0.0.0 & " + "/opt/spark/bin/spark-class "
+                        + org.apache.spark.deploy.worker.Worker.class.getName() + " spark://127.0.0.1:" + MASTER_PORT);
+
+        // Wait for the Web UI to be HTTP 200 OK
+        waitingFor(Wait.forHttp("/").forPort(WEBUI_PORT));
     }
 
     public String getMasterUrl() {
-        return "spark://" + getHost() + ":" + getMappedPort(7077);
+        return "spark://" + getHost() + ":" + getMappedPort(MASTER_PORT);
+    }
+
+    public String getWebUiUrl() {
+        return "http://" + getHost() + ":" + getMappedPort(WEBUI_PORT);
     }
 
     public static String getSparkVersion() {
@@ -84,7 +92,6 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
                 final Instant started = new Instant();
                 LOG.info("Started extracting [%s]", sparkArchiveFile);
 
-                // jarchivelib handles .tgz (tar.gz) seamlessly
                 final Archiver archiver = ArchiverFactory.createArchiver(sparkArchiveFile);
                 archiver.extract(sparkArchiveFile, SPARK_CONTAINER_FOLDER);
 
