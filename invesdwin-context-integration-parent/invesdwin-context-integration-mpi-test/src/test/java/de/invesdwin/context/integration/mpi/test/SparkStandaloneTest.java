@@ -34,7 +34,7 @@ public class SparkStandaloneTest extends ATest {
 
     @Test
     public void testSparkOnStandalone() throws Exception {
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3, SparkJobMain.class)
+        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
                 .getResource()
                 .getFile();
 
