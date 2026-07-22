@@ -47,6 +47,7 @@
 		<module>invesdwin-context-integration-hadoop</module>
 		<module>invesdwin-context-integration-hadoop-test</module>
 		<module>invesdwin-context-integration-spark</module>
+		<module>invesdwin-context-integration-spark-test</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-netty</module>
@@ -324,6 +325,11 @@
 				<artifactId>invesdwin-context-integration-spark</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-spark-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
