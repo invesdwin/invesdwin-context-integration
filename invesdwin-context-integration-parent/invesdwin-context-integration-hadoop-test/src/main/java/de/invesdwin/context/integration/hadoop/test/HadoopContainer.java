@@ -109,6 +109,15 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
         return generatedImageName;
     }
 
+    public static String getHadoopVersion() {
+        return HADOOP_VERSION;
+    }
+
+    public static File getHadoopHomeFolder() {
+        maybeDownloadAndExtractHadoop();
+        return HADOOP_FOLDER;
+    }
+
     private static void maybeDownloadAndExtractHadoop() {
         try {
             final Resource[] resources = PreMergedContext.getInstance()
@@ -156,14 +165,6 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
         }
     }
 
-    public File getHadoopFolder() {
-        return HADOOP_FOLDER;
-    }
-
-    public String getHadoopVersion() {
-        return HADOOP_VERSION;
-    }
-
     public Configuration newHadoopConfiguration() {
         final Configuration conf = new Configuration();
         putProperties(conf);
@@ -172,7 +173,7 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
 
     public YarnConfiguration newYarnConfiguration() {
         //CHECKSTYLE:OFF
-        System.setProperty("hadoop.home.dir", getHadoopFolder().getAbsolutePath());
+        System.setProperty("hadoop.home.dir", getHadoopHomeFolder().getAbsolutePath());
         //CHECKSTYLE:ON
         final YarnConfiguration conf = new YarnConfiguration();
         putProperties(conf);

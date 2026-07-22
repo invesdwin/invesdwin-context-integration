@@ -76,14 +76,15 @@ public class YarnDistributedShellTest extends ATest {
             throws IOException, InterruptedException {
         final List<String> command = new ArrayList<>();
 
-        final File yarnFile = new File(HADOOP.getHadoopFolder(), "bin/yarn");
+        final File yarnFile = new File(HadoopContainer.getHadoopHomeFolder(), "bin/yarn");
 
         // Use the 'yarn' command available in the environment
         command.add(yarnFile.getAbsolutePath());
         command.add("jar");
 
-        final File amJar = new File(HADOOP.getHadoopFolder(),
-                "share/hadoop/yarn/hadoop-yarn-applications-distributedshell-" + HADOOP.getHadoopVersion() + ".jar");
+        final File amJar = new File(HadoopContainer.getHadoopHomeFolder(),
+                "share/hadoop/yarn/hadoop-yarn-applications-distributedshell-" + HadoopContainer.getHadoopVersion()
+                        + ".jar");
 
         // Path to the DistributedShell JAR (you can find this in your Hadoop install)
         command.add(amJar.getAbsolutePath());

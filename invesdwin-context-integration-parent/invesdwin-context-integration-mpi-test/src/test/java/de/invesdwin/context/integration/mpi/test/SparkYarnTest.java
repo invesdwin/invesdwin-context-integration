@@ -20,6 +20,7 @@ import de.invesdwin.context.integration.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.SparkJobMain;
+import de.invesdwin.context.integration.spark.test.SparkContainer;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
@@ -35,7 +36,7 @@ public class SparkYarnTest extends ATest {
     private static final HadoopContainer HADOOP = new HadoopContainer();
 
     @Test
-    public void testSparkOnYarnTrueIsolation() throws Exception {
+    public void testSparkOnYarn() throws Exception {
         final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3, SparkJobMain.class)
                 .getResource()
                 .getFile();
@@ -50,11 +51,11 @@ public class SparkYarnTest extends ATest {
 
         final Map<String, String> env = ILockCollectionFactory.getInstance(false).newLinkedMap();
         env.putAll(System.getenv()); // Inherit local variables (like SPARK_HOME)
-        env.put("HADOOP_CONF_DIR", HADOOP.getHadoopFolder().getAbsolutePath());
+        env.put("HADOOP_CONF_DIR", HadoopContainer.getHadoopHomeFolder().getAbsolutePath());
 
         final SparkAppHandle handle = new SparkLauncher(env)
                 // NOTE: You must have Spark installed locally (or in your CI) to use SparkLauncher
-                .setSparkHome(System.getenv("SPARK_HOME"))
+                .setSparkHome(SparkContainer.getSparkHomeFolder().getAbsolutePath())
                 .setMaster("yarn")
                 .setDeployMode("cluster") // Runs the Driver inside YARN too
                 .setAppResource(hdfsJobJarPath.toString())

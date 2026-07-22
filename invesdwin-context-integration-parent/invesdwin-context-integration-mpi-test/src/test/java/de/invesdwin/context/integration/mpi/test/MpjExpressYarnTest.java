@@ -36,7 +36,7 @@ public class MpjExpressYarnTest extends AMpiTest {
         String script = Files.readFileToString(scriptTemplate, Charset.defaultCharset());
         script = script.replace("{MPJ_HOME}", new File("mpj/MpjExpress-v0_44_kevinmilner").getAbsolutePath());
         script = script.replace("{JAVA_HOME}", new SystemProperties().getString("java.home"));
-        script = script.replace("{HADOOP_HOME}", HADOOP.getHadoopFolder().getAbsolutePath());
+        script = script.replace("{HADOOP_HOME}", HadoopContainer.getHadoopHomeFolder().getAbsolutePath());
         final StringBuilder args = new StringBuilder();
         args.append("-yarn -np 2 -dev niodev -hdfsFolder \"/tmp/" + getClass().getSimpleName() + "\" ");
         //args.append("-debugYarn");
