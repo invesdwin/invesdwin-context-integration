@@ -24,13 +24,13 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
 
     private static final Log LOG = new Log(SparkContainer.class);
 
-    private static final String SPARK_VERSION = "3.5.0";
+    private static final String SPARK_VERSION = "4.2.0";
     private static final DockerImageName SPARK_IMAGE = DockerImageName.parse("bitnami/spark:" + SPARK_VERSION);
 
     private static final String SPARK_PACKAGE = "spark-" + SPARK_VERSION + "-bin-hadoop3";
-    private static final File SPARK_CACHE_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
+    private static final File SPARK_CONTAINER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
             SparkContainer.class.getSimpleName());
-    private static final File SPARK_HOME_FOLDER = new File(SPARK_CACHE_FOLDER, SPARK_PACKAGE);
+    private static final File SPARK_HOME_FOLDER = new File(SPARK_CONTAINER_FOLDER, SPARK_PACKAGE);
 
     public SparkContainer() {
         super(SPARK_IMAGE);
@@ -60,11 +60,12 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
 
     private static void maybeDownloadAndExtractSpark() {
         try {
-            final File sparkArchiveFile = new File(SPARK_CACHE_FOLDER, SPARK_PACKAGE + ".tgz");
+            final File sparkArchiveFile = new File(SPARK_CONTAINER_FOLDER, SPARK_PACKAGE + ".tgz");
 
             if (!sparkArchiveFile.exists()) {
                 final Instant started = new Instant();
                 LOG.info("Started downloading [%s]", sparkArchiveFile);
+                Files.forceMkdirParent(sparkArchiveFile);
                 final File sparkArchiveFilePart = new File(sparkArchiveFile.getAbsolutePath() + ".part");
                 Files.deleteQuietly(sparkArchiveFilePart);
 
@@ -83,7 +84,7 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
 
                 // jarchivelib handles .tgz (tar.gz) seamlessly
                 final Archiver archiver = ArchiverFactory.createArchiver(sparkArchiveFile);
-                archiver.extract(sparkArchiveFile, SPARK_CACHE_FOLDER);
+                archiver.extract(sparkArchiveFile, SPARK_CONTAINER_FOLDER);
 
                 Assertions.assertThat(SPARK_HOME_FOLDER).exists();
                 LOG.info("Finished extracting [%s] after %s", sparkArchiveFile, started);

@@ -40,9 +40,6 @@ public class SparkYarnTest extends ATest {
         final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3, SparkJobMain.class)
                 .getResource()
                 .getFile();
-        final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
-        final Path hdfsJobJarPath = new Path("/tmp/" + jobJarFile.getName());
-        fs.copyFromLocalFile(false, true, new Path(jobJarFile.getAbsolutePath()), hdfsJobJarPath);
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final boolean[] jobSuccessful = new boolean[1];
@@ -58,7 +55,7 @@ public class SparkYarnTest extends ATest {
                 .setSparkHome(SparkContainer.getSparkHomeFolder().getAbsolutePath())
                 .setMaster("yarn")
                 .setDeployMode("cluster") // Runs the Driver inside YARN too
-                .setAppResource(hdfsJobJarPath.toString())
+                .setAppResource(jobJarFile.getAbsolutePath())
                 .setMainClass(SparkJobMain.class.getName())
 
                 // CRITICAL: Force true container isolation
@@ -84,6 +81,7 @@ public class SparkYarnTest extends ATest {
 
         // 4. Download and verify logs from HDFS
         final File localLogDir = new File(ContextProperties.getCacheDirectory(), "spark-logs");
+        final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
         fs.copyToLocalFile(new Path(hdfsLogDir), new Path(localLogDir.getAbsolutePath()));
 
         final File log_1_2 = new File(localLogDir, "1_2_LatencyServerTask.log");

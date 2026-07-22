@@ -34,9 +34,9 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
     private static final Log LOG = new Log(HadoopContainer.class);
 
     private static final String HADOOP_VERSION = "3.5.0";
-    private static final File HADOOP_DOCKER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
+    private static final File HADOOP_CONTAINER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
             HadoopContainer.class.getSimpleName());
-    public static final File HADOOP_FOLDER = new File(HADOOP_DOCKER_FOLDER, "hadoop");
+    public static final File HADOOP_HOME_FOLDER = new File(HADOOP_CONTAINER_FOLDER, "hadoop");
     //not needed to run the jobs
     private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
@@ -102,7 +102,7 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
 
     private static String buildDockerImage(final String targetImageName) {
         final String generatedImageName = new ImageFromDockerfile(targetImageName, false)
-                .withFileFromPath(".", HADOOP_DOCKER_FOLDER.toPath())
+                .withFileFromPath(".", HADOOP_CONTAINER_FOLDER.toPath())
                 .get();
 
         // Note: ImageFromDockerfile automatically tags it with the name we provided
@@ -115,7 +115,7 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
 
     public static File getHadoopHomeFolder() {
         maybeDownloadAndExtractHadoop();
-        return HADOOP_FOLDER;
+        return HADOOP_HOME_FOLDER;
     }
 
     private static void maybeDownloadAndExtractHadoop() {
@@ -125,15 +125,15 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
                             "classpath*:/" + HadoopContainer.class.getPackageName().replace(".", "/") + "/files/*");
             for (int i = 0; i < resources.length; i++) {
                 final Resource resource = resources[i];
-                final File file = new File(HADOOP_DOCKER_FOLDER, resource.getFilename());
+                final File file = new File(HADOOP_CONTAINER_FOLDER, resource.getFilename());
                 Files.copyInputStreamToFile(resource.getInputStream(), file);
                 if (file.getName().equals("docker-entrypoint.sh")) {
                     file.setExecutable(true, false);
                 }
             }
 
-            final File hadoopVersionedFolder = new File(HADOOP_FOLDER.getAbsolutePath() + "-" + HADOOP_VERSION);
-            final File hadoopFile = new File(HADOOP_DOCKER_FOLDER, "hadoop-" + HADOOP_VERSION + ".tar.gz");
+            final File hadoopVersionedFolder = new File(HADOOP_HOME_FOLDER.getAbsolutePath() + "-" + HADOOP_VERSION);
+            final File hadoopFile = new File(HADOOP_CONTAINER_FOLDER, "hadoop-" + HADOOP_VERSION + ".tar.gz");
             if (!hadoopFile.exists()) {
                 final Instant started = new Instant();
                 LOG.info("Started downloading [%s]", hadoopFile);
@@ -142,21 +142,21 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
                 IOUtils.copy(URIs.asUrl("https://archive.apache.org/dist/hadoop/common/hadoop-" + HADOOP_VERSION
                         + "/hadoop-" + HADOOP_VERSION + ".tar.gz"), hadoopFilePart);
                 Files.moveFileQuietly(hadoopFilePart, hadoopFile);
-                Files.deleteQuietly(HADOOP_FOLDER);
+                Files.deleteQuietly(HADOOP_HOME_FOLDER);
                 Files.deleteQuietly(hadoopVersionedFolder);
                 LOG.info("Finished downloading [%s] after %s", hadoopFile, started);
             }
-            if (!HADOOP_FOLDER.exists()) {
+            if (!HADOOP_HOME_FOLDER.exists()) {
                 final Instant started = new Instant();
                 LOG.info("Started extracting [%s]", hadoopFile);
                 final Archiver archiver = ArchiverFactory.createArchiver(hadoopFile);
                 archiver.extract(hadoopFile, hadoopVersionedFolder.getParentFile());
                 Assertions.assertThat(hadoopVersionedFolder).exists();
-                Files.moveDirectory(hadoopVersionedFolder, HADOOP_FOLDER);
+                Files.moveDirectory(hadoopVersionedFolder, HADOOP_HOME_FOLDER);
                 //                COPY core-site.xml $HADOOP_HOME/etc/hadoop/
                 for (final String filename : new String[] { "core-site.xml", "hdfs-site.xml", "yarn-site.xml" }) {
-                    Files.copyFile(new File(HADOOP_DOCKER_FOLDER, filename),
-                            new File(HADOOP_FOLDER, "etc/hadoop/" + filename));
+                    Files.copyFile(new File(HADOOP_CONTAINER_FOLDER, filename),
+                            new File(HADOOP_HOME_FOLDER, "etc/hadoop/" + filename));
                 }
                 LOG.info("Finished extracting [%s] after %s", hadoopFile, started);
             }
