@@ -11,7 +11,6 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import de.invesdwin.context.beans.init.AMain;
-import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.string.Strings;
@@ -22,14 +21,14 @@ public class SparkJobMain extends AMain {
     private static final boolean BOOTSTRAP = true;
 
     // The driver only needs the total size and the log directory
-    @Option(help = true, name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \""
-            + YarnJobMain.DEFAULT_HDFS_URI + "\"", required = true)
+    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + YarnJobMain.DEFAULT_HDFS_URI
+            + "\"", required = true)
     protected String hdfsUri;
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
+    @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
-    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
+    @Option(name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
-    @Option(help = true, name = "-m", aliases = "--master", usage = "Defines the Spark master URL", required = false)
+    @Option(name = "-m", aliases = "--master", usage = "Defines the Spark master URL")
     protected String master;
 
     public SparkJobMain() {
@@ -71,10 +70,6 @@ public class SparkJobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        try {
-            new SparkJobMain(args).run();
-        } catch (final Throwable t) {
-            Err.process(t);
-        }
+        new SparkJobMain(args).run();
     }
 }

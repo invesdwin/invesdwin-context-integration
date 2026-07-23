@@ -32,7 +32,6 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.string.Strings;
@@ -54,14 +53,14 @@ public class YarnJobMain extends AMain {
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
     }
 
-    @Option(help = true, name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + DEFAULT_HDFS_URI
+    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + DEFAULT_HDFS_URI
             + "\"", required = true)
     protected String hdfsUri;
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
+    @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
-    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
+    @Option(name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
-    @Option(help = true, name = "-r", aliases = "--rank", usage = "Defines the rank of this process", required = true)
+    @Option(name = "-r", aliases = "--rank", usage = "Defines the rank of this process", required = true)
     protected int rank;
 
     public YarnJobMain(final String[] args) {
@@ -209,11 +208,7 @@ public class YarnJobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        try {
-            new YarnJobMain(args).run();
-        } catch (final Throwable t) {
-            Err.process(t);
-        }
+        new YarnJobMain(args).run();
     }
 
 }

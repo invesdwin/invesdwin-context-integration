@@ -53,7 +53,7 @@ public class MpiJobMain extends AMain {
         MPI = ProvidedMpiAdapter.getProvidedInstance();
     }
 
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
+    @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
 
     private final Log log = new Log(this);
