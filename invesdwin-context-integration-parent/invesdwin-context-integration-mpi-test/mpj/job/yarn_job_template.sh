@@ -13,13 +13,8 @@ SEQ_NUM=$(expr "$SEQ" + 0)
 RANK=$((SEQ_NUM - 2))
 SIZE={SIZE}
 
-# 1. Create a unique local logging folder for this container
-LOCAL_LOG_DIR="/tmp/container_${CONTAINER_ID}"
-mkdir -p "$LOCAL_LOG_DIR"
+echo "HDFS_URI"
+echo $HDFS_URI
 
 # 2. Execute the payload, passing the local log directory
-/opt/java/openjdk/bin/java -jar $1 --size $SIZE --rank $RANK --logDir "$LOCAL_LOG_DIR"
-
-# 3. Copy the generated log files back to HDFS so your client can download them
-/home/hduser/hadoop/bin/hadoop fs -mkdir -p /tmp/logs/
-/home/hduser/hadoop/bin/hadoop fs -put "$LOCAL_LOG_DIR"/* /tmp/logs/
+/opt/java/openjdk/bin/java -jar $1 --size $SIZE --rank $RANK --logDir "{HDFS_LOG_DIR}" --hdfsUri "{HDFS_URI}"

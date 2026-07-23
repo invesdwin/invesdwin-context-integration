@@ -34,23 +34,24 @@ public class YarnDistributedShellTest extends ATest {
 
     @Test
     public void test() throws Exception {
-
         final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.MPI, YarnJobMain.class).getResource()
                 .getFile();
         final File jobScriptFile = new File(ContextProperties.getCacheDirectory(), "yarn_job.sh");
 
         // 1. Define HDFS paths
+        final YarnConfiguration conf = HADOOP.newYarnConfiguration();
+        final FileSystem fs = FileSystem.get(conf);
         final Path hdfsJobJarPath = new Path("/tmp/" + jobJarFile.getName());
         final Path hdfsJobScriptPath = new Path("/tmp/" + jobScriptFile.getName());
 
+        final Path hdfsLogDir = new Path("/tmp/logs/");
         final File jobScriptTemplate = new File("mpj/job/yarn_job_template.sh");
         String jobScript = Files.readFileToString(jobScriptTemplate, Charset.defaultCharset());
         jobScript = jobScript.replace("{HDFS_JOB_JAR_PATH}", hdfsJobJarPath.toString())
-                .replace("{SIZE}", String.valueOf(NUM_CONTAINERS));
+                .replace("{SIZE}", String.valueOf(NUM_CONTAINERS))
+                .replace("{HDFS_LOG_DIR}", hdfsLogDir.toString())
+                .replace("{HDFS_URI}", fs.getUri().toString());
         Files.writeStringToFile(jobScriptFile, jobScript, Charset.defaultCharset());
-
-        final YarnConfiguration conf = HADOOP.newYarnConfiguration();
-        final FileSystem fs = FileSystem.get(conf);
 
         // 2. Upload files to HDFS (overwrite = true)
         fs.copyFromLocalFile(false, true, new Path(jobJarFile.getAbsolutePath()), hdfsJobJarPath);
@@ -59,7 +60,6 @@ public class YarnDistributedShellTest extends ATest {
         runDistributedShellViaProcess(hdfsJobJarPath, hdfsJobScriptPath);
 
         // 3. Check logs in HDFS
-        final Path hdfsLogDir = new Path("/tmp/logs/");
         if (fs.exists(hdfsLogDir)) {
             fs.copyToLocalFile(hdfsLogDir, new Path(ContextProperties.getCacheDirectory().getAbsolutePath()));
         }

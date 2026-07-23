@@ -22,7 +22,7 @@ import de.invesdwin.util.time.Instant;
 @NotThreadSafe
 public class SparkContainer extends GenericContainer<SparkContainer> {
 
-    private static final int WEBUI_PORT = 8080;
+    private static final int WEBUI_HTTP_PORT = 8080;
     private static final int MASTER_PORT = 7077;
 
     private static final Log LOG = new Log(SparkContainer.class);
@@ -39,7 +39,7 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
         super(SPARK_IMAGE);
 
         // Expose Spark Master Port and Web UI
-        withExposedPorts(MASTER_PORT, WEBUI_PORT);
+        withExposedPorts(MASTER_PORT, WEBUI_HTTP_PORT);
 
         // Launch Master in background, then launch Worker connected to local Master
         withCommand("/bin/sh", "-c",
@@ -48,7 +48,13 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
                         + org.apache.spark.deploy.worker.Worker.class.getName() + " spark://127.0.0.1:" + MASTER_PORT);
 
         // Wait for the Web UI to be HTTP 200 OK
-        waitingFor(Wait.forHttp("/").forPort(WEBUI_PORT));
+        waitingFor(Wait.forHttp("/").forPort(WEBUI_HTTP_PORT));
+    }
+
+    @Override
+    public void start() {
+        super.start();
+        LOG.warn("Spark Web UI available at: " + getWebUiUrl());
     }
 
     public String getMasterUrl() {
@@ -56,7 +62,7 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
     }
 
     public String getWebUiUrl() {
-        return "http://" + getHost() + ":" + getMappedPort(WEBUI_PORT);
+        return "http://" + getHost() + ":" + getMappedPort(WEBUI_HTTP_PORT);
     }
 
     public static String getSparkVersion() {

@@ -31,6 +31,15 @@ import de.invesdwin.util.time.Instant;
 @NotThreadSafe
 public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContainer> {
 
+    private static final int RESOURCEMANAGER_PORT = 8032;
+    private static final int DATATRANSFER_PORT = 9866;
+    private static final int HDFS_PORT = 9000;
+    private static final int RESOURCEMANAGER_HTTP_PORT = 8088;
+    private static final int NAMENODE_HTTP_PORT = 9870;
+    private static final int DATANODE_HTTP_PORT = 9864;
+    private static final int MAPREDUCECLIENT_PORTRANGE_FROM = 49000;
+    private static final int MAPREDUCECLIENT_PORTRANGE_TO = 49005;
+
     private static final Log LOG = new Log(HadoopContainer.class);
 
     private static final String HADOOP_VERSION = "3.5.0";
@@ -49,29 +58,48 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
 
         if (HADOOP_FRONTENDS) {
             //dfs.datanode.http.address - The secondary namenode http/https server address and port.
-            withFixedExposedPort(9864, 9864);
+            withFixedExposedPort(DATANODE_HTTP_PORT, DATANODE_HTTP_PORT);
             //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
-            withFixedExposedPort(9870, 9870);
+            withFixedExposedPort(NAMENODE_HTTP_PORT, NAMENODE_HTTP_PORT);
             //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
-            withFixedExposedPort(8088, 8088);
+            withFixedExposedPort(RESOURCEMANAGER_HTTP_PORT, RESOURCEMANAGER_HTTP_PORT);
         }
         //fs.defaultFS - The name of the default file system.
-        withFixedExposedPort(9000, 9000);
+        withFixedExposedPort(HDFS_PORT, HDFS_PORT);
         //DataNode data transfer port (Hadoop 3.x)
-        withFixedExposedPort(9866, 9866);
+        withFixedExposedPort(DATATRANSFER_PORT, DATATRANSFER_PORT);
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
-        withFixedExposedPort(8032, 8032);
+        withFixedExposedPort(RESOURCEMANAGER_PORT, 8032);
         setWaitStrategy(new DockerHealthcheckWaitStrategy());
         if (HADOOP_EXPOSE_HOST) {
             withAccessToHost(true);
             //https://stackoverflow.com/a/60740997
             withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
         }
-        for (int i = 49000; i <= 49005; i++) {
+        for (int i = MAPREDUCECLIENT_PORTRANGE_FROM; i <= MAPREDUCECLIENT_PORTRANGE_TO; i++) {
             withFixedExposedPort(i, i);
         }
+    }
 
+    @Override
+    public void start() {
+        super.start();
+        LOG.warn("Hadoop ResourceManager Web UI available at: " + getResourcemanagerHttpUrl());
+        LOG.warn("Hadoop NameNode Web UI available at: " + getNamenodeHttpUrl());
+        LOG.warn("Hadoop DataNode Web UI available at: " + getDatanodeHttpUrl());
+    }
+
+    public String getResourcemanagerHttpUrl() {
+        return "http://" + getHost() + ":" + getMappedPort(RESOURCEMANAGER_HTTP_PORT);
+    }
+
+    public String getNamenodeHttpUrl() {
         //logs are available at: http://localhost:9870/logs/
+        return "http://" + getHost() + ":" + getMappedPort(NAMENODE_HTTP_PORT);
+    }
+
+    public String getDatanodeHttpUrl() {
+        return "http://" + getHost() + ":" + getMappedPort(DATANODE_HTTP_PORT);
     }
 
     private static String newDockerImageName() {
@@ -181,13 +209,14 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
     }
 
     private void putProperties(final Configuration conf) {
-        conf.set("fs.defaultFS", "hdfs://localhost:9000");
-        conf.set("yarn.resourcemanager.address", "localhost:8032");
+        conf.set("fs.defaultFS", "hdfs://localhost:" + HDFS_PORT);
+        conf.set("yarn.resourcemanager.address", "localhost:" + RESOURCEMANAGER_PORT);
         conf.set("yarn.nodemanager.hostname", "localhost");
         conf.set("yarn.nodemanager.address", "localhost:8041");
         conf.set("yarn.nodemanager.webapp.address", "localhost:8042");
         conf.set("mapreduce.framework.name", "yarn");
-        conf.set("yarn.app.mapreduce.am.job.client.port-range", "49000-49005");
+        conf.set("yarn.app.mapreduce.am.job.client.port-range",
+                MAPREDUCECLIENT_PORTRANGE_FROM + "-" + MAPREDUCECLIENT_PORTRANGE_TO);
         conf.set("yarn.app.mapreduce.am.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.map.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");

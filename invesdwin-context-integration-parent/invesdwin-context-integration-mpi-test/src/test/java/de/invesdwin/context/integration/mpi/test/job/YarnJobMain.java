@@ -1,9 +1,6 @@
 package de.invesdwin.context.integration.mpi.test.job;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -49,6 +46,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 @NotThreadSafe
 public class YarnJobMain extends AMain {
 
+    public static final String DEFAULT_HDFS_URI = "hdfs://localhost:9000";
     private static final boolean BOOTSTRAP = true;
 
     static {
@@ -56,6 +54,9 @@ public class YarnJobMain extends AMain {
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
     }
 
+    @Option(help = true, name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + DEFAULT_HDFS_URI
+            + "\"", required = true)
+    protected String hdfsUri;
     @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
     @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
@@ -81,16 +82,7 @@ public class YarnJobMain extends AMain {
         final AChannelTest parent = new AChannelTest() {
         };
 
-        // 1. Initialize Hadoop FileSystem
-        final Configuration conf = new Configuration();
-        final FileSystem fs;
-        try {
-            // this falls back to a local filesystem if HDFS is not available
-            fs = FileSystem.get(conf);
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);
-        }
-
+        final FileSystem fs = newFileSystem();
         // 2. Define the HDFS Path (using the path string from logDir)
         final Path serverAddressFile = new Path(logDir.getParentFile().getPath(), "serverAddress.txt");
 
@@ -117,7 +109,7 @@ public class YarnJobMain extends AMain {
                         .newSerdeReader(new NativeSocketSynchronousReader(serverChannel));
                 final ISynchronousWriter<FDate> responseWriter = parent
                         .newSerdeWriter(new NativeSocketSynchronousWriter(serverChannel));
-                try (OutputStream log = newLog(rank, size, LatencyServerTask.class)) {
+                try (OutputStream log = newLog(fs, LatencyServerTask.class)) {
                     new LatencyServerTask(parent, log, requestReader, responseWriter).run();
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
@@ -142,7 +134,7 @@ public class YarnJobMain extends AMain {
                     .newSerdeWriter(new NativeSocketSynchronousWriter(clientChannel));
             final ISynchronousReader<FDate> responseReader = parent
                     .newSerdeReader(new NativeSocketSynchronousReader(clientChannel));
-            try (OutputStream log = newLog(rank, size, LatencyClientTask.class)) {
+            try (OutputStream log = newLog(fs, LatencyClientTask.class)) {
                 new LatencyClientTask(parent, log, requestWriter, responseReader).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -190,14 +182,30 @@ public class YarnJobMain extends AMain {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, true);
     }
 
-    private OutputStream newLog(final int rank, final int size, final Class<?> taskClass) throws FileNotFoundException {
+    private OutputStream newLog(final FileSystem fs, final Class<?> taskClass) throws IOException {
         final LogLevelOutputStream log = new LogLevelOutputStream(LogLevel.INFO, new Log(taskClass));
         if (logDir == null) {
             return log;
         }
-        final BufferedOutputStream file = new BufferedOutputStream(new FileOutputStream(
-                new File(logDir, (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log")));
-        return new BroadcastingOutputStream(log, file);
+
+        final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
+        final Path hdfsLogPath = new Path(logDir.getPath(), logFileName);
+
+        // Create the file in HDFS (overwriting if exists)
+        final OutputStream hdfsOut = fs.create(hdfsLogPath, true);
+
+        return new BroadcastingOutputStream(log, hdfsOut);
+    }
+
+    private FileSystem newFileSystem() {
+        final Configuration conf = new Configuration();
+        conf.set("fs.defaultFS", hdfsUri);
+        try {
+            // this falls back to a local filesystem if HDFS is not available
+            return FileSystem.get(conf);
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);
+        }
     }
 
     public static void main(final String[] args) {

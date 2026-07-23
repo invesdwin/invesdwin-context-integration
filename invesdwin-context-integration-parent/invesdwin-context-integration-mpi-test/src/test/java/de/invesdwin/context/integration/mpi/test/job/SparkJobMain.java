@@ -22,6 +22,9 @@ public class SparkJobMain extends AMain {
     private static final boolean BOOTSTRAP = true;
 
     // The driver only needs the total size and the log directory
+    @Option(help = true, name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \""
+            + YarnJobMain.DEFAULT_HDFS_URI + "\"", required = true)
+    protected String hdfsUri;
     @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
     @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
@@ -39,10 +42,10 @@ public class SparkJobMain extends AMain {
 
     @Override
     protected void startApplication(final CmdLineParser parser) {
-        runSparkJob(size, logDir, master);
+        runSparkJob(hdfsUri, logDir, size, master);
     }
 
-    private static void runSparkJob(final int size, final File logDir, final String master) {
+    private static void runSparkJob(final String hdfsUri, final File logDir, final int size, final String master) {
         // Run locally with threads equal to container count
         final SparkConf conf = new SparkConf().setAppName(SparkJobMain.class.getSimpleName());
         if (master != null) {
@@ -57,7 +60,7 @@ public class SparkJobMain extends AMain {
                     final int rank = iterator.next();
 
                     final String[] args = { "--size", String.valueOf(size), "--rank", String.valueOf(rank), "--logDir",
-                            logDir.getAbsolutePath() };
+                            logDir.getAbsolutePath(), "--hdfsUri", hdfsUri };
 
                     // Execute logic
                     YarnJobMain.main(args);

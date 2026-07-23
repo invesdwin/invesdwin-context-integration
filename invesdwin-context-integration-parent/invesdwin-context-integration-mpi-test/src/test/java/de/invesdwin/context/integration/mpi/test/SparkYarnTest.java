@@ -46,7 +46,8 @@ public class SparkYarnTest extends ATest {
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
         final String hdfsLogDir = "/tmp/spark-logs";
-        final String defaultFs = HADOOP.newHadoopConfiguration().get("fs.defaultFS");
+        final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
+        final String defaultFs = fs.getUri().toString();
         final Map<String, String> env = ILockCollectionFactory.getInstance(false).newLinkedMap();
         env.putAll(System.getenv());
         env.put("SPARK_HOME", SparkContainer.getSparkHomeFolder().getAbsolutePath());
@@ -65,7 +66,7 @@ public class SparkYarnTest extends ATest {
                 .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS))
                 .setConf("spark.executor.cores", "1")
 
-                .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", hdfsLogDir)
+                .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", hdfsLogDir, "--hdfsUri", defaultFs)
                 .startApplication(new SparkAppHandle.Listener() {
                     @Override
                     public void stateChanged(final SparkAppHandle handle) {
@@ -84,7 +85,6 @@ public class SparkYarnTest extends ATest {
 
         // 4. Download and verify logs from HDFS
         final File localLogDir = new File(ContextProperties.getCacheDirectory(), "spark-logs");
-        final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
         fs.copyToLocalFile(new Path(hdfsLogDir), new Path(localLogDir.getAbsolutePath()));
 
         final File log_1_2 = new File(localLogDir, "1_2_LatencyServerTask.log");
