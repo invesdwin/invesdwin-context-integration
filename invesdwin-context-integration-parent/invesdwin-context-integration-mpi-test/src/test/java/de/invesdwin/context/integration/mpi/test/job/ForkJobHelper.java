@@ -26,7 +26,6 @@ import de.invesdwin.util.concurrent.lock.FileChannelLock;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
-import de.invesdwin.util.lang.uri.connect.IURIsConnectFactory;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
 /**
@@ -43,7 +42,6 @@ public final class ForkJobHelper {
     private static final File OPENJDK_EXTRACTED_FOLDER;
 
     static {
-        URIs.setDefaultUrisConnectFactory(IURIsConnectFactory.URL_CONNECTION);
         PlatformInitializerProperties.setAllowed(false);
         OPENJDK_FOLDER = new File(ContextProperties.getHomeDirectory(), "openjdk" + OPENJDK_VERSION);
         final String folderVersion = OPENJDK_VERSION.replace("_", "+");

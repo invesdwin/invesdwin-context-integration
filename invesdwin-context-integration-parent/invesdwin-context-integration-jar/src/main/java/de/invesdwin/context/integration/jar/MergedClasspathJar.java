@@ -21,6 +21,7 @@ import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarVisitor;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;
+import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.time.Instant;
 
 @ThreadSafe
@@ -74,9 +75,11 @@ public class MergedClasspathJar {
 
     protected File newFile() {
         if (mainClass != null) {
-            return new File(ContextProperties.getCacheDirectory(), mainClass.getSimpleName() + ".jar");
+            return new File(ContextProperties.getCacheDirectory(), getClass().getSimpleName() + "_" + filter.name()
+                    + "_" + mainClass.getSimpleName() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
         } else {
-            return new File(ContextProperties.TEMP_DIRECTORY, getClass().getName() + "_" + filter.name() + ".jar");
+            return new File(ContextProperties.TEMP_DIRECTORY,
+                    getClass().getSimpleName() + "_" + filter.name() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
         }
     }
 

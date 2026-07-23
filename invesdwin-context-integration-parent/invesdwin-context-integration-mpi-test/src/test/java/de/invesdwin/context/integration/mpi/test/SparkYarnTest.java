@@ -7,6 +7,7 @@ import java.util.concurrent.CountDownLatch;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.agrona.collections.MutableBoolean;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.spark.launcher.SparkAppHandle;
@@ -37,37 +38,39 @@ public class SparkYarnTest extends ATest {
 
     @Test
     public void testSparkOnYarn() throws Exception {
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3, SparkJobMain.class)
+        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
                 .getResource()
                 .getFile();
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
-        final boolean[] jobSuccessful = new boolean[1];
+        final MutableBoolean jobSuccessful = new MutableBoolean();
 
-        final String hdfsLogDir = "/tmp/spark-logs"; // Let Spark write logs to HDFS
-
+        final String hdfsLogDir = "/tmp/spark-logs";
+        final String defaultFs = HADOOP.newHadoopConfiguration().get("fs.defaultFS");
         final Map<String, String> env = ILockCollectionFactory.getInstance(false).newLinkedMap();
-        env.putAll(System.getenv()); // Inherit local variables (like SPARK_HOME)
+        env.putAll(System.getenv());
+        env.put("SPARK_HOME", SparkContainer.getSparkHomeFolder().getAbsolutePath());
         env.put("HADOOP_CONF_DIR", HadoopContainer.getHadoopHomeFolder().getAbsolutePath());
 
         final SparkAppHandle handle = new SparkLauncher(env)
-                // NOTE: You must have Spark installed locally (or in your CI) to use SparkLauncher
                 .setSparkHome(SparkContainer.getSparkHomeFolder().getAbsolutePath())
                 .setMaster("yarn")
-                .setDeployMode("cluster") // Runs the Driver inside YARN too
+                .setDeployMode("cluster")
                 .setAppResource(jobJarFile.getAbsolutePath())
                 .setMainClass(SparkJobMain.class.getName())
 
-                // CRITICAL: Force true container isolation
-                .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS)) // 2 JVMs!
-                .setConf("spark.executor.cores", "1") // 1 Core per JVM ensures tasks split
+                .setConf("spark.hadoop.fs.defaultFS", defaultFs)
+                .setConf("spark.yarn.stagingDir", defaultFs + "/tmp/spark-staging")
+
+                .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS))
+                .setConf("spark.executor.cores", "1")
 
                 .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", hdfsLogDir)
                 .startApplication(new SparkAppHandle.Listener() {
                     @Override
                     public void stateChanged(final SparkAppHandle handle) {
                         if (handle.getState().isFinal()) {
-                            jobSuccessful[0] = (handle.getState() == SparkAppHandle.State.FINISHED);
+                            jobSuccessful.set(handle.getState() == SparkAppHandle.State.FINISHED);
                             countDownLatch.countDown();
                         }
                     }
@@ -76,7 +79,7 @@ public class SparkYarnTest extends ATest {
                     public void infoChanged(final SparkAppHandle handle) {}
                 });
         countDownLatch.await();
-        Assertions.checkTrue(jobSuccessful[0], "Spark on YARN job failed!");
+        Assertions.checkTrue(jobSuccessful.get(), "Spark on YARN job failed!");
         handle.stop();
 
         // 4. Download and verify logs from HDFS
