@@ -13,8 +13,5 @@ SEQ_NUM=$(expr "$SEQ" + 0)
 RANK=$((SEQ_NUM - 2))
 SIZE={SIZE}
 
-echo "HDFS_URI"
-echo $HDFS_URI
-
 # 2. Execute the payload, passing the local log directory
 /opt/java/openjdk/bin/java -jar $1 --size $SIZE --rank $RANK --logDir "{HDFS_LOG_DIR}" --hdfsUri "{HDFS_URI}"
