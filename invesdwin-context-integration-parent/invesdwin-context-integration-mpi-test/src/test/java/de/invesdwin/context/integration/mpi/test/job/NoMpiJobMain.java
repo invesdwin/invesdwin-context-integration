@@ -56,11 +56,11 @@ public class NoMpiJobMain extends AMain {
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
     }
 
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
+    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
-    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes")
+    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
-    @Option(help = true, name = "-r", aliases = "--rank", usage = "Defines the rank of this process")
+    @Option(help = true, name = "-r", aliases = "--rank", usage = "Defines the rank of this process", required = true)
     protected int rank;
 
     public NoMpiJobMain(final String[] args) {
@@ -166,8 +166,6 @@ public class NoMpiJobMain extends AMain {
         } catch (final Throwable t) {
             Err.process(t);
         }
-        //kill any outstanding threads
-        System.exit(0);
     }
 
 }

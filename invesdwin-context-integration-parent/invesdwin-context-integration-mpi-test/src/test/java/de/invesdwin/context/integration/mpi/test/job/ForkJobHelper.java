@@ -26,14 +26,15 @@ import de.invesdwin.util.concurrent.lock.FileChannelLock;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
+import de.invesdwin.util.lang.uri.connect.IURIsConnectFactory;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
 /**
- * Use this job to upgrade from an older java version to a newer one. This might be needed on hadoop clusters that run
- * on older JVMs.
+ * Use this job heler to upgrade from an older java version to a newer one. This might be needed on hadoop clusters that
+ * run on older JVMs.
  */
 @NotThreadSafe
-public final class MpiJobJvmUpgradeMain {
+public final class ForkJobHelper {
 
     private static final String OPENJDK_MAJOR_VERSION = "21";
     private static final String OPENJDK_VERSION = OPENJDK_MAJOR_VERSION + ".0.11_10";
@@ -42,6 +43,7 @@ public final class MpiJobJvmUpgradeMain {
     private static final File OPENJDK_EXTRACTED_FOLDER;
 
     static {
+        URIs.setDefaultUrisConnectFactory(IURIsConnectFactory.URL_CONNECTION);
         PlatformInitializerProperties.setAllowed(false);
         OPENJDK_FOLDER = new File(ContextProperties.getHomeDirectory(), "openjdk" + OPENJDK_VERSION);
         final String folderVersion = OPENJDK_VERSION.replace("_", "+");
@@ -52,9 +54,9 @@ public final class MpiJobJvmUpgradeMain {
                 + "U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
-    private MpiJobJvmUpgradeMain() {}
+    private ForkJobHelper() {}
 
-    public static void main(final String[] args) {
+    public static void fork(final Class<?> mainClass, final String[] args) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         StringBuilder classpath = new StringBuilder();
         for (final URL url : DynamicInstrumentationReflections.getURLs(classLoader)) {
@@ -64,17 +66,16 @@ public final class MpiJobJvmUpgradeMain {
         classpath = Strings.removeEnd(classpath, ":");
 
         try {
-            //upgrade to java 17 from java 11 (hadoop does not support java 17 yet)
-            final File javaHome = maybeDownloadAndExtractJava17();
+            final File javaHome = maybeDownloadAndExtractJava();
             final List<String> commands = new ArrayList<>();
             commands.add(javaHome.getAbsolutePath() + "/bin/java");
             commands.add("-classpath");
             commands.add(classpath.toString());
-            commands.add(MpiJobMain.class.getName());
+            commands.add(mainClass.getName());
             for (int i = 0; i < args.length; i++) {
                 commands.add(args[i]);
             }
-            final Slf4jStream stream = Slf4jStream.of(MpiJobJvmUpgradeMain.class);
+            final Slf4jStream stream = Slf4jStream.of(ForkJobHelper.class);
             new ProcessExecutor().command(commands)
                     .destroyOnExit()
                     .exitValueNormal()
@@ -91,11 +92,9 @@ public final class MpiJobJvmUpgradeMain {
         } catch (final Throwable e) {
             throw Err.process(e);
         }
-        //kill any outstanding threads
-        System.exit(0);
     }
 
-    private static File maybeDownloadAndExtractJava17() {
+    private static File maybeDownloadAndExtractJava() {
         for (final String potentialJavaHome : new String[] {
                 "/usr/lib/jvm/java-" + OPENJDK_MAJOR_VERSION + "-openjdk-amd64",
                 "/usr/lib/jvm/java-" + OPENJDK_MAJOR_VERSION + "-openjdk" }) {

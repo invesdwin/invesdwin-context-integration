@@ -53,7 +53,7 @@ public class MpiJobMain extends AMain {
         MPI = ProvidedMpiAdapter.getProvidedInstance();
     }
 
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
+    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
 
     private final Log log = new Log(this);
@@ -184,8 +184,6 @@ public class MpiJobMain extends AMain {
         } finally {
             MPI.free();
         }
-        //kill any outstanding threads
-        System.exit(0);
     }
 
 }

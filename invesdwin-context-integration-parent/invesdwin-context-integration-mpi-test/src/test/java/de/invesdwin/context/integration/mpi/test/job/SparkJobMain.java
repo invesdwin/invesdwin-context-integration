@@ -22,9 +22,9 @@ public class SparkJobMain extends AMain {
     private static final boolean BOOTSTRAP = true;
 
     // The driver only needs the total size and the log directory
-    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory")
+    @Option(help = true, name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected File logDir;
-    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes")
+    @Option(help = true, name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
     @Option(help = true, name = "-m", aliases = "--master", usage = "Defines the Spark master URL", required = false)
     protected String master;
@@ -60,7 +60,7 @@ public class SparkJobMain extends AMain {
                             logDir.getAbsolutePath() };
 
                     // Execute logic
-                    new YarnJobMain(args).run();
+                    YarnJobMain.main(args);
                 }
                 return Collections.singletonList(true).iterator();
             }).collect();
