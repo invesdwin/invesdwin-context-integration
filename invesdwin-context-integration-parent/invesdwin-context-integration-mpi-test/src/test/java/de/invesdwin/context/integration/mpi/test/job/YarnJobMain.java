@@ -53,7 +53,7 @@ public class YarnJobMain extends AMain {
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
     }
 
-    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + DEFAULT_HDFS_URI
+    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defines the hdfs uri like \"" + DEFAULT_HDFS_URI
             + "\"", required = true)
     protected String hdfsUri;
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)

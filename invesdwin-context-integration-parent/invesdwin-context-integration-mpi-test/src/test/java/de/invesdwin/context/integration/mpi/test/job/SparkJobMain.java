@@ -21,7 +21,7 @@ public class SparkJobMain extends AMain {
     private static final boolean BOOTSTRAP = true;
 
     // The driver only needs the total size and the log directory
-    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defined the hdfs uri like \"" + YarnJobMain.DEFAULT_HDFS_URI
+    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defines the hdfs uri like \"" + YarnJobMain.DEFAULT_HDFS_URI
             + "\"", required = true)
     protected String hdfsUri;
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
