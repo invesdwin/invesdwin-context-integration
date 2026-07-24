@@ -1,23 +1,23 @@
 package de.invesdwin.context.integration.mpi.test;
 
 import java.io.File;
-import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.collections.MutableBoolean;
+import org.apache.commons.io.IOUtils;
 import org.apache.spark.launcher.SparkAppHandle;
 import org.apache.spark.launcher.SparkAppHandle.State;
 import org.apache.spark.launcher.SparkLauncher;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.BindMode;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.integration.mpi.test.job.SparkJobMain;
@@ -26,7 +26,9 @@ import de.invesdwin.context.integration.spark.test.SparkContainer;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
-import de.invesdwin.util.lang.Files;
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
+import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ServiceAccountBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.client.Config;
@@ -38,40 +40,23 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 public class SparkKubernetesTest extends ATest {
 
     private static final String SPARK_SA = "spark-sa";
+    private static final String SHARED_PVC = "spark-pvc";
+    private static final String HELPER_POD = "pvc-helper";
     private static final int NUM_CONTAINERS = 2;
-    private static final File LOCAL_LOG_DIR = ContextProperties.getCacheDirectory();
-    private static final File JOB_JAR_FILE = newJobJarFile();
 
-    // 1. Spin up a K3s Kubernetes Cluster, mounting the JAR and Log dir into the K8s node
     @Container
-    private static final KubernetesContainer K3S = new KubernetesContainer() {
-        {
-            withFileSystemBind(JOB_JAR_FILE.getAbsolutePath(), "/tmp/job.jar", BindMode.READ_ONLY);
-            withFileSystemBind(LOCAL_LOG_DIR.getAbsolutePath(), "/tmp/logs", BindMode.READ_WRITE);
-        }
-    };
-
-    private static File newJobJarFile() {
-        try {
-            return new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class).getResource().getFile();
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
+    private static final KubernetesContainer K3S = new KubernetesContainer();
 
     @Test
     public void testSparkOnKubernetes() throws Exception {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
-        LOCAL_LOG_DIR.mkdirs();
-        LOCAL_LOG_DIR.setWritable(true, false);
-
-        // 2. Setup RBAC (Create ServiceAccount and RoleBinding using Fabric8)
         try (KubernetesClient client = new KubernetesClientBuilder()
                 .withConfig(Config.fromKubeconfig(K3S.getKubeConfigYaml()))
                 .build()) {
 
+            // 2. Setup RBAC (ServiceAccount & RoleBinding)
             client.serviceAccounts()
                     .inNamespace("default")
                     .resource(new ServiceAccountBuilder().withNewMetadata().withName(SPARK_SA).endMetadata().build())
@@ -95,81 +80,136 @@ public class SparkKubernetesTest extends ATest {
                             .endSubject()
                             .build())
                     .serverSideApply();
-        }
 
-        // 1. Create temporary file for Spark to read KUBECONFIG
+            // 3. Create a K8s PVC for shared cluster storage
+            client.persistentVolumeClaims()
+                    .inNamespace("default")
+                    .resource(new PersistentVolumeClaimBuilder().withNewMetadata()
+                            .withName(SHARED_PVC)
+                            .endMetadata()
+                            .withNewSpec()
+                            .withAccessModes("ReadWriteOnce")
+                            .withNewResources()
+                            .addToRequests("storage", new Quantity("1Gi"))
+                            .endResources()
+                            .endSpec()
+                            .build())
+                    .serverSideApply();
 
-        // 2. Safely extract the master URL from the YAML using Fabric8 Config
-        final io.fabric8.kubernetes.client.Config k8sConfig = io.fabric8.kubernetes.client.Config
-                .fromKubeconfig(K3S.getKubeConfigYaml());
-        final String masterUrl = k8sConfig.getMasterUrl(); // e.g., "https://localhost:32768"
+            // 4. Spawn a lightweight helper pod mounting the PVC to transfer files
+            client.pods()
+                    .inNamespace("default")
+                    .resource(new PodBuilder().withNewMetadata()
+                            .withName(HELPER_POD)
+                            .endMetadata()
+                            .withNewSpec()
+                            .addNewContainer()
+                            .withName("helper")
+                            .withImage(SparkContainer.SPARK_IMAGE_NAME)
+                            .withCommand("sh", "-c", "trap : TERM INT; sleep infinity & wait")
+                            .addNewVolumeMount()
+                            .withName("shared-vol")
+                            .withMountPath("/mnt/shared")
+                            .endVolumeMount()
+                            .endContainer()
+                            .addNewVolume()
+                            .withName("shared-vol")
+                            .withNewPersistentVolumeClaim()
+                            .withClaimName(SHARED_PVC)
+                            .endPersistentVolumeClaim()
+                            .endVolume()
+                            .endSpec()
+                            .build())
+                    .serverSideApply();
 
-        // 3. Configure launcher environment
-        final Map<String, String> env = ILockCollectionFactory.getInstance(false).newMap(System.getenv());
-        env.put("KUBECONFIG", K3S.getKubeConfigFile().getAbsolutePath());
+            client.pods().inNamespace("default").withName(HELPER_POD).waitUntilReady(1, TimeUnit.MINUTES);
 
-        final SparkLauncher launcher = new SparkLauncher(env)
-                .setSparkHome(SparkContainer.getSparkHomeFolder().getAbsolutePath())
-                .setMaster("k8s://" + masterUrl)
-                .setDeployMode("cluster")
-                .setMainClass(SparkJobMain.class.getName())
-                .setAppResource("local:///tmp/job.jar") // 'local://' tells K8s to look inside the pod's file system
+            // 5. Upload the local JOB JAR directly into the PVC over Kubernetes API
+            final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class).getResource()
+                    .getFile();
+            client.pods()
+                    .inNamespace("default")
+                    .withName(HELPER_POD)
+                    .file("/mnt/shared/job.jar")
+                    .upload(jobJarFile.toPath());
 
-                // Configure standard executor limits
-                .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS))
-                .setConf("spark.executor.cores", "1")
+            // 6. Extract K8s Master URL
+            final Config k8sConfig = Config.fromKubeconfig(K3S.getKubeConfigYaml());
+            final String masterUrl = k8sConfig.getMasterUrl();
 
-                // Use a standard Spark image (must have Java compatible with your JAR)
-                .setConf("spark.kubernetes.container.image", SparkContainer.SPARK_IMAGE_NAME)
-                .setConf("spark.kubernetes.authenticate.driver.serviceAccountName", SPARK_SA)
+            final Map<String, String> env = ILockCollectionFactory.getInstance(false).newMap(System.getenv());
+            env.put("KUBECONFIG", K3S.getKubeConfigFile().getAbsolutePath());
 
-                .setConf("spark.driver.extraJavaOptions", "-Duser.home=/tmp")
-                .setConf("spark.executor.extraJavaOptions", "-Duser.home=/tmp")
+            // 7. Launch Spark job referencing the PVC paths
+            final SparkLauncher launcher = new SparkLauncher(env)
+                    .setSparkHome(SparkContainer.getSparkHomeFolder().getAbsolutePath())
+                    .setMaster("k8s://" + masterUrl)
+                    .setDeployMode("cluster")
+                    .setMainClass(SparkJobMain.class.getName())
+                    .setAppResource("local:///mnt/shared/job.jar")
 
-                // 4. Mount the hostPath directories into the Driver and Executor Pods
-                // This makes the JAR available at /tmp/job.jar and logs writable to /tmp/logs inside every pod
-                .setConf("spark.kubernetes.driver.volumes.hostPath.jobjar.mount.path", "/tmp/job.jar")
-                .setConf("spark.kubernetes.driver.volumes.hostPath.jobjar.options.path", "/tmp/job.jar")
-                .setConf("spark.kubernetes.executor.volumes.hostPath.jobjar.mount.path", "/tmp/job.jar")
-                .setConf("spark.kubernetes.executor.volumes.hostPath.jobjar.options.path", "/tmp/job.jar")
+                    .setConf("spark.executor.instances", String.valueOf(NUM_CONTAINERS))
+                    .setConf("spark.executor.cores", "1")
+                    .setConf("spark.kubernetes.container.image", SparkContainer.SPARK_IMAGE_NAME)
+                    .setConf("spark.kubernetes.authenticate.driver.serviceAccountName", SPARK_SA)
 
-                .setConf("spark.kubernetes.driver.volumes.hostPath.logdir.mount.path", "/tmp/logs")
-                .setConf("spark.kubernetes.driver.volumes.hostPath.logdir.options.path", "/tmp/logs")
-                .setConf("spark.kubernetes.executor.volumes.hostPath.logdir.mount.path", "/tmp/logs")
-                .setConf("spark.kubernetes.executor.volumes.hostPath.logdir.options.path", "/tmp/logs")
+                    .setConf("spark.driver.extraJavaOptions", "-Duser.home=/tmp")
+                    .setConf("spark.executor.extraJavaOptions", "-Duser.home=/tmp")
 
-                .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", "/tmp/logs", "--hdfsUri", "file:///");
+                    // Mount the K8s PVC into Driver and Executor Pods
+                    .setConf("spark.kubernetes.driver.volumes.persistentVolumeClaim.shared-vol.options.claimName",
+                            SHARED_PVC)
+                    .setConf("spark.kubernetes.driver.volumes.persistentVolumeClaim.shared-vol.mount.path",
+                            "/mnt/shared")
+                    .setConf("spark.kubernetes.executor.volumes.persistentVolumeClaim.shared-vol.options.claimName",
+                            SHARED_PVC)
+                    .setConf("spark.kubernetes.executor.volumes.persistentVolumeClaim.shared-vol.mount.path",
+                            "/mnt/shared")
 
-        final SparkAppHandle handle = launcher.startApplication(new SparkAppHandle.Listener() {
-            @Override
-            public void stateChanged(final SparkAppHandle handle) {
-                final State state = handle.getState();
-                if (state.isFinal()) {
-                    // In K8s cluster mode, the driver pod shutting down severs the SparkLauncher connection,
-                    // often causing a LOST state. We accept LOST here and let the subsequent log checks
-                    // strictly validate the actual success of the workload.
-                    jobSuccessful.set(state == SparkAppHandle.State.FINISHED || state == SparkAppHandle.State.LOST);
-                    countDownLatch.countDown();
+                    .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", "/mnt/shared/logs", "--hdfsUri",
+                            "file:///");
+
+            final SparkAppHandle handle = launcher.startApplication(new SparkAppHandle.Listener() {
+                @Override
+                public void stateChanged(final SparkAppHandle handle) {
+                    final State state = handle.getState();
+                    if (state.isFinal()) {
+                        jobSuccessful.set(state == SparkAppHandle.State.FINISHED || state == SparkAppHandle.State.LOST);
+                        countDownLatch.countDown();
+                    }
                 }
+
+                @Override
+                public void infoChanged(final SparkAppHandle handle) {}
+            });
+
+            countDownLatch.await();
+            Assertions.checkTrue(jobSuccessful.get(), "Spark on Kubernetes job failed!");
+            if (!handle.getState().isFinal()) {
+                handle.stop();
             }
 
-            @Override
-            public void infoChanged(final SparkAppHandle handle) {}
-        });
+            // 8. Fetch and verify logs from the PVC via the Fabric8 client
+            final String str_1_2;
+            try (InputStream is = client.pods()
+                    .inNamespace("default")
+                    .withName(HELPER_POD)
+                    .file("/mnt/shared/logs/1_2_LatencyServerTask.log")
+                    .read()) {
+                str_1_2 = IOUtils.toString(is, Charset.defaultCharset());
+            }
 
-        countDownLatch.await();
-        Assertions.checkTrue(jobSuccessful.get(), "Spark on Kubernetes job failed!");
-        if (!handle.getState().isFinal()) {
-            handle.stop();
+            final String str_2_2;
+            try (InputStream is = client.pods()
+                    .inNamespace("default")
+                    .withName(HELPER_POD)
+                    .file("/mnt/shared/logs/2_2_LatencyClientTask.log")
+                    .read()) {
+                str_2_2 = IOUtils.toString(is, Charset.defaultCharset());
+            }
+
+            Assertions.assertThat(str_1_2).contains("WritesFinished: ").contains("(100%)");
+            Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains("(100%)");
         }
-
-        // 5. Verify logs directly from host OS (thanks to volume binding)
-        final File log_1_2 = new File(LOCAL_LOG_DIR, "1_2_LatencyServerTask.log");
-        final File log_2_2 = new File(LOCAL_LOG_DIR, "2_2_LatencyClientTask.log");
-
-        final String str_1_2 = Files.readFileToStringNoThrow(log_1_2, Charset.defaultCharset());
-        final String str_2_2 = Files.readFileToStringNoThrow(log_2_2, Charset.defaultCharset());
-        Assertions.assertThat(str_1_2).contains("WritesFinished: ").contains("(100%)");
-        Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains("(100%)");
     }
 }
