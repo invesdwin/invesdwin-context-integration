@@ -83,11 +83,11 @@ public class YarnJobMain extends AMain {
 
         final FileSystem fs = newFileSystem();
         // 2. Define the HDFS Path (using the path string from logDir)
-        final Path serverAddressFile = new Path(logDir.getParentFile().getPath(), "serverAddress.txt");
+        final Path serverAddressFile = new Path(logDir.getPath(), "serverAddress.txt");
 
         switch (rank) {
         case 0: {
-            final String serverHostname = NetworkUtil.getHostname();
+            final String serverHostname = NetworkUtil.getLocalAddress().getHostAddress();
             final int serverPort = NetworkUtil.findAvailableTcpPort();
             final InetSocketAddress serverAddress = new InetSocketAddress(serverHostname, serverPort);
             final String serverAddressStr = serverHostname + ":" + serverPort;

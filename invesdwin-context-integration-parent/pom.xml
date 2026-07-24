@@ -48,6 +48,8 @@
 		<module>invesdwin-context-integration-hadoop-test</module>
 		<module>invesdwin-context-integration-spark</module>
 		<module>invesdwin-context-integration-spark-test</module>
+		<module>invesdwin-context-integration-kubernetes</module>
+		<module>invesdwin-context-integration-kubernetes-test</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
 		<module>invesdwin-context-integration-channel-netty</module>
@@ -140,6 +142,7 @@
 		<version.hadoop>3.5.0</version.hadoop>
 		<version.spark>4.2.0</version.spark>
 		<version.awaitility>4.3.0</version.awaitility>
+		<version.kubernetes-client>7.8.0</version.kubernetes-client>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -329,6 +332,22 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-spark-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-kubernetes-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -967,6 +986,16 @@
 						<artifactId>logback-classic</artifactId>
 					</exclusion>
 				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-k3s</artifactId>
+				<version>${version.testcontainers}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.fabric8</groupId>
+				<artifactId>kubernetes-client</artifactId>
+				<version>${version.kubernetes-client}</version>
 			</dependency>
 			<dependency>
 				<groupId>io.confluent</groupId>

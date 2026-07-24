@@ -76,5 +76,10 @@
 			<artifactId>invesdwin-context-integration-spark-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-kubernetes-test</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>

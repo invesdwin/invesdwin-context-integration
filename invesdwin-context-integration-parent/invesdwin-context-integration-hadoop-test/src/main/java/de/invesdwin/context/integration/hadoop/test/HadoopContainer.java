@@ -12,9 +12,10 @@ import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.springframework.core.io.Resource;
 import org.testcontainers.DockerClientFactory;
-import org.testcontainers.containers.FixedHostPortGenericContainer;
+import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.containers.wait.strategy.DockerHealthcheckWaitStrategy;
 import org.testcontainers.images.builder.ImageFromDockerfile;
+import org.testcontainers.utility.DockerImageName;
 
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.exception.NotFoundException;
@@ -29,7 +30,7 @@ import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.Instant;
 
 @NotThreadSafe
-public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContainer> {
+public class HadoopContainer extends GenericContainer<HadoopContainer> {
 
     private static final int RESOURCEMANAGER_PORT = 8032;
     private static final int DATATRANSFER_PORT = 9866;
@@ -52,24 +53,28 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
     private static final boolean HADOOP_EXPOSE_HOST = false;
     private static final boolean FORCE_BUILD_DOCKER_IMAGE = false;
 
-    @SuppressWarnings("deprecation")
     public HadoopContainer() {
-        super(newDockerImageName());
+        this(DockerImageName.parse(newDockerImageName()));
+    }
+
+    @SuppressWarnings("deprecation")
+    public HadoopContainer(final DockerImageName image) {
+        super(image);
 
         if (HADOOP_FRONTENDS) {
             //dfs.datanode.http.address - The secondary namenode http/https server address and port.
-            withFixedExposedPort(DATANODE_HTTP_PORT, DATANODE_HTTP_PORT);
+            addFixedExposedPort(DATANODE_HTTP_PORT, DATANODE_HTTP_PORT);
             //dfs.namenode.http-address - The address and the base port where the dfs namenode web ui will listen on.
-            withFixedExposedPort(NAMENODE_HTTP_PORT, NAMENODE_HTTP_PORT);
+            addFixedExposedPort(NAMENODE_HTTP_PORT, NAMENODE_HTTP_PORT);
             //yarn.resourcemanager.webapp.address - The http/https address of the RM web application
-            withFixedExposedPort(RESOURCEMANAGER_HTTP_PORT, RESOURCEMANAGER_HTTP_PORT);
+            addFixedExposedPort(RESOURCEMANAGER_HTTP_PORT, RESOURCEMANAGER_HTTP_PORT);
         }
         //fs.defaultFS - The name of the default file system.
-        withFixedExposedPort(HDFS_PORT, HDFS_PORT);
+        addFixedExposedPort(HDFS_PORT, HDFS_PORT);
         //DataNode data transfer port (Hadoop 3.x)
-        withFixedExposedPort(DATATRANSFER_PORT, DATATRANSFER_PORT);
+        addFixedExposedPort(DATATRANSFER_PORT, DATATRANSFER_PORT);
         //yarn.resourcemanager.address - The address of the applications manager interface in the RM.
-        withFixedExposedPort(RESOURCEMANAGER_PORT, 8032);
+        addFixedExposedPort(RESOURCEMANAGER_PORT, 8032);
         setWaitStrategy(new DockerHealthcheckWaitStrategy());
         if (HADOOP_EXPOSE_HOST) {
             withAccessToHost(true);
@@ -77,7 +82,7 @@ public class HadoopContainer extends FixedHostPortGenericContainer<HadoopContain
             withExtraHost(IntegrationProperties.HOSTNAME, "172.17.0.1");
         }
         for (int i = MAPREDUCECLIENT_PORTRANGE_FROM; i <= MAPREDUCECLIENT_PORTRANGE_TO; i++) {
-            withFixedExposedPort(i, i);
+            addFixedExposedPort(i, i);
         }
     }
 

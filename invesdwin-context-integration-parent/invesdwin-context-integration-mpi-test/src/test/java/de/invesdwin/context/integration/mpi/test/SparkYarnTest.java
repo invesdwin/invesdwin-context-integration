@@ -45,7 +45,7 @@ public class SparkYarnTest extends ATest {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
-        final String hdfsLogDir = "/tmp/spark-logs";
+        final String hdfsLogDir = "/tmp/logs/";
         final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
         final String defaultFs = fs.getUri().toString();
         final Map<String, String> env = ILockCollectionFactory.getInstance(false).newLinkedMap();
@@ -81,7 +81,9 @@ public class SparkYarnTest extends ATest {
                 });
         countDownLatch.await();
         Assertions.checkTrue(jobSuccessful.get(), "Spark on YARN job failed!");
-        handle.stop();
+        if (!handle.getState().isFinal()) {
+            handle.stop();
+        }
 
         // 4. Download and verify logs from HDFS
         final File localLogDir = new File(ContextProperties.getCacheDirectory(), "spark-logs");

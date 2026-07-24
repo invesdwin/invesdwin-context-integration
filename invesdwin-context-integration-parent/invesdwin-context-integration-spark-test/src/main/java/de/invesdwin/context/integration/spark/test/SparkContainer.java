@@ -22,13 +22,14 @@ import de.invesdwin.util.time.Instant;
 @NotThreadSafe
 public class SparkContainer extends GenericContainer<SparkContainer> {
 
+    public static final String SPARK_VERSION = "4.2.0";
+    public static final String SPARK_IMAGE_NAME = "apache/spark:" + SPARK_VERSION + "-scala-java25";
+    public static final DockerImageName SPARK_IMAGE = DockerImageName.parse(SPARK_IMAGE_NAME);
+
     private static final int WEBUI_HTTP_PORT = 8080;
     private static final int MASTER_PORT = 7077;
 
     private static final Log LOG = new Log(SparkContainer.class);
-
-    private static final String SPARK_VERSION = "4.2.0";
-    private static final DockerImageName SPARK_IMAGE = DockerImageName.parse("apache/spark:" + SPARK_VERSION);
 
     private static final String SPARK_PACKAGE = "spark-" + SPARK_VERSION + "-bin-hadoop3";
     private static final File SPARK_CONTAINER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
@@ -36,7 +37,11 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
     private static final File SPARK_HOME_FOLDER = new File(SPARK_CONTAINER_FOLDER, SPARK_PACKAGE);
 
     public SparkContainer() {
-        super(SPARK_IMAGE);
+        this(SPARK_IMAGE);
+    }
+
+    public SparkContainer(final DockerImageName image) {
+        super(image);
 
         // Expose Spark Master Port and Web UI
         withExposedPorts(MASTER_PORT, WEBUI_HTTP_PORT);
