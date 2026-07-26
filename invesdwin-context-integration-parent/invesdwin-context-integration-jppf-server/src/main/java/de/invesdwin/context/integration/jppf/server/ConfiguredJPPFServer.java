@@ -106,7 +106,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     private <S> void unregisterMBeans(final Class<S> clazz) {
         final MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         final ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        final Hook<S> hook = HookFactory.registerSPIMultipleHook(clazz, null, loader);
+        final Hook<S> hook = HookFactory.newInstance().registerSPIMultipleHook(clazz, null, loader);
         for (final HookInstance<S> hookInstance : hook.getInstances()) {
             try {
                 final String mbeanName = (String) hookInstance.invoke("getMBeanName");

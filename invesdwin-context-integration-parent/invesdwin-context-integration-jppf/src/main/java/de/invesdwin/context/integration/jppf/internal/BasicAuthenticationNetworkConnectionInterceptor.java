@@ -8,6 +8,7 @@ import java.net.Socket;
 import javax.annotation.concurrent.Immutable;
 
 import org.jppf.comm.interceptor.AbstractNetworkConnectionInterceptor;
+import org.jppf.utils.JPPFChannelDescriptor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
@@ -28,7 +29,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
     private static final String OK = "OK";
 
     @Override
-    public boolean onAccept(final Socket acceptedSocket) {
+    public boolean onAccept(final Socket acceptedSocket, final JPPFChannelDescriptor descriptor) {
         Integer prevTimeout = null;
         try {
             // set a timeout on read operations and store the previous setting, if any
@@ -65,7 +66,7 @@ public class BasicAuthenticationNetworkConnectionInterceptor extends AbstractNet
     }
 
     @Override
-    public boolean onConnect(final Socket connectedSocket) {
+    public boolean onConnect(final Socket connectedSocket, final JPPFChannelDescriptor descriptor) {
         Integer prevTimeout = null;
         try {
             // set a timeout on read operations and store the previous setting, if any

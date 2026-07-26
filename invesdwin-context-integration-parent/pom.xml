@@ -98,7 +98,7 @@
 		<version.jersey>3.1.11</version.jersey>
 		<version.jakarta.ws.rs>3.1.0</version.jakarta.ws.rs>
 		<version.xmlsec>4.0.4</version.xmlsec>
-		<version.jppf>6.2</version.jppf>
+		<version.jppf>6.3-inv</version.jppf>
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
