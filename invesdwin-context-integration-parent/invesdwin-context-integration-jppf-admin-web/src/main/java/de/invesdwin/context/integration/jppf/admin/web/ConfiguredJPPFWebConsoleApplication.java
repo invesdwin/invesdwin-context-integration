@@ -3,6 +3,7 @@ package de.invesdwin.context.integration.jppf.admin.web;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.jppf.admin.web.JPPFWebConsoleApplication;
+import org.jppf.admin.web.security.JPPFServletContainerAuthenticatedWebSession;
 
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.jppf.JPPFClientProperties;
@@ -17,7 +18,13 @@ public class ConfiguredJPPFWebConsoleApplication extends JPPFWebConsoleApplicati
         MergedContext.autowire(null);
         Assertions.checkTrue(JPPFClientProperties.INITIALIZED);
         super.init();
+        getCspSettings().blocking().disabled();
         getTopologyManager().getJPPFClient().addDriverDiscovery(new ConfiguredClientDriverDiscovery());
+    }
+
+    @Override
+    protected Class<? extends JPPFServletContainerAuthenticatedWebSession> getContainerManagedWebSessionClass() {
+        return ConfiguredJPPFWebSession.class;
     }
 
 }
