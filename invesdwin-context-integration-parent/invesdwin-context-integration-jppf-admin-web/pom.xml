@@ -10,11 +10,6 @@
 	<artifactId>invesdwin-context-integration-jppf-admin-web</artifactId>
 	<packaging>jar</packaging>
 
-	<properties>
-		<version.wicket>8.5.0</version.wicket>
-		<version.wicketstuff>8.5.0</version.wicketstuff>
-	</properties>
-
 	<build>
 		<plugins>
 			<plugin>
