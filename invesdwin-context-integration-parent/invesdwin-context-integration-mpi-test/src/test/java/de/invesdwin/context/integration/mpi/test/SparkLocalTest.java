@@ -21,8 +21,8 @@ public class SparkLocalTest extends ATest {
         final int numContainers = 2;
         final File logDir = ContextProperties.getCacheDirectory();
 
-        SparkJobMain.main(new String[] { "--size", String.valueOf(numContainers), "--logDir", logDir.getAbsolutePath(),
-                "--hdfsUri", "file:///", "--master", "local[" + numContainers + "]" });
+        SparkJobMain.main(new String[] { "--size", String.valueOf(numContainers), "--logDir",
+                "file://" + logDir.getAbsolutePath(), "--master", "local[" + numContainers + "]" });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

@@ -56,7 +56,7 @@ public class NoMpiJobMain extends AMain {
     }
 
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
-    protected File logDir;
+    protected String logDir;
     @Option(name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
     @Option(name = "-r", aliases = "--rank", usage = "Defines the rank of this process", required = true)

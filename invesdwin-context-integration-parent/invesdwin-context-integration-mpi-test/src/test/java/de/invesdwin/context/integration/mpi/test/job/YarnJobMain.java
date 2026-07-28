@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.mpi.test.job;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -45,7 +44,6 @@ import de.invesdwin.util.time.date.FTimeUnit;
 @NotThreadSafe
 public class YarnJobMain extends AMain {
 
-    public static final String DEFAULT_HDFS_URI = "hdfs://localhost:9000";
     private static final boolean BOOTSTRAP = true;
 
     static {
@@ -53,11 +51,8 @@ public class YarnJobMain extends AMain {
         PlatformInitializerProperties.setAllowed(BOOTSTRAP);
     }
 
-    @Option(name = "-d", aliases = "--hdfsUri", usage = "Defines the hdfs uri like \"" + DEFAULT_HDFS_URI
-            + "\"", required = true)
-    protected String hdfsUri;
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
-    protected File logDir;
+    protected String logDir;
     @Option(name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
     @Option(name = "-r", aliases = "--rank", usage = "Defines the rank of this process", required = true)
@@ -83,7 +78,7 @@ public class YarnJobMain extends AMain {
 
         final FileSystem fs = newFileSystem();
         // 2. Define the HDFS Path (using the path string from logDir)
-        final Path serverAddressFile = new Path(logDir.getPath(), "serverAddress.txt");
+        final Path serverAddressFile = new Path(logDir, "serverAddress.txt");
 
         switch (rank) {
         case 0: {
@@ -188,7 +183,7 @@ public class YarnJobMain extends AMain {
         }
 
         final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
-        final Path hdfsLogPath = new Path(logDir.getPath(), logFileName);
+        final Path hdfsLogPath = new Path(logDir, logFileName);
 
         // Create the file in HDFS (overwriting if exists)
         final OutputStream hdfsOut = fs.create(hdfsLogPath, true);
@@ -197,11 +192,8 @@ public class YarnJobMain extends AMain {
     }
 
     private FileSystem newFileSystem() {
-        final Configuration conf = new Configuration();
-        conf.set("fs.defaultFS", hdfsUri);
         try {
-            // this falls back to a local filesystem if HDFS is not available
-            return FileSystem.get(conf);
+            return new Path(logDir).getFileSystem(new Configuration());
         } catch (final IOException e) {
             throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);
         }

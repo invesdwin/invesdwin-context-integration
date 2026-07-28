@@ -54,7 +54,7 @@ public class MpiJobMain extends AMain {
     }
 
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
-    protected File logDir;
+    protected String logDir;
 
     private final Log log = new Log(this);
 

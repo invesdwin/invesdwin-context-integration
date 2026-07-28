@@ -195,8 +195,7 @@ public class SparkKubernetesImageTest extends ATest {
                     .setConf("spark.kubernetes.executor.volumes.persistentVolumeClaim.shared-vol.mount.path",
                             "/mnt/shared")
 
-                    .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", "/mnt/shared/logs", "--hdfsUri",
-                            "file:///");
+                    .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", "file:///mnt/shared/logs");
 
             final SparkAppHandle handle = launcher.startApplication(new SparkAppHandle.Listener() {
                 @Override

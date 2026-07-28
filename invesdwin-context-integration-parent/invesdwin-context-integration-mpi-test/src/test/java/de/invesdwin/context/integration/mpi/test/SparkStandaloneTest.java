@@ -62,8 +62,8 @@ public class SparkStandaloneTest extends ATest {
                 .setConf("spark.executor.cores", "1")
                 .setConf("spark.executor.extraJavaOptions", "-Duser.home=/tmp")
 
-                .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir", dockerLogDir.getAbsolutePath(),
-                        "--hdfsUri", "file:///")
+                .addAppArgs("--size", String.valueOf(NUM_CONTAINERS), "--logDir",
+                        "file://" + dockerLogDir.getAbsolutePath())
                 .startApplication(new SparkAppHandle.Listener() {
                     @Override
                     public void stateChanged(final SparkAppHandle handle) {
