@@ -7,7 +7,6 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.compute.ComputeJob;
 import org.apache.ignite.compute.JobExecutionContext;
 import org.apache.ignite.table.KeyValueView;
@@ -30,15 +29,14 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
     @Override
     public CompletableFuture<TaskResult> executeAsync(final JobExecutionContext context, final String arg) {
         return CompletableFuture.supplyAsync(() -> {
-            // Parse comma-delimited arguments from the submitter
             final String[] parts = arg.split(";");
             final int rank = Integer.parseInt(parts[0]);
             final int size = Integer.parseInt(parts[1]);
-            // parts[2] is the host path, which is invalid inside the Docker container!
-            final String clientAddress = parts[3];
 
-            try (IgniteClient client = IgniteClient.builder().addresses(clientAddress).build()) {
-                final KeyValueView<String, String> cache = client.tables()
+            try {
+                // Access cache directly via embedded node access context
+                final KeyValueView<String, String> cache = context.ignite()
+                        .tables()
                         .table(JOB_STATE_CACHE)
                         .keyValueView(String.class, String.class);
 
@@ -58,11 +56,9 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
                 final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
                 try {
-                    // DYNAMIC RESOLUTION: Find the JAR file inside the container's deployment storage
                     final File deployedJarFile = new File(
                             ForkIgnite3Task.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 
-                    // Use the locally resolved JAR instead of the client-provided path
                     ForkJobHelper.fork(deployedJarFile, ForkIgnite3TaskMain.class,
                             new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
                                     "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
@@ -97,8 +93,10 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
 
     public static class TaskResult implements Serializable {
         private static final long serialVersionUID = 1L;
-        private final String logFileName;
-        private final String logContent;
+        private String logFileName;
+        private String logContent;
+
+        public TaskResult() {}
 
         public TaskResult(final String logFileName, final String logContent) {
             this.logFileName = logFileName;
@@ -109,8 +107,16 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
             return logFileName;
         }
 
+        public void setLogFileName(final String logFileName) {
+            this.logFileName = logFileName;
+        }
+
         public String getLogContent() {
             return logContent;
+        }
+
+        public void setLogContent(final String logContent) {
+            this.logContent = logContent;
         }
     }
 }
