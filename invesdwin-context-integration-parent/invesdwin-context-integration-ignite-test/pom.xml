@@ -26,6 +26,11 @@
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-channel</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-channel</artifactId>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>

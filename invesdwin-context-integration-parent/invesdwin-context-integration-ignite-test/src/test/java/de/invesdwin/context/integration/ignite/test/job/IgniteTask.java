@@ -14,7 +14,7 @@ import org.apache.ignite.Ignition;
 import org.apache.ignite.lang.IgniteCallable;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.InlineChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -52,8 +52,7 @@ public class IgniteTask implements IgniteCallable<IgniteTask.TaskResult> {
     public TaskResult call() throws Exception {
         final Ignite ignite = Ignition.ignite();
         final IgniteCache<String, String> cache = ignite.getOrCreateCache(JOB_STATE_CACHE);
-        final AChannelTest parent = new AChannelTest() {
-        };
+        final InlineChannelTest parent = new InlineChannelTest();
 
         final FastByteArrayOutputStream memoryLogStream = new FastByteArrayOutputStream();
         final Class<?> taskClass;

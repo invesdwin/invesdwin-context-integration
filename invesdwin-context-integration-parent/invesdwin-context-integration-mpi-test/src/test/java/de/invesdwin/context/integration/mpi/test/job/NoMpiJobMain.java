@@ -19,7 +19,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
-import de.invesdwin.context.integration.channel.AChannelTest;
+import de.invesdwin.context.integration.channel.InlineChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServerTask;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
@@ -77,8 +77,7 @@ public class NoMpiJobMain extends AMain {
     }
 
     private void testPerformance() {
-        final AChannelTest parent = new AChannelTest() {
-        };
+        final InlineChannelTest parent = new InlineChannelTest();
         //logDir should be shared between all processes, e.g. a shared file system
         final File serverAddressFile = new File(logDir, "serverAddress.txt");
         switch (rank) {
