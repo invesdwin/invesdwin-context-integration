@@ -32,6 +32,8 @@ import de.invesdwin.util.time.Instant;
 @NotThreadSafe
 public class HadoopContainer extends GenericContainer<HadoopContainer> {
 
+    public static final String HADOOP_VERSION = "3.5.0";
+
     private static final int RESOURCEMANAGER_PORT = 8032;
     private static final int DATATRANSFER_PORT = 9866;
     private static final int HDFS_PORT = 9000;
@@ -43,10 +45,9 @@ public class HadoopContainer extends GenericContainer<HadoopContainer> {
 
     private static final Log LOG = new Log(HadoopContainer.class);
 
-    private static final String HADOOP_VERSION = "3.5.0";
     private static final File HADOOP_CONTAINER_FOLDER = new File(ContextProperties.getHomeDataDirectory(),
             HadoopContainer.class.getSimpleName());
-    public static final File HADOOP_HOME_FOLDER = new File(HADOOP_CONTAINER_FOLDER, "hadoop");
+    private static final File HADOOP_HOME_FOLDER = new File(HADOOP_CONTAINER_FOLDER, "hadoop");
     //not needed to run the jobs
     private static final boolean HADOOP_FRONTENDS = true;
     //not needed because MpjExpress can work without connection to the host
@@ -140,10 +141,6 @@ public class HadoopContainer extends GenericContainer<HadoopContainer> {
 
         // Note: ImageFromDockerfile automatically tags it with the name we provided
         return generatedImageName;
-    }
-
-    public static String getHadoopVersion() {
-        return HADOOP_VERSION;
     }
 
     public static File getHadoopHomeFolder() {

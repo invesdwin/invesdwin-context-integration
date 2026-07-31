@@ -7,17 +7,18 @@
 		<artifactId>invesdwin-context-integration-parent</artifactId>
 		<version>1.0.3-SNAPSHOT</version>
 	</parent>
-	<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
+	<artifactId>invesdwin-context-integration-ignite-test</artifactId>
 	<packaging>jar</packaging>
 
 	<dependencies>
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-hadoop</artifactId>
+			<artifactId>invesdwin-context-integration-ignite</artifactId>
 		</dependency>
+		
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-hadoop</artifactId>
+			<artifactId>invesdwin-context-integration-ignite</artifactId>
 			<type>test-jar</type>
 			<scope>test</scope>
 		</dependency>
@@ -25,18 +26,8 @@
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-channel</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-channel</artifactId>
 			<type>test-jar</type>
 			<scope>test</scope>
-		</dependency>
-	
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-jar</artifactId>
 		</dependency>
 
 		<dependency>

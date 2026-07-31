@@ -44,19 +44,10 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-mpi-mvapich2</artifactId>
 		</dependency>-->
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-jar</artifactId>
-		</dependency>
 
 		<dependency>
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-docker</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
@@ -69,16 +60,6 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-channel</artifactId>
 			<type>test-jar</type>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-spark-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-kubernetes-test</artifactId>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>

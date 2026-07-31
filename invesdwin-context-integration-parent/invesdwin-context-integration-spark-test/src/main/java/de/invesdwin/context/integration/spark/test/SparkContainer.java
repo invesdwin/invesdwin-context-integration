@@ -70,10 +70,6 @@ public class SparkContainer extends GenericContainer<SparkContainer> {
         return "http://" + getHost() + ":" + getMappedPort(WEBUI_HTTP_PORT);
     }
 
-    public static String getSparkVersion() {
-        return SPARK_VERSION;
-    }
-
     public static File getSparkHomeFolder() {
         maybeDownloadAndExtractSpark();
         return SPARK_HOME_FOLDER;

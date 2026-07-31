@@ -1,16 +1,16 @@
-package de.invesdwin.context.integration.mpi.test.job;
+package de.invesdwin.context.integration.hadoop.test.yarn.job;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.jar.ForkJobHelper;
 
 @NotThreadSafe
-public final class ForkMpiJobMain {
+public final class ForkYarnJobMain {
 
-    private ForkMpiJobMain() {}
+    private ForkYarnJobMain() {}
 
     public static void main(final String[] args) {
-        ForkJobHelper.fork(MpiJobMain.class, args);
+        ForkJobHelper.fork(YarnJobMain.class, args);
     }
 
 }
