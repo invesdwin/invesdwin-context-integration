@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.ignite.test.job;
+package de.invesdwin.context.integration.ignite.test.simple.job;
 
 import java.io.OutputStream;
 import java.io.Serializable;

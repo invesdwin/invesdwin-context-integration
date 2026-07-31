@@ -39,6 +39,10 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-docker</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-jar</artifactId>
+		</dependency>
 	</dependencies>
 
 </project>

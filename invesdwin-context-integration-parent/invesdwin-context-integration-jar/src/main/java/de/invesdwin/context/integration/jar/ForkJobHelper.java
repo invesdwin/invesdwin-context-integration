@@ -56,22 +56,35 @@ public final class ForkJobHelper {
 
     public static void fork(final Class<?> mainClass, final String[] args) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        StringBuilder classpath = new StringBuilder();
+        final StringBuilder classpath = new StringBuilder();
         for (final URL url : DynamicInstrumentationReflections.getURLs(classLoader)) {
             classpath.append(url.toString());
             classpath.append(File.pathSeparator);
         }
-        classpath = Strings.removeEnd(classpath, ":");
+        final String classpathStr = Strings.removeEnd(classpath.toString(), ":");
+        fork(classpathStr, mainClass, args);
+    }
 
+    public static void fork(final File jarFile, final Class<?> mainClass, final String[] args) {
+        fork(jarFile.getAbsolutePath(), mainClass, args);
+    }
+
+    public static void fork(final String classpath, final Class<?> mainClass, final String[] args) {
+        fork(classpath, mainClass.getName(), args);
+    }
+
+    public static void fork(final String classpath, final String mainClassName, final String[] args) {
         try {
             final File javaHome = maybeDownloadAndExtractJava();
             final List<String> commands = new ArrayList<>();
-            commands.add(javaHome.getAbsolutePath() + "/bin/java");
+            commands.add(new File(javaHome, "bin/java").getAbsolutePath());
             commands.add("-classpath");
-            commands.add(classpath.toString());
-            commands.add(mainClass.getName());
-            for (int i = 0; i < args.length; i++) {
-                commands.add(args[i]);
+            commands.add(classpath);
+            commands.add(mainClassName);
+            if (args != null) {
+                for (int i = 0; i < args.length; i++) {
+                    commands.add(args[i]);
+                }
             }
             final Slf4jStream stream = Slf4jStream.of(ForkJobHelper.class);
             new ProcessExecutor().command(commands)
