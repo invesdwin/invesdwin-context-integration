@@ -18,6 +18,7 @@ import org.apache.ignite.spi.discovery.tcp.ipfinder.vm.TcpDiscoveryVmIpFinder;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
@@ -56,6 +57,8 @@ public class IgniteJobMain extends AMain {
 
     public static void runIgniteJob(final String logDir, final int size, final String master) {
         final IgniteConfiguration cfg = new IgniteConfiguration();
+        final File workDir = new File(ContextProperties.getCacheDirectory(), "ignite-work");
+        cfg.setWorkDirectory(workDir.getAbsolutePath());
         cfg.setPeerClassLoadingEnabled(true);
 
         final TcpDiscoverySpi spi = new TcpDiscoverySpi();
