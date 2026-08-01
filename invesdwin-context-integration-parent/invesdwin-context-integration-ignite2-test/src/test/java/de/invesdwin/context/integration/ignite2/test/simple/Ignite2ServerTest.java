@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.ignite2.test.bootstrapped;
+package de.invesdwin.context.integration.ignite2.test.simple;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -11,21 +11,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.ignite2.test.Ignite2Container;
-import de.invesdwin.context.integration.ignite2.test.bootstrapped.job.ForkIgniteJobMain;
-import de.invesdwin.context.integration.ignite2.test.bootstrapped.job.ForkIgniteTaskMain;
-import de.invesdwin.context.integration.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.ignite2.test.simple.job.Ignite2JobMain;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 
-/**
- * Example on how to jail break the ignite classloader in order to perform an invesdwin bootstrap in an unrestricted
- * JVM.
- */
 @Testcontainers
 @NotThreadSafe
-public class ForkIgniteServerTest extends ATest {
+public class Ignite2ServerTest extends ATest {
 
     private static final int NUM_CONTAINERS = 2;
 
@@ -35,20 +28,13 @@ public class ForkIgniteServerTest extends ATest {
     @Test
     public void test() throws Exception {
         final File logDir = ContextProperties.getCacheDirectory();
+
+        // Retrieve mapped host and port from Testcontainers
         final String masterAddress = IGNITE.getDiscoveryAddress();
 
-        // Create the job JAR on the fly from the outside
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, ForkIgniteTaskMain.class) {
-            @Override
-            protected File newFolder() {
-                return ContextProperties.TEMP_CLASSPATH_DIRECTORY;
-            }
-        }.getResource().getFile();
-
-        // Pass the job JAR path to ForkIgniteJobMain
-        ForkIgniteJobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath(), "--master", masterAddress, "--jobJar",
-                "classpath:/" + jobJarFile.getName() });
+        // Pass --master address to configure the job as a client connecting to Docker
+        Ignite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
+                "file://" + logDir.getAbsolutePath(), "--master", masterAddress });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

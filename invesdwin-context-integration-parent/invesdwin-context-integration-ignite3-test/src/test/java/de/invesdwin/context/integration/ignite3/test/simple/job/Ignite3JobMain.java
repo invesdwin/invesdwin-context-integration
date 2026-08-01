@@ -2,11 +2,7 @@ package de.invesdwin.context.integration.ignite3.test.simple.job;
 
 import java.io.File;
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -23,8 +19,7 @@ import org.kohsuke.args4j.Option;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
-import de.invesdwin.util.time.date.millis.FDateMillis;
-import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
+import de.invesdwin.context.integration.ignite3.test.Ignite3Container;
 
 @NotThreadSafe
 public class Ignite3JobMain extends AMain {
@@ -54,17 +49,13 @@ public class Ignite3JobMain extends AMain {
     @Override
     protected void startApplication(final CmdLineParser parser) {
         try {
-            final String fixedMaster = master != null ? master.replace("localhost", "127.0.0.1") : master;
-            final String fixedRestAddress = restAddress != null ? restAddress.replace("localhost", "127.0.0.1")
-                    : restAddress;
-
             final String unitId = "simple-job-unit";
-            final String unitVersion = "3.0.0";
-            deployUnitViaRest(fixedRestAddress, unitId, unitVersion, jobJar);
+            final String unitVersion = "3.1.0";
+            Ignite3Container.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
 
             final DeploymentUnit unit = new DeploymentUnit(unitId, unitVersion);
 
-            try (IgniteClient client = IgniteClient.builder().addresses(fixedMaster).build()) {
+            try (IgniteClient client = IgniteClient.builder().addresses(master).build()) {
                 client.sql()
                         .execute(null,
                                 "CREATE TABLE IF NOT EXISTS ignite3JobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
@@ -75,11 +66,11 @@ public class Ignite3JobMain extends AMain {
                         .units(List.of(unit))
                         .build();
 
-                final JobTarget target = JobTarget.anyNode(client.clusterNodes());
+                final JobTarget target = JobTarget.anyNode(client.cluster().nodes());
                 final List<CompletableFuture<Ignite3Task.TaskResult>> futures = new ArrayList<>();
 
                 for (int rank = 0; rank < size; rank++) {
-                    final String args = rank + ";" + size + ";" + fixedMaster;
+                    final String args = rank + ";" + size + ";" + master;
                     final CompletableFuture<Ignite3Task.TaskResult> future = client.compute()
                             .submitAsync(target, descriptor, args)
                             .thenCompose(org.apache.ignite.compute.JobExecution::resultAsync);
@@ -96,36 +87,6 @@ public class Ignite3JobMain extends AMain {
             }
         } catch (final Exception e) {
             throw new RuntimeException("Failed to run Ignite 3 job", e);
-        }
-    }
-
-    private void deployUnitViaRest(final String restAddress, final String unitId, final String version,
-            final String filePath) throws Exception {
-        final String boundary = "---Ignite3Boundary" + FDateMillis.nowMillis();
-        final Path path = Path.of(filePath);
-        final byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
-
-        final String header = "--" + boundary + "\r\n"
-                + "Content-Disposition: form-data; name=\"unitContent\"; filename=\"" + path.getFileName().toString()
-                + "\"\r\n" + "Content-Type: application/java-archive\r\n\r\n";
-        final String footer = "\r\n--" + boundary + "--\r\n";
-
-        final FastByteArrayOutputStream body = new FastByteArrayOutputStream();
-        body.write(header.getBytes(StandardCharsets.UTF_8));
-        body.write(fileBytes);
-        body.write(footer.getBytes(StandardCharsets.UTF_8));
-
-        final HttpClient httpClient = HttpClient.newHttpClient();
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
-                .build();
-
-        final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 300) {
-            throw new RuntimeException(
-                    "Deployment REST call failed: HTTP " + response.statusCode() + " - " + response.body());
         }
     }
 

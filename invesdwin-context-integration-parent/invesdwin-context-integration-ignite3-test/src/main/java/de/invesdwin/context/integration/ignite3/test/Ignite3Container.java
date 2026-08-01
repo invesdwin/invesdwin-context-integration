@@ -6,6 +6,8 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -30,6 +32,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.millis.FDateMillis;
+import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
 public class Ignite3Container extends GenericContainer<Ignite3Container> {
@@ -189,5 +192,43 @@ public class Ignite3Container extends GenericContainer<Ignite3Container> {
 
     public String getClientAddress() {
         return getHost() + ":" + getMappedPort(CLIENT_PORT);
+    }
+
+    public String getRestAddress() {
+        return getHost() + ":" + getMappedPort(REST_PORT);
+    }
+
+    public void deployUnitViaRest(final String unitId, final String version, final String filePath) throws Exception {
+        deployUnitViaRest(getRestAddress(), unitId, version, filePath);
+    }
+
+    public static void deployUnitViaRest(final String restAddress, final String unitId, final String version,
+            final String filePath) throws Exception {
+        final String boundary = "---Ignite3Boundary" + FDateMillis.nowMillis();
+        final Path path = Path.of(filePath);
+        final byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
+
+        final String header = "--" + boundary + "\r\n"
+                + "Content-Disposition: form-data; name=\"unitContent\"; filename=\"" + path.getFileName().toString()
+                + "\"\r\n" + "Content-Type: application/java-archive\r\n\r\n";
+        final String footer = "\r\n--" + boundary + "--\r\n";
+
+        final FastByteArrayOutputStream body = new FastByteArrayOutputStream();
+        body.write(header.getBytes(StandardCharsets.UTF_8));
+        body.write(fileBytes);
+        body.write(footer.getBytes(StandardCharsets.UTF_8));
+
+        final HttpClient httpClient = HttpClient.newHttpClient();
+        final HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
+                .build();
+
+        final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        if (response.statusCode() >= 300) {
+            throw new RuntimeException(
+                    "Deployment REST call failed: HTTP " + response.statusCode() + " - " + response.body());
+        }
     }
 }

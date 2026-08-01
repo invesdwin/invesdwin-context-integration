@@ -35,7 +35,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
-public class IgniteTask implements IgniteCallable<IgniteTask.TaskResult> {
+public class Ignite2Task implements IgniteCallable<Ignite2Task.TaskResult> {
 
     public static final String JOB_STATE_CACHE = "igniteJobStateCache";
     public static final String KEY_SERVER_ADDRESS = "serverAddress";
@@ -43,7 +43,7 @@ public class IgniteTask implements IgniteCallable<IgniteTask.TaskResult> {
     private final int rank;
     private final int size;
 
-    public IgniteTask(final int rank, final int size) {
+    public Ignite2Task(final int rank, final int size) {
         this.rank = rank;
         this.size = size;
     }
