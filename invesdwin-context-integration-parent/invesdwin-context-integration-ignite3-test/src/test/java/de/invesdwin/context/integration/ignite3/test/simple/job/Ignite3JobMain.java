@@ -19,7 +19,7 @@ import org.kohsuke.args4j.Option;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
-import de.invesdwin.context.integration.ignite3.test.Ignite3Container;
+import de.invesdwin.context.integration.ignite3.Ignite3RestHelper;
 
 @NotThreadSafe
 public class Ignite3JobMain extends AMain {
@@ -51,7 +51,7 @@ public class Ignite3JobMain extends AMain {
         try {
             final String unitId = "simple-job-unit";
             final String unitVersion = "3.1.0";
-            Ignite3Container.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
+            Ignite3RestHelper.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
 
             final DeploymentUnit unit = new DeploymentUnit(unitId, unitVersion);
 

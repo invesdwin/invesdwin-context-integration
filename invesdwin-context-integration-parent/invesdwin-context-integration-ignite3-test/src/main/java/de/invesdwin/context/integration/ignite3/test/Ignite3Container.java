@@ -2,12 +2,6 @@ package de.invesdwin.context.integration.ignite3.test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -26,13 +20,12 @@ import com.github.dockerjava.api.exception.NotFoundException;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.beans.init.PreMergedContext;
+import de.invesdwin.context.integration.ignite3.Ignite3RestHelper;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.Instant;
-import de.invesdwin.util.time.date.millis.FDateMillis;
-import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
 public class Ignite3Container extends GenericContainer<Ignite3Container> {
@@ -139,55 +132,7 @@ public class Ignite3Container extends GenericContainer<Ignite3Container> {
 
     @Override
     protected void containerIsStarted(final com.github.dockerjava.api.command.InspectContainerResponse containerInfo) {
-        initializeCluster();
-    }
-
-    private void initializeCluster() {
-        final String restHost = getHost();
-        final int restPort = getMappedPort(REST_PORT);
-
-        try {
-            final String initJson = "{" + "\"metaStorageNodes\": [\"defaultNode\"], "
-                    + "\"cmgNodes\": [\"defaultNode\"], " + "\"clusterName\": \"ignite3-test-cluster\"" + "}";
-
-            final HttpClient client = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(10)).build();
-
-            final HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create("http://" + restHost + ":" + restPort + "/management/v1/cluster/init"))
-                    .header("Content-Type", "application/json")
-                    .POST(HttpRequest.BodyPublishers.ofString(initJson))
-                    .build();
-
-            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() != 200 && response.statusCode() != 409) {
-                throw new RuntimeException("Failed to initialize Ignite 3 cluster. HTTP " + response.statusCode() + ": "
-                        + response.body());
-            }
-
-            final long timeoutAt = FDateMillis.nowMillis() + 30000;
-            final HttpRequest stateRequest = HttpRequest.newBuilder()
-                    .uri(URI.create("http://" + restHost + ":" + restPort + "/management/v1/node/state"))
-                    .GET()
-                    .build();
-
-            while (FDateMillis.nowMillis() < timeoutAt) {
-                try {
-                    final HttpResponse<String> stateResp = client.send(stateRequest,
-                            HttpResponse.BodyHandlers.ofString());
-                    if (stateResp.statusCode() == 200 && stateResp.body().contains("\"state\":\"STARTED\"")) {
-                        return;
-                    }
-                } catch (final Exception ignored) {
-                }
-                Thread.sleep(500);
-            }
-            throw new RuntimeException(
-                    "Timed out waiting for Ignite 3 cluster to reach STARTED state after initialization.");
-
-        } catch (final Exception e) {
-            throw new RuntimeException("Error during Ignite 3 cluster initialization", e);
-        }
+        Ignite3RestHelper.initializeCluster(getRestAddress());
     }
 
     public String getClientAddress() {
@@ -198,37 +143,4 @@ public class Ignite3Container extends GenericContainer<Ignite3Container> {
         return getHost() + ":" + getMappedPort(REST_PORT);
     }
 
-    public void deployUnitViaRest(final String unitId, final String version, final String filePath) throws Exception {
-        deployUnitViaRest(getRestAddress(), unitId, version, filePath);
-    }
-
-    public static void deployUnitViaRest(final String restAddress, final String unitId, final String version,
-            final String filePath) throws Exception {
-        final String boundary = "---Ignite3Boundary" + FDateMillis.nowMillis();
-        final Path path = Path.of(filePath);
-        final byte[] fileBytes = java.nio.file.Files.readAllBytes(path);
-
-        final String header = "--" + boundary + "\r\n"
-                + "Content-Disposition: form-data; name=\"unitContent\"; filename=\"" + path.getFileName().toString()
-                + "\"\r\n" + "Content-Type: application/java-archive\r\n\r\n";
-        final String footer = "\r\n--" + boundary + "--\r\n";
-
-        final FastByteArrayOutputStream body = new FastByteArrayOutputStream();
-        body.write(header.getBytes(StandardCharsets.UTF_8));
-        body.write(fileBytes);
-        body.write(footer.getBytes(StandardCharsets.UTF_8));
-
-        final HttpClient httpClient = HttpClient.newHttpClient();
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
-                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
-                .POST(HttpRequest.BodyPublishers.ofByteArray(body.toByteArray()))
-                .build();
-
-        final HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        if (response.statusCode() >= 300) {
-            throw new RuntimeException(
-                    "Deployment REST call failed: HTTP " + response.statusCode() + " - " + response.body());
-        }
-    }
 }

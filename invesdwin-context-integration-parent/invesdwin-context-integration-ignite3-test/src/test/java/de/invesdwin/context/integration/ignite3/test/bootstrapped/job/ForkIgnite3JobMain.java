@@ -17,7 +17,7 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
 import de.invesdwin.context.beans.init.AMain;
-import de.invesdwin.context.integration.ignite3.test.Ignite3Container;
+import de.invesdwin.context.integration.ignite3.Ignite3RestHelper;
 
 @NotThreadSafe
 public class ForkIgnite3JobMain extends AMain {
@@ -42,7 +42,7 @@ public class ForkIgnite3JobMain extends AMain {
         try {
             final String unitId = "fork-job-unit";
             final String unitVersion = "3.0.0";
-            Ignite3Container.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
+            Ignite3RestHelper.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
 
             final DeploymentUnit unit = new DeploymentUnit(unitId, unitVersion);
 

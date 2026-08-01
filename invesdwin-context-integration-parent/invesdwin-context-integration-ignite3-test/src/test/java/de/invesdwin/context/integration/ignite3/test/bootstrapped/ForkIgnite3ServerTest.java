@@ -33,7 +33,7 @@ public class ForkIgnite3ServerTest extends ATest {
         final File logDir = ContextProperties.getCacheDirectory();
 
         final String clientAddress = IGNITE.getClientAddress();
-        final String restAddress = IGNITE.getHost() + ":" + IGNITE.getMappedPort(Ignite3Container.REST_PORT);
+        final String restAddress = IGNITE.getRestAddress();
 
         final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, ForkIgnite3TaskMain.class)
                 .getResource()
