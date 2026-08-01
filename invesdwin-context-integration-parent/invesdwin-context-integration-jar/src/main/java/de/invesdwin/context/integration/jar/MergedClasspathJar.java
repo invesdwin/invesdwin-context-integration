@@ -75,12 +75,16 @@ public class MergedClasspathJar {
 
     protected File newFile() {
         if (mainClass != null) {
-            return new File(ContextProperties.getCacheDirectory(), getClass().getSimpleName() + "_" + filter.name()
-                    + "_" + mainClass.getSimpleName() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
+            return new File(newFolder(), getClass().getSimpleName() + "_" + filter.name() + "_"
+                    + mainClass.getSimpleName() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
         } else {
-            return new File(ContextProperties.TEMP_DIRECTORY,
+            return new File(newFolder(),
                     getClass().getSimpleName() + "_" + filter.name() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
         }
+    }
+
+    protected File newFolder() {
+        return ContextProperties.TEMP_DIRECTORY;
     }
 
     protected JarOutputStream newJarOutputStream(final FileOutputStream fos) throws IOException {

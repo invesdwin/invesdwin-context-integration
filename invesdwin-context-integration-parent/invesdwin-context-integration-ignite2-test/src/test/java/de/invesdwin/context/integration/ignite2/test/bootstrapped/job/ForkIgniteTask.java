@@ -1,15 +1,20 @@
 package de.invesdwin.context.integration.ignite2.test.bootstrapped.job;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.lang.IgniteCallable;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.ResourceLoader;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.jar.ForkJobHelper;
@@ -58,8 +63,13 @@ public class ForkIgniteTask implements IgniteCallable<ForkIgniteTask.TaskResult>
         final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
         try {
+            final ResourceLoader resourceLoader = new DefaultResourceLoader();
+            final Resource jobJarResource = resourceLoader.getResource(jobJar);
+            final File localJobJar = new File(ContextProperties.TEMP_DIRECTORY, jobJarResource.getFilename());
+            IOUtils.copy(jobJarResource.getInputStream(), new FileOutputStream(localJobJar));
+
             // Use the passed job JAR path directly via ForkJobHelper
-            ForkJobHelper.fork(new File(jobJar), ForkIgniteTaskMain.class,
+            ForkJobHelper.fork(localJobJar, ForkIgniteTaskMain.class,
                     new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size), "--serverAddress",
                             serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 
