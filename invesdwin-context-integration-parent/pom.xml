@@ -113,7 +113,7 @@
 		<version.shrinkwrap-resolver>3.3.4</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
-		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
+		<version.lmax-disruptor>4.0.0</version.lmax-disruptor>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
 		<version.aeron>1.50.4</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
