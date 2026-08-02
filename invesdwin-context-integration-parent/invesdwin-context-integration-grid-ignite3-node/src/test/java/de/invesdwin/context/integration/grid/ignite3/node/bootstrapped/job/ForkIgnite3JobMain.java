@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -112,10 +111,9 @@ public class ForkIgnite3JobMain extends AMain {
                     futures.add(future);
                 }
 
-                final File targetDir = parseLogDirectory(logDir);
                 for (final CompletableFuture<ForkIgnite3Task.TaskResult> future : futures) {
                     final ForkIgnite3Task.TaskResult result = future.join();
-                    final File logFile = new File(targetDir, result.getLogFileName());
+                    final File logFile = new File(logDir, result.getLogFileName());
                     de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
                             StandardCharsets.UTF_8);
                 }
@@ -137,13 +135,6 @@ public class ForkIgnite3JobMain extends AMain {
                 server.shutdown();
             }
         }
-    }
-
-    private static File parseLogDirectory(final String logDir) {
-        if (logDir.startsWith("file:")) {
-            return new File(URI.create(logDir));
-        }
-        return new File(logDir);
     }
 
     public static void main(final String[] args) {
