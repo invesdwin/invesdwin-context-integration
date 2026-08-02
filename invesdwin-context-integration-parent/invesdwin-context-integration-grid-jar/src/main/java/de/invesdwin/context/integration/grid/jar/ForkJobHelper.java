@@ -14,6 +14,7 @@ import org.apache.commons.io.IOUtils;
 import org.rauschig.jarchivelib.Archiver;
 import org.rauschig.jarchivelib.ArchiverFactory;
 import org.zeroturnaround.exec.ProcessExecutor;
+import org.zeroturnaround.exec.StartedProcess;
 import org.zeroturnaround.exec.stop.ProcessStopper;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
@@ -100,6 +101,48 @@ public final class ForkJobHelper {
                         }
                     })
                     .execute();
+        } catch (final Throwable e) {
+            throw Err.process(e);
+        }
+    }
+
+    public static StartedProcess forkAsync(final Class<?> mainClass, final String[] args) {
+        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        final StringBuilder classpath = new StringBuilder();
+        for (final URL url : DynamicInstrumentationReflections.getURLs(classLoader)) {
+            classpath.append(url.toString());
+            classpath.append(File.pathSeparator);
+        }
+        final String classpathStr = Strings.removeEnd(classpath.toString(), ":");
+        return forkAsync(classpathStr, mainClass.getName(), args);
+    }
+
+    public static StartedProcess forkAsync(final String classpath, final String mainClassName, final String[] args) {
+        try {
+            final File javaHome = maybeDownloadAndExtractJava();
+            final List<String> commands = new ArrayList<>();
+            commands.add(new File(javaHome, "bin/java").getAbsolutePath());
+            commands.add("-classpath");
+            commands.add(classpath);
+            commands.add(mainClassName);
+            if (args != null) {
+                for (int i = 0; i < args.length; i++) {
+                    commands.add(args[i]);
+                }
+            }
+            final Slf4jStream stream = Slf4jStream.of(ForkJobHelper.class);
+            return new ProcessExecutor().command(commands)
+                    .destroyOnExit()
+                    .redirectOutput(stream.asInfo())
+                    .redirectError(stream.asWarn())
+                    .environment(System.getenv())
+                    .stopper(new ProcessStopper() {
+                        @Override
+                        public void stop(final Process process) {
+                            process.destroy();
+                        }
+                    })
+                    .start();
         } catch (final Throwable e) {
             throw Err.process(e);
         }
