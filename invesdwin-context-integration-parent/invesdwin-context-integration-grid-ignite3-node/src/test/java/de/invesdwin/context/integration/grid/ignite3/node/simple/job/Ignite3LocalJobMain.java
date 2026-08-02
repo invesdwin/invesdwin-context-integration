@@ -53,9 +53,15 @@ public class Ignite3LocalJobMain extends AMain {
                 String.valueOf(FDateMillis.nowMillis()));
 
         // Configuration wrapped inside the required 'ignite' root block
-        final String config = "ignite {\n" + "  network: {\n" + "    port: 3344,\n" + "    nodeFinder: {\n"
-                + "      netClusterNodes: [ \"localhost:3344\" ]\n" + "    }\n" + "  },\n"
-                + "  clientConnector: { port: 10800 }\n" + "}";
+        final String config = "ignite {\n" //
+                + "  network: {\n" //
+                + "    port: 3344,\n" //
+                + "    listenAddresses: [ \"127.0.0.1\" ],\n" //
+                + "    nodeFinder: {\n" //
+                + "      netClusterNodes: [ \"127.0.0.1:3344\" ]\n" //
+                + "    }\n" //
+                + "  }\n" //
+                + "}";
 
         IgniteServer server = null;
         try {
