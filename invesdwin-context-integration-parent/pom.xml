@@ -39,6 +39,8 @@
 		<module>invesdwin-context-integration-grid-ignite2</module>
 		<module>invesdwin-context-integration-grid-ignite2-test</module>
 		<module>invesdwin-context-integration-grid-ignite3</module>
+		<module>invesdwin-context-integration-grid-ignite3-client</module>
+		<module>invesdwin-context-integration-grid-ignite3-node</module>
 		<module>invesdwin-context-integration-grid-ignite3-test</module>
 		<module>invesdwin-context-integration-grid-mpi</module>
 		<module>invesdwin-context-integration-grid-mpi-openmpi</module>
@@ -148,6 +150,7 @@
 		<version.spark>4.2.0</version.spark>
 		<version.awaitility>4.3.0</version.awaitility>
 		<version.kubernetes-client>7.8.0</version.kubernetes-client>
+		<version.ignite>3.1.0</version.ignite>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -293,6 +296,16 @@
 				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-client</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-node</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
@@ -1227,6 +1240,21 @@
 				<groupId>org.axonframework</groupId>
 				<artifactId>axon-test</artifactId>
 				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-client</artifactId>
+				<version>${version.ignite}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-api</artifactId>
+				<version>${version.ignite}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-runner</artifactId>
+				<version>${version.ignite}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

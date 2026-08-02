@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.test.simple.job;
+package de.invesdwin.context.integration.grid.ignite3.client.simple.job;
 
 import java.io.OutputStream;
 import java.io.Serializable;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.test.bootstrapped.job;
+package de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job;
 
 import java.io.File;
 import java.io.Serializable;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.test.simple;
+package de.invesdwin.context.integration.grid.ignite3.client.simple;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -10,9 +10,9 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.grid.ignite3.client.simple.job.Ignite3JobMain;
+import de.invesdwin.context.integration.grid.ignite3.client.simple.job.Ignite3Task;
 import de.invesdwin.context.integration.grid.ignite3.test.Ignite3Container;
-import de.invesdwin.context.integration.grid.ignite3.test.simple.job.Ignite3JobMain;
-import de.invesdwin.context.integration.grid.ignite3.test.simple.job.Ignite3Task;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
