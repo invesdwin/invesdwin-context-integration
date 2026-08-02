@@ -1255,6 +1255,16 @@
 				<groupId>org.apache.ignite</groupId>
 				<artifactId>ignite-runner</artifactId>
 				<version>${version.ignite}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.annotation</groupId>
+						<artifactId>javax.annotation-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
