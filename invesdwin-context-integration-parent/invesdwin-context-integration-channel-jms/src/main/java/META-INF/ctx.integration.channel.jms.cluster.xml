@@ -1,0 +1,29 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:amq="urn:activemq"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="urn:activemq /schema/artemis-jms.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<!-- Caching so that the template is no performance hog -->
+	<bean id="jmsConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+		<constructor-arg ref="amqConnectionFactory" />
+		<property name="exceptionListener" ref="jmsExceptionListener" />
+		<property name="sessionCacheSize" value="10" />
+	</bean>
+	
+	<!--
+		Every clients connects itself to its own broker. All brokers are connected to each other.
+	-->
+	<bean id="amqConnectionFactory" class="org.apache.activemq.artemis.jms.client.ActiveMQConnectionFactory">
+		<constructor-arg value="vm://default" />
+	</bean>
+	
+	<!--
+		Broker choose a random port and find each other to build a grid. This is a bit slower but more robust.
+		See http://activemq.apache.org/networks-of-brokers.html
+	-->
+	<bean id="broker" class="de.invesdwin.context.integration.channel.jms.internal.ConfirguredEmbeddedActiveMQ"
+		init-method="start" destroy-method="stop">
+	</bean>
+
+</beans>

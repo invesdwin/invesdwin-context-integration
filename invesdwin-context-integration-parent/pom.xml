@@ -19,43 +19,49 @@
 		</license>
 	</licenses>
 	<modules>
-		<module>invesdwin-context-integration-amqp</module>
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
-		<module>invesdwin-context-integration-jppf</module>
-		<module>invesdwin-context-integration-jppf-admin</module>
-		<module>invesdwin-context-integration-jppf-admin-web</module>
-		<module>invesdwin-context-integration-jppf-node</module>
-		<module>invesdwin-context-integration-jppf-node-dist</module>
-		<module>invesdwin-context-integration-jppf-server</module>
-		<module>invesdwin-context-integration-jppf-server-dist</module>
+		<module>invesdwin-context-integration-grid-jppf</module>
+		<module>invesdwin-context-integration-grid-jppf-admin</module>
+		<module>invesdwin-context-integration-grid-jppf-admin-web</module>
+		<module>invesdwin-context-integration-grid-jppf-node</module>
+		<module>invesdwin-context-integration-grid-jppf-node-dist</module>
+		<module>invesdwin-context-integration-grid-jppf-server</module>
+		<module>invesdwin-context-integration-grid-jppf-server-dist</module>
+		<module>invesdwin-context-integration-grid-jar</module>
+		<module>invesdwin-context-integration-grid-docker</module>
+		<module>invesdwin-context-integration-grid-hadoop</module>
+		<module>invesdwin-context-integration-grid-hadoop-test</module>
+		<module>invesdwin-context-integration-grid-spark</module>
+		<module>invesdwin-context-integration-grid-spark-test</module>
+		<module>invesdwin-context-integration-grid-kubernetes</module>
+		<module>invesdwin-context-integration-grid-kubernetes-test</module>
+		<module>invesdwin-context-integration-grid-ignite2</module>
+		<module>invesdwin-context-integration-grid-ignite2-test</module>
+		<module>invesdwin-context-integration-grid-ignite3</module>
+		<module>invesdwin-context-integration-grid-ignite3-test</module>
+		<module>invesdwin-context-integration-grid-mpi</module>
+		<module>invesdwin-context-integration-grid-mpi-openmpi</module>
+		<module>invesdwin-context-integration-grid-mpi-mvapich2</module>
+		<module>invesdwin-context-integration-grid-mpi-mpjexpress</module>
+		<module>invesdwin-context-integration-grid-mpi-fastmpj</module>
+		<module>invesdwin-context-integration-grid-mpi-test</module>
 		<module>invesdwin-context-integration-ftp</module>
 		<module>invesdwin-context-integration-ftp-server</module>
 		<module>invesdwin-context-integration-ftp-server-dist</module>
 		<module>invesdwin-context-integration-webdav</module>
 		<module>invesdwin-context-integration-webdav-server</module>
 		<module>invesdwin-context-integration-webdav-server-dist</module>
-		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>
 		<module>invesdwin-context-integration-ws-jaxws</module>
 		<module>invesdwin-context-integration-ws-registry</module>
 		<module>invesdwin-context-integration-ws-registry-dist</module>
 		<module>invesdwin-context-integration-maven</module>
-		<module>invesdwin-context-integration-jar</module>
-		<module>invesdwin-context-integration-docker</module>
-		<module>invesdwin-context-integration-hadoop</module>
-		<module>invesdwin-context-integration-hadoop-test</module>
-		<module>invesdwin-context-integration-spark</module>
-		<module>invesdwin-context-integration-spark-test</module>
-		<module>invesdwin-context-integration-kubernetes</module>
-		<module>invesdwin-context-integration-kubernetes-test</module>
-		<module>invesdwin-context-integration-ignite2</module>
-		<module>invesdwin-context-integration-ignite2-test</module>
-		<module>invesdwin-context-integration-ignite3</module>
-		<module>invesdwin-context-integration-ignite3-test</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
+		<module>invesdwin-context-integration-channel-jms</module>
+		<module>invesdwin-context-integration-channel-amqp</module>
 		<module>invesdwin-context-integration-channel-netty</module>
 		<module>invesdwin-context-integration-channel-mina</module>
 		<module>invesdwin-context-integration-channel-enxio</module>
@@ -75,13 +81,8 @@
 		<module>invesdwin-context-integration-channel-kryonet</module>
 		<module>invesdwin-context-integration-channel-nng</module>
 		<module>invesdwin-context-integration-channel-aeron</module>
-		<module>invesdwin-context-integration-rmi</module>
-		<module>invesdwin-context-integration-mpi</module>
-		<module>invesdwin-context-integration-mpi-openmpi</module>
-		<module>invesdwin-context-integration-mpi-mvapich2</module>
-		<module>invesdwin-context-integration-mpi-mpjexpress</module>
-		<module>invesdwin-context-integration-mpi-fastmpj</module>
-		<module>invesdwin-context-integration-mpi-test</module>
+		<module>invesdwin-context-integration-channel-rmi</module>
+		<module>invesdwin-context-integration-channel-rmi-spring</module>
 	</modules>
 	<properties>
 		<project.version.invesdwin-context>1.0.4-SNAPSHOT</project.version.invesdwin-context>
@@ -173,11 +174,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-amqp</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
@@ -194,27 +190,159 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-server</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-server</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-node</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-node</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-admin</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-admin</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-admin-web</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-admin-web</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-jar</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-docker</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-docker</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-openmpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-mvapich2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-mpjexpress</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-fastmpj</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -247,11 +375,6 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-webdav-server</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jms</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -292,108 +415,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jar</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-docker</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-docker</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-hadoop-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-spark</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-spark</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-spark-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite2</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite2</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite2-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite3</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite3</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-ignite3-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-kubernetes</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-kubernetes</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-kubernetes-test</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-affinity</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
@@ -407,6 +428,16 @@
 				<artifactId>invesdwin-context-integration-channel</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jms</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-amqp</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
@@ -511,37 +542,12 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-rmi</artifactId>
+				<artifactId>invesdwin-context-integration-channel-rmi</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-mvapich2</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-test</artifactId>
+				<artifactId>invesdwin-context-integration-channel-rmi-spring</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
