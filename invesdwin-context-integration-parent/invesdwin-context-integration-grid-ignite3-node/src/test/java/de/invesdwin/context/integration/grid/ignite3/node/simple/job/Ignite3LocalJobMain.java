@@ -59,14 +59,16 @@ public class Ignite3LocalJobMain extends AMain {
         final Path workDir = Path.of(ContextProperties.getCacheDirectory().getAbsolutePath(),
                 "ignite3-work-" + nodeName, String.valueOf(FDateMillis.nowMillis()));
 
-        // Configuration mapping network ports and dynamically assigning unique REST ports to avoid port collision
+        // Configuration using correct multicast discovery fields directly under nodeFinder
         final int restPort = 10300 + (port - 3344);
         final String config = "ignite {\n" //
                 + "  network: {\n" //
                 + "    port: " + port + ",\n" //
                 + "    listenAddresses: [ \"127.0.0.1\" ],\n" //
                 + "    nodeFinder: {\n" //
-                + "      netClusterNodes: [ \"127.0.0.1:3344\", \"127.0.0.1:3345\" ]\n" //
+                + "      type: \"MULTICAST\",\n" //
+                + "      group: \"239.192.0.0\",\n" //
+                + "      port: 47401\n" //
                 + "    }\n" //
                 + "  },\n" //
                 + "  rest: {\n" //

@@ -12,7 +12,6 @@ import org.apache.ignite.compute.JobExecutionContext;
 import org.apache.ignite.table.KeyValueView;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.jar.ForkJobHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -56,9 +55,11 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
                 final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
                 try {
-                    ForkJobHelper.fork(ForkIgnite3TaskMain.class,
-                            new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
-                                    "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
+                    final String[] args = new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
+                            "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() };
+                    //no need to actually fork here since we are already in a boostrapped JVM
+                    ForkIgnite3TaskMain.main(args);
+                    //ForkJobHelper.fork(ForkIgnite3TaskMain.class, args);
 
                     final String logContent = Files.readFileToString(tempLogFile, StandardCharsets.UTF_8);
                     final String taskClassName = (rank == 0) ? "LatencyServerTask" : "LatencyClientTask";
