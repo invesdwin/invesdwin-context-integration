@@ -57,7 +57,7 @@ public class Ignite2JobMain extends AMain {
 
     public static void runIgniteJob(final String logDir, final int size, final String master) {
         final IgniteConfiguration cfg = new IgniteConfiguration();
-        final File workDir = new File(ContextProperties.getCacheDirectory(), "ignite-work");
+        final File workDir = new File(ContextProperties.getCacheDirectory(), "ignite2-work");
         cfg.setWorkDirectory(workDir.getAbsolutePath());
         cfg.setPeerClassLoadingEnabled(true);
 
