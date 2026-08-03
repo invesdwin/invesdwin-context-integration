@@ -15,6 +15,7 @@ import org.apache.ignite.IgniteServer;
 import org.apache.ignite.InitParameters;
 import org.apache.ignite.compute.JobDescriptor;
 import org.apache.ignite.compute.JobTarget;
+import org.apache.ignite.deployment.DeploymentUnit;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -22,6 +23,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
+import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
@@ -49,6 +51,9 @@ public class SimpleIgnite3NodeLocalJobMain extends AMain {
 
     @Option(name = "-m", aliases = "--master", usage = "Defines if this node submits the job", required = false)
     protected boolean master = false;
+
+    @Option(name = "-j", aliases = "--jobJar", usage = "Defines the job JAR path", required = false)
+    protected String jobJar;
 
     public SimpleIgnite3NodeLocalJobMain(final String[] args) {
         super(args, BOOTSTRAP);
@@ -97,10 +102,24 @@ public class SimpleIgnite3NodeLocalJobMain extends AMain {
                         .execute(null,
                                 "CREATE TABLE IF NOT EXISTS ignite3JobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
 
-                final JobDescriptor<String, SimpleIgnite3NodeTask.TaskResult> descriptor = JobDescriptor.<String, SimpleIgnite3NodeTask.TaskResult> builder(
-                        SimpleIgnite3NodeTask.class.getName()).resultClass(SimpleIgnite3NodeTask.TaskResult.class).build();
+                final String unitId = "simple-node-unit";
+                final String unitVersion = "3.1.0";
 
-                final JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
+                if (jobJar != null) {
+                    final String restAddress = "127.0.0.1:" + restPort;
+                    Ignite3RestHelper.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
+                }
+
+                final JobDescriptor.Builder<String, SimpleIgnite3NodeTask.TaskResult> descriptorBuilder = JobDescriptor.<String, SimpleIgnite3NodeTask.TaskResult> builder(
+                        SimpleIgnite3NodeTask.class.getName()).resultClass(SimpleIgnite3NodeTask.TaskResult.class);
+
+                if (jobJar != null) {
+                    descriptorBuilder.units(List.of(new DeploymentUnit(unitId, unitVersion)));
+                }
+
+                final JobDescriptor<String, SimpleIgnite3NodeTask.TaskResult> descriptor = descriptorBuilder.build();
+
+                final JobTarget target = JobTarget.anyNode(ignite.cluster().nodes());
                 final List<CompletableFuture<SimpleIgnite3NodeTask.TaskResult>> futures = new ArrayList<>();
 
                 for (int rank = 0; rank < size; rank++) {

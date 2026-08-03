@@ -100,9 +100,11 @@ public class BootstrappedIgnite3NodeJobMain extends AMain {
                                 "CREATE TABLE IF NOT EXISTS jobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
 
                 final JobDescriptor<String, BootstrappedIgnite3NodeTask.TaskResult> descriptor = JobDescriptor.<String, BootstrappedIgnite3NodeTask.TaskResult> builder(
-                        BootstrappedIgnite3NodeTask.class.getName()).resultClass(BootstrappedIgnite3NodeTask.TaskResult.class).build();
+                        BootstrappedIgnite3NodeTask.class.getName())
+                        .resultClass(BootstrappedIgnite3NodeTask.TaskResult.class)
+                        .build();
 
-                final JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
+                final JobTarget target = JobTarget.anyNode(ignite.cluster().nodes());
                 final List<CompletableFuture<BootstrappedIgnite3NodeTask.TaskResult>> futures = new ArrayList<>();
 
                 for (int rank = 0; rank < size; rank++) {
