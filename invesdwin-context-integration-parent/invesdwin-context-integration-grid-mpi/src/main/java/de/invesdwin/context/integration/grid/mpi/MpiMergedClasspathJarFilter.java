@@ -2,8 +2,8 @@ package de.invesdwin.context.integration.grid.mpi;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
-import de.invesdwin.context.integration.grid.jar.visitor.IMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.IMergedClasspathJarFilter;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.string.Strings;
 

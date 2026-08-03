@@ -17,7 +17,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.jar.ForkProcessHelper;
+import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
@@ -69,7 +69,7 @@ public class BootstrappedIgnite2Task implements IgniteCallable<BootstrappedIgnit
             IOUtils.copy(jobJarResource.getInputStream(), new FileOutputStream(localJobJar));
 
             // Use the passed job JAR path directly via ForkJobHelper
-            ForkProcessHelper.fork(localJobJar, BootstrappedIgnite2TaskMain.class,
+            new ForkProcessHelper().fork(localJobJar, BootstrappedIgnite2TaskMain.class,
                     new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size), "--serverAddress",
                             serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.jar.visitor;
+package de.invesdwin.context.integration.grid.jar.visitor.filter;
 
 import javax.annotation.concurrent.Immutable;
 

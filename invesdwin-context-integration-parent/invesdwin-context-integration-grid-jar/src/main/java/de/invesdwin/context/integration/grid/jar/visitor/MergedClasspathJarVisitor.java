@@ -21,6 +21,7 @@ import org.apache.maven.plugins.shade.resource.ResourceTransformer;
 import org.apache.maven.plugins.shade.resource.ServicesResourceTransformer;
 import org.apache.maven.plugins.shade.resource.XmlAppendingTransformer;
 
+import de.invesdwin.context.integration.grid.jar.visitor.filter.IMergedClasspathJarFilter;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
 import de.invesdwin.maven.plugin.shade.RegexAppendingTransformer;

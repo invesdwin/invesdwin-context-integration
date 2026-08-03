@@ -14,7 +14,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.hadoop.HadoopMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.CombinedMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.CombinedMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.mpi.MpiMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.system.properties.SystemProperties;

@@ -11,7 +11,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.mpi.test.job.MpiJobMain;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;

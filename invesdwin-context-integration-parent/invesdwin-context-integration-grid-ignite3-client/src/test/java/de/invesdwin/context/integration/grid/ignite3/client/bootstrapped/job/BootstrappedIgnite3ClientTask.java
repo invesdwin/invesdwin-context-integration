@@ -12,7 +12,7 @@ import org.apache.ignite.compute.JobExecutionContext;
 import org.apache.ignite.table.KeyValueView;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.jar.ForkProcessHelper;
+import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -56,7 +56,7 @@ public class BootstrappedIgnite3ClientTask implements ComputeJob<String, Bootstr
                 final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
                 try {
-                    ForkProcessHelper.fork(
+                    new ForkProcessHelper().fork(
                             new File(BootstrappedIgnite3ClientTask.class.getProtectionDomain()
                                     .getCodeSource()
                                     .getLocation()

@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.grid.ignite2.test.Ignite2Container;
 import de.invesdwin.context.integration.grid.ignite2.test.bootstrapped.job.BootstrappedIgnite2JobMain;
 import de.invesdwin.context.integration.grid.ignite2.test.bootstrapped.job.BootstrappedIgnite2TaskMain;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;

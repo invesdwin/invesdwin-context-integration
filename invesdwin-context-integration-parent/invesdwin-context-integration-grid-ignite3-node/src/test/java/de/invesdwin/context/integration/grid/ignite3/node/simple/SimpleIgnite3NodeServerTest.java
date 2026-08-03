@@ -11,9 +11,9 @@ import org.zeroturnaround.exec.StartedProcess;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.ignite3.node.simple.job.SimpleIgnite3NodeLocalJobMain;
 import de.invesdwin.context.integration.grid.ignite3.node.simple.job.SimpleIgnite3NodeTask;
-import de.invesdwin.context.integration.grid.jar.ForkProcessHelper;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.PackageMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.PackageMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -32,7 +32,7 @@ public class SimpleIgnite3NodeServerTest extends ATest {
                 SimpleIgnite3NodeTask.class).getResource().getFile();
 
         // 1. Fork the second node (worker node) asynchronously via ForkJobHelper
-        final StartedProcess workerProcess = ForkProcessHelper.forkAsync(SimpleIgnite3NodeLocalJobMain.class,
+        final StartedProcess workerProcess = new ForkProcessHelper().forkAsync(SimpleIgnite3NodeLocalJobMain.class,
                 new String[] { "--nodeName", "worker-node", "--port", "3345" });
 
         try {

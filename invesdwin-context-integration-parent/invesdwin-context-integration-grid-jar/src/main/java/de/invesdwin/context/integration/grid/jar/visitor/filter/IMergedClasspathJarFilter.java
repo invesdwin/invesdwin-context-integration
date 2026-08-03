@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.jar.visitor;
+package de.invesdwin.context.integration.grid.jar.visitor.filter;
 
 public interface IMergedClasspathJarFilter {
     String name();

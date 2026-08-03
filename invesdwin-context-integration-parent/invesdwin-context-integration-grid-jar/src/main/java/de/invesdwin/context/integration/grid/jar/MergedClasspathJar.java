@@ -15,9 +15,9 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.jar.visitor.IMergedClasspathJarFilter;
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarVisitor;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.IMergedClasspathJarFilter;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;

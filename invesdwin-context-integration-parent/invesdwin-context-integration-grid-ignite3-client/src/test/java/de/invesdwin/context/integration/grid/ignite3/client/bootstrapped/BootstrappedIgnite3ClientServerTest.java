@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job.Boo
 import de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job.BootstrappedIgnite3ClientTaskMain;
 import de.invesdwin.context.integration.grid.ignite3.test.Ignite3Container;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
