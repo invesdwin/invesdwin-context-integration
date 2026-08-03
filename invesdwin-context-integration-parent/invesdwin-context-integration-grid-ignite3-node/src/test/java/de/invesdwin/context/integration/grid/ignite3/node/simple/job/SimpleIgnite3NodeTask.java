@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.client.simple.job;
+package de.invesdwin.context.integration.grid.ignite3.node.simple.job;
 
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -35,7 +35,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
-public class Ignite3Task implements ComputeJob<String, Ignite3Task.TaskResult> {
+public class SimpleIgnite3NodeTask implements ComputeJob<String, SimpleIgnite3NodeTask.TaskResult> {
 
     public static final String JOB_STATE_CACHE = "ignite3JobStateCache";
     public static final String KEY_SERVER_ADDRESS = "serverAddress";

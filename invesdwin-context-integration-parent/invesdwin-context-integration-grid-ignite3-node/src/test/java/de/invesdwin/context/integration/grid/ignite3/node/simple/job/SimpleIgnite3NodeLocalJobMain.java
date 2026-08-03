@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job;
+package de.invesdwin.context.integration.grid.ignite3.node.simple.job;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
@@ -26,7 +26,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
 @NotThreadSafe
-public class ForkIgnite3JobMain extends AMain {
+public class SimpleIgnite3NodeLocalJobMain extends AMain {
 
     private static final boolean BOOTSTRAP = true;
 
@@ -50,7 +50,7 @@ public class ForkIgnite3JobMain extends AMain {
     @Option(name = "-m", aliases = "--master", usage = "Defines if this node submits the job", required = false)
     protected boolean master = false;
 
-    public ForkIgnite3JobMain(final String[] args) {
+    public SimpleIgnite3NodeLocalJobMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
 
@@ -60,6 +60,7 @@ public class ForkIgnite3JobMain extends AMain {
                 "ignite3-work-" + nodeName, String.valueOf(FDateMillis.nowMillis()));
 
         // Configuration using correct multicast discovery fields directly under nodeFinder
+        final int restPort = 10300 + (port - 3344);
         final String config = "ignite {\n" //
                 + "  network: {\n" //
                 + "    port: " + port + ",\n" //
@@ -71,10 +72,7 @@ public class ForkIgnite3JobMain extends AMain {
                 + "    }\n" //
                 + "  },\n" //
                 + "  rest: {\n" //
-                + "    port: " + (10300 + (port - 3344)) + "\n" //
-                + "  },\n" //
-                + "  clientConnector: {\n" //
-                + "    port: " + (10800 + (port - 3344)) + "\n" //
+                + "    port: " + restPort + "\n" //
                 + "  }\n" //
                 + "}";
 
@@ -97,29 +95,30 @@ public class ForkIgnite3JobMain extends AMain {
 
                 ignite.sql()
                         .execute(null,
-                                "CREATE TABLE IF NOT EXISTS jobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
+                                "CREATE TABLE IF NOT EXISTS ignite3JobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
 
-                final JobDescriptor<String, ForkIgnite3Task.TaskResult> descriptor = JobDescriptor.<String, ForkIgnite3Task.TaskResult> builder(
-                        ForkIgnite3Task.class.getName()).resultClass(ForkIgnite3Task.TaskResult.class).build();
+                final JobDescriptor<String, SimpleIgnite3NodeTask.TaskResult> descriptor = JobDescriptor.<String, SimpleIgnite3NodeTask.TaskResult> builder(
+                        SimpleIgnite3NodeTask.class.getName()).resultClass(SimpleIgnite3NodeTask.TaskResult.class).build();
 
                 final JobTarget target = JobTarget.anyNode(ignite.clusterNodes());
-                final List<CompletableFuture<ForkIgnite3Task.TaskResult>> futures = new ArrayList<>();
+                final List<CompletableFuture<SimpleIgnite3NodeTask.TaskResult>> futures = new ArrayList<>();
 
                 for (int rank = 0; rank < size; rank++) {
                     final String args = rank + ";" + size;
-                    final CompletableFuture<ForkIgnite3Task.TaskResult> future = ignite.compute()
+                    final CompletableFuture<SimpleIgnite3NodeTask.TaskResult> future = ignite.compute()
                             .submitAsync(target, descriptor, args)
                             .thenCompose(org.apache.ignite.compute.JobExecution::resultAsync);
                     futures.add(future);
                 }
 
-                for (final CompletableFuture<ForkIgnite3Task.TaskResult> future : futures) {
-                    final ForkIgnite3Task.TaskResult result = future.join();
+                for (final CompletableFuture<SimpleIgnite3NodeTask.TaskResult> future : futures) {
+                    final SimpleIgnite3NodeTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
                     de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
                             StandardCharsets.UTF_8);
                 }
             } else {
+                // Keep the worker process alive until it receives a shutdown signal from the test
                 final CountDownLatch latch = new CountDownLatch(1);
                 final IgniteServer srvRef = server;
                 Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -140,6 +139,6 @@ public class ForkIgnite3JobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        new ForkIgnite3JobMain(args).run();
+        new SimpleIgnite3NodeLocalJobMain(args).run();
     }
 }

@@ -25,7 +25,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class ForkIgnite2Task implements IgniteCallable<ForkIgnite2Task.TaskResult> {
+public class BootstrappedIgnite2Task implements IgniteCallable<BootstrappedIgnite2Task.TaskResult> {
 
     public static final String JOB_STATE_CACHE = "igniteJobStateCache";
     public static final String KEY_SERVER_ADDRESS = "serverAddress";
@@ -34,7 +34,7 @@ public class ForkIgnite2Task implements IgniteCallable<ForkIgnite2Task.TaskResul
     private final int size;
     private final String jobJar;
 
-    public ForkIgnite2Task(final int rank, final int size, final String jobJar) {
+    public BootstrappedIgnite2Task(final int rank, final int size, final String jobJar) {
         this.rank = rank;
         this.size = size;
         this.jobJar = jobJar;
@@ -69,7 +69,7 @@ public class ForkIgnite2Task implements IgniteCallable<ForkIgnite2Task.TaskResul
             IOUtils.copy(jobJarResource.getInputStream(), new FileOutputStream(localJobJar));
 
             // Use the passed job JAR path directly via ForkJobHelper
-            ForkJobHelper.fork(localJobJar, ForkIgnite2TaskMain.class,
+            ForkJobHelper.fork(localJobJar, BootstrappedIgnite2TaskMain.class,
                     new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size), "--serverAddress",
                             serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 

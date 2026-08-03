@@ -9,14 +9,14 @@ import org.junit.jupiter.api.Test;
 import org.zeroturnaround.exec.StartedProcess;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job.ForkIgnite3JobMain;
+import de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job.BootstrappedIgnite3NodeJobMain;
 import de.invesdwin.context.integration.grid.jar.ForkJobHelper;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 
 @NotThreadSafe
-public class ForkIgnite3ServerTest extends ATest {
+public class BootstrappedIgnite3NodeServerTest extends ATest {
 
     private static final int NUM_NODES = 2;
 
@@ -25,7 +25,7 @@ public class ForkIgnite3ServerTest extends ATest {
         final File logDir = ContextProperties.getCacheDirectory();
 
         // 1. Fork the worker node asynchronously via ForkJobHelper
-        final StartedProcess workerProcess = ForkJobHelper.forkAsync(ForkIgnite3JobMain.class,
+        final StartedProcess workerProcess = ForkJobHelper.forkAsync(BootstrappedIgnite3NodeJobMain.class,
                 new String[] { "--nodeName", "worker-node", "--port", "3345" });
 
         try {
@@ -33,7 +33,7 @@ public class ForkIgnite3ServerTest extends ATest {
             Thread.sleep(3000);
 
             // 2. Run the master node (node-0 on port 3344) in the test JVM
-            ForkIgnite3JobMain.main(new String[] { "--nodeName", "master-node", "--port", "3344", "--size",
+            BootstrappedIgnite3NodeJobMain.main(new String[] { "--nodeName", "master-node", "--port", "3344", "--size",
                     String.valueOf(NUM_NODES), "--logDir", logDir.getAbsolutePath(), "--master" });
 
             final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");

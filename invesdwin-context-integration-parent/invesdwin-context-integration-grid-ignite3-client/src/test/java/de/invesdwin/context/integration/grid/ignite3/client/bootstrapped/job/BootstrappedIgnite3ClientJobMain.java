@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.client.simple.job;
+package de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job;
 
 import java.io.File;
 import java.net.URI;
@@ -16,41 +16,32 @@ import org.apache.ignite.deployment.DeploymentUnit;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
-import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
-import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
 import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
 
 @NotThreadSafe
-public class Ignite3JobMain extends AMain {
-
-    private static final boolean BOOTSTRAP = true;
-
-    static {
-        AspectJWeaverIncludesConfigurer.setShowWeaveInfo(false);
-        PlatformInitializerProperties.setAllowed(BOOTSTRAP);
-    }
+public class BootstrappedIgnite3ClientJobMain extends AMain {
 
     @Option(name = "-l", aliases = "--logDir", usage = "Defines the log directory", required = true)
     protected String logDir;
     @Option(name = "-s", aliases = "--size", usage = "Defines the number of processes", required = true)
     protected int size;
-    @Option(name = "-m", aliases = "--master", usage = "Defines the Ignite master address", required = true)
+    @Option(name = "-m", aliases = "--master", usage = "Defines the Ignite master address (client port)", required = true)
     protected String master;
     @Option(name = "--rest", usage = "Defines the Ignite REST address", required = true)
     protected String restAddress;
     @Option(name = "-j", aliases = "--jobJar", usage = "Defines the job JAR path", required = true)
     protected String jobJar;
 
-    public Ignite3JobMain(final String[] args) {
-        super(args, BOOTSTRAP);
+    public BootstrappedIgnite3ClientJobMain(final String[] args) {
+        super(args, true);
     }
 
     @Override
     protected void startApplication(final CmdLineParser parser) {
         try {
-            final String unitId = "simple-job-unit";
-            final String unitVersion = "3.1.0";
+            final String unitId = "fork-job-unit";
+            final String unitVersion = "3.0.0";
             Ignite3RestHelper.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
 
             final DeploymentUnit unit = new DeploymentUnit(unitId, unitVersion);
@@ -58,28 +49,29 @@ public class Ignite3JobMain extends AMain {
             try (IgniteClient client = IgniteClient.builder().addresses(master).build()) {
                 client.sql()
                         .execute(null,
-                                "CREATE TABLE IF NOT EXISTS ignite3JobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
+                                "CREATE TABLE IF NOT EXISTS jobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
 
-                final JobDescriptor<String, Ignite3Task.TaskResult> descriptor = JobDescriptor.<String, Ignite3Task.TaskResult> builder(
-                        Ignite3Task.class.getName())
-                        .resultClass(Ignite3Task.TaskResult.class)
+                final JobDescriptor<String, BootstrappedIgnite3ClientTask.TaskResult> descriptor = JobDescriptor.<String, BootstrappedIgnite3ClientTask.TaskResult> builder(
+                        BootstrappedIgnite3ClientTask.class.getName())
+                        .resultClass(BootstrappedIgnite3ClientTask.TaskResult.class)
                         .units(List.of(unit))
                         .build();
 
                 final JobTarget target = JobTarget.anyNode(client.cluster().nodes());
-                final List<CompletableFuture<Ignite3Task.TaskResult>> futures = new ArrayList<>();
+                final List<CompletableFuture<BootstrappedIgnite3ClientTask.TaskResult>> futures = new ArrayList<>();
 
                 for (int rank = 0; rank < size; rank++) {
-                    final String args = rank + ";" + size + ";" + master;
-                    final CompletableFuture<Ignite3Task.TaskResult> future = client.compute()
+                    final String args = rank + ";" + size + ";" + jobJar;
+                    final CompletableFuture<BootstrappedIgnite3ClientTask.TaskResult> future = client.compute()
                             .submitAsync(target, descriptor, args)
                             .thenCompose(org.apache.ignite.compute.JobExecution::resultAsync);
+
                     futures.add(future);
                 }
 
                 final File targetDir = parseLogDirectory(logDir);
-                for (final CompletableFuture<Ignite3Task.TaskResult> future : futures) {
-                    final Ignite3Task.TaskResult result = future.join();
+                for (final CompletableFuture<BootstrappedIgnite3ClientTask.TaskResult> future : futures) {
+                    final BootstrappedIgnite3ClientTask.TaskResult result = future.join();
                     final File logFile = new File(targetDir, result.getLogFileName());
                     de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
                             StandardCharsets.UTF_8);
@@ -98,6 +90,6 @@ public class Ignite3JobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        new Ignite3JobMain(args).run();
+        new BootstrappedIgnite3ClientJobMain(args).run();
     }
 }

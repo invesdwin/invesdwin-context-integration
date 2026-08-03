@@ -21,7 +21,7 @@ import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @NotThreadSafe
-public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskResult> {
+public class BootstrappedIgnite3ClientTask implements ComputeJob<String, BootstrappedIgnite3ClientTask.TaskResult> {
 
     public static final String JOB_STATE_CACHE = "jobStateCache";
     public static final String KEY_SERVER_ADDRESS = "serverAddress";
@@ -57,9 +57,9 @@ public class ForkIgnite3Task implements ComputeJob<String, ForkIgnite3Task.TaskR
 
                 try {
                     final File deployedJarFile = new File(
-                            ForkIgnite3Task.class.getProtectionDomain().getCodeSource().getLocation().toURI());
+                            BootstrappedIgnite3ClientTask.class.getProtectionDomain().getCodeSource().getLocation().toURI());
 
-                    ForkJobHelper.fork(deployedJarFile, ForkIgnite3TaskMain.class,
+                    ForkJobHelper.fork(deployedJarFile, BootstrappedIgnite3ClientTaskMain.class,
                             new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
                                     "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 

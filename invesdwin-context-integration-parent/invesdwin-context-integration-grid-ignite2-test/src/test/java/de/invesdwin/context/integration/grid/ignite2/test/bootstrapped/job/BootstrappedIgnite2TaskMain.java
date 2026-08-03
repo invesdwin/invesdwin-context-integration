@@ -32,7 +32,7 @@ import de.invesdwin.util.time.date.FDate;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
-public class ForkIgnite2TaskMain extends AMain {
+public class BootstrappedIgnite2TaskMain extends AMain {
 
     private static final boolean BOOTSTRAP = true;
 
@@ -50,7 +50,7 @@ public class ForkIgnite2TaskMain extends AMain {
     @Option(name = "-t", aliases = "--tempFile", usage = "Temp file to write results to", required = true)
     protected String tempFile;
 
-    public ForkIgnite2TaskMain(final String[] args) {
+    public BootstrappedIgnite2TaskMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
 
@@ -109,6 +109,6 @@ public class ForkIgnite2TaskMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        new ForkIgnite2TaskMain(args).run();
+        new BootstrappedIgnite2TaskMain(args).run();
     }
 }

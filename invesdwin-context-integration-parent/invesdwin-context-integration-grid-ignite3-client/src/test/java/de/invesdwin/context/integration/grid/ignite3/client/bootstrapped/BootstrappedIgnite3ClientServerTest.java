@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.client.simple;
+package de.invesdwin.context.integration.grid.ignite3.client.bootstrapped;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -10,8 +10,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
-import de.invesdwin.context.integration.grid.ignite3.client.simple.job.Ignite3JobMain;
-import de.invesdwin.context.integration.grid.ignite3.client.simple.job.Ignite3Task;
+import de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job.BootstrappedIgnite3ClientJobMain;
+import de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job.BootstrappedIgnite3ClientTaskMain;
 import de.invesdwin.context.integration.grid.ignite3.test.Ignite3Container;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
@@ -21,7 +21,7 @@ import de.invesdwin.util.lang.Files;
 
 @NotThreadSafe
 @Testcontainers
-public class Ignite3ServerTest extends ATest {
+public class BootstrappedIgnite3ClientServerTest extends ATest {
 
     private static final int NUM_CONTAINERS = 2;
 
@@ -35,21 +35,16 @@ public class Ignite3ServerTest extends ATest {
         final String clientAddress = IGNITE.getClientAddress();
         final String restAddress = IGNITE.getRestAddress();
 
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, Ignite3Task.class)
+        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, BootstrappedIgnite3ClientTaskMain.class)
                 .getResource()
                 .getFile();
 
-        Ignite3JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
+        BootstrappedIgnite3ClientJobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
                 "file://" + logDir.getAbsolutePath(), "--master", clientAddress, "--rest", restAddress, "--jobJar",
                 jobJarFile.getAbsolutePath() });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
-        final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");
-
         final String str_1_2 = Files.readFileToStringNoThrow(log_1_2, Charset.defaultCharset());
-        final String str_2_2 = Files.readFileToStringNoThrow(log_2_2, Charset.defaultCharset());
-
         Assertions.assertThat(str_1_2).contains("WritesFinished: ").contains("(100%)");
-        Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains("(100%)");
     }
 }

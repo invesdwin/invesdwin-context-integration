@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.test.simple.job;
+package de.invesdwin.context.integration.grid.ignite2.test.bootstrapped.job;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
-public class Ignite2JobMain extends AMain {
+public class BootstrappedIgnite2JobMain extends AMain {
 
     private static final boolean BOOTSTRAP = true;
 
@@ -41,23 +41,25 @@ public class Ignite2JobMain extends AMain {
     protected int size;
     @Option(name = "-m", aliases = "--master", usage = "Defines the Ignite master address")
     protected String master;
+    @Option(name = "-j", aliases = "--jobJar", usage = "Defines the job JAR path", required = true)
+    protected String jobJar;
 
-    public Ignite2JobMain() {
+    public BootstrappedIgnite2JobMain() {
         super(Strings.EMPTY_ARRAY, BOOTSTRAP);
     }
 
-    public Ignite2JobMain(final String[] args) {
+    public BootstrappedIgnite2JobMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
 
     @Override
     protected void startApplication(final CmdLineParser parser) {
-        runIgniteJob(logDir, size, master);
+        runIgniteJob(logDir, size, master, jobJar);
     }
 
-    public static void runIgniteJob(final String logDir, final int size, final String master) {
+    public static void runIgniteJob(final String logDir, final int size, final String master, final String jobJar) {
         final IgniteConfiguration cfg = new IgniteConfiguration();
-        final File workDir = new File(ContextProperties.getCacheDirectory(), "ignite2-work");
+        final File workDir = new File(ContextProperties.getCacheDirectory(), "ignite-work");
         cfg.setWorkDirectory(workDir.getAbsolutePath());
         cfg.setPeerClassLoadingEnabled(true);
 
@@ -66,7 +68,6 @@ public class Ignite2JobMain extends AMain {
 
         if (master != null) {
             ipFinder.setAddresses(java.util.Collections.singletonList(master));
-            // Run as a thick client connecting to the Docker cluster
             cfg.setClientMode(true);
         } else {
             ipFinder.setAddresses(java.util.Collections.singletonList("127.0.0.1:47500..47509"));
@@ -76,18 +77,18 @@ public class Ignite2JobMain extends AMain {
         cfg.setDiscoverySpi(spi);
 
         try (Ignite ignite = Ignition.start(cfg)) {
-            final List<Ignite2Task> tasks = new ArrayList<>();
+            final List<BootstrappedIgnite2Task> tasks = new ArrayList<>();
             for (int rank = 0; rank < size; rank++) {
-                tasks.add(new Ignite2Task(rank, size));
+                tasks.add(new BootstrappedIgnite2Task(rank, size, jobJar));
             }
 
             // Distribute and execute worker tasks across the compute grid
-            final Collection<Ignite2Task.TaskResult> results = ignite.compute().call(tasks);
+            final Collection<BootstrappedIgnite2Task.TaskResult> results = ignite.compute().call(tasks);
 
             // Write in-memory gathered logs to logDir
             if (logDir != null) {
                 final File targetDir = parseLogDirectory(logDir);
-                for (final Ignite2Task.TaskResult result : results) {
+                for (final BootstrappedIgnite2Task.TaskResult result : results) {
                     final File logFile = new File(targetDir, result.getLogFileName());
                     try {
                         Files.writeStringToFile(logFile, result.getLogContent(), StandardCharsets.UTF_8);
@@ -107,6 +108,6 @@ public class Ignite2JobMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        new Ignite2JobMain(args).run();
+        new BootstrappedIgnite2JobMain(args).run();
     }
 }

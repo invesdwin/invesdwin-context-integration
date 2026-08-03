@@ -11,14 +11,14 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.ignite2.test.Ignite2Container;
-import de.invesdwin.context.integration.grid.ignite2.test.simple.job.Ignite2JobMain;
+import de.invesdwin.context.integration.grid.ignite2.test.simple.job.SimpleIgnite2JobMain;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 
 @Testcontainers
 @NotThreadSafe
-public class Ignite2ServerTest extends ATest {
+public class SimpleIgnite2ServerTest extends ATest {
 
     private static final int NUM_CONTAINERS = 2;
 
@@ -33,7 +33,7 @@ public class Ignite2ServerTest extends ATest {
         final String masterAddress = IGNITE.getDiscoveryAddress();
 
         // Pass --master address to configure the job as a client connecting to Docker
-        Ignite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
+        SimpleIgnite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
                 "file://" + logDir.getAbsolutePath(), "--master", masterAddress });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");

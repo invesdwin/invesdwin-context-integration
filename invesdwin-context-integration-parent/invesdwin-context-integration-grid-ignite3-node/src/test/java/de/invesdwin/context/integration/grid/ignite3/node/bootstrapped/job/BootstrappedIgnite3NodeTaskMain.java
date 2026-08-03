@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job;
+package de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -32,7 +32,7 @@ import de.invesdwin.util.time.date.FDate;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
 @NotThreadSafe
-public class ForkIgnite3TaskMain extends AMain {
+public class BootstrappedIgnite3NodeTaskMain extends AMain {
 
     private static final boolean BOOTSTRAP = true;
 
@@ -50,7 +50,7 @@ public class ForkIgnite3TaskMain extends AMain {
     @Option(name = "-t", aliases = "--tempFile", usage = "Temp file to write results to", required = true)
     protected String tempFile;
 
-    public ForkIgnite3TaskMain(final String[] args) {
+    public BootstrappedIgnite3NodeTaskMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
 
@@ -109,6 +109,6 @@ public class ForkIgnite3TaskMain extends AMain {
     }
 
     public static void main(final String[] args) {
-        new ForkIgnite3TaskMain(args).run();
+        new BootstrappedIgnite3NodeTaskMain(args).run();
     }
 }
