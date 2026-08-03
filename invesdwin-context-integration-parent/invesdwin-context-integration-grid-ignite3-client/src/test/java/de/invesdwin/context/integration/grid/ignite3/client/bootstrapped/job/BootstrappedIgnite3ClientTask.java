@@ -56,10 +56,12 @@ public class BootstrappedIgnite3ClientTask implements ComputeJob<String, Bootstr
                 final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
                 try {
-                    final File deployedJarFile = new File(
-                            BootstrappedIgnite3ClientTask.class.getProtectionDomain().getCodeSource().getLocation().toURI());
-
-                    ForkJobHelper.fork(deployedJarFile, BootstrappedIgnite3ClientTaskMain.class,
+                    ForkJobHelper.fork(
+                            new File(BootstrappedIgnite3ClientTask.class.getProtectionDomain()
+                                    .getCodeSource()
+                                    .getLocation()
+                                    .toURI()),
+                            BootstrappedIgnite3ClientTaskMain.class,
                             new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
                                     "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 

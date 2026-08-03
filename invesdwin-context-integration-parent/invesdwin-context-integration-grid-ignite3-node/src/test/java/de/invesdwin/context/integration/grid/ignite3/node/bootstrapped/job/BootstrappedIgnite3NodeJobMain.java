@@ -15,6 +15,7 @@ import org.apache.ignite.IgniteServer;
 import org.apache.ignite.InitParameters;
 import org.apache.ignite.compute.JobDescriptor;
 import org.apache.ignite.compute.JobTarget;
+import org.apache.ignite.deployment.DeploymentUnit;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -22,6 +23,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
+import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
@@ -50,6 +52,10 @@ public class BootstrappedIgnite3NodeJobMain extends AMain {
     @Option(name = "-m", aliases = "--master", usage = "Defines if this node submits the job", required = false)
     protected boolean master = false;
 
+    // Added jobJar argument
+    @Option(name = "-j", aliases = "--jobJar", usage = "Defines the job JAR path", required = false)
+    protected String jobJar;
+
     public BootstrappedIgnite3NodeJobMain(final String[] args) {
         super(args, BOOTSTRAP);
     }
@@ -58,6 +64,8 @@ public class BootstrappedIgnite3NodeJobMain extends AMain {
     protected void startApplication(final CmdLineParser parser) {
         final Path workDir = Path.of(ContextProperties.getCacheDirectory().getAbsolutePath(),
                 "ignite3-work-" + nodeName, String.valueOf(FDateMillis.nowMillis()));
+
+        final int restPort = 10300 + (port - 3344);
 
         // Configuration using correct multicast discovery fields directly under nodeFinder
         final String config = "ignite {\n" //
@@ -71,7 +79,7 @@ public class BootstrappedIgnite3NodeJobMain extends AMain {
                 + "    }\n" //
                 + "  },\n" //
                 + "  rest: {\n" //
-                + "    port: " + (10300 + (port - 3344)) + "\n" //
+                + "    port: " + restPort + "\n" //
                 + "  },\n" //
                 + "  clientConnector: {\n" //
                 + "    port: " + (10800 + (port - 3344)) + "\n" //
@@ -99,9 +107,25 @@ public class BootstrappedIgnite3NodeJobMain extends AMain {
                         .execute(null,
                                 "CREATE TABLE IF NOT EXISTS jobStateCache (key VARCHAR PRIMARY KEY, val VARCHAR)");
 
-                final JobDescriptor<String, BootstrappedIgnite3NodeTask.TaskResult> descriptor = JobDescriptor.<String, BootstrappedIgnite3NodeTask.TaskResult> builder(
+                // Deploy unit if jar is provided
+                final String unitId = "bootstrapped-node-unit";
+                final String unitVersion = "3.1.0";
+
+                if (jobJar != null) {
+                    final String restAddress = "127.0.0.1:" + restPort;
+                    Ignite3RestHelper.deployUnitViaRest(restAddress, unitId, unitVersion, jobJar);
+                }
+
+                // Build descriptor dynamically depending on jobJar
+                final JobDescriptor.Builder<String, BootstrappedIgnite3NodeTask.TaskResult> descriptorBuilder = JobDescriptor.<String, BootstrappedIgnite3NodeTask.TaskResult> builder(
                         BootstrappedIgnite3NodeTask.class.getName())
-                        .resultClass(BootstrappedIgnite3NodeTask.TaskResult.class)
+                        .resultClass(BootstrappedIgnite3NodeTask.TaskResult.class);
+
+                if (jobJar != null) {
+                    descriptorBuilder.units(List.of(new DeploymentUnit(unitId, unitVersion)));
+                }
+
+                final JobDescriptor<String, BootstrappedIgnite3NodeTask.TaskResult> descriptor = descriptorBuilder
                         .build();
 
                 final JobTarget target = JobTarget.anyNode(ignite.cluster().nodes());

@@ -12,6 +12,7 @@ import org.apache.ignite.compute.JobExecutionContext;
 import org.apache.ignite.table.KeyValueView;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.grid.jar.ForkJobHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.UnknownArgumentException;
@@ -58,8 +59,12 @@ public class BootstrappedIgnite3NodeTask implements ComputeJob<String, Bootstrap
                     final String[] args = new String[] { "--rank", String.valueOf(rank), "--size", String.valueOf(size),
                             "--serverAddress", serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() };
                     //no need to actually fork here since we are already in a boostrapped JVM
-                    BootstrappedIgnite3NodeTaskMain.main(args);
-                    //ForkJobHelper.fork(ForkIgnite3TaskMain.class, args);
+                    //                    BootstrappedIgnite3NodeTaskMain.main(args);
+                    //                    ForkJobHelper.fork(ForkIgnite3TaskMain.class, args);
+                    ForkJobHelper.fork(new File(BootstrappedIgnite3NodeTaskMain.class.getProtectionDomain()
+                            .getCodeSource()
+                            .getLocation()
+                            .toURI()), BootstrappedIgnite3NodeTaskMain.class, args);
 
                     final String logContent = Files.readFileToString(tempLogFile, StandardCharsets.UTF_8);
                     final String taskClassName = (rank == 0) ? "LatencyServerTask" : "LatencyClientTask";

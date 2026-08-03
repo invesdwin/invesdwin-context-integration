@@ -22,8 +22,8 @@ public class SimpleIgnite3NodeLocalTest extends ATest {
     public void test() throws Exception {
         final File logDir = ContextProperties.getCacheDirectory();
 
-        SimpleIgnite3NodeLocalJobMain
-                .main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath() });
+        SimpleIgnite3NodeLocalJobMain.main(new String[] { "--nodeName", "local-node", "--port", "3344", "--size",
+                String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath(), "--master" });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");
