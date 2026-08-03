@@ -35,13 +35,12 @@ public class SimpleIgnite3ClientServerTest extends ATest {
         final String clientAddress = IGNITE.getClientAddress();
         final String restAddress = IGNITE.getRestAddress();
 
-        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, SimpleIgnite3ClientTask.class)
-                .getResource()
-                .getFile();
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT,
+                SimpleIgnite3ClientTask.class).getResource().getFile();
 
-        SimpleIgnite3ClientJobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath(), "--master", clientAddress, "--rest", restAddress, "--jobJar",
-                jobJarFile.getAbsolutePath() });
+        SimpleIgnite3ClientJobMain
+                .main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath(),
+                        "--master", clientAddress, "--rest", restAddress, "--jobJar", jobJarFile.getAbsolutePath() });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

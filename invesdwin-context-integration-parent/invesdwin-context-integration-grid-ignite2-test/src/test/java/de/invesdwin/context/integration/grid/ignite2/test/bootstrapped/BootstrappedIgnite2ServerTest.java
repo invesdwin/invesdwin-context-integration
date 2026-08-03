@@ -38,7 +38,8 @@ public class BootstrappedIgnite2ServerTest extends ATest {
         final String masterAddress = IGNITE.getDiscoveryAddress();
 
         // Create the job JAR on the fly from the outside
-        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, BootstrappedIgnite2TaskMain.class) {
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT,
+                BootstrappedIgnite2TaskMain.class) {
             @Override
             protected File newFolder() {
                 return ContextProperties.TEMP_CLASSPATH_DIRECTORY;
@@ -46,9 +47,9 @@ public class BootstrappedIgnite2ServerTest extends ATest {
         }.getResource().getFile();
 
         // Pass the job JAR path to ForkIgniteJobMain
-        BootstrappedIgnite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath(), "--master", masterAddress, "--jobJar",
-                "classpath:/" + jobJarFile.getName() });
+        BootstrappedIgnite2JobMain
+                .main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath(),
+                        "--master", masterAddress, "--jobJar", "classpath:/" + jobJarFile.getName() });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

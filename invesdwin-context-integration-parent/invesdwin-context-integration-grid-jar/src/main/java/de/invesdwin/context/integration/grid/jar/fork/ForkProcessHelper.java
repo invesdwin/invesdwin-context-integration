@@ -23,7 +23,7 @@ import de.invesdwin.util.lang.string.Strings;
 @NotThreadSafe
 public final class ForkProcessHelper {
 
-    private IJavaHomeProvider javaHomeProvider = OpenJdk21JavaHomeProvider.INSTANCE;
+    private IJavaHomeProvider javaHomeProvider = CurrentJavaHomeProvider.INSTANCE;
 
     public ForkProcessHelper() {}
 

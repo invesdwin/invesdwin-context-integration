@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.grid.ignite2.test.simple.job;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,9 +85,8 @@ public class SimpleIgnite2JobMain extends AMain {
 
             // Write in-memory gathered logs to logDir
             if (logDir != null) {
-                final File targetDir = parseLogDirectory(logDir);
                 for (final SimpleIgnite2Task.TaskResult result : results) {
-                    final File logFile = new File(targetDir, result.getLogFileName());
+                    final File logFile = new File(logDir, result.getLogFileName());
                     try {
                         Files.writeStringToFile(logFile, result.getLogContent(), StandardCharsets.UTF_8);
                     } catch (final IOException e) {
@@ -97,13 +95,6 @@ public class SimpleIgnite2JobMain extends AMain {
                 }
             }
         }
-    }
-
-    private static File parseLogDirectory(final String logDir) {
-        if (logDir.startsWith("file:")) {
-            return new File(URI.create(logDir));
-        }
-        return new File(logDir);
     }
 
     public static void main(final String[] args) {

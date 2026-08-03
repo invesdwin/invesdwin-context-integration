@@ -22,8 +22,8 @@ public class SimpleIgnite2LocalTest extends ATest {
     public void test() throws Exception {
         final File logDir = ContextProperties.getCacheDirectory();
 
-        SimpleIgnite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath() });
+        SimpleIgnite2JobMain
+                .main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath() });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

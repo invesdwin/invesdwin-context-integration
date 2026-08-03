@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.client.simple.job;
 
 import java.io.File;
-import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -77,10 +76,9 @@ public class SimpleIgnite3ClientJobMain extends AMain {
                     futures.add(future);
                 }
 
-                final File targetDir = parseLogDirectory(logDir);
                 for (final CompletableFuture<SimpleIgnite3ClientTask.TaskResult> future : futures) {
                     final SimpleIgnite3ClientTask.TaskResult result = future.join();
-                    final File logFile = new File(targetDir, result.getLogFileName());
+                    final File logFile = new File(logDir, result.getLogFileName());
                     de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
                             StandardCharsets.UTF_8);
                 }
@@ -88,13 +86,6 @@ public class SimpleIgnite3ClientJobMain extends AMain {
         } catch (final Exception e) {
             throw new RuntimeException("Failed to run Ignite 3 job", e);
         }
-    }
-
-    private static File parseLogDirectory(final String logDir) {
-        if (logDir.startsWith("file:")) {
-            return new File(URI.create(logDir));
-        }
-        return new File(logDir);
     }
 
     public static void main(final String[] args) {

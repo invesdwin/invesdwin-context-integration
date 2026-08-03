@@ -34,7 +34,7 @@ public class SimpleIgnite2ServerTest extends ATest {
 
         // Pass --master address to configure the job as a client connecting to Docker
         SimpleIgnite2JobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath(), "--master", masterAddress });
+                logDir.getAbsolutePath(), "--master", masterAddress });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(logDir, "2_2_LatencyClientTask.log");

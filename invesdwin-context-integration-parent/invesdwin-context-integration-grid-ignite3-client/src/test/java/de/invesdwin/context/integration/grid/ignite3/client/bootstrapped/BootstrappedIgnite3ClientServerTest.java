@@ -35,13 +35,12 @@ public class BootstrappedIgnite3ClientServerTest extends ATest {
         final String clientAddress = IGNITE.getClientAddress();
         final String restAddress = IGNITE.getRestAddress();
 
-        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, BootstrappedIgnite3ClientTaskMain.class)
-                .getResource()
-                .getFile();
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT,
+                BootstrappedIgnite3ClientTaskMain.class).getResource().getFile();
 
-        BootstrappedIgnite3ClientJobMain.main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir",
-                "file://" + logDir.getAbsolutePath(), "--master", clientAddress, "--rest", restAddress, "--jobJar",
-                jobJarFile.getAbsolutePath() });
+        BootstrappedIgnite3ClientJobMain
+                .main(new String[] { "--size", String.valueOf(NUM_CONTAINERS), "--logDir", logDir.getAbsolutePath(),
+                        "--master", clientAddress, "--rest", restAddress, "--jobJar", jobJarFile.getAbsolutePath() });
 
         final File log_1_2 = new File(logDir, "1_2_LatencyServerTask.log");
         final String str_1_2 = Files.readFileToStringNoThrow(log_1_2, Charset.defaultCharset());
