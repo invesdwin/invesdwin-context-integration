@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.grid.ignite3.node.simple.job.SimpleIgnit
 import de.invesdwin.context.integration.grid.ignite3.node.simple.job.SimpleIgnite3NodeTask;
 import de.invesdwin.context.integration.grid.jar.ForkJobHelper;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.PackageMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -27,9 +27,9 @@ public class SimpleIgnite3NodeServerTest extends ATest {
     public void test() throws Exception {
         final File logDir = ContextProperties.getCacheDirectory();
 
-        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, SimpleIgnite3NodeTask.class)
-                .getResource()
-                .getFile();
+        final File jobJarFile = new MergedClasspathJar(
+                new PackageMergedClasspathJarFilter(SimpleIgnite3NodeTask.class.getPackageName()),
+                SimpleIgnite3NodeTask.class).getResource().getFile();
 
         // 1. Fork the second node (worker node) asynchronously via ForkJobHelper
         final StartedProcess workerProcess = ForkJobHelper.forkAsync(SimpleIgnite3NodeLocalJobMain.class,
