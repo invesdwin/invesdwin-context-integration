@@ -34,7 +34,7 @@ import de.invesdwin.util.time.date.millis.FDateMillis;
  * that run on older JVMs.
  */
 @NotThreadSafe
-public final class ForkJobHelper {
+public final class ForkProcessHelper {
 
     private static final String OPENJDK_MAJOR_VERSION = "21";
     private static final String OPENJDK_VERSION = OPENJDK_MAJOR_VERSION + ".0.11_10";
@@ -53,7 +53,7 @@ public final class ForkJobHelper {
                 + "U-jdk_x64_linux_hotspot_" + OPENJDK_VERSION + ".tar.gz";
     }
 
-    private ForkJobHelper() {}
+    private ForkProcessHelper() {}
 
     public static void fork(final Class<?> mainClass, final String[] args) {
         final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
@@ -87,7 +87,7 @@ public final class ForkJobHelper {
                     commands.add(args[i]);
                 }
             }
-            final Slf4jStream stream = Slf4jStream.of(ForkJobHelper.class);
+            final Slf4jStream stream = Slf4jStream.of(ForkProcessHelper.class);
             new ProcessExecutor().command(commands)
                     .destroyOnExit()
                     .exitValueNormal()
@@ -130,7 +130,7 @@ public final class ForkJobHelper {
                     commands.add(args[i]);
                 }
             }
-            final Slf4jStream stream = Slf4jStream.of(ForkJobHelper.class);
+            final Slf4jStream stream = Slf4jStream.of(ForkProcessHelper.class);
             return new ProcessExecutor().command(commands)
                     .destroyOnExit()
                     .redirectOutput(stream.asInfo())
