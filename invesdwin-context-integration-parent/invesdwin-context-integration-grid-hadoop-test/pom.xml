@@ -36,11 +36,6 @@
 	
 		<dependency>
 			<groupId>de.invesdwin</groupId>
-			<artifactId>invesdwin-context-integration-grid-jar</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-grid-docker</artifactId>
 		</dependency>
 	</dependencies>

@@ -19,7 +19,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.spark.test.job.SparkJobMain;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -37,7 +37,7 @@ public class SparkYarnTest extends ATest {
 
     @Test
     public void testSparkOnYarn() throws Exception {
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
                 .getResource()
                 .getFile();
 

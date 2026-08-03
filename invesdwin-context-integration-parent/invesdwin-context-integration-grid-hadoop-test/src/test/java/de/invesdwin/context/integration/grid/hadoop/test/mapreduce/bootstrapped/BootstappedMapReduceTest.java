@@ -20,11 +20,11 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import de.invesdwin.context.integration.grid.hadoop.HadoopMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.hadoop.test.mapreduce.bootstrapped.job.HadoopTestJobMapper;
 import de.invesdwin.context.integration.grid.hadoop.test.mapreduce.bootstrapped.job.HadoopTestJobReducer;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 
@@ -70,7 +70,9 @@ public class BootstappedMapReduceTest extends ATest {
         // 2. Configure the Job
         final Job job = Job.getInstance(conf, "Spring Integration Test");
 
-        job.setJar(new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3).getResource().getFile().getAbsolutePath());
+        job.setJar(new MergedClasspathJar(HadoopMergedClasspathJarFilter.HADOOP3).getResource()
+                .getFile()
+                .getAbsolutePath());
 
         job.setMapperClass(HadoopTestJobMapper.class);
         job.setReducerClass(HadoopTestJobReducer.class);

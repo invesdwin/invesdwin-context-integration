@@ -10,7 +10,7 @@ import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.mpi.MpiMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.mpi.test.job.NoMpiJobMain;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.log.LogLevel;
@@ -28,7 +28,7 @@ public class NoOpenMpiTest extends AMpiTest {
         final File jobTemplate = new File("mpj/job/openmpi_job_template.sh");
         String job = Files.readFileToString(jobTemplate, Charset.defaultCharset());
         job = job.replace("{ARGS}", "java -jar "
-                + new MergedClasspathJar(MergedClasspathJarFilter.MPI, NoMpiJobMain.class).getResource()
+                + new MergedClasspathJar(MpiMergedClasspathJarFilter.MPI, NoMpiJobMain.class).getResource()
                         .getFile()
                         .getAbsolutePath()
                 + " --logDir \"" + ContextProperties.getCacheDirectory().getAbsolutePath() + "\""

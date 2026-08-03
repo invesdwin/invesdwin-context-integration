@@ -16,7 +16,7 @@ import org.springframework.core.io.Resource;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.jar.visitor.IMergedClasspathJarFilter;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarVisitor;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
@@ -35,7 +35,7 @@ public class MergedClasspathJar {
     private final Class<?> mainClass;
 
     public MergedClasspathJar() {
-        this(MergedClasspathJarFilter.DEFAULT);
+        this(DefaultMergedClasspathJarFilter.DEFAULT);
     }
 
     public MergedClasspathJar(final IMergedClasspathJarFilter filter) {

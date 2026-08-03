@@ -14,7 +14,7 @@ import de.invesdwin.context.integration.grid.ignite3.client.simple.job.SimpleIgn
 import de.invesdwin.context.integration.grid.ignite3.client.simple.job.SimpleIgnite3ClientTask;
 import de.invesdwin.context.integration.grid.ignite3.test.Ignite3Container;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -35,7 +35,7 @@ public class SimpleIgnite3ClientServerTest extends ATest {
         final String clientAddress = IGNITE.getClientAddress();
         final String restAddress = IGNITE.getRestAddress();
 
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SimpleIgnite3ClientTask.class)
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, SimpleIgnite3ClientTask.class)
                 .getResource()
                 .getFile();
 

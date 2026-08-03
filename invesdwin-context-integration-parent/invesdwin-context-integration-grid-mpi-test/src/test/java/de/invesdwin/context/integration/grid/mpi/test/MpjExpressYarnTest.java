@@ -11,9 +11,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import org.zeroturnaround.exec.ProcessExecutor;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.grid.hadoop.HadoopMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.CombinedMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.mpi.MpiMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.mpi.test.job.MpiJobMain;
 import de.invesdwin.context.system.properties.SystemProperties;
 import de.invesdwin.util.lang.Files;
@@ -43,9 +45,8 @@ public class MpjExpressYarnTest extends AMpiTest {
         args.append(" -wdir \"");
         args.append(workDir.getAbsolutePath());
         args.append("\" -jar ");
-        args.append(new MergedClasspathJar(MergedClasspathJarFilter.MPI_YARN3, MpiJobMain.class).getResource()
-                .getFile()
-                .getAbsolutePath());
+        args.append(new MergedClasspathJar(new CombinedMergedClasspathJarFilter(MpiMergedClasspathJarFilter.MPI,
+                HadoopMergedClasspathJarFilter.HADOOP3), MpiJobMain.class).getResource().getFile().getAbsolutePath());
         args.append(" ");
         args.append(MpiJobMain.class.getName());
         script = script.replace("{ARGS}", args.toString());

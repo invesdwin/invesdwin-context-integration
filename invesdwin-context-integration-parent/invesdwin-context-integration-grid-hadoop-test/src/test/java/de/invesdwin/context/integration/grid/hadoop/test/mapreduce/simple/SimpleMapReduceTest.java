@@ -21,10 +21,10 @@ import org.junit.jupiter.api.Test;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import de.invesdwin.context.integration.grid.hadoop.HadoopMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.hadoop.test.mapreduce.simple.job.LineCountJob;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 
@@ -57,7 +57,9 @@ public class SimpleMapReduceTest extends ATest {
         // 2. Configure the Job
         final Job job = Job.getInstance(conf, "Line Count Integration Test");
 
-        job.setJar(new MergedClasspathJar(MergedClasspathJarFilter.HADOOP3).getResource().getFile().getAbsolutePath());
+        job.setJar(new MergedClasspathJar(HadoopMergedClasspathJarFilter.HADOOP3).getResource()
+                .getFile()
+                .getAbsolutePath());
 
         job.setMapperClass(LineCountJob.LineCountMapper.class);
         job.setCombinerClass(LineCountJob.LineCountReducer.class);

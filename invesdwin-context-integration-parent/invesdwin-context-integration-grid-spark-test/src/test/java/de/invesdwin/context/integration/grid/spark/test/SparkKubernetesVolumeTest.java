@@ -20,7 +20,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.integration.grid.spark.test.job.SparkJobMain;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
@@ -206,7 +206,7 @@ public class SparkKubernetesVolumeTest extends ATest {
     }
 
     private void uploadJobJarFile(final KubernetesClient client) throws IOException {
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, SparkJobMain.class)
                 .getResource()
                 .getFile();
         client.pods()

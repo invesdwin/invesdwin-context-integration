@@ -20,7 +20,7 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.hadoop.test.yarn.job.YarnJobMain;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
-import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -35,7 +35,8 @@ public class YarnDistributedShellTest extends ATest {
 
     @Test
     public void test() throws Exception {
-        final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.MPI, YarnJobMain.class).getResource()
+        final File jobJarFile = new MergedClasspathJar(DefaultMergedClasspathJarFilter.DEFAULT, YarnJobMain.class)
+                .getResource()
                 .getFile();
         final File jobScriptFile = new File(ContextProperties.getCacheDirectory(), "yarn_job.sh");
 
