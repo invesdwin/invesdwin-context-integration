@@ -36,13 +36,14 @@ public class CombinedMergedClasspathJarFilter implements IMergedClasspathJarFilt
     }
 
     private static String newCombinedName(final IMergedClasspathJarFilter[] filters) {
-        final StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder("COMBINED[");
         for (int i = 0; i < filters.length; i++) {
             if (i > 0) {
                 sb.append("+");
             }
             sb.append(filters[i].name());
         }
+        sb.append("]");
         return sb.toString();
     }
 

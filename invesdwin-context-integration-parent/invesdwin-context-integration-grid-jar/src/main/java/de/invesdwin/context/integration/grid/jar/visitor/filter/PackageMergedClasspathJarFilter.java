@@ -2,6 +2,8 @@ package de.invesdwin.context.integration.grid.jar.visitor.filter;
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.collections.Arrays;
+
 @Immutable
 public class PackageMergedClasspathJarFilter implements IMergedClasspathJarFilter {
     private static final String[] BLACKLIST = new String[] { ".*" };
@@ -32,7 +34,7 @@ public class PackageMergedClasspathJarFilter implements IMergedClasspathJarFilte
 
     @Override
     public String name() {
-        return PackageMergedClasspathJarFilter.class.getSimpleName();
+        return "PACKAGE[" + Arrays.hashCode(whitelist) + "]";
     }
 
     @Override
