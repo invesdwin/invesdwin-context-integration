@@ -13,7 +13,7 @@ import de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job.Boots
 import de.invesdwin.context.integration.grid.ignite3.node.bootstrapped.job.BootstrappedIgnite3NodeTask;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
-import de.invesdwin.context.integration.grid.jar.visitor.filter.PackageMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -29,8 +29,11 @@ public class BootstrappedIgnite3NodeServerTest extends ATest {
 
         // Build the deployment unit JAR
         final File jobJarFile = new MergedClasspathJar(
-                new PackageMergedClasspathJarFilter(BootstrappedIgnite3NodeTask.class.getPackageName()),
-                BootstrappedIgnite3NodeTask.class).getResource().getFile();
+                DefaultMergedClasspathJarFilter.DEFAULT /*
+                                                         * new
+                                                         * PackageMergedClasspathJarFilter(BootstrappedIgnite3NodeTask.
+                                                         * class.getPackageName())
+                                                         */, BootstrappedIgnite3NodeTask.class).getResource().getFile();
 
         // 1. Fork the worker node asynchronously via ForkJobHelper
         final StartedProcess workerProcess = new ForkProcessHelper().forkAsync(BootstrappedIgnite3NodeJobMain.class,

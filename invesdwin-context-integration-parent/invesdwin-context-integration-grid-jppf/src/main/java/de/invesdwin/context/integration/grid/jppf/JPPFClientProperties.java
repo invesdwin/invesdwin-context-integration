@@ -17,7 +17,7 @@ import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 @Immutable
 public final class JPPFClientProperties {
 
-    public static final String SERVICE_NAME = "invesdwin-context-integration-jppf-server";
+    public static final String SERVICE_NAME;
     public static final String USERNAMETOKEN_PASSWORD;
     public static final boolean INITIALIZED;
     public static final boolean CLIENT_SSL_ENABLED;
@@ -33,6 +33,8 @@ public final class JPPFClientProperties {
         USERNAMETOKEN_PASSWORD = systemProperties.getStringWithSecurityWarning(
                 JPPFClientProperties.class.getName() + ".USERNAMETOKEN_PASSWORD",
                 IProperties.INVESDWIN_DEFAULT_PASSWORD);
+
+        SERVICE_NAME = systemProperties.getString(JPPFClientProperties.class.getName() + ".SERVICE_NAME");
 
         final TypedProperties props = JPPFConfiguration.getProperties();
         if (!systemProperties.containsValue(JPPFProperties.RESOURCE_CACHE_DIR.getName())) {

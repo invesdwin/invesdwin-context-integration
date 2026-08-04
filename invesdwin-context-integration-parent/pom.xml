@@ -37,6 +37,7 @@
 		<module>invesdwin-context-integration-grid-kubernetes</module>
 		<module>invesdwin-context-integration-grid-kubernetes-test</module>
 		<module>invesdwin-context-integration-grid-ignite2</module>
+		<module>invesdwin-context-integration-grid-ignite2-node</module>
 		<module>invesdwin-context-integration-grid-ignite2-test</module>
 		<module>invesdwin-context-integration-grid-ignite3</module>
 		<module>invesdwin-context-integration-grid-ignite3-client</module>
@@ -280,6 +281,11 @@
 				<artifactId>invesdwin-context-integration-grid-ignite2</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-node</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
