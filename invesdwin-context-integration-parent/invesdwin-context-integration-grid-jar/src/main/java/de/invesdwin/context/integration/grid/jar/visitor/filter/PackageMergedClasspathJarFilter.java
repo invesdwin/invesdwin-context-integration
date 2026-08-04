@@ -10,8 +10,24 @@ public class PackageMergedClasspathJarFilter implements IMergedClasspathJarFilte
     public PackageMergedClasspathJarFilter(final String... basePackages) {
         whitelist = new String[basePackages.length];
         for (int i = 0; i < basePackages.length; i++) {
-            whitelist[i] = basePackages[i] + ".*";
+            whitelist[i] = convertPackageNameToPathRegex(basePackages[i]);
         }
+    }
+
+    private static String convertPackageNameToPathRegex(final String packageName) {
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < packageName.length(); i++) {
+            final char c = packageName.charAt(i);
+            if (c == '.' && (i + 1 < packageName.length() && packageName.charAt(i + 1) != '*')) {
+                sb.append('/');
+            } else {
+                sb.append(c);
+            }
+        }
+        if (sb.length() >= 2 && sb.charAt(sb.length() - 2) != '.' && sb.charAt(sb.length() - 1) != '*') {
+            sb.append(".*");
+        }
+        return sb.toString();
     }
 
     @Override
