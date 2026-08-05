@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="ignite2Server"
+		class="de.invesdwin.context.integration.grid.ignite2.server.ConfiguredIgnite2Server"
+		init-method="start" destroy-method="stop">
+	</bean>
+
+	<bean id="#{T(de.invesdwin.context.integration.grid.ignite2.Ignite2ClientProperties).NODE_DISCOVERY_SERVICE_NAME}"
+		class="de.invesdwin.context.integration.grid.ignite2.node.internal.Ignite2NodeDiscoveryServicePublication" />
+		
+	<bean id="#{T(de.invesdwin.context.integration.grid.ignite2.Ignite2ClientProperties).THIN_CLIENT_SERVICE_NAME}"
+		class="de.invesdwin.context.integration.grid.ignite2.node.internal.Ignite2ThinClientServicePublication" />
+
+</beans>

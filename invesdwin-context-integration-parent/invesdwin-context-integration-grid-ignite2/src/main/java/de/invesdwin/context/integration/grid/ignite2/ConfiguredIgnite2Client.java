@@ -7,6 +7,7 @@ import org.apache.ignite.client.IgniteClient;
 import org.apache.ignite.configuration.ClientConfiguration;
 import org.springframework.beans.factory.FactoryBean;
 
+import de.invesdwin.context.integration.grid.ignite2.registry.ConfiguredClientAddressFinder;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import jakarta.inject.Named;

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.node;
+package de.invesdwin.context.integration.grid.ignite2.server;
 
 import javax.annotation.concurrent.ThreadSafe;
 
@@ -20,11 +20,11 @@ import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.time.date.FTimeUnit;
 
 @ThreadSafe
-public final class ConfiguredIgnite2Node implements IStartupHook, IShutdownHook {
+public final class ConfiguredIgnite2Server implements IStartupHook, IShutdownHook {
 
     private static final WrappedExecutorService NODE_EXECUTOR = Executors
-            .newFixedThreadPool(ConfiguredIgnite2Node.class.getSimpleName(), 1);
-    private static final Log LOG = new Log(ConfiguredIgnite2Node.class);
+            .newFixedThreadPool(ConfiguredIgnite2Server.class.getSimpleName(), 1);
+    private static final Log LOG = new Log(ConfiguredIgnite2Server.class);
 
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
@@ -39,7 +39,7 @@ public final class ConfiguredIgnite2Node implements IStartupHook, IShutdownHook 
         Assertions.checkNull(this.ignite, "already started");
         this.ignite = ignite;
         if (ignite != null) {
-            LOG.info("%s started with name: %s", ConfiguredIgnite2Node.class.getSimpleName(), ignite.name());
+            LOG.info("%s started with name: %s", ConfiguredIgnite2Server.class.getSimpleName(), ignite.name());
         }
     }
 
@@ -56,22 +56,22 @@ public final class ConfiguredIgnite2Node implements IStartupHook, IShutdownHook 
             public void run() {
                 final IgniteConfiguration configuration = new IgniteConfiguration();
 
-                //use thick client mode which does not store data, but allows to run compute jobs (which can be a temporary instance)
-                configuration.setClientMode(true);
+                //start a full server node which stores data and allows to run compute jobs
+                configuration.setClientMode(false);
 
                 final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
                 clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
-                clientConnectorConfiguration.setPort(Ignite2NodeProperties.THIN_CLIENT_PORT);
+                clientConnectorConfiguration.setPort(Ignite2ServerProperties.THIN_CLIENT_PORT);
                 configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
 
                 final TcpCommunicationSpi tcpCommunicationSpi = new TcpCommunicationSpi();
-                //support running behind a firewall
-                tcpCommunicationSpi.setForceClientToServerConnections(true);
+                //data storage requires bidirectional communication, so we do not force client to server connections
+                tcpCommunicationSpi.setForceClientToServerConnections(false);
                 configuration.setCommunicationSpi(tcpCommunicationSpi);
 
                 final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
                 tcpDiscoverySpi.setLocalAddress(IntegrationProperties.HOSTNAME);
-                tcpDiscoverySpi.setLocalPort(Ignite2NodeProperties.NODE_DISCOVERY_PORT);
+                tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.NODE_DISCOVERY_PORT);
                 tcpDiscoverySpi.setIpFinder(new ConfiguredTcpDiscoveryIpFinder());
                 configuration.setDiscoverySpi(tcpDiscoverySpi);
 
@@ -118,7 +118,7 @@ public final class ConfiguredIgnite2Node implements IStartupHook, IShutdownHook 
             }
 
             ignite = null;
-            LOG.info("%s stopped: %s", ConfiguredIgnite2Node.class.getSimpleName(), igniteName);
+            LOG.info("%s stopped: %s", ConfiguredIgnite2Server.class.getSimpleName(), igniteName);
         }
     }
 

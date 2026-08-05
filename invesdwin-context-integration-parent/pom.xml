@@ -38,10 +38,11 @@
 		<module>invesdwin-context-integration-grid-kubernetes-test</module>
 		<module>invesdwin-context-integration-grid-ignite2</module>
 		<module>invesdwin-context-integration-grid-ignite2-node</module>
+		<module>invesdwin-context-integration-grid-ignite2-server</module>
 		<module>invesdwin-context-integration-grid-ignite2-test</module>
 		<module>invesdwin-context-integration-grid-ignite3</module>
 		<module>invesdwin-context-integration-grid-ignite3-client</module>
-		<module>invesdwin-context-integration-grid-ignite3-node</module>
+		<module>invesdwin-context-integration-grid-ignite3-server</module>
 		<module>invesdwin-context-integration-grid-ignite3-test</module>
 		<module>invesdwin-context-integration-grid-mpi</module>
 		<module>invesdwin-context-integration-grid-mpi-openmpi</module>
@@ -289,6 +290,11 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-server</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-grid-ignite2-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
@@ -310,7 +316,7 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-grid-ignite3-node</artifactId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-server</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>

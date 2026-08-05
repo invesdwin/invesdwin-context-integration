@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.node;
+package de.invesdwin.context.integration.grid.ignite2.server;
 
 import java.util.List;
 
@@ -20,21 +20,21 @@ import jakarta.inject.Named;
  */
 @ThreadSafe
 @Named
-public class Ignite2NodeContextLocation extends AConditionalContextLocation {
+public class Ignite2ServerContextLocation extends AConditionalContextLocation {
 
-    public static final PositionedResource NODE_CONTEXT_LOCATION;
+    public static final PositionedResource SERVER_CONTEXT_LOCATION;
 
-    private static volatile boolean activated = Ignite2NodeProperties.STARTUP_ENABLED;
+    private static volatile boolean activated = Ignite2ServerProperties.STARTUP_ENABLED;
 
     static {
         Assertions.checkNotNull(PreMergedContext.getInstance());
-        NODE_CONTEXT_LOCATION = PositionedResource.of(new ClassPathResource("/META-INF/ctx.ignite2.node.xml"),
+        SERVER_CONTEXT_LOCATION = PositionedResource.of(new ClassPathResource("/META-INF/ctx.ignite2.server.xml"),
                 ResourcePosition.START);
     }
 
     @Override
     protected List<PositionedResource> getContextResourcesIfConditionSatisfied() {
-        return Arrays.asList(NODE_CONTEXT_LOCATION);
+        return Arrays.asList(SERVER_CONTEXT_LOCATION);
     }
 
     @Override

@@ -1,7 +1,0 @@
-<Configuration>
-
-    <Loggers>
-        <Logger name="org.apache.ignite" level="TRACE" additivity="true" />
-    </Loggers>
-
-</Configuration>
