@@ -2,136 +2,61 @@ package de.invesdwin.context.integration.grid.ignite2.server;
 
 import javax.annotation.concurrent.ThreadSafe;
 
-import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.ConnectorConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 
-import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.grid.ignite2.AConfiguredIgnite2Instance;
 import de.invesdwin.context.integration.grid.ignite2.registry.ConfiguredTcpDiscoveryIpFinder;
-import de.invesdwin.context.log.Log;
-import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
-import de.invesdwin.util.shutdown.IShutdownHook;
-import de.invesdwin.util.time.date.FTimeUnit;
 
 @ThreadSafe
-public final class ConfiguredIgnite2Server implements IStartupHook, IShutdownHook {
+public final class ConfiguredIgnite2Server extends AConfiguredIgnite2Instance {
 
-    private static final WrappedExecutorService NODE_EXECUTOR = Executors
-            .newFixedThreadPool(ConfiguredIgnite2Server.class.getSimpleName(), 1);
-    private static final Log LOG = new Log(ConfiguredIgnite2Server.class);
+    @Override
+    protected IgniteConfiguration createConfiguration() {
+        final IgniteConfiguration configuration = new IgniteConfiguration();
 
-    private boolean startupInvoked = false;
-    private boolean startDelayed = false;
+        // Start a full server node which stores data and allows running compute jobs
+        configuration.setClientMode(false);
 
-    private volatile Ignite ignite;
+        // 1. Thin Client Port Configuration (0 = random port)
+        final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
+        clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
+        clientConnectorConfiguration.setPort(Ignite2ServerProperties.THIN_CLIENT_PORT);
+        configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
 
-    public synchronized Ignite getNode() {
-        return ignite;
-    }
+        // 2. REST HTTP Port Configuration (0 = random port)
+        final ConnectorConfiguration connectorConfiguration = new ConnectorConfiguration();
+        connectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
+        connectorConfiguration.setPort(Ignite2ServerProperties.REST_PORT);
+        configuration.setConnectorConfiguration(connectorConfiguration);
 
-    private synchronized void setNode(final Ignite ignite) {
-        Assertions.checkNull(this.ignite, "already started");
-        this.ignite = ignite;
-        if (ignite != null) {
-            LOG.info("%s started with name: %s", ConfiguredIgnite2Server.class.getSimpleName(), ignite.name());
-        }
-    }
+        // 3. TCP Communication Port Configuration (0 = random port)
+        final TcpCommunicationSpi tcpCommunicationSpi = new TcpCommunicationSpi();
+        tcpCommunicationSpi.setForceClientToServerConnections(false);
+        tcpCommunicationSpi.setLocalPort(Ignite2ServerProperties.SERVER_COMMUNICATION_PORT);
+        configuration.setCommunicationSpi(tcpCommunicationSpi);
 
-    public synchronized void start() {
-        Assertions.checkNull(ignite, "already started");
+        // 4. TCP Discovery Port Configuration (0 = random port)
+        final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
+        tcpDiscoverySpi.setLocalAddress(IntegrationProperties.HOSTNAME);
+        tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.SERVER_DISCOVERY_PORT);
+        tcpDiscoverySpi.setIpFinder(new ConfiguredTcpDiscoveryIpFinder());
+        configuration.setDiscoverySpi(tcpDiscoverySpi);
 
-        if (!startupInvoked) {
-            startDelayed = true;
-            return;
-        }
-
-        NODE_EXECUTOR.execute(new Runnable() {
-            @Override
-            public void run() {
-                final IgniteConfiguration configuration = new IgniteConfiguration();
-
-                // Start a full server node which stores data and allows running compute jobs
-                configuration.setClientMode(false);
-
-                // 1. Thin Client Port Configuration (0 = random port)
-                final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
-                clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
-                clientConnectorConfiguration.setPort(Ignite2ServerProperties.THIN_CLIENT_PORT);
-                configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
-
-                // 2. REST HTTP Port Configuration (0 = random port)
-                final ConnectorConfiguration connectorConfiguration = new ConnectorConfiguration();
-                connectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
-                connectorConfiguration.setPort(Ignite2ServerProperties.REST_PORT);
-                configuration.setConnectorConfiguration(connectorConfiguration);
-
-                // 3. TCP Communication Port Configuration (0 = random port)
-                final TcpCommunicationSpi tcpCommunicationSpi = new TcpCommunicationSpi();
-                tcpCommunicationSpi.setForceClientToServerConnections(false);
-                tcpCommunicationSpi.setLocalPort(Ignite2ServerProperties.SERVER_COMMUNICATION_PORT);
-                configuration.setCommunicationSpi(tcpCommunicationSpi);
-
-                // 4. TCP Discovery Port Configuration (0 = random port)
-                final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
-                tcpDiscoverySpi.setLocalAddress(IntegrationProperties.HOSTNAME);
-                tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.SERVER_DISCOVERY_PORT);
-                tcpDiscoverySpi.setIpFinder(new ConfiguredTcpDiscoveryIpFinder());
-                configuration.setDiscoverySpi(tcpDiscoverySpi);
-
-                // Ignition.start blocks until the node joins the topology
-                final Ignite startedNode = Ignition.start(configuration);
-                setNode(startedNode);
-            }
-        });
-
-        while (ignite == null) {
-            try {
-                FTimeUnit.SECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while waiting for Ignite to start", e);
-            }
-        }
+        return configuration;
     }
 
     @Override
-    public synchronized void startup() throws Exception {
-        startupInvoked = true;
-        if (startDelayed) {
-            start();
-        }
-    }
-
-    public synchronized void stop() {
-        if (ignite != null) {
-            final String igniteName = ignite.name();
-
-            try {
-                ignite.close();
-            } catch (final Exception e) {
-                LOG.error("Error shutting down Ignite node", e);
-            }
-
-            try {
-                NODE_EXECUTOR.awaitPendingCountZero();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
-
-            ignite = null;
-            LOG.info("%s stopped: %s", ConfiguredIgnite2Server.class.getSimpleName(), igniteName);
-        }
+    protected int getMinimumNodesCountForWarmup() {
+        return 0; // Servers don't strictly wait for clients to exist before logging warmup
     }
 
     @Override
-    public void shutdown() throws Exception {
-        stop();
+    protected int getMinimumServersCountForWarmup() {
+        return 1; // Wait for at least this server itself to be registered
     }
 }

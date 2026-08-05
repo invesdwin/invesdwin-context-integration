@@ -19,6 +19,10 @@
 			<groupId>de.invesdwin</groupId>
 			<artifactId>invesdwin-context-integration-ws</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>de.invesdwin</groupId>
+			<artifactId>invesdwin-context-integration-webdav</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.apache.ignite</groupId>
