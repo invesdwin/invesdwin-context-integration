@@ -7,8 +7,8 @@ import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 
 import de.invesdwin.context.integration.IntegrationProperties;
-import de.invesdwin.context.integration.grid.ignite2.AConfiguredIgnite2Instance;
-import de.invesdwin.context.integration.grid.ignite2.registry.ConfiguredTcpDiscoveryIpFinder;
+import de.invesdwin.context.integration.grid.ignite2.instance.AConfiguredIgnite2Instance;
+import de.invesdwin.context.integration.grid.ignite2.instance.ConfiguredTcpDiscoveryIpFinder;
 
 @ThreadSafe
 public final class ConfiguredIgnite2Node extends AConfiguredIgnite2Instance {
@@ -43,6 +43,6 @@ public final class ConfiguredIgnite2Node extends AConfiguredIgnite2Instance {
 
     @Override
     protected int getMinimumServersCountForWarmup() {
-        return 0; // Thick clients can potentially start without servers, adjusting to 0
+        return 1; // Require at least one server node to be available before warmup completes
     }
 }

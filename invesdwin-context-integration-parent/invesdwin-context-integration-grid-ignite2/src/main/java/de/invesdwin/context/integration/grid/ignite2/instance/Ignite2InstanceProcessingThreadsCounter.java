@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2;
+package de.invesdwin.context.integration.grid.ignite2.instance;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -38,11 +38,11 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public class Ignite2ProcessingThreadsCounter {
+public class Ignite2InstanceProcessingThreadsCounter {
 
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
 
-    public static final String WEBDAV_DIRECTORY = Ignite2ProcessingThreadsCounter.class.getSimpleName();
+    public static final String WEBDAV_DIRECTORY = Ignite2InstanceProcessingThreadsCounter.class.getSimpleName();
     public static final String WEBDAV_CONTENT_SEPARATOR = ";";
     public static final String WEBDAV_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_PS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
@@ -52,7 +52,7 @@ public class Ignite2ProcessingThreadsCounter {
     public static final String NODE_HEARTBEAT_FILE_PREFIX = "node_";
     private static final int MAX_COUNT_HISTORY = 60;
 
-    private static final Log LOG = new Log(Ignite2ProcessingThreadsCounter.class);
+    private static final Log LOG = new Log(Ignite2InstanceProcessingThreadsCounter.class);
 
     private final Ignite ignite;
     private final WebdavServerDestinationProvider webdavServerDestinationProvider;
@@ -76,11 +76,11 @@ public class Ignite2ProcessingThreadsCounter {
 
     private final WrappedExecutorService executor;
 
-    public Ignite2ProcessingThreadsCounter(final Ignite ignite) {
+    public Ignite2InstanceProcessingThreadsCounter(final Ignite ignite) {
         this.ignite = ignite;
         this.webdavServerDestinationProvider = MergedContext.getInstance()
                 .getBean(WebdavServerDestinationProvider.class);
-        this.executor = Executors.newFixedThreadPool(Ignite2ProcessingThreadsCounter.class.getSimpleName() + "_refresh",
+        this.executor = Executors.newFixedThreadPool(Ignite2InstanceProcessingThreadsCounter.class.getSimpleName() + "_refresh",
                 1);
 
         // Listen to Ignite topology changes instead of JPPF
@@ -272,7 +272,7 @@ public class Ignite2ProcessingThreadsCounter {
 
     private void logDetectedCounts() {
         final StringBuilder message = new StringBuilder();
-        message.append(Ignite2ProcessingThreadsCounter.class.getSimpleName());
+        message.append(Ignite2InstanceProcessingThreadsCounter.class.getSimpleName());
         message.append(" detected ");
         message.append(nodeInfos.size());
         message.append(" (~").append(getNodesCount()).append(")");

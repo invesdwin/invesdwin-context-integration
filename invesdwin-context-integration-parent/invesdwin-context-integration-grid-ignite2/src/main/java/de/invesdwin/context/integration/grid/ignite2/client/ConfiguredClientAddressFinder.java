@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.registry;
+package de.invesdwin.context.integration.grid.ignite2.client;
 
 import java.net.URI;
 import java.util.Collection;
@@ -10,7 +10,6 @@ import javax.annotation.concurrent.Immutable;
 import org.apache.ignite.client.ClientAddressFinder;
 
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.grid.ignite2.Ignite2ThinClientDestinationProvider;
 
 @Immutable
 public class ConfiguredClientAddressFinder implements ClientAddressFinder {

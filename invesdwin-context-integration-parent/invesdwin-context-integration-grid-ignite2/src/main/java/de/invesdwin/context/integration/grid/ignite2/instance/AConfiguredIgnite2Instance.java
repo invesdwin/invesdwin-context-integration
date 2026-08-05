@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2;
+package de.invesdwin.context.integration.grid.ignite2.instance;
 
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
@@ -40,11 +40,11 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
 
-    private volatile Ignite ignite;
+    private volatile Ignite instance;
 
     @GuardedBy("this")
     private WebdavFileChannel heartbeatWebdavFileChannel;
-    private Ignite2ProcessingThreadsCounter processingThreadsCounter;
+    private Ignite2InstanceProcessingThreadsCounter processingThreadsCounter;
 
     protected abstract IgniteConfiguration createConfiguration();
 
@@ -52,26 +52,26 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
 
     protected abstract int getMinimumServersCountForWarmup();
 
-    public synchronized Ignite getIgnite() {
-        return ignite;
+    public synchronized Ignite getInstance() {
+        return instance;
     }
 
-    public synchronized Ignite2ProcessingThreadsCounter getProcessingThreadsCounter() {
+    public synchronized Ignite2InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
         return processingThreadsCounter;
     }
 
-    private synchronized void setIgnite(final Ignite ignite) {
-        Assertions.checkNull(this.ignite, "already started");
-        this.ignite = ignite;
-        if (ignite != null) {
-            processingThreadsCounter = new Ignite2ProcessingThreadsCounter(ignite);
+    private synchronized void setInstance(final Ignite instance) {
+        Assertions.checkNull(this.instance, "already started");
+        this.instance = instance;
+        if (instance != null) {
+            processingThreadsCounter = new Ignite2InstanceProcessingThreadsCounter(instance);
             uploadHeartbeat();
-            log.info("%s started with name: %s", getClass().getSimpleName(), ignite.name());
+            log.info("%s started with name: %s", getClass().getSimpleName(), instance.name());
         }
     }
 
     public synchronized void start() {
-        Assertions.checkNull(ignite, "already started");
+        Assertions.checkNull(instance, "already started");
 
         if (!startupInvoked) {
             startDelayed = true;
@@ -88,11 +88,11 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                         EventType.EVT_NODE_FAILED);
 
                 final Ignite startedNode = Ignition.start(configuration);
-                setIgnite(startedNode);
+                setInstance(startedNode);
             }
         });
 
-        while (ignite == null) {
+        while (instance == null) {
             try {
                 FTimeUnit.SECONDS.sleep(1);
             } catch (final InterruptedException e) {
@@ -123,9 +123,9 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
     }
 
     public synchronized void stop() {
-        if (ignite != null) {
-            final String igniteName = ignite.name();
-            final String nodeUuid = ignite.cluster().localNode().id().toString();
+        if (instance != null) {
+            final String igniteName = instance.name();
+            final String nodeUuid = instance.cluster().localNode().id().toString();
 
             try {
                 final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
@@ -135,7 +135,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             }
 
             try {
-                ignite.close();
+                instance.close();
             } catch (final Exception e) {
                 log.error("Error shutting down Ignite node", e);
             }
@@ -146,7 +146,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 Thread.currentThread().interrupt();
             }
 
-            ignite = null;
+            instance = null;
             processingThreadsCounter = null;
             log.info("%s stopped: %s", getClass().getSimpleName(), igniteName);
         }
@@ -165,7 +165,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         }
         final Ignite localIgnite;
         synchronized (this) {
-            localIgnite = this.ignite;
+            localIgnite = this.instance;
         }
         if (localIgnite != null) {
             try {
@@ -175,10 +175,10 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 final int processingThreads = localNode.metrics().getTotalCpus();
                 final FDate heartbeat = FDate.now();
 
-                final String content = hostname + Ignite2ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
-                        + Ignite2ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
-                        + Ignite2ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + heartbeat.toString(Ignite2ProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
+                final String content = hostname + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
+                        + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
+                        + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + heartbeat.toString(Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
 
                 synchronized (this) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
@@ -219,11 +219,11 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
             final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    Ignite2ProcessingThreadsCounter.WEBDAV_DIRECTORY);
+                    Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
-                final String prefix = ignite.cluster().localNode().isClient()
-                        ? Ignite2ProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX
-                        : Ignite2ProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
+                final String prefix = instance.cluster().localNode().isClient()
+                        ? Ignite2InstanceProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX
+                        : Ignite2InstanceProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
                 channel.setFilename(prefix + nodeUuid + ".heartbeat");
                 channel.connect();
             }

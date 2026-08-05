@@ -1,7 +1,8 @@
-package de.invesdwin.context.integration.grid.ignite2;
+package de.invesdwin.context.integration.grid.ignite2.instance;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import de.invesdwin.context.integration.grid.ignite2.Ignite2ClientProperties;
 import de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider;
 import jakarta.inject.Named;
 

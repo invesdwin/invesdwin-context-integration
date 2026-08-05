@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.registry;
+package de.invesdwin.context.integration.grid.ignite2.instance;
 
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -11,7 +11,6 @@ import org.apache.ignite.spi.IgniteSpiException;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinderAdapter;
 
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.grid.ignite2.Ignite2ServerDiscoveryDestinationProvider;
 
 @Immutable
 public class ConfiguredTcpDiscoveryIpFinder extends TcpDiscoveryIpFinderAdapter {
