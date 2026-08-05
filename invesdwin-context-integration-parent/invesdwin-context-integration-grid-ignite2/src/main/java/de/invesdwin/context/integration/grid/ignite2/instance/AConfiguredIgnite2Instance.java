@@ -11,6 +11,7 @@ import org.apache.ignite.Ignition;
 import org.apache.ignite.cluster.ClusterNode;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.events.EventType;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
@@ -32,7 +33,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutdownHook {
+public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutdownHook, FactoryBean<Ignite> {
 
     protected final Log log = new Log(getClass());
     private final WrappedExecutorService executor = Executors.newFixedThreadPool(getClass().getSimpleName(), 1);
@@ -54,6 +55,16 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
 
     public synchronized Ignite getInstance() {
         return instance;
+    }
+
+    @Override
+    public Ignite getObject() throws Exception {
+        return getInstance();
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return Ignite.class;
     }
 
     public synchronized Ignite2InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
@@ -175,9 +186,9 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 final int processingThreads = localNode.metrics().getTotalCpus();
                 final FDate heartbeat = FDate.now();
 
-                final String content = hostname + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
-                        + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
-                        + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                final String content = hostname + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + nodeUuid + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + processingThreads + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
 
                 synchronized (this) {
