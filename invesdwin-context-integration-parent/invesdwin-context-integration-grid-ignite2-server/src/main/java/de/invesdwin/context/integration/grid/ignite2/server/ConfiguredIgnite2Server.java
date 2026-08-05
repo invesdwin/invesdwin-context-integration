@@ -71,7 +71,7 @@ public final class ConfiguredIgnite2Server implements IStartupHook, IShutdownHoo
 
                 final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
                 tcpDiscoverySpi.setLocalAddress(IntegrationProperties.HOSTNAME);
-                tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.NODE_DISCOVERY_PORT);
+                tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.SERVER_DISCOVERY_PORT);
                 tcpDiscoverySpi.setIpFinder(new ConfiguredTcpDiscoveryIpFinder());
                 configuration.setDiscoverySpi(tcpDiscoverySpi);
 

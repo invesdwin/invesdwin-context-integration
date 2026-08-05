@@ -14,7 +14,7 @@ public final class Ignite2NodeProperties {
     static {
         final SystemProperties systemProperties = new SystemProperties(Ignite2NodeProperties.class);
         STARTUP_ENABLED = systemProperties.getBoolean("STARTUP_ENABLED");
-        NODE_DISCOVERY_PORT = systemProperties.getPort("NODE_PORT", true);
+        NODE_DISCOVERY_PORT = systemProperties.getPort("NODE_DISCOVERY_PORT", true);
         THIN_CLIENT_PORT = systemProperties.getPort("THIN_CLIENT_PORT", true);
         INITIALIZED = true;
     }

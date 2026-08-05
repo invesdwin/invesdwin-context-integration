@@ -8,11 +8,11 @@ import de.invesdwin.context.integration.grid.ignite2.server.Ignite2ServerPropert
 import de.invesdwin.context.integration.ws.registry.publication.WebServicePublicationSupport;
 
 @ThreadSafe
-public class Ignite2NodeDiscoveryServicePublication extends WebServicePublicationSupport {
+public class Ignite2ServerDiscoveryServicePublication extends WebServicePublicationSupport {
 
     @Override
     public URI getUri() {
-        return Ignite2ServerProperties.getNodeDiscoveryBindUri();
+        return Ignite2ServerProperties.getServerDiscoveryBindUri();
     }
 
 }

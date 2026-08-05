@@ -11,21 +11,21 @@ import org.apache.ignite.spi.IgniteSpiException;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.TcpDiscoveryIpFinderAdapter;
 
 import de.invesdwin.context.beans.init.MergedContext;
-import de.invesdwin.context.integration.grid.ignite2.Ignite2NodeDiscoveryDestinationProvider;
+import de.invesdwin.context.integration.grid.ignite2.Ignite2ServerDiscoveryDestinationProvider;
 
 @Immutable
 public class ConfiguredTcpDiscoveryIpFinder extends TcpDiscoveryIpFinderAdapter {
 
-    private Ignite2NodeDiscoveryDestinationProvider destinationProvider;
+    private Ignite2ServerDiscoveryDestinationProvider destinationProvider;
 
     public ConfiguredTcpDiscoveryIpFinder() {
         // Set to true so nodes don't unregister themselves from this finder on shutdown
         setShared(true);
     }
 
-    private synchronized Ignite2NodeDiscoveryDestinationProvider getDestinationProvider() {
+    private synchronized Ignite2ServerDiscoveryDestinationProvider getDestinationProvider() {
         if (destinationProvider == null) {
-            destinationProvider = MergedContext.getInstance().getBean(Ignite2NodeDiscoveryDestinationProvider.class);
+            destinationProvider = MergedContext.getInstance().getBean(Ignite2ServerDiscoveryDestinationProvider.class);
         }
         return destinationProvider;
     }

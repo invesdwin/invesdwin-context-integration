@@ -7,10 +7,10 @@ import jakarta.inject.Named;
 
 @ThreadSafe
 @Named
-public class Ignite2NodeDiscoveryDestinationProvider extends RegistryDestinationProvider {
+public class Ignite2ServerDiscoveryDestinationProvider extends RegistryDestinationProvider {
 
-    public Ignite2NodeDiscoveryDestinationProvider() {
-        setServiceName(Ignite2ClientProperties.NODE_DISCOVERY_SERVICE_NAME);
+    public Ignite2ServerDiscoveryDestinationProvider() {
+        setServiceName(Ignite2ClientProperties.SERVER_DISCOVERY_SERVICE_NAME);
     }
 
     @Override
