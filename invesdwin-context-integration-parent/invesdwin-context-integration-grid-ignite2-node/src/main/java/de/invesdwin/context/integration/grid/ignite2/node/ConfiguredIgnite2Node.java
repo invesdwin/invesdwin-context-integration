@@ -4,7 +4,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
-import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -59,14 +58,11 @@ public final class ConfiguredIgnite2Node implements IStartupHook, IShutdownHook 
                 //use thick client mode which does not store data, but allows to run compute jobs (which can be a temporary instance)
                 configuration.setClientMode(true);
 
-                final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
-                clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
-                clientConnectorConfiguration.setPort(Ignite2NodeProperties.THIN_CLIENT_PORT);
-                configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
-
                 final TcpCommunicationSpi tcpCommunicationSpi = new TcpCommunicationSpi();
                 //support running behind a firewall
                 tcpCommunicationSpi.setForceClientToServerConnections(true);
+                //override communication port
+                tcpCommunicationSpi.setLocalPort(Ignite2NodeProperties.NODE_COMMUNICATION_PORT);
                 configuration.setCommunicationSpi(tcpCommunicationSpi);
 
                 final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();

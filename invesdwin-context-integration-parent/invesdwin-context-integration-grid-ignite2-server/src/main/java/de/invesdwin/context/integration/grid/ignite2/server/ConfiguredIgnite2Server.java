@@ -5,6 +5,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
+import org.apache.ignite.configuration.ConnectorConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
@@ -56,19 +57,28 @@ public final class ConfiguredIgnite2Server implements IStartupHook, IShutdownHoo
             public void run() {
                 final IgniteConfiguration configuration = new IgniteConfiguration();
 
-                //start a full server node which stores data and allows to run compute jobs
+                // Start a full server node which stores data and allows running compute jobs
                 configuration.setClientMode(false);
 
+                // 1. Thin Client Port Configuration (0 = random port)
                 final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
                 clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
                 clientConnectorConfiguration.setPort(Ignite2ServerProperties.THIN_CLIENT_PORT);
                 configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
 
+                // 2. REST HTTP Port Configuration (0 = random port)
+                final ConnectorConfiguration connectorConfiguration = new ConnectorConfiguration();
+                connectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
+                connectorConfiguration.setPort(Ignite2ServerProperties.REST_PORT);
+                configuration.setConnectorConfiguration(connectorConfiguration);
+
+                // 3. TCP Communication Port Configuration (0 = random port)
                 final TcpCommunicationSpi tcpCommunicationSpi = new TcpCommunicationSpi();
-                //data storage requires bidirectional communication, so we do not force client to server connections
                 tcpCommunicationSpi.setForceClientToServerConnections(false);
+                tcpCommunicationSpi.setLocalPort(Ignite2ServerProperties.SERVER_COMMUNICATION_PORT);
                 configuration.setCommunicationSpi(tcpCommunicationSpi);
 
+                // 4. TCP Discovery Port Configuration (0 = random port)
                 final TcpDiscoverySpi tcpDiscoverySpi = new TcpDiscoverySpi();
                 tcpDiscoverySpi.setLocalAddress(IntegrationProperties.HOSTNAME);
                 tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.SERVER_DISCOVERY_PORT);
@@ -103,8 +113,6 @@ public final class ConfiguredIgnite2Server implements IStartupHook, IShutdownHoo
         if (ignite != null) {
             final String igniteName = ignite.name();
 
-            // Cleanly shuts down this specific Ignite instance.
-            // Ignite handles its own internal classloader and thread teardown cleanly.
             try {
                 ignite.close();
             } catch (final Exception e) {
