@@ -94,6 +94,9 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             public void run() {
                 final IgniteConfiguration configuration = createConfiguration();
 
+                // Enable Peer Class Loading across cluster nodes
+                configuration.setPeerClassLoadingEnabled(true);
+
                 // Ensure topology events required by Ignite2ProcessingThreadsCounter are always enabled
                 configuration.setIncludeEventTypes(EventType.EVT_NODE_JOINED, EventType.EVT_NODE_LEFT,
                         EventType.EVT_NODE_FAILED);
