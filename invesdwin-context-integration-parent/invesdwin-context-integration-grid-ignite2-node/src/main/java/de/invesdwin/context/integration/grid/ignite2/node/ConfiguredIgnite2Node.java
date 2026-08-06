@@ -36,13 +36,4 @@ public final class ConfiguredIgnite2Node extends AConfiguredIgnite2Instance {
         return configuration;
     }
 
-    @Override
-    protected int getMinimumNodesCountForWarmup() {
-        return 1; // Wait for at least this thick client itself to be registered
-    }
-
-    @Override
-    protected int getMinimumServersCountForWarmup() {
-        return 1; // Require at least one server node to be available before warmup completes
-    }
 }

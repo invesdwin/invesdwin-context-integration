@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2;
+package de.invesdwin.context.integration.grid.ignite3;
 
 import java.net.URI;
 import java.util.ArrayList;
@@ -16,7 +16,7 @@ import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
-import de.invesdwin.util.bean.tuple.Triple;
+import de.invesdwin.util.bean.tuple.Pair;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.factory.pool.map.ICloseableMap;
@@ -31,7 +31,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public abstract class AIgnite2ProcessingThreadsCounter {
+public abstract class AIgnite3ProcessingThreadsCounter {
 
     public static final Duration REFRESH_INTERVAL = Duration.ONE_MINUTE;
 
@@ -40,22 +40,17 @@ public abstract class AIgnite2ProcessingThreadsCounter {
     public static final String WEBDAV_CONTENT_DATEFORMAT = FDate.FORMAT_ISO_DATE_TIME_PS;
     public static final Duration HEARTBEAT_TIMEOUT = new Duration(5, FTimeUnit.MINUTES);
 
-    public static final String DRIVER_HEARTBEAT_FILE_PREFIX = "driver_";
     public static final String NODE_HEARTBEAT_FILE_PREFIX = "node_";
     protected static final int MAX_COUNT_HISTORY = 60;
 
-    private static final Log LOG = new Log(AIgnite2ProcessingThreadsCounter.class);
+    private static final Log LOG = new Log(AIgnite3ProcessingThreadsCounter.class);
 
     protected final WebdavServerDestinationProvider webdavServerDestinationProvider;
 
     @GuardedBy("this")
-    protected Map<String, String> nodeInfos = Collections.emptyMap();
-    @GuardedBy("this")
     protected Map<String, String> serverInfos = Collections.emptyMap();
     @GuardedBy("this")
     protected final List<Integer> serversCounts = new ArrayList<Integer>();
-    @GuardedBy("this")
-    protected final List<Integer> nodesCounts = new ArrayList<Integer>();
     @GuardedBy("this")
     protected final List<Integer> sumProcessingThreadsCounts = new ArrayList<>();
     @GuardedBy("this")
@@ -65,7 +60,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
     @GuardedBy("this")
     protected boolean warmupFinished = false;
 
-    public AIgnite2ProcessingThreadsCounter() {
+    public AIgnite3ProcessingThreadsCounter() {
         this.webdavServerDestinationProvider = MergedContext.getInstance()
                 .getBean(WebdavServerDestinationProvider.class);
     }
@@ -81,26 +76,23 @@ public abstract class AIgnite2ProcessingThreadsCounter {
 
         final int processingThreadsCountBefore = getSumProcessingThreadsCount();
         final int serversCountBefore = getServersCount();
-        final int nodesCountBefore = getNodesCount();
 
-        final Triple<List<Integer>, Map<String, String>, Map<String, String>> processingThreadsAndServersAndNodes = countProcessingThreads();
+        // Returning a Pair directly mapping Ignite 3 unified nodes[cite: 48, 52]
+        final Pair<List<Integer>, Map<String, String>> processingThreadsAndServers = countProcessingThreads();
 
-        sumProcessingThreadsCounts.add(Integers.sum(processingThreadsAndServersAndNodes.getFirst()));
+        sumProcessingThreadsCounts.add(Integers.sum(processingThreadsAndServers.getFirst()));
         Lists.maybeTrimSizeStart(sumProcessingThreadsCounts, MAX_COUNT_HISTORY);
-        medianProcessingThreadsCounts.add(Integers.median(processingThreadsAndServersAndNodes.getFirst()));
+        medianProcessingThreadsCounts.add(Integers.median(processingThreadsAndServers.getFirst()));
         Lists.maybeTrimSizeStart(medianProcessingThreadsCounts, MAX_COUNT_HISTORY);
 
-        serverInfos = sortInfos(processingThreadsAndServersAndNodes.getSecond());
-        nodeInfos = sortInfos(processingThreadsAndServersAndNodes.getThird());
+        serverInfos = sortInfos(processingThreadsAndServers.getSecond());
 
         serversCounts.add(serverInfos.size());
         Lists.maybeTrimSizeStart(serversCounts, MAX_COUNT_HISTORY);
-        nodesCounts.add(nodeInfos.size());
-        Lists.maybeTrimSizeStart(nodesCounts, MAX_COUNT_HISTORY);
 
         if (warmupFinished) {
             if (processingThreadsCountBefore != getSumProcessingThreadsCount()
-                    || serversCountBefore != getServersCount() || nodesCountBefore != getNodesCount()) {
+                    || serversCountBefore != getServersCount()) {
                 logDetectedCounts();
             }
         }
@@ -108,7 +100,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         lastRefresh = FDate.now();
     }
 
-    protected abstract Triple<List<Integer>, Map<String, String>, Map<String, String>> countProcessingThreads();
+    protected abstract Pair<List<Integer>, Map<String, String>> countProcessingThreads();
 
     protected Map<String, String> sortInfos(final Map<String, String> infos) {
         final List<String> sortedUUIDs = new ArrayList<>(infos.keySet());
@@ -121,8 +113,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
     }
 
     protected void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> localServerInfos,
-            final Map<String, String> localNodeInfos, final Set<String> onlineNodeUuids,
-            final boolean checkOnlineStatus) {
+            final Set<String> onlineNodeUuids, final boolean checkOnlineStatus) {
         for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
             try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
                 channel.connect();
@@ -139,15 +130,8 @@ public abstract class AIgnite2ProcessingThreadsCounter {
                                     || onlineNodeUuids.contains(heartbeatInfo.getUuid());
                             final String suffix = isOnline ? "" : ":offline";
 
-                            if (heartbeatInfo.isDriver()) {
-                                if (!localNodeInfos.containsKey(heartbeatInfo.getUuid())) {
-                                    localNodeInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
-                                            + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    if (isOnline) {
-                                        processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                    }
-                                }
-                            } else if (heartbeatInfo.isNode()) {
+                            // No longer checking isDriver(), all Ignite 3 nodes are treated as servers[cite: 48, 52]
+                            if (heartbeatInfo.isNode()) {
                                 if (!localServerInfos.containsKey(heartbeatInfo.getUuid())) {
                                     localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
                                             + heartbeatInfo.getProcessingThreadsCount() + suffix);
@@ -198,11 +182,6 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         return Integers.max(0, Integers.max(medianProcessingThreadsCounts));
     }
 
-    public synchronized int getNodesCount() {
-        maybeRefresh();
-        return Integers.max(0, Integers.max(nodesCounts));
-    }
-
     public synchronized int getServersCount() {
         maybeRefresh();
         return Integers.max(0, Integers.max(serversCounts));
@@ -217,16 +196,9 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         final StringBuilder message = new StringBuilder();
         message.append(getClass().getSimpleName());
         message.append(" detected ");
-        message.append(nodeInfos.size());
-        message.append(" (~").append(getNodesCount()).append(")");
-        message.append(" nodes");
-        if (nodeInfos.size() != 1) {
-            message.append("s");
-        }
-        message.append(" for ");
         message.append(serverInfos.size());
         message.append(" (~").append(getServersCount()).append(")");
-        message.append(" servers");
+        message.append(" nodes");
         if (serverInfos.size() != 1) {
             message.append("s");
         }
@@ -246,14 +218,8 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         message.append(" (~").append(Integers.max(0, getMedianProcessingThreadsCount())).append(")");
         message.append(" median batch size");
         message.append(": ");
-        if (!nodeInfos.isEmpty()) {
-            message.append("\nNodes: ");
-            for (final String driver : nodeInfos.values()) {
-                message.append("\n    - ");
-                message.append(driver);
-            }
-        }
-        message.append("\nServers: ");
+
+        message.append("\nNodes: ");
         for (final String node : serverInfos.values()) {
             message.append("\n    - ");
             message.append(node);
@@ -261,7 +227,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         LOG.info("%s", message);
     }
 
-    public void waitForMinimumCounts(final int minimumCount, final Duration timeout) throws TimeoutException {
+    public void waitForMinimumCounts(final int minimumServersCount, final Duration timeout) throws TimeoutException {
         final Instant start = new Instant();
         boolean firstRun;
         synchronized (this) {
@@ -280,7 +246,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
                 refresh();
             }
             firstRun = false;
-        } while (getNodesCount() + getServersCount() < minimumCount);
+        } while (getServersCount() < minimumServersCount);
     }
 
     protected static final class HeartbeatInfo {
@@ -313,10 +279,6 @@ public abstract class AIgnite2ProcessingThreadsCounter {
 
         public FDate getHeartbeat() {
             return heartbeat;
-        }
-
-        public boolean isDriver() {
-            return fileName.startsWith(DRIVER_HEARTBEAT_FILE_PREFIX);
         }
 
         public boolean isNode() {

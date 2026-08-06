@@ -43,7 +43,6 @@
 		<module>invesdwin-context-integration-grid-ignite2-server-dist</module>
 		<module>invesdwin-context-integration-grid-ignite2-test</module>
 		<module>invesdwin-context-integration-grid-ignite3</module>
-		<module>invesdwin-context-integration-grid-ignite3-client</module>
 		<module>invesdwin-context-integration-grid-ignite3-server</module>
 		<module>invesdwin-context-integration-grid-ignite3-test</module>
 		<module>invesdwin-context-integration-grid-mpi</module>
@@ -310,11 +309,6 @@
 				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-grid-ignite3-client</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>

@@ -1,4 +1,4 @@
-package de.invesdwin.context.integration.grid.ignite2.instance;
+package de.invesdwin.context.integration.grid.ignite3.instance;
 
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
@@ -7,10 +7,6 @@ import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.ignite.Ignite;
-import org.apache.ignite.Ignition;
-import org.apache.ignite.cluster.ClusterNode;
-import org.apache.ignite.configuration.IgniteConfiguration;
-import org.apache.ignite.events.EventType;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -18,6 +14,7 @@ import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.grid.ignite3.AIgnite3ProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.webdav.WebdavFileChannel;
@@ -33,7 +30,7 @@ import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
 
 @ThreadSafe
-public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutdownHook, FactoryBean<Ignite> {
+public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, IShutdownHook, FactoryBean<Ignite> {
 
     protected final Log log = new Log(getClass());
     private final WrappedExecutorService executor = Executors.newFixedThreadPool(getClass().getSimpleName(), 1);
@@ -41,17 +38,24 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
 
-    private volatile Ignite instance;
+    private volatile S server;
 
     @GuardedBy("this")
     private WebdavFileChannel heartbeatWebdavFileChannel;
-    private Ignite2InstanceProcessingThreadsCounter processingThreadsCounter;
+    private Ignite3InstanceProcessingThreadsCounter processingThreadsCounter;
 
-    protected abstract IgniteConfiguration createConfiguration();
+    // Delegated to subclass to handle the actual server/client node startup[cite: 40]
+    protected abstract S startIgniteServer();
+
+    public synchronized S getServer() {
+        return server;
+    }
 
     public synchronized Ignite getInstance() {
-        return instance;
+        return getApi(server);
     }
+
+    protected abstract Ignite getApi(S server);
 
     @Override
     public Ignite getObject() throws Exception {
@@ -63,22 +67,23 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         return Ignite.class;
     }
 
-    public synchronized Ignite2InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
+    public synchronized Ignite3InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
         return processingThreadsCounter;
     }
 
-    private synchronized void setInstance(final Ignite instance) {
-        Assertions.checkNull(this.instance, "already started");
-        this.instance = instance;
-        if (instance != null) {
-            processingThreadsCounter = new Ignite2InstanceProcessingThreadsCounter(instance);
+    private synchronized void setInstance(final S server) {
+        Assertions.checkNull(this.server, "already started");
+        this.server = server;
+        if (server != null) {
+            final Ignite instance = getInstance();
+            processingThreadsCounter = new Ignite3InstanceProcessingThreadsCounter(instance);
             uploadHeartbeat();
             log.info("%s started with name: %s", getClass().getSimpleName(), instance.name());
         }
     }
 
     public synchronized void start() {
-        Assertions.checkNull(instance, "already started");
+        Assertions.checkNull(server, "already started");
 
         if (!startupInvoked) {
             startDelayed = true;
@@ -88,21 +93,13 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                final IgniteConfiguration configuration = createConfiguration();
-
-                // Enable Peer Class Loading across cluster nodes
-                configuration.setPeerClassLoadingEnabled(true);
-
-                // Ensure topology events required by Ignite2ProcessingThreadsCounter are always enabled
-                configuration.setIncludeEventTypes(EventType.EVT_NODE_JOINED, EventType.EVT_NODE_LEFT,
-                        EventType.EVT_NODE_FAILED);
-
-                final Ignite startedNode = Ignition.start(configuration);
-                setInstance(startedNode);
+                // Ignite 3 server configuration and startup is entirely delegated[cite: 40]
+                final S server = startIgniteServer();
+                setInstance(server);
             }
         });
 
-        while (instance == null) {
+        while (server == null) {
             try {
                 FTimeUnit.SECONDS.sleep(1);
             } catch (final InterruptedException e) {
@@ -132,19 +129,18 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
     }
 
     public synchronized void stop() {
-        if (instance != null) {
-            final String igniteName = instance.name();
-            final String nodeUuid = instance.cluster().localNode().id().toString();
+        if (server != null) {
+            final String igniteName = getInstance().name();
 
             try {
-                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(igniteName);
                 channel.delete();
             } catch (final Throwable e) {
                 //ignore
             }
 
             try {
-                instance.close();
+                shutdown(server);
             } catch (final Exception e) {
                 log.error("Error shutting down Ignite node", e);
             }
@@ -155,11 +151,13 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 Thread.currentThread().interrupt();
             }
 
-            instance = null;
+            server = null;
             processingThreadsCounter = null;
             log.info("%s stopped: %s", getClass().getSimpleName(), igniteName);
         }
     }
+
+    protected abstract void shutdown(S server);
 
     @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
     @SkipParallelExecution
@@ -174,20 +172,20 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         }
         final Ignite localIgnite;
         synchronized (this) {
-            localIgnite = this.instance;
+            localIgnite = getInstance();
         }
         if (localIgnite != null) {
             try {
                 final String hostname = IntegrationProperties.HOSTNAME;
-                final ClusterNode localNode = localIgnite.cluster().localNode();
-                final String nodeUuid = localNode.id().toString();
-                final int processingThreads = localNode.metrics().getTotalCpus();
+                // Ignite 3 node identification acts directly on the Ignite instance instead of cluster local nodes[cite: 40]
+                final String nodeUuid = localIgnite.name();
+                final int processingThreads = Runtime.getRuntime().availableProcessors();
                 final FDate heartbeat = FDate.now();
 
-                final String content = hostname + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + nodeUuid + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + processingThreads + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
-                        + heartbeat.toString(Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
+                final String content = hostname + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
+                        + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
+                        + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + heartbeat.toString(AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
 
                 synchronized (this) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
@@ -228,11 +226,9 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
             final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
+                    AIgnite3ProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
-                final String prefix = instance.cluster().localNode().isClient()
-                        ? Ignite2InstanceProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX
-                        : Ignite2InstanceProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
+                final String prefix = AIgnite3ProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
                 channel.setFilename(prefix + nodeUuid + ".heartbeat");
                 channel.connect();
             }

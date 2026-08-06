@@ -1,15 +1,13 @@
-package de.invesdwin.context.integration.grid.ignite2.client;
+package de.invesdwin.context.integration.grid.ignite3.client;
 
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
 
-import org.apache.ignite.Ignition;
 import org.apache.ignite.client.IgniteClient;
-import org.apache.ignite.configuration.ClientConfiguration;
 import org.springframework.beans.factory.FactoryBean;
 
-import de.invesdwin.context.integration.grid.ignite2.Ignite2ClientProperties;
+import de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -18,15 +16,15 @@ import jakarta.inject.Named;
 
 @Named
 @Immutable
-public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> {
+public final class ConfiguredIgnite3Client implements FactoryBean<IgniteClient> {
 
     public static final Duration DEFAULT_BATCH_TIMEOUT = new Duration(3, FTimeUnit.SECONDS);
-    private static final Log LOG = new Log(ConfiguredIgnite2Client.class);
+    private static final Log LOG = new Log(ConfiguredIgnite3Client.class);
     private static IgniteClient instance;
 
-    private static Ignite2ClientProcessingThreadsCounter processingThreadsCounter;
+    private static Ignite3ClientProcessingThreadsCounter processingThreadsCounter;
 
-    public static synchronized Ignite2ClientProcessingThreadsCounter getProcessingThreadsCounter() {
+    public static synchronized Ignite3ClientProcessingThreadsCounter getProcessingThreadsCounter() {
         return processingThreadsCounter;
     }
 
@@ -37,12 +35,12 @@ public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> 
 
     public static synchronized IgniteClient getInstance() {
         if (instance == null) {
-            Assertions.checkTrue(Ignite2ClientProperties.INITIALIZED);
+            Assertions.checkTrue(Ignite3ClientProperties.INITIALIZED);
 
-            final ClientConfiguration cfg = new ClientConfiguration();
-            cfg.setAddressesFinder(new ConfiguredClientAddressFinder());
+            final ConfiguredClientAddressFinder addressFinder = new ConfiguredClientAddressFinder();
 
-            final IgniteClient startedClient = Ignition.startClient(cfg);
+            final IgniteClient startedClient = IgniteClient.builder().addressFinder(addressFinder).build();
+
             setInstance(startedClient);
         }
         return instance;
@@ -52,14 +50,15 @@ public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> 
         Assertions.checkNull(instance, "already started");
         instance = client;
         if (client != null) {
-            processingThreadsCounter = new Ignite2ClientProcessingThreadsCounter(client);
+            processingThreadsCounter = new Ignite3ClientProcessingThreadsCounter(client);
             waitForWarmup();
-            LOG.info("%s connected", ConfiguredIgnite2Client.class.getSimpleName());
+            LOG.info("%s connected", ConfiguredIgnite3Client.class.getSimpleName());
         }
     }
 
     private static void waitForWarmup() {
         try {
+            // Passes only the single unified server count
             processingThreadsCounter.waitForMinimumCounts(1, Duration.ONE_MINUTE);
         } catch (final TimeoutException e) {
             //ignore
@@ -81,7 +80,7 @@ public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> 
             }
             instance = null;
             processingThreadsCounter = null;
-            LOG.info("%s stopped", ConfiguredIgnite2Client.class.getSimpleName());
+            LOG.info("%s stopped", ConfiguredIgnite3Client.class.getSimpleName());
         }
     }
 }

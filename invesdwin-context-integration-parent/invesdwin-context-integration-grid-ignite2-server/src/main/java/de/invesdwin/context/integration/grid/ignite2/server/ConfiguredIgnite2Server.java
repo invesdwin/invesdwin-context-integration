@@ -50,13 +50,4 @@ public final class ConfiguredIgnite2Server extends AConfiguredIgnite2Instance {
         return configuration;
     }
 
-    @Override
-    protected int getMinimumNodesCountForWarmup() {
-        return 0; // Servers don't strictly wait for nodes to exist before logging warmup
-    }
-
-    @Override
-    protected int getMinimumServersCountForWarmup() {
-        return 1; // Wait for at least this server itself to be registered
-    }
 }
