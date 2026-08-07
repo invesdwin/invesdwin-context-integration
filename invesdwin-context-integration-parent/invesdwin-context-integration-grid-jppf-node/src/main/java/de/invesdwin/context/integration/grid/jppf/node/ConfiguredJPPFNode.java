@@ -194,11 +194,11 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 heartbeatWebdavFileChannel.close();
                 heartbeatWebdavFileChannel = null;
             }
-            final URI ftpServerUri = MergedContext.getInstance()
+            final URI weebdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            final WebdavFileChannel channel = new WebdavFileChannel(weebdavServerUri)
+                    .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 channel.setFilename(JPPFProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX + nodeUuid + ".heartbeat");
                 channel.connect();

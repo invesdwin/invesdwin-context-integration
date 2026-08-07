@@ -19,9 +19,9 @@ import org.jppf.utils.TypedProperties;
 import org.jppf.utils.configuration.JPPFProperties;
 import org.jppf.utils.configuration.JPPFProperty;
 
-import com.github.sardine.DavResource;
-
 import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.info.IFileInfo;
 import de.invesdwin.context.integration.grid.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.grid.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.grid.jppf.topology.TopologyNodes;
@@ -217,14 +217,14 @@ public class JPPFProcessingThreadsCounter {
 
     private void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> nodeInfos,
             final Map<String, String> driverInfos) {
-        for (final URI ftpServerUri : webdavServerDestinationProvider.getDestinations()) {
-            try (WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri, WEBDAV_DIRECTORY)) {
+        for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
+            try (WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri).setSubDirectory(WEBDAV_DIRECTORY)) {
                 channel.connect();
-                final List<DavResource> listFiles = channel.listFiles();
+                final List<? extends IFileInfo> listFiles = channel.listFiles();
                 if (listFiles != null && !listFiles.isEmpty()) {
                     try (ICloseableMap<String, HeartbeatInfo> hostname_heartbeatinfo = PooledLinkedMap.getInstance()) {
                         for (int i = 0; i < listFiles.size(); i++) {
-                            final DavResource file = listFiles.get(i);
+                            final IFileInfo file = listFiles.get(i);
                             processHeartbeat(hostname_heartbeatinfo, channel, file);
                         }
 
@@ -247,9 +247,9 @@ public class JPPFProcessingThreadsCounter {
         }
     }
 
-    private void processHeartbeat(final Map<String, HeartbeatInfo> hostname_heartbeatInfo,
-            final WebdavFileChannel channel, final DavResource file) {
-        channel.setFilename(file.getName());
+    private void processHeartbeat(final Map<String, HeartbeatInfo> hostname_heartbeatInfo, final IFileChannel channel,
+            final IFileInfo file) {
+        channel.setFilename(file.getFilename());
         final byte[] content = channel.download();
         if (content != null && content.length > 0) {
             final String contentStr = new String(content);
@@ -266,7 +266,7 @@ public class JPPFProcessingThreadsCounter {
                 final HeartbeatInfo existing = hostname_heartbeatInfo.get(hostname);
                 if (existing == null || heartbeat.isAfterNotNullSafe(existing.getHeartbeat())) {
                     hostname_heartbeatInfo.put(hostname,
-                            new HeartbeatInfo(hostname, uuid, processingThreadsCount, heartbeat, file.getName()));
+                            new HeartbeatInfo(hostname, uuid, processingThreadsCount, heartbeat, file.getFilename()));
                 }
             }
         }

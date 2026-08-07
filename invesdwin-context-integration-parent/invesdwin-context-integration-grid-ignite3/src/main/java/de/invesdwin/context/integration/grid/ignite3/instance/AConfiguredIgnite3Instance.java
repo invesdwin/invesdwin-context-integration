@@ -222,11 +222,11 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
                 heartbeatWebdavFileChannel.close();
                 heartbeatWebdavFileChannel = null;
             }
-            final URI ftpServerUri = MergedContext.getInstance()
+            final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    AIgnite3ProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            final WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri)
+                    .setSubDirectory(AIgnite3ProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 final String prefix = AIgnite3ProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
                 channel.setFilename(prefix + nodeUuid + ".heartbeat");

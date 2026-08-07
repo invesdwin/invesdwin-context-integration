@@ -203,11 +203,11 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
                 heartbeatWebdavFileChannel.close();
                 heartbeatWebdavFileChannel = null;
             }
-            final URI ftpServerUri = MergedContext.getInstance()
+            final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            final WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri)
+                    .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 channel.setFilename(
                         JPPFProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX + driverUuid + ".heartbeat");

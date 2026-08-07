@@ -224,11 +224,11 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 heartbeatWebdavFileChannel.close();
                 heartbeatWebdavFileChannel = null;
             }
-            final URI ftpServerUri = MergedContext.getInstance()
+            final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(ftpServerUri,
-                    Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            final WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri)
+                    .setSubDirectory(Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 final String prefix = instance.cluster().localNode().isClient()
                         ? Ignite2InstanceProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX

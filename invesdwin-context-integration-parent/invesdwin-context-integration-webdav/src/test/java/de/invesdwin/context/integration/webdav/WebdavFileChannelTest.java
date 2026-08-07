@@ -29,31 +29,31 @@ public class WebdavFileChannelTest extends ATest {
     @Test
     public void test() {
         final URI destination = getDestination();
-        final WebdavFileChannel channel = new WebdavFileChannel(destination,
-                WebdavFileChannelTest.class.getSimpleName());
+        final WebdavFileChannel channel = new WebdavFileChannel(destination)
+                .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
         channel.setFilename("noexisting");
         channel.connect();
         Assertions.checkNull(channel.download());
         Assertions.checkFalse(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(-1);
+        Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.createUniqueFile();
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(0);
+        Assertions.assertThat(channel.length()).isEqualTo(0);
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(write.length);
+        Assertions.assertThat(channel.length()).isEqualTo(write.length);
         final byte[] read = channel.download();
         final String readStr = new String(read);
         Assertions.assertThat(readStr).isEqualTo(writeStr);
         channel.delete();
         Assertions.checkNull(channel.download());
         Assertions.checkFalse(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(-1);
+        Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(write.length);
+        Assertions.assertThat(channel.length()).isEqualTo(write.length);
         final byte[] read2 = channel.download();
         final String readStr2 = new String(read2);
         Assertions.assertThat(readStr2).isEqualTo(writeStr);
@@ -68,8 +68,8 @@ public class WebdavFileChannelTest extends ATest {
     @Test
     public void testRandom() {
         final URI destination = getDestination();
-        final WebdavFileChannel channel = new WebdavFileChannel(destination,
-                WebdavFileChannelTest.class.getSimpleName());
+        final WebdavFileChannel channel = new WebdavFileChannel(destination)
+                .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
         channel.connect();
         channel.createUniqueFile();
         final String writeStr = "hello world";
@@ -88,8 +88,8 @@ public class WebdavFileChannelTest extends ATest {
                 channel.exists();
                 break;
             case 2:
-                log.info("size");
-                channel.size();
+                log.info("length");
+                channel.length();
                 break;
             case 3:
                 log.info("createUniqueFile");
@@ -104,8 +104,8 @@ public class WebdavFileChannelTest extends ATest {
                 channel.delete();
                 break;
             case 6:
-                log.info("modified");
-                channel.modified();
+                log.info("lastModified");
+                channel.lastModified();
                 break;
             default:
                 throw UnknownArgumentException.newInstance(int.class, random);

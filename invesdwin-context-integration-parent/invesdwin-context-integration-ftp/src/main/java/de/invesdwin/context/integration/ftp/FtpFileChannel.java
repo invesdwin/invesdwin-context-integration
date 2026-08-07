@@ -8,7 +8,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -19,15 +18,16 @@ import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Files;
-import de.invesdwin.util.lang.Objects;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.string.description.TextDescription;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.DeletingFileInputStream;
 import de.invesdwin.util.streams.closeable.Closeables;
@@ -43,43 +43,110 @@ import it.sauronsoftware.ftp4j.FTPIllegalReplyException;
 import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 
 @ThreadSafe
-public class FtpFileChannel implements IFileChannel<FTPFile> {
+public class FtpFileChannel implements IFileChannel {
 
     private final URI serverUri;
-    private final String directory;
-    @GuardedBy("this")
+    private final URI baseServerUri;
+    private final String baseDirectory;
+    private String subDirectory = "";
     private String filename;
-    @GuardedBy("this")
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
 
     @GuardedBy("this")
     private transient FtpFileChannelFinalizer finalizer;
 
-    public FtpFileChannel(final URI serverUri, final String directory) {
+    public FtpFileChannel(final URI serverUri) {
         if (serverUri == null) {
             throw new NullPointerException("serverUri should not be null");
         }
         this.serverUri = serverUri;
-        this.directory = Strings.putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"),
-                "/");
+        this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, null);
+        this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
     }
 
+    public FtpFileChannel(final String serverUri) {
+        this(serverUri == null ? null : URIs.asUri(serverUri));
+    }
+
+    public static String combinePath(final String baseDirectory, final String subDirectory) {
+        if (Strings.isBlank(subDirectory)) {
+            return baseDirectory;
+        }
+        String cleanDir = subDirectory.replace("\\", "/").replaceAll("[/]+", "/");
+        while (cleanDir.startsWith("/")) {
+            cleanDir = cleanDir.substring(1);
+        }
+        if (cleanDir.isEmpty()) {
+            return baseDirectory;
+        }
+        return Strings.putSuffix(baseDirectory + cleanDir, "/");
+    }
+
+    @Override
     public URI getServerUri() {
         return serverUri;
     }
 
-    @Override
-    public String getDirectory() {
-        return directory;
+    public URI getServerUriObject() {
+        return serverUri;
     }
 
     @Override
-    public synchronized void setFilename(final String filename) {
+    public URI getBaseServerUri() {
+        return baseServerUri;
+    }
+
+    @Override
+    public String getBaseDirectory() {
+        return baseDirectory;
+    }
+
+    @Override
+    public String getSubDirectory() {
+        return subDirectory;
+    }
+
+    @Override
+    public String getAbsoluteDirectory() {
+        return combinePath(baseDirectory, subDirectory);
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public IFileChannel withSubDirectory(final String subDirectory) {
+        //CHECKSTYLE:ON
+        final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        instance.emptyFileContent = emptyFileContent;
+        instance.filename = filename;
+        instance.setSubDirectory(subDirectory);
+        return instance;
+    }
+
+    @Override
+    public FtpFileChannel setSubDirectory(final String subDirectory) {
+        final boolean connected = isConnected();
+        if (connected) {
+            try {
+                finalizer.ftpClient.changeDirectory("/");
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+        this.subDirectory = subDirectory != null ? subDirectory : "";
+        if (connected) {
+            createAndChangeDirectory();
+        }
+        return this;
+    }
+
+    @Override
+    public FtpFileChannel setFilename(final String filename) {
         this.filename = filename;
+        return this;
     }
 
     @Override
-    public synchronized String getFilename() {
+    public String getFilename() {
         if (filename == null) {
             throw new NullPointerException("please call setFilename(...) first");
         }
@@ -87,22 +154,23 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized byte[] getEmptyFileContent() {
+    public byte[] getEmptyFileContent() {
         return emptyFileContent;
     }
 
     @Override
-    public synchronized void setEmptyFileContent(final byte[] emptyFileContent) {
+    public FtpFileChannel setEmptyFileContent(final byte[] emptyFileContent) {
         this.emptyFileContent = emptyFileContent;
+        return this;
     }
 
     @Override
-    public synchronized void createUniqueFile() {
-        createUniqueFile(FtpFileChannel.class.getSimpleName() + "_", ".channel");
+    public FtpFileChannel createUniqueFile() {
+        return createUniqueFile(FtpFileChannel.class.getSimpleName() + "_", ".channel");
     }
 
     @Override
-    public synchronized void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
+    public FtpFileChannel createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
         assertConnected();
         while (true) {
             final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
@@ -113,15 +181,16 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                 break;
             }
         }
+        return this;
     }
 
-    public synchronized FTPClient getFtpClient() {
+    public FTPClient getFtpClient() {
         assertConnected();
         return finalizer.ftpClient;
     }
 
     @Override
-    public synchronized void connect() {
+    public FtpFileChannel connect() {
         try {
             if (finalizer == null) {
                 finalizer = new FtpFileChannelFinalizer();
@@ -144,6 +213,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
             finalizer.register(this);
             login();
             createAndChangeDirectory();
+            return this;
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
@@ -154,19 +224,20 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
      * Can be overridden to change the login credentials. We don't use properties for this since it would be wise to
      * transfer them over the wire with this object in serialized form.
      */
-    protected synchronized void login() throws IOException, FTPIllegalReplyException, FTPException {
+    protected void login() throws IOException, FTPIllegalReplyException, FTPException {
         finalizer.ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
     }
 
-    protected synchronized boolean isAuthenticated() {
+    protected boolean isAuthenticated() {
         return finalizer.ftpClient.isAuthenticated();
     }
 
     /**
      * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
      */
-    private synchronized void createAndChangeDirectory() {
-        final String[] pathElements = directory.split("/");
+    private void createAndChangeDirectory() {
+        final String absDir = getAbsoluteDirectory();
+        final String[] pathElements = absDir.split("/");
         final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
@@ -182,7 +253,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         }
     }
 
-    private synchronized void createAndChangeSingleDirectory(final String singleDir) throws Exception {
+    private void createAndChangeSingleDirectory(final String singleDir) throws Exception {
         try {
             finalizer.ftpClient.changeDirectory(singleDir);
         } catch (final FTPException e) {
@@ -192,18 +263,18 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
         return finalizer != null && finalizer.ftpClient != null && finalizer.ftpClient.isConnected()
                 && isAuthenticated();
     }
 
     @Override
-    public synchronized boolean exists() {
+    public boolean exists() {
         return info() != null;
     }
 
     @Override
-    public synchronized long size() {
+    public long length() {
         assertConnected();
         try {
             return finalizer.ftpClient.fileSize(getFilename());
@@ -219,7 +290,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized FDate modified() {
+    public FDate lastModified() {
         assertConnected();
         try {
             final Date date = finalizer.ftpClient.modifiedDate(getFilename());
@@ -242,14 +313,14 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized FTPFile info() {
+    public FtpFileInfo info() {
         assertConnected();
         try {
             final FTPFile[] listFiles = finalizer.ftpClient.list(getFilename());
             if (listFiles.length == 0) {
                 return null;
             } else if (listFiles.length == 1) {
-                return listFiles[0];
+                return FtpFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory, listFiles[0]);
             } else {
                 throw new IllegalStateException("More than one result: " + listFiles.length);
             }
@@ -265,10 +336,11 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized List<FTPFile> list() {
+    public List<FtpFileInfo> list() {
         assertConnected();
         try {
-            return Arrays.asList(finalizer.ftpClient.list());
+            return Arrays.asList(FtpFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory,
+                    finalizer.ftpClient.list()));
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return Collections.emptyList();
@@ -280,28 +352,16 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized List<FTPFile> listFiles() {
-        final List<FTPFile> list = list();
-        final List<FTPFile> files = new ArrayList<>();
-        for (final FTPFile file : list) {
-            if (file.getType() == FTPFile.TYPE_FILE) {
-                files.add(file);
-            }
-        }
-        return files;
+    public List<FtpFileInfo> listFiles() {
+        return (List<FtpFileInfo>) IFileChannel.super.listFiles();
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized List<FTPFile> listDirectories() {
-        final List<FTPFile> list = list();
-        final List<FTPFile> directories = new ArrayList<>();
-        for (final FTPFile directory : list) {
-            if (directory.getType() == FTPFile.TYPE_DIRECTORY) {
-                directories.add(directory);
-            }
-        }
-        return directories;
+    public List<FtpFileInfo> listDirectories() {
+        return (List<FtpFileInfo>) IFileChannel.super.listDirectories();
     }
 
     private void assertConnected() {
@@ -309,36 +369,39 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public void rename(final String filename) {
+    public FtpFileChannel rename(final String filename) {
         assertConnected();
         try {
             finalizer.ftpClient.rename(getFilename(), filename);
             setFilename(filename);
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized void upload(final File file) {
+    public FtpFileChannel upload(final File file) {
         assertConnected();
         try {
             finalizer.ftpClient.upload(file);
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized void upload(final byte[] bytes) {
-        upload(new FastByteArrayInputStream(bytes));
+    public FtpFileChannel upload(final byte[] bytes) {
+        return upload(new FastByteArrayInputStream(bytes));
     }
 
     @Override
-    public synchronized void upload(final InputStream input) {
+    public FtpFileChannel upload(final InputStream input) {
         assertConnected();
         try {
             finalizer.ftpClient.upload(getFilename(), input, 0, 0, null);
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -347,7 +410,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized void download(final File destination) {
+    public FtpFileChannel download(final File destination) {
         try {
             try (InputStream in = downloadInputStream()) {
                 if (in != null) {
@@ -357,13 +420,14 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
                     }
                 }
             }
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized byte[] download() {
+    public byte[] download() {
         try {
             try (InputStream in = downloadInputStream()) {
                 if (in == null) {
@@ -379,13 +443,14 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized void delete() {
+    public FtpFileChannel delete() {
         assertConnected();
         try {
             finalizer.ftpClient.deleteFile(getFilename());
+            return this;
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
-                return;
+                return this;
             } else {
                 throw new RuntimeException(e);
             }
@@ -395,7 +460,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized void close() {
+    public void close() {
         if (finalizer != null) {
             finalizer.close();
             finalizer = null;
@@ -403,7 +468,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized OutputStream uploadOutputStream() {
+    public OutputStream uploadOutputStream() {
         assertConnected();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
@@ -437,8 +502,8 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized File getLocalTempFile() {
-        final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getDirectory());
+    public File getLocalTempFile() {
+        final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getAbsoluteDirectory());
         try {
             Files.forceMkdir(directory);
         } catch (final IOException e) {
@@ -450,14 +515,15 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
     }
 
     @Override
-    public synchronized void reconnect() {
+    public FtpFileChannel reconnect() {
         assertConnected();
         close();
         connect();
+        return this;
     }
 
     @Override
-    public synchronized InputStream downloadInputStream() {
+    public InputStream downloadInputStream() {
         assertConnected();
         final File file = getLocalTempFile();
         try {
@@ -488,11 +554,7 @@ public class FtpFileChannel implements IFileChannel<FTPFile> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
-                .add("serverUri", serverUri)
-                .add("directory", directory)
-                .add("filename", filename)
-                .toString();
+        return FileChannelInfos.toString(this);
     }
 
     private static final class FtpFileChannelFinalizer extends AFinalizer {
