@@ -412,7 +412,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public FtpFileChannel download(final File destination) {
         try {
-            try (InputStream in = downloadInputStream()) {
+            try (InputStream in = newDownload()) {
                 if (in != null) {
                     Files.forceMkdirParent(destination);
                     try (FileOutputStream out = new FileOutputStream(destination)) {
@@ -429,7 +429,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public byte[] download() {
         try {
-            try (InputStream in = downloadInputStream()) {
+            try (InputStream in = newDownload()) {
                 if (in == null) {
                     return null;
                 } else {
@@ -468,7 +468,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public OutputStream uploadOutputStream() {
+    public OutputStream newUpload() {
         assertConnected();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
@@ -523,7 +523,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public InputStream downloadInputStream() {
+    public InputStream newDownload() {
         assertConnected();
         final File file = getLocalTempFile();
         try {

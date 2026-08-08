@@ -211,7 +211,7 @@ public class HadoopContainer extends GenericContainer<HadoopContainer> {
     }
 
     private void putProperties(final Configuration conf) {
-        conf.set("fs.defaultFS", "hdfs://localhost:" + HDFS_PORT);
+        conf.set("fs.defaultFS", getHdfsUri());
         conf.set("yarn.resourcemanager.address", "localhost:" + RESOURCEMANAGER_PORT);
         conf.set("yarn.nodemanager.hostname", "localhost");
         conf.set("yarn.nodemanager.address", "localhost:8041");
@@ -222,6 +222,10 @@ public class HadoopContainer extends GenericContainer<HadoopContainer> {
         conf.set("yarn.app.mapreduce.am.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.map.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
         conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
+    }
+
+    public String getHdfsUri() {
+        return "hdfs://localhost:" + HDFS_PORT;
     }
 
 }

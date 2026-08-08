@@ -367,7 +367,7 @@ public class WebdavFileChannel implements IFileChannel {
 
     @Override
     public WebdavFileChannel download(final File destination) {
-        try (InputStream in = downloadInputStream()) {
+        try (InputStream in = newDownload()) {
             if (in != null) {
                 Files.forceMkdirParent(destination);
                 try (FileOutputStream out = new FileOutputStream(destination)) {
@@ -383,7 +383,7 @@ public class WebdavFileChannel implements IFileChannel {
     @Override
     public byte[] download() {
         try {
-            try (InputStream in = downloadInputStream()) {
+            try (InputStream in = newDownload()) {
                 if (in == null) {
                     return null;
                 } else {
@@ -423,7 +423,7 @@ public class WebdavFileChannel implements IFileChannel {
     }
 
     @Override
-    public OutputStream uploadOutputStream() {
+    public OutputStream newUpload() {
         assertConnected();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
@@ -478,7 +478,7 @@ public class WebdavFileChannel implements IFileChannel {
     }
 
     @Override
-    public InputStream downloadInputStream() {
+    public InputStream newDownload() {
         assertConnected();
         try {
             return finalizer.webdavClient.get(getFileUri().toString());
