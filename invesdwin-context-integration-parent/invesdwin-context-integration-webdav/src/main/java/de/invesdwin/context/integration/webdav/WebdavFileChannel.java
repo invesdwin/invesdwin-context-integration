@@ -85,10 +85,8 @@ public class WebdavFileChannel implements IFileChannel {
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -108,10 +106,8 @@ public class WebdavFileChannel implements IFileChannel {
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -123,10 +119,8 @@ public class WebdavFileChannel implements IFileChannel {
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -244,9 +238,6 @@ public class WebdavFileChannel implements IFileChannel {
 
     @Override
     public String getFilename() {
-        if (filename == null) {
-            throw new NullPointerException("please call setFilename(...) first");
-        }
         return filename;
     }
 
@@ -331,9 +322,6 @@ public class WebdavFileChannel implements IFileChannel {
         }
     }
 
-    /**
-     * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
-     */
     @Override
     public WebdavFileChannel createDirectory() {
         connect(false);
@@ -359,7 +347,6 @@ public class WebdavFileChannel implements IFileChannel {
         try {
             finalizer.webdavClient.createDirectory(baseServerUri.toString() + singleDir);
         } catch (final SardineException e) {
-            //500 might happen when creating directories in parallel, the others when folders already exist or parent folders are missing
             if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT
                     || e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                 return;
@@ -526,7 +513,7 @@ public class WebdavFileChannel implements IFileChannel {
             if (in != null) {
                 Files.forceMkdirParent(destination);
                 try (FileOutputStream out = new FileOutputStream(destination)) {
-                    IOUtils.copy(in, out);
+                    IOUtils.copyLarge(in, out);
                 }
             }
             return this;
@@ -549,7 +536,6 @@ public class WebdavFileChannel implements IFileChannel {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
@@ -599,7 +585,6 @@ public class WebdavFileChannel implements IFileChannel {
                 try {
                     super.close();
                     if (!file.exists()) {
-                        //write an empty file
                         Files.write(file, "", Charset.defaultCharset());
                     }
                     upload(file);
@@ -663,5 +648,4 @@ public class WebdavFileChannel implements IFileChannel {
             return false;
         }
     }
-
 }

@@ -8,11 +8,13 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -41,12 +43,12 @@ public class HadoopFileChannel implements IFileChannel {
     public static final String DEFAULT_SERVER_URI_STR = "hdfs:///";
     public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
     private static final boolean CACHED_FILE_SYSTEM = true;
+    private static final Pattern MULTIPLE_SLASHES = Pattern.compile("[/]+");
 
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
 
-    // Marked as transient since Configuration and FileSystem are not Serializable
     private transient Configuration configuration;
 
     @GuardedBy("this")
@@ -104,7 +106,7 @@ public class HadoopFileChannel implements IFileChannel {
         if (Strings.isBlank(subDirectory)) {
             return baseDirectory;
         }
-        String cleanDir = subDirectory.replace("\\", "/").replaceAll("[/]+", "/");
+        String cleanDir = MULTIPLE_SLASHES.matcher(subDirectory.replace("\\", "/")).replaceAll("/");
         while (cleanDir.startsWith("/")) {
             cleanDir = cleanDir.substring(1);
         }
@@ -131,10 +133,8 @@ public class HadoopFileChannel implements IFileChannel {
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, configuration);
         instance.emptyFileContent = emptyFileContent;
         instance.subDirectory = subDirectory;
-        try {
+        if (filename != null) {
             instance.setFilename(filename);
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -147,10 +147,8 @@ public class HadoopFileChannel implements IFileChannel {
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -170,10 +168,8 @@ public class HadoopFileChannel implements IFileChannel {
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -185,10 +181,8 @@ public class HadoopFileChannel implements IFileChannel {
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
         instance.emptyFileContent = emptyFileContent;
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -344,9 +338,6 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public String getFilename() {
-        if (filename == null) {
-            throw new NullPointerException("please call setFilename(...) first");
-        }
         return filename;
     }
 
@@ -591,7 +582,7 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel upload(final InputStream input) {
         ensureDirectoryCreated();
         try (FSDataOutputStream out = finalizer.fs.create(resolveFilePath(), true)) {
-            copyStream(input, out);
+            IOUtils.copyLarge(input, out);
             return this;
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -700,14 +691,6 @@ public class HadoopFileChannel implements IFileChannel {
         return FileChannelInfos.toString(this);
     }
 
-    private void copyStream(final InputStream in, final OutputStream out) throws IOException {
-        final byte[] buffer = new byte[8192];
-        int read;
-        while ((read = in.read(buffer)) != -1) {
-            out.write(buffer, 0, read);
-        }
-    }
-
     private void writeObject(final ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         if (configuration != null) {
@@ -755,6 +738,5 @@ public class HadoopFileChannel implements IFileChannel {
         public boolean isThreadLocal() {
             return false;
         }
-
     }
 }

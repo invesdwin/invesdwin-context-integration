@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -47,6 +48,8 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @ThreadSafe
 public class FtpFileChannel implements IFileChannel {
 
+    private static final Pattern MULTIPLE_SLASHES = Pattern.compile("[/]+");
+
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -75,7 +78,7 @@ public class FtpFileChannel implements IFileChannel {
         if (Strings.isBlank(subDirectory)) {
             return baseDirectory;
         }
-        String cleanDir = subDirectory.replace("\\", "/").replaceAll("[/]+", "/");
+        String cleanDir = MULTIPLE_SLASHES.matcher(subDirectory.replace("\\", "/")).replaceAll("/");
         while (cleanDir.startsWith("/")) {
             cleanDir = cleanDir.substring(1);
         }
@@ -104,10 +107,8 @@ public class FtpFileChannel implements IFileChannel {
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -127,10 +128,8 @@ public class FtpFileChannel implements IFileChannel {
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -142,10 +141,8 @@ public class FtpFileChannel implements IFileChannel {
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         instance.emptyFileContent = emptyFileContent;
-        try {
+        if (getFilename() != null) {
             instance.setFilename(getFilename());
-        } catch (final Exception e) {
-            // filename not set
         }
         return instance;
     }
@@ -275,9 +272,6 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public String getFilename() {
-        if (filename == null) {
-            throw new NullPointerException("please call setFilename(...) first");
-        }
         return filename;
     }
 
@@ -365,10 +359,6 @@ public class FtpFileChannel implements IFileChannel {
         }
     }
 
-    /**
-     * Can be overridden to change the login credentials. We don't use properties for this since it would be wise to
-     * transfer them over the wire with this object in serialized form.
-     */
     protected void login() throws IOException, FTPIllegalReplyException, FTPException {
         finalizer.ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
     }
@@ -377,9 +367,6 @@ public class FtpFileChannel implements IFileChannel {
         return finalizer.ftpClient.isAuthenticated();
     }
 
-    /**
-     * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
-     */
     private void createAndChangeDirectory() {
         final String absDir = getAbsoluteDirectory();
         final String[] pathElements = absDir.split("/");
@@ -625,7 +612,7 @@ public class FtpFileChannel implements IFileChannel {
                 if (in != null) {
                     Files.forceMkdirParent(destination);
                     try (FileOutputStream out = new FileOutputStream(destination)) {
-                        IOUtils.copy(in, out);
+                        IOUtils.copyLarge(in, out);
                     }
                 }
             }
@@ -698,7 +685,6 @@ public class FtpFileChannel implements IFileChannel {
                 try {
                     super.close();
                     if (!file.exists()) {
-                        //write an empty file
                         Files.write(file, "", Charset.defaultCharset());
                     }
                     finalizer.ftpClient.upload(file);
@@ -787,7 +773,5 @@ public class FtpFileChannel implements IFileChannel {
         public boolean isThreadLocal() {
             return false;
         }
-
     }
-
 }
