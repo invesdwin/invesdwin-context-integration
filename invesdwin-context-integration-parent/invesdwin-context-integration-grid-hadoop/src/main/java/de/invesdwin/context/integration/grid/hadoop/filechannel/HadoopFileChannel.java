@@ -680,9 +680,9 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     @Override
-    public HadoopFileChannel reconnect() {
+    public HadoopFileChannel reconnect(final boolean createDirectory) {
         close();
-        connect();
+        connect(createDirectory);
         return this;
     }
 

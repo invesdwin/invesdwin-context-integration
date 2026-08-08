@@ -695,9 +695,9 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public FtpFileChannel reconnect() {
+    public FtpFileChannel reconnect(final boolean createDirectory) {
         close();
-        connect();
+        connect(createDirectory);
         return this;
     }
 
