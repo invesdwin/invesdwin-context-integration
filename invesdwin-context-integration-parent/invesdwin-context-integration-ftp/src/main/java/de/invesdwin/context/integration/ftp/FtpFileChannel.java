@@ -431,6 +431,28 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public boolean exists() {
+        assertConnected();
+        if (filename == null) {
+            try {
+                final String currentDir = finalizer.ftpClient.currentDirectory();
+                boolean exists;
+                try {
+                    finalizer.ftpClient.changeDirectory(getAbsoluteDirectory());
+                    exists = true;
+                } catch (final Exception e) {
+                    exists = false;
+                } finally {
+                    try {
+                        finalizer.ftpClient.changeDirectory(currentDir);
+                    } catch (final Exception e) {
+                        // ignore
+                    }
+                }
+                return exists;
+            } catch (final Exception e) {
+                return false;
+            }
+        }
         return info() != null;
     }
 

@@ -380,6 +380,9 @@ public class WebdavFileChannel implements IFileChannel {
     public boolean exists() {
         assertConnected();
         try {
+            if (filename == null) {
+                return finalizer.webdavClient.exists(getDirectoryUri().toString());
+            }
             return finalizer.webdavClient.exists(getFileUri().toString());
         } catch (final IOException e) {
             throw new RuntimeException(e);

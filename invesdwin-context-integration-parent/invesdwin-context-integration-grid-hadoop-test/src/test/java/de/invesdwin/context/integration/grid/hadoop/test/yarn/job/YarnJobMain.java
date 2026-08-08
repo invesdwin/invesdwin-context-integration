@@ -4,16 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.charset.Charset;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.commons.io.IOUtils;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
-import org.apache.hadoop.fs.FSDataOutputStream;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 
@@ -29,6 +22,8 @@ import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.SocketSynchronousChannel;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousReader;
 import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSocketSynchronousWriter;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -75,9 +70,8 @@ public class YarnJobMain extends AMain {
     private void testPerformance() {
         final InlineChannelTest parent = new InlineChannelTest();
 
-        final FileSystem fs = newFileSystem();
-        // 2. Define the HDFS Path (using the path string from logDir)
-        final Path serverAddressFile = new Path(logDir, "serverAddress.txt");
+        final IFileChannel logChannel = FileChannelRegistry.newInstance(logDir);
+        final IFileChannel serverAddressChannel = logChannel.withFilename("serverAddress.txt");
 
         switch (rank) {
         case 0: {
@@ -88,10 +82,8 @@ public class YarnJobMain extends AMain {
 
             try {
                 // Write Address to HDFS
-                try (FSDataOutputStream out = fs.create(serverAddressFile, true)) {
-                    out.write(serverAddressStr.getBytes(Charset.defaultCharset()));
-                }
-            } catch (final IOException e) {
+                serverAddressChannel.uploadString(serverAddressStr);
+            } catch (final Exception e) {
                 throw new RuntimeException("Failed to write server address to HDFS", e);
             }
 
@@ -102,7 +94,7 @@ public class YarnJobMain extends AMain {
                         .newSerdeReader(new NativeSocketSynchronousReader(serverChannel));
                 final ISynchronousWriter<FDate> responseWriter = parent
                         .newSerdeWriter(new NativeSocketSynchronousWriter(serverChannel));
-                try (OutputStream log = newLog(fs, LatencyServerTask.class)) {
+                try (OutputStream log = newLog(logChannel, LatencyServerTask.class)) {
                     new LatencyServerTask(parent, log, requestReader, responseWriter).run();
                 } catch (final IOException e) {
                     throw new RuntimeException(e);
@@ -110,16 +102,16 @@ public class YarnJobMain extends AMain {
             } finally {
                 // Clean up HDFS file after server shuts down
                 try {
-                    fs.delete(serverAddressFile, false);
-                } catch (final IOException e) {
+                    serverAddressChannel.delete();
+                } catch (final Exception e) {
                     // Ignore or log cleanup failure
                 }
             }
             break;
         }
         case 1: {
-            // Pass the HDFS Path and FileSystem instance to the waiter
-            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressFile, fs);
+            // Pass the server address channel for waiting
+            final InetSocketAddress serverAddress = waitForServerAddress(serverAddressChannel);
 
             final SocketSynchronousChannel clientChannel = newSocketSynchronousChannel(serverAddress, false,
                     parent.getMaxMessageSize());
@@ -127,7 +119,7 @@ public class YarnJobMain extends AMain {
                     .newSerdeWriter(new NativeSocketSynchronousWriter(clientChannel));
             final ISynchronousReader<FDate> responseReader = parent
                     .newSerdeReader(new NativeSocketSynchronousReader(clientChannel));
-            try (OutputStream log = newLog(fs, LatencyClientTask.class)) {
+            try (OutputStream log = newLog(logChannel, LatencyClientTask.class)) {
                 new LatencyClientTask(parent, log, requestWriter, responseReader).run();
             } catch (final IOException e) {
                 throw new RuntimeException(e);
@@ -139,13 +131,10 @@ public class YarnJobMain extends AMain {
         }
     }
 
-    private InetSocketAddress waitForServerAddress(final Path serverAddressFile, final FileSystem fs) {
+    private InetSocketAddress waitForServerAddress(final IFileChannel serverAddressChannel) {
         final Instant start = new Instant();
         try {
-            // Check HDFS for file existence
-            while (!fs.exists(serverAddressFile)) {
-
-                // CRITICAL: Do not poll HDFS every 1ms. 500ms protects the NameNode.
+            while (!serverAddressChannel.exists()) {
                 FTimeUnit.MILLISECONDS.sleepNoInterrupt(500);
 
                 if (start.isGreaterThan(ContextProperties.DEFAULT_NETWORK_TIMEOUT)) {
@@ -153,19 +142,14 @@ public class YarnJobMain extends AMain {
                 }
             }
 
-            // Read the file from HDFS
-            final String serverAddressStr;
-            try (FSDataInputStream in = fs.open(serverAddressFile)) {
-                serverAddressStr = IOUtils.toString(in, Charset.defaultCharset());
-            }
-
+            final String serverAddressStr = serverAddressChannel.downloadString();
             final String[] serverAddressStrSplit = Strings.splitPreserveAllTokens(serverAddressStr, ":");
             final String serverHostname = serverAddressStrSplit[0];
             final int serverPort = Integer.parseInt(serverAddressStrSplit[1]);
 
             return new InetSocketAddress(serverHostname, serverPort);
 
-        } catch (final IOException e) {
+        } catch (final Exception e) {
             throw new RuntimeException("Error reading server address from HDFS", e);
         }
     }
@@ -175,27 +159,17 @@ public class YarnJobMain extends AMain {
         return new SocketSynchronousChannel(socketAddress, server, estimatedMaxMessageSize, true);
     }
 
-    private OutputStream newLog(final FileSystem fs, final Class<?> taskClass) throws IOException {
+    private OutputStream newLog(final IFileChannel logChannel, final Class<?> taskClass) {
         final LogLevelOutputStream log = new LogLevelOutputStream(LogLevel.INFO, new Log(taskClass));
         if (logDir == null) {
             return log;
         }
 
         final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
-        final Path hdfsLogPath = new Path(logDir, logFileName);
-
-        // Create the file in HDFS (overwriting if exists)
-        final OutputStream hdfsOut = fs.create(hdfsLogPath, true);
+        final IFileChannel taskLogChannel = logChannel.withFilename(logFileName);
+        final OutputStream hdfsOut = taskLogChannel.newUpload();
 
         return new BroadcastingOutputStream(log, hdfsOut);
-    }
-
-    private FileSystem newFileSystem() {
-        try {
-            return new Path(logDir).getFileSystem(new Configuration());
-        } catch (final IOException e) {
-            throw new RuntimeException("Failed to initialize Hadoop FileSystem", e);
-        }
     }
 
     public static void main(final String[] args) {

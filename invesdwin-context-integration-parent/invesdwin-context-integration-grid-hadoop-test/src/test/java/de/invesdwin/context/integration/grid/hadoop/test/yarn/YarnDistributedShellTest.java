@@ -8,15 +8,15 @@ import java.util.List;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.hadoop.test.yarn.job.YarnJobMain;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
@@ -40,30 +40,35 @@ public class YarnDistributedShellTest extends ATest {
                 .getFile();
         final File jobScriptFile = new File(ContextProperties.getCacheDirectory(), "yarn_job.sh");
 
-        // 1. Define HDFS paths
-        final YarnConfiguration conf = HADOOP.newYarnConfiguration();
-        final FileSystem fs = FileSystem.get(conf);
-        final Path hdfsJobJarPath = new Path("/tmp/" + jobJarFile.getName());
-        final Path hdfsJobScriptPath = new Path("/tmp/" + jobScriptFile.getName());
+        // 1. Define HDFS channels
+        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
+        final IFileChannel jobJarChannel = fileChannel.withAbsolutePath("/tmp/" + jobJarFile.getName());
+        final IFileChannel jobScriptChannel = fileChannel.withAbsolutePath("/tmp/" + jobScriptFile.getName());
+        final IFileChannel logDirChannel = fileChannel.withAbsoluteDirectory("/tmp/logs/");
 
-        final Path hdfsLogDir = new Path("/tmp/logs/");
         final File jobScriptTemplate = new ClassPathResource("yarn_job_template.sh", getClass()).getFile();
         String jobScript = Files.readFileToString(jobScriptTemplate, Charset.defaultCharset());
-        jobScript = jobScript.replace("{HDFS_JOB_JAR_PATH}", hdfsJobJarPath.toString())
+        jobScript = jobScript.replace("{HDFS_JOB_JAR_PATH}", jobJarChannel.getFileUri().toString())
                 .replace("{SIZE}", String.valueOf(NUM_CONTAINERS))
-                .replace("{HDFS_LOG_DIR}", fs.getUri().toString() + hdfsLogDir.toString());
+                .replace("{HDFS_LOG_DIR}", logDirChannel.getDirectoryUri().toString());
         Files.writeStringToFile(jobScriptFile, jobScript, Charset.defaultCharset());
 
-        // 2. Upload files to HDFS (overwrite = true)
-        fs.copyFromLocalFile(false, true, new Path(jobJarFile.getAbsolutePath()), hdfsJobJarPath);
-        fs.copyFromLocalFile(false, true, new Path(jobScriptFile.getAbsolutePath()), hdfsJobScriptPath);
+        // 2. Upload files to HDFS
+        jobJarChannel.upload(jobJarFile);
+        jobScriptChannel.upload(jobScriptFile);
 
-        runDistributedShellViaProcess(hdfsJobJarPath, hdfsJobScriptPath);
+        runDistributedShellViaProcess(jobJarChannel.getFileUri().toString(), jobScriptChannel.getFileUri().toString());
 
         // 3. Check logs in HDFS
-        if (fs.exists(hdfsLogDir)) {
-            fs.copyToLocalFile(hdfsLogDir, new Path(ContextProperties.getCacheDirectory().getAbsolutePath()));
+        if (logDirChannel.exists()) {
+            final File localLogsDir = new File(ContextProperties.getCacheDirectory(), "logs");
+            de.invesdwin.util.lang.Files.forceMkdir(localLogsDir);
+            logDirChannel.withFilename("1_2_LatencyServerTask.log")
+                    .download(new File(localLogsDir, "1_2_LatencyServerTask.log"));
+            logDirChannel.withFilename("2_2_LatencyClientTask.log")
+                    .download(new File(localLogsDir, "2_2_LatencyClientTask.log"));
         }
+
         final File log_1_2 = new File(ContextProperties.getCacheDirectory(), "logs/1_2_LatencyServerTask.log");
         final File log_2_2 = new File(ContextProperties.getCacheDirectory(), "logs/2_2_LatencyClientTask.log");
 
@@ -73,7 +78,7 @@ public class YarnDistributedShellTest extends ATest {
         Assertions.assertThat(str_2_2).contains("ReadsFinished: ").contains("(100%)");
     }
 
-    public void runDistributedShellViaProcess(final Path hdfsJobJarPath, final Path hdfsJobScriptPath)
+    public void runDistributedShellViaProcess(final String hdfsJobJarPathStr, final String hdfsJobScriptPathStr)
             throws IOException, InterruptedException {
         final List<String> command = new ArrayList<>();
 
@@ -87,23 +92,23 @@ public class YarnDistributedShellTest extends ATest {
                 "share/hadoop/yarn/hadoop-yarn-applications-distributedshell-" + HadoopContainer.HADOOP_VERSION
                         + ".jar");
 
-        // Path to the DistributedShell JAR (you can find this in your Hadoop install)
+        // Path to the DistributedShell JAR
         command.add(amJar.getAbsolutePath());
 
         // Arguments for DistributedShell
-        command.add("-jar"); // The DistributedShell app master JAR
+        command.add("-jar");
         command.add(amJar.getAbsolutePath());
 
         command.add("-num_containers");
         command.add(String.valueOf(NUM_CONTAINERS));
 
         command.add("-shell_command");
-        command.add("/home/hduser/hadoop/bin/hadoop fs -get " + hdfsJobScriptPath.toString() + " . && "
-                + "/home/hduser/hadoop/bin/hadoop fs -get " + hdfsJobJarPath.toString() + " . && " + "sh "
-                + hdfsJobScriptPath.getName() + " " + hdfsJobJarPath.getName());
+        command.add("/home/hduser/hadoop/bin/hadoop fs -get " + hdfsJobScriptPathStr + " . && "
+                + "/home/hduser/hadoop/bin/hadoop fs -get " + hdfsJobJarPathStr + " . && " + "sh "
+                + new Path(hdfsJobScriptPathStr).getName() + " " + new Path(hdfsJobJarPathStr).getName());
 
         final ProcessBuilder pb = new ProcessBuilder(command);
-        pb.inheritIO(); // This streams the YARN logs directly to your JUnit console!
+        pb.inheritIO(); // Streams YARN logs directly to console
 
         final Process process = pb.start();
         final int exitCode = process.waitFor();

@@ -8,8 +8,6 @@ import java.util.concurrent.CountDownLatch;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.agrona.collections.MutableBoolean;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.spark.launcher.SparkAppHandle;
 import org.apache.spark.launcher.SparkLauncher;
 import org.junit.jupiter.api.Test;
@@ -17,6 +15,8 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.hadoop.test.HadoopContainer;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
 import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
@@ -44,9 +44,11 @@ public class SparkYarnTest extends ATest {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
+        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
         final String hdfsLogDir = "/tmp/logs/";
-        final FileSystem fs = FileSystem.get(HADOOP.newHadoopConfiguration());
-        final String defaultFs = fs.getUri().toString();
+        final IFileChannel logDirChannel = fileChannel.withAbsoluteDirectory(hdfsLogDir);
+        final String defaultFs = fileChannel.getBaseServerUri().toString();
+
         final Map<String, String> env = ILockCollectionFactory.getInstance(false).newLinkedMap();
         env.putAll(System.getenv());
         env.put("SPARK_HOME", SparkContainer.getSparkHomeFolder().getAbsolutePath());
@@ -84,9 +86,15 @@ public class SparkYarnTest extends ATest {
             handle.stop();
         }
 
-        // 4. Download and verify logs from HDFS
+        // 4. Download and verify logs from HDFS via IFileChannel
         final File localLogDir = new File(ContextProperties.getCacheDirectory(), "spark-logs");
-        fs.copyToLocalFile(new Path(hdfsLogDir), new Path(localLogDir.getAbsolutePath()));
+        if (logDirChannel.exists()) {
+            de.invesdwin.util.lang.Files.forceMkdir(localLogDir);
+            logDirChannel.withFilename("1_2_LatencyServerTask.log")
+                    .download(new File(localLogDir, "1_2_LatencyServerTask.log"));
+            logDirChannel.withFilename("2_2_LatencyClientTask.log")
+                    .download(new File(localLogDir, "2_2_LatencyClientTask.log"));
+        }
 
         final File log_1_2 = new File(localLogDir, "1_2_LatencyServerTask.log");
         final File log_2_2 = new File(localLogDir, "2_2_LatencyClientTask.log");

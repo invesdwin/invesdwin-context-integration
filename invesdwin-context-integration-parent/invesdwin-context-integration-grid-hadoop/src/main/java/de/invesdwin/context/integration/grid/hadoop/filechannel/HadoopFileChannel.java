@@ -385,7 +385,6 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel connect(final boolean createDirectory) {
         try {
             if (fs == null) {
-                // Using newInstance prevents closing a cached FileSystem shared by the JVM[cite: 3]
                 fs = FileSystem.newInstance(serverUri, configuration);
             }
             connected = true;
@@ -407,6 +406,9 @@ public class HadoopFileChannel implements IFileChannel {
     public boolean exists() {
         assertConnected();
         try {
+            if (filename == null) {
+                return fs.exists(resolveDirectoryPath());
+            }
             return fs.exists(resolveFilePath());
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -706,9 +708,6 @@ public class HadoopFileChannel implements IFileChannel {
         }
     }
 
-    /**
-     * Custom serialization method to save the Hadoop Configuration state.
-     */
     private void writeObject(final ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         if (configuration != null) {
@@ -719,9 +718,6 @@ public class HadoopFileChannel implements IFileChannel {
         }
     }
 
-    /**
-     * Custom deserialization method to load the Hadoop Configuration state.
-     */
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (in.readBoolean()) {
