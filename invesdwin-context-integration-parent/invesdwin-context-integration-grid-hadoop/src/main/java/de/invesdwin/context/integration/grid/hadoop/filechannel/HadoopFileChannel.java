@@ -22,6 +22,7 @@ import org.apache.hadoop.fs.Path;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
@@ -44,13 +45,14 @@ public class HadoopFileChannel implements IFileChannel {
     private final String baseDirectory;
 
     // Marked as transient since Configuration is not Serializable
-    private transient Configuration conf;
+    private transient Configuration configuration;
     private transient FileSystem fs;
 
     private String subDirectory = "";
     private String filename;
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
     private boolean connected = false;
+    private boolean directoryCreated = false;
 
     public HadoopFileChannel() {
         this(DEFAULT_SERVER_URI, new Configuration());
@@ -64,15 +66,33 @@ public class HadoopFileChannel implements IFileChannel {
         this(serverUri == null ? null : URIs.asUri(serverUri), new Configuration());
     }
 
-    public HadoopFileChannel(final String serverUri, final Configuration conf) {
-        this(serverUri == null ? null : URIs.asUri(serverUri), conf);
+    public HadoopFileChannel(final String serverUri, final Configuration configuration) {
+        this(serverUri == null ? null : URIs.asUri(serverUri), configuration);
     }
 
-    public HadoopFileChannel(final URI serverUri, final Configuration conf) {
-        this.conf = conf != null ? conf : new Configuration();
+    public HadoopFileChannel(final URI serverUri, final Configuration configuration) {
+        this.configuration = configuration != null ? configuration : new Configuration();
         this.serverUri = serverUri != null ? serverUri : DEFAULT_SERVER_URI;
         this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, DEFAULT_SERVER_URI);
         this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
+    }
+
+    public Configuration getConfiguration() {
+        return configuration;
+    }
+
+    public HadoopFileChannel setConfiguration(final Configuration configuration) {
+        this.configuration = configuration != null ? configuration : new Configuration();
+        if (fs != null) {
+            try {
+                fs.close();
+            } catch (final IOException e) {
+                // Ignore close exceptions
+            } finally {
+                fs = null;
+            }
+        }
+        return this;
     }
 
     public static String combinePath(final String baseDirectory, final String subDirectory) {
@@ -91,13 +111,166 @@ public class HadoopFileChannel implements IFileChannel {
 
     //CHECKSTYLE:OFF
     @Override
-    public IFileChannel withSubDirectory(final String subDirectory) {
+    public HadoopFileChannel withSubDirectory(final String subDirectory) {
         //CHECKSTYLE:ON
-        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.conf);
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
         instance.emptyFileContent = emptyFileContent;
         instance.filename = filename;
         instance.setSubDirectory(subDirectory);
         return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    public HadoopFileChannel withConfiguration(final Configuration configuration) {
+        //CHECKSTYLE:ON
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.subDirectory = subDirectory;
+        try {
+            instance.setFilename(filename);
+        } catch (final Exception e) {
+            // filename not set
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withBaseServerUri(final URI baseServerUri) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelInfos.newDirectoryUri(baseServerUri, getBaseDirectory());
+        final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        try {
+            instance.setFilename(getFilename());
+        } catch (final Exception e) {
+            // filename not set
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withBaseServerUri(final String baseServerUri) {
+        //CHECKSTYLE:ON
+        return withBaseServerUri(URIs.asUri(baseServerUri));
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withBaseDirectory(final String baseDirectory) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        try {
+            instance.setFilename(getFilename());
+        } catch (final Exception e) {
+            // filename not set
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        try {
+            instance.setFilename(getFilename());
+        } catch (final Exception e) {
+            // filename not set
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withSubPath(final String subPath) {
+        //CHECKSTYLE:ON
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(subPath);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withSubPath(final java.nio.file.Path path) {
+        //CHECKSTYLE:ON
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(path);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    public HadoopFileChannel withSubPath(final Path path) {
+        //CHECKSTYLE:ON
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(path);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withFilename(final String filename) {
+        //CHECKSTYLE:ON
+        final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        instance.setFilename(filename);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withAbsolutePath(final String path) {
+        //CHECKSTYLE:ON
+        if (Strings.isBlank(path)) {
+            final HadoopFileChannel instance = new HadoopFileChannel(getBaseServerUri(), this.configuration);
+            instance.emptyFileContent = emptyFileContent;
+            instance.setSubPath((String) null);
+            return instance;
+        }
+        if (path.contains("://")) {
+            final IFileChannel registryChannel = FileChannelRegistry.newInstance(path);
+            if (registryChannel instanceof HadoopFileChannel) {
+                return ((HadoopFileChannel) registryChannel).withConfiguration(this.configuration);
+            }
+            return (HadoopFileChannel) registryChannel;
+        } else {
+            final HadoopFileChannel instance = new HadoopFileChannel(getBaseServerUri(), this.configuration);
+            instance.emptyFileContent = emptyFileContent;
+            instance.setSubPath(path);
+            return instance;
+        }
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public HadoopFileChannel withAbsolutePath(final java.nio.file.Path path) {
+        //CHECKSTYLE:ON
+        return withAbsolutePath(path != null ? path.toString() : null);
+    }
+
+    //CHECKSTYLE:OFF
+    public HadoopFileChannel withAbsolutePath(final Path path) {
+        //CHECKSTYLE:ON
+        if (path == null) {
+            return withAbsolutePath((String) null);
+        }
+        final URI uri = path.toUri();
+        if (uri.getScheme() != null && !uri.getScheme().equalsIgnoreCase("hdfs")
+                && !uri.getScheme().equalsIgnoreCase("viewfs")) {
+            return withAbsolutePath(uri.getPath() != null ? uri.getPath() : path.toString());
+        }
+        return withAbsolutePath(uri.toString());
     }
 
     @Override
@@ -131,8 +304,11 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel setSubDirectory(final String subDirectory) {
-        this.subDirectory = subDirectory != null ? subDirectory : "";
-        createDirectoryIfNotExists();
+        final String newSubDirectory = subDirectory != null ? subDirectory : "";
+        if (!this.subDirectory.equals(newSubDirectory)) {
+            this.subDirectory = newSubDirectory;
+            this.directoryCreated = false;
+        }
         return this;
     }
 
@@ -140,6 +316,25 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel setFilename(final String filename) {
         this.filename = filename;
         return this;
+    }
+
+    @Override
+    public HadoopFileChannel setSubPath(final String path) {
+        IFileChannel.super.setSubPath(path);
+        return this;
+    }
+
+    @Override
+    public HadoopFileChannel setSubPath(final java.nio.file.Path path) {
+        IFileChannel.super.setSubPath(path);
+        return this;
+    }
+
+    public HadoopFileChannel setSubPath(final Path path) {
+        if (path == null) {
+            return setSubPath((String) null);
+        }
+        return setSubPath(path.toUri().getPath());
     }
 
     @Override
@@ -168,7 +363,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
-        assertConnected();
+        ensureDirectoryCreated();
         while (true) {
             final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
             setFilename(filename);
@@ -183,13 +378,20 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel connect() {
+        return connect(true);
+    }
+
+    @Override
+    public HadoopFileChannel connect(final boolean createDirectory) {
         try {
             if (fs == null) {
-                // Using newInstance prevents closing a cached FileSystem shared by the JVM
-                fs = FileSystem.newInstance(serverUri, conf);
+                // Using newInstance prevents closing a cached FileSystem shared by the JVM[cite: 3]
+                fs = FileSystem.newInstance(serverUri, configuration);
             }
             connected = true;
-            createDirectoryIfNotExists();
+            if (createDirectory) {
+                createDirectory();
+            }
             return this;
         } catch (final IOException e) {
             throw new RuntimeException("Failed to connect to Hadoop FileSystem at " + serverUri, e);
@@ -290,21 +492,31 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     private void assertConnected() {
-        Assertions.checkTrue(isConnected(), "Please call connect() first");
+        if (!isConnected()) {
+            connect(false);
+        }
     }
 
-    private void createDirectoryIfNotExists() {
-        if (isConnected()) {
-            try {
-                final Path dirPath = resolveDirectoryPath();
-                if (!fs.exists(dirPath)) {
-                    fs.mkdirs(dirPath);
-                }
-            } catch (final IOException e) {
-                throw new RuntimeException("Failed to create Hadoop directory structure at " + resolveDirectoryPath(),
-                        e);
-            }
+    private void ensureDirectoryCreated() {
+        assertConnected();
+        if (!directoryCreated) {
+            createDirectory();
         }
+    }
+
+    @Override
+    public HadoopFileChannel createDirectory() {
+        assertConnected();
+        try {
+            final Path dirPath = resolveDirectoryPath();
+            if (!fs.exists(dirPath)) {
+                fs.mkdirs(dirPath);
+            }
+            directoryCreated = true;
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to create Hadoop directory structure at " + resolveDirectoryPath(), e);
+        }
+        return this;
     }
 
     private Path resolveDirectoryPath() {
@@ -334,7 +546,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel upload(final File file) {
-        assertConnected();
+        ensureDirectoryCreated();
         try {
             fs.copyFromLocalFile(false, true, new Path(file.toURI()), resolveFilePath());
             return this;
@@ -350,7 +562,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel upload(final InputStream input) {
-        assertConnected();
+        ensureDirectoryCreated();
         try (FSDataOutputStream out = fs.create(resolveFilePath(), true)) {
             copyStream(input, out);
             return this;
@@ -359,6 +571,12 @@ public class HadoopFileChannel implements IFileChannel {
         } finally {
             Closeables.close(input);
         }
+    }
+
+    @Override
+    public HadoopFileChannel uploadString(final String text) {
+        IFileChannel.super.uploadString(text);
+        return this;
     }
 
     @Override
@@ -413,6 +631,7 @@ public class HadoopFileChannel implements IFileChannel {
     @Override
     public void close() {
         connected = false;
+        directoryCreated = false;
         if (fs != null) {
             try {
                 fs.close();
@@ -426,7 +645,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public OutputStream newUpload() {
-        assertConnected();
+        ensureDirectoryCreated();
         try {
             return fs.create(resolveFilePath(), true);
         } catch (final IOException e) {
@@ -492,9 +711,9 @@ public class HadoopFileChannel implements IFileChannel {
      */
     private void writeObject(final ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
-        if (conf != null) {
+        if (configuration != null) {
             out.writeBoolean(true);
-            conf.write(out);
+            configuration.write(out);
         } else {
             out.writeBoolean(false);
         }
@@ -506,10 +725,10 @@ public class HadoopFileChannel implements IFileChannel {
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (in.readBoolean()) {
-            conf = new Configuration();
-            conf.readFields(in);
+            configuration = new Configuration();
+            configuration.readFields(in);
         } else {
-            conf = new Configuration();
+            configuration = new Configuration();
         }
     }
 }
