@@ -313,7 +313,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     public FTPClient getFtpClient() {
-        assertConnected();
+        connect(false);
         return finalizer.ftpClient;
     }
 
@@ -328,10 +328,18 @@ public class FtpFileChannel implements IFileChannel {
             if (finalizer == null) {
                 finalizer = new FtpFileChannelFinalizer();
             }
-            if (finalizer.ftpClient != null && (!finalizer.ftpClient.isConnected() || !isAuthenticated())) {
-                close();
+            if (finalizer.ftpClient != null && finalizer.ftpClient.isConnected() && isAuthenticated()) {
+                if (createDirectory && !directoryCreated) {
+                    createDirectory();
+                } else {
+                    changeDirectoryOnly();
+                }
+                return this;
             }
-            Assertions.checkNull(finalizer.ftpClient, "Already connected");
+            if (finalizer.ftpClient != null) {
+                close();
+                finalizer = new FtpFileChannelFinalizer();
+            }
             finalizer.ftpClient = new FTPClient();
             //be a bit more firewall friendly
             finalizer.ftpClient.setPassive(true);
@@ -345,7 +353,7 @@ public class FtpFileChannel implements IFileChannel {
             finalizer.ftpClient.connect(serverUri.getHost(), serverUri.getPort());
             finalizer.register(this);
             login();
-            if (createDirectory) {
+            if (createDirectory && !directoryCreated) {
                 createDirectory();
             } else {
                 changeDirectoryOnly();
@@ -417,7 +425,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public FtpFileChannel createDirectory() {
-        assertConnected();
+        connect(false);
         createAndChangeDirectory();
         directoryCreated = true;
         return this;
@@ -431,7 +439,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public boolean exists() {
-        assertConnected();
+        connect(false);
         if (filename == null) {
             try {
                 final String currentDir = finalizer.ftpClient.currentDirectory();
@@ -458,7 +466,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public long length() {
-        assertConnected();
+        connect(false);
         try {
             return finalizer.ftpClient.fileSize(getFilename());
         } catch (final FTPException e) {
@@ -474,7 +482,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public FDate lastModified() {
-        assertConnected();
+        connect(false);
         try {
             final Date date = finalizer.ftpClient.modifiedDate(getFilename());
             if (date == null) {
@@ -497,7 +505,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public FtpFileInfo info() {
-        assertConnected();
+        connect(false);
         try {
             final FTPFile[] listFiles = finalizer.ftpClient.list(getFilename());
             if (listFiles.length == 0) {
@@ -520,7 +528,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public List<FtpFileInfo> list() {
-        assertConnected();
+        connect(false);
         try {
             return Arrays.asList(FtpFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory,
                     finalizer.ftpClient.list()));
@@ -547,14 +555,8 @@ public class FtpFileChannel implements IFileChannel {
         return (List<FtpFileInfo>) IFileChannel.super.listDirectories();
     }
 
-    private void assertConnected() {
-        if (!isConnected()) {
-            connect(false);
-        }
-    }
-
     private void ensureDirectoryCreated() {
-        assertConnected();
+        connect(false);
         if (!directoryCreated) {
             createDirectory();
         }
@@ -562,11 +564,26 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public FtpFileChannel rename(final String filename) {
-        assertConnected();
+        connect(false);
         try {
             finalizer.ftpClient.rename(getFilename(), filename);
             setFilename(filename);
             return this;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void moveSameType(final IFileChannel targetChannel) {
+        connect(false);
+        try {
+            final FtpFileChannel targetFtp = (FtpFileChannel) targetChannel;
+            targetFtp.ensureDirectoryCreated();
+            finalizer.ftpClient.rename(getAbsoluteDirectory() + getFilename(),
+                    targetFtp.getAbsoluteDirectory() + targetFtp.getFilename());
+            setSubDirectory(targetFtp.getSubDirectory());
+            setFilename(targetFtp.getFilename());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -636,7 +653,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public FtpFileChannel delete() {
-        assertConnected();
+        connect(false);
         try {
             finalizer.ftpClient.deleteFile(getFilename());
             return this;
@@ -703,7 +720,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public InputStream newDownload() {
-        assertConnected();
+        connect(false);
         final File file = downloadLocalTempFile();
         try {
             finalizer.ftpClient.download(getFilename(), file);

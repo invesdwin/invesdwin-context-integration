@@ -392,18 +392,15 @@ public class HadoopFileChannel implements IFileChannel {
             if (finalizer == null) {
                 finalizer = new HadoopFileChannelFinalizer();
             }
-            if (finalizer.fs != null && !isConnected()) {
-                close();
-            }
             if (finalizer.fs == null) {
                 if (CACHED_FILE_SYSTEM) {
                     finalizer.fs = FileSystem.get(serverUri, configuration);
                 } else {
                     finalizer.fs = FileSystem.newInstance(serverUri, configuration);
                 }
+                finalizer.register(this);
             }
-            finalizer.register(this);
-            if (createDirectory) {
+            if (createDirectory && !directoryCreated) {
                 createDirectory();
             }
             return this;
@@ -420,7 +417,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public boolean exists() {
-        assertConnected();
+        connect(false);
         try {
             if (filename == null) {
                 return finalizer.fs.exists(resolveDirectoryPath());
@@ -433,7 +430,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public long length() {
-        assertConnected();
+        connect(false);
         try {
             final Path path = resolveFilePath();
             if (finalizer.fs.exists(path)) {
@@ -447,7 +444,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public FDate lastModified() {
-        assertConnected();
+        connect(false);
         try {
             final Path path = resolveFilePath();
             if (finalizer.fs.exists(path)) {
@@ -461,7 +458,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileInfo info() {
-        assertConnected();
+        connect(false);
         try {
             final Path path = resolveFilePath();
             if (finalizer.fs.exists(path)) {
@@ -476,7 +473,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public List<HadoopFileInfo> list() {
-        assertConnected();
+        connect(false);
         try {
             final Path dirPath = resolveDirectoryPath();
             if (!finalizer.fs.exists(dirPath)) {
@@ -509,14 +506,8 @@ public class HadoopFileChannel implements IFileChannel {
         return (List<HadoopFileInfo>) IFileChannel.super.listDirectories();
     }
 
-    private void assertConnected() {
-        if (!isConnected()) {
-            connect(false);
-        }
-    }
-
     private void ensureDirectoryCreated() {
-        assertConnected();
+        connect(false);
         if (!directoryCreated) {
             createDirectory();
         }
@@ -524,7 +515,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel createDirectory() {
-        assertConnected();
+        connect(false);
         try {
             final Path dirPath = resolveDirectoryPath();
             if (!finalizer.fs.exists(dirPath)) {
@@ -547,7 +538,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel rename(final String filename) {
-        assertConnected();
+        connect(false);
         try {
             final Path source = resolveFilePath();
             final Path target = new Path(FileChannelInfos.newFileUri(baseServerUri, getAbsoluteDirectory(), filename));
@@ -557,6 +548,24 @@ public class HadoopFileChannel implements IFileChannel {
             }
             setFilename(filename);
             return this;
+        } catch (final IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void moveSameType(final IFileChannel targetChannel) {
+        connect(false);
+        try {
+            final HadoopFileChannel targetHadoop = (HadoopFileChannel) targetChannel;
+            targetHadoop.ensureDirectoryCreated();
+            final Path source = resolveFilePath();
+            final Path target = targetHadoop.resolveFilePath();
+            if (!finalizer.fs.rename(source, target)) {
+                throw new RuntimeException("Hadoop move operation returned false from " + source + " to " + target);
+            }
+            setSubDirectory(targetHadoop.getSubDirectory());
+            setFilename(targetHadoop.getFilename());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -599,7 +608,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel download(final File destination) {
-        assertConnected();
+        connect(false);
         try {
             final Path source = resolveFilePath();
             if (finalizer.fs.exists(source)) {
@@ -614,7 +623,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public byte[] download() {
-        assertConnected();
+        connect(false);
         try {
             final Path source = resolveFilePath();
             if (!finalizer.fs.exists(source)) {
@@ -634,7 +643,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public HadoopFileChannel delete() {
-        assertConnected();
+        connect(false);
         try {
             final Path path = resolveFilePath();
             if (finalizer.fs.exists(path)) {
@@ -667,7 +676,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public InputStream newDownload() {
-        assertConnected();
+        connect(false);
         try {
             final Path source = resolveFilePath();
             if (finalizer.fs.exists(source)) {
