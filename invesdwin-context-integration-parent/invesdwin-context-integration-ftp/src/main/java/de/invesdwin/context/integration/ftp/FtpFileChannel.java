@@ -665,7 +665,7 @@ public class FtpFileChannel implements IFileChannel {
         ensureDirectoryCreated();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
-            private final File file = getLocalTempFile();
+            private final File file = downloadLocalTempFile();
 
             @Override
             protected OutputStream newDelegate() {
@@ -695,19 +695,6 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public File getLocalTempFile() {
-        final File directory = new File(FtpClientProperties.TEMP_DIRECTORY, getAbsoluteDirectory());
-        try {
-            Files.forceMkdir(directory);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        final File file = new File(directory, getFilename());
-        Files.deleteQuietly(file);
-        return file;
-    }
-
-    @Override
     public FtpFileChannel reconnect() {
         close();
         connect();
@@ -717,7 +704,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public InputStream newDownload() {
         assertConnected();
-        final File file = getLocalTempFile();
+        final File file = downloadLocalTempFile();
         try {
             finalizer.ftpClient.download(getFilename(), file);
         } catch (final FTPException e) {

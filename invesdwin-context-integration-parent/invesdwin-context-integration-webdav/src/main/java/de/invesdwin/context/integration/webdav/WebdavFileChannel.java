@@ -573,7 +573,7 @@ public class WebdavFileChannel implements IFileChannel {
         ensureDirectoryCreated();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
-            private final File file = getLocalTempFile();
+            private final File file = downloadLocalTempFile();
 
             @Override
             protected OutputStream newDelegate() {
@@ -600,19 +600,6 @@ public class WebdavFileChannel implements IFileChannel {
                 }
             }
         };
-    }
-
-    @Override
-    public File getLocalTempFile() {
-        final File directory = new File(WebdavClientProperties.TEMP_DIRECTORY, getAbsoluteDirectory());
-        try {
-            Files.forceMkdir(directory);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        final File file = new File(directory, getFilename());
-        Files.deleteQuietly(file);
-        return file;
     }
 
     @Override

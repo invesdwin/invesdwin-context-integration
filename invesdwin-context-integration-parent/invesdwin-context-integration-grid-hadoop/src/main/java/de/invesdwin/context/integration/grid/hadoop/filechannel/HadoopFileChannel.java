@@ -20,7 +20,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
-import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
@@ -678,25 +677,6 @@ public class HadoopFileChannel implements IFileChannel {
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public File getLocalTempFile() {
-        final File directory = new File(ContextProperties.TEMP_DIRECTORY, getAbsoluteDirectory());
-        try {
-            Files.forceMkdir(directory);
-        } catch (final IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
-        final File file = new File(directory, getFilename());
-        Files.deleteQuietly(file);
-
-        if (exists()) {
-            download(file);
-        }
-
-        return file;
     }
 
     @Override
