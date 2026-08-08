@@ -10,6 +10,7 @@ import java.net.URI;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.hadoop.conf.Configuration;
@@ -27,6 +28,7 @@ import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.finalizer.AFinalizer;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
@@ -39,19 +41,21 @@ public class HadoopFileChannel implements IFileChannel {
 
     public static final String DEFAULT_SERVER_URI_STR = "hdfs:///";
     public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    private static final boolean CACHED_FILE_SYSTEM = true;
 
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
 
-    // Marked as transient since Configuration is not Serializable
+    // Marked as transient since Configuration and FileSystem are not Serializable
     private transient Configuration configuration;
-    private transient FileSystem fs;
+
+    @GuardedBy("this")
+    private transient HadoopFileChannelFinalizer finalizer;
 
     private String subDirectory = "";
     private String filename;
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
-    private boolean connected = false;
     private boolean directoryCreated = false;
 
     public HadoopFileChannel() {
@@ -83,13 +87,15 @@ public class HadoopFileChannel implements IFileChannel {
 
     public HadoopFileChannel setConfiguration(final Configuration configuration) {
         this.configuration = configuration != null ? configuration : new Configuration();
-        if (fs != null) {
+        if (finalizer != null && finalizer.fs != null) {
             try {
-                fs.close();
+                if (!CACHED_FILE_SYSTEM) {
+                    finalizer.fs.close();
+                }
             } catch (final IOException e) {
                 // Ignore close exceptions
             } finally {
-                fs = null;
+                finalizer.fs = null;
             }
         }
         return this;
@@ -384,22 +390,33 @@ public class HadoopFileChannel implements IFileChannel {
     @Override
     public HadoopFileChannel connect(final boolean createDirectory) {
         try {
-            if (fs == null) {
-                fs = FileSystem.newInstance(serverUri, configuration);
+            if (finalizer == null) {
+                finalizer = new HadoopFileChannelFinalizer();
             }
-            connected = true;
+            if (finalizer.fs != null && !isConnected()) {
+                close();
+            }
+            if (finalizer.fs == null) {
+                if (CACHED_FILE_SYSTEM) {
+                    finalizer.fs = FileSystem.get(serverUri, configuration);
+                } else {
+                    finalizer.fs = FileSystem.newInstance(serverUri, configuration);
+                }
+            }
+            finalizer.register(this);
             if (createDirectory) {
                 createDirectory();
             }
             return this;
-        } catch (final IOException e) {
+        } catch (final Throwable e) {
+            close();
             throw new RuntimeException("Failed to connect to Hadoop FileSystem at " + serverUri, e);
         }
     }
 
     @Override
     public boolean isConnected() {
-        return connected;
+        return finalizer != null && finalizer.fs != null;
     }
 
     @Override
@@ -407,9 +424,9 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             if (filename == null) {
-                return fs.exists(resolveDirectoryPath());
+                return finalizer.fs.exists(resolveDirectoryPath());
             }
-            return fs.exists(resolveFilePath());
+            return finalizer.fs.exists(resolveFilePath());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -420,8 +437,8 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path path = resolveFilePath();
-            if (fs.exists(path)) {
-                return fs.getFileStatus(path).getLen();
+            if (finalizer.fs.exists(path)) {
+                return finalizer.fs.getFileStatus(path).getLen();
             }
             return -1;
         } catch (final IOException e) {
@@ -434,8 +451,8 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path path = resolveFilePath();
-            if (fs.exists(path)) {
-                return new FDate(fs.getFileStatus(path).getModificationTime());
+            if (finalizer.fs.exists(path)) {
+                return new FDate(finalizer.fs.getFileStatus(path).getModificationTime());
             }
             return null;
         } catch (final IOException e) {
@@ -448,9 +465,9 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path path = resolveFilePath();
-            if (fs.exists(path)) {
+            if (finalizer.fs.exists(path)) {
                 return HadoopFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory,
-                        fs.getFileStatus(path));
+                        finalizer.fs.getFileStatus(path));
             }
             return null;
         } catch (final IOException e) {
@@ -463,11 +480,11 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path dirPath = resolveDirectoryPath();
-            if (!fs.exists(dirPath)) {
+            if (!finalizer.fs.exists(dirPath)) {
                 return java.util.Collections.emptyList();
             }
 
-            final FileStatus[] statuses = fs.listStatus(dirPath);
+            final FileStatus[] statuses = finalizer.fs.listStatus(dirPath);
             if (statuses == null) {
                 return java.util.Collections.emptyList();
             }
@@ -511,8 +528,8 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path dirPath = resolveDirectoryPath();
-            if (!fs.exists(dirPath)) {
-                fs.mkdirs(dirPath);
+            if (!finalizer.fs.exists(dirPath)) {
+                finalizer.fs.mkdirs(dirPath);
             }
             directoryCreated = true;
         } catch (final IOException e) {
@@ -536,7 +553,7 @@ public class HadoopFileChannel implements IFileChannel {
             final Path source = resolveFilePath();
             final Path target = new Path(FileChannelInfos.newFileUri(baseServerUri, getAbsoluteDirectory(), filename));
 
-            if (!fs.rename(source, target)) {
+            if (!finalizer.fs.rename(source, target)) {
                 throw new RuntimeException("Hadoop rename operation returned false from " + source + " to " + target);
             }
             setFilename(filename);
@@ -550,7 +567,7 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel upload(final File file) {
         ensureDirectoryCreated();
         try {
-            fs.copyFromLocalFile(false, true, new Path(file.toURI()), resolveFilePath());
+            finalizer.fs.copyFromLocalFile(false, true, new Path(file.toURI()), resolveFilePath());
             return this;
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -565,7 +582,7 @@ public class HadoopFileChannel implements IFileChannel {
     @Override
     public HadoopFileChannel upload(final InputStream input) {
         ensureDirectoryCreated();
-        try (FSDataOutputStream out = fs.create(resolveFilePath(), true)) {
+        try (FSDataOutputStream out = finalizer.fs.create(resolveFilePath(), true)) {
             copyStream(input, out);
             return this;
         } catch (final IOException e) {
@@ -586,9 +603,9 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path source = resolveFilePath();
-            if (fs.exists(source)) {
+            if (finalizer.fs.exists(source)) {
                 Files.forceMkdirParent(destination);
-                fs.copyToLocalFile(false, source, new Path(destination.toURI()), true);
+                finalizer.fs.copyToLocalFile(false, source, new Path(destination.toURI()), true);
             }
             return this;
         } catch (final IOException e) {
@@ -601,12 +618,12 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path source = resolveFilePath();
-            if (!fs.exists(source)) {
+            if (!finalizer.fs.exists(source)) {
                 return null;
             }
 
-            final FileStatus status = fs.getFileStatus(source);
-            try (FSDataInputStream in = fs.open(source)) {
+            final FileStatus status = finalizer.fs.getFileStatus(source);
+            try (FSDataInputStream in = finalizer.fs.open(source)) {
                 final byte[] data = new byte[(int) status.getLen()];
                 in.readFully(data);
                 return data;
@@ -621,8 +638,8 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path path = resolveFilePath();
-            if (fs.exists(path)) {
-                fs.delete(path, false);
+            if (finalizer.fs.exists(path)) {
+                finalizer.fs.delete(path, false);
             }
             return this;
         } catch (final IOException e) {
@@ -632,24 +649,18 @@ public class HadoopFileChannel implements IFileChannel {
 
     @Override
     public void close() {
-        connected = false;
-        directoryCreated = false;
-        if (fs != null) {
-            try {
-                fs.close();
-            } catch (final IOException e) {
-                // Ignore close exceptions
-            } finally {
-                fs = null;
-            }
+        if (finalizer != null) {
+            finalizer.close();
+            finalizer = null;
         }
+        directoryCreated = false;
     }
 
     @Override
     public OutputStream newUpload() {
         ensureDirectoryCreated();
         try {
-            return fs.create(resolveFilePath(), true);
+            return finalizer.fs.create(resolveFilePath(), true);
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
@@ -660,8 +671,8 @@ public class HadoopFileChannel implements IFileChannel {
         assertConnected();
         try {
             final Path source = resolveFilePath();
-            if (fs.exists(source)) {
-                return fs.open(source);
+            if (finalizer.fs.exists(source)) {
+                return finalizer.fs.open(source);
             }
             return null;
         } catch (final IOException e) {
@@ -726,5 +737,35 @@ public class HadoopFileChannel implements IFileChannel {
         } else {
             configuration = new Configuration();
         }
+    }
+
+    private static final class HadoopFileChannelFinalizer extends AFinalizer {
+
+        private FileSystem fs;
+
+        @Override
+        protected void clean() {
+            if (fs != null) {
+                if (!CACHED_FILE_SYSTEM) {
+                    try {
+                        fs.close();
+                    } catch (final IOException e) {
+                        // ignore
+                    }
+                }
+                fs = null;
+            }
+        }
+
+        @Override
+        protected boolean isCleaned() {
+            return fs == null;
+        }
+
+        @Override
+        public boolean isThreadLocal() {
+            return false;
+        }
+
     }
 }
