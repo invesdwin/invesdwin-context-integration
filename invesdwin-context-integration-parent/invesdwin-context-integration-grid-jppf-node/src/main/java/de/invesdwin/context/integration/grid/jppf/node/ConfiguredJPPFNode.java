@@ -57,6 +57,11 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         Assertions.checkNull(this.node, "already started");
         this.node = node;
         if (node != null) {
+            //disable local execution if we have an embedded node
+            if (JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_EXECUTION_ENABLED)) {
+                LOG.info("Disabling local execution because we have an embedded node");
+                JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_EXECUTION_ENABLED, false);
+            }
             uploadHeartbeat();
             LOG.info("%s started with UUID: %s", ConfiguredJPPFNode.class.getSimpleName(), node.getUuid());
         }
