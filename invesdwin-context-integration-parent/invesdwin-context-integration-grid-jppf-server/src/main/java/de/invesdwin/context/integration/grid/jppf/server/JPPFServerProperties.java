@@ -26,12 +26,23 @@ public final class JPPFServerProperties {
 
     static {
         Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
+        final SystemProperties jppfSystemProperties = new SystemProperties();
         PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
         LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
-        if (LOCAL_NODE_ENABLED) {
-            JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_NODES, 1);
+        if (!jppfSystemProperties.containsValue(JPPFProperties.LOCAL_NODES.getName())) {
+            if (LOCAL_NODE_ENABLED) {
+                JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_NODES, 1);
+            } else {
+                JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_NODES, 0);
+            }
         }
-        final SystemProperties jppfSystemProperties = new SystemProperties();
+        if (!jppfSystemProperties.containsValue(JPPFProperties.LOCAL_EXECUTION_ENABLED.getName())) {
+            if (LOCAL_NODE_ENABLED) {
+                JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_EXECUTION_ENABLED, true);
+            } else {
+                JPPFConfiguration.getProperties().set(JPPFProperties.LOCAL_EXECUTION_ENABLED, false);
+            }
+        }
         if (jppfSystemProperties.containsValue(KEY_JPPF_SERVER_CLASS_CACHE_ENABLED)) {
             SERVER_CLASS_CACHE_ENABLED = jppfSystemProperties.getBoolean(KEY_JPPF_SERVER_CLASS_CACHE_ENABLED);
         } else {
