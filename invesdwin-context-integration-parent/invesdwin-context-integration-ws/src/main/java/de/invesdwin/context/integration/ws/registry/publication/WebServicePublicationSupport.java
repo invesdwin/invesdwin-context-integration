@@ -26,7 +26,9 @@ public class WebServicePublicationSupport extends AConfigurableWebServicePublica
 
     @Override
     public void setBeanName(final String name) {
-        setServiceName(name);
+        if (serviceName == null) {
+            serviceName = name;
+        }
     }
 
     @Override

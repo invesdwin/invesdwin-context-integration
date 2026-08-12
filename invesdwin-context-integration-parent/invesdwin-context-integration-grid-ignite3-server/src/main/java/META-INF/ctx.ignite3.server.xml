@@ -8,13 +8,22 @@
 		init-method="start" destroy-method="stop">
 	</bean>
 
-	<bean id="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).SERVER_DISCOVERY_SERVICE_NAME}"
-		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ServerDiscoveryServicePublication" />
-		
-	<bean id="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).THIN_CLIENT_SERVICE_NAME}"
-		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ThinClientServicePublication" />
+	<bean id="ignite3ServerDiscoveryServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ServerDiscoveryServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).SERVER_DISCOVERY_SERVICE_NAME}" />
+	</bean>
 
-	<bean id="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).REST_SERVICE_NAME}"
-		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3RestServicePublication" />
+	<bean id="ignite3ThinClientServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ThinClientServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).THIN_CLIENT_SERVICE_NAME}" />
+	</bean>
+
+	<bean id="ignite3RestServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3RestServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).REST_SERVICE_NAME}" />
+	</bean>
 
 </beans>

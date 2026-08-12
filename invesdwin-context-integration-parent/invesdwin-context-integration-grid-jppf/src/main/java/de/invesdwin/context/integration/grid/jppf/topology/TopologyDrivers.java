@@ -2,7 +2,7 @@ package de.invesdwin.context.integration.grid.jppf.topology;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
@@ -14,10 +14,13 @@ import org.jppf.management.JMXDriverConnectionWrapper;
 import org.jppf.management.JPPFManagementInfo;
 import org.jppf.management.JPPFSystemInformation;
 import org.jppf.management.NodeSelector;
-import org.jppf.management.forwarding.JPPFNodeForwardingMBean;
+import org.jppf.management.forwarding.NodeForwardingMBean;
+import org.jppf.utils.InvocationResult;
+import org.jppf.utils.ResultsMap;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.jppf.JPPFClientProperties;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.uri.URIs;
 
@@ -26,8 +29,9 @@ public final class TopologyDrivers {
 
     public static final String NODE_FORWARDING_HOST_PREFIX = "forwarding:";
 
-    private TopologyDrivers() {
-    }
+    private static final Log LOG = new Log(TopologyDrivers.class);
+
+    private TopologyDrivers() {}
 
     public static List<TopologyNode> discoverHiddenNodes(final TopologyDriver driver) {
         final JMXDriverConnectionWrapper driverJmx = connect(driver);
@@ -37,23 +41,25 @@ public final class TopologyDrivers {
         }
 
         try {
-            final JPPFNodeForwardingMBean proxy = driverJmx.getNodeForwarder();
+            final NodeForwardingMBean proxy = driverJmx.getForwarder();
 
             // this selector selects all nodes attached to the driver
             final NodeSelector selector = new AllNodesSelector();
 
             // invoke the state() method on the remote 'JPPFNodeAdminMBean' node MBeans
             // note that the MBean name does not need to be stated explicitely
-            final Map<String, Object> results = proxy.systemInformation(selector);
+            final ResultsMap<String, JPPFSystemInformation> results = proxy.systemInformation(selector);
 
             // handling the results
             final List<TopologyNode> nodes = new ArrayList<>();
-            for (final Map.Entry<String, Object> entry : results.entrySet()) {
-                if (entry.getValue() instanceof Exception) {
-                    final Exception exc = (Exception) entry.getValue();
-                    throw exc;
+            for (final Entry<String, InvocationResult<JPPFSystemInformation>> entry : results.entrySet()) {
+                final InvocationResult<JPPFSystemInformation> invocationResult = entry.getValue();
+                if (invocationResult.isException()) {
+                    final Exception exc = invocationResult.exception();
+                    LOG.warn("%s", exc);
+                    continue;
                 } else {
-                    final JPPFSystemInformation systemInfo = (JPPFSystemInformation) entry.getValue();
+                    final JPPFSystemInformation systemInfo = invocationResult.result();
                     final JPPFManagementInfo nodeInformation = new JPPFManagementInfo(
                             NODE_FORWARDING_HOST_PREFIX + driver.getManagementInfo().getHost(),
                             driver.getManagementInfo().getIpAddress(), driver.getManagementInfo().getPort(),

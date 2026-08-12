@@ -13,7 +13,10 @@
 		<!-- startup/shutdown is handled manually in server -->
 	</bean>
 
-	<bean id="#{T(de.invesdwin.context.integration.grid.jppf.JPPFClientProperties).SERVICE_NAME}"
-		class="de.invesdwin.context.integration.grid.jppf.server.internal.JPPFServicePublication" />
+	<bean id="jppfServicePublication"
+		class="de.invesdwin.context.integration.grid.jppf.server.internal.JPPFServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.jppf.JPPFClientProperties).SERVICE_NAME}" />
+	</bean>
 
 </beans>
