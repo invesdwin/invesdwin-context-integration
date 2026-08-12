@@ -2,6 +2,7 @@ package de.invesdwin.context.integration.grid.jppf.server;
 
 import java.lang.management.ManagementFactory;
 import java.net.URI;
+import java.util.List;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -11,6 +12,7 @@ import javax.management.ObjectName;
 import org.apache.commons.lang3.BooleanUtils;
 import org.jppf.management.spi.JPPFDriverMBeanProvider;
 import org.jppf.server.JPPFDriver;
+import org.jppf.server.JPPFDriverAccessor;
 import org.jppf.server.node.JPPFNode;
 import org.jppf.utils.JPPFConfiguration;
 import org.jppf.utils.configuration.JPPFProperties;
@@ -33,7 +35,6 @@ import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.lang.reflection.Reflections;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.date.FDate;
@@ -79,12 +80,15 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     @Override
     public synchronized void startup() {
         if (driver != null) {
-            if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
-                final JPPFNode localNode = Reflections.field("localNode").ofType(JPPFNode.class).in(driver).get();
-                node.setNode(localNode);
-                Assertions.assertThat(node.getNode()).isSameAs(localNode);
+            if (JPPFServerProperties.LOCAL_NODES > 0) {
+                final List<JPPFNode> localNodes = JPPFDriverAccessor.getLocalNodes(driver);
+                if (localNodes.size() > 0) {
+                    final JPPFNode localNode = localNodes.get(0);
+                    node.setNode(localNode);
+                    Assertions.assertThat(node.getNode()).isSameAs(localNode);
+                }
             } else {
-                if (isNodeStartupEnabled()) {
+                if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
                     node.start();
                     Assertions.checkNotNull(node.getNode());
                 }

@@ -20,6 +20,7 @@ public final class JPPFServerProperties {
     public static final boolean STARTUP_ENABLED;
     public static final boolean PEER_SSL_ENABLED;
     public static final boolean LOCAL_NODE_ENABLED;
+    public static final int LOCAL_NODES;
     public static final boolean INITIALIZED;
     public static final boolean SERVER_CLASS_CACHE_ENABLED;
     private static final String KEY_JPPF_SERVER_CLASS_CACHE_ENABLED = "jppf.server.class.cache.enabled";
@@ -28,6 +29,7 @@ public final class JPPFServerProperties {
         Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
         PEER_SSL_ENABLED = JPPFNodeProperties.PEER_SSL_ENABLED;
         LOCAL_NODE_ENABLED = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODE_ENABLED);
+        LOCAL_NODES = JPPFConfiguration.getProperties().get(JPPFProperties.LOCAL_NODES);
         final SystemProperties jppfSystemProperties = new SystemProperties();
         if (jppfSystemProperties.containsValue(KEY_JPPF_SERVER_CLASS_CACHE_ENABLED)) {
             SERVER_CLASS_CACHE_ENABLED = jppfSystemProperties.getBoolean(KEY_JPPF_SERVER_CLASS_CACHE_ENABLED);

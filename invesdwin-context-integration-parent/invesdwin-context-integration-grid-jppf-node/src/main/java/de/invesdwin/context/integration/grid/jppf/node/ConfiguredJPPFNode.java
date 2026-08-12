@@ -82,6 +82,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 runner.start("noLauncher");
             }
         });
+        FTimeUnit.SECONDS.sleepNoInterrupt(1);
         while (node == null) {
             setNode((JPPFNode) runner.getNode());
             try {
