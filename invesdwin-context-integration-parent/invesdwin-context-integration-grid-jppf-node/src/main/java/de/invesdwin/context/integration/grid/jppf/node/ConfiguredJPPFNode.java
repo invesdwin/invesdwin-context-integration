@@ -25,6 +25,7 @@ import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.context.log.error.handler.AlwaysErrExecutorExceptionHandler;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.concurrent.WrappedExecutorService;
@@ -38,11 +39,12 @@ import de.invesdwin.util.time.date.FTimeUnit;
 public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     private static final WrappedExecutorService NODE_EXECUTOR = Executors
-            .newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(), 1);
+            .newFixedThreadPool(ConfiguredJPPFNode.class.getSimpleName(), 1)
+            .setExecutorExceptionHandler(AlwaysErrExecutorExceptionHandler.INSTANCE);
     private static final Log LOG = new Log(ConfiguredJPPFNode.class);
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
-    private JPPFNode node;
+    private volatile JPPFNode node;
     @GuardedBy("ConfiguredJPPFNode.class")
     private WebdavFileChannel heartbeatWebdavFileChannel;
     private volatile NodeRunner runner;
@@ -60,29 +62,30 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         }
     }
 
-    public synchronized void start() {
-        Assertions.checkNull(node, "already started");
-        Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
-        if (!startupInvoked) {
-            startDelayed = true;
-            return;
-        }
-        final TypedProperties config = JPPFConfiguration.getProperties();
-        final TypedProperties defaults = new TypedProperties(config);
-        final TypedProperties overrides = new ConfigurationOverridesHandler().load(true);
-        if (overrides != null) {
-            config.putAll(overrides);
-            config.setBoolean("jppf.node.overrides.set", true);
-        }
-        config.setDefaults(defaults);
-        runner = new NodeRunner(config);
-        NODE_EXECUTOR.execute(new Runnable() {
-            @Override
-            public void run() {
-                runner.start("noLauncher");
+    public void start() {
+        synchronized (this) {
+            Assertions.checkNull(runner, "already started");
+            Assertions.checkTrue(JPPFNodeProperties.INITIALIZED);
+            if (!startupInvoked) {
+                startDelayed = true;
+                return;
             }
-        });
-        FTimeUnit.SECONDS.sleepNoInterrupt(1);
+            final TypedProperties config = JPPFConfiguration.getProperties();
+            final TypedProperties defaults = new TypedProperties(config);
+            final TypedProperties overrides = new ConfigurationOverridesHandler().load(true);
+            if (overrides != null) {
+                config.putAll(overrides);
+                config.setBoolean("jppf.node.overrides.set", true);
+            }
+            config.setDefaults(defaults);
+            runner = new NodeRunner(config);
+            NODE_EXECUTOR.execute(new Runnable() {
+                @Override
+                public void run() {
+                    runner.start("noLauncher");
+                }
+            });
+        }
         while (node == null) {
             setNode((JPPFNode) runner.getNode());
             try {
@@ -146,21 +149,18 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         if (ShutdownHookManager.isShuttingDown()) {
             return;
         }
-        final JPPFNode node;
-        synchronized (this) {
-            node = this.node;
-        }
-        if (node != null) {
+        final JPPFNode nodeCopy = this.node;
+        if (nodeCopy != null) {
             try {
                 final String hostname = IntegrationProperties.HOSTNAME;
-                final String nodeUuid = node.getUuid();
+                final String nodeUuid = nodeCopy.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
                 final FDate heartbeat = FDate.now();
                 final String content = hostname + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
-                synchronized (this) {
+                synchronized (nodeCopy) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                     try {
                         channel.upload(content.getBytes());

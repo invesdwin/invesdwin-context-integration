@@ -47,7 +47,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     private static final Log LOG = new Log(ConfiguredJPPFServer.class);
     @GuardedBy("ConfiguredJPPFServer.class")
     private static Boolean nodeStartupEnabled;
-    private JPPFDriver driver;
+    private volatile JPPFDriver driver;
     @GuardedBy("ConfiguredJPPFServer.class")
     private WebdavFileChannel heartbeatWebdavFileChannel;
 
@@ -78,19 +78,22 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     }
 
     @Override
-    public synchronized void startup() {
-        if (driver != null) {
-            if (JPPFServerProperties.LOCAL_NODES > 0) {
-                final List<JPPFNode> localNodes = JPPFDriverAccessor.getLocalNodes(driver);
-                if (localNodes.size() > 0) {
-                    final JPPFNode localNode = localNodes.get(0);
-                    node.setNode(localNode);
-                    Assertions.assertThat(node.getNode()).isSameAs(localNode);
-                }
-            } else {
-                if (isNodeStartupEnabled() || JPPFServerProperties.LOCAL_NODE_ENABLED) {
-                    node.start();
-                    Assertions.checkNotNull(node.getNode());
+    public void startup() {
+        final JPPFDriver driverCopy = driver;
+        if (driverCopy != null) {
+            synchronized (driverCopy) {
+                if (JPPFServerProperties.LOCAL_NODE_ENABLED) {
+                    final List<JPPFNode> localNodes = JPPFDriverAccessor.getLocalNodes(driverCopy);
+                    if (localNodes.size() > 0) {
+                        final JPPFNode localNode = localNodes.get(0);
+                        node.setNode(localNode);
+                        Assertions.assertThat(node.getNode()).isSameAs(localNode);
+                    }
+                } else {
+                    if (isNodeStartupEnabled()) {
+                        node.start();
+                        Assertions.checkNotNull(node.getNode());
+                    }
                 }
             }
         }
@@ -158,28 +161,23 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         if (ShutdownHookManager.isShuttingDown()) {
             return;
         }
-        final JPPFDriver driver;
-        synchronized (this) {
-            driver = this.driver;
-        }
-        if (driver != null) {
+        final JPPFDriver driverCopy = this.driver;
+        if (driverCopy != null) {
             try {
                 final String hostname = IntegrationProperties.HOSTNAME;
-                final String driverUuid = driver.getUuid();
+                final String driverUuid = driverCopy.getUuid();
                 final int processingThreads = JPPFConfiguration.get(JPPFProperties.PROCESSING_THREADS);
                 final FDate heartbeat = FDate.now();
                 final String content = hostname + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + driverUuid
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
-                synchronized (this) {
-                    final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);
-                    try {
-                        channel.upload(content.getBytes());
-                    } catch (final Throwable t) {
-                        channel.close();
-                        throw t;
-                    }
+                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);
+                try {
+                    channel.upload(content.getBytes());
+                } catch (final Throwable t) {
+                    channel.close();
+                    throw t;
                 }
             } catch (final Throwable t) {
                 throw new RetryLaterRuntimeException(t);
