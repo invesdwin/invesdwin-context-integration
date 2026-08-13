@@ -1,5 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite2.instance;
 
+import java.io.File;
 import java.net.URI;
 import java.util.concurrent.TimeoutException;
 
@@ -15,6 +16,7 @@ import org.springframework.beans.factory.FactoryBean;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
@@ -83,6 +85,9 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         }
 
         final IgniteConfiguration configuration = createConfiguration();
+
+        configuration.setWorkDirectory(
+                new File(ContextProperties.getCacheDirectory(), getClass().getSimpleName()).getAbsolutePath());
 
         // Enable Peer Class Loading across cluster nodes
         configuration.setPeerClassLoadingEnabled(true);
