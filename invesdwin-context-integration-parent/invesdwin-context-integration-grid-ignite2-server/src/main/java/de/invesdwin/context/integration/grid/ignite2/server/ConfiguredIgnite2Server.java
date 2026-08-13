@@ -1,5 +1,7 @@
 package de.invesdwin.context.integration.grid.ignite2.server;
 
+import java.io.File;
+
 import javax.annotation.concurrent.ThreadSafe;
 
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
@@ -9,6 +11,7 @@ import org.apache.ignite.configuration.ThinClientConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 
+import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.grid.ignite2.instance.AConfiguredIgnite2Instance;
 import de.invesdwin.context.integration.grid.ignite2.instance.ConfiguredTcpDiscoveryIpFinder;
@@ -52,6 +55,10 @@ public final class ConfiguredIgnite2Server extends AConfiguredIgnite2Instance {
         tcpDiscoverySpi.setLocalPort(Ignite2ServerProperties.SERVER_DISCOVERY_PORT);
         tcpDiscoverySpi.setIpFinder(new ConfiguredTcpDiscoveryIpFinder());
         configuration.setDiscoverySpi(tcpDiscoverySpi);
+
+        configuration.setWorkDirectory(
+                new File(ContextProperties.getCacheDirectory(), ConfiguredIgnite2Server.class.getSimpleName())
+                        .getAbsolutePath());
 
         return configuration;
     }
