@@ -24,8 +24,6 @@ import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
-import de.invesdwin.util.concurrent.Executors;
-import de.invesdwin.util.concurrent.WrappedExecutorService;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.date.FDate;
@@ -36,7 +34,6 @@ import de.invesdwin.util.time.duration.Duration;
 public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutdownHook, FactoryBean<Ignite> {
 
     protected final Log log = new Log(getClass());
-    private final WrappedExecutorService executor = Executors.newFixedThreadPool(getClass().getSimpleName(), 1);
 
     private boolean startupInvoked = false;
     private boolean startDelayed = false;
@@ -85,31 +82,17 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             return;
         }
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                final IgniteConfiguration configuration = createConfiguration();
+        final IgniteConfiguration configuration = createConfiguration();
 
-                // Enable Peer Class Loading across cluster nodes
-                configuration.setPeerClassLoadingEnabled(true);
+        // Enable Peer Class Loading across cluster nodes
+        configuration.setPeerClassLoadingEnabled(true);
 
-                // Ensure topology events required by Ignite2ProcessingThreadsCounter are always enabled
-                configuration.setIncludeEventTypes(EventType.EVT_NODE_JOINED, EventType.EVT_NODE_LEFT,
-                        EventType.EVT_NODE_FAILED);
+        // Ensure topology events required by Ignite2ProcessingThreadsCounter are always enabled
+        configuration.setIncludeEventTypes(EventType.EVT_NODE_JOINED, EventType.EVT_NODE_LEFT,
+                EventType.EVT_NODE_FAILED);
 
-                final Ignite startedNode = Ignition.start(configuration);
-                setInstance(startedNode);
-            }
-        });
-
-        while (instance == null) {
-            try {
-                FTimeUnit.SECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while waiting for Ignite to start", e);
-            }
-        }
+        final Ignite startedNode = Ignition.start(configuration);
+        setInstance(startedNode);
 
         waitForWarmup();
     }
@@ -147,12 +130,6 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 instance.close();
             } catch (final Exception e) {
                 log.error("Error shutting down Ignite node", e);
-            }
-
-            try {
-                executor.awaitPendingCountZero();
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
 
             instance = null;

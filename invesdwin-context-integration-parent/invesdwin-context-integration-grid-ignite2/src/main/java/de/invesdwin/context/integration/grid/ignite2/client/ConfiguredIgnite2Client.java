@@ -27,6 +27,9 @@ public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> 
     private static Ignite2ClientProcessingThreadsCounter processingThreadsCounter;
 
     public static synchronized Ignite2ClientProcessingThreadsCounter getProcessingThreadsCounter() {
+        if (processingThreadsCounter == null) {
+            processingThreadsCounter = new Ignite2ClientProcessingThreadsCounter(getInstance());
+        }
         return processingThreadsCounter;
     }
 
@@ -52,19 +55,19 @@ public final class ConfiguredIgnite2Client implements FactoryBean<IgniteClient> 
         Assertions.checkNull(instance, "already started");
         instance = client;
         if (client != null) {
-            processingThreadsCounter = new Ignite2ClientProcessingThreadsCounter(client);
             waitForWarmup();
             LOG.info("%s connected", ConfiguredIgnite2Client.class.getSimpleName());
         }
     }
 
     private static void waitForWarmup() {
+        final Ignite2ClientProcessingThreadsCounter processingThreadsCounterCopy = getProcessingThreadsCounter();
         try {
-            processingThreadsCounter.waitForMinimumCounts(1, Duration.ONE_MINUTE);
+            processingThreadsCounterCopy.waitForMinimumCounts(1, Duration.ONE_MINUTE);
         } catch (final TimeoutException e) {
             //ignore
         }
-        processingThreadsCounter.logWarmupFinished();
+        processingThreadsCounterCopy.logWarmupFinished();
     }
 
     @Override

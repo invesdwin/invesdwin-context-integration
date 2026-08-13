@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.grid.jppf.client;
 import java.util.concurrent.TimeoutException;
 
 import javax.annotation.concurrent.Immutable;
-import jakarta.inject.Named;
 
 import org.jppf.client.JPPFClient;
 import org.jppf.client.monitoring.jobs.JobMonitor;
@@ -14,6 +13,7 @@ import de.invesdwin.context.integration.grid.jppf.JPPFClientProperties;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.time.date.FTimeUnit;
 import de.invesdwin.util.time.duration.Duration;
+import jakarta.inject.Named;
 
 @Named
 @Immutable
@@ -69,7 +69,6 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
             instance = new JPPFClient();
             topologyManager = new TopologyManager(instance);
             jobMonitor = new JobMonitor(topologyManager);
-            Assertions.checkNotNull(getProcessingThreadsCounter());
             final ConfiguredClientDriverDiscovery clientDiscovery = new ConfiguredClientDriverDiscovery();
             instance.addDriverDiscovery(clientDiscovery);
             instance.addClientQueueListener(new ConnectionSizingClientQueueListener(jobMonitor));
@@ -88,12 +87,14 @@ public final class ConfiguredJPPFClient implements FactoryBean<JPPFClient> {
         if (expectedDriversCount > 0) {
             minimumNodesCount += 1;
         }
+        final JPPFProcessingThreadsCounter processingThreadsCounterCopy = getProcessingThreadsCounter();
         try {
-            processingThreadsCounter.waitForMinimumCounts(expectedDriversCount, minimumNodesCount, Duration.ONE_MINUTE);
+            processingThreadsCounterCopy.waitForMinimumCounts(expectedDriversCount, minimumNodesCount,
+                    Duration.ONE_MINUTE);
         } catch (final TimeoutException e) {
             //ignore
         }
-        processingThreadsCounter.logWarmupFinished();
+        processingThreadsCounterCopy.logWarmupFinished();
     }
 
     @Override

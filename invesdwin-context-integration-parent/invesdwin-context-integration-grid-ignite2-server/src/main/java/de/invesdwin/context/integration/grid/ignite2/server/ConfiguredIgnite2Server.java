@@ -5,6 +5,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import org.apache.ignite.configuration.ClientConnectorConfiguration;
 import org.apache.ignite.configuration.ConnectorConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
+import org.apache.ignite.configuration.ThinClientConfiguration;
 import org.apache.ignite.spi.communication.tcp.TcpCommunicationSpi;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 
@@ -26,6 +27,11 @@ public final class ConfiguredIgnite2Server extends AConfiguredIgnite2Instance {
         final ClientConnectorConfiguration clientConnectorConfiguration = new ClientConnectorConfiguration();
         clientConnectorConfiguration.setHost(IntegrationProperties.HOSTNAME);
         clientConnectorConfiguration.setPort(Ignite2ServerProperties.THIN_CLIENT_PORT);
+
+        final ThinClientConfiguration thinClientConfiguration = new ThinClientConfiguration();
+        thinClientConfiguration.setMaxActiveComputeTasksPerConnection(Integer.MAX_VALUE);
+        clientConnectorConfiguration.setThinClientConfiguration(thinClientConfiguration);
+
         configuration.setClientConnectorConfiguration(clientConnectorConfiguration);
 
         // 2. REST HTTP Port Configuration (0 = random port)
