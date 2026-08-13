@@ -56,7 +56,7 @@ public final class TopologyDrivers {
                 final InvocationResult<JPPFSystemInformation> invocationResult = entry.getValue();
                 if (invocationResult.isException()) {
                     final Exception exc = invocationResult.exception();
-                    LOG.warn("%s", exc);
+                    LOG.trace("Unable to retrieve system information for node: %s", exc);
                     continue;
                 } else {
                     final JPPFSystemInformation systemInfo = invocationResult.result();
