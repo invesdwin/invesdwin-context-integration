@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.grid.hadoop.filechannel;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -13,10 +12,10 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.hadoop.conf.Configuration;
 
-import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.registry.IFileChannelFactory;
 import de.invesdwin.context.integration.filechannel.registry.IFileChannelFactoryProvider;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 
 @Immutable
@@ -63,18 +62,7 @@ public class HadoopFileChannelFactoryProvider implements IFileChannelFactoryProv
                     }
 
                     if (scheme != null) {
-                        final String resolvedScheme = scheme;
-                        factories.add(new IFileChannelFactory() {
-                            @Override
-                            public String getScheme() {
-                                return resolvedScheme;
-                            }
-
-                            @Override
-                            public IFileChannel newInstance(final URI serverUri) {
-                                return new HadoopFileChannel(serverUri);
-                            }
-                        });
+                        factories.add(new HadoopFileChannelFactory(scheme));
                     }
                 }
             }
@@ -87,6 +75,6 @@ public class HadoopFileChannelFactoryProvider implements IFileChannelFactoryProv
         for (final IFileChannelFactory factory : factories) {
             uniqueFactories.putIfAbsent(factory.getScheme(), factory);
         }
-        return uniqueFactories.values();
+        return Collections.unmodifiableCollection(uniqueFactories.values());
     }
 }

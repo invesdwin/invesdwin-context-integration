@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
 
+import de.invesdwin.context.integration.webdav.test.LocalWebdavFileChannelStub;
 import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.ITestContextSetup;
@@ -24,6 +25,7 @@ public class WebdavFileChannelTest extends ATest {
     public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
         ctx.deactivateBean(RegistryServiceStub.class);
+        ctx.deactivateBean(LocalWebdavFileChannelStub.class);
     }
 
     @Test
