@@ -26,12 +26,13 @@ import de.invesdwin.context.beans.hook.IPreStartupHook;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.grid.jppf.node.ConfiguredJPPFNode;
 import de.invesdwin.context.integration.grid.jppf.node.JPPFNodeContextLocation;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -49,7 +50,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
     private static Boolean nodeStartupEnabled;
     private volatile JPPFDriver driver;
     @GuardedBy("ConfiguredJPPFServer.class")
-    private WebdavFileChannel heartbeatWebdavFileChannel;
+    private IFileChannel heartbeatWebdavFileChannel;
 
     @Inject
     private ConfiguredJPPFNode node;
@@ -172,7 +173,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
-                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);
+                final IFileChannel channel = getHeartbeatWebdavFileChannel(driverUuid);
                 try {
                     channel.upload(content.getBytes());
                 } catch (final Throwable t) {
@@ -186,7 +187,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
         }
     }
 
-    private WebdavFileChannel getHeartbeatWebdavFileChannel(final String driverUuid) {
+    private IFileChannel getHeartbeatWebdavFileChannel(final String driverUuid) {
         final boolean differentDriverUuid = heartbeatWebdavFileChannel != null
                 && heartbeatWebdavFileChannel.getFilename() != null
                 && !heartbeatWebdavFileChannel.getFilename().contains(driverUuid);
@@ -208,7 +209,7 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
                     .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 channel.setFilename(

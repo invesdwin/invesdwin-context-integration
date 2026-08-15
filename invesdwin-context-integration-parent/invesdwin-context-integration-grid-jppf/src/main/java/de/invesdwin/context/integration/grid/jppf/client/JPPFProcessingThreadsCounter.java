@@ -22,10 +22,10 @@ import org.jppf.utils.configuration.JPPFProperty;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.jppf.JPPFClientProperties;
 import de.invesdwin.context.integration.grid.jppf.topology.ATopologyVisitor;
 import de.invesdwin.context.integration.grid.jppf.topology.TopologyNodes;
-import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
@@ -218,7 +218,8 @@ public class JPPFProcessingThreadsCounter {
     private void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> nodeInfos,
             final Map<String, String> driverInfos) {
         for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
-            try (WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri).setSubDirectory(WEBDAV_DIRECTORY)) {
+            try (IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+                    .setSubDirectory(WEBDAV_DIRECTORY)) {
                 channel.connect();
                 final List<? extends IFileInfo> listFiles = channel.listFiles();
                 if (listFiles != null && !listFiles.isEmpty()) {

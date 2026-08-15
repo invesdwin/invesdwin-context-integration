@@ -20,9 +20,10 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
@@ -43,7 +44,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
     private volatile Ignite instance;
 
     @GuardedBy("this")
-    private WebdavFileChannel heartbeatWebdavFileChannel;
+    private IFileChannel heartbeatWebdavFileChannel;
     private Ignite2InstanceProcessingThreadsCounter processingThreadsCounter;
 
     protected abstract IgniteConfiguration createConfiguration();
@@ -125,7 +126,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             final String nodeUuid = instance.cluster().localNode().id().toString();
 
             try {
-                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                final IFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                 channel.delete();
             } catch (final Throwable e) {
                 //ignore
@@ -172,7 +173,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                         + heartbeat.toString(Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
 
                 synchronized (this) {
-                    final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                    final IFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                     try {
                         channel.upload(content.getBytes());
                     } catch (final Throwable t) {
@@ -186,7 +187,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         }
     }
 
-    private WebdavFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
+    private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
         final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
                 && heartbeatWebdavFileChannel.getFilename() != null
                 && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
@@ -209,7 +210,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(webdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
                     .setSubDirectory(Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 final String prefix = instance.cluster().localNode().isClient()

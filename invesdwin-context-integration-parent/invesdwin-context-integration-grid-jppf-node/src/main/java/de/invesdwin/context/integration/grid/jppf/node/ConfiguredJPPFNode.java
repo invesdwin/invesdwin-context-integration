@@ -19,10 +19,11 @@ import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.jppf.client.JPPFProcessingThreadsCounter;
 import de.invesdwin.context.integration.retry.Retry;
 import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
-import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.handler.AlwaysErrExecutorExceptionHandler;
@@ -46,7 +47,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
     private boolean startDelayed = false;
     private volatile JPPFNode node;
     @GuardedBy("ConfiguredJPPFNode.class")
-    private WebdavFileChannel heartbeatWebdavFileChannel;
+    private IFileChannel heartbeatWebdavFileChannel;
     private volatile NodeRunner runner;
 
     public synchronized JPPFNode getNode() {
@@ -113,7 +114,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         if (node != null) {
             final String nodeUuid = node.getUuid();
             try {
-                final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                final IFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                 channel.delete();
             } catch (final Throwable e) {
                 //ignore
@@ -166,7 +167,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                         + JPPFProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(JPPFProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
                 synchronized (nodeCopy) {
-                    final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                    final IFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                     try {
                         channel.upload(content.getBytes());
                     } catch (final Throwable t) {
@@ -181,7 +182,7 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
         }
     }
 
-    private WebdavFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
+    private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
         final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
                 && heartbeatWebdavFileChannel.getFilename() != null
                 && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
@@ -200,10 +201,10 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
                 heartbeatWebdavFileChannel.close();
                 heartbeatWebdavFileChannel = null;
             }
-            final URI weebdavServerUri = MergedContext.getInstance()
+            final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final WebdavFileChannel channel = new WebdavFileChannel(weebdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
                     .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 channel.setFilename(JPPFProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX + nodeUuid + ".heartbeat");

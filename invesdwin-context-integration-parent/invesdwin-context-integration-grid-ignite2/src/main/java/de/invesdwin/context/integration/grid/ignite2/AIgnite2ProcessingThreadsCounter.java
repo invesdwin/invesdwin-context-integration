@@ -13,7 +13,7 @@ import javax.annotation.concurrent.ThreadSafe;
 import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
-import de.invesdwin.context.integration.webdav.WebdavFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.bean.tuple.Triple;
@@ -124,7 +124,8 @@ public abstract class AIgnite2ProcessingThreadsCounter {
             final Map<String, String> localNodeInfos, final Set<String> onlineNodeUuids,
             final boolean checkOnlineStatus) {
         for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
-            try (IFileChannel channel = new WebdavFileChannel(webdavServerUri).setSubDirectory(WEBDAV_DIRECTORY)) {
+            try (IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+                    .setSubDirectory(WEBDAV_DIRECTORY)) {
                 channel.connect();
                 final List<? extends IFileInfo> listFiles = channel.listFiles();
                 if (listFiles != null && !listFiles.isEmpty()) {
