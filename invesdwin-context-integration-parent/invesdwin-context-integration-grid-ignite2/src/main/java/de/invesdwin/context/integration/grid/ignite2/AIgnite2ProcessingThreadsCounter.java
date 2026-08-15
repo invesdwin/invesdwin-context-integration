@@ -136,25 +136,21 @@ public abstract class AIgnite2ProcessingThreadsCounter {
                         }
 
                         for (final HeartbeatInfo heartbeatInfo : hostname_heartbeatinfo.values()) {
-                            final boolean isOnline = !checkOnlineStatus
+                            final boolean online = !checkOnlineStatus
                                     || onlineNodeUuids.contains(heartbeatInfo.getUuid());
-                            final String suffix = isOnline ? "" : ":offline";
+                            final String suffix = online ? "" : ":offline";
 
                             if (heartbeatInfo.isDriver()) {
                                 if (!localNodeInfos.containsKey(heartbeatInfo.getUuid())) {
                                     localNodeInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
                                             + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    if (isOnline) {
-                                        processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                    }
+                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
                                 }
                             } else if (heartbeatInfo.isNode()) {
                                 if (!localServerInfos.containsKey(heartbeatInfo.getUuid())) {
                                     localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
                                             + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    if (isOnline) {
-                                        processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                    }
+                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
                                 }
                             }
                         }

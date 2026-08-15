@@ -127,18 +127,16 @@ public abstract class AIgnite3ProcessingThreadsCounter {
                         }
 
                         for (final HeartbeatInfo heartbeatInfo : hostname_heartbeatinfo.values()) {
-                            final boolean isOnline = !checkOnlineStatus
+                            final boolean online = !checkOnlineStatus
                                     || onlineNodeUuids.contains(heartbeatInfo.getUuid());
-                            final String suffix = isOnline ? "" : ":offline";
+                            final String suffix = online ? "" : ":offline";
 
                             // No longer checking isDriver(), all Ignite 3 nodes are treated as servers[cite: 48, 52]
                             if (heartbeatInfo.isNode()) {
                                 if (!localServerInfos.containsKey(heartbeatInfo.getUuid())) {
                                     localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
                                             + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    if (isOnline) {
-                                        processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                    }
+                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
                                 }
                             }
                         }
