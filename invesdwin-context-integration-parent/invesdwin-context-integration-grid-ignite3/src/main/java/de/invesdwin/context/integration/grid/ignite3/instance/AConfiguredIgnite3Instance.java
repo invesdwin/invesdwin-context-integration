@@ -68,6 +68,9 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
     }
 
     public synchronized Ignite3InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
+        if (processingThreadsCounter == null) {
+            processingThreadsCounter = new Ignite3InstanceProcessingThreadsCounter(getInstance());
+        }
         return processingThreadsCounter;
     }
 
@@ -76,7 +79,6 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
         this.server = server;
         if (server != null) {
             final Ignite instance = getInstance();
-            processingThreadsCounter = new Ignite3InstanceProcessingThreadsCounter(instance);
             uploadHeartbeat();
             log.info("%s started with name: %s", getClass().getSimpleName(), instance.name());
         }
@@ -96,12 +98,13 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
     }
 
     private void waitForWarmup() {
+        final Ignite3InstanceProcessingThreadsCounter processingThreadsCounterCopy = getProcessingThreadsCounter();
         try {
-            processingThreadsCounter.waitForMinimumCounts(1, Duration.ONE_MINUTE);
+            processingThreadsCounterCopy.waitForMinimumCounts(1, Duration.ONE_MINUTE);
         } catch (final TimeoutException e) {
             //ignore
         }
-        processingThreadsCounter.logWarmupFinished();
+        processingThreadsCounterCopy.logWarmupFinished();
     }
 
     @Override
