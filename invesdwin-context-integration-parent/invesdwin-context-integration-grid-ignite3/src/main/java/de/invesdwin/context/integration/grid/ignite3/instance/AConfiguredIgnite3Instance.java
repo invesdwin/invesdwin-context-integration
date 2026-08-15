@@ -90,24 +90,8 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
             return;
         }
 
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                // Ignite 3 server configuration and startup is entirely delegated[cite: 40]
-                final S server = startIgniteServer();
-                setInstance(server);
-            }
-        });
-
-        while (server == null) {
-            try {
-                FTimeUnit.SECONDS.sleep(1);
-            } catch (final InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new RuntimeException("Interrupted while waiting for Ignite to start", e);
-            }
-        }
-
+        final S server = startIgniteServer();
+        setInstance(server);
         waitForWarmup();
     }
 
@@ -170,10 +154,7 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
         if (ShutdownHookManager.isShuttingDown()) {
             return;
         }
-        final Ignite localIgnite;
-        synchronized (this) {
-            localIgnite = getInstance();
-        }
+        final Ignite localIgnite = getInstance();
         if (localIgnite != null) {
             try {
                 final String hostname = IntegrationProperties.HOSTNAME;
@@ -187,7 +168,7 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
                         + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
                         + heartbeat.toString(AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
 
-                synchronized (this) {
+                synchronized (localIgnite) {
                     final WebdavFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
                     try {
                         channel.upload(content.getBytes());
