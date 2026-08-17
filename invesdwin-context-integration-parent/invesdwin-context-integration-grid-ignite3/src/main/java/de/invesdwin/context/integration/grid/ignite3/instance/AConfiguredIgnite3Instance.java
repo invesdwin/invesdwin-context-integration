@@ -172,7 +172,7 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
                     }
                 }
 
-                final int processingThreads = Runtime.getRuntime().availableProcessors();
+                final int processingThreads = newCpuThreadPoolCount();
                 final FDate heartbeat = FDate.now();
 
                 final String content = hostname + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
@@ -193,6 +193,10 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
                 throw new RetryLaterRuntimeException(t);
             }
         }
+    }
+
+    protected int newCpuThreadPoolCount() {
+        return Executors.getCpuThreadPoolCount();
     }
 
     private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {

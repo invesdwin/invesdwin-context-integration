@@ -56,27 +56,31 @@ public class Ignite2InstanceProcessingThreadsCounter extends AIgnite2ProcessingT
 
     @Override
     protected Triple<List<Integer>, Map<String, String>, Map<String, String>> countProcessingThreads() {
-        final List<Integer> processingThreads = new ArrayList<>();
+        final Map<String, Integer> serverThreads = ILockCollectionFactory.getInstance(false).newMap();
+        final Map<String, Integer> nodeThreads = ILockCollectionFactory.getInstance(false).newMap();
         final Map<String, String> localServerInfos = ILockCollectionFactory.getInstance(false).newMap();
         final Map<String, String> localNodeInfos = ILockCollectionFactory.getInstance(false).newMap();
 
         for (final ClusterNode node : ignite.cluster().forServers().nodes()) {
             final String uuid = node.id().toString();
-            final int threads = node.metrics().getTotalCpus();
-            processingThreads.add(threads);
+            final int threads = Executors.getCpuThreadPoolCount();
+            serverThreads.put(uuid, threads);
             localServerInfos.put(uuid, uuid + ":" + threads + (node.isLocal() ? ":local" : ""));
         }
 
         for (final ClusterNode node : ignite.cluster().forClients().nodes()) {
             final String uuid = node.id().toString();
-            final int threads = node.metrics().getTotalCpus();
-            processingThreads.add(threads);
+            final int threads = Executors.getCpuThreadPoolCount();
+            nodeThreads.put(uuid, threads);
             localNodeInfos.put(uuid, uuid + ":" + threads + (node.isLocal() ? ":local" : ""));
         }
 
-        if (localNodeInfos.size() > 0) {
-            processHeartbeats(processingThreads, localServerInfos, localNodeInfos, null, false);
-        }
+        processHeartbeats(serverThreads, nodeThreads, localServerInfos, localNodeInfos, null, false);
+
+        final List<Integer> processingThreads = new ArrayList<>(serverThreads.size() + nodeThreads.size());
+        processingThreads.addAll(serverThreads.values());
+        processingThreads.addAll(nodeThreads.values());
+
         return Triple.of(processingThreads, localServerInfos, localNodeInfos);
     }
 

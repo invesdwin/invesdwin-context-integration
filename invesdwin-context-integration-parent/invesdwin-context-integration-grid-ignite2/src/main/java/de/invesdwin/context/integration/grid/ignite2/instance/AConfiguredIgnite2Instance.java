@@ -27,6 +27,7 @@ import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
 import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.Executors;
 import de.invesdwin.util.shutdown.IShutdownHook;
 import de.invesdwin.util.shutdown.ShutdownHookManager;
 import de.invesdwin.util.time.date.FDate;
@@ -87,6 +88,11 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
 
         final IgniteConfiguration configuration = createConfiguration();
 
+        // Limits execution of compute tasks and strategy jobs
+        configuration.setPublicThreadPoolSize(newCpuThreadPoolCount());
+        // Limits execution of deployed services
+        configuration.setServiceThreadPoolSize(newCpuThreadPoolCount());
+
         configuration.setWorkDirectory(
                 new File(ContextProperties.getCacheDirectory(), getClass().getSimpleName()).getAbsolutePath());
 
@@ -101,6 +107,10 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
         setInstance(startedNode);
 
         waitForWarmup();
+    }
+
+    protected int newCpuThreadPoolCount() {
+        return Executors.getCpuThreadPoolCount();
     }
 
     private void waitForWarmup() {
@@ -164,7 +174,7 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
                 final String hostname = IntegrationProperties.HOSTNAME;
                 final ClusterNode localNode = localIgnite.cluster().localNode();
                 final String nodeUuid = localNode.id().toString();
-                final int processingThreads = localNode.metrics().getTotalCpus();
+                final int processingThreads = newCpuThreadPoolCount();
                 final FDate heartbeat = FDate.now();
 
                 final String content = hostname + Ignite2InstanceProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR

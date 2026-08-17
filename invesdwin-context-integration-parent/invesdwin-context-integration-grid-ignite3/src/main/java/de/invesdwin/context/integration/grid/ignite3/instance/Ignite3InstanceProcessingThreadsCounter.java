@@ -42,20 +42,19 @@ public class Ignite3InstanceProcessingThreadsCounter extends AIgnite3ProcessingT
 
     @Override
     protected Pair<List<Integer>, Map<String, String>> countProcessingThreads() {
-        final List<Integer> processingThreads = new ArrayList<>();
+        final Map<String, Integer> serverThreads = ILockCollectionFactory.getInstance(false).newMap();
         final Map<String, String> localServerInfos = ILockCollectionFactory.getInstance(false).newMap();
 
-        // Process Ignite 3 cluster nodes uniformly using UUIDs
         for (final ClusterNode node : ignite.cluster().nodes()) {
             final String uuid = node.id().toString();
-            final int threads = Runtime.getRuntime().availableProcessors();
-            processingThreads.add(threads);
+            final int threads = Executors.getCpuThreadPoolCount();
+            serverThreads.put(uuid, threads);
             localServerInfos.put(uuid, uuid + ":" + threads);
         }
 
-        if (!localServerInfos.isEmpty()) {
-            processHeartbeats(processingThreads, localServerInfos, null, false);
-        }
+        processHeartbeats(serverThreads, localServerInfos, null, false);
+
+        final List<Integer> processingThreads = new ArrayList<>(serverThreads.values());
 
         return Pair.of(processingThreads, localServerInfos);
     }

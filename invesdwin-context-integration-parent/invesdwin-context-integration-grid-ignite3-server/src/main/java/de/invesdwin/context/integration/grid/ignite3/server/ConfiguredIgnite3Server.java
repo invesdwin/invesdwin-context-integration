@@ -47,6 +47,9 @@ public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<Ig
         // 3. Build the properly nested HOCON configuration
         final String hoconConfig = "{\n" //
                 + "  ignite: {\n" //
+                + "    compute: {\n" //
+                + "      threadPoolSize: " + newCpuThreadPoolCount() + "\n" //
+                + "    },\n" //
                 + "    network: {\n" //
                 + "      port: " + Ignite3ServerProperties.SERVER_COMMUNICATION_PORT + ",\n" //
                 + "      nodeFinder: {\n" //

@@ -120,9 +120,9 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         return sortedInfos;
     }
 
-    protected void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> localServerInfos,
-            final Map<String, String> localNodeInfos, final Set<String> onlineNodeUuids,
-            final boolean checkOnlineStatus) {
+    protected void processHeartbeats(final Map<String, Integer> serverThreads, final Map<String, Integer> nodeThreads,
+            final Map<String, String> localServerInfos, final Map<String, String> localNodeInfos,
+            final Set<String> onlineNodeUuids, final boolean checkOnlineStatus) {
         for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
             try (IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
                     .setSubDirectory(WEBDAV_DIRECTORY)) {
@@ -141,17 +141,19 @@ public abstract class AIgnite2ProcessingThreadsCounter {
                             final String suffix = online ? "" : ":offline";
 
                             if (heartbeatInfo.isDriver()) {
-                                if (!localNodeInfos.containsKey(heartbeatInfo.getUuid())) {
-                                    localNodeInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
-                                            + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                }
+                                final String existing = localNodeInfos.get(heartbeatInfo.getUuid());
+                                final boolean isLocal = existing != null && existing.contains(":local");
+                                localNodeInfos.put(heartbeatInfo.getUuid(),
+                                        heartbeatInfo.getUuid() + ":" + heartbeatInfo.getProcessingThreadsCount()
+                                                + (isLocal ? ":local" : "") + suffix);
+                                nodeThreads.put(heartbeatInfo.getUuid(), heartbeatInfo.getProcessingThreadsCount());
                             } else if (heartbeatInfo.isNode()) {
-                                if (!localServerInfos.containsKey(heartbeatInfo.getUuid())) {
-                                    localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
-                                            + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                }
+                                final String existing = localServerInfos.get(heartbeatInfo.getUuid());
+                                final boolean isLocal = existing != null && existing.contains(":local");
+                                localServerInfos.put(heartbeatInfo.getUuid(),
+                                        heartbeatInfo.getUuid() + ":" + heartbeatInfo.getProcessingThreadsCount()
+                                                + (isLocal ? ":local" : "") + suffix);
+                                serverThreads.put(heartbeatInfo.getUuid(), heartbeatInfo.getProcessingThreadsCount());
                             }
                         }
                     }

@@ -112,8 +112,9 @@ public abstract class AIgnite3ProcessingThreadsCounter {
         return sortedInfos;
     }
 
-    protected void processHeartbeats(final List<Integer> processingThreads, final Map<String, String> localServerInfos,
-            final Set<String> onlineNodeUuids, final boolean checkOnlineStatus) {
+    protected void processHeartbeats(final Map<String, Integer> serverThreads,
+            final Map<String, String> localServerInfos, final Set<String> onlineNodeUuids,
+            final boolean checkOnlineStatus) {
         for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
             try (IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
                     .setSubDirectory(WEBDAV_DIRECTORY)) {
@@ -131,13 +132,10 @@ public abstract class AIgnite3ProcessingThreadsCounter {
                                     || onlineNodeUuids.contains(heartbeatInfo.getUuid());
                             final String suffix = online ? "" : ":offline";
 
-                            // No longer checking isDriver(), all Ignite 3 nodes are treated as servers[cite: 48, 52]
                             if (heartbeatInfo.isNode()) {
-                                if (!localServerInfos.containsKey(heartbeatInfo.getUuid())) {
-                                    localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
-                                            + heartbeatInfo.getProcessingThreadsCount() + suffix);
-                                    processingThreads.add(heartbeatInfo.getProcessingThreadsCount());
-                                }
+                                localServerInfos.put(heartbeatInfo.getUuid(), heartbeatInfo.getUuid() + ":"
+                                        + heartbeatInfo.getProcessingThreadsCount() + suffix);
+                                serverThreads.put(heartbeatInfo.getUuid(), heartbeatInfo.getProcessingThreadsCount());
                             }
                         }
                     }

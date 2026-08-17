@@ -32,7 +32,8 @@ public class Ignite2ClientProcessingThreadsCounter extends AIgnite2ProcessingThr
 
     @Override
     protected Triple<List<Integer>, Map<String, String>, Map<String, String>> countProcessingThreads() {
-        final List<Integer> processingThreads = new ArrayList<>();
+        final Map<String, Integer> serverThreads = ILockCollectionFactory.getInstance(false).newMap();
+        final Map<String, Integer> nodeThreads = ILockCollectionFactory.getInstance(false).newMap();
         final Map<String, String> localServerInfos = ILockCollectionFactory.getInstance(false).newMap();
         final Map<String, String> localNodeInfos = ILockCollectionFactory.getInstance(false).newMap();
 
@@ -47,7 +48,12 @@ public class Ignite2ClientProcessingThreadsCounter extends AIgnite2ProcessingThr
             LOG.warn("Failed to query thin client cluster nodes for online status check", t);
         }
 
-        processHeartbeats(processingThreads, localServerInfos, localNodeInfos, onlineNodeUuids, true);
+        processHeartbeats(serverThreads, nodeThreads, localServerInfos, localNodeInfos, onlineNodeUuids, true);
+
+        final List<Integer> processingThreads = new ArrayList<>(serverThreads.size() + nodeThreads.size());
+        processingThreads.addAll(serverThreads.values());
+        processingThreads.addAll(nodeThreads.values());
+
         return Triple.of(processingThreads, localServerInfos, localNodeInfos);
     }
 }
