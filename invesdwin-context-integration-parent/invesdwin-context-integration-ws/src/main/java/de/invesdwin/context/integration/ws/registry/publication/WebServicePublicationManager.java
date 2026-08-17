@@ -78,7 +78,7 @@ public class WebServicePublicationManager implements IStartupHook {
     private void registerServiceInstance(final IWebServicePublication publication) {
         final URI publicationUri = publication.getUri();
         if (publicationUri != null) {
-            if (URIs.connect(publicationUri).isServerResponding()) {
+            if (!publication.isValidatePort() || URIs.connect(publicationUri).isServerResponding()) {
                 if (publication.isUseRegistry()) {
                     registerServiceInstanceInRegistry(publication, publicationUri);
                 } else {

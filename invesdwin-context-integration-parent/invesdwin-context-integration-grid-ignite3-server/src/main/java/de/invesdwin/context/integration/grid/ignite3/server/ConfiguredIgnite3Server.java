@@ -16,11 +16,14 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.grid.ignite3.instance.AConfiguredIgnite3Instance;
 import de.invesdwin.context.integration.grid.ignite3.instance.ConfiguredServerAddressFinder;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
 
 @ThreadSafe
 public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<IgniteServer> {
+
+    private static final Log LOG = new Log(ConfiguredIgnite3Server.class);
 
     @Override
     protected IgniteServer startIgniteServer() {

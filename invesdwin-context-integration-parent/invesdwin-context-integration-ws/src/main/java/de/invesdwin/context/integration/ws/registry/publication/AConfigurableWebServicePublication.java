@@ -6,6 +6,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 public abstract class AConfigurableWebServicePublication implements IConfigurableWebServicePublication {
 
     private boolean useRegistry = true;
+    private boolean validatePort = true;
 
     @Override
     public void setUseRegistry(final boolean useRegistry) {
@@ -15,6 +16,16 @@ public abstract class AConfigurableWebServicePublication implements IConfigurabl
     @Override
     public boolean isUseRegistry() {
         return useRegistry;
+    }
+
+    @Override
+    public boolean isValidatePort() {
+        return validatePort;
+    }
+
+    @Override
+    public void setValidatePort(final boolean validatePort) {
+        this.validatePort = validatePort;
     }
 
 }

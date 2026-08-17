@@ -4,6 +4,8 @@ import java.net.URI;
 
 public interface IWebServicePublication {
 
+    boolean isValidatePort();
+
     String getServiceName();
 
     URI getUri();
