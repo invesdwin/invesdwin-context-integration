@@ -45,9 +45,9 @@ public class Ignite3InstanceProcessingThreadsCounter extends AIgnite3ProcessingT
         final List<Integer> processingThreads = new ArrayList<>();
         final Map<String, String> localServerInfos = ILockCollectionFactory.getInstance(false).newMap();
 
-        // Process Ignite 3 cluster nodes uniformly[cite: 48]
+        // Process Ignite 3 cluster nodes uniformly using UUIDs
         for (final ClusterNode node : ignite.cluster().nodes()) {
-            final String uuid = node.name();
+            final String uuid = node.id().toString();
             final int threads = Runtime.getRuntime().availableProcessors();
             processingThreads.add(threads);
             localServerInfos.put(uuid, uuid + ":" + threads);

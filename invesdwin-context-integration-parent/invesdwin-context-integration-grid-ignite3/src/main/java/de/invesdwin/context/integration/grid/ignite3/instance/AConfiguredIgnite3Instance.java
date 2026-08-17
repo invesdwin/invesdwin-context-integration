@@ -162,8 +162,16 @@ public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, ISh
         if (localIgnite != null) {
             try {
                 final String hostname = IntegrationProperties.HOSTNAME;
-                // Ignite 3 node identification acts directly on the Ignite instance instead of cluster local nodes[cite: 40]
-                final String nodeUuid = localIgnite.name();
+
+                // Retrieve the actual UUID by finding the local node in the cluster topology
+                String nodeUuid = localIgnite.name(); // Fallback to name
+                for (final org.apache.ignite.network.ClusterNode node : localIgnite.cluster().nodes()) {
+                    if (node.name().equals(localIgnite.name())) {
+                        nodeUuid = node.id().toString();
+                        break;
+                    }
+                }
+
                 final int processingThreads = Runtime.getRuntime().availableProcessors();
                 final FDate heartbeat = FDate.now();
 

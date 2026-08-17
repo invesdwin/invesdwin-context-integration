@@ -10,6 +10,10 @@ import de.invesdwin.context.integration.ws.registry.publication.WebServicePublic
 @ThreadSafe
 public class Ignite3ServerDiscoveryServicePublication extends WebServicePublicationSupport {
 
+    {
+        setValidatePort(false);
+    }
+
     @Override
     public URI getUri() {
         return Ignite3ServerProperties.getServerDiscoveryBindUri();

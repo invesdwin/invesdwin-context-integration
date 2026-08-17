@@ -16,18 +16,17 @@ import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.grid.ignite3.instance.AConfiguredIgnite3Instance;
 import de.invesdwin.context.integration.grid.ignite3.instance.ConfiguredServerAddressFinder;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
 
 @ThreadSafe
 public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<IgniteServer> {
 
-    private static final Log LOG = new Log(ConfiguredIgnite3Server.class);
+    private static final String SERVER_NAME_PREFIX = "invesdwin-ignite-server-";
 
     @Override
     protected IgniteServer startIgniteServer() {
-        final String nodeName = "ignite-server-" + IntegrationProperties.HOSTNAME;
+        final String nodeName = SERVER_NAME_PREFIX + IntegrationProperties.HOSTNAME;
 
         // 1. Resolve addresses from service discovery
         final ConfiguredServerAddressFinder addressFinder = new ConfiguredServerAddressFinder();
@@ -37,7 +36,7 @@ public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<Ig
         // 2. Derive deterministic Meta Storage node names from discovered hostnames
         final List<String> metaStorageNodes = Arrays.stream(seedNodes)
                 .map(address -> address.contains(":") ? address.substring(0, address.indexOf(':')) : address)
-                .map(host -> "ignite-server-" + host)
+                .map(host -> SERVER_NAME_PREFIX + host)
                 .collect(Collectors.toList());
 
         // Fallback: If discovery is completely empty, use the local node to bootstrap a 1-node cluster
