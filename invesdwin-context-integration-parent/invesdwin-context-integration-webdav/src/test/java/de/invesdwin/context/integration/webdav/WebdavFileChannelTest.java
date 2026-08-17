@@ -31,8 +31,10 @@ public class WebdavFileChannelTest extends ATest {
     @Test
     public void test() {
         final URI destination = getDestination();
+        //CHECKSTYLE:OFF
         final WebdavFileChannel channel = new WebdavFileChannel(destination)
                 .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:ON
         channel.setFilename("noexisting");
         channel.connect();
         Assertions.checkNull(channel.download());
@@ -70,8 +72,10 @@ public class WebdavFileChannelTest extends ATest {
     @Test
     public void testRandom() {
         final URI destination = getDestination();
+        //CHECKSTYLE:OFF
         final WebdavFileChannel channel = new WebdavFileChannel(destination)
                 .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:ON
         channel.connect();
         channel.createUniqueFile();
         final String writeStr = "hello world";

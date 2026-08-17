@@ -22,6 +22,8 @@ public class LocalWebdavFileChannelFactory implements IFileChannelFactory {
 
     @Override
     public IFileChannel newInstance(final URI serverUri) {
+        //CHECKSTYLE:OFF
         return new LocalWebdavFileChannel(serverUri);
+        //CHECKSTYLE:ON
     }
 }

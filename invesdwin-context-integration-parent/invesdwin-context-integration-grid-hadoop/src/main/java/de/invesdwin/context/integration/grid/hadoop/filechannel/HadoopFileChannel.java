@@ -119,8 +119,8 @@ public class HadoopFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public HadoopFileChannel withSubDirectory(final String subDirectory) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.filename = filename;
         instance.setSubDirectory(subDirectory);
@@ -129,8 +129,8 @@ public class HadoopFileChannel implements IFileChannel {
 
     //CHECKSTYLE:OFF
     public HadoopFileChannel withConfiguration(final Configuration configuration) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.subDirectory = subDirectory;
         if (filename != null) {
@@ -144,7 +144,9 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel withBaseServerUri(final URI baseServerUri) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(baseServerUri, getBaseDirectory());
+        //CHECKSTYLE:OFF
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         if (getFilename() != null) {
@@ -165,7 +167,9 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel withBaseDirectory(final String baseDirectory) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        //CHECKSTYLE:OFF
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         if (getFilename() != null) {
@@ -179,7 +183,9 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        //CHECKSTYLE:OFF
         final HadoopFileChannel instance = new HadoopFileChannel(newServerUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         if (getFilename() != null) {
             instance.setFilename(getFilename());
@@ -190,8 +196,8 @@ public class HadoopFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public HadoopFileChannel withSubPath(final String subPath) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(subPath);
         return instance;
@@ -200,8 +206,8 @@ public class HadoopFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public HadoopFileChannel withSubPath(final java.nio.file.Path path) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(path);
         return instance;
@@ -209,8 +215,8 @@ public class HadoopFileChannel implements IFileChannel {
 
     //CHECKSTYLE:OFF
     public HadoopFileChannel withSubPath(final Path path) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(path);
         return instance;
@@ -219,8 +225,8 @@ public class HadoopFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public HadoopFileChannel withFilename(final String filename) {
-        //CHECKSTYLE:ON
         final HadoopFileChannel instance = new HadoopFileChannel(serverUri, this.configuration);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         instance.setFilename(filename);
@@ -232,7 +238,9 @@ public class HadoopFileChannel implements IFileChannel {
     public HadoopFileChannel withAbsolutePath(final String path) {
         //CHECKSTYLE:ON
         if (Strings.isBlank(path)) {
+            //CHECKSTYLE:OFF
             final HadoopFileChannel instance = new HadoopFileChannel(getBaseServerUri(), this.configuration);
+            //CHECKSTYLE:ON
             instance.emptyFileContent = emptyFileContent;
             instance.setSubPath((String) null);
             return instance;
@@ -244,7 +252,9 @@ public class HadoopFileChannel implements IFileChannel {
             }
             return (HadoopFileChannel) registryChannel;
         } else {
+            //CHECKSTYLE:OFF
             final HadoopFileChannel instance = new HadoopFileChannel(getBaseServerUri(), this.configuration);
+            //CHECKSTYLE:ON
             instance.emptyFileContent = emptyFileContent;
             instance.setSubPath(path);
             return instance;

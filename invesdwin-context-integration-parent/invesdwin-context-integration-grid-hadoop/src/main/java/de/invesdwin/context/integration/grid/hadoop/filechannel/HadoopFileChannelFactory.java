@@ -22,6 +22,8 @@ public class HadoopFileChannelFactory implements IFileChannelFactory {
 
     @Override
     public IFileChannel newInstance(final URI serverUri) {
+        //CHECKSTYLE:OFF
         return new HadoopFileChannel(serverUri);
+        //CHECKSTYLE:ON
     }
 }

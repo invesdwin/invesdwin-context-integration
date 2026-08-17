@@ -91,8 +91,8 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubDirectory(final String subDirectory) {
-        //CHECKSTYLE:ON
         final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.filename = filename;
         instance.setSubDirectory(subDirectory);
@@ -104,7 +104,9 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel withBaseServerUri(final URI baseServerUri) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(baseServerUri, getBaseDirectory());
+        //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         if (getFilename() != null) {
@@ -125,7 +127,9 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel withBaseDirectory(final String baseDirectory) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         if (getFilename() != null) {
@@ -139,7 +143,9 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         if (getFilename() != null) {
             instance.setFilename(getFilename());
@@ -150,8 +156,8 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubPath(final String subPath) {
-        //CHECKSTYLE:ON
         final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(subPath);
         return instance;
@@ -160,8 +166,8 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubPath(final Path path) {
-        //CHECKSTYLE:ON
         final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(path);
         return instance;
@@ -170,8 +176,8 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withFilename(final String filename) {
-        //CHECKSTYLE:ON
         final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
         instance.setFilename(filename);
@@ -183,7 +189,9 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel withAbsolutePath(final String path) {
         //CHECKSTYLE:ON
         if (Strings.isBlank(path)) {
+            //CHECKSTYLE:OFF
             final FtpFileChannel instance = new FtpFileChannel(getBaseServerUri());
+            //CHECKSTYLE:ON
             instance.emptyFileContent = emptyFileContent;
             instance.setSubPath((String) null);
             return instance;
@@ -191,7 +199,9 @@ public class FtpFileChannel implements IFileChannel {
         if (path.contains("://")) {
             return (FtpFileChannel) FileChannelRegistry.newInstance(path);
         } else {
+            //CHECKSTYLE:OFF
             final FtpFileChannel instance = new FtpFileChannel(getBaseServerUri());
+            //CHECKSTYLE:ON
             instance.emptyFileContent = emptyFileContent;
             instance.setSubPath(path);
             return instance;

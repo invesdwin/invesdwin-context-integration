@@ -22,6 +22,8 @@ public class FtpFileChannelFactory implements IFileChannelFactory {
 
     @Override
     public IFileChannel newInstance(final URI serverUri) {
+        //CHECKSTYLE:OFF
         return new FtpFileChannel(serverUri);
+        //CHECKSTYLE:ON
     }
 }
