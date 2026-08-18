@@ -225,7 +225,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         message.append(" for ");
         message.append(serverInfos.size());
         message.append(" (~").append(getServersCount()).append(")");
-        message.append(" servers");
+        message.append(" server");
         if (serverInfos.size() != 1) {
             message.append("s");
         }

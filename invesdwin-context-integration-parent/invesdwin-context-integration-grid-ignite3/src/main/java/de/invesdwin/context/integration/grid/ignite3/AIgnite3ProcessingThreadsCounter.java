@@ -195,7 +195,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
         message.append(" detected ");
         message.append(serverInfos.size());
         message.append(" (~").append(getServersCount()).append(")");
-        message.append(" node");
+        message.append(" server");
         if (serverInfos.size() != 1) {
             message.append("s");
         }
@@ -216,7 +216,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
         message.append(" median batch size");
         message.append(": ");
 
-        message.append("\nNodes: ");
+        message.append("\nServers: ");
         for (final String node : serverInfos.values()) {
             message.append("\n    - ");
             message.append(node);
