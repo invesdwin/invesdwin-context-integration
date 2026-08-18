@@ -217,9 +217,9 @@ public abstract class AIgnite3ProcessingThreadsCounter {
         message.append(": ");
 
         message.append("\nServers: ");
-        for (final String node : serverInfos.values()) {
+        for (final String server : serverInfos.values()) {
             message.append("\n    - ");
-            message.append(node);
+            message.append(server);
         }
         LOG.info("%s", message);
     }

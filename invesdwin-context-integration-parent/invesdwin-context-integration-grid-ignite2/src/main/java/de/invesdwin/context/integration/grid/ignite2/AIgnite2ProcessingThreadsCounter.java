@@ -247,15 +247,15 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         message.append(": ");
         if (!nodeInfos.isEmpty()) {
             message.append("\nNodes: ");
-            for (final String driver : nodeInfos.values()) {
+            for (final String node : nodeInfos.values()) {
                 message.append("\n    - ");
-                message.append(driver);
+                message.append(node);
             }
         }
         message.append("\nServers: ");
-        for (final String node : serverInfos.values()) {
+        for (final String server : serverInfos.values()) {
             message.append("\n    - ");
-            message.append(node);
+            message.append(server);
         }
         LOG.info("%s", message);
     }
