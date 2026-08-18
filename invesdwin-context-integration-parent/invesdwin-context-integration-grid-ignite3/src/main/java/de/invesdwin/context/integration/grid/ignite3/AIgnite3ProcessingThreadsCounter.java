@@ -195,7 +195,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
         message.append(" detected ");
         message.append(serverInfos.size());
         message.append(" (~").append(getServersCount()).append(")");
-        message.append(" nodes");
+        message.append(" node");
         if (serverInfos.size() != 1) {
             message.append("s");
         }

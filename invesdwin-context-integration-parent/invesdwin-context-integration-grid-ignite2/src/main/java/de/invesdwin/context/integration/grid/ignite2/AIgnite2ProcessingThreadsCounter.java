@@ -218,7 +218,7 @@ public abstract class AIgnite2ProcessingThreadsCounter {
         message.append(" detected ");
         message.append(nodeInfos.size());
         message.append(" (~").append(getNodesCount()).append(")");
-        message.append(" nodes");
+        message.append(" node");
         if (nodeInfos.size() != 1) {
             message.append("s");
         }
