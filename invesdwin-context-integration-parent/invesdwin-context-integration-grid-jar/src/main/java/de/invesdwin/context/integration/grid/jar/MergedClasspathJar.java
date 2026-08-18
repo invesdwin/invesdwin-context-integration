@@ -47,17 +47,25 @@ public class MergedClasspathJar {
         this.mainClass = mainClass;
     }
 
-    public synchronized Resource getResource() {
-        try {
-            if (alreadyGenerated == null || !alreadyGenerated.exists()) {
-                final File file = newFile();
-                generate(file);
-                alreadyGenerated = file;
+    public File getFile() {
+        if (alreadyGenerated == null) {
+            synchronized (this) {
+                try {
+                    if (alreadyGenerated == null) {
+                        final File file = newFile();
+                        generate(file);
+                        alreadyGenerated = file;
+                    }
+                } catch (final IOException e) {
+                    throw Err.process(e);
+                }
             }
-            return new FileSystemResource(alreadyGenerated);
-        } catch (final IOException e) {
-            throw Err.process(e);
         }
+        return alreadyGenerated;
+    }
+
+    public Resource getResource() {
+        return new FileSystemResource(getFile());
     }
 
     protected void generate(final File file) throws FileNotFoundException, IOException {
