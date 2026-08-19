@@ -36,7 +36,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
         this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
 
         // Build cache directory targeting the directory path rather than the file path
-        final URI directoryUri = FileChannelInfos.newDirectoryUri(baseServerUri, getAbsoluteDirectory());
+        final URI directoryUri = FileChannelInfos.newDirectoryUri(baseServerUri, baseDirectory);
         final File localTargetDir = new File(ContextProperties.getCacheDirectory(),
                 LocalWebdavFileChannel.class.getSimpleName() + "/"
                         + Strings.removeStart(Files.normalizePath(directoryUri.toString()), "/"));
