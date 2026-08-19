@@ -80,6 +80,7 @@ public class HadoopFileChannel implements IFileChannel {
         this.serverUri = serverUri != null ? serverUri : DEFAULT_SERVER_URI;
         this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, DEFAULT_SERVER_URI);
         this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
+        this.filename = FileChannelInfos.extractFileName(serverUri);
     }
 
     public Configuration getConfiguration() {

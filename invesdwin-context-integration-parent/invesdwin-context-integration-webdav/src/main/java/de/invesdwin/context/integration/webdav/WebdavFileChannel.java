@@ -60,6 +60,7 @@ public class WebdavFileChannel implements IFileChannel {
         this.serverUri = serverUri;
         this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, null);
         this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
+        this.filename = FileChannelInfos.extractFileName(serverUri);
     }
 
     public WebdavFileChannel(final String serverUri) {

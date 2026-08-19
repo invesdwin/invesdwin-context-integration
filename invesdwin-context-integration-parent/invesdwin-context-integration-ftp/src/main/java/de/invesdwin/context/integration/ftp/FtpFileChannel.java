@@ -68,6 +68,7 @@ public class FtpFileChannel implements IFileChannel {
         this.serverUri = serverUri;
         this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, null);
         this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
+        this.filename = FileChannelInfos.extractFileName(serverUri);
     }
 
     public FtpFileChannel(final String serverUri) {
