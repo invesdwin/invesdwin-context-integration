@@ -1217,6 +1217,10 @@
 						<groupId>com.esotericsoftware</groupId>
 						<artifactId>minlog</artifactId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.openlabtesting.leveldbjni</groupId>
+						<artifactId>leveldbjni-all</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
