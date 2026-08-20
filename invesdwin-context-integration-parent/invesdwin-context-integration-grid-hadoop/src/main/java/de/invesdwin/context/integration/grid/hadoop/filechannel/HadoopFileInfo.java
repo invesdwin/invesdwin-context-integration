@@ -6,8 +6,8 @@ import javax.annotation.concurrent.Immutable;
 
 import org.apache.hadoop.fs.FileStatus;
 
-import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.util.time.date.FDate;
 
 @Immutable
@@ -60,11 +60,6 @@ public class HadoopFileInfo implements IFileInfo {
     }
 
     @Override
-    public String getAbsoluteDirectory() {
-        return HadoopFileChannel.combinePath(baseDirectory, subDirectory);
-    }
-
-    @Override
     public String getFilename() {
         return delegate.getPath().getName();
     }
@@ -96,7 +91,7 @@ public class HadoopFileInfo implements IFileInfo {
 
     @Override
     public String toString() {
-        return FileChannelInfos.toString(this);
+        return FileChannelPaths.toString(this);
     }
 
     public static HadoopFileInfo valueOf(final URI serverUri, final URI baseServerUri, final String baseDirectory,

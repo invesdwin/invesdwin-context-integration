@@ -11,7 +11,6 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -20,7 +19,8 @@ import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
@@ -48,7 +48,8 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @ThreadSafe
 public class FtpFileChannel implements IFileChannel {
 
-    private static final Pattern MULTIPLE_SLASHES = Pattern.compile("[/]+");
+    public static final String DEFAULT_SERVER_URI_STR = "ftp:///";
+    public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
 
     private final URI serverUri;
     private final URI baseServerUri;
@@ -62,31 +63,15 @@ public class FtpFileChannel implements IFileChannel {
     private transient FtpFileChannelFinalizer finalizer;
 
     public FtpFileChannel(final URI serverUri) {
-        if (serverUri == null) {
-            throw new NullPointerException("serverUri should not be null");
-        }
-        this.serverUri = serverUri;
-        this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, null);
-        this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
-        this.filename = FileChannelInfos.extractFileName(serverUri);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
+        this.serverUri = path.getServerUri();
+        this.baseServerUri = path.getBaseServerUri();
+        this.baseDirectory = path.getAbsoluteDirectory();
+        this.filename = path.getFilename();
     }
 
     public FtpFileChannel(final String serverUri) {
         this(serverUri == null ? null : URIs.asUri(serverUri));
-    }
-
-    public static String combinePath(final String baseDirectory, final String subDirectory) {
-        if (Strings.isBlank(subDirectory)) {
-            return baseDirectory;
-        }
-        String cleanDir = MULTIPLE_SLASHES.matcher(subDirectory.replace("\\", "/")).replaceAll("/");
-        while (cleanDir.startsWith("/")) {
-            cleanDir = cleanDir.substring(1);
-        }
-        if (cleanDir.isEmpty()) {
-            return baseDirectory;
-        }
-        return Strings.putSuffix(baseDirectory + cleanDir, "/");
     }
 
     //CHECKSTYLE:OFF
@@ -104,7 +89,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public FtpFileChannel withBaseServerUri(final URI baseServerUri) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(baseServerUri, getBaseDirectory());
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(baseServerUri, getBaseDirectory());
         //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -127,7 +112,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public FtpFileChannel withBaseDirectory(final String baseDirectory) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), baseDirectory);
         //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -143,7 +128,7 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public FtpFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         //CHECKSTYLE:OFF
         final FtpFileChannel instance = new FtpFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -238,11 +223,6 @@ public class FtpFileChannel implements IFileChannel {
     @Override
     public String getSubDirectory() {
         return subDirectory;
-    }
-
-    @Override
-    public String getAbsoluteDirectory() {
-        return combinePath(baseDirectory, subDirectory);
     }
 
     @Override
@@ -747,7 +727,7 @@ public class FtpFileChannel implements IFileChannel {
 
     @Override
     public String toString() {
-        return FileChannelInfos.toString(this);
+        return FileChannelPaths.toString(this);
     }
 
     private static final class FtpFileChannelFinalizer extends AFinalizer {

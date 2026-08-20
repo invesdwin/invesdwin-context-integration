@@ -22,8 +22,10 @@ import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 import com.github.sardine.impl.SardineException;
 
+import de.invesdwin.context.integration.IntegrationProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -42,6 +44,7 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @NotThreadSafe
 public class WebdavFileChannel implements IFileChannel {
 
+    public static final URI DEFAULT_SERVER_URI = IntegrationProperties.WEBSERVER_BIND_URI;
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -54,13 +57,11 @@ public class WebdavFileChannel implements IFileChannel {
     private transient WebdavFileChannelFinalizer finalizer;
 
     public WebdavFileChannel(final URI serverUri) {
-        if (serverUri == null) {
-            throw new NullPointerException("serverUri should not be null");
-        }
-        this.serverUri = serverUri;
-        this.baseServerUri = FileChannelInfos.extractBaseServerUri(this.serverUri, null);
-        this.baseDirectory = FileChannelInfos.extractBaseDirectory(this.serverUri);
-        this.filename = FileChannelInfos.extractFileName(serverUri);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
+        this.serverUri = path.getServerUri();
+        this.baseServerUri = path.getBaseServerUri();
+        this.baseDirectory = path.getAbsoluteDirectory();
+        this.filename = path.getFilename();
     }
 
     public WebdavFileChannel(final String serverUri) {
@@ -82,7 +83,7 @@ public class WebdavFileChannel implements IFileChannel {
     @Override
     public WebdavFileChannel withBaseServerUri(final URI baseServerUri) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(baseServerUri, getBaseDirectory());
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(baseServerUri, getBaseDirectory());
         //CHECKSTYLE:OFF
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -105,7 +106,7 @@ public class WebdavFileChannel implements IFileChannel {
     @Override
     public WebdavFileChannel withBaseDirectory(final String baseDirectory) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), baseDirectory);
         //CHECKSTYLE:OFF
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -121,7 +122,7 @@ public class WebdavFileChannel implements IFileChannel {
     @Override
     public WebdavFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
         //CHECKSTYLE:ON
-        final URI newServerUri = FileChannelInfos.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         //CHECKSTYLE:OFF
         final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
         //CHECKSTYLE:ON
@@ -212,11 +213,6 @@ public class WebdavFileChannel implements IFileChannel {
     @Override
     public String getSubDirectory() {
         return subDirectory;
-    }
-
-    @Override
-    public String getAbsoluteDirectory() {
-        return FileChannelInfos.combinePath(baseDirectory, subDirectory);
     }
 
     @Override
@@ -467,7 +463,7 @@ public class WebdavFileChannel implements IFileChannel {
         connect(false);
         try {
             finalizer.webdavClient.move(getFileUri().toString(),
-                    FileChannelInfos.newFileUri(baseServerUri, getAbsoluteDirectory(), filename).toString());
+                    FileChannelPaths.newFileUri(baseServerUri, getAbsoluteDirectory(), filename).toString());
             setFilename(filename);
             return this;
         } catch (final Exception e) {
@@ -633,7 +629,7 @@ public class WebdavFileChannel implements IFileChannel {
 
     @Override
     public String toString() {
-        return FileChannelInfos.toString(this);
+        return FileChannelPaths.toString(this);
     }
 
     private static final class WebdavFileChannelFinalizer extends AFinalizer {

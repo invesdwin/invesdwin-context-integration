@@ -7,7 +7,7 @@ import java.net.URI;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.grid.jar.MergedClasspathJar;
 import de.invesdwin.context.log.Log;
@@ -91,11 +91,11 @@ public class UploadedMergedClasspathJar implements ISafeCloseable {
                         mergedClasspathJarFileUploaded = null;
                         LOG.info("Successfully deleted merged classpath JAR [%s] from [%s]",
                                 mergedClasspathJarFileUploadedCopy.getName(),
-                                FileChannelInfos.newFileUri(filechannelServerUri, fileChannelSubDirectory,
+                                FileChannelPaths.newFileUri(filechannelServerUri, fileChannelSubDirectory,
                                         mergedClasspathJarFileUploadedCopy.getName()));
                     } catch (final Throwable t) {
                         throw Err.process(new RuntimeException("Failed to delete merged classpath JAR from ["
-                                + FileChannelInfos.newFileUri(filechannelServerUri, fileChannelSubDirectory,
+                                + FileChannelPaths.newFileUri(filechannelServerUri, fileChannelSubDirectory,
                                         mergedClasspathJarFileUploadedCopy.getName())
                                 + "]", t));
                     }

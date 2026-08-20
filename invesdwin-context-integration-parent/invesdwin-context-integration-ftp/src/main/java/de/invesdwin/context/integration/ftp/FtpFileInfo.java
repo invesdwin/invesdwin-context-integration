@@ -4,8 +4,8 @@ import java.net.URI;
 
 import javax.annotation.concurrent.Immutable;
 
-import de.invesdwin.context.integration.filechannel.info.FileChannelInfos;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.util.time.date.FDate;
 import it.sauronsoftware.ftp4j.FTPFile;
 
@@ -48,11 +48,6 @@ public class FtpFileInfo implements IFileInfo {
     }
 
     @Override
-    public String getAbsoluteDirectory() {
-        return FtpFileChannel.combinePath(baseDirectory, subDirectory);
-    }
-
-    @Override
     public String getFilename() {
         return delegate.getName();
     }
@@ -84,7 +79,7 @@ public class FtpFileInfo implements IFileInfo {
 
     @Override
     public String toString() {
-        return FileChannelInfos.toString(this);
+        return FileChannelPaths.toString(this);
     }
 
     public static FtpFileInfo[] valueOf(final URI serverUri, final URI baseServerUri, final String baseDirectory,
