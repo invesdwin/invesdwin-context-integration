@@ -17,7 +17,7 @@ public class KubernetesContainer extends K3sContainer {
 
     private static final DockerImageName K3S_IMAGE = DockerImageName.parse("rancher/k3s:latest");
     //this file can be imported in k8s lens IDE
-    private static final File KUBE_CONFIG_FILE = new File(ContextProperties.getSystemHomeDirectory(),
+    private static final File KUBE_CONFIG_FILE = new File(ContextProperties.getUserHomeDirectory(),
             ".kube/" + KubernetesContainer.class.getSimpleName() + "_k3s-kubeconfig.yaml");
 
     private boolean initialized = false;
