@@ -18,7 +18,7 @@ import de.invesdwin.context.log.error.Err;
  * that run on older JVMs.
  */
 @NotThreadSafe
-public final class ForkProcessHelper {
+public class ForkProcessHelper {
 
     private IJavaHomeProvider javaHomeProvider = CurrentJavaHomeProvider.INSTANCE;
     private IJavaClasspathProvider javaClasspathProvider = CurrentJavaClasspathProvider.INSTANCE;
@@ -62,12 +62,14 @@ public final class ForkProcessHelper {
             commands.add(new File(javaHome, "bin/java").getAbsolutePath());
             commands.add("-classpath");
             commands.add(classpath);
+            addJavaArguments(commands);
             commands.add(mainClassName);
             if (args != null) {
                 for (int i = 0; i < args.length; i++) {
                     commands.add(args[i]);
                 }
             }
+            addMainArguments(commands);
             final Slf4jStream stream = Slf4jStream.of(ForkProcessHelper.class);
             new ProcessExecutor().command(commands)
                     .destroyOnExit()
@@ -99,12 +101,14 @@ public final class ForkProcessHelper {
             commands.add(javaCommand.getAbsolutePath());
             commands.add("-classpath");
             commands.add(classpath);
+            addJavaArguments(commands);
             commands.add(mainClassName);
             if (args != null) {
                 for (int i = 0; i < args.length; i++) {
                     commands.add(args[i]);
                 }
             }
+            addMainArguments(commands);
             final Slf4jStream stream = Slf4jStream.of(ForkProcessHelper.class);
             return new ProcessExecutor().command(commands)
                     .destroyOnExit()
@@ -122,5 +126,9 @@ public final class ForkProcessHelper {
             throw Err.process(e);
         }
     }
+
+    protected void addJavaArguments(final List<String> commands) {}
+
+    protected void addMainArguments(final List<String> commands) {}
 
 }
