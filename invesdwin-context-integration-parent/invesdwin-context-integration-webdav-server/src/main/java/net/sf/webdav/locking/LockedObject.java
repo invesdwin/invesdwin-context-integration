@@ -122,7 +122,7 @@ public class LockedObject {
         try {
             String[] ownerCopy = this.owner;
             if (ownerCopy != null) {
-                final int size = ownerCopy.length;
+                int size = ownerCopy.length;
                 for (int i = 0; i < size; i++) {
                     // check every owner if it is the requested one
                     if (ownerCopy[i].equals(owner)) {
@@ -136,7 +136,8 @@ public class LockedObject {
                             }
                         }
                         ownerCopy = newLockedObjectOwner;
-                        this.owner = newLockedObjectOwner;
+                        this.owner = ownerCopy;
+                        size = ownerCopy.length;
                     }
                 }
                 if (ownerCopy.length == 0) {
@@ -144,7 +145,9 @@ public class LockedObject {
                 }
             }
         } catch (final ArrayIndexOutOfBoundsException e) {
-            LOG.warn("LockedObject.removeLockedObjectOwner(): %s", e);
+            //CHECKSTYLE:OFF
+            LOG.warn("LockedObject.removeLockedObjectOwner(): {}", e);
+            //CHECKSTYLE:ON
         }
     }
 
@@ -176,8 +179,8 @@ public class LockedObject {
     public void removeLockedObject() {
         if (this != this.resourceLocks.root && !this.getPath().equals("/")) {
 
-            final LockedObject[] parentChildrenCopy = this.parent.children;
-            final int size = parentChildrenCopy.length;
+            LockedObject[] parentChildrenCopy = this.parent.children;
+            int size = parentChildrenCopy.length;
             for (int i = 0; i < size; i++) {
                 if (parentChildrenCopy[i].equals(this)) {
                     final LockedObject[] newChildren = new LockedObject[size - 1];
@@ -189,9 +192,13 @@ public class LockedObject {
                         }
                     }
                     if (newChildren.length != 0) {
-                        this.parent.children = newChildren;
+                        parentChildrenCopy = newChildren;
+                        this.parent.children = parentChildrenCopy;
+                        size = parentChildrenCopy.length;
                     } else {
+                        parentChildrenCopy = null;
                         this.parent.children = null;
+                        size = 0;
                     }
                     break;
                 }
@@ -213,21 +220,26 @@ public class LockedObject {
         if (this != this.resourceLocks.tempRoot) {
             // removing from tree
             if (this.parent != null && this.parent.children != null) {
-                final int size = this.parent.children.length;
+                LockedObject[] parentChildrenCopy = this.parent.children;
+                int size = parentChildrenCopy.length;
                 for (int i = 0; i < size; i++) {
-                    if (this.parent.children[i].equals(this)) {
+                    if (parentChildrenCopy[i].equals(this)) {
                         final LockedObject[] newChildren = new LockedObject[size - 1];
                         for (int i2 = 0; i2 < (size - 1); i2++) {
                             if (i2 < i) {
-                                newChildren[i2] = this.parent.children[i2];
+                                newChildren[i2] = parentChildrenCopy[i2];
                             } else {
-                                newChildren[i2] = this.parent.children[i2 + 1];
+                                newChildren[i2] = parentChildrenCopy[i2 + 1];
                             }
                         }
                         if (newChildren.length != 0) {
-                            this.parent.children = newChildren;
+                            parentChildrenCopy = newChildren;
+                            this.parent.children = parentChildrenCopy;
+                            size = parentChildrenCopy.length;
                         } else {
+                            parentChildrenCopy = null;
                             this.parent.children = null;
+                            size = 0;
                         }
                         break;
                     }

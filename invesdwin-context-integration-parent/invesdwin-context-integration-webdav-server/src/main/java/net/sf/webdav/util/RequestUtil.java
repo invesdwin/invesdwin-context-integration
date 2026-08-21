@@ -540,7 +540,9 @@ public final class RequestUtil {
             try {
                 return new String(bytes, 0, ox, enc);
             } catch (final Exception e) {
-                LOG.warn("%s", Throwables.getFullStackTrace(e));
+                //CHECKSTYLE:OFF
+                LOG.warn("{}", Throwables.getFullStackTrace(e));
+                //CHECKSTYLE:ON
             }
         }
         return new String(bytes, 0, ox);

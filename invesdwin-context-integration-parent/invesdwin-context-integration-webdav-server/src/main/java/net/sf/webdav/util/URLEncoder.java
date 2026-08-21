@@ -55,7 +55,9 @@ public class URLEncoder {
         try {
             writer = new OutputStreamWriter(buf, "UTF8");
         } catch (final Exception e) {
-            LOG.warn("%s", Throwables.getFullStackTrace(e));
+            //CHECKSTYLE:OFF
+            LOG.warn("{}", Throwables.getFullStackTrace(e));
+            //CHECKSTYLE:ON
             writer = new OutputStreamWriter(buf);
         }
 
