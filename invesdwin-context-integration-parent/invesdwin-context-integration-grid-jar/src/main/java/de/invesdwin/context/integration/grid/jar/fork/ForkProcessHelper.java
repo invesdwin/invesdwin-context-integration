@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.jar.fork;
 
 import java.io.File;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,8 +12,6 @@ import org.zeroturnaround.exec.stop.ProcessStopper;
 import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.log.error.Err;
-import de.invesdwin.instrument.DynamicInstrumentationReflections;
-import de.invesdwin.util.lang.string.Strings;
 
 /**
  * Use this job helper to upgrade from an older java version to a newer one. This might be needed on hadoop clusters
@@ -24,6 +21,7 @@ import de.invesdwin.util.lang.string.Strings;
 public final class ForkProcessHelper {
 
     private IJavaHomeProvider javaHomeProvider = CurrentJavaHomeProvider.INSTANCE;
+    private IJavaClasspathProvider javaClasspathProvider = CurrentJavaClasspathProvider.INSTANCE;
 
     public ForkProcessHelper() {}
 
@@ -36,15 +34,17 @@ public final class ForkProcessHelper {
         return javaHomeProvider;
     }
 
+    public void setJavaClasspathProvider(final IJavaClasspathProvider javaClasspathProvider) {
+        this.javaClasspathProvider = javaClasspathProvider;
+    }
+
+    public IJavaClasspathProvider getJavaClasspathProvider() {
+        return javaClasspathProvider;
+    }
+
     public void fork(final Class<?> mainClass, final String[] args) {
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        final StringBuilder classpath = new StringBuilder();
-        for (final URL url : DynamicInstrumentationReflections.getURLs(classLoader)) {
-            classpath.append(url.toString());
-            classpath.append(File.pathSeparator);
-        }
-        final String classpathStr = Strings.removeEnd(classpath.toString(), ":");
-        fork(classpathStr, mainClass, args);
+        final String classpath = javaClasspathProvider.getClasspath();
+        fork(classpath, mainClass, args);
     }
 
     public void fork(final File jarFile, final Class<?> mainClass, final String[] args) {
@@ -88,21 +88,15 @@ public final class ForkProcessHelper {
     }
 
     public StartedProcess forkAsync(final Class<?> mainClass, final String[] args) {
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        final StringBuilder classpath = new StringBuilder();
-        for (final URL url : DynamicInstrumentationReflections.getURLs(classLoader)) {
-            classpath.append(url.toString());
-            classpath.append(File.pathSeparator);
-        }
-        final String classpathStr = Strings.removeEnd(classpath.toString(), ":");
-        return forkAsync(classpathStr, mainClass.getName(), args);
+        final String classpath = javaClasspathProvider.getClasspath();
+        return forkAsync(classpath, mainClass.getName(), args);
     }
 
     public StartedProcess forkAsync(final String classpath, final String mainClassName, final String[] args) {
         try {
-            final File javaHome = javaHomeProvider.getJavaHome();
+            final File javaCommand = javaHomeProvider.getJavaCommand();
             final List<String> commands = new ArrayList<>();
-            commands.add(new File(javaHome, "bin/java").getAbsolutePath());
+            commands.add(javaCommand.getAbsolutePath());
             commands.add("-classpath");
             commands.add(classpath);
             commands.add(mainClassName);

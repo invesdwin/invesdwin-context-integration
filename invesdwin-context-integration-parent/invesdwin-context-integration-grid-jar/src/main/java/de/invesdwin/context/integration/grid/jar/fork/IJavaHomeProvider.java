@@ -6,4 +6,8 @@ public interface IJavaHomeProvider {
 
     File getJavaHome();
 
+    default File getJavaCommand() {
+        return new File(getJavaHome(), "bin/java");
+    }
+
 }
