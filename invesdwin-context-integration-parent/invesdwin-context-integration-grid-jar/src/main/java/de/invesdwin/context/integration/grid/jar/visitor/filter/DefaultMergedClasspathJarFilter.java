@@ -29,6 +29,6 @@ public enum DefaultMergedClasspathJarFilter implements IMergedClasspathJarFilter
     //    </filter>
     //</filters>
     private static final String[] DEFAULT_BLACKLIST = { "META-INF/.*\\.SF", "META-INF/.*\\.DSA", "META-INF/.*\\.RSA",
-            "META-INF/MANIFEST.MF", "META-INF/INDEX.LIST" };
+            "META-INF/MANIFEST\\.MF", "META-INF/INDEX\\.LIST" };
 
 }

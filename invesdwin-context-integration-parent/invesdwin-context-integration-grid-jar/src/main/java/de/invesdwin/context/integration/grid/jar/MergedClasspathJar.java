@@ -21,6 +21,7 @@ import de.invesdwin.context.integration.grid.jar.visitor.filter.IMergedClasspath
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;
+import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.time.Instant;
 
@@ -30,9 +31,10 @@ public class MergedClasspathJar {
     private final Log log = new Log(this);
 
     private final IMergedClasspathJarFilter filter;
+    private final Class<?> mainClass;
+
     @GuardedBy("this")
     private File alreadyGenerated;
-    private final Class<?> mainClass;
 
     public MergedClasspathJar() {
         this(DefaultMergedClasspathJarFilter.DEFAULT);
@@ -75,10 +77,15 @@ public class MergedClasspathJar {
         final FileOutputStream fos = new FileOutputStream(file);
         try (JarOutputStream jarOut = newJarOutputStream(fos)) {
             beforeProcess(jarOut);
-            processor.process(new MergedClasspathJarVisitor(jarOut, filter));
+            processor.process(newMergedClasspathJarVisitor(jarOut, filter));
             afterProcess(jarOut);
         }
         log.info("Finished generating [%s] after %s", file, start);
+    }
+
+    protected IClasspathResourceVisitor newMergedClasspathJarVisitor(final JarOutputStream jarOut,
+            final IMergedClasspathJarFilter filter) {
+        return new MergedClasspathJarVisitor(jarOut, filter);
     }
 
     protected File newFile() {

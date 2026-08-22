@@ -3,9 +3,7 @@ package de.invesdwin.context.integration.grid.jar.visitor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
@@ -26,6 +24,7 @@ import de.invesdwin.context.log.error.Err;
 import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
 import de.invesdwin.maven.plugin.shade.RegexAppendingTransformer;
 import de.invesdwin.maven.plugin.shade.WebFragmentTransformer;
+import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.lang.reflection.Reflections;
@@ -78,12 +77,6 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
     //</transformer>
     private static final String[] MERGED_XML_RESOURCES = { "META-INF/aop.xml", "META-INF/wsdl.plugin.xml" };
     //CHECKSTYLE:OFF
-    private static final Map<String, Object> MANIFEST_ENTRIES = new LinkedHashMap<String, Object>() {
-        //CHECKSTYLE:ON
-        {
-            put("Multi-Release", "true");
-        }
-    };
 
     private final Set<String> duplicateResourcesFilter = ILockCollectionFactory.getInstance(false).newSet();
 
@@ -94,7 +87,11 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
     public MergedClasspathJarVisitor(final JarOutputStream jarOut, final IMergedClasspathJarFilter filter) {
         this.jarOut = jarOut;
         this.filter = filter;
-        this.transformers = new ArrayList<ResourceTransformer>();
+        this.transformers = newTransformers();
+    }
+
+    protected List<ResourceTransformer> newTransformers() {
+        final List<ResourceTransformer> transformers = new ArrayList<ResourceTransformer>();
         for (final String mergedStringResource : MERGED_STRING_RESOURCES) {
             final AppendingTransformer transformer = new AppendingTransformer();
             Reflections.field("resource").ofType(String.class).in(transformer).set(mergedStringResource);
@@ -128,15 +125,21 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
         //<transformer
         //    implementation="org.apache.logging.log4j.maven.plugins.shade.transformer.Log4j2PluginCacheFileTransformer" />
         transformers.add(new Log4j2PluginCacheFileTransformer());
-        //<transformer
-        //    implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-        //    <manifestEntries>
-        //        <Multi-Release>true</Multi-Release>
-        //    </manifestEntries>
-        //</transformer>
-        //        final ManifestResourceTransformer manifestResourceTransformer = new ManifestResourceTransformer();
-        //        manifestResourceTransformer.setManifestEntries(MANIFEST_ENTRIES);
-        //        transformers.add(manifestResourceTransformer);
+        return transformers;
+    }
+
+    public MergedClasspathJarVisitor addTransformer(final ResourceTransformer transformer) {
+        transformers.add(transformer);
+        return this;
+    }
+
+    public MergedClasspathJarVisitor addTransformers(final ResourceTransformer... transformers) {
+        return addTransformers(Arrays.asList(transformers));
+    }
+
+    public MergedClasspathJarVisitor addTransformers(final List<ResourceTransformer> transformers) {
+        this.transformers.addAll(transformers);
+        return this;
     }
 
     @Override
@@ -189,5 +192,4 @@ public class MergedClasspathJarVisitor implements IClasspathResourceVisitor {
             throw Err.process(e);
         }
     }
-
 }

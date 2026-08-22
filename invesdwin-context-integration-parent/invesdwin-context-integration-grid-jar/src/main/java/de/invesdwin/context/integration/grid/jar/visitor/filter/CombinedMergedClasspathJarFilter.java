@@ -62,4 +62,20 @@ public class CombinedMergedClasspathJarFilter implements IMergedClasspathJarFilt
         return whitelist;
     }
 
+    public static IMergedClasspathJarFilter ofNullable(final IMergedClasspathJarFilter... filters) {
+        final List<IMergedClasspathJarFilter> nonNullFilters = new ArrayList<>(filters.length);
+        for (final IMergedClasspathJarFilter filter : filters) {
+            if (filter != null) {
+                nonNullFilters.add(filter);
+            }
+        }
+        if (nonNullFilters.isEmpty()) {
+            return null;
+        } else if (nonNullFilters.size() == 1) {
+            return nonNullFilters.get(0);
+        } else {
+            return new CombinedMergedClasspathJarFilter(nonNullFilters.toArray(new IMergedClasspathJarFilter[0]));
+        }
+    }
+
 }

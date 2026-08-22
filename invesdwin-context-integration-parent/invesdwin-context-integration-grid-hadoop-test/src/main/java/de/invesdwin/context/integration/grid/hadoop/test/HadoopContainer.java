@@ -224,7 +224,7 @@ public class HadoopContainer extends GenericContainer<HadoopContainer> {
         conf.set("mapreduce.reduce.env", "HADOOP_MAPRED_HOME=/home/hduser/hadoop");
     }
 
-    public String getHdfsUri() {
+    public static String getHdfsUri() {
         return "hdfs://localhost:" + HDFS_PORT;
     }
 
