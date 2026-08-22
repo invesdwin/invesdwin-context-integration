@@ -53,7 +53,7 @@ public class SparkKubernetesImageTest extends ATest {
     private static final String JOB_SPARK_IMAGE = newJobSparkImage();
 
     @Container
-    private static final KubernetesContainer K3S = new KubernetesContainer();
+    private static final KubernetesContainer KUBERNETES = new KubernetesContainer();
 
     private static String newJobSparkImage() {
         try {
@@ -75,7 +75,7 @@ public class SparkKubernetesImageTest extends ATest {
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
         try (KubernetesClient client = new KubernetesClientBuilder()
-                .withConfig(Config.fromKubeconfig(K3S.getKubeConfigYaml()))
+                .withConfig(Config.fromKubeconfig(KUBERNETES.getKubeConfigYaml()))
                 .build()) {
 
             uploadJobSparkImage();
@@ -148,11 +148,11 @@ public class SparkKubernetesImageTest extends ATest {
 
             client.pods().inNamespace("default").withName(HELPER_POD).waitUntilReady(1, TimeUnit.MINUTES);
 
-            final Config k8sConfig = Config.fromKubeconfig(K3S.getKubeConfigYaml());
+            final Config k8sConfig = Config.fromKubeconfig(KUBERNETES.getKubeConfigYaml());
             final String masterUrl = k8sConfig.getMasterUrl();
 
             final Map<String, String> env = ILockCollectionFactory.getInstance(false).newMap(System.getenv());
-            env.put("KUBECONFIG", K3S.getKubeConfigFile().getAbsolutePath());
+            env.put("KUBECONFIG", KUBERNETES.getKubeConfigFile().getAbsolutePath());
 
             //alterantively, we can upload the JAR to the helper pod and reference it from there, but in this case we baked it into the image
             //            final File jobJarFile = new MergedClasspathJar(MergedClasspathJarFilter.DEFAULT, SparkJobMain.class).getResource()
@@ -250,10 +250,10 @@ public class SparkKubernetesImageTest extends ATest {
         }
 
         // 2. Transfer the tarball into the K3s cluster container
-        K3S.copyFileToContainer(MountableFile.forHostPath(tempImageTar.toPath()), "/tmp/spark-job-image.tar");
+        KUBERNETES.copyFileToContainer(MountableFile.forHostPath(tempImageTar.toPath()), "/tmp/spark-job-image.tar");
 
         // 3. Import the tarball into the K3s internal registry (k8s.io namespace)
-        final ExecResult execResult = K3S.execInContainer("ctr", "-n", "k8s.io", "images", "import",
+        final ExecResult execResult = KUBERNETES.execInContainer("ctr", "-n", "k8s.io", "images", "import",
                 "/tmp/spark-job-image.tar");
 
         if (execResult.getExitCode() != 0) {

@@ -44,7 +44,7 @@ public class SparkKubernetesVolumeTest extends ATest {
     private static final int NUM_CONTAINERS = 2;
 
     @Container
-    private static final KubernetesContainer K3S = new KubernetesContainer();
+    private static final KubernetesContainer KUBERNETES = new KubernetesContainer();
 
     @Test
     public void testSparkOnKubernetes() throws Exception {
@@ -52,7 +52,7 @@ public class SparkKubernetesVolumeTest extends ATest {
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
         try (KubernetesClient client = new KubernetesClientBuilder()
-                .withConfig(Config.fromKubeconfig(K3S.getKubeConfigYaml()))
+                .withConfig(Config.fromKubeconfig(KUBERNETES.getKubeConfigYaml()))
                 .build()) {
 
             // 2. Setup RBAC (ServiceAccount & RoleBinding)
@@ -127,11 +127,11 @@ public class SparkKubernetesVolumeTest extends ATest {
             uploadJobJarFile(client);
 
             // 6. Extract K8s Master URL
-            final Config k8sConfig = Config.fromKubeconfig(K3S.getKubeConfigYaml());
+            final Config k8sConfig = Config.fromKubeconfig(KUBERNETES.getKubeConfigYaml());
             final String masterUrl = k8sConfig.getMasterUrl();
 
             final Map<String, String> env = ILockCollectionFactory.getInstance(false).newMap(System.getenv());
-            env.put("KUBECONFIG", K3S.getKubeConfigFile().getAbsolutePath());
+            env.put("KUBECONFIG", KUBERNETES.getKubeConfigFile().getAbsolutePath());
 
             // 7. Launch Spark job referencing the PVC paths
             final SparkLauncher launcher = new SparkLauncher(env)
