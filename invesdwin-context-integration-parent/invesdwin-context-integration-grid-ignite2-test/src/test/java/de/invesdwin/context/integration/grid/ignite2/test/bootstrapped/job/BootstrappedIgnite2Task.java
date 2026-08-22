@@ -12,15 +12,14 @@ import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
 import org.apache.ignite.lang.IgniteCallable;
-import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.ResourceLoader;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.streams.resource.Resources;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
 
@@ -63,8 +62,7 @@ public class BootstrappedIgnite2Task implements IgniteCallable<BootstrappedIgnit
         final File tempLogFile = File.createTempFile("ignite-task-", ".log");
 
         try {
-            final ResourceLoader resourceLoader = new DefaultResourceLoader();
-            final Resource jobJarResource = resourceLoader.getResource(jobJar);
+            final Resource jobJarResource = Resources.LOADER.getResource(jobJar);
             final File localJobJar = new File(ContextProperties.TEMP_DIRECTORY, jobJarResource.getFilename());
             IOUtils.copy(jobJarResource.getInputStream(), new FileOutputStream(localJobJar));
 
