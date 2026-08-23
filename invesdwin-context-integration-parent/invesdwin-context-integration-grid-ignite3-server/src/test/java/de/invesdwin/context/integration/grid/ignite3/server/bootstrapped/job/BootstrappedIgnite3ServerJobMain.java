@@ -90,7 +90,7 @@ public class BootstrappedIgnite3ServerJobMain extends AMain {
         try {
             final Path configFile = workDir.resolve("ignite-config.conf");
             Files.createDirectories(workDir);
-            Files.writeString(configFile, config, Charsets.DEFAULT);
+            Files.writeString(configFile, config, Charsets.defaultCharset());
 
             server = IgniteServer.start(nodeName, configFile, workDir);
 
@@ -142,7 +142,8 @@ public class BootstrappedIgnite3ServerJobMain extends AMain {
                 for (final CompletableFuture<BootstrappedIgnite3ServerTask.TaskResult> future : futures) {
                     final BootstrappedIgnite3ServerTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
+                            Charsets.defaultCharset());
                 }
             } else {
                 final CountDownLatch latch = new CountDownLatch(1);

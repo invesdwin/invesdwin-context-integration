@@ -192,7 +192,7 @@ public class NifiContainer extends GenericContainer<NifiContainer> {
     protected MultipartEntityBuilder multipartEntityBuilderCustomization(final String patchedJsonStr,
             final String fileName) {
         final MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
-        multipartEntityBuilder.addBinaryBody("file", patchedJsonStr.getBytes(Charsets.DEFAULT),
+        multipartEntityBuilder.addBinaryBody("file", patchedJsonStr.getBytes(Charsets.defaultCharset()),
                 ContentType.APPLICATION_JSON, fileName + ".json");
         multipartEntityBuilder.addTextBody("groupName", fileName);
         multipartEntityBuilder.addTextBody("clientId", "4036074c-018c-1000-3e06-aaaaaaaaaaaa");

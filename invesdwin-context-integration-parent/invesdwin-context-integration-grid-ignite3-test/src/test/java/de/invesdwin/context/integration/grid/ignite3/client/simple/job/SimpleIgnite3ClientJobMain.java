@@ -79,7 +79,8 @@ public class SimpleIgnite3ClientJobMain extends AMain {
                 for (final CompletableFuture<SimpleIgnite3ClientTask.TaskResult> future : futures) {
                     final SimpleIgnite3ClientTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
+                            Charsets.defaultCharset());
                 }
             }
         } catch (final Exception e) {

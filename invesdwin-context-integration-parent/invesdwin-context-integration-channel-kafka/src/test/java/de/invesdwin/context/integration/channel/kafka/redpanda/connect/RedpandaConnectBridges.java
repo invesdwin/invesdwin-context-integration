@@ -65,8 +65,10 @@ public class RedpandaConnectBridges implements IKafkaBridges {
 
         @SuppressWarnings("resource")
         final GenericContainer<?> bridgeContainer = new GenericContainer<>(
-                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4.63.0")).withNetworkMode("host")
-                        .withCopyToContainer(Transferable.of(yamlConfig.getBytes(Charsets.DEFAULT)), "/connect.yaml")
+                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4.63.0"))
+                        .withNetworkMode("host")
+                        .withCopyToContainer(Transferable.of(yamlConfig.getBytes(Charsets.defaultCharset())),
+                                "/connect.yaml")
                         .withCommand("run", "/connect.yaml")
                         .waitingFor(Wait.forLogMessage(".*Listening for HTTP requests at: http://0.0.0.0:4195.*", 1));
         //.waitingFor(Wait.forLogMessage(".*Input type .* is now active.*", 1));

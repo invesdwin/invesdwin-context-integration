@@ -41,7 +41,7 @@ public final class Ignite3RestHelper {
             if (username != null && password != null) {
                 final String auth = username + ":" + password;
                 final String encodedAuth = java.util.Base64.getEncoder()
-                        .encodeToString(auth.getBytes(Charsets.DEFAULT));
+                        .encodeToString(auth.getBytes(Charsets.defaultCharset()));
                 final String authHeader = "Basic " + encodedAuth;
 
                 initRequestBuilder.header("Authorization", authHeader);
@@ -96,9 +96,9 @@ public final class Ignite3RestHelper {
         final String footer = "\r\n--" + boundary + "--\r\n";
 
         final FastByteArrayOutputStream body = new FastByteArrayOutputStream();
-        body.write(header.getBytes(Charsets.DEFAULT));
+        body.write(header.getBytes(Charsets.defaultCharset()));
         body.write(fileBytes);
-        body.write(footer.getBytes(Charsets.DEFAULT));
+        body.write(footer.getBytes(Charsets.defaultCharset()));
 
         final HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
@@ -107,7 +107,7 @@ public final class Ignite3RestHelper {
         // Add HTTP Basic Authentication header if credentials are provided
         if (username != null && password != null) {
             final String auth = username + ":" + password;
-            final String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(Charsets.DEFAULT));
+            final String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(Charsets.defaultCharset()));
             requestBuilder.header("Authorization", "Basic " + encodedAuth);
         }
 

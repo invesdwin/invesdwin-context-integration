@@ -71,7 +71,8 @@ public class BootstrappedIgnite3ClientJobMain extends AMain {
                 for (final CompletableFuture<BootstrappedIgnite3ClientTask.TaskResult> future : futures) {
                     final BootstrappedIgnite3ClientTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
+                            Charsets.defaultCharset());
                 }
             }
         } catch (final Exception e) {

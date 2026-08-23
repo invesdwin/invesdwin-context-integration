@@ -104,7 +104,7 @@ public class SimpleIgnite2Task implements IgniteCallable<SimpleIgnite2Task.TaskR
         }
 
         final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
-        final String logContent = memoryLogStream.toString(Charsets.DEFAULT);
+        final String logContent = memoryLogStream.toString(Charsets.defaultCharset());
 
         return new TaskResult(logFileName, logContent);
     }

@@ -73,7 +73,7 @@ public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<Ig
                 Files.deleteDirectory(workDirFile);
             }
             java.nio.file.Files.createDirectories(workDir);
-            java.nio.file.Files.writeString(configFile, hoconConfig, Charsets.DEFAULT);
+            java.nio.file.Files.writeString(configFile, hoconConfig, Charsets.defaultCharset());
         } catch (final Exception e) {
             throw new RuntimeException("Failed to create Ignite configuration file", e);
         }

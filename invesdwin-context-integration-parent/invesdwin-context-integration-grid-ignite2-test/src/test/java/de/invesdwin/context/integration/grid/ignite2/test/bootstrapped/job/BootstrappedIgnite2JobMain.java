@@ -89,7 +89,7 @@ public class BootstrappedIgnite2JobMain extends AMain {
                 for (final BootstrappedIgnite2Task.TaskResult result : results) {
                     final File logFile = new File(logDir, result.getLogFileName());
                     try {
-                        Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
+                        Files.writeStringToFile(logFile, result.getLogContent(), Charsets.defaultCharset());
                     } catch (final IOException e) {
                         throw new RuntimeException("Failed to write task log file: " + logFile, e);
                     }

@@ -103,7 +103,7 @@ public class SimpleIgnite3ClientTask implements ComputeJob<String, SimpleIgnite3
                 }
 
                 final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
-                final String logContent = memoryLogStream.toString(Charsets.DEFAULT);
+                final String logContent = memoryLogStream.toString(Charsets.defaultCharset());
 
                 return new TaskResult(logFileName, logContent);
             } catch (final Exception e) {

@@ -72,7 +72,7 @@ public class BootstrappedIgnite2Task implements IgniteCallable<BootstrappedIgnit
                             serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 
             // Read the output written by the forked JVM
-            final String logContent = Files.readFileToString(tempLogFile, Charsets.DEFAULT);
+            final String logContent = Files.readFileToString(tempLogFile, Charsets.defaultCharset());
 
             final String taskClassName = (rank == 0) ? "LatencyServerTask" : "LatencyClientTask";
             final String logFileName = (rank + 1) + "_" + size + "_" + taskClassName + ".log";

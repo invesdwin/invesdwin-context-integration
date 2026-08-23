@@ -49,7 +49,7 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
      */
     public static String newFlowFileForKafka(final Resource flowResource, final String bootstrapServers) {
         try (InputStream in = flowResource.getInputStream()) {
-            final String jsonStr = IOUtils.toString(in, Charsets.DEFAULT);
+            final String jsonStr = IOUtils.toString(in, Charsets.defaultCharset());
             return jsonStr.replace("{KAFKA_INTERNAL_BOOTSTRAP_SERVERS}", bootstrapServers)
                     .replace("{STATELESS_SCHEDULED_STATE}", STATELESS ? "DISABLED" : "ENABLED")
                     .replace("{STATELESS_EXECUTION_ENGINE}", STATELESS ? "STATELESS" : "INHERITED")
