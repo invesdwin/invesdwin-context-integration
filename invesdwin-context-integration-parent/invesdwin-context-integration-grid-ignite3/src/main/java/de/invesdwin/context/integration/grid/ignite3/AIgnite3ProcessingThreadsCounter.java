@@ -147,7 +147,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
     private void processHeartbeat(final Map<String, HeartbeatInfo> hostname_heartbeatInfo, final IFileChannel channel,
             final IFileInfo file) {
         channel.setFilename(file.getFilename());
-        final byte[] content = channel.download();
+        final byte[] content = channel.downloadBytes();
         if (content != null && content.length > 0) {
             final String contentStr = new String(content);
             final String[] split = Strings.splitPreserveAllTokens(contentStr, WEBDAV_CONTENT_SEPARATOR);

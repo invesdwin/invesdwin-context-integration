@@ -614,7 +614,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public byte[] download() {
+    public byte[] downloadBytes() {
         try {
             try (InputStream in = newDownload()) {
                 if (in == null) {

@@ -605,7 +605,7 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     @Override
-    public byte[] download() {
+    public byte[] downloadBytes() {
         connect(false);
         try {
             final Path source = resolveFilePath();

@@ -37,7 +37,7 @@ public class WebdavFileChannelTest extends ATest {
         //CHECKSTYLE:ON
         channel.setFilename("noexisting");
         channel.connect();
-        Assertions.checkNull(channel.download());
+        Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
         Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.createUniqueFile();
@@ -48,17 +48,17 @@ public class WebdavFileChannelTest extends ATest {
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
         Assertions.assertThat(channel.length()).isEqualTo(write.length);
-        final byte[] read = channel.download();
+        final byte[] read = channel.downloadBytes();
         final String readStr = new String(read);
         Assertions.assertThat(readStr).isEqualTo(writeStr);
         channel.delete();
-        Assertions.checkNull(channel.download());
+        Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
         Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
         Assertions.assertThat(channel.length()).isEqualTo(write.length);
-        final byte[] read2 = channel.download();
+        final byte[] read2 = channel.downloadBytes();
         final String readStr2 = new String(read2);
         Assertions.assertThat(readStr2).isEqualTo(writeStr);
         channel.delete();
@@ -86,8 +86,8 @@ public class WebdavFileChannelTest extends ATest {
             final int random = randomGenerator.nextInt(0, 7);
             switch (random) {
             case 0:
-                log.info("download");
-                channel.download();
+                log.info("downloadBytes");
+                channel.downloadBytes();
                 break;
             case 1:
                 log.info("exists");

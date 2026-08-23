@@ -389,8 +389,8 @@ public class LocalWebdavFileChannel implements IFileChannel {
     }
 
     @Override
-    public byte[] download() {
-        return localDelegate.download();
+    public byte[] downloadBytes() {
+        return localDelegate.downloadBytes();
     }
 
     @Override
