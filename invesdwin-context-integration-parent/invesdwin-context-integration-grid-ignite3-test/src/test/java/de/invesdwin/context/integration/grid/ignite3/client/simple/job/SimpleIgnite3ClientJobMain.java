@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.client.simple.job;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +18,7 @@ import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
 import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
+import de.invesdwin.util.lang.string.Charsets;
 
 @NotThreadSafe
 public class SimpleIgnite3ClientJobMain extends AMain {
@@ -79,8 +79,7 @@ public class SimpleIgnite3ClientJobMain extends AMain {
                 for (final CompletableFuture<SimpleIgnite3ClientTask.TaskResult> future : futures) {
                     final SimpleIgnite3ClientTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
-                            StandardCharsets.UTF_8);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
                 }
             }
         } catch (final Exception e) {

@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.grid.ignite3.server.bootstrapped.job;
 
 import java.io.File;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -16,6 +15,7 @@ import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.error.Err;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
 
@@ -65,7 +65,7 @@ public class BootstrappedIgnite3ServerTask implements ComputeJob<String, Bootstr
                     //                            .getLocation()
                     //                            .toURI()), BootstrappedIgnite3NodeTaskMain.class, args);
 
-                    final String logContent = Files.readFileToString(tempLogFile, StandardCharsets.UTF_8);
+                    final String logContent = Files.readFileToString(tempLogFile, Charsets.DEFAULT);
                     final String taskClassName = (rank == 0) ? "LatencyServerTask" : "LatencyClientTask";
                     final String logFileName = (rank + 1) + "_" + size + "_" + taskClassName + ".log";
 

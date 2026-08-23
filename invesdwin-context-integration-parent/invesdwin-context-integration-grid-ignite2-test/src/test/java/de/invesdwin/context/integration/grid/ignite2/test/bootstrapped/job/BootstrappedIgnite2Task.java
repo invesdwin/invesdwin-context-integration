@@ -3,7 +3,6 @@ package de.invesdwin.context.integration.grid.ignite2.test.bootstrapped.job;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.Serializable;
-import java.nio.charset.StandardCharsets;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -19,6 +18,7 @@ import de.invesdwin.context.integration.grid.jar.fork.ForkProcessHelper;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.streams.resource.Resources;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -72,7 +72,7 @@ public class BootstrappedIgnite2Task implements IgniteCallable<BootstrappedIgnit
                             serverAddressStr, "--tempFile", tempLogFile.getAbsolutePath() });
 
             // Read the output written by the forked JVM
-            final String logContent = Files.readFileToString(tempLogFile, StandardCharsets.UTF_8);
+            final String logContent = Files.readFileToString(tempLogFile, Charsets.DEFAULT);
 
             final String taskClassName = (rank == 0) ? "LatencyServerTask" : "LatencyClientTask";
             final String logFileName = (rank + 1) + "_" + size + "_" + taskClassName + ".log";

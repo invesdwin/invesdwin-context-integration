@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,6 +19,7 @@ import org.testcontainers.utility.DockerImageName;
 import de.invesdwin.context.integration.channel.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.kafka.IKafkaContainer;
 import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
@@ -65,10 +65,8 @@ public class RedpandaConnectBridges implements IKafkaBridges {
 
         @SuppressWarnings("resource")
         final GenericContainer<?> bridgeContainer = new GenericContainer<>(
-                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4.63.0"))
-                        .withNetworkMode("host")
-                        .withCopyToContainer(Transferable.of(yamlConfig.getBytes(StandardCharsets.UTF_8)),
-                                "/connect.yaml")
+                DockerImageName.parse("docker.redpanda.com/redpandadata/connect:4.63.0")).withNetworkMode("host")
+                        .withCopyToContainer(Transferable.of(yamlConfig.getBytes(Charsets.DEFAULT)), "/connect.yaml")
                         .withCommand("run", "/connect.yaml")
                         .waitingFor(Wait.forLogMessage(".*Listening for HTTP requests at: http://0.0.0.0:4195.*", 1));
         //.waitingFor(Wait.forLogMessage(".*Input type .* is now active.*", 1));

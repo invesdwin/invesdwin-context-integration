@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.client.bootstrapped.job;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -17,6 +16,7 @@ import org.kohsuke.args4j.Option;
 
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
+import de.invesdwin.util.lang.string.Charsets;
 
 @NotThreadSafe
 public class BootstrappedIgnite3ClientJobMain extends AMain {
@@ -71,8 +71,7 @@ public class BootstrappedIgnite3ClientJobMain extends AMain {
                 for (final CompletableFuture<BootstrappedIgnite3ClientTask.TaskResult> future : futures) {
                     final BootstrappedIgnite3ClientTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
-                            StandardCharsets.UTF_8);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
                 }
             }
         } catch (final Exception e) {

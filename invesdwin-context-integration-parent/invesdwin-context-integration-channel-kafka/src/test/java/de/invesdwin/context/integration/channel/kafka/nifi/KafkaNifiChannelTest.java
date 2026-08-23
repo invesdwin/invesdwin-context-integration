@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.channel.kafka.nifi;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -24,6 +23,7 @@ import de.invesdwin.context.integration.channel.kafka.KafkaSynchronousReader;
 import de.invesdwin.context.integration.channel.kafka.KafkaSynchronousWriter;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.duration.Duration;
@@ -49,7 +49,7 @@ public class KafkaNifiChannelTest extends AKafkaChannelTest {
      */
     public static String newFlowFileForKafka(final Resource flowResource, final String bootstrapServers) {
         try (InputStream in = flowResource.getInputStream()) {
-            final String jsonStr = IOUtils.toString(in, StandardCharsets.UTF_8);
+            final String jsonStr = IOUtils.toString(in, Charsets.DEFAULT);
             return jsonStr.replace("{KAFKA_INTERNAL_BOOTSTRAP_SERVERS}", bootstrapServers)
                     .replace("{STATELESS_SCHEDULED_STATE}", STATELESS ? "DISABLED" : "ENABLED")
                     .replace("{STATELESS_EXECUTION_ENGINE}", STATELESS ? "STATELESS" : "INHERITED")

@@ -4,7 +4,6 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -25,6 +24,7 @@ import de.invesdwin.context.integration.channel.sync.socket.tcp.unsafe.NativeSoc
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.UnknownArgumentException;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.BroadcastingOutputStream;
@@ -103,7 +103,7 @@ public class SimpleIgnite3ServerTask implements ComputeJob<String, SimpleIgnite3
                 }
 
                 final String logFileName = (rank + 1) + "_" + size + "_" + taskClass.getSimpleName() + ".log";
-                final String logContent = memoryLogStream.toString(StandardCharsets.UTF_8);
+                final String logContent = memoryLogStream.toString(Charsets.DEFAULT);
 
                 return new TaskResult(logFileName, logContent);
             } catch (final Exception e) {

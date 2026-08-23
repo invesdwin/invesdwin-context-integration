@@ -2,7 +2,6 @@ package de.invesdwin.context.integration.grid.ignite2.test.simple.job;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -22,6 +21,7 @@ import de.invesdwin.context.PlatformInitializerProperties;
 import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
@@ -88,7 +88,7 @@ public class SimpleIgnite2JobMain extends AMain {
                 for (final SimpleIgnite2Task.TaskResult result : results) {
                     final File logFile = new File(logDir, result.getLogFileName());
                     try {
-                        Files.writeStringToFile(logFile, result.getLogContent(), StandardCharsets.UTF_8);
+                        Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
                     } catch (final IOException e) {
                         throw new RuntimeException("Failed to write task log file: " + logFile, e);
                     }

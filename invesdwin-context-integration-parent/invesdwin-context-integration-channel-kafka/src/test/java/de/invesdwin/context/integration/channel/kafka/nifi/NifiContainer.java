@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.channel.kafka.nifi;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.invesdwin.context.integration.marshaller.MarshallerJsonJackson;
 import de.invesdwin.context.integration.network.NetworkUtil;
 import de.invesdwin.context.log.Log;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.lang.uri.connect.IURIsConnect;
@@ -192,7 +192,7 @@ public class NifiContainer extends GenericContainer<NifiContainer> {
     protected MultipartEntityBuilder multipartEntityBuilderCustomization(final String patchedJsonStr,
             final String fileName) {
         final MultipartEntityBuilder multipartEntityBuilder = MultipartEntityBuilder.create();
-        multipartEntityBuilder.addBinaryBody("file", patchedJsonStr.getBytes(StandardCharsets.UTF_8),
+        multipartEntityBuilder.addBinaryBody("file", patchedJsonStr.getBytes(Charsets.DEFAULT),
                 ContentType.APPLICATION_JSON, fileName + ".json");
         multipartEntityBuilder.addTextBody("groupName", fileName);
         multipartEntityBuilder.addTextBody("clientId", "4036074c-018c-1000-3e06-aaaaaaaaaaaa");

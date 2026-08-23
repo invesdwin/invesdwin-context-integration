@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.server;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -18,6 +17,7 @@ import de.invesdwin.context.integration.grid.ignite3.instance.AConfiguredIgnite3
 import de.invesdwin.context.integration.grid.ignite3.instance.ConfiguredServerAddressFinder;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.string.Charsets;
 
 @ThreadSafe
 public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<IgniteServer> {
@@ -73,7 +73,7 @@ public final class ConfiguredIgnite3Server extends AConfiguredIgnite3Instance<Ig
                 Files.deleteDirectory(workDirFile);
             }
             java.nio.file.Files.createDirectories(workDir);
-            java.nio.file.Files.writeString(configFile, hoconConfig, StandardCharsets.UTF_8);
+            java.nio.file.Files.writeString(configFile, hoconConfig, Charsets.DEFAULT);
         } catch (final Exception e) {
             throw new RuntimeException("Failed to create Ignite configuration file", e);
         }

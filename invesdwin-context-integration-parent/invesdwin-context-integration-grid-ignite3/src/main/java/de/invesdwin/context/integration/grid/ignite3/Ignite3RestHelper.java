@@ -4,11 +4,12 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.util.Base64;
 
 import javax.annotation.concurrent.Immutable;
 
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
@@ -40,7 +41,7 @@ public final class Ignite3RestHelper {
             if (username != null && password != null) {
                 final String auth = username + ":" + password;
                 final String encodedAuth = java.util.Base64.getEncoder()
-                        .encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+                        .encodeToString(auth.getBytes(Charsets.DEFAULT));
                 final String authHeader = "Basic " + encodedAuth;
 
                 initRequestBuilder.header("Authorization", authHeader);
@@ -95,9 +96,9 @@ public final class Ignite3RestHelper {
         final String footer = "\r\n--" + boundary + "--\r\n";
 
         final FastByteArrayOutputStream body = new FastByteArrayOutputStream();
-        body.write(header.getBytes(StandardCharsets.UTF_8));
+        body.write(header.getBytes(Charsets.DEFAULT));
         body.write(fileBytes);
-        body.write(footer.getBytes(StandardCharsets.UTF_8));
+        body.write(footer.getBytes(Charsets.DEFAULT));
 
         final HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
@@ -106,8 +107,7 @@ public final class Ignite3RestHelper {
         // Add HTTP Basic Authentication header if credentials are provided
         if (username != null && password != null) {
             final String auth = username + ":" + password;
-            final String encodedAuth = java.util.Base64.getEncoder()
-                    .encodeToString(auth.getBytes(StandardCharsets.UTF_8));
+            final String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(Charsets.DEFAULT));
             requestBuilder.header("Authorization", "Basic " + encodedAuth);
         }
 

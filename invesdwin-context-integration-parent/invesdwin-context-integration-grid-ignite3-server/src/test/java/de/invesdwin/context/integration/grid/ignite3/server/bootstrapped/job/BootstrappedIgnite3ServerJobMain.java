@@ -1,7 +1,6 @@
 package de.invesdwin.context.integration.grid.ignite3.server.bootstrapped.job;
 
 import java.io.File;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +24,7 @@ import de.invesdwin.context.beans.init.AMain;
 import de.invesdwin.context.beans.init.platform.util.AspectJWeaverIncludesConfigurer;
 import de.invesdwin.context.integration.grid.ignite3.Ignite3RestHelper;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.string.Charsets;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 
 @NotThreadSafe
@@ -90,7 +90,7 @@ public class BootstrappedIgnite3ServerJobMain extends AMain {
         try {
             final Path configFile = workDir.resolve("ignite-config.conf");
             Files.createDirectories(workDir);
-            Files.writeString(configFile, config, StandardCharsets.UTF_8);
+            Files.writeString(configFile, config, Charsets.DEFAULT);
 
             server = IgniteServer.start(nodeName, configFile, workDir);
 
@@ -142,8 +142,7 @@ public class BootstrappedIgnite3ServerJobMain extends AMain {
                 for (final CompletableFuture<BootstrappedIgnite3ServerTask.TaskResult> future : futures) {
                     final BootstrappedIgnite3ServerTask.TaskResult result = future.join();
                     final File logFile = new File(logDir, result.getLogFileName());
-                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(),
-                            StandardCharsets.UTF_8);
+                    de.invesdwin.util.lang.Files.writeStringToFile(logFile, result.getLogContent(), Charsets.DEFAULT);
                 }
             } else {
                 final CountDownLatch latch = new CountDownLatch(1);
