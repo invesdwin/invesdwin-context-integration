@@ -19,6 +19,7 @@ import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.integration.channel.kafka.IKafkaBridges;
 import de.invesdwin.context.integration.channel.kafka.IKafkaContainer;
+import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.lang.string.Strings;
 
 @NotThreadSafe
@@ -53,7 +54,7 @@ public class RedpandaConnectBridges implements IKafkaBridges {
 
     @Override
     public GenericContainer<?> startBridge(final String inputTopic, final String outputTopic) {
-        final String uuid = java.util.UUID.randomUUID().toString();
+        final String uuid = UUIDs.newPseudoRandomUUID().toString();
 
         final String template = readResourceAsString("connect-bridge.yaml");
         final String yamlConfig = template

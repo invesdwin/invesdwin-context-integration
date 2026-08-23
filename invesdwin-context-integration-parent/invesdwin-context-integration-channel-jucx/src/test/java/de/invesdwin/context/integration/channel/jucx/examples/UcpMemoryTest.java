@@ -8,7 +8,6 @@ import static java.nio.file.StandardOpenOption.WRITE;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
-import java.util.UUID;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -28,11 +27,12 @@ import org.openucx.jucx.ucp.UcpWorkerParams;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.lang.UUIDs;
 
 @NotThreadSafe
 public class UcpMemoryTest extends UcxTest {
     public static final int MEM_SIZE = 4096;
-    public static final String RANDOM_TEXT = UUID.randomUUID().toString();
+    public static final String RANDOM_TEXT = UUIDs.newPseudoRandomUUID().toString();
 
     @Test
     public void testMmapFile() throws Exception {
