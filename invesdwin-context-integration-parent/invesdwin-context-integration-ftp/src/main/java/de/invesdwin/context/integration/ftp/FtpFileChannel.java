@@ -351,7 +351,25 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     protected void login() throws IOException, FTPIllegalReplyException, FTPException {
-        finalizer.ftpClient.login(FtpClientProperties.USERNAME, FtpClientProperties.PASSWORD);
+        final String username;
+        final String password;
+
+        if (serverUri != null && serverUri.getUserInfo() != null) {
+            final String userInfo = serverUri.getUserInfo();
+            final int colonIdx = userInfo.indexOf(':');
+            if (colonIdx != -1) {
+                username = userInfo.substring(0, colonIdx);
+                password = userInfo.substring(colonIdx + 1);
+            } else {
+                username = userInfo;
+                password = ""; // or handle empty password as appropriate
+            }
+        } else {
+            username = FtpClientProperties.USERNAME;
+            password = FtpClientProperties.PASSWORD;
+        }
+
+        finalizer.ftpClient.login(username, password);
     }
 
     protected boolean isAuthenticated() {

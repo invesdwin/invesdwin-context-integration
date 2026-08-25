@@ -364,7 +364,25 @@ public class WebdavFileChannel implements IFileChannel {
     }
 
     protected Sardine login() {
-        return SardineFactory.begin(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
+        final String username;
+        final String password;
+
+        if (serverUri != null && serverUri.getUserInfo() != null) {
+            final String userInfo = serverUri.getUserInfo();
+            final int colonIdx = userInfo.indexOf(':');
+            if (colonIdx != -1) {
+                username = userInfo.substring(0, colonIdx);
+                password = userInfo.substring(colonIdx + 1);
+            } else {
+                username = userInfo;
+                password = ""; // or handle empty password as appropriate
+            }
+        } else {
+            username = WebdavClientProperties.USERNAME;
+            password = WebdavClientProperties.PASSWORD;
+        }
+
+        return SardineFactory.begin(username, password);
     }
 
     @Override
