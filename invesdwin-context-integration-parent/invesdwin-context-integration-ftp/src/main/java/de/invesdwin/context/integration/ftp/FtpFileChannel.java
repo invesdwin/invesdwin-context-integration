@@ -552,6 +552,7 @@ public class FtpFileChannel implements IFileChannel {
         }
     }
 
+    @Deprecated
     @Override
     public void moveSameType(final IFileChannel targetChannel) {
         connect(false);

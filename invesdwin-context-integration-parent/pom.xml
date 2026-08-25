@@ -131,6 +131,7 @@
 		<version.barchart-udt>2.3.0</version.barchart-udt>
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
 		<version.tomcat-jni>10.0.27</version.tomcat-jni>
+		<version.tomcat>11.0.25</version.tomcat>
 		<version.jnr-enxio>0.32.14</version.jnr-enxio>
 		<version.fastmpj>1.0_7</version.fastmpj>
 		<version.openmpi>4.1.4</version.openmpi>
@@ -1007,6 +1008,11 @@
 				<groupId>org.apache.tomcat</groupId>
 				<artifactId>tomcat-jni</artifactId>
 				<version>${version.tomcat-jni}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.tomcat</groupId>
+				<artifactId>tomcat-catalina</artifactId>
+				<version>${version.tomcat}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.jnr</groupId>

@@ -536,6 +536,7 @@ public class HadoopFileChannel implements IFileChannel {
         }
     }
 
+    @Deprecated
     @Override
     public void moveSameType(final IFileChannel targetChannel) {
         connect(false);

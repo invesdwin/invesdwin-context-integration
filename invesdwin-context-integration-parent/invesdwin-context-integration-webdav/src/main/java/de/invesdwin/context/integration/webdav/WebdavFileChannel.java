@@ -44,7 +44,7 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @NotThreadSafe
 public class WebdavFileChannel implements IFileChannel {
 
-    public static final URI DEFAULT_SERVER_URI = IntegrationProperties.WEBSERVER_BIND_URI;
+    public static final URI DEFAULT_SERVER_URI = URIs.asUri(IntegrationProperties.WEBSERVER_BIND_URI + "/webdav/");
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -471,6 +471,7 @@ public class WebdavFileChannel implements IFileChannel {
         }
     }
 
+    @Deprecated
     @Override
     public void moveSameType(final IFileChannel targetChannel) {
         connect(false);

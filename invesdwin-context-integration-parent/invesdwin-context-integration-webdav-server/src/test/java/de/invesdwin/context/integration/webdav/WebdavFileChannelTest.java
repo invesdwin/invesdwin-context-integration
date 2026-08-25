@@ -7,14 +7,15 @@ import javax.annotation.concurrent.NotThreadSafe;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.webdav.test.LocalWebdavFileChannelStub;
-import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.ITestContextSetup;
+import de.invesdwin.context.webserver.test.WebserverTest;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.error.UnknownArgumentException;
 import de.invesdwin.util.math.random.PseudoRandomGenerator;
 import jakarta.inject.Inject;
 
+@WebserverTest
 @NotThreadSafe
 public class WebdavFileChannelTest extends ATest {
 
@@ -24,7 +25,6 @@ public class WebdavFileChannelTest extends ATest {
     @Override
     public void setUpContext(final ITestContextSetup ctx) throws Exception {
         super.setUpContext(ctx);
-        ctx.deactivateBean(RegistryServiceStub.class);
         ctx.deactivateBean(LocalWebdavFileChannelStub.class);
     }
 

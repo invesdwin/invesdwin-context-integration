@@ -350,6 +350,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
         return this;
     }
 
+    @Deprecated
     @Override
     public void moveSameType(final IFileChannel targetChannel) {
         if (targetChannel instanceof LocalWebdavFileChannel) {
