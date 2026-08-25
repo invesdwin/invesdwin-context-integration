@@ -34,7 +34,7 @@ public class ConfiguredWebdavServlet extends ExtendedWebdavServlet {
 
     @Override
     @SkipParallelExecution
-    @Scheduled(fixedRate = 10, timeUnit = TimeUnit.SECONDS)
+    @Scheduled(fixedDelay = 10, timeUnit = TimeUnit.SECONDS)
     public void periodicEvent() {
         super.periodicEvent();
     }
