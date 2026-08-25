@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.concurrent.GuardedBy;
@@ -44,6 +45,8 @@ public class HadoopFileChannel implements IFileChannel {
     public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
     private static final boolean CACHED_FILE_SYSTEM = true;
 
+    private static Supplier<Configuration> defaultConfigurationFactory = () -> new Configuration();
+
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -59,15 +62,15 @@ public class HadoopFileChannel implements IFileChannel {
     private boolean directoryCreated = false;
 
     public HadoopFileChannel() {
-        this(DEFAULT_SERVER_URI, new Configuration());
+        this(DEFAULT_SERVER_URI, defaultConfigurationFactory.get());
     }
 
     public HadoopFileChannel(final URI serverUri) {
-        this(serverUri != null ? serverUri : DEFAULT_SERVER_URI, new Configuration());
+        this(serverUri != null ? serverUri : DEFAULT_SERVER_URI, defaultConfigurationFactory.get());
     }
 
     public HadoopFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri), new Configuration());
+        this(serverUri == null ? null : URIs.asUri(serverUri), defaultConfigurationFactory.get());
     }
 
     public HadoopFileChannel(final String serverUri, final Configuration configuration) {
@@ -75,7 +78,7 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     public HadoopFileChannel(final URI serverUri, final Configuration configuration) {
-        this.configuration = configuration != null ? configuration : new Configuration();
+        this.configuration = configuration != null ? configuration : defaultConfigurationFactory.get();
         final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
@@ -83,12 +86,24 @@ public class HadoopFileChannel implements IFileChannel {
         this.filename = path.getFilename();
     }
 
+    public static Supplier<Configuration> getDefaultConfigurationFactory() {
+        return defaultConfigurationFactory;
+    }
+
+    public static void setDefaultConfigurationFactory(final Supplier<Configuration> configurationFactory) {
+        if (configurationFactory == null) {
+            defaultConfigurationFactory = () -> new Configuration();
+        } else {
+            defaultConfigurationFactory = configurationFactory;
+        }
+    }
+
     public Configuration getConfiguration() {
         return configuration;
     }
 
     public HadoopFileChannel setConfiguration(final Configuration configuration) {
-        this.configuration = configuration != null ? configuration : new Configuration();
+        this.configuration = configuration != null ? configuration : defaultConfigurationFactory.get();
         if (finalizer != null && finalizer.fs != null) {
             try {
                 if (!CACHED_FILE_SYSTEM) {
@@ -697,10 +712,10 @@ public class HadoopFileChannel implements IFileChannel {
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         if (in.readBoolean()) {
-            configuration = new Configuration();
+            configuration = new Configuration(false);
             configuration.readFields(in);
         } else {
-            configuration = new Configuration();
+            configuration = defaultConfigurationFactory.get();
         }
     }
 
