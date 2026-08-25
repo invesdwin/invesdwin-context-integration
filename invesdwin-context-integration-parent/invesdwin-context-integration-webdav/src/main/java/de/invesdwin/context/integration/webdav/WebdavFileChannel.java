@@ -10,6 +10,7 @@ import java.net.URI;
 import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -22,7 +23,7 @@ import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 import com.github.sardine.impl.SardineException;
 
-import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
@@ -44,7 +45,14 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @NotThreadSafe
 public class WebdavFileChannel implements IFileChannel {
 
-    public static final URI DEFAULT_SERVER_URI = URIs.asUri(IntegrationProperties.WEBSERVER_BIND_URI + "/webdav/");
+    public static final Supplier<URI> DEFAULT_SERVER_URI_F = new Supplier<URI>() {
+        @Override
+        public URI get() {
+            final WebdavServerDestinationProvider destinationProvider = MergedContext.getInstance()
+                    .getBean(WebdavServerDestinationProvider.class);
+            return destinationProvider.getDestination();
+        }
+    };
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -57,7 +65,7 @@ public class WebdavFileChannel implements IFileChannel {
     private transient WebdavFileChannelFinalizer finalizer;
 
     public WebdavFileChannel(final URI serverUri) {
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();

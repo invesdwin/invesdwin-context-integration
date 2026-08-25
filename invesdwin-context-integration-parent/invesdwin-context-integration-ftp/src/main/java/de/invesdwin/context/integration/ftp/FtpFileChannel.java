@@ -11,6 +11,7 @@ import java.nio.charset.Charset;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.annotation.concurrent.GuardedBy;
 import javax.annotation.concurrent.ThreadSafe;
@@ -50,6 +51,7 @@ public class FtpFileChannel implements IFileChannel {
 
     public static final String DEFAULT_SERVER_URI_STR = "ftp:///";
     public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    public static final Supplier<URI> DEFAULT_SERVER_URI_F = () -> DEFAULT_SERVER_URI;
 
     private final URI serverUri;
     private final URI baseServerUri;
@@ -63,7 +65,7 @@ public class FtpFileChannel implements IFileChannel {
     private transient FtpFileChannelFinalizer finalizer;
 
     public FtpFileChannel(final URI serverUri) {
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();

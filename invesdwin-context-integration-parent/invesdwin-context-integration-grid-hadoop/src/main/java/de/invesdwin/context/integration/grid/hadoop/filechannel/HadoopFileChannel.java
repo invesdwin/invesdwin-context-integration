@@ -43,6 +43,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     public static final String DEFAULT_SERVER_URI_STR = "hdfs:///";
     public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    public static final Supplier<URI> DEFAULT_SERVER_URI_F = () -> DEFAULT_SERVER_URI;
     private static final boolean CACHED_FILE_SYSTEM = true;
 
     private static Supplier<Configuration> defaultConfigurationFactory = () -> new Configuration();
@@ -79,7 +80,7 @@ public class HadoopFileChannel implements IFileChannel {
 
     public HadoopFileChannel(final URI serverUri, final Configuration configuration) {
         this.configuration = configuration != null ? configuration : defaultConfigurationFactory.get();
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();

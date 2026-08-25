@@ -34,7 +34,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
             throw new NullPointerException("serverUri should not be null");
         }
 
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI);
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();
