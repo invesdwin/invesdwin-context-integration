@@ -73,7 +73,7 @@
 
 	<!-- securing rest services here per default, specific services can be reconfigured 
 		by addin more security http tags for those and overriding this config thus -->
-	<security:http
+	<security:http request-matcher="ant"
 		authentication-manager-ref="springWebAuthenticationManager"
 		use-expressions="true" pattern="/spring-web/**">
 

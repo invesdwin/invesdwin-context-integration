@@ -7,6 +7,7 @@
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
 	<security:http
+		request-matcher="ant"
 		authentication-manager-ref="webdavAuthenticationManager"
 		use-expressions="true" pattern="/webdav/**">
 
