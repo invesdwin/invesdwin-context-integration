@@ -6,15 +6,20 @@
 	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security.xsd
 		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<security:http
-		request-matcher="ant"
+	<bean
+		class="org.springframework.context.support.PropertySourcesPlaceholderConfigurer">
+		<property name="localOverride" value="true" />
+	</bean>
+
+	<security:http request-matcher="ant"
 		authentication-manager-ref="webdavAuthenticationManager"
 		use-expressions="true" pattern="/webdav/**">
 
 		<security:csrf disabled="true" />
 		<security:headers>
 			<security:frame-options policy="SAMEORIGIN" />
-			<security:content-type-options disabled="true" />
+			<security:content-type-options
+				disabled="true" />
 		</security:headers>
 
 		<security:http-basic />
@@ -25,17 +30,14 @@
 
 	<security:authentication-manager
 		id="webdavAuthenticationManager">
-		<security:authentication-provider>
+		<security:authentication-provider
+			user-service-ref="webdavUserDetailsService">
 			<security:password-encoder
 				ref="noopPasswordEncoder" />
-			<security:user-service>
-				<security:user
-					name="${de.invesdwin.context.integration.webdav.WebdavClientProperties.USERNAME}"
-					password="${de.invesdwin.context.integration.webdav.WebdavClientProperties.PASSWORD}"
-					authorities="_WEBDAV_" />
-			</security:user-service>
 		</security:authentication-provider>
 	</security:authentication-manager>
 
+	<bean id="webdavUserDetailsService"
+		class="de.invesdwin.context.integration.webdav.server.internal.WebdavUserDetailsManager" />
 
 </beans>
