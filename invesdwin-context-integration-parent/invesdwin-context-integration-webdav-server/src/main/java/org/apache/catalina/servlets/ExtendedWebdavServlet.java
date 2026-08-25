@@ -327,8 +327,11 @@ public class ExtendedWebdavServlet extends WebdavServlet {
         sb.append(
                 ".container { max-width: 1000px; margin: 0 auto; background: var(--card-bg); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.1); overflow: hidden; }\n");
         sb.append(
-                ".header-bar { padding: 1.5rem 2rem; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); }\n");
+                ".header-bar { padding: 1.25rem 2rem; background-color: var(--card-bg); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }\n");
         sb.append("h1 { margin: 0; font-size: 1.25rem; font-weight: 600; word-break: break-all; }\n");
+        sb.append(
+                ".parent-btn { display: inline-flex; align-items: center; padding: 0.4rem 0.8rem; background-color: var(--hover-bg); border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; color: var(--text-main); font-weight: 500; text-decoration: none; transition: all 0.15s ease; }\n");
+        sb.append(".parent-btn:hover { background-color: var(--border-color); text-decoration: none; }\n");
         sb.append("table { width: 100%; border-collapse: collapse; text-align: left; }\n");
         sb.append("th, td { padding: 0.85rem 2rem; font-size: 0.9rem; }\n");
         sb.append(
@@ -352,6 +355,7 @@ public class ExtendedWebdavServlet extends WebdavServlet {
         sb.append("<div class=\"header-bar\">\r\n");
         sb.append("<h1>");
         sb.append(sm.getString("defaultServlet.directory.title", escapedDirectoryWebappPath));
+        sb.append("</h1>\r\n");
 
         // Render the link to our parent (if required)
         String parentDirectory = directoryWebappPath;
@@ -361,7 +365,7 @@ public class ExtendedWebdavServlet extends WebdavServlet {
         final int slash = parentDirectory.lastIndexOf('/');
         if (slash >= 0) {
             String parent = directoryWebappPath.substring(0, slash);
-            sb.append(" \u2013 <a href=\"");
+            sb.append("<a class=\"parent-btn\" href=\"");
             sb.append(rewrittenContextPath);
             if (parent.isEmpty()) {
                 parent = "/";
@@ -374,10 +378,9 @@ public class ExtendedWebdavServlet extends WebdavServlet {
             sb.append("<span class=\"icon\">⬆️</span> ");
             sb.append(sm.getString("defaultServlet.directory.parent",
                     org.apache.tomcat.util.security.Escape.htmlElementContent(parent)));
-            sb.append("</a>");
+            sb.append("</a>\r\n");
         }
 
-        sb.append("</h1>\r\n");
         sb.append("</div>\r\n");
 
         sb.append("<table>\r\n");
