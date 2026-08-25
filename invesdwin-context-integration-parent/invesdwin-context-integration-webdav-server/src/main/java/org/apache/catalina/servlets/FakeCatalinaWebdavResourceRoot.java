@@ -29,7 +29,6 @@ public class FakeCatalinaWebdavResourceRoot implements WebResourceRoot {
 
     private final FakeCatalinaContext context;
     private final Path rootDir;
-    private final boolean atomicMoveSupported = true;
 
     public FakeCatalinaWebdavResourceRoot(final FakeCatalinaContext context, final Path rootDir) {
         this.context = context;
@@ -117,6 +116,27 @@ public class FakeCatalinaWebdavResourceRoot implements WebResourceRoot {
         }
     }
 
+    @Override
+    public WebResource[] listResources(final String path) {
+        final Path dir = resolvePath(path);
+        if (!Files.isDirectory(dir)) {
+            return new WebResource[0];
+        }
+
+        // Ensure the base web path ends with a slash so we can append child names
+        final String basePath = path.endsWith("/") ? path : path + "/";
+
+        try (Stream<Path> stream = Files.list(dir)) {
+            return stream.map(p -> {
+                final String childPath = basePath + p.getFileName().toString();
+                // Instantiate Tomcat's built-in FileResource directly just like in getResource()
+                return new FileResource(this, childPath, p.toFile(), true, null);
+            }).toArray(WebResource[]::new);
+        } catch (final IOException e) {
+            return new WebResource[0];
+        }
+    }
+
     // --- Delegated / Supported Defaults ---
 
     @Override
@@ -184,11 +204,6 @@ public class FakeCatalinaWebdavResourceRoot implements WebResourceRoot {
 
     @Override
     public Set<String> listWebAppPaths(final String path) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public WebResource[] listResources(final String path) {
         throw new UnsupportedOperationException();
     }
 
