@@ -1,0 +1,7 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="org.apache.spark" level="TRACE" additivity="true" />
+    </Loggers>
+
+</Configuration>

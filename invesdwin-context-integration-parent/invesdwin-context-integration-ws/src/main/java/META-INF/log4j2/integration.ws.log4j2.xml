@@ -1,0 +1,26 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="de.invesdwin.context.integration.ws.registry.publication.internal.WebServicePublicationManager" 
+                level="DEBUG" 
+                additivity="false">
+            <AppenderRef ref="integration" />
+        </Logger>
+        
+        <Logger name="de.invesdwin.context.integration.ws.registry.RegistryDestinationProvider" 
+                level="DEBUG" 
+                additivity="false">
+            <AppenderRef ref="integration" />
+        </Logger>
+
+        <Logger name="de.invesdwin.context.integration.ws.XsdWebServiceEndpointMapping" 
+                level="WARN" 
+                additivity="false">
+            <AppenderRef ref="stdout" />
+            <AppenderRef ref="stderr" />
+            <AppenderRef ref="common" />
+            <AppenderRef ref="error" />
+        </Logger>
+    </Loggers>
+
+</Configuration>

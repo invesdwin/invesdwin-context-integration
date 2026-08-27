@@ -1,0 +1,130 @@
+package de.invesdwin.context.integration.grid.jppf.topology;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.concurrent.Immutable;
+
+import org.jppf.client.monitoring.topology.TopologyDriver;
+import org.jppf.client.monitoring.topology.TopologyNode;
+import org.jppf.management.AllNodesSelector;
+import org.jppf.management.JMXDriverConnectionWrapper;
+import org.jppf.management.JPPFManagementInfo;
+import org.jppf.management.JPPFSystemInformation;
+import org.jppf.management.NodeSelector;
+import org.jppf.management.forwarding.NodeForwardingMBean;
+import org.jppf.utils.InvocationResult;
+import org.jppf.utils.ResultsMap;
+
+import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.grid.jppf.JPPFClientProperties;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.util.collections.Collections;
+import de.invesdwin.util.lang.uri.URIs;
+
+@Immutable
+public final class TopologyDrivers {
+
+    public static final String NODE_FORWARDING_HOST_PREFIX = "forwarding:";
+
+    private static final Log LOG = new Log(TopologyDrivers.class);
+
+    private TopologyDrivers() {}
+
+    public static List<TopologyNode> discoverHiddenNodes(final TopologyDriver driver) {
+        final JMXDriverConnectionWrapper driverJmx = connect(driver);
+
+        if (driverJmx == null) {
+            return Collections.emptyList();
+        }
+
+        try {
+            final NodeForwardingMBean proxy = driverJmx.getForwarder();
+
+            // this selector selects all nodes attached to the driver
+            final NodeSelector selector = new AllNodesSelector();
+
+            // invoke the state() method on the remote 'JPPFNodeAdminMBean' node MBeans
+            // note that the MBean name does not need to be stated explicitely
+            final ResultsMap<String, JPPFSystemInformation> results = proxy.systemInformation(selector);
+
+            // handling the results
+            final List<TopologyNode> nodes = new ArrayList<>();
+            for (final Entry<String, InvocationResult<JPPFSystemInformation>> entry : results.entrySet()) {
+                final InvocationResult<JPPFSystemInformation> invocationResult = entry.getValue();
+                if (invocationResult.isException()) {
+                    final Exception exc = invocationResult.exception();
+                    LOG.trace("Unable to retrieve system information for node: %s", exc);
+                    continue;
+                } else {
+                    final JPPFSystemInformation systemInfo = invocationResult.result();
+                    final JPPFManagementInfo nodeInformation = new JPPFManagementInfo(
+                            NODE_FORWARDING_HOST_PREFIX + driver.getManagementInfo().getHost(),
+                            driver.getManagementInfo().getIpAddress(), driver.getManagementInfo().getPort(),
+                            systemInfo.getUuid().getProperty("jppf.uuid"), JPPFManagementInfo.NODE,
+                            JPPFClientProperties.CLIENT_SSL_ENABLED);
+                    nodeInformation.setSystemInfo(systemInfo);
+                    final TopologyNode node = new TopologyNode(nodeInformation);
+                    nodes.add(node);
+                }
+            }
+            return nodes;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                driverJmx.close();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static JPPFSystemInformation extractSystemInfo(final TopologyDriver driver) {
+        final JPPFManagementInfo managementInfo = driver.getManagementInfo();
+        if (managementInfo.getSystemInfo() != null) {
+            return managementInfo.getSystemInfo();
+        }
+        final JMXDriverConnectionWrapper jmx = connect(driver);
+        if (jmx == null) {
+            return null;
+        }
+        try {
+            final JPPFSystemInformation systemInfo = jmx.systemInformation();
+            managementInfo.setSystemInfo(systemInfo); //cache the system info
+            return systemInfo;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        } finally {
+            try {
+                jmx.close();
+            } catch (final Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static JMXDriverConnectionWrapper connect(final TopologyDriver driver) {
+        final JPPFManagementInfo managementInfo = driver.getManagementInfo();
+        final String host = managementInfo.getHost();
+        final int port = managementInfo.getPort();
+        if (!URIs.connect("p://" + host + ":" + port).isServerResponding()) {
+            return null;
+        }
+        final boolean secure = managementInfo.isSecure();
+        final JMXDriverConnectionWrapper jmx = new JMXDriverConnectionWrapper(host, port, secure);
+        try {
+            jmx.connectAndWait(ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS);
+            if (!jmx.isConnected()) {
+                throw new TimeoutException("JMX connect timeout [" + ContextProperties.DEFAULT_NETWORK_TIMEOUT_MILLIS
+                        + " ms] exceeded for: host=" + host + " port=" + port + " secure=" + secure);
+            }
+            return jmx;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+}

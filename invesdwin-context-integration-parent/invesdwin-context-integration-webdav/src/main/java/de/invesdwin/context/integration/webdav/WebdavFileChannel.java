@@ -8,12 +8,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Date;
+import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.annotation.concurrent.GuardedBy;
-import javax.annotation.concurrent.ThreadSafe;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -23,7 +23,11 @@ import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 import com.github.sardine.impl.SardineException;
 
+import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.Objects;
@@ -38,14 +42,22 @@ import de.invesdwin.util.streams.delegate.ADelegateOutputStream;
 import de.invesdwin.util.time.date.FDate;
 import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 
-@ThreadSafe
-public class WebdavFileChannel implements IFileChannel<DavResource> {
+@NotThreadSafe
+public class WebdavFileChannel implements IFileChannel {
 
-    private final String serverUrl;
-    private String directory;
-    @GuardedBy("this")
+    public static final Supplier<URI> DEFAULT_SERVER_URI_F = new Supplier<URI>() {
+        @Override
+        public URI get() {
+            final WebdavServerDestinationProvider destinationProvider = MergedContext.getInstance()
+                    .getBean(WebdavServerDestinationProvider.class);
+            return destinationProvider.getDestination();
+        }
+    };
+    private final URI serverUri;
+    private final URI baseServerUri;
+    private final String baseDirectory;
+    private String subDirectory = "";
     private String filename;
-    @GuardedBy("this")
     private byte[] emptyFileContent = Bytes.EMPTY_ARRAY;
     private boolean directoryValidated = false;
 
@@ -53,85 +65,216 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     private transient WebdavFileChannelFinalizer finalizer;
 
     public WebdavFileChannel(final URI serverUri) {
-        if (serverUri == null) {
-            throw new NullPointerException("serverUri should not be null");
+        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
+        this.serverUri = path.getServerUri();
+        this.baseServerUri = path.getBaseServerUri();
+        this.baseDirectory = path.getAbsoluteDirectory();
+        this.filename = path.getFilename();
+    }
+
+    public WebdavFileChannel(final String serverUri) {
+        this(serverUri == null ? null : URIs.asUri(serverUri));
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withSubDirectory(final String subDirectory) {
+        final WebdavFileChannel instance = new WebdavFileChannel(serverUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.filename = filename;
+        instance.setSubDirectory(subDirectory);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withBaseServerUri(final URI baseServerUri) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(baseServerUri, getBaseDirectory());
+        //CHECKSTYLE:OFF
+        final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        if (getFilename() != null) {
+            instance.setFilename(getFilename());
         }
-        this.serverUrl = Strings.removeEnd(serverUri.toString(), "/");
+        return instance;
     }
 
-    public WebdavFileChannel(final URI serverUri, final String directory) {
-        this(serverUri);
-        setDirectory(directory);
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withBaseServerUri(final String baseServerUri) {
+        //CHECKSTYLE:ON
+        return withBaseServerUri(URIs.asUri(baseServerUri));
     }
 
-    public URI getServerUri() {
-        return URIs.asUri(serverUrl);
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withBaseDirectory(final String baseDirectory) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), baseDirectory);
+        //CHECKSTYLE:OFF
+        final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        if (getFilename() != null) {
+            instance.setFilename(getFilename());
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withAbsoluteDirectory(final String absoluteDirectory) {
+        //CHECKSTYLE:ON
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
+        //CHECKSTYLE:OFF
+        final WebdavFileChannel instance = new WebdavFileChannel(newServerUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        if (getFilename() != null) {
+            instance.setFilename(getFilename());
+        }
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withSubPath(final String subPath) {
+        final WebdavFileChannel instance = new WebdavFileChannel(serverUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(subPath);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withSubPath(final Path path) {
+        final WebdavFileChannel instance = new WebdavFileChannel(serverUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(path);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withFilename(final String filename) {
+        final WebdavFileChannel instance = new WebdavFileChannel(serverUri);
+        //CHECKSTYLE:ON
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubDirectory(getSubDirectory());
+        instance.setFilename(filename);
+        return instance;
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withAbsolutePath(final String path) {
+        //CHECKSTYLE:ON
+        if (Strings.isBlank(path)) {
+            //CHECKSTYLE:OFF
+            final WebdavFileChannel instance = new WebdavFileChannel(getBaseServerUri());
+            //CHECKSTYLE:ON
+            instance.emptyFileContent = emptyFileContent;
+            instance.setSubPath((String) null);
+            return instance;
+        }
+        if (path.contains("://")) {
+            return (WebdavFileChannel) FileChannelRegistry.newInstance(path);
+        } else {
+            //CHECKSTYLE:OFF
+            final WebdavFileChannel instance = new WebdavFileChannel(getBaseServerUri());
+            //CHECKSTYLE:ON
+            instance.emptyFileContent = emptyFileContent;
+            instance.setSubPath(path);
+            return instance;
+        }
+    }
+
+    //CHECKSTYLE:OFF
+    @Override
+    public WebdavFileChannel withAbsolutePath(final Path path) {
+        //CHECKSTYLE:ON
+        return withAbsolutePath(path != null ? path.toString() : null);
     }
 
     @Override
-    public synchronized String getDirectory() {
-        if (directory == null) {
-            throw new NullPointerException("please call setDirectory(...) first");
-        }
-        return directory;
+    public URI getServerUri() {
+        return serverUri;
     }
 
-    public synchronized void setDirectory(final String directory) {
-        final String directoryBefore = this.directory;
-        if (directory == null) {
-            this.directory = null;
-        } else {
-            this.directory = Strings
-                    .putSuffix(Strings.putPrefix(directory.replace("\\", "/").replaceAll("[/]+", "/"), "/"), "/");
-        }
-        if (!Objects.equals(directoryBefore, this.directory)) {
+    @Override
+    public URI getBaseServerUri() {
+        return baseServerUri;
+    }
+
+    @Override
+    public String getBaseDirectory() {
+        return baseDirectory;
+    }
+
+    @Override
+    public String getSubDirectory() {
+        return subDirectory;
+    }
+
+    @Override
+    public WebdavFileChannel setSubDirectory(final String subDirectory) {
+        final String dirBefore = getAbsoluteDirectory();
+        this.subDirectory = subDirectory != null ? subDirectory : "";
+        if (!Objects.equals(dirBefore, getAbsoluteDirectory())) {
             directoryValidated = false;
         }
-    }
-
-    public String getDirectoryUrl() {
-        return serverUrl + getDirectory();
-    }
-
-    public synchronized String getFileUrl() {
-        return newFileUrl(getFilename());
-    }
-
-    public synchronized String newFileUrl(final String filename) {
-        return serverUrl + getDirectory() + filename;
+        return this;
     }
 
     @Override
-    public synchronized void setFilename(final String filename) {
+    public WebdavFileChannel setFilename(final String filename) {
         this.filename = filename;
+        return this;
     }
 
     @Override
-    public synchronized String getFilename() {
-        if (filename == null) {
-            throw new NullPointerException("please call setFilename(...) first");
-        }
+    public WebdavFileChannel setSubPath(final String path) {
+        IFileChannel.super.setSubPath(path);
+        return this;
+    }
+
+    @Override
+    public WebdavFileChannel setSubPath(final Path path) {
+        IFileChannel.super.setSubPath(path);
+        return this;
+    }
+
+    @Override
+    public String getFilename() {
         return filename;
     }
 
     @Override
-    public synchronized byte[] getEmptyFileContent() {
+    public byte[] getEmptyFileContent() {
         return emptyFileContent;
     }
 
     @Override
-    public synchronized void setEmptyFileContent(final byte[] emptyFileContent) {
+    public WebdavFileChannel setEmptyFileContent(final byte[] emptyFileContent) {
         this.emptyFileContent = emptyFileContent;
+        return this;
     }
 
     @Override
-    public synchronized void createUniqueFile() {
-        createUniqueFile(WebdavFileChannel.class.getSimpleName() + "_", ".channel");
+    public WebdavFileChannel createUniqueFile() {
+        return createUniqueFile(WebdavFileChannel.class.getSimpleName() + "_", ".channel");
     }
 
     @Override
-    public synchronized void createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
-        assertConnected();
+    public WebdavFileChannel createUniqueFile(final String filenamePrefix, final String filenameSuffix) {
+        ensureDirectoryCreated();
         while (true) {
             final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
             setFilename(filename);
@@ -141,48 +284,63 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
                 break;
             }
         }
+        return this;
     }
 
-    public synchronized Sardine getWebdavClient() {
-        assertConnected();
+    public Sardine getWebdavClient() {
+        connect(false);
         return finalizer.webdavClient;
     }
 
     @Override
-    public synchronized void connect() {
+    public WebdavFileChannel connect() {
+        return connect(true);
+    }
+
+    @Override
+    public WebdavFileChannel connect(final boolean createDirectory) {
         try {
             if (finalizer == null) {
                 finalizer = new WebdavFileChannelFinalizer();
             }
-            Assertions.checkNull(finalizer.webdavClient, "Already connected");
+            if (finalizer.webdavClient != null) {
+                if (createDirectory && !directoryValidated) {
+                    createDirectory();
+                }
+                return this;
+            }
             finalizer.webdavClient = login();
-            finalizer.webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUrl));
+            finalizer.webdavClient.enablePreemptiveAuthentication(URIs.asUrl(serverUri));
             finalizer.register(this);
+            if (createDirectory && !directoryValidated) {
+                createDirectory();
+            }
+            return this;
         } catch (final Throwable e) {
             close();
             throw new RuntimeException(e);
         }
     }
 
-    private void maybeCreateDirectory() {
-        if (directoryValidated) {
-            return;
-        }
-        try {
-            if (!finalizer.webdavClient.exists(getDirectoryUrl())) {
-                createDirectory();
+    private void ensureDirectoryCreated() {
+        connect(false);
+        if (!directoryValidated) {
+            try {
+                if (!finalizer.webdavClient.exists(getDirectoryUri().toString())) {
+                    createDirectory();
+                } else {
+                    directoryValidated = true;
+                }
+            } catch (final IOException e) {
+                throw new RuntimeException(e);
             }
-            directoryValidated = true;
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * http://www.codejava.net/java-se/networking/ftp/creating-nested-directory-structure-on-a-ftp-server
-     */
-    private synchronized void createDirectory() {
-        final String[] pathElements = getDirectory().split("/");
+    @Override
+    public WebdavFileChannel createDirectory() {
+        connect(false);
+        final String[] pathElements = getAbsoluteDirectory().split("/");
         final StringBuilder prevPathElements = new StringBuilder("/");
         if (pathElements != null && pathElements.length > 0) {
             for (final String singleDir : pathElements) {
@@ -196,13 +354,14 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
                 }
             }
         }
+        directoryValidated = true;
+        return this;
     }
 
-    private synchronized void createSingleDirectory(final String singleDir) throws Exception {
+    private void createSingleDirectory(final String singleDir) throws Exception {
         try {
-            finalizer.webdavClient.createDirectory(getServerUri() + singleDir);
+            finalizer.webdavClient.createDirectory(baseServerUri.toString() + singleDir);
         } catch (final SardineException e) {
-            //500 might happen when creating directories in parallel, the others when folders already exist or parent folders are missing
             if (e.getStatusCode() == HttpStatus.SC_METHOD_NOT_ALLOWED || e.getStatusCode() == HttpStatus.SC_CONFLICT
                     || e.getStatusCode() == HttpStatus.SC_INTERNAL_SERVER_ERROR) {
                 return;
@@ -213,59 +372,72 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     protected Sardine login() {
-        return SardineFactory.begin(WebdavClientProperties.USERNAME, WebdavClientProperties.PASSWORD);
+        final String username;
+        final String password;
+
+        if (serverUri != null && serverUri.getUserInfo() != null) {
+            final String userInfo = serverUri.getUserInfo();
+            final int colonIdx = userInfo.indexOf(':');
+            if (colonIdx != -1) {
+                username = userInfo.substring(0, colonIdx);
+                password = userInfo.substring(colonIdx + 1);
+            } else {
+                username = userInfo;
+                password = ""; // or handle empty password as appropriate
+            }
+        } else {
+            username = WebdavClientProperties.USERNAME;
+            password = WebdavClientProperties.PASSWORD;
+        }
+
+        return SardineFactory.begin(username, password);
     }
 
     @Override
-    public synchronized boolean isConnected() {
+    public boolean isConnected() {
         return finalizer != null && finalizer.webdavClient != null;
     }
 
     @Override
-    public synchronized boolean exists() {
-        assertConnected();
+    public boolean exists() {
+        connect(false);
         try {
-            return finalizer.webdavClient.exists(getFileUrl());
+            if (filename == null) {
+                return finalizer.webdavClient.exists(getDirectoryUri().toString());
+            }
+            return finalizer.webdavClient.exists(getFileUri().toString());
         } catch (final IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized long size() {
-        final DavResource info = info();
+    public long length() {
+        final WebdavFileInfo info = info();
         if (info == null) {
             return -1;
         }
-        final Long length = info.getContentLength();
-        if (length == null) {
-            return -1;
-        }
-        return length;
+        return info.length();
     }
 
     @Override
-    public synchronized FDate modified() {
-        final DavResource info = info();
+    public FDate lastModified() {
+        final WebdavFileInfo info = info();
         if (info == null) {
             return null;
         }
-        final Date modified = info.getModified();
-        if (modified == null) {
-            return null;
-        }
-        return new FDate(modified);
+        return info.lastModified();
     }
 
     @Override
-    public synchronized DavResource info() {
-        assertConnected();
+    public WebdavFileInfo info() {
+        connect(false);
         try {
-            final List<DavResource> listFiles = finalizer.webdavClient.list(getFileUrl());
+            final List<DavResource> listFiles = finalizer.webdavClient.list(getFileUri().toString());
             if (listFiles.size() == 0) {
                 return null;
             } else if (listFiles.size() == 1) {
-                return listFiles.get(0);
+                return WebdavFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory, listFiles.get(0));
             } else {
                 throw new IllegalStateException("More than one result: " + listFiles.size());
             }
@@ -281,14 +453,14 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    public synchronized List<DavResource> list() {
-        assertConnected();
+    public List<WebdavFileInfo> list() {
+        connect(false);
         try {
-            final List<DavResource> list = finalizer.webdavClient.list(getDirectoryUrl());
-            if (!list.isEmpty() && list.get(0).getPath().endsWith(Strings.putSuffix(this.directory, "/"))) {
+            final List<DavResource> list = finalizer.webdavClient.list(getDirectoryUri().toString());
+            if (!list.isEmpty() && list.get(0).getPath().endsWith(Strings.putSuffix(getAbsoluteDirectory(), "/"))) {
                 list.remove(0);
             }
-            return list;
+            return WebdavFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory, list);
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return null;
@@ -300,73 +472,68 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         }
     }
 
+    @SuppressWarnings("unchecked")
     @Override
-    public synchronized List<DavResource> listFiles() {
-        final List<DavResource> list = list();
-        if (list == null) {
-            return null;
-        }
-        final List<DavResource> files = new ArrayList<>();
-        for (final DavResource file : list) {
-            if (!file.isDirectory()) {
-                files.add(file);
-            }
-        }
-        return files;
+    public List<WebdavFileInfo> listFiles() {
+        return (List<WebdavFileInfo>) IFileChannel.super.listFiles();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public List<WebdavFileInfo> listDirectories() {
+        return (List<WebdavFileInfo>) IFileChannel.super.listDirectories();
     }
 
     @Override
-    public synchronized List<DavResource> listDirectories() {
-        final List<DavResource> list = list();
-        if (list == null) {
-            return null;
-        }
-        final List<DavResource> directories = new ArrayList<>();
-        for (final DavResource directory : list) {
-            if (directory.isDirectory()) {
-                directories.add(directory);
-            }
-        }
-        return directories;
-    }
-
-    private void assertConnected() {
-        Assertions.checkTrue(isConnected(), "Please call connect() first");
-    }
-
-    @Override
-    public void rename(final String filename) {
-        assertConnected();
+    public WebdavFileChannel rename(final String filename) {
+        connect(false);
         try {
-            finalizer.webdavClient.move(getFileUrl(), newFileUrl(filename));
+            finalizer.webdavClient.move(getFileUri().toString(),
+                    FileChannelPaths.newFileUri(baseServerUri, getAbsoluteDirectory(), filename).toString());
             setFilename(filename);
+            return this;
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Deprecated
+    @Override
+    public void moveSameType(final IFileChannel targetChannel) {
+        connect(false);
+        try {
+            final WebdavFileChannel targetWebdav = (WebdavFileChannel) targetChannel;
+            targetWebdav.ensureDirectoryCreated();
+            finalizer.webdavClient.move(getFileUri().toString(), targetWebdav.getFileUri().toString());
+            setSubDirectory(targetWebdav.getSubDirectory());
+            setFilename(targetWebdav.getFilename());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized void upload(final File file) {
-        assertConnected();
-        maybeCreateDirectory();
+    public WebdavFileChannel upload(final File file) {
+        ensureDirectoryCreated();
         try {
-            finalizer.webdavClient.put(getFileUrl(), file, null);
+            finalizer.webdavClient.put(getFileUri().toString(), file, null);
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized void upload(final byte[] bytes) {
-        upload(new FastByteArrayInputStream(bytes));
+    public WebdavFileChannel upload(final byte[] bytes) {
+        return upload(new FastByteArrayInputStream(bytes));
     }
 
     @Override
-    public synchronized void upload(final InputStream input) {
-        assertConnected();
-        maybeCreateDirectory();
+    public WebdavFileChannel upload(final InputStream input) {
+        ensureDirectoryCreated();
         try {
-            finalizer.webdavClient.put(getFileUrl(), input);
+            finalizer.webdavClient.put(getFileUri().toString(), input);
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         } finally {
@@ -375,25 +542,24 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    public synchronized void download(final File destination) {
-        try {
-            try (InputStream in = downloadInputStream()) {
-                if (in != null) {
-                    Files.forceMkdirParent(destination);
-                    try (FileOutputStream out = new FileOutputStream(destination)) {
-                        IOUtils.copy(in, out);
-                    }
+    public WebdavFileChannel download(final File destination) {
+        try (InputStream in = newDownload()) {
+            if (in != null) {
+                Files.forceMkdirParent(destination);
+                try (FileOutputStream out = new FileOutputStream(destination)) {
+                    IOUtils.copyLarge(in, out);
                 }
             }
+            return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public synchronized byte[] download() {
+    public byte[] downloadBytes() {
         try {
-            try (InputStream in = downloadInputStream()) {
+            try (InputStream in = newDownload()) {
                 if (in == null) {
                     return null;
                 } else {
@@ -404,17 +570,17 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
-
     }
 
     @Override
-    public synchronized void delete() {
-        assertConnected();
+    public WebdavFileChannel delete() {
+        connect(false);
         try {
-            finalizer.webdavClient.delete(getFileUrl());
+            finalizer.webdavClient.delete(getFileUri().toString());
+            return this;
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
-                return;
+                return this;
             } else {
                 throw new RuntimeException(e);
             }
@@ -424,19 +590,20 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    public synchronized void close() {
+    public void close() {
         if (finalizer != null) {
             finalizer.close();
             finalizer = null;
         }
+        directoryValidated = false;
     }
 
     @Override
-    public synchronized OutputStream uploadOutputStream() {
-        assertConnected();
+    public OutputStream newUpload() {
+        ensureDirectoryCreated();
         return new ADelegateOutputStream(new TextDescription("%s: uploadOutputStream()", this)) {
 
-            private final File file = getLocalTempFile();
+            private final File file = downloadLocalTempFile();
 
             @Override
             protected OutputStream newDelegate() {
@@ -452,7 +619,6 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
                 try {
                     super.close();
                     if (!file.exists()) {
-                        //write an empty file
                         Files.write(file, "", Charset.defaultCharset());
                     }
                     upload(file);
@@ -466,30 +632,17 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
     }
 
     @Override
-    public synchronized File getLocalTempFile() {
-        final File directory = new File(WebdavClientProperties.TEMP_DIRECTORY, getDirectory());
-        try {
-            Files.forceMkdir(directory);
-        } catch (final IOException e) {
-            throw new RuntimeException(e);
-        }
-        final File file = new File(directory, getFilename());
-        Files.deleteQuietly(file);
-        return file;
-    }
-
-    @Override
-    public synchronized void reconnect() {
-        assertConnected();
+    public WebdavFileChannel reconnect(final boolean createDirectory) {
         close();
-        connect();
+        connect(createDirectory);
+        return this;
     }
 
     @Override
-    public synchronized InputStream downloadInputStream() {
-        assertConnected();
+    public InputStream newDownload() {
+        connect(false);
         try {
-            return finalizer.webdavClient.get(getFileUrl());
+            return finalizer.webdavClient.get(getFileUri().toString());
         } catch (final SardineException e) {
             if (e.getStatusCode() == HttpStatus.SC_NOT_FOUND) {
                 return null;
@@ -503,7 +656,7 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this).addValue(getFileUrl()).toString();
+        return FileChannelPaths.toString(this);
     }
 
     private static final class WebdavFileChannelFinalizer extends AFinalizer {
@@ -529,5 +682,4 @@ public class WebdavFileChannel implements IFileChannel<DavResource> {
             return false;
         }
     }
-
 }

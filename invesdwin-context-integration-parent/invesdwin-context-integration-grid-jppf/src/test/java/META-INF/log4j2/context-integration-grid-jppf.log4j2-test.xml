@@ -1,0 +1,12 @@
+<Configuration>
+
+	<Loggers>
+		<Logger name="org.jppf" additivity="false" level="TRACE">
+			<AppenderRef ref="stdout" />
+			<AppenderRef ref="stderr" />
+			<AppenderRef ref="common" />
+			<AppenderRef ref="error" />
+		</Logger>
+	</Loggers>
+
+</Configuration>

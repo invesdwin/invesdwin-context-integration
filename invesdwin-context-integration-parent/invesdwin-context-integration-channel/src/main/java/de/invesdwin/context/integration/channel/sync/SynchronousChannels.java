@@ -10,12 +10,14 @@ import javax.annotation.concurrent.Immutable;
 import org.apache.commons.lang3.BooleanUtils;
 import org.zeroturnaround.exec.ProcessExecutor;
 import org.zeroturnaround.exec.stop.ProcessStopper;
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.log.Log;
 import de.invesdwin.instrument.DynamicInstrumentationProperties;
 import de.invesdwin.util.concurrent.lock.ILock;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.duration.Duration;
 
 @Immutable
@@ -31,6 +33,7 @@ public final class SynchronousChannels {
     public static final int MAX_FRAGMENTED_DATAGRAM_PACKET_SIZE = 65507;
     public static final int MAX_UNFRAGMENTED_DATAGRAM_PACKET_SIZE = 508;
 
+    private static final Log LOG = new Log(SynchronousChannels.class);
     private static final File TMPFS_FOLDER = new File("/dev/shm");
     @GuardedBy("SynchronousChannels.class")
     private static File tmpfsFolderOrFallback;
@@ -337,8 +340,8 @@ public final class SynchronousChannels {
                 .destroyOnExit()
                 .timeout(1, TimeUnit.MINUTES)
                 .exitValueNormal()
-                .redirectOutput(Slf4jStream.of(SynchronousChannels.class).asInfo())
-                .redirectError(Slf4jStream.of(SynchronousChannels.class).asWarn())
+                .redirectOutput(new LogLevelOutputStream(LogLevel.INFO, LOG))
+                .redirectError(new LogLevelOutputStream(LogLevel.WARN, LOG))
                 .stopper(new ProcessStopper() {
                     @Override
                     public void stop(final Process process) {

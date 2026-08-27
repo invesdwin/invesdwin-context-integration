@@ -6,6 +6,7 @@ import de.invesdwin.context.integration.channel.stream.server.service.IStreamSyn
 import de.invesdwin.context.integration.channel.stream.server.service.IStreamSynchronousEndpointServiceFactory;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.IProperties;
+import de.invesdwin.util.log.ILogLevel;
 import de.invesdwin.util.log.LogLevel;
 
 @ThreadSafe
@@ -18,7 +19,7 @@ public class LoggingDelegateStreamSynchronousEndpointServiceFactory
     private final IStreamSynchronousEndpointServiceFactory delegateFactory;
 
     private final Log log;
-    private final LogLevel logLevel;
+    private final ILogLevel logLevel;
     private final String id;
 
     public LoggingDelegateStreamSynchronousEndpointServiceFactory(
@@ -32,7 +33,7 @@ public class LoggingDelegateStreamSynchronousEndpointServiceFactory
     }
 
     public LoggingDelegateStreamSynchronousEndpointServiceFactory(
-            final IStreamSynchronousEndpointServiceFactory delegate, final Log log, final LogLevel logLevel) {
+            final IStreamSynchronousEndpointServiceFactory delegate, final Log log, final ILogLevel logLevel) {
         this.delegateFactory = delegate;
         this.log = log;
         this.logLevel = logLevel;

@@ -10,6 +10,7 @@ import de.invesdwin.context.integration.channel.stream.server.session.manager.IS
 import de.invesdwin.context.log.Log;
 import de.invesdwin.context.system.properties.IProperties;
 import de.invesdwin.util.lang.Objects;
+import de.invesdwin.util.log.ILogLevel;
 import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 
@@ -22,7 +23,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     private final IStreamSessionManager delegate;
 
     private final Log log;
-    private final LogLevel logLevel;
+    private final ILogLevel logLevel;
     private final String id;
 
     public LoggingDelegateStreamSessionManager(final IStreamSessionManager delegate) {
@@ -34,7 +35,7 @@ public class LoggingDelegateStreamSessionManager implements IStreamSessionManage
     }
 
     public LoggingDelegateStreamSessionManager(final IStreamSessionManager delegate, final Log log,
-            final LogLevel logLevel) {
+            final ILogLevel logLevel) {
         this.delegate = delegate;
         this.log = log;
         this.logLevel = logLevel;

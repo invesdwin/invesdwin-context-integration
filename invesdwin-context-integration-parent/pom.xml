@@ -19,43 +19,75 @@
 		</license>
 	</licenses>
 	<modules>
-		<module>invesdwin-context-integration-amqp</module>
-		<module>invesdwin-context-integration-axon</module>
 		<module>invesdwin-context-integration-batch</module>
 		<module>invesdwin-context-integration-batch-admin</module>
-		<module>invesdwin-context-integration-jppf</module>
-		<module>invesdwin-context-integration-jppf-admin</module>
-		<module>invesdwin-context-integration-jppf-admin-web</module>
-		<module>invesdwin-context-integration-jppf-node</module>
-		<module>invesdwin-context-integration-jppf-node-dist</module>
-		<module>invesdwin-context-integration-jppf-server</module>
-		<module>invesdwin-context-integration-jppf-server-dist</module>
+		<module>invesdwin-context-integration-grid-jppf</module>
+		<module>invesdwin-context-integration-grid-jppf-admin</module>
+		<module>invesdwin-context-integration-grid-jppf-admin-web</module>
+		<module>invesdwin-context-integration-grid-jppf-node</module>
+		<module>invesdwin-context-integration-grid-jppf-node-dist</module>
+		<module>invesdwin-context-integration-grid-jppf-server</module>
+		<module>invesdwin-context-integration-grid-jppf-server-dist</module>
+		<module>invesdwin-context-integration-grid-jar</module>
+		<module>invesdwin-context-integration-grid-docker</module>
+		<module>invesdwin-context-integration-grid-hadoop</module>
+		<module>invesdwin-context-integration-grid-hadoop-test</module>
+		<module>invesdwin-context-integration-grid-spark</module>
+		<module>invesdwin-context-integration-grid-spark-test</module>
+		<module>invesdwin-context-integration-grid-kubernetes</module>
+		<module>invesdwin-context-integration-grid-kubernetes-test</module>
+		<module>invesdwin-context-integration-grid-ignite2</module>
+		<module>invesdwin-context-integration-grid-ignite2-node</module>
+		<module>invesdwin-context-integration-grid-ignite2-node-dist</module>
+		<module>invesdwin-context-integration-grid-ignite2-server</module>
+		<module>invesdwin-context-integration-grid-ignite2-server-dist</module>
+		<module>invesdwin-context-integration-grid-ignite2-test</module>
+		<module>invesdwin-context-integration-grid-ignite3</module>
+		<module>invesdwin-context-integration-grid-ignite3-server</module>
+		<module>invesdwin-context-integration-grid-ignite3-test</module>
+		<module>invesdwin-context-integration-grid-mpi</module>
+		<module>invesdwin-context-integration-grid-mpi-openmpi</module>
+		<module>invesdwin-context-integration-grid-mpi-mvapich2</module>
+		<module>invesdwin-context-integration-grid-mpi-mpjexpress</module>
+		<module>invesdwin-context-integration-grid-mpi-fastmpj</module>
+		<module>invesdwin-context-integration-grid-mpi-test</module>
 		<module>invesdwin-context-integration-ftp</module>
 		<module>invesdwin-context-integration-ftp-server</module>
 		<module>invesdwin-context-integration-ftp-server-dist</module>
 		<module>invesdwin-context-integration-webdav</module>
 		<module>invesdwin-context-integration-webdav-server</module>
 		<module>invesdwin-context-integration-webdav-server-dist</module>
-		<module>invesdwin-context-integration-jms</module>
 		<module>invesdwin-context-integration-ws</module>
 		<module>invesdwin-context-integration-ws-jaxrs</module>
 		<module>invesdwin-context-integration-ws-jaxws</module>
 		<module>invesdwin-context-integration-ws-registry</module>
 		<module>invesdwin-context-integration-ws-registry-dist</module>
 		<module>invesdwin-context-integration-maven</module>
-		<module>invesdwin-context-integration-jar</module>
-		<module>invesdwin-context-integration-docker</module>
 		<module>invesdwin-context-integration-affinity</module>
 		<module>invesdwin-context-integration-channel</module>
-		<module>invesdwin-context-integration-channel-gpl</module>
-		<module>invesdwin-context-integration-channel-confluent</module>
-		<module>invesdwin-context-integration-rmi</module>
-		<module>invesdwin-context-integration-mpi</module>
-		<module>invesdwin-context-integration-mpi-openmpi</module>
-		<module>invesdwin-context-integration-mpi-mvapich2</module>
-		<module>invesdwin-context-integration-mpi-mpjexpress</module>
-		<module>invesdwin-context-integration-mpi-fastmpj</module>
-		<module>invesdwin-context-integration-mpi-test</module>
+		<module>invesdwin-context-integration-channel-jms</module>
+		<module>invesdwin-context-integration-channel-amqp</module>
+		<module>invesdwin-context-integration-channel-netty</module>
+		<module>invesdwin-context-integration-channel-mina</module>
+		<module>invesdwin-context-integration-channel-enxio</module>
+		<module>invesdwin-context-integration-channel-jgroups</module>
+		<module>invesdwin-context-integration-channel-hadronio</module>
+		<module>invesdwin-context-integration-channel-pulsar</module>
+		<module>invesdwin-context-integration-channel-kafka</module>
+		<module>invesdwin-context-integration-channel-kafka-confluent</module>
+		<module>invesdwin-context-integration-channel-axon</module>
+		<module>invesdwin-context-integration-channel-chronicle</module>
+		<module>invesdwin-context-integration-channel-redis</module>
+		<module>invesdwin-context-integration-channel-jucx</module>
+		<module>invesdwin-context-integration-channel-darpc</module>
+		<module>invesdwin-context-integration-channel-jnanomsg</module>
+		<module>invesdwin-context-integration-channel-jnetrobust</module>
+		<module>invesdwin-context-integration-channel-jeromq</module>
+		<module>invesdwin-context-integration-channel-kryonet</module>
+		<module>invesdwin-context-integration-channel-nng</module>
+		<module>invesdwin-context-integration-channel-aeron</module>
+		<module>invesdwin-context-integration-channel-rmi</module>
+		<module>invesdwin-context-integration-channel-rmi-spring</module>
 	</modules>
 	<properties>
 		<project.version.invesdwin-context>1.0.4-SNAPSHOT</project.version.invesdwin-context>
@@ -73,10 +105,10 @@
 		<!-- cxf does not yet support jakarta EE 9:
 		https://issues.apache.org/jira/browse/CXF-8371 -->
 		<version.cxf>3.5.4</version.cxf>
-		<version.jersey>3.1.10</version.jersey>
+		<version.jersey>3.1.11</version.jersey>
 		<version.jakarta.ws.rs>3.1.0</version.jakarta.ws.rs>
 		<version.xmlsec>4.0.4</version.xmlsec>
-		<version.jppf>6.2</version.jppf>
+		<version.jppf>6.3-inv</version.jppf>
 		<version.ftp4j>1.7.3</version.ftp4j>
 		<version.ftpserver>1.1.1</version.ftpserver>
 		<version.webdav-handler>3.3.0</version.webdav-handler>
@@ -84,7 +116,7 @@
 		<version.shrinkwrap-resolver>3.3.4</version.shrinkwrap-resolver>
 		<version.eclipse-aether>1.1.0</version.eclipse-aether>
 		<version.reactive-streams>1.0.4</version.reactive-streams>
-		<version.lmax-disruptor>3.4.4</version.lmax-disruptor>
+		<version.lmax-disruptor>4.0.0</version.lmax-disruptor>
 		<version.conversant-disruptor>1.2.15</version.conversant-disruptor>
 		<version.aeron>1.50.4</version.aeron>
 		<version.jeromq>0.5.2</version.jeromq>
@@ -94,11 +126,12 @@
 		<version.kryonet>2.22.9</version.kryonet>
 		<version.chronicle-affinity>2026.2</version.chronicle-affinity>
 		<version.chronicle-network>2.24ea15</version.chronicle-network>
-		<version.axon>4.5.11</version.axon>
+		<version.axon>4.13.2</version.axon>
 		<version.srp6a>2.1.0</version.srp6a>
 		<version.barchart-udt>2.3.0</version.barchart-udt>
 		<version.jnetrobust>0.1.0-inv</version.jnetrobust>
 		<version.tomcat-jni>10.0.27</version.tomcat-jni>
+		<version.tomcat>11.0.25</version.tomcat>
 		<version.jnr-enxio>0.32.14</version.jnr-enxio>
 		<version.fastmpj>1.0_7</version.fastmpj>
 		<version.openmpi>4.1.4</version.openmpi>
@@ -117,6 +150,11 @@
 		<version.jgroups>5.2.14.Final</version.jgroups>
 		<version.embedded-maven>2.4.39</version.embedded-maven>
 		<version.sisu>0.9.0.M4</version.sisu>
+		<version.hadoop>3.5.0</version.hadoop>
+		<version.spark>4.2.0</version.spark>
+		<version.awaitility>4.3.0</version.awaitility>
+		<version.kubernetes-client>7.8.0</version.kubernetes-client>
+		<version.ignite>3.1.0</version.ignite>
 	</properties>
 	<dependencyManagement>
 		<dependencies>
@@ -142,23 +180,6 @@
 				<scope>import</scope>
 			</dependency>
 			<dependency>
-				<groupId>org.axonframework</groupId>
-				<artifactId>axon-bom</artifactId>
-				<version>${version.axon}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-amqp</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-axon</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-batch</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
@@ -176,27 +197,174 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-server</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-server</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-node</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-node</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-admin</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-admin</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jppf-admin-web</artifactId>
+				<artifactId>invesdwin-context-integration-grid-jppf-admin-web</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-jar</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-docker</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-docker</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-hadoop-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-spark-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-node</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-server</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite2-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-server</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-ignite3-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-kubernetes-test</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-openmpi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-mvapich2</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-mpjexpress</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-fastmpj</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-grid-mpi-test</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -229,11 +397,6 @@
 			<dependency>
 				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-webdav-server</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jms</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -274,22 +437,6 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-jar</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-docker</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-docker</artifactId>
-				<version>${project.version.invesdwin-context-integration}</version>
-				<type>test-jar</type>
-			</dependency>
-			<dependency>
-				<groupId>de.invesdwin</groupId>
 				<artifactId>invesdwin-context-integration-affinity</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
@@ -306,42 +453,123 @@
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-channel-gpl</artifactId>
+				<artifactId>invesdwin-context-integration-channel-jms</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-rmi</artifactId>
+				<artifactId>invesdwin-context-integration-channel-amqp</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi</artifactId>
+				<artifactId>invesdwin-context-integration-channel-netty</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-openmpi</artifactId>
+				<artifactId>invesdwin-context-integration-channel-mina</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-mvapich2</artifactId>
+				<artifactId>invesdwin-context-integration-channel-enxio</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-mpjexpress</artifactId>
+				<artifactId>invesdwin-context-integration-channel-jgroups</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-fastmpj</artifactId>
+				<artifactId>invesdwin-context-integration-channel-hadronio</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
 				<groupId>de.invesdwin</groupId>
-				<artifactId>invesdwin-context-integration-mpi-test</artifactId>
+				<artifactId>invesdwin-context-integration-channel-pulsar</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-kafka</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-kafka</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+				<type>test-jar</type>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-confluent</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-axon</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-chronicle</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-redis</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jucx</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-darpc</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jnanomsg</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jnetrobust</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-jeromq</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-kryonet</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-nng</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-aeron</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-rmi</artifactId>
+				<version>${project.version.invesdwin-context-integration}</version>
+			</dependency>
+			<dependency>
+				<groupId>de.invesdwin</groupId>
+				<artifactId>invesdwin-context-integration-channel-rmi-spring</artifactId>
 				<version>${project.version.invesdwin-context-integration}</version>
 			</dependency>
 			<dependency>
@@ -364,10 +592,6 @@
 				<artifactId>spring-integration-ws</artifactId>
 				<version>${version.spring-integration}</version>
 				<exclusions>
-					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
 					<exclusion>
 						<artifactId>stax-api</artifactId>
 						<groupId>javax.xml.stream</groupId>
@@ -407,6 +631,10 @@
 						<artifactId>ehcache-core</artifactId>
 						<groupId>net.sf.ehcache</groupId>
 					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+					</exclusion>
 				</exclusions>
 			</dependency>
 			<dependency>
@@ -420,10 +648,6 @@
 				<version>${version.spring-ws}</version>
 				<exclusions>
 					<exclusion>
-						<artifactId>commons-logging</artifactId>
-						<groupId>commons-logging</groupId>
-					</exclusion>
-					<exclusion>
 						<groupId>com.sun.xml.bind</groupId>
 						<artifactId>jaxb-impl</artifactId>
 					</exclusion>
@@ -433,12 +657,6 @@
 				<groupId>org.apache.activemq</groupId>
 				<artifactId>artemis-jakarta-server</artifactId>
 				<version>${version.artemis}</version>
-				<exclusions>
-					<exclusion>
-						<groupId>commons-logging</groupId>
-						<artifactId>commons-logging</artifactId>
-					</exclusion>
-				</exclusions>
 			</dependency>
 			<dependency>
 				<groupId>jakarta.jms</groupId>
@@ -544,9 +762,9 @@
 				<version>${version.jersey}</version>
 			</dependency>
 			<dependency>
-			    <groupId>jakarta.ws.rs</groupId>
-			    <artifactId>jakarta.ws.rs-api</artifactId>
-			    <version>${version.jakarta.ws.rs}</version>
+				<groupId>jakarta.ws.rs</groupId>
+				<artifactId>jakarta.ws.rs-api</artifactId>
+				<version>${version.jakarta.ws.rs}</version>
 			</dependency>
 			<dependency>
 				<groupId>org.jboss.shrinkwrap.resolver</groupId>
@@ -560,6 +778,10 @@
 					<exclusion>
 						<groupId>javax.enterprise</groupId>
 						<artifactId>cdi-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -633,6 +855,10 @@
 						<artifactId>log4j</artifactId>
 					</exclusion>
 					<exclusion>
+						<groupId>ch.qos.reload4j</groupId>
+						<artifactId>reload4j</artifactId>
+					</exclusion>
+					<exclusion>
 						<groupId>javax.el</groupId>
 						<artifactId>javax.el-api</artifactId>
 					</exclusion>
@@ -659,6 +885,10 @@
 					<exclusion>
 						<groupId>javax.servlet</groupId>
 						<artifactId>javax.servlet-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>slf4j-reload4j</artifactId>
 					</exclusion>
 				</exclusions>
 			</dependency>
@@ -696,11 +926,6 @@
 				<groupId>org.reactivestreams</groupId>
 				<artifactId>reactive-streams</artifactId>
 				<version>${version.reactive-streams}</version>
-			</dependency>
-			<dependency>
-				<groupId>org.commonjava.web</groupId>
-				<artifactId>webdav-handler-common</artifactId>
-				<version>${version.webdav-handler}</version>
 			</dependency>
 			<dependency>
 				<groupId>com.github.lookfirst</groupId>
@@ -785,6 +1010,11 @@
 				<version>${version.tomcat-jni}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.apache.tomcat</groupId>
+				<artifactId>tomcat-catalina</artifactId>
+				<version>${version.tomcat}</version>
+			</dependency>
+			<dependency>
 				<groupId>com.github.jnr</groupId>
 				<artifactId>jnr-enxio</artifactId>
 				<version>${version.jnr-enxio}</version>
@@ -825,53 +1055,74 @@
 				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
-			    <groupId>com.github.testcontainers-all-things-kafka</groupId>
-			    <artifactId>cp-testcontainers</artifactId>
-			    <version>${version.cp-testcontainers}</version>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-redpanda</artifactId>
+				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
-			    <groupId>io.confluent</groupId>
-			    <artifactId>kafka-avro-serializer</artifactId>
-			    <version>${version.confluent}</version>
+				<groupId>com.github.testcontainers-all-things-kafka</groupId>
+				<artifactId>cp-testcontainers</artifactId>
+				<version>${version.cp-testcontainers}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>ch.qos.logback</groupId>
+						<artifactId>logback-classic</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 			<dependency>
-			   <groupId>io.lettuce</groupId>
-               <artifactId>lettuce-core</artifactId>
-               <version>${version.lettuce}</version>
-            </dependency>
-            <dependency>
-               <groupId>redis.clients</groupId>
-               <artifactId>jedis</artifactId>
-               <version>${version.jedis}</version>
-            </dependency>
-			<dependency>
-			    <groupId>org.apache.pulsar</groupId>
-	            <artifactId>pulsar-client</artifactId>
-	            <version>${version.pulsar}</version>
-	            <exclusions>
-	            	<exclusion>
-	            		<groupId>javax.validation</groupId>
-	            		<artifactId>validation-api</artifactId>
-	            	</exclusion>
-	            </exclusions>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-k3s</artifactId>
+				<version>${version.testcontainers}</version>
 			</dependency>
 			<dependency>
-	            <groupId>org.apache.pulsar</groupId>
-	            <artifactId>pulsar-client-admin</artifactId>
-	            <version>${version.pulsar}</version>
-	            <exclusions>
-	            	<exclusion>
-	            		<groupId>javax.validation</groupId>
-	            		<artifactId>validation-api</artifactId>
-	            	</exclusion>
-	            </exclusions>
-	        </dependency>
-	        <dependency>
-	            <groupId>org.testcontainers</groupId>
-	            <artifactId>testcontainers-pulsar</artifactId>
-	    		<version>${version.testcontainers}</version>
-	    		<scope>test</scope>
-			</dependency>                 
+				<groupId>io.fabric8</groupId>
+				<artifactId>kubernetes-client</artifactId>
+				<version>${version.kubernetes-client}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.confluent</groupId>
+				<artifactId>kafka-avro-serializer</artifactId>
+				<version>${version.confluent}</version>
+			</dependency>
+			<dependency>
+				<groupId>io.lettuce</groupId>
+				<artifactId>lettuce-core</artifactId>
+				<version>${version.lettuce}</version>
+			</dependency>
+			<dependency>
+				<groupId>redis.clients</groupId>
+				<artifactId>jedis</artifactId>
+				<version>${version.jedis}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.pulsar</groupId>
+				<artifactId>pulsar-client</artifactId>
+				<version>${version.pulsar}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.pulsar</groupId>
+				<artifactId>pulsar-client-admin</artifactId>
+				<version>${version.pulsar}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.testcontainers</groupId>
+				<artifactId>testcontainers-pulsar</artifactId>
+				<version>${version.testcontainers}</version>
+				<scope>test</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.openucx</groupId>
 				<artifactId>jucx</artifactId>
@@ -933,6 +1184,101 @@
 				<groupId>org.eclipse.sisu</groupId>
 				<artifactId>org.eclipse.sisu.plexus</artifactId>
 				<version>${version.sisu}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-client-api</artifactId>
+				<version>${version.hadoop}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-client-runtime</artifactId>
+				<version>${version.hadoop}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.hadoop</groupId>
+				<artifactId>hadoop-yarn-applications-distributedshell</artifactId>
+				<version>${version.hadoop}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.ehcache</groupId>
+						<artifactId>ehcache</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-core_2.13</artifactId>
+				<version>${version.spark}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jul-to-slf4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>org.slf4j</groupId>
+						<artifactId>jcl-over-slf4j</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>com.esotericsoftware</groupId>
+						<artifactId>minlog</artifactId>
+					</exclusion>
+				</exclusions>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.spark</groupId>
+				<artifactId>spark-launcher_2.13</artifactId>
+				<version>${version.spark}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.awaitility</groupId>
+				<artifactId>awaitility</artifactId>
+				<version>${version.awaitility}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-configuration</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-server-connector</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-spring</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.axonframework</groupId>
+				<artifactId>axon-test</artifactId>
+				<version>${version.axon}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-client</artifactId>
+				<version>${version.ignite}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-api</artifactId>
+				<version>${version.ignite}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.apache.ignite</groupId>
+				<artifactId>ignite-runner</artifactId>
+				<version>${version.ignite}</version>
+				<exclusions>
+					<exclusion>
+						<groupId>javax.annotation</groupId>
+						<artifactId>javax.annotation-api</artifactId>
+					</exclusion>
+					<exclusion>
+						<groupId>javax.validation</groupId>
+						<artifactId>validation-api</artifactId>
+					</exclusion>
+				</exclusions>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

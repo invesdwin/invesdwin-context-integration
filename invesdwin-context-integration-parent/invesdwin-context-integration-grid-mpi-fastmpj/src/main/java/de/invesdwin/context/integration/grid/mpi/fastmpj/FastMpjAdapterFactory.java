@@ -1,0 +1,33 @@
+package de.invesdwin.context.integration.grid.mpi.fastmpj;
+
+import java.lang.reflect.Field;
+
+import javax.annotation.concurrent.Immutable;
+
+import de.invesdwin.context.integration.grid.mpi.IMpiAdapter;
+import de.invesdwin.context.integration.grid.mpi.IMpiAdapterFactory;
+import de.invesdwin.context.log.error.Err;
+import de.invesdwin.util.lang.reflection.Reflections;
+
+@Immutable
+public class FastMpjAdapterFactory implements IMpiAdapterFactory {
+
+    @Override
+    public boolean isAvailable() {
+        try {
+            final Class<Object> mpiClass = Reflections.classForName("mpi.MPI");
+            //finalized field is called j here due to obfuscation
+            final Field jField = Reflections.findField(mpiClass, "j");
+            return jField != null;
+        } catch (final Throwable t) {
+            Err.process(t);
+            return false;
+        }
+    }
+
+    @Override
+    public IMpiAdapter newInstance() {
+        return new de.invesdwin.context.integration.grid.mpi.fastmpj.FastMpjAdapter();
+    }
+
+}

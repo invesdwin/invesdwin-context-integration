@@ -1,14 +1,11 @@
 package de.invesdwin.context.integration.channel;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
-
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
 
 import com.google.common.util.concurrent.ListenableFuture;
 
@@ -35,7 +32,9 @@ import de.invesdwin.util.concurrent.future.Futures;
 import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.IFDateProvider;
@@ -132,7 +131,7 @@ public class ThroughputChannelTest {
 
         public ThroughputReceiverTask(final AChannelTest parent, final Log log,
                 final ISynchronousReader<FDate> channelReader) {
-            this(parent, Slf4jStream.of(log).asInfo(), channelReader);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), channelReader);
         }
 
         public ThroughputReceiverTask(final AChannelTest parent, final OutputStream log,
@@ -147,7 +146,7 @@ public class ThroughputChannelTest {
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
                 final ILatencyReport latencyReportMessageReceived = latencyReportFactory.newLatencyReport(
                         "throughput/2_" + ThroughputReceiverTask.class.getSimpleName() + "_messageReceived");
@@ -189,8 +188,8 @@ public class ThroughputChannelTest {
                     channelReader.close();
                     latencyReportMessageReceived.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
     }
@@ -207,7 +206,7 @@ public class ThroughputChannelTest {
 
         public ThroughputSenderTask(final AChannelTest parent, final Log log,
                 final ISynchronousWriter<FDate> channelWriter) {
-            this(parent, Slf4jStream.of(log).asInfo(), channelWriter);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), channelWriter);
         }
 
         public ThroughputSenderTask(final AChannelTest parent, final OutputStream log,
@@ -227,7 +226,7 @@ public class ThroughputChannelTest {
                 if (AChannelTest.DEBUG) {
                     log.write("sender open channel writer\n".getBytes());
                 }
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 channelWriter.open();
                 try {
@@ -262,8 +261,8 @@ public class ThroughputChannelTest {
                     channelWriter.close();
                     latencyReportMessageSent.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 

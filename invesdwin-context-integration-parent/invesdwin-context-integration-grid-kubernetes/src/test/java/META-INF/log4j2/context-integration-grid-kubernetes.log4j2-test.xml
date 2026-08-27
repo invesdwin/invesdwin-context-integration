@@ -1,0 +1,7 @@
+<Configuration>
+
+    <Loggers>
+        <Logger name="io.fabric8.kubernetes" level="TRACE" additivity="true" />
+    </Loggers>
+
+</Configuration>

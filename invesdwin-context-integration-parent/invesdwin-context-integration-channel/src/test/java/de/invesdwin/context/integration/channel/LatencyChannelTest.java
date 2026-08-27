@@ -9,8 +9,6 @@ import java.util.concurrent.BlockingQueue;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-
 import com.google.common.util.concurrent.ListenableFuture;
 
 import de.invesdwin.context.integration.channel.AChannelTest.FileChannelType;
@@ -41,8 +39,10 @@ import de.invesdwin.util.concurrent.loop.LoopInterruptedCheck;
 import de.invesdwin.util.concurrent.reference.IReference;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.lang.Files;
+import de.invesdwin.util.log.LogLevel;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
 import de.invesdwin.util.streams.closeable.Closeables;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.FTimeUnit;
@@ -190,7 +190,7 @@ public class LatencyChannelTest {
 
         public LatencyClientTask(final AChannelTest parent, final Log log,
                 final ISynchronousWriter<FDate> requestWriter, final ISynchronousReader<FDate> responseReader) {
-            this(parent, Slf4jStream.of(log).asInfo(), requestWriter, responseReader);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), requestWriter, responseReader);
         }
 
         public LatencyClientTask(final AChannelTest parent, final OutputStream log,
@@ -207,7 +207,7 @@ public class LatencyChannelTest {
             try {
                 Instant readsStart = new Instant();
                 FDate prevValue = null;
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;
                 final ILatencyReport latencyReportRequestSent = latencyReportFactory
                         .newLatencyReport("latency/1_" + LatencyClientTask.class.getSimpleName() + "_requestSent");
@@ -284,8 +284,8 @@ public class LatencyChannelTest {
                     latencyReportResponseReceived.close();
                     latencyReportRoundtrip.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 
@@ -305,7 +305,7 @@ public class LatencyChannelTest {
 
         public LatencyServerTask(final AChannelTest parent, final Log log,
                 final ISynchronousReader<FDate> requestReader, final ISynchronousWriter<FDate> responseWriter) {
-            this(parent, Slf4jStream.of(log).asInfo(), requestReader, responseWriter);
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log), requestReader, responseWriter);
         }
 
         public LatencyServerTask(final AChannelTest parent, final OutputStream log,
@@ -326,7 +326,7 @@ public class LatencyChannelTest {
                         .newLatencyReport("latency/2_" + LatencyServerTask.class.getSimpleName() + "_requestReceived");
                 final ILatencyReport latencyReportResponseSent = AChannelTest.LATENCY_REPORT_FACTORY
                         .newLatencyReport("latency/3_" + LatencyServerTask.class.getSimpleName() + "_responseSent");
-                int count = -parent.getWarmupMessageCount();
+                long count = -parent.getWarmupMessageCount();
                 final LoopInterruptedCheck loopCheck = parent.newLoopInterruptedCheck();
                 if (AChannelTest.DEBUG) {
                     log.write("server open request reader\n".getBytes());
@@ -380,8 +380,8 @@ public class LatencyChannelTest {
                     latencyReportRequestReceived.close();
                     latencyReportResponseSent.close();
                 }
-            } catch (final IOException e) {
-                throw new RuntimeException(e);
+            } catch (final Throwable e) {
+                throw Err.process(e);
             }
         }
 
@@ -407,7 +407,7 @@ public class LatencyChannelTest {
         private final AChannelTest parent;
         private final OutputStream log;
         private Instant readsStart;
-        private int count;
+        private long count;
         private ICloseableIterator<? extends IFDateProvider> values;
         private FDate prevValue;
         private ILatencyReport latencyReportResponseReceived;
@@ -419,7 +419,7 @@ public class LatencyChannelTest {
         }
 
         public LatencyClientHandler(final AChannelTest parent, final Log log) {
-            this(parent, Slf4jStream.of(log).asInfo());
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log));
         }
 
         public LatencyClientHandler(final AChannelTest parent, final OutputStream log) {
@@ -514,7 +514,7 @@ public class LatencyChannelTest {
         private final AChannelTest parent;
         private final OutputStream log;
         private Instant writesStart;
-        private int count;
+        private long count;
         private final LoopInterruptedCheck loopCheck;
         private ILatencyReport latencyReportRequestReceived;
 
@@ -523,7 +523,7 @@ public class LatencyChannelTest {
         }
 
         public LatencyServerHandler(final AChannelTest parent, final Log log) {
-            this(parent, Slf4jStream.of(log).asInfo());
+            this(parent, new LogLevelOutputStream(LogLevel.INFO, log));
         }
 
         public LatencyServerHandler(final AChannelTest parent, final OutputStream log) {

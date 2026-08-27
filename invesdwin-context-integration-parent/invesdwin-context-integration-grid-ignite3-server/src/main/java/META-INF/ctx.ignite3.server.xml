@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id="ignite3Server"
+		class="de.invesdwin.context.integration.grid.ignite3.server.ConfiguredIgnite3Server"
+		init-method="start" destroy-method="stop">
+	</bean>
+
+	<bean id="ignite3ServerDiscoveryServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ServerDiscoveryServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).SERVER_DISCOVERY_SERVICE_NAME}" />
+	</bean>
+
+	<bean id="ignite3ThinClientServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3ThinClientServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).THIN_CLIENT_SERVICE_NAME}" />
+	</bean>
+
+	<bean id="ignite3RestServicePublication"
+		class="de.invesdwin.context.integration.grid.ignite3.server.internal.Ignite3RestServicePublication">
+		<property name="serviceName"
+			value="#{T(de.invesdwin.context.integration.grid.ignite3.Ignite3ClientProperties).REST_SERVICE_NAME}" />
+	</bean>
+
+</beans>

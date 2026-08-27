@@ -11,7 +11,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.ws.registry.IRegistryService;
 import de.invesdwin.context.integration.ws.registry.ServiceBinding;
-import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
 import de.invesdwin.util.collections.fast.concurrent.ASynchronizedFastIterableDelegateSet;
 import de.invesdwin.util.time.date.FDate;
@@ -51,7 +50,7 @@ public class RegistryServiceStubImpl implements IRegistryService {
         } else {
             binding.setAccessUri(accessURI);
         }
-        Assertions.assertThat(registeredBindings.add(binding)).isTrue();
+        registeredBindings.add(binding);
         return binding;
     }
 
@@ -60,7 +59,7 @@ public class RegistryServiceStubImpl implements IRegistryService {
         for (final ServiceBinding binding : registeredBindings) {
             if (binding.getName().equals(serviceName)
                     && binding.getAccessUri().toString().equals(accessUri.toString())) {
-                Assertions.assertThat(registeredBindings.remove(binding)).isTrue();
+                registeredBindings.remove(binding);
                 binding.setDeleted(FDate.now().jodaTimeValue().toDateTime());
                 return binding;
             }

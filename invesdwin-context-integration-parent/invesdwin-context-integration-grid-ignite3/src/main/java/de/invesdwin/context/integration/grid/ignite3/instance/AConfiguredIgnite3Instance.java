@@ -1,0 +1,241 @@
+package de.invesdwin.context.integration.grid.ignite3.instance;
+
+import java.net.URI;
+import java.util.concurrent.TimeoutException;
+
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
+
+import org.apache.ignite.Ignite;
+import org.springframework.beans.factory.FactoryBean;
+import org.springframework.scheduling.annotation.Scheduled;
+
+import de.invesdwin.aspects.annotation.SkipParallelExecution;
+import de.invesdwin.context.beans.hook.IStartupHook;
+import de.invesdwin.context.beans.init.MergedContext;
+import de.invesdwin.context.integration.IntegrationProperties;
+import de.invesdwin.context.integration.filechannel.IFileChannel;
+import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
+import de.invesdwin.context.integration.grid.ignite3.AIgnite3ProcessingThreadsCounter;
+import de.invesdwin.context.integration.retry.Retry;
+import de.invesdwin.context.integration.retry.RetryLaterRuntimeException;
+import de.invesdwin.context.integration.webdav.WebdavServerDestinationProvider;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.util.assertions.Assertions;
+import de.invesdwin.util.concurrent.Executors;
+import de.invesdwin.util.concurrent.WrappedExecutorService;
+import de.invesdwin.util.shutdown.IShutdownHook;
+import de.invesdwin.util.shutdown.ShutdownHookManager;
+import de.invesdwin.util.time.date.FDate;
+import de.invesdwin.util.time.date.FTimeUnit;
+import de.invesdwin.util.time.duration.Duration;
+
+@ThreadSafe
+public abstract class AConfiguredIgnite3Instance<S> implements IStartupHook, IShutdownHook, FactoryBean<Ignite> {
+
+    protected final Log log = new Log(getClass());
+    private final WrappedExecutorService executor = Executors.newFixedThreadPool(getClass().getSimpleName(), 1);
+
+    private boolean startupInvoked = false;
+    private boolean startDelayed = false;
+
+    private volatile S server;
+
+    @GuardedBy("this")
+    private IFileChannel heartbeatWebdavFileChannel;
+    private Ignite3InstanceProcessingThreadsCounter processingThreadsCounter;
+
+    // Delegated to subclass to handle the actual server/client node startup[cite: 40]
+    protected abstract S startIgniteServer();
+
+    public synchronized S getServer() {
+        return server;
+    }
+
+    public synchronized Ignite getInstance() {
+        return getApi(server);
+    }
+
+    protected abstract Ignite getApi(S server);
+
+    @Override
+    public Ignite getObject() throws Exception {
+        return getInstance();
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return Ignite.class;
+    }
+
+    public synchronized Ignite3InstanceProcessingThreadsCounter getProcessingThreadsCounter() {
+        if (processingThreadsCounter == null) {
+            processingThreadsCounter = new Ignite3InstanceProcessingThreadsCounter(getInstance());
+        }
+        return processingThreadsCounter;
+    }
+
+    private synchronized void setInstance(final S server) {
+        Assertions.checkNull(this.server, "already started");
+        this.server = server;
+        if (server != null) {
+            final Ignite instance = getInstance();
+            uploadHeartbeat();
+            log.info("%s started with name: %s", getClass().getSimpleName(), instance.name());
+        }
+    }
+
+    public synchronized void start() {
+        Assertions.checkNull(server, "already started");
+
+        if (!startupInvoked) {
+            startDelayed = true;
+            return;
+        }
+
+        final S server = startIgniteServer();
+        setInstance(server);
+        waitForWarmup();
+    }
+
+    private void waitForWarmup() {
+        final Ignite3InstanceProcessingThreadsCounter processingThreadsCounterCopy = getProcessingThreadsCounter();
+        try {
+            processingThreadsCounterCopy.waitForMinimumCounts(1, Duration.ONE_MINUTE);
+        } catch (final TimeoutException e) {
+            //ignore
+        }
+        processingThreadsCounterCopy.logWarmupFinished();
+    }
+
+    @Override
+    public synchronized void startup() throws Exception {
+        startupInvoked = true;
+        if (startDelayed) {
+            start();
+        }
+    }
+
+    public synchronized void stop() {
+        if (server != null) {
+            final String igniteName = getInstance().name();
+
+            try {
+                final IFileChannel channel = getHeartbeatWebdavFileChannel(igniteName);
+                channel.delete();
+            } catch (final Throwable e) {
+                //ignore
+            }
+
+            try {
+                shutdown(server);
+            } catch (final Exception e) {
+                log.error("Error shutting down Ignite node", e);
+            }
+
+            try {
+                executor.awaitPendingCountZero();
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+            server = null;
+            processingThreadsCounter = null;
+            log.info("%s stopped: %s", getClass().getSimpleName(), igniteName);
+        }
+    }
+
+    protected abstract void shutdown(S server);
+
+    @Scheduled(initialDelay = 0, fixedDelay = 1 * FTimeUnit.SECONDS_IN_MINUTE * FTimeUnit.MILLISECONDS_IN_SECOND)
+    @SkipParallelExecution
+    private void scheduledUploadHeartbeat() {
+        uploadHeartbeat();
+    }
+
+    @Retry
+    private void uploadHeartbeat() {
+        if (ShutdownHookManager.isShuttingDown()) {
+            return;
+        }
+        final Ignite localIgnite = getInstance();
+        if (localIgnite != null) {
+            try {
+                final String hostname = IntegrationProperties.HOSTNAME;
+
+                // Retrieve the actual UUID by finding the local node in the cluster topology
+                String nodeUuid = localIgnite.name(); // Fallback to name
+                for (final org.apache.ignite.network.ClusterNode node : localIgnite.cluster().nodes()) {
+                    if (node.name().equals(localIgnite.name())) {
+                        nodeUuid = node.id().toString();
+                        break;
+                    }
+                }
+
+                final int processingThreads = newCpuThreadPoolCount();
+                final FDate heartbeat = FDate.now();
+
+                final String content = hostname + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + nodeUuid
+                        + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR + processingThreads
+                        + AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_SEPARATOR
+                        + heartbeat.toString(AIgnite3ProcessingThreadsCounter.WEBDAV_CONTENT_DATEFORMAT);
+
+                synchronized (localIgnite) {
+                    final IFileChannel channel = getHeartbeatWebdavFileChannel(nodeUuid);
+                    try {
+                        channel.upload(content.getBytes());
+                    } catch (final Throwable t) {
+                        channel.close();
+                        throw t;
+                    }
+                }
+            } catch (final Throwable t) {
+                throw new RetryLaterRuntimeException(t);
+            }
+        }
+    }
+
+    protected int newCpuThreadPoolCount() {
+        return Executors.getCpuThreadPoolCount();
+    }
+
+    private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
+        final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
+                && heartbeatWebdavFileChannel.getFilename() != null
+                && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
+
+        if (heartbeatWebdavFileChannel == null || differentNodeUuid || !heartbeatWebdavFileChannel.isConnected()) {
+            if (heartbeatWebdavFileChannel != null) {
+                if (differentNodeUuid) {
+                    try {
+                        if (!heartbeatWebdavFileChannel.isConnected()) {
+                            heartbeatWebdavFileChannel.connect();
+                        }
+                        heartbeatWebdavFileChannel.delete();
+                    } catch (final Throwable t) {
+                        //ignore
+                    }
+                }
+                heartbeatWebdavFileChannel.close();
+                heartbeatWebdavFileChannel = null;
+            }
+            final URI webdavServerUri = MergedContext.getInstance()
+                    .getBean(WebdavServerDestinationProvider.class)
+                    .getDestination();
+            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+                    .setSubDirectory(AIgnite3ProcessingThreadsCounter.WEBDAV_DIRECTORY);
+            if (!channel.isConnected()) {
+                final String prefix = AIgnite3ProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
+                channel.setFilename(prefix + nodeUuid + ".heartbeat");
+                channel.connect();
+            }
+            heartbeatWebdavFileChannel = channel;
+        }
+        return heartbeatWebdavFileChannel;
+    }
+
+    @Override
+    public void shutdown() throws Exception {
+        stop();
+    }
+}

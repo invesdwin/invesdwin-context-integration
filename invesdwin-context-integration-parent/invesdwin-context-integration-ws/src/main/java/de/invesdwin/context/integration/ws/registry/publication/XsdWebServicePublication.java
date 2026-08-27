@@ -32,6 +32,7 @@ public class XsdWebServicePublication extends DefaultWsdl11Definition
 
     private volatile String name;
     private volatile boolean useRegistry = true;
+    private volatile boolean validatePort = true;
 
     @Override
     public void setUseRegistry(final boolean useRegistry) {
@@ -41,6 +42,16 @@ public class XsdWebServicePublication extends DefaultWsdl11Definition
     @Override
     public boolean isUseRegistry() {
         return useRegistry;
+    }
+
+    @Override
+    public boolean isValidatePort() {
+        return validatePort;
+    }
+
+    @Override
+    public void setValidatePort(final boolean validatePort) {
+        this.validatePort = validatePort;
     }
 
     @Override

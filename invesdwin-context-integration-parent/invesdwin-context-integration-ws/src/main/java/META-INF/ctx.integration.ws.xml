@@ -73,14 +73,15 @@
 
 	<!-- securing rest services here per default, specific services can be reconfigured 
 		by addin more security http tags for those and overriding this config thus -->
-	<security:http
+	<security:http request-matcher="ant"
 		authentication-manager-ref="springWebAuthenticationManager"
 		use-expressions="true" pattern="/spring-web/**">
 
 		<security:csrf disabled="true" />
 		<security:headers>
 			<security:frame-options policy="SAMEORIGIN" />
-			<security:content-type-options disabled="true" />
+			<security:content-type-options
+				disabled="true" />
 		</security:headers>
 
 		<security:http-basic />
@@ -91,17 +92,16 @@
 
 	<security:authentication-manager
 		id="springWebAuthenticationManager">
-		<security:authentication-provider>
+		<security:authentication-provider
+			user-service-ref="springWebUserDetailsService">
 			<security:password-encoder
 				ref="noopPasswordEncoder" />
-			<security:user-service>
-				<security:user
-					name="${de.invesdwin.context.integration.ws.IntegrationWsProperties.SPRING_WEB_USER}"
-					password="${de.invesdwin.context.integration.ws.IntegrationWsProperties.SPRING_WEB_PASSWORD}"
-					authorities="_SPRING_WEB_" />
-			</security:user-service>
 		</security:authentication-provider>
 	</security:authentication-manager>
+
+	<!-- Replaces the inline user-service to safely evaluate Java static strings -->
+	<bean id="springWebUserDetailsService"
+		class="de.invesdwin.context.integration.ws.internal.SpringWebUserDetailsManager" />
 
 
 </beans>

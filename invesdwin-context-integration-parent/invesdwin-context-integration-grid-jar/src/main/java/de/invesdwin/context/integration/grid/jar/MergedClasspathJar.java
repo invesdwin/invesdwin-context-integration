@@ -1,0 +1,120 @@
+package de.invesdwin.context.integration.grid.jar;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.jar.Attributes;
+import java.util.jar.JarOutputStream;
+import java.util.jar.Manifest;
+
+import javax.annotation.concurrent.GuardedBy;
+import javax.annotation.concurrent.ThreadSafe;
+
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
+
+import de.invesdwin.context.ContextProperties;
+import de.invesdwin.context.integration.grid.jar.visitor.MergedClasspathJarVisitor;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.DefaultMergedClasspathJarFilter;
+import de.invesdwin.context.integration.grid.jar.visitor.filter.IMergedClasspathJarFilter;
+import de.invesdwin.context.log.Log;
+import de.invesdwin.context.log.error.Err;
+import de.invesdwin.context.system.classpath.ClasspathResourceProcessor;
+import de.invesdwin.context.system.classpath.IClasspathResourceVisitor;
+import de.invesdwin.util.lang.UUIDs;
+import de.invesdwin.util.time.Instant;
+
+@ThreadSafe
+public class MergedClasspathJar {
+
+    private final Log log = new Log(this);
+
+    private final IMergedClasspathJarFilter filter;
+    private final Class<?> mainClass;
+
+    @GuardedBy("this")
+    private File alreadyGenerated;
+
+    public MergedClasspathJar() {
+        this(DefaultMergedClasspathJarFilter.DEFAULT);
+    }
+
+    public MergedClasspathJar(final IMergedClasspathJarFilter filter) {
+        this(filter, null);
+    }
+
+    public MergedClasspathJar(final IMergedClasspathJarFilter filter, final Class<?> mainClass) {
+        this.filter = filter;
+        this.mainClass = mainClass;
+    }
+
+    public File getFile() {
+        if (alreadyGenerated == null) {
+            synchronized (this) {
+                try {
+                    if (alreadyGenerated == null) {
+                        final File file = newFile();
+                        generate(file);
+                        alreadyGenerated = file;
+                    }
+                } catch (final IOException e) {
+                    throw Err.process(e);
+                }
+            }
+        }
+        return alreadyGenerated;
+    }
+
+    public Resource getResource() {
+        return new FileSystemResource(getFile());
+    }
+
+    protected void generate(final File file) throws FileNotFoundException, IOException {
+        final Instant start = new Instant();
+        log.info("Started generating [%s]", file);
+        final ClasspathResourceProcessor processor = new ClasspathResourceProcessor();
+        final FileOutputStream fos = new FileOutputStream(file);
+        try (JarOutputStream jarOut = newJarOutputStream(fos)) {
+            beforeProcess(jarOut);
+            processor.process(newMergedClasspathJarVisitor(jarOut, filter));
+            afterProcess(jarOut);
+        }
+        log.info("Finished generating [%s] after %s", file, start);
+    }
+
+    protected IClasspathResourceVisitor newMergedClasspathJarVisitor(final JarOutputStream jarOut,
+            final IMergedClasspathJarFilter filter) {
+        return new MergedClasspathJarVisitor(jarOut, filter);
+    }
+
+    protected File newFile() {
+        if (mainClass != null) {
+            return new File(newFolder(), getClass().getSimpleName() + "_" + filter.name() + "_"
+                    + mainClass.getSimpleName() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
+        } else {
+            return new File(newFolder(),
+                    getClass().getSimpleName() + "_" + filter.name() + "_" + UUIDs.newPseudoRandomUUID() + ".jar");
+        }
+    }
+
+    protected File newFolder() {
+        return ContextProperties.TEMP_DIRECTORY;
+    }
+
+    protected JarOutputStream newJarOutputStream(final FileOutputStream fos) throws IOException {
+        if (mainClass != null) {
+            final Manifest manifest = new Manifest();
+            final Attributes global = manifest.getMainAttributes();
+            global.put(Attributes.Name.MANIFEST_VERSION, "1.0");
+            global.put(Attributes.Name.MAIN_CLASS, mainClass.getName());
+            return new JarOutputStream(fos, manifest);
+        } else {
+            return new JarOutputStream(fos);
+        }
+    }
+
+    protected void beforeProcess(final JarOutputStream jarOut) throws IOException {}
+
+    protected void afterProcess(final JarOutputStream jarOut) throws IOException {}
+}

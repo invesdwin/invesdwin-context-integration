@@ -239,7 +239,7 @@ public class LmaxDisruptorQueue<T> extends AbstractQueue<T> implements BlockingQ
         if (c >= knownPublishedSeq + 1) {
             long pos = c;
             for (long sequence = knownPublishedSeq + 1; sequence <= c; sequence++) {
-                if (!ringBuffer.isPublished(sequence)) {
+                if (!ringBuffer.isAvailable(sequence)) {
                     pos = sequence - 1;
                     break;
                 }

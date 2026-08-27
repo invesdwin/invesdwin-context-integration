@@ -39,10 +39,6 @@ import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.BidiNativ
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramChannelTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramDtlsHandshakeProviderTest;
 import de.invesdwin.context.integration.channel.sync.socket.udp.unsafe.NativeDatagramTlsHandshakeProviderTest;
-import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtChannelTest;
-import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtDtlsHandshakeProviderTest;
-import de.invesdwin.context.integration.channel.sync.socket.udt.BidiUdtTlsHandshakeProviderTest;
-import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
 
 @Suite
 @SelectClasses({ SocketChannelTest.class, BidiSocketChannelTest.class, BlockingSocketChannelTest.class,
@@ -56,11 +52,9 @@ import de.invesdwin.context.integration.channel.sync.socket.udt.UdtChannelTest;
         BlockingDatagramDtlsHandshakeProviderTest.class, NativeDatagramTlsHandshakeProviderTest.class,
         DatagramDtlsHandshakeProviderTest.class, NativeDatagramDtlsHandshakeProviderTest.class,
         StreamEncryptionNativeSocketChannelTest.class, StreamVerifiedEncryptionNativeSocketChannelTest.class,
-        UdtChannelTest.class, BidiUdtChannelTest.class, BidiUdtTlsHandshakeProviderTest.class,
-        BidiUdtDtlsHandshakeProviderTest.class, UnixDomainSocketChannelTest.class,
-        BidiUnixDomainSocketChannelTest.class, NativeUnixDomainSocketChannelTest.class,
-        BidiNativeUnixDomainSocketChannelTest.class, SctpChannelTest.class, BidiSctpChannelTest.class,
-        NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
+        UnixDomainSocketChannelTest.class, BidiUnixDomainSocketChannelTest.class,
+        NativeUnixDomainSocketChannelTest.class, BidiNativeUnixDomainSocketChannelTest.class, SctpChannelTest.class,
+        BidiSctpChannelTest.class, NativeSctpChannelTest.class, BidiNativeSctpChannelTest.class })
 @Immutable
 public class SocketChannelTestSuite {
 

@@ -6,4 +6,6 @@ public interface IConfigurableWebServicePublication extends IWebServicePublicati
 
     void setUseRegistry(boolean useRegistry);
 
+    void setValidatePort(boolean validatePort);
+
 }

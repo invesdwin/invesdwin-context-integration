@@ -6,8 +6,6 @@ import java.io.OutputStream;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.zeroturnaround.exec.stream.slf4j.Slf4jStream;
-
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyClientTask;
 import de.invesdwin.context.integration.channel.report.ILatencyReport;
@@ -16,6 +14,8 @@ import de.invesdwin.context.integration.channel.rpc.base.client.IRpcSynchronousE
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.iterable.ICloseableIterator;
+import de.invesdwin.util.log.LogLevel;
+import de.invesdwin.util.streams.log.LogLevelOutputStream;
 import de.invesdwin.util.time.Instant;
 import de.invesdwin.util.time.date.FDate;
 import de.invesdwin.util.time.date.IFDateProvider;
@@ -37,7 +37,7 @@ public class RpcClientTask implements Runnable {
     public RpcClientTask(final AChannelTest parent, final Log log,
             final IRpcSynchronousEndpointClient<IRpcTestService> client, final String clientId,
             final RpcTestServiceMode mode) {
-        this(parent, Slf4jStream.of(log).asInfo(), client, clientId, mode);
+        this(parent, new LogLevelOutputStream(LogLevel.INFO, log), client, clientId, mode);
     }
 
     public RpcClientTask(final AChannelTest parent, final OutputStream log,
@@ -52,7 +52,7 @@ public class RpcClientTask implements Runnable {
 
     @Override
     public void run() {
-        int count = -parent.getWarmupMessageCount();
+        long count = -parent.getWarmupMessageCount();
         Instant readsStart = new Instant();
         FDate prevValue = null;
         final ILatencyReportFactory latencyReportFactory = AChannelTest.LATENCY_REPORT_FACTORY;

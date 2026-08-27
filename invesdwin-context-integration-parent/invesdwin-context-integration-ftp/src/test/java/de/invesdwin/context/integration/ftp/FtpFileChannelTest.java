@@ -29,31 +29,34 @@ public class FtpFileChannelTest extends ATest {
     @Test
     public void test() {
         final URI destination = getDestination();
-        final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:OFF
+        final FtpFileChannel channel = new FtpFileChannel(destination.toString())
+                .setSubDirectory(FtpFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:ON
         channel.setFilename("noexisting");
         channel.connect();
-        Assertions.checkNull(channel.download());
+        Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(-1);
+        Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.createUniqueFile();
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(0);
+        Assertions.assertThat(channel.length()).isEqualTo(0);
         final String writeStr = "hello world";
         final byte[] write = writeStr.getBytes();
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(write.length);
-        final byte[] read = channel.download();
+        Assertions.assertThat(channel.length()).isEqualTo(write.length);
+        final byte[] read = channel.downloadBytes();
         final String readStr = new String(read);
         Assertions.assertThat(readStr).isEqualTo(writeStr);
         channel.delete();
-        Assertions.checkNull(channel.download());
+        Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(-1);
+        Assertions.assertThat(channel.length()).isEqualTo(-1);
         channel.upload(write);
         Assertions.checkTrue(channel.exists());
-        Assertions.assertThat(channel.size()).isEqualTo(write.length);
-        final byte[] read2 = channel.download();
+        Assertions.assertThat(channel.length()).isEqualTo(write.length);
+        final byte[] read2 = channel.downloadBytes();
         final String readStr2 = new String(read2);
         Assertions.assertThat(readStr2).isEqualTo(writeStr);
         channel.delete();
@@ -67,7 +70,10 @@ public class FtpFileChannelTest extends ATest {
     @Test
     public void testRandom() {
         final URI destination = getDestination();
-        final FtpFileChannel channel = new FtpFileChannel(destination, FtpFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:OFF
+        final FtpFileChannel channel = new FtpFileChannel(destination.toString())
+                .setSubDirectory(FtpFileChannelTest.class.getSimpleName());
+        //CHECKSTYLE:ON
         channel.connect();
         channel.createUniqueFile();
         final String writeStr = "hello world";
@@ -78,16 +84,16 @@ public class FtpFileChannelTest extends ATest {
             final int random = randomGenerator.nextInt(0, 7);
             switch (random) {
             case 0:
-                log.info("download");
-                channel.download();
+                log.info("downloadBytes");
+                channel.downloadBytes();
                 break;
             case 1:
                 log.info("exists");
                 channel.exists();
                 break;
             case 2:
-                log.info("size");
-                channel.size();
+                log.info("length");
+                channel.length();
                 break;
             case 3:
                 log.info("createUniqueFile");
@@ -102,8 +108,8 @@ public class FtpFileChannelTest extends ATest {
                 channel.delete();
                 break;
             case 6:
-                log.info("modified");
-                channel.modified();
+                log.info("lastModified");
+                channel.lastModified();
                 break;
             default:
                 throw UnknownArgumentException.newInstance(int.class, random);

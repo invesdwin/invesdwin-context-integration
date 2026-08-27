@@ -1,0 +1,23 @@
+package de.invesdwin.context.integration.grid.jppf.node.test;
+
+import javax.annotation.concurrent.Immutable;
+
+import de.invesdwin.context.integration.grid.jppf.node.JPPFNodeContextLocation;
+import de.invesdwin.context.test.ATest;
+import de.invesdwin.context.test.ITestContext;
+import de.invesdwin.context.test.stub.StubSupport;
+import jakarta.inject.Named;
+
+@Named
+@Immutable
+public class JPPFNodeContextLocationStub extends StubSupport {
+
+    @Override
+    public void tearDownOnce(final ATest test, final ITestContext ctx) {
+        if (!ctx.isFinishedGlobal()) {
+            return;
+        }
+        JPPFNodeContextLocation.deactivate();
+    }
+
+}
