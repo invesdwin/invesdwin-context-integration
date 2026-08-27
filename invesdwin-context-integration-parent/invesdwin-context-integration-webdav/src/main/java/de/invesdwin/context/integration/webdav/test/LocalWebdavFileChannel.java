@@ -12,7 +12,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
-import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
@@ -35,7 +35,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
     }
 
     public LocalWebdavFileChannel(final URI serverUri) {
-        this(UriFileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F));
+        this(FileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F));
     }
 
     public LocalWebdavFileChannel(final IFileChannelPath path) {

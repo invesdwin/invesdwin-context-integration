@@ -20,7 +20,7 @@ import org.apache.commons.io.IOUtils;
 
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
@@ -70,7 +70,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     public FtpFileChannel(final URI serverUri) {
-        this(UriFileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F));
+        this(FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F));
     }
 
     public FtpFileChannel(final IFileChannelPath path) {

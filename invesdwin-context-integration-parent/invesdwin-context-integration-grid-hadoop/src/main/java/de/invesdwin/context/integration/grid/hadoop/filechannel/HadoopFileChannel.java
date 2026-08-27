@@ -23,7 +23,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
@@ -84,7 +84,7 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     public HadoopFileChannel(final URI serverUri, final Configuration configuration) {
-        this(UriFileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F), configuration);
+        this(FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F), configuration);
     }
 
     public HadoopFileChannel(final IFileChannelPath path, final Configuration configuration) {
