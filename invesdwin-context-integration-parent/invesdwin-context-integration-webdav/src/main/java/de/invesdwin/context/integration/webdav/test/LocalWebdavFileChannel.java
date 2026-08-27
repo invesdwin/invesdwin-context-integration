@@ -12,8 +12,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.ContextProperties;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.IFileInfo;
-import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
+import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.context.integration.webdav.WebdavFileChannel;
 import de.invesdwin.util.lang.Files;
@@ -29,12 +30,15 @@ public class LocalWebdavFileChannel implements IFileChannel {
     private final String baseDirectory;
     private final IFileChannel localDelegate;
 
-    public LocalWebdavFileChannel(final URI serverUri) {
-        if (serverUri == null) {
-            throw new NullPointerException("serverUri should not be null");
-        }
+    public LocalWebdavFileChannel(final String serverUri) {
+        this(serverUri == null ? null : URIs.asUri(serverUri));
+    }
 
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F);
+    public LocalWebdavFileChannel(final URI serverUri) {
+        this(UriFileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F));
+    }
+
+    public LocalWebdavFileChannel(final IFileChannelPath path) {
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();
@@ -47,10 +51,6 @@ public class LocalWebdavFileChannel implements IFileChannel {
         final IFileChannel delegate = FileChannelRegistry.newInstance(localTargetDir.toURI());
         delegate.setFilename(path.getFilename());
         this.localDelegate = delegate;
-    }
-
-    public LocalWebdavFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri));
     }
 
     // --- Fluent Builder Wrappers ---

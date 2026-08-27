@@ -23,8 +23,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
+import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
@@ -66,12 +67,16 @@ public class HadoopFileChannel implements IFileChannel {
         this(DEFAULT_SERVER_URI, defaultConfigurationFactory.get());
     }
 
+    public HadoopFileChannel(final String serverUri) {
+        this(serverUri == null ? null : URIs.asUri(serverUri), defaultConfigurationFactory.get());
+    }
+
     public HadoopFileChannel(final URI serverUri) {
         this(serverUri != null ? serverUri : DEFAULT_SERVER_URI, defaultConfigurationFactory.get());
     }
 
-    public HadoopFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri), defaultConfigurationFactory.get());
+    public HadoopFileChannel(final IFileChannelPath path) {
+        this(path, defaultConfigurationFactory.get());
     }
 
     public HadoopFileChannel(final String serverUri, final Configuration configuration) {
@@ -79,8 +84,11 @@ public class HadoopFileChannel implements IFileChannel {
     }
 
     public HadoopFileChannel(final URI serverUri, final Configuration configuration) {
+        this(UriFileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F), configuration);
+    }
+
+    public HadoopFileChannel(final IFileChannelPath path, final Configuration configuration) {
         this.configuration = configuration != null ? configuration : defaultConfigurationFactory.get();
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();

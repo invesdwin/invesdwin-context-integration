@@ -23,10 +23,10 @@ import com.github.sardine.Sardine;
 import com.github.sardine.SardineFactory;
 import com.github.sardine.impl.SardineException;
 
-import de.invesdwin.context.beans.init.MergedContext;
 import de.invesdwin.context.integration.filechannel.IFileChannel;
-import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
+import de.invesdwin.context.integration.filechannel.info.path.UriFileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
+import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.lang.Files;
@@ -45,14 +45,10 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 @NotThreadSafe
 public class WebdavFileChannel implements IFileChannel {
 
-    public static final Supplier<URI> DEFAULT_SERVER_URI_F = new Supplier<URI>() {
-        @Override
-        public URI get() {
-            final WebdavServerDestinationProvider destinationProvider = MergedContext.getInstance()
-                    .getBean(WebdavServerDestinationProvider.class);
-            return destinationProvider.getDestination();
-        }
-    };
+    public static final String DEFAULT_SERVER_URI_STR = "webdav:///";
+    public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    public static final Supplier<URI> DEFAULT_SERVER_URI_F = () -> DEFAULT_SERVER_URI;
+
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
@@ -64,16 +60,19 @@ public class WebdavFileChannel implements IFileChannel {
     @GuardedBy("this")
     private transient WebdavFileChannelFinalizer finalizer;
 
+    public WebdavFileChannel(final String serverUri) {
+        this(serverUri == null ? null : URIs.asUri(serverUri));
+    }
+
     public WebdavFileChannel(final URI serverUri) {
-        final FileChannelPath path = FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F);
+        this(UriFileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public WebdavFileChannel(final IFileChannelPath path) {
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();
         this.filename = path.getFilename();
-    }
-
-    public WebdavFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri));
     }
 
     //CHECKSTYLE:OFF
