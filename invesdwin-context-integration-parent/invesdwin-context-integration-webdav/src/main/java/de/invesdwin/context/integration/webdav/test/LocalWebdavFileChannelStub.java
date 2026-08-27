@@ -4,6 +4,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.beans.hook.ReinitializationHookManager;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
+import de.invesdwin.context.integration.ws.registry.RegistryServiceStub;
 import de.invesdwin.context.test.ATest;
 import de.invesdwin.context.test.stub.StubSupport;
 import jakarta.inject.Named;
@@ -16,6 +17,9 @@ public class LocalWebdavFileChannelStub extends StubSupport {
 
     @Override
     public void setUpContextBeforeLoading(final ATest test) throws Exception {
+        if (!RegistryServiceStub.isEnabled()) {
+            return;
+        }
         maybeRegisterReinitializationHook();
         FileChannelRegistry.register(new LocalWebdavFileChannelFactoryProvider());
     }
