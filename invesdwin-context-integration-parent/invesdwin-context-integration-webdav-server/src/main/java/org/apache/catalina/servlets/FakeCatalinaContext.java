@@ -866,7 +866,11 @@ public class FakeCatalinaContext implements Context {
 
     @Override
     public String findMimeMapping(final String extension) {
-        return servletContext.getMimeType(extension);
+        final String mimeType = servletContext.getMimeType(extension);
+        if (mimeType != null) {
+            return mimeType;
+        }
+        return "application/octet-stream";
     }
 
     @Override
