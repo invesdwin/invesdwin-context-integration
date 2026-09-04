@@ -10,6 +10,8 @@ import javax.annotation.concurrent.NotThreadSafe;
 import de.invesdwin.context.integration.channel.sync.ISynchronousChannel;
 import de.invesdwin.context.integration.compression.CompressionMode;
 import de.invesdwin.context.integration.compression.ICompressionFactory;
+import de.invesdwin.context.persistence.timeseriesdb.directory.base.ITimeSeriesBaseDirectory;
+import de.invesdwin.context.persistence.timeseriesdb.directory.base.TimeSeriesBaseDirectory;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.PeriodicalSegmentFinder;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.SegmentedKey;
 import de.invesdwin.context.persistence.timeseriesdb.segmented.finder.DummySegmentFinder;
@@ -131,8 +133,8 @@ public class TimeSeriesDBSynchronousChannel implements ISynchronousChannel {
         }
 
         @Override
-        public File getBaseDirectory() {
-            return directory;
+        public ITimeSeriesBaseDirectory getBaseDirectory() {
+            return new TimeSeriesBaseDirectory(directory);
         }
 
         @Override
