@@ -8,6 +8,7 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -21,6 +22,7 @@ import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 
 import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
@@ -29,6 +31,9 @@ import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
 import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
+import de.invesdwin.util.collections.iterable.ICloseableIterator;
+import de.invesdwin.util.collections.iterable.WrapperCloseableIterable;
+import de.invesdwin.util.error.FastNoSuchElementException;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
@@ -511,6 +516,83 @@ public class HadoopFileChannel implements IFileChannel {
     @Override
     public List<HadoopFileInfo> listDirectories() {
         return (List<HadoopFileInfo>) IFileChannel.super.listDirectories();
+    }
+
+    @Override
+    public ICloseableIterator<HadoopFileInfo> listIterator() {
+        return createFilteredIterator(status -> true);
+    }
+
+    @Override
+    public ICloseableIterator<HadoopFileInfo> listFilesIterator() {
+        return createFilteredIterator(FileStatus::isFile);
+    }
+
+    @Override
+    public ICloseableIterator<HadoopFileInfo> listDirectoriesIterator() {
+        return createFilteredIterator(FileStatus::isDirectory);
+    }
+
+    /**
+     * Creates a lazy iterator wrapping Hadoop's batch-fetching RemoteIterator.
+     */
+    private ICloseableIterator<HadoopFileInfo> createFilteredIterator(final Predicate<FileStatus> filter) {
+        connect(false);
+        try {
+            final Path dirPath = resolveDirectoryPath();
+            if (!finalizer.fs.exists(dirPath)) {
+                return WrapperCloseableIterable.maybeWrap(java.util.Collections.<HadoopFileInfo> emptyList())
+                        .iterator();
+            }
+
+            // RemoteIterator fetches directory entries from the NameNode in lazy batches
+            final RemoteIterator<FileStatus> remoteIterator = finalizer.fs.listStatusIterator(dirPath);
+
+            return new ICloseableIterator<HadoopFileInfo>() {
+                private FileStatus nextElement = null;
+
+                private void advance() {
+                    while (nextElement == null) {
+                        try {
+                            if (remoteIterator.hasNext()) {
+                                final FileStatus candidate = remoteIterator.next();
+                                if (filter.test(candidate)) {
+                                    nextElement = candidate;
+                                }
+                            } else {
+                                break; // No more elements
+                            }
+                        } catch (final IOException e) {
+                            throw new RuntimeException("Error iterating Hadoop directory at " + dirPath, e);
+                        }
+                    }
+                }
+
+                @Override
+                public boolean hasNext() {
+                    advance();
+                    return nextElement != null;
+                }
+
+                @Override
+                public HadoopFileInfo next() {
+                    if (!hasNext()) {
+                        throw FastNoSuchElementException.getInstance("end reached");
+                    }
+                    final FileStatus current = nextElement;
+                    nextElement = null;
+                    return HadoopFileInfo.valueOf(serverUri, baseServerUri, baseDirectory, subDirectory, current);
+                }
+
+                @Override
+                public void close() {
+                    // Hadoop's RemoteIterator does not hold open local OS file handles like NIO,
+                    // so no explicit local resource closure is required here.
+                }
+            };
+        } catch (final IOException e) {
+            throw new RuntimeException("Failed to initiate Hadoop directory iterator at " + resolveDirectoryPath(), e);
+        }
     }
 
     private void ensureDirectoryCreated() {
