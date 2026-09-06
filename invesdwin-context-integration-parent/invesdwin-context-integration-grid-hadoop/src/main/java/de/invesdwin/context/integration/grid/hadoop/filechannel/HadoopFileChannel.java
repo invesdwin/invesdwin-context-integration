@@ -577,7 +577,8 @@ public class HadoopFileChannel implements IFileChannel {
                 @Override
                 public HadoopFileInfo next() {
                     if (!hasNext()) {
-                        throw FastNoSuchElementException.getInstance("end reached");
+                        throw FastNoSuchElementException
+                                .getInstance("HadoopFileChannel.createFilteredIterator end reached");
                     }
                     final FileStatus current = nextElement;
                     nextElement = null;
