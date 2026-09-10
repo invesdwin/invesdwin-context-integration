@@ -46,11 +46,11 @@ public class UploadedMergedClasspathJar implements ISafeCloseable {
     }
 
     private File uploadClasspathJar(final URI filechannelServerUri) {
-        try (IFileChannel channel = FileChannelRegistry.newInstance(filechannelServerUri)
+        try (IFileChannel channel = FileChannelRegistry.newDirectory(filechannelServerUri)
                 .setSubDirectory(fileChannelSubDirectory)) {
             try {
                 final File mergedClasspathJarFile = getMergedClasspathJarFile();
-                channel.setFilename(mergedClasspathJarFile.getName());
+                channel.setFileName(mergedClasspathJarFile.getName());
                 channel.upload(mergedClasspathJarFile);
                 this.shutdownHook = new UploadedMergedClasspathJarShutdownHook(filechannelServerUri);
                 ShutdownHookManager.register(shutdownHook);
@@ -84,9 +84,9 @@ public class UploadedMergedClasspathJar implements ISafeCloseable {
             synchronized (this) {
                 final File mergedClasspathJarFileUploadedCopy = mergedClasspathJarFileUploaded;
                 if (mergedClasspathJarFileUploadedCopy != null) {
-                    try (IFileChannel channel = FileChannelRegistry.newInstance(filechannelServerUri)
+                    try (IFileChannel channel = FileChannelRegistry.newDirectory(filechannelServerUri)
                             .setSubDirectory(fileChannelSubDirectory)
-                            .setFilename(mergedClasspathJarFileUploadedCopy.getName())) {
+                            .setFileName(mergedClasspathJarFileUploadedCopy.getName())) {
                         channel.delete();
                         mergedClasspathJarFileUploaded = null;
                         LOG.info("Successfully deleted merged classpath JAR [%s] from [%s]",

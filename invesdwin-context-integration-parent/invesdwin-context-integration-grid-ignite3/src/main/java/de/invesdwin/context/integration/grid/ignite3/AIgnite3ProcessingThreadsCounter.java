@@ -116,7 +116,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
             final Map<String, String> localServerInfos, final Set<String> onlineNodeUuids,
             final boolean checkOnlineStatus) {
         for (final URI webdavServerUri : webdavServerDestinationProvider.getDestinations()) {
-            try (IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+            try (IFileChannel channel = FileChannelRegistry.newDirectory(webdavServerUri)
                     .setSubDirectory(WEBDAV_DIRECTORY)) {
                 channel.connect();
                 final List<? extends IFileInfo> listFiles = channel.listFiles();
@@ -146,7 +146,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
 
     private void processHeartbeat(final Map<String, HeartbeatInfo> hostname_heartbeatInfo, final IFileChannel channel,
             final IFileInfo file) {
-        channel.setFilename(file.getFilename());
+        channel.setFileName(file.getFileName());
         final byte[] content = channel.downloadBytes();
         if (content != null && content.length > 0) {
             final String contentStr = new String(content);
@@ -163,7 +163,7 @@ public abstract class AIgnite3ProcessingThreadsCounter {
                 final HeartbeatInfo existing = hostname_heartbeatInfo.get(hostname);
                 if (existing == null || heartbeat.isAfterNotNullSafe(existing.getHeartbeat())) {
                     hostname_heartbeatInfo.put(hostname,
-                            new HeartbeatInfo(hostname, uuid, processingThreadsCount, heartbeat, file.getFilename()));
+                            new HeartbeatInfo(hostname, uuid, processingThreadsCount, heartbeat, file.getFileName()));
                 }
             }
         }

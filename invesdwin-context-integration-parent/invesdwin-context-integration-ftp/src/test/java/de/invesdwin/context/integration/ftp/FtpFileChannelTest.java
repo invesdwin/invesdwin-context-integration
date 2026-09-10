@@ -30,10 +30,10 @@ public class FtpFileChannelTest extends ATest {
     public void test() {
         final URI destination = getDestination();
         //CHECKSTYLE:OFF
-        final FtpFileChannel channel = new FtpFileChannel(destination.toString())
+        final FtpFileChannel channel = FtpFileChannel.newDirectory(destination)
                 .setSubDirectory(FtpFileChannelTest.class.getSimpleName());
         //CHECKSTYLE:ON
-        channel.setFilename("noexisting");
+        channel.setFileName("noexisting");
         channel.connect();
         Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
@@ -71,7 +71,7 @@ public class FtpFileChannelTest extends ATest {
     public void testRandom() {
         final URI destination = getDestination();
         //CHECKSTYLE:OFF
-        final FtpFileChannel channel = new FtpFileChannel(destination.toString())
+        final FtpFileChannel channel = FtpFileChannel.newDirectory(destination)
                 .setSubDirectory(FtpFileChannelTest.class.getSimpleName());
         //CHECKSTYLE:ON
         channel.connect();

@@ -44,7 +44,7 @@ public class SparkYarnTest extends ATest {
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         final MutableBoolean jobSuccessful = new MutableBoolean();
 
-        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
+        final IFileChannel fileChannel = FileChannelRegistry.newDirectory(HadoopContainer.getHdfsUri());
         final String hdfsLogDir = "/tmp/logs/";
         final IFileChannel logDirChannel = fileChannel.withAbsoluteDirectory(hdfsLogDir);
         final String defaultFs = fileChannel.getBaseServerUri().toString();

@@ -184,8 +184,8 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
 
     private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
         final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
-                && heartbeatWebdavFileChannel.getFilename() != null
-                && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
+                && heartbeatWebdavFileChannel.getFileName() != null
+                && !heartbeatWebdavFileChannel.getFileName().contains(nodeUuid);
         if (heartbeatWebdavFileChannel == null || differentNodeUuid || !heartbeatWebdavFileChannel.isConnected()) {
             if (heartbeatWebdavFileChannel != null) {
                 if (differentNodeUuid) {
@@ -204,10 +204,10 @@ public final class ConfiguredJPPFNode implements IStartupHook, IShutdownHook {
             final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newDirectory(webdavServerUri)
                     .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
-                channel.setFilename(JPPFProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX + nodeUuid + ".heartbeat");
+                channel.setFileName(JPPFProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX + nodeUuid + ".heartbeat");
                 channel.connect();
             }
             heartbeatWebdavFileChannel = channel;

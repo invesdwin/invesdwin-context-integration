@@ -33,7 +33,7 @@ public class BootstappedMapReduceTest extends ATest {
     @Test
     public void test() throws Exception {
         // 1. Prepare Input Data on HDFS via IFileChannel
-        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
+        final IFileChannel fileChannel = FileChannelRegistry.newDirectory(HadoopContainer.getHdfsUri());
         final IFileChannel inputFileChannel = fileChannel.withAbsolutePath("/tmp/test-input/data.txt");
 
         // Write a simple text file to HDFS cleanly
@@ -56,7 +56,7 @@ public class BootstappedMapReduceTest extends ATest {
         // Resolve input and output directory paths using withAbsoluteDirectory
         final IFileChannel inputDirChannel = fileChannel.withAbsoluteDirectory("/tmp/test-input");
         FileInputFormat.addInputPath(job, new Path(inputDirChannel.getDirectoryUri()));
-        FileOutputFormat.setOutputPath(job, new Path(HADOOP.getHdfsUri() + "/tmp/test-output"));
+        FileOutputFormat.setOutputPath(job, new Path(HadoopContainer.getHdfsUri() + "/tmp/test-output"));
 
         // 3. Submit and wait for completion
         final boolean success = job.waitForCompletion(true);
@@ -69,7 +69,7 @@ public class BootstappedMapReduceTest extends ATest {
 
         final IFileInfo resultFileInfo = outputChannel.listFiles()
                 .stream()
-                .filter(file -> file.getFilename().startsWith("part-"))
+                .filter(file -> file.getFileName().startsWith("part-"))
                 .findFirst()
                 .orElse(null);
 
@@ -77,7 +77,7 @@ public class BootstappedMapReduceTest extends ATest {
         Assertions.checkTrue(resultFileInfo != null, "No output file found!");
 
         // 7. Read and assert the content using downloadString()
-        final String text = outputChannel.withFilename(resultFileInfo.getFilename()).downloadString();
+        final String text = outputChannel.withFilename(resultFileInfo.getFileName()).downloadString();
         final String expectedText = "0_mapped_reduced\t[one_mapped]_reduced\n"
                 + "4_mapped_reduced\t[two_mapped]_reduced\n" + "8_mapped_reduced\t[three_mapped]_reduced\n";
         Assertions.assertThat(text).isEqualTo(expectedText);

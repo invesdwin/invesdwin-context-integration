@@ -22,7 +22,7 @@ public class FtpFileChannelFactory implements IFileChannelFactory {
     @Override
     public IFileChannel newInstance(final IFileChannelPath path) {
         //CHECKSTYLE:OFF
-        return new FtpFileChannel(path);
+        return FtpFileChannel.newInstance(path);
         //CHECKSTYLE:ON
     }
 }
