@@ -46,7 +46,7 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 public class HadoopFileChannel implements IFileChannel {
 
     public static final String DEFAULT_SERVER_URI_STR = "hdfs:///";
-    public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    public static final URI DEFAULT_SERVER_URI = URIs.asUri(DEFAULT_SERVER_URI_STR);
     public static final Supplier<URI> DEFAULT_SERVER_URI_F = () -> DEFAULT_SERVER_URI;
     private static final boolean CACHED_FILE_SYSTEM = true;
 
