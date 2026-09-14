@@ -70,7 +70,7 @@ public class YarnJobMain extends AMain {
     private void testPerformance() {
         final InlineChannelTest parent = new InlineChannelTest();
 
-        final IFileChannel logChannel = FileChannelRegistry.newInstance(logDir);
+        final IFileChannel logChannel = FileChannelRegistry.newDirectory(logDir);
         final IFileChannel serverAddressChannel = logChannel.withFilename("serverAddress.txt");
 
         switch (rank) {
