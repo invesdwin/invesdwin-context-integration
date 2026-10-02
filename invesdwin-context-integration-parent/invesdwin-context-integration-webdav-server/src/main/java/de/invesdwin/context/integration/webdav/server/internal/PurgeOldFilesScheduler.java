@@ -1,14 +1,7 @@
 package de.invesdwin.context.integration.webdav.server.internal;
 
-import java.io.File;
-import java.util.Iterator;
-
 import javax.annotation.concurrent.NotThreadSafe;
 
-import org.apache.commons.io.IOCase;
-import org.apache.commons.io.filefilter.AgeFileFilter;
-import org.apache.commons.io.filefilter.NameFileFilter;
-import org.apache.commons.io.filefilter.NotFileFilter;
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
@@ -16,7 +9,6 @@ import de.invesdwin.context.beans.hook.IStartupHook;
 import de.invesdwin.context.integration.webdav.WebdavClientProperties;
 import de.invesdwin.context.integration.webdav.server.WebdavServerProperties;
 import de.invesdwin.util.lang.Files;
-import de.invesdwin.util.time.date.FDate;
 import jakarta.inject.Named;
 
 @Named
