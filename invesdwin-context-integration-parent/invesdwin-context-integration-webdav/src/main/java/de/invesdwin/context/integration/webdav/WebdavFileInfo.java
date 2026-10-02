@@ -51,7 +51,7 @@ public class WebdavFileInfo implements IFileInfo {
     }
 
     @Override
-    public String getFilename() {
+    public String getFileName() {
         return delegate.getName();
     }
 
@@ -82,6 +82,16 @@ public class WebdavFileInfo implements IFileInfo {
     @Override
     public DavResource unwrap() {
         return delegate;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return FileChannelPaths.equals(this, obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return FileChannelPaths.hashCode(this);
     }
 
     @Override

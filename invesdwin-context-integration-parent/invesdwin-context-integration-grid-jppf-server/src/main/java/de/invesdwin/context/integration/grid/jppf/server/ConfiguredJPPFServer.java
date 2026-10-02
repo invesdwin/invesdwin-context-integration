@@ -189,8 +189,8 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
 
     private IFileChannel getHeartbeatWebdavFileChannel(final String driverUuid) {
         final boolean differentDriverUuid = heartbeatWebdavFileChannel != null
-                && heartbeatWebdavFileChannel.getFilename() != null
-                && !heartbeatWebdavFileChannel.getFilename().contains(driverUuid);
+                && heartbeatWebdavFileChannel.getFileName() != null
+                && !heartbeatWebdavFileChannel.getFileName().contains(driverUuid);
         if (heartbeatWebdavFileChannel == null || differentDriverUuid || !heartbeatWebdavFileChannel.isConnected()) {
             if (heartbeatWebdavFileChannel != null) {
                 if (differentDriverUuid) {
@@ -209,10 +209,10 @@ public final class ConfiguredJPPFServer implements IPreStartupHook, IStartupHook
             final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newDirectory(webdavServerUri)
                     .setSubDirectory(JPPFProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
-                channel.setFilename(
+                channel.setFileName(
                         JPPFProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX + driverUuid + ".heartbeat");
                 channel.connect();
             }

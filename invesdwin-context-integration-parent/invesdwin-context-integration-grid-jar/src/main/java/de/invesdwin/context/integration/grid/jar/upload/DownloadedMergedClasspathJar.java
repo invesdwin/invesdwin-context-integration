@@ -36,9 +36,9 @@ public class DownloadedMergedClasspathJar {
             if (localClasspathJar.exists()) {
                 return localClasspathJar;
             }
-            try (IFileChannel channel = FileChannelRegistry.newInstance(fileChannelServerUri)
+            try (IFileChannel channel = FileChannelRegistry.newDirectory(fileChannelServerUri)
                     .setSubDirectory(fileChannelSubDirectory)
-                    .setFilename(classpathJarName)) {
+                    .setFileName(classpathJarName)) {
                 try {
                     if (channel.exists()) {
                         channel.download(localClasspathJar);

@@ -41,7 +41,7 @@ public class YarnDistributedShellTest extends ATest {
         final File jobScriptFile = new File(ContextProperties.getCacheDirectory(), "yarn_job.sh");
 
         // 1. Define HDFS channels
-        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
+        final IFileChannel fileChannel = FileChannelRegistry.newDirectory(HadoopContainer.getHdfsUri());
         final IFileChannel jobJarChannel = fileChannel.withAbsolutePath("/tmp/" + jobJarFile.getName());
         final IFileChannel jobScriptChannel = fileChannel.withAbsolutePath("/tmp/" + jobScriptFile.getName());
         final IFileChannel logDirChannel = fileChannel.withAbsoluteDirectory("/tmp/logs/");

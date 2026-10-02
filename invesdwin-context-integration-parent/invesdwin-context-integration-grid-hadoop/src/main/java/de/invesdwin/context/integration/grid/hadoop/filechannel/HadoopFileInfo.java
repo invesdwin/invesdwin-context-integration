@@ -60,7 +60,7 @@ public class HadoopFileInfo implements IFileInfo {
     }
 
     @Override
-    public String getFilename() {
+    public String getFileName() {
         return delegate.getPath().getName();
     }
 
@@ -87,6 +87,16 @@ public class HadoopFileInfo implements IFileInfo {
     @Override
     public FileStatus unwrap() {
         return delegate;
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return FileChannelPaths.equals(this, obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return FileChannelPaths.hashCode(this);
     }
 
     @Override

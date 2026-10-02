@@ -199,8 +199,8 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
 
     private IFileChannel getHeartbeatWebdavFileChannel(final String nodeUuid) {
         final boolean differentNodeUuid = heartbeatWebdavFileChannel != null
-                && heartbeatWebdavFileChannel.getFilename() != null
-                && !heartbeatWebdavFileChannel.getFilename().contains(nodeUuid);
+                && heartbeatWebdavFileChannel.getFileName() != null
+                && !heartbeatWebdavFileChannel.getFileName().contains(nodeUuid);
 
         if (heartbeatWebdavFileChannel == null || differentNodeUuid || !heartbeatWebdavFileChannel.isConnected()) {
             if (heartbeatWebdavFileChannel != null) {
@@ -220,13 +220,13 @@ public abstract class AConfiguredIgnite2Instance implements IStartupHook, IShutd
             final URI webdavServerUri = MergedContext.getInstance()
                     .getBean(WebdavServerDestinationProvider.class)
                     .getDestination();
-            final IFileChannel channel = FileChannelRegistry.newInstance(webdavServerUri)
+            final IFileChannel channel = FileChannelRegistry.newDirectory(webdavServerUri)
                     .setSubDirectory(Ignite2InstanceProcessingThreadsCounter.WEBDAV_DIRECTORY);
             if (!channel.isConnected()) {
                 final String prefix = instance.cluster().localNode().isClient()
                         ? Ignite2InstanceProcessingThreadsCounter.DRIVER_HEARTBEAT_FILE_PREFIX
                         : Ignite2InstanceProcessingThreadsCounter.NODE_HEARTBEAT_FILE_PREFIX;
-                channel.setFilename(prefix + nodeUuid + ".heartbeat");
+                channel.setFileName(prefix + nodeUuid + ".heartbeat");
                 channel.connect();
             }
             heartbeatWebdavFileChannel = channel;

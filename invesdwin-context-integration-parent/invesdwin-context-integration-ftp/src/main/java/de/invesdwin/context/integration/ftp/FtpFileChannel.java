@@ -23,14 +23,12 @@ import de.invesdwin.context.integration.filechannel.IFileChannel;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPath;
 import de.invesdwin.context.integration.filechannel.info.path.FileChannelPaths;
 import de.invesdwin.context.integration.filechannel.info.path.IFileChannelPath;
-import de.invesdwin.context.integration.filechannel.registry.FileChannelRegistry;
 import de.invesdwin.util.assertions.Assertions;
 import de.invesdwin.util.collections.Arrays;
 import de.invesdwin.util.collections.Collections;
 import de.invesdwin.util.lang.Files;
 import de.invesdwin.util.lang.UUIDs;
 import de.invesdwin.util.lang.finalizer.AFinalizer;
-import de.invesdwin.util.lang.string.Strings;
 import de.invesdwin.util.lang.string.description.TextDescription;
 import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.math.Bytes;
@@ -51,7 +49,7 @@ import it.unimi.dsi.fastutil.io.FastByteArrayInputStream;
 public class FtpFileChannel implements IFileChannel {
 
     public static final String DEFAULT_SERVER_URI_STR = "ftp:///";
-    public static final URI DEFAULT_SERVER_URI = URI.create(DEFAULT_SERVER_URI_STR);
+    public static final URI DEFAULT_SERVER_URI = URIs.asUri(DEFAULT_SERVER_URI_STR);
     public static final Supplier<URI> DEFAULT_SERVER_URI_F = () -> DEFAULT_SERVER_URI;
 
     private final URI serverUri;
@@ -65,25 +63,17 @@ public class FtpFileChannel implements IFileChannel {
     @GuardedBy("this")
     private transient FtpFileChannelFinalizer finalizer;
 
-    public FtpFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri));
-    }
-
-    public FtpFileChannel(final URI serverUri) {
-        this(FileChannelPath.valueOf(serverUri, DEFAULT_SERVER_URI_F));
-    }
-
-    public FtpFileChannel(final IFileChannelPath path) {
+    protected FtpFileChannel(final IFileChannelPath path) {
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();
-        this.filename = path.getFilename();
+        this.filename = path.getFileName();
     }
 
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubDirectory(final String subDirectory) {
-        final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        final FtpFileChannel instance = newDirectory(serverUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.filename = filename;
@@ -97,12 +87,12 @@ public class FtpFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(baseServerUri, getBaseDirectory());
         //CHECKSTYLE:OFF
-        final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        final FtpFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         return instance;
     }
@@ -120,12 +110,12 @@ public class FtpFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), baseDirectory);
         //CHECKSTYLE:OFF
-        final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        final FtpFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         return instance;
     }
@@ -136,11 +126,11 @@ public class FtpFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         //CHECKSTYLE:OFF
-        final FtpFileChannel instance = new FtpFileChannel(newServerUri);
+        final FtpFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         return instance;
     }
@@ -148,7 +138,7 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubPath(final String subPath) {
-        final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        final FtpFileChannel instance = newDirectory(serverUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(subPath);
@@ -158,7 +148,7 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withSubPath(final Path path) {
-        final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        final FtpFileChannel instance = newDirectory(serverUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubPath(path);
@@ -168,36 +158,22 @@ public class FtpFileChannel implements IFileChannel {
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withFilename(final String filename) {
-        final FtpFileChannel instance = new FtpFileChannel(serverUri);
+        final FtpFileChannel instance = newDirectory(serverUri);
         //CHECKSTYLE:ON
         instance.emptyFileContent = emptyFileContent;
         instance.setSubDirectory(getSubDirectory());
-        instance.setFilename(filename);
+        instance.setFileName(filename);
         return instance;
     }
 
     //CHECKSTYLE:OFF
     @Override
     public FtpFileChannel withAbsolutePath(final String path) {
+        final FtpFileChannel instance = newDirectory(getBaseServerUri());
         //CHECKSTYLE:ON
-        if (Strings.isBlank(path)) {
-            //CHECKSTYLE:OFF
-            final FtpFileChannel instance = new FtpFileChannel(getBaseServerUri());
-            //CHECKSTYLE:ON
-            instance.emptyFileContent = emptyFileContent;
-            instance.setSubPath((String) null);
-            return instance;
-        }
-        if (path.contains("://")) {
-            return (FtpFileChannel) FileChannelRegistry.newInstance(path);
-        } else {
-            //CHECKSTYLE:OFF
-            final FtpFileChannel instance = new FtpFileChannel(getBaseServerUri());
-            //CHECKSTYLE:ON
-            instance.emptyFileContent = emptyFileContent;
-            instance.setSubPath(path);
-            return instance;
-        }
+        instance.emptyFileContent = emptyFileContent;
+        instance.setSubPath(path);
+        return instance;
     }
 
     //CHECKSTYLE:OFF
@@ -250,7 +226,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public FtpFileChannel setFilename(final String filename) {
+    public FtpFileChannel setFileName(final String filename) {
         this.filename = filename;
         return this;
     }
@@ -268,7 +244,7 @@ public class FtpFileChannel implements IFileChannel {
     }
 
     @Override
-    public String getFilename() {
+    public String getFileName() {
         return filename;
     }
 
@@ -293,7 +269,7 @@ public class FtpFileChannel implements IFileChannel {
         ensureDirectoryCreated();
         while (true) {
             final String filename = filenamePrefix + UUIDs.newPseudoRandomUUID() + filenameSuffix;
-            setFilename(filename);
+            setFileName(filename);
             if (!exists()) {
                 upload(new FastByteArrayInputStream(getEmptyFileContent()));
                 Assertions.checkTrue(exists());
@@ -470,7 +446,7 @@ public class FtpFileChannel implements IFileChannel {
     public long length() {
         connect(false);
         try {
-            return finalizer.ftpClient.fileSize(getFilename());
+            return finalizer.ftpClient.fileSize(getFileName());
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return -1;
@@ -486,7 +462,7 @@ public class FtpFileChannel implements IFileChannel {
     public FDate lastModified() {
         connect(false);
         try {
-            final Date date = finalizer.ftpClient.modifiedDate(getFilename());
+            final Date date = finalizer.ftpClient.modifiedDate(getFileName());
             if (date == null) {
                 return null;
             } else {
@@ -509,7 +485,7 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileInfo info() {
         connect(false);
         try {
-            final FTPFile[] listFiles = finalizer.ftpClient.list(getFilename());
+            final FTPFile[] listFiles = finalizer.ftpClient.list(getFileName());
             if (listFiles.length == 0) {
                 return null;
             } else if (listFiles.length == 1) {
@@ -568,8 +544,8 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel rename(final String filename) {
         connect(false);
         try {
-            finalizer.ftpClient.rename(getFilename(), filename);
-            setFilename(filename);
+            finalizer.ftpClient.rename(getFileName(), filename);
+            setFileName(filename);
             return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -583,10 +559,10 @@ public class FtpFileChannel implements IFileChannel {
         try {
             final FtpFileChannel targetFtp = (FtpFileChannel) targetChannel;
             targetFtp.ensureDirectoryCreated();
-            finalizer.ftpClient.rename(getAbsoluteDirectory() + getFilename(),
-                    targetFtp.getAbsoluteDirectory() + targetFtp.getFilename());
+            finalizer.ftpClient.rename(getAbsoluteDirectory() + getFileName(),
+                    targetFtp.getAbsoluteDirectory() + targetFtp.getFileName());
             setSubDirectory(targetFtp.getSubDirectory());
-            setFilename(targetFtp.getFilename());
+            setFileName(targetFtp.getFileName());
         } catch (final Exception e) {
             throw new RuntimeException(e);
         }
@@ -612,7 +588,7 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel upload(final InputStream input) {
         ensureDirectoryCreated();
         try {
-            finalizer.ftpClient.upload(getFilename(), input, 0, 0, null);
+            finalizer.ftpClient.upload(getFileName(), input, 0, 0, null);
             return this;
         } catch (final Exception e) {
             throw new RuntimeException(e);
@@ -658,7 +634,7 @@ public class FtpFileChannel implements IFileChannel {
     public FtpFileChannel delete() {
         connect(false);
         try {
-            finalizer.ftpClient.deleteFile(getFilename());
+            finalizer.ftpClient.deleteFile(getFileName());
             return this;
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_ACTION_NOT_TAKEN || e.getCode() == FTPCodes.FILE_NOT_FOUND) {
@@ -725,7 +701,7 @@ public class FtpFileChannel implements IFileChannel {
         connect(false);
         final File file = downloadLocalTempFile();
         try {
-            finalizer.ftpClient.download(getFilename(), file);
+            finalizer.ftpClient.download(getFileName(), file);
         } catch (final FTPException e) {
             if (e.getCode() == FTPCodes.FILE_NOT_FOUND) {
                 return null;
@@ -748,6 +724,16 @@ public class FtpFileChannel implements IFileChannel {
                 }
             }
         };
+    }
+
+    @Override
+    public boolean equals(final Object obj) {
+        return FileChannelPaths.equals(this, obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return FileChannelPaths.hashCode(this);
     }
 
     @Override
@@ -789,5 +775,21 @@ public class FtpFileChannel implements IFileChannel {
         public boolean isThreadLocal() {
             return false;
         }
+    }
+
+    public static FtpFileChannel newInstance(final URI serverUri) {
+        return new FtpFileChannel(FileChannelPath.newInstance(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static FtpFileChannel newFile(final URI serverUri) {
+        return new FtpFileChannel(FileChannelPath.newFile(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static FtpFileChannel newDirectory(final URI serverUri) {
+        return new FtpFileChannel(FileChannelPath.newDirectory(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static FtpFileChannel newInstance(final IFileChannelPath path) {
+        return new FtpFileChannel(path);
     }
 }

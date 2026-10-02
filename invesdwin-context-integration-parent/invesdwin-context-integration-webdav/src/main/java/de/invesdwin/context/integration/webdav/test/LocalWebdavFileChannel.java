@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -25,20 +26,13 @@ import de.invesdwin.util.time.date.FDate;
 @NotThreadSafe
 public class LocalWebdavFileChannel implements IFileChannel {
 
+    private static final Supplier<URI> DEFAULT_SERVER_URI_F = WebdavFileChannel.DEFAULT_SERVER_URI_F;
     private final URI serverUri;
     private final URI baseServerUri;
     private final String baseDirectory;
     private final IFileChannel localDelegate;
 
-    public LocalWebdavFileChannel(final String serverUri) {
-        this(serverUri == null ? null : URIs.asUri(serverUri));
-    }
-
-    public LocalWebdavFileChannel(final URI serverUri) {
-        this(FileChannelPath.valueOf(serverUri, WebdavFileChannel.DEFAULT_SERVER_URI_F));
-    }
-
-    public LocalWebdavFileChannel(final IFileChannelPath path) {
+    protected LocalWebdavFileChannel(final IFileChannelPath path) {
         this.serverUri = path.getServerUri();
         this.baseServerUri = path.getBaseServerUri();
         this.baseDirectory = path.getAbsoluteDirectory();
@@ -48,8 +42,8 @@ public class LocalWebdavFileChannel implements IFileChannel {
                 LocalWebdavFileChannel.class.getSimpleName() + "/"
                         + Strings.removeStart(Files.normalizePath(directoryUri.toString()), "/"));
 
-        final IFileChannel delegate = FileChannelRegistry.newInstance(localTargetDir.toURI());
-        delegate.setFilename(path.getFilename());
+        final IFileChannel delegate = FileChannelRegistry.newDirectory(localTargetDir);
+        delegate.setFileName(path.getFileName());
         this.localDelegate = delegate;
     }
 
@@ -62,10 +56,10 @@ public class LocalWebdavFileChannel implements IFileChannel {
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(),
                 FileChannelPaths.combinePath(getBaseDirectory(), subDirectory));
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
@@ -77,11 +71,11 @@ public class LocalWebdavFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(baseServerUri, getBaseDirectory());
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.setSubDirectory(getSubDirectory());
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
@@ -100,11 +94,11 @@ public class LocalWebdavFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), baseDirectory);
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.setSubDirectory(getSubDirectory());
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
@@ -116,10 +110,10 @@ public class LocalWebdavFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), absoluteDirectory);
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
-        if (getFilename() != null) {
-            instance.setFilename(getFilename());
+        if (getFileName() != null) {
+            instance.setFileName(getFileName());
         }
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
@@ -135,7 +129,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
         final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(),
                 FileChannelPaths.combinePath(getAbsoluteDirectory(), subPath));
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
@@ -154,9 +148,9 @@ public class LocalWebdavFileChannel implements IFileChannel {
         //CHECKSTYLE:ON
         final URI newServerUri = FileChannelPaths.newFileUri(getBaseServerUri(), getAbsoluteDirectory(), filename);
         //CHECKSTYLE:OFF
-        final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
         //CHECKSTYLE:ON
-        instance.setFilename(filename);
+        instance.setFileName(filename);
         instance.setEmptyFileContent(getEmptyFileContent());
         return instance;
     }
@@ -165,27 +159,12 @@ public class LocalWebdavFileChannel implements IFileChannel {
     @Override
     public LocalWebdavFileChannel withAbsolutePath(final String path) {
         //CHECKSTYLE:ON
-        if (Strings.isBlank(path)) {
-            //CHECKSTYLE:OFF
-            final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(getBaseServerUri());
-            //CHECKSTYLE:ON
-            instance.setEmptyFileContent(getEmptyFileContent());
-            return instance;
-        }
-        if (path.contains("://")) {
-            //CHECKSTYLE:OFF
-            final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(path);
-            //CHECKSTYLE:ON
-            instance.setEmptyFileContent(getEmptyFileContent());
-            return instance;
-        } else {
-            final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), path);
-            //CHECKSTYLE:OFF
-            final LocalWebdavFileChannel instance = new LocalWebdavFileChannel(newServerUri);
-            //CHECKSTYLE:ON
-            instance.setEmptyFileContent(getEmptyFileContent());
-            return instance;
-        }
+        final URI newServerUri = FileChannelPaths.newDirectoryUri(getBaseServerUri(), path);
+        //CHECKSTYLE:OFF
+        final LocalWebdavFileChannel instance = newDirectory(newServerUri);
+        //CHECKSTYLE:ON
+        instance.setEmptyFileContent(getEmptyFileContent());
+        return instance;
     }
 
     //CHECKSTYLE:OFF
@@ -226,8 +205,8 @@ public class LocalWebdavFileChannel implements IFileChannel {
     }
 
     @Override
-    public LocalWebdavFileChannel setFilename(final String filename) {
-        localDelegate.setFilename(filename);
+    public LocalWebdavFileChannel setFileName(final String filename) {
+        localDelegate.setFileName(filename);
         return this;
     }
 
@@ -244,8 +223,8 @@ public class LocalWebdavFileChannel implements IFileChannel {
     }
 
     @Override
-    public String getFilename() {
-        return localDelegate.getFilename();
+    public String getFileName() {
+        return localDelegate.getFileName();
     }
 
     @Override
@@ -357,7 +336,7 @@ public class LocalWebdavFileChannel implements IFileChannel {
             final LocalWebdavFileChannel targetStub = (LocalWebdavFileChannel) targetChannel;
             localDelegate.moveSameType(targetStub.localDelegate);
             setSubDirectory(targetStub.getSubDirectory());
-            setFilename(targetStub.getFilename());
+            setFileName(targetStub.getFileName());
         } else {
             localDelegate.moveSameType(targetChannel);
         }
@@ -411,7 +390,33 @@ public class LocalWebdavFileChannel implements IFileChannel {
     }
 
     @Override
+    public boolean equals(final Object obj) {
+        return FileChannelPaths.equals(this, obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return FileChannelPaths.hashCode(this);
+    }
+
+    @Override
     public String toString() {
         return FileChannelPaths.toString(this);
+    }
+
+    public static LocalWebdavFileChannel newInstance(final URI serverUri) {
+        return new LocalWebdavFileChannel(FileChannelPath.newInstance(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static LocalWebdavFileChannel newFile(final URI serverUri) {
+        return new LocalWebdavFileChannel(FileChannelPath.newFile(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static LocalWebdavFileChannel newDirectory(final URI serverUri) {
+        return new LocalWebdavFileChannel(FileChannelPath.newDirectory(serverUri, DEFAULT_SERVER_URI_F));
+    }
+
+    public static LocalWebdavFileChannel newInstance(final IFileChannelPath path) {
+        return new LocalWebdavFileChannel(path);
     }
 }

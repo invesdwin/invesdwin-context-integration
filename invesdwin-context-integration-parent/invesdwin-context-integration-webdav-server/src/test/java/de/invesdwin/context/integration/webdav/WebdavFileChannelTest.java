@@ -32,10 +32,10 @@ public class WebdavFileChannelTest extends ATest {
     public void test() {
         final URI destination = getDestination();
         //CHECKSTYLE:OFF
-        final WebdavFileChannel channel = new WebdavFileChannel(destination)
+        final WebdavFileChannel channel = WebdavFileChannel.newDirectory(destination)
                 .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
         //CHECKSTYLE:ON
-        channel.setFilename("noexisting");
+        channel.setFileName("noexisting");
         channel.connect();
         Assertions.checkNull(channel.downloadBytes());
         Assertions.checkFalse(channel.exists());
@@ -64,7 +64,7 @@ public class WebdavFileChannelTest extends ATest {
         channel.move(channel.withSubDirectory("sub"));
         Assertions.assertThat(channel.getSubDirectory()).isEqualTo("sub");
         channel.move(channel.withFilename("renamed"));
-        Assertions.assertThat(channel.getFilename()).isEqualTo("renamed");
+        Assertions.assertThat(channel.getFileName()).isEqualTo("renamed");
         channel.delete();
         channel.close();
     }
@@ -77,7 +77,7 @@ public class WebdavFileChannelTest extends ATest {
     public void testRandom() {
         final URI destination = getDestination();
         //CHECKSTYLE:OFF
-        final WebdavFileChannel channel = new WebdavFileChannel(destination)
+        final WebdavFileChannel channel = WebdavFileChannel.newDirectory(destination)
                 .setSubDirectory(WebdavFileChannelTest.class.getSimpleName());
         //CHECKSTYLE:ON
         channel.connect();

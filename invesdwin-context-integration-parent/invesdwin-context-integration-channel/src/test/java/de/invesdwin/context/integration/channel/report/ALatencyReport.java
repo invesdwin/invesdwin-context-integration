@@ -132,7 +132,8 @@ public abstract class ALatencyReport implements ILatencyReport {
     @Override
     public void measureLatency(final long index, final FDate message, final FDate arrivalTimestamp) {
         try {
-            final String line = index + CSV_SEPARATOR + (arrivalTimestamp.millisValue() - message.millisValue()) + "\n";
+            final String line = index + CSV_SEPARATOR
+                    + (arrivalTimestamp.doubleValue(measureTimeUnit) - message.doubleValue(measureTimeUnit)) + "\n";
             out.write(line.getBytes());
         } catch (final IOException e) {
             throw new RuntimeException(e);
@@ -170,7 +171,7 @@ public abstract class ALatencyReport implements ILatencyReport {
                 if (index < 0) {
                     continue;
                 }
-                final long latencyValueRaw = Long.parseLong(tokens[1]);
+                final double latencyValueRaw = Double.parseDouble(tokens[1]);
                 final double latencyValue = reportTimeUnit.asFractional()
                         .convert(latencyValueRaw, measureTimeUnit.asFractional());
                 values.add(Decimal.valueOf(latencyValue).round(decimalPlaces));

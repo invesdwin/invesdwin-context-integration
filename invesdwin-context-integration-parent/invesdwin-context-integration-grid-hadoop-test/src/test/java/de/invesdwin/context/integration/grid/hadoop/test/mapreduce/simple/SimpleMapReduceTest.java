@@ -35,7 +35,7 @@ public class SimpleMapReduceTest extends ATest {
         final Configuration conf = HADOOP.newHadoopConfiguration();
 
         // 1. Prepare Input Data on HDFS via IFileChannel
-        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HADOOP.getHdfsUri());
+        final IFileChannel fileChannel = FileChannelRegistry.newInstance(HadoopContainer.getHdfsUri());
         final IFileChannel inputFileChannel = fileChannel.withAbsolutePath("/tmp/test-input/data.txt");
 
         // Write a simple file to HDFS cleanly
@@ -70,7 +70,7 @@ public class SimpleMapReduceTest extends ATest {
         // 5. Find the part file (MapReduce creates files like part-r-00000)
         final IFileInfo resultFileInfo = outputChannel.listFiles()
                 .stream()
-                .filter(file -> file.getFilename().startsWith("part-"))
+                .filter(file -> file.getFileName().startsWith("part-"))
                 .findFirst()
                 .orElse(null);
 
@@ -78,7 +78,7 @@ public class SimpleMapReduceTest extends ATest {
         Assertions.checkTrue(resultFileInfo != null, "No output file found!");
 
         // 7. Read and assert the content
-        final String line = outputChannel.withFilename(resultFileInfo.getFilename()).downloadString();
+        final String line = outputChannel.withFilename(resultFileInfo.getFileName()).downloadString();
         Assertions.checkTrue(line != null && line.contains("total_lines\t3"),
                 "Expected output 'total_lines 3', but got: " + line);
     }

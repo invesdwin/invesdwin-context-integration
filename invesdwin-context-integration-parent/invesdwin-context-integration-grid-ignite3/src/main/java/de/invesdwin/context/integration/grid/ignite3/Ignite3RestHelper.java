@@ -1,6 +1,5 @@
 package de.invesdwin.context.integration.grid.ignite3;
 
-import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -10,6 +9,7 @@ import java.util.Base64;
 import javax.annotation.concurrent.Immutable;
 
 import de.invesdwin.util.lang.string.Charsets;
+import de.invesdwin.util.lang.uri.URIs;
 import de.invesdwin.util.time.date.millis.FDateMillis;
 import it.unimi.dsi.fastutil.io.FastByteArrayOutputStream;
 
@@ -30,11 +30,11 @@ public final class Ignite3RestHelper {
             final HttpClient client = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(10)).build();
 
             final HttpRequest.Builder initRequestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create("http://" + restAddress + "/management/v1/cluster/init"))
+                    .uri(URIs.asUri("http://" + restAddress + "/management/v1/cluster/init"))
                     .header("Content-Type", "application/json");
 
             final HttpRequest.Builder stateRequestBuilder = HttpRequest.newBuilder()
-                    .uri(URI.create("http://" + restAddress + "/management/v1/node/state"))
+                    .uri(URIs.asUri("http://" + restAddress + "/management/v1/node/state"))
                     .GET();
 
             // Add HTTP Basic Authentication header to both requests if credentials are provided
@@ -101,7 +101,7 @@ public final class Ignite3RestHelper {
         body.write(footer.getBytes(Charsets.defaultCharset()));
 
         final HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
+                .uri(URIs.asUri("http://" + restAddress + "/management/v1/deployment/units/" + unitId + "/" + version))
                 .header("Content-Type", "multipart/form-data; boundary=" + boundary);
 
         // Add HTTP Basic Authentication header if credentials are provided

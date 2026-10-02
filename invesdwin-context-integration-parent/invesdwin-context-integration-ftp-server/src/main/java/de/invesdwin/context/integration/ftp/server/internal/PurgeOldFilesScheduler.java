@@ -1,14 +1,15 @@
 package de.invesdwin.context.integration.ftp.server.internal;
 
 import javax.annotation.concurrent.NotThreadSafe;
-import jakarta.inject.Named;
 
 import org.springframework.scheduling.annotation.Scheduled;
 
 import de.invesdwin.aspects.annotation.SkipParallelExecution;
 import de.invesdwin.context.beans.hook.IStartupHook;
+import de.invesdwin.context.integration.ftp.FtpClientProperties;
 import de.invesdwin.context.integration.ftp.server.FtpServerProperties;
 import de.invesdwin.util.lang.Files;
+import jakarta.inject.Named;
 
 @Named
 @NotThreadSafe
@@ -21,7 +22,8 @@ public class PurgeOldFilesScheduler implements IStartupHook {
                 || !FtpServerProperties.WORKING_DIRECTORY.exists()) {
             return;
         }
-        Files.purgeOldFiles(FtpServerProperties.WORKING_DIRECTORY, FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION);
+        Files.purgeOldFiles(FtpServerProperties.WORKING_DIRECTORY, FtpServerProperties.PURGE_FILES_OLDER_THAN_DURATION,
+                FtpClientProperties.PROTECTED_FOLDER_NAME);
     }
 
     @Override
