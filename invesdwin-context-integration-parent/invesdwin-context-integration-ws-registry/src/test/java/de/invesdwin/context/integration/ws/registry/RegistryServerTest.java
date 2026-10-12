@@ -95,7 +95,9 @@ public class RegistryServerTest extends APersistenceTest {
     public void testServiceBindingHeartbeatChecker() throws IOException, InterruptedException {
         final String infoUri = IntegrationProperties.WEBSERVER_BIND_URI + "/spring-web/registry/info";
         //check this first because connection caching might lead to wrong result since it remembers basic auth
-        Assertions.assertThat(URIs.connect(infoUri).isDownloadPossible()).isTrue();
+        Assertions.assertThat(URIs.connect(infoUri)
+                .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .isDownloadPossible()).isTrue();
 
         final long countBindingsPreviously = serviceBindingDao.count();
 
