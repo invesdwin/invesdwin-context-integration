@@ -6,10 +6,8 @@ import java.net.InetSocketAddress;
 import javax.annotation.concurrent.NotThreadSafe;
 
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.GenericContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.testcontainers.utility.DockerImageName;
 
 import de.invesdwin.context.integration.channel.AChannelTest;
 import de.invesdwin.context.integration.channel.LatencyChannelTest;
@@ -18,6 +16,8 @@ import de.invesdwin.context.integration.channel.LatencyChannelTest.LatencyServer
 import de.invesdwin.context.integration.channel.ThroughputChannelTest;
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputReceiverTask;
 import de.invesdwin.context.integration.channel.ThroughputChannelTest.ThroughputSenderTask;
+import de.invesdwin.context.integration.channel.redis.ARespContainer;
+import de.invesdwin.context.integration.channel.redis.DragonflyContainer;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousWriter;
 import de.invesdwin.util.streams.buffer.bytes.IByteBufferProvider;
@@ -27,21 +27,17 @@ import de.invesdwin.util.time.duration.Duration;
 @Testcontainers
 @NotThreadSafe
 public class JedisChannelTest extends AChannelTest {
-    private static final int REDIS_PORT = 6379;
     @Container
-    private static final GenericContainer<?> REDIS_CONTAINER = newRedisContainer();
+    private static final ARespContainer<?> RESP_CONTAINER = newRespContainer();
     private static final Duration POLL_TIMEOUT = Duration.ZERO;
 
     @SuppressWarnings("resource")
-    private static GenericContainer<?> newRedisContainer() {
-        return new GenericContainer<>(DockerImageName.parse("redis:8.8.3-alpine")).withExposedPorts(REDIS_PORT);
-        // dragonflydb/dragonfly:v1.27.1
-        // redis:7.2-alpine
+    private static ARespContainer<?> newRespContainer() {
+        return new DragonflyContainer();
     }
 
     private InetSocketAddress newRedisServerAddress() {
-        //        return InetSocketAddress.createUnresolved("localhost", REDIS_PORT);
-        return InetSocketAddress.createUnresolved(REDIS_CONTAINER.getHost(), REDIS_CONTAINER.getMappedPort(REDIS_PORT));
+        return InetSocketAddress.createUnresolved(RESP_CONTAINER.getRespHost(), RESP_CONTAINER.getRespPort());
     }
 
     @Test
