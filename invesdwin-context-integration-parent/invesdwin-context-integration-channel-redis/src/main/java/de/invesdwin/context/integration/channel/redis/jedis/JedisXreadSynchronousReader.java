@@ -8,9 +8,9 @@ import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientReader;
 import de.invesdwin.context.integration.channel.sync.ISynchronousReader;
-import de.invesdwin.util.collections.array.primitive.circular.CircularGenericPrimitiveArrayQueue;
+import de.invesdwin.util.collections.array.primitive.queue.IGenericPrimitiveQueue;
+import de.invesdwin.util.collections.array.primitive.queue.circular.CircularGenericPrimitiveArrayQueue;
 import de.invesdwin.util.collections.factory.ILockCollectionFactory;
-import de.invesdwin.util.collections.queue.IGenericQueue;
 import de.invesdwin.util.error.FastEOFException;
 import de.invesdwin.util.math.Bytes;
 import de.invesdwin.util.streams.buffer.bytes.ByteBuffers;
@@ -39,7 +39,7 @@ public class JedisXreadSynchronousReader implements ISynchronousReader<IByteBuff
     private final Entry<byte[], StreamEntryID> streamEntry;
 
     // Use a queue to buffer messages fetched in batches
-    private final IGenericQueue<StreamEntryBinary> messageBuffer;
+    private final IGenericPrimitiveQueue<StreamEntryBinary> messageBuffer;
     private StreamEntryBinary message;
 
     public JedisXreadSynchronousReader(final JedisSynchronousChannel channel, final String topic) {
