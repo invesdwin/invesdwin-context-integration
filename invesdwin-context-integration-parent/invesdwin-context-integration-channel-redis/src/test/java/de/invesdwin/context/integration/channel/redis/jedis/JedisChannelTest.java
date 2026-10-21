@@ -72,7 +72,7 @@ public class JedisChannelTest extends AChannelTest {
     protected void runRedisThroughputTest(final InetSocketAddress redisServerAddress, final String topic)
             throws InterruptedException {
         final ISynchronousWriter<FDate> channelWriter = newSerdeWriter(
-                newJedisSynchronousWriter(new JedisSynchronousChannel(redisServerAddress), topic));
+                newJedisSynchronousWriter(new JedisSynchronousChannel(redisServerAddress), topic, false));
         final ThroughputSenderTask senderTask = new ThroughputSenderTask(this, channelWriter);
         final ISynchronousReader<FDate> channelReader = newSerdeReader(
                 newJedisSynchronousReader(new JedisSynchronousChannel(redisServerAddress), topic));
@@ -86,14 +86,14 @@ public class JedisChannelTest extends AChannelTest {
         final ISynchronousReader<FDate> requestReader = newSerdeReader(
                 newJedisSynchronousReader(serverChannel, requestTopic));
         final ISynchronousWriter<FDate> responseWriter = newSerdeWriter(
-                newJedisSynchronousWriter(serverChannel, responseTopic));
+                newJedisSynchronousWriter(serverChannel, responseTopic, true));
         final LatencyServerTask serverTask = new LatencyServerTask(this, requestReader, responseWriter);
 
         final JedisSynchronousChannel clientChannel = new JedisSynchronousChannel(redisServerAddress);
         final ISynchronousReader<FDate> responseReader = newSerdeReader(
                 newJedisSynchronousReader(clientChannel, responseTopic));
         final ISynchronousWriter<FDate> requestWriter = newSerdeWriter(
-                newJedisSynchronousWriter(clientChannel, requestTopic));
+                newJedisSynchronousWriter(clientChannel, requestTopic, true));
         final LatencyClientTask clientTask = new LatencyClientTask(this, requestWriter, responseReader);
 
         new LatencyChannelTest(this).runLatencyTest(serverTask, clientTask);
@@ -110,7 +110,7 @@ public class JedisChannelTest extends AChannelTest {
     }
 
     protected ISynchronousWriter<IByteBufferProvider> newJedisSynchronousWriter(final JedisSynchronousChannel channel,
-            final String topic) {
-        return new JedisXaddSynchronousWriter(channel, topic);
+            final String topic, final boolean flush) {
+        return new JedisXaddSynchronousWriter(channel, topic, flush);
     }
 }
