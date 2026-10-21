@@ -80,7 +80,6 @@ public class JedisXreadSynchronousReader implements ISynchronousReader<IByteBuff
     @Override
     public void close() throws IOException {
         if (client != null) {
-            client.close();
             client = null;
         }
         channel.close();
