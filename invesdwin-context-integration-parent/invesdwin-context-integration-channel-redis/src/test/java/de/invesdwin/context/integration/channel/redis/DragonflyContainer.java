@@ -6,7 +6,8 @@ import org.testcontainers.utility.DockerImageName;
 
 @NotThreadSafe
 public class DragonflyContainer extends ARespContainer<DragonflyContainer> {
-    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("dragonflydb/dragonfly:v1.27.1");
+    private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName
+            .parse("ghcr.io/dragonflydb/dragonfly:v2.0.2");
 
     public DragonflyContainer() {
         this(DEFAULT_IMAGE_NAME);
