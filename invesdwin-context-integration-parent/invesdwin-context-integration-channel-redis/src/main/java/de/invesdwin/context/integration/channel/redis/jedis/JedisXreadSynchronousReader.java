@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+
 import javax.annotation.concurrent.NotThreadSafe;
 
 import de.invesdwin.context.integration.channel.stream.client.channel.StreamSynchronousEndpointClientReader;
@@ -55,6 +56,10 @@ public class JedisXreadSynchronousReader implements ISynchronousReader<IByteBuff
     }
 
     protected XReadParams newParams() {
+        if (pollTimeout.isZero()) {
+            // Redis treats BLOCK 0 as blocking indefinitely
+            return new XReadParams().count(newBatchSize());
+        }
         // Read multiple values per poll to increase throughput
         return new XReadParams().count(newBatchSize()).block(pollTimeout.intValue(FTimeUnit.MILLISECONDS));
     }
