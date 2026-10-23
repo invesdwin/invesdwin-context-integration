@@ -151,6 +151,159 @@ public class PulsarNettyDelegateByteBuffer implements IByteBuffer {
         return delegate.getInt(index);
     }
 
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized int getIntVolatile(final int index) {
+        return getInt(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized byte getByteVolatile(final int index) {
+        return getByte(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized char getCharVolatile(final int index) {
+        return getChar(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized short getShortVolatile(final int index) {
+        return getShort(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized long getLongVolatile(final int index) {
+        return getLong(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized float getFloatVolatile(final int index) {
+        return getFloat(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized double getDoubleVolatile(final int index) {
+        return getDouble(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized int getIntAcquire(final int index) {
+        return getInt(index);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized long getLongAcquire(final int index) {
+        return getLong(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized int getIntVolatileReverse(final int index) {
+        return getIntReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized char getCharVolatileReverse(final int index) {
+        return getCharReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized short getShortVolatileReverse(final int index) {
+        return getShortReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized long getLongVolatileReverse(final int index) {
+        return getLongReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized float getFloatVolatileReverse(final int index) {
+        return getFloatReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized double getDoubleVolatileReverse(final int index) {
+        return getDoubleReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with putIntReleaseReverse/putIntOrderedReverse.
+     */
+    @Override
+    public synchronized int getIntAcquireReverse(final int index) {
+        return getIntReverse(index);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with putLongReleaseReverse/putLongOrderedReverse.
+     */
+    @Override
+    public synchronized long getLongAcquireReverse(final int index) {
+        return getLongReverse(index);
+    }
+
     @Override
     public int getIntReverse(final int index) {
         return delegate.getIntLE(index);
@@ -269,6 +422,195 @@ public class PulsarNettyDelegateByteBuffer implements IByteBuffer {
     public void putInt(final int index, final int value) {
         ensureCapacity(index, Integer.BYTES);
         delegate.setInt(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putIntVolatile(final int index, final int value) {
+        putInt(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putByteVolatile(final int index, final byte value) {
+        putByte(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putCharVolatile(final int index, final char value) {
+        putChar(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putShortVolatile(final int index, final short value) {
+        putShort(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putLongVolatile(final int index, final long value) {
+        putLong(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putFloatVolatile(final int index, final float value) {
+        putFloat(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putDoubleVolatile(final int index, final double value) {
+        putDouble(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putIntRelease(final int index, final int value) {
+        putInt(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putIntOrdered(final int index, final int value) {
+        putInt(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putLongRelease(final int index, final long value) {
+        putLong(index, value);
+    }
+
+    /**
+     * Synchronized delegation: the monitor provides the visibility guarantee until the shaded-netty ByteBuf
+     * exposes atomics.
+     */
+    @Override
+    public synchronized void putLongOrdered(final int index, final long value) {
+        putLong(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putIntVolatileReverse(final int index, final int value) {
+        putIntReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putCharVolatileReverse(final int index, final char value) {
+        putCharReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putShortVolatileReverse(final int index, final short value) {
+        putShortReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putLongVolatileReverse(final int index, final long value) {
+        putLongReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putFloatVolatileReverse(final int index, final float value) {
+        putFloatReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics.
+     */
+    @Override
+    public synchronized void putDoubleVolatileReverse(final int index, final double value) {
+        putDoubleReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with getIntAcquireReverse.
+     */
+    @Override
+    public synchronized void putIntReleaseReverse(final int index, final int value) {
+        putIntReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with getIntAcquireReverse.
+     */
+    @Override
+    public synchronized void putIntOrderedReverse(final int index, final int value) {
+        putIntReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with getLongAcquireReverse.
+     */
+    @Override
+    public synchronized void putLongReleaseReverse(final int index, final long value) {
+        putLongReverse(index, value);
+    }
+
+    /**
+     * Synchronized delegation to the plain reverse sibling: the monitor provides the visibility guarantee until
+     * the shaded-netty ByteBuf exposes atomics. Pairs with getLongAcquireReverse.
+     */
+    @Override
+    public synchronized void putLongOrderedReverse(final int index, final long value) {
+        putLongReverse(index, value);
     }
 
     @Override
