@@ -3,6 +3,20 @@
 
 	<name>de.invesdwin.context.integration.ws</name>
 
+	<!-- Retryable refusals (the IRetryLaterException family, e.g. while the service is initializing) must not
+		travel up into the webserver as servlet exceptions: they are answered as a clean 503 retry-later without
+		a stack. This fragment owns the spring-web mapping, so the filter covers every spring-web service
+		published through it in every dist. -->
+	<filter>
+		<filter-name>retryLaterFilter</filter-name>
+		<filter-class>de.invesdwin.context.integration.ws.internal.RetryLaterFilter</filter-class>
+	</filter>
+
+	<filter-mapping>
+		<filter-name>retryLaterFilter</filter-name>
+		<url-pattern>/spring-web/*</url-pattern>
+	</filter-mapping>
+
 	<!-- spring-web -->
 	<servlet>
 		<servlet-name>spring-web</servlet-name>
