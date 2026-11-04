@@ -20,7 +20,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @RequestMapping(RetryLaterFilterTest.PATH)
 public class TestRetryLaterController {
 
-    public static final String PENDING_MESSAGE = RetryLaterPendingRuntimeException.PENDING_TAG
+    public static final String PENDING_MESSAGE = RetryLaterPendingRuntimeException.PENDING_PREFIX
             + "Service is currently initializing: test";
 
     @RequestMapping("/refusal")
