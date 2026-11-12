@@ -24,7 +24,9 @@ import jakarta.servlet.http.HttpServletResponse;
  * serving its HTML error page - error spamming for what is a normal 'retry later' state.
  *
  * This filter maps any spring-web request failure whose cause chain carries a retryable to a clean 503 with the
- * short retry message and no stack, so the webserver never sees the exception. The cause chain must be searched
+ * short retry message and no stack, so the webserver never sees the exception. With
+ * Throwables.DEBUG_STACK_TRACE_ENABLED the full chain is appended to the body, which is how the operator gets the
+ * server-side detail back without a rebuild. The cause chain must be searched
  * and not just the top exception type, because the retryable often arrives wrapped - e.g. Futures.get re-throws
  * a joined async update future's cause as a plain RuntimeException, which loses the subtype. The
  * IRetryLaterException marker alone does not carry a message, so the found marker is used as the Throwable it
@@ -72,11 +74,10 @@ public class RetryLaterFilter implements Filter {
             httpResponse.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             httpResponse.setContentType("text/plain");
             httpResponse.setCharacterEncoding("UTF-8");
-            String message = retry.getMessage();
-            if (message == null) {
-                message = retry.getClass().getSimpleName();
-            }
-            httpResponse.getWriter().write(message);
+            //the body is short by design (the http client turns a non-2xx into an IOException carrying it). It names the
+            //verdict class plus its cause chain; with Throwables.DEBUG_STACK_TRACE_ENABLED the full stack of the verdict
+            //comes along too, which is how the operator gets the server-side detail back without a rebuild.
+            httpResponse.getWriter().write(Throwables.getMessagesAndStackTraceIfDebugEnabled(retry));
         }
     }
 
