@@ -1,9 +1,12 @@
 package de.invesdwin.context.integration.ws.internal;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import javax.annotation.concurrent.ThreadSafe;
 
+import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Test;
 
 import de.invesdwin.context.integration.IntegrationProperties;
@@ -45,6 +48,63 @@ public class RetryLaterFilterTest extends ATest {
     @Test
     public void testRetryLaterDuringStreamWriteIsNotAServletErrorPage() throws IOException {
         assertRetryLaterStatus(newUri("/stream"));
+    }
+
+    /**
+     * The load-bearing case: the handler pushed bytes into the container (its writer's close() flushes the format
+     * header) and only then refuses. With the guard the header is still buffered, so the refusal is answered as a
+     * retry-later status with its message; without it (SPRING_WEB_RETRY_LATER_BUFFER_BYTES=0) the flush has already
+     * committed the response and this cannot hold any more.
+     */
+    @Test
+    public void testRefusalAfterAHeaderFlushIsStillAnsweredAsRetryLater() throws IOException {
+        final String body = assertRetryLaterStatus(newUri("/flushThenRefusal"));
+        Assertions.assertThat(body).doesNotContain("format-header");
+    }
+
+    /**
+     * The buffering guard must not change a successful response: the body arrives complete and exactly once, also
+     * when it is bigger than the buffer (the shape where an early release followed by a second write of the prefix
+     * would show up as a wrong length).
+     */
+    @Test
+    public void testSuccessfulBodiesArriveCompleteAndExactlyOnce() throws IOException {
+        Assertions.assertThat(new String(downloadBody(newUri("/ok")), StandardCharsets.UTF_8))
+                .isEqualTo(TestRetryLaterController.OK_BODY);
+        final byte[] large = downloadBody(newUri("/largeOk"));
+        Assertions.assertThat(large).hasSize(TestRetryLaterController.LARGE_BODY_BYTES);
+        Assertions.assertThat(new String(large, StandardCharsets.UTF_8))
+                .isEqualTo(TestRetryLaterController.LARGE_BODY);
+    }
+
+    /**
+     * The documented limit of the guard: once the body has overflowed the buffer it is in the container, so the
+     * refusal cannot be replaced by a retry-later status - the client keeps its partial body instead.
+     */
+    @Test
+    public void testRefusalAfterTheBufferOverflowKeepsThePartialBody() throws IOException {
+        String failureMessage = null;
+        int receivedBytes = 0;
+        try {
+            receivedBytes = downloadBody(newUri("/largeThenRefusal")).length;
+        } catch (final IOException e) {
+            failureMessage = e.getMessage();
+        }
+        Assertions.assertThat(receivedBytes >= TestRetryLaterController.LARGE_BODY_BYTES
+                || failureMessage != null).isTrue();
+        if (failureMessage != null) {
+            //it is a truncated stream, not a retry-later status: the refusal did not become answerable any more
+            Assertions.assertThat(failureMessage).doesNotContain("503");
+            Assertions.assertThat(failureMessage).doesNotContain("Service is currently initializing");
+        }
+    }
+
+    private byte[] downloadBody(final String uri) throws IOException {
+        try (InputStream in = URIs.connect(uri)
+                .putBasicAuth(IntegrationWsProperties.SPRING_WEB_USER, IntegrationWsProperties.SPRING_WEB_PASSWORD)
+                .downloadInputStream()) {
+            return IOUtils.toByteArray(in);
+        }
     }
 
     private String newUri(final String methodPath) {

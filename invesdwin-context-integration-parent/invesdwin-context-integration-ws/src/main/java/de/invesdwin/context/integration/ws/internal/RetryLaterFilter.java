@@ -5,6 +5,7 @@ import java.io.IOException;
 import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.retry.IRetryLaterException;
+import de.invesdwin.context.integration.ws.IntegrationWsProperties;
 import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import jakarta.servlet.Filter;
@@ -36,8 +37,11 @@ import jakarta.servlet.http.HttpServletResponse;
  * implementor is unchecked (RetryLaterRuntimeException and its subtypes), and spring-web rethrows an unchecked
  * handler failure unwrapped, so a checked-only catch would never see the family it exists for.
  *
- * A failure after the response is already committed (streamed data started) cannot be rewritten anymore without
- * corrupting the body, so it keeps the old path.
+ * The response is wrapped in {@link RetryLaterBufferedResponse}, so "streamed data started" no longer means
+ * "committed": a refusal that surfaces while a demand is being written into the response is still answerable as long
+ * as the buffered body has not exceeded IntegrationWsProperties.SPRING_WEB_RETRY_LATER_BUFFER_BYTES. A body larger
+ * than that is a real stream and goes to the container while the handler is still writing, and a failure after that
+ * point cannot be rewritten without corrupting the body, so it keeps the old path.
  *
  * The consumer side is unaffected: the http client surfaces any non-2xx as an IOException, which is in the
  * allowed causes of the retry policies, so the calling @Retry aspects back off exactly as they did with the
@@ -51,22 +55,31 @@ public class RetryLaterFilter implements Filter {
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
-        try {
+        if (!(request instanceof HttpServletRequest) || !(response instanceof HttpServletResponse)) {
             chain.doFilter(request, response);
+            return;
+        }
+        final HttpServletRequest httpRequest = (HttpServletRequest) request;
+        final HttpServletResponse httpResponse = (HttpServletResponse) response;
+        //the body is buffered so that a refusal surfacing while a demand is streamed into the response can still be
+        //answered here; see RetryLaterBufferedResponse for why the alternative is a webserver WARN per request
+        final RetryLaterBufferedResponse deferred = new RetryLaterBufferedResponse(httpResponse,
+                IntegrationWsProperties.SPRING_WEB_RETRY_LATER_BUFFER_BYTES);
+        try {
+            chain.doFilter(request, deferred);
+            deferred.flushBufferedBody();
         } catch (final Exception e) {
             final IRetryLaterException marker = Throwables.getCauseByType(e, IRetryLaterException.class);
-            if (marker == null || !(request instanceof HttpServletRequest)
-                    || !(response instanceof HttpServletResponse)) {
+            if (marker == null) {
                 throw e;
             }
             //every IRetryLaterException implementor is a Throwable
             final Throwable retry = (Throwable) marker;
-            final HttpServletRequest httpRequest = (HttpServletRequest) request;
-            final HttpServletResponse httpResponse = (HttpServletResponse) response;
-            if (httpResponse.isCommitted()) {
+            if (deferred.isBodyInFlight()) {
                 //streaming already started, a 503 cannot replace the partial body anymore
                 throw e;
             }
+            deferred.discardBufferedBody();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Answering with retry-later for [%s]: %s", httpRequest.getRequestURI(), retry.getMessage());
             }
