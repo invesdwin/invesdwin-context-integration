@@ -30,6 +30,10 @@ import jakarta.servlet.http.HttpServletResponse;
  * IRetryLaterException marker alone does not carry a message, so the found marker is used as the Throwable it
  * must be.
  *
+ * The catch is Exception and not only the checked ServletException | IOException: every IRetryLaterException
+ * implementor is unchecked (RetryLaterRuntimeException and its subtypes), and spring-web rethrows an unchecked
+ * handler failure unwrapped, so a checked-only catch would never see the family it exists for.
+ *
  * A failure after the response is already committed (streamed data started) cannot be rewritten anymore without
  * corrupting the body, so it keeps the old path.
  *
@@ -47,7 +51,7 @@ public class RetryLaterFilter implements Filter {
             throws IOException, ServletException {
         try {
             chain.doFilter(request, response);
-        } catch (final ServletException | IOException e) {
+        } catch (final Exception e) {
             final IRetryLaterException marker = Throwables.getCauseByType(e, IRetryLaterException.class);
             if (marker == null || !(request instanceof HttpServletRequest)
                     || !(response instanceof HttpServletResponse)) {
