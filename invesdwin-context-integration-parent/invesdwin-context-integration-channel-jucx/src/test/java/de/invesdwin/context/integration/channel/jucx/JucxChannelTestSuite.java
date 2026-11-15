@@ -8,25 +8,31 @@ import org.junit.platform.suite.api.Suite;
 /**
  * The build and CI run this suite and nothing else in the module.
  * <p>
- * What is below is measured, not inherited (2026-11-15: one module run plus one run per class, on a box that has the
- * UCX engine and no RDMA link; the load average was 13-22 from an unrelated process, which depresses the rates but not
- * the failure mode). {@link BidiJucxChannelTest} writes and reads all 1,000 records and then fails the close handshake
- * when the read does not return within {@code AChannelTest.MAX_WAIT_DURATION}. {@link JucxChannelTest} completes its
- * 1,000 records too and then does not finish: run alone, both of its threads sit at full CPU inside
- * {@code UcpEndpoint.destroyEndpointNative}, reached from the channel finalizer's quiet close, for minutes; run after
- * another UCX class in the same reused surefire fork, it aborts the JVM instead on the worker-ownership assertion
- * {@code ucs_async_check_owner_thread(&(worker)->async)} in {@code ucp_ep.c}, so no {@code Tests run} line for it ever
- * appears. {@link RpcJucxChannelTest} is selected and disabled at the class level ("jucx version mismatch"), which the
- * parent pom's {@code version.jucx} against the box's UCX release has never resolved. This module is therefore red
- * before any machine change, and it stays red here: the failure is in the channel's teardown, not in a missing
- * transport, and it is not hidden behind an assumption.
+ * What is recorded below is measured, not inherited (2026-11-15: one module run plus one run per class, on a box that
+ * has the UCX engine and no RDMA link; the load average was 13-22 from an unrelated process, which depresses the rates
+ * but not the failure mode). {@link BidiJucxChannelTest} writes and reads all 1,000 records and then fails the close
+ * handshake when the read does not return within {@code AChannelTest.MAX_WAIT_DURATION}. {@link JucxChannelTest}
+ * completes its 1,000 records too and then does not finish, in one of two shapes, seen in both class orders and with
+ * this suite's availability cell absent: run alone it simply hangs, both of its threads at full CPU inside
+ * {@code UcpEndpoint.destroyEndpointNative}, reached from the channel finalizer's quiet close, for six measured
+ * minutes; run after another UCX class in the reused surefire fork it prints the worker-ownership assertion
+ * {@code ucs_async_check_owner_thread(&(worker)->async)} from {@code ucp_ep.c}, surefire records the fork as gone and
+ * no {@code Tests run} line for it ever appears - after which the JVM process frequently keeps spinning at full CPU for
+ * minutes anyway, so a build that has already reported may still have left a fork running.
+ * {@link RpcJucxChannelTest} is selected and disabled at the class level ("jucx version mismatch"), which the parent
+ * pom's {@code version.jucx} against the box's UCX release has never resolved. This module is therefore red before any
+ * machine change, and it stays red here: the failure is in the channel's teardown, not in a missing transport, and it
+ * is not hidden behind an assumption.
  * <p>
  * {@link JucxChannelAvailabilityTest} states the precondition the RDMA work depends on - the engine loads, and no
- * rc_verbs device is present - and reports the missing half by skipping. It is listed last because that is where it
- * costs nothing: measured, with that cell run first the next UCX class hangs rather than aborts, which would stretch
- * this module's red run out to the bom's 1,800 s fork timeout. While the fork dies early, as it does today, the cell
- * does not get to report here; the equivalent cell in the channel-hadronio suite does, and that is the one to watch
- * during a software-RDMA sitting.
+ * rc_verbs device is present - and reports the missing half by skipping. It is listed first so that its reading exists
+ * before the fork can go: this suite does not reach its own end today, and a cell placed last is a cell that never
+ * reports. The equivalent cell in the channel-hadronio suite, in a module that does terminate, is the one to watch
+ * during a software-RDMA sitting. One cost named honestly, with the sample kept small on purpose: in the four runs
+ * that had this cell in the suite the second UCX class hung rather than aborted three times, in the two runs that had
+ * no cell it aborted both times, and no mechanism is known for that - so a red run of this module may spin rather than
+ * fail, and the bound the bom documents is not enough to stop it: measured, a fork was still at full CPU 5m13s into a
+ * run that had asked for {@code -DforkedProcessTimeoutInSeconds=240}. Whoever runs this build kills the leftover fork.
  * <p>
  * Deliberately not selected: the seven classes under {@code examples}, which are vendored upstream JUCX tests of that
  * binding rather than of this module's channels. Measured per class, one surefire run each:
@@ -42,8 +48,8 @@ import org.junit.platform.suite.api.Suite;
  * the report of the classes above with a crash rather than add coverage of this module.
  */
 @Suite
-@SelectClasses({ BidiJucxChannelTest.class, JucxChannelTest.class, RpcJucxChannelTest.class,
-        JucxChannelAvailabilityTest.class })
+@SelectClasses({ JucxChannelAvailabilityTest.class, BidiJucxChannelTest.class, JucxChannelTest.class,
+        RpcJucxChannelTest.class })
 @Immutable
 public class JucxChannelTestSuite {
 
