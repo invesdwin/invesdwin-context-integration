@@ -26,9 +26,9 @@ import org.junit.platform.suite.api.Suite;
  * {@link de.invesdwin.context.integration.channel.darpc.sync.active.DisniActiveChannelTest},
  * {@link de.invesdwin.context.integration.channel.darpc.sync.active.BidiDisniActiveChannelTest},
  * {@link de.invesdwin.context.integration.channel.darpc.sync.passive.DisniPassiveChannelTest} and
- * {@link de.invesdwin.context.integration.channel.darpc.sync.passive.BidiDisniPassiveChannelTest}; the two rpc.client
- * ones additionally bind a fixed host address rather than a discovered local one, so they need a per-box address
- * before they can be selected.
+ * {@link de.invesdwin.context.integration.channel.darpc.sync.passive.BidiDisniPassiveChannelTest}. All eight now bind
+ * a discovered local address ({@code findLocalNetworkAddress()}), so the native library is the only precondition left;
+ * the two rpc.client ones used to bind a fixed host address that no box in the fleet can bind at all.
  */
 // CHECKSTYLE:OFF
 @Suite
