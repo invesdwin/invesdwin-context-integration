@@ -14,7 +14,7 @@ import org.junit.platform.suite.api.Suite;
  * run in a build as they stand: on a machine without the disni native library they all error with
  * {@code java.lang.UnsatisfiedLinkError: no disni in java.library.path}, followed by the permanent
  * {@code NoClassDefFoundError: Could not initialize class com.ibm.disni.verbs.impl.NativeDispatcher}. Measured per
- * class on subes-lap-mid, 2026-11-15, one surefire run each: 11 errors across the eight -
+ * class on one dev box, 2026-11-15, one surefire run each: 11 errors across the eight -
  * {@link DarpcChannelAvailabilityTest} states that precondition instead of hiding it, since an empty suite is not
  * allowed either ({@code NoTestsDiscovered} fails the build).
  * <p>
