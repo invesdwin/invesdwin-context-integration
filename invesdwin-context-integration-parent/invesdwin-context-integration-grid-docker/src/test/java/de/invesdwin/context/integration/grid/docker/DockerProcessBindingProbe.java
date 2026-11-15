@@ -31,26 +31,24 @@ import de.invesdwin.util.time.duration.Duration;
  *
  * The iqfeed service starts its IQConnect provider in a container (IqfeedLoginCredentials#newIqconnectContainer) and
  * DTN allows one session per account, so a surviving container from a dead process is a second holder of that
- * session. The production symptom on ptstaging is two mechanisms fighting each other: the fleet's own labeled claim
+ * session. The production symptom is two mechanisms fighting each other: the service's own labeled claim
  * (IqfeedContainerReclaimer stops and removes every container carrying the service label, at startup, between start
  * retries and on graceful cleanup) and ryuk, which only reaps containers labeled with its own session id. The
- * measurement behind that design is the mid repro of 2026-11-05 quoted in the reclaimer javadoc ('ryuk killed the
+ * measurement behind that design is the repro of 2026-11-05 quoted in the reclaimer javadoc ('ryuk killed the
  * kill -9 orphan about a second after its client died, while our stop was still running'). This probe re-measures the
  * same thing on the current stack (testcontainers 2.0.3, ryuk 0.13.0, docker 29.x) with several processes and real
  * kill -9, so that a better solution can be argued from numbers instead of from the symptom.
  *
- * Measured on subes-lap-mid, three full runs, 4 cells each, with a kill -9 reap at PT10.051S / PT10.060S / PT10.071S,
- * the reaper container re-used by the next process while the session ids differ, a fixed-port challenger refused
- * without any container being created, and an orphan still running 60 s after its reaper was removed by hand. The
- * write-up with the interpretation is 'Does ryuk bind a container to the java process? Measured, with kill -9' in the
- * trading research notes.
+ * Measured over three full runs, 4 cells each, with a kill -9 reap at PT10.051S / PT10.060S / PT10.071S, the reaper
+ * container re-used by the next process while the session ids differ, a fixed-port challenger refused without any
+ * container being created, and an orphan still running 60 s after its reaper was removed by hand.
  *
  * NOT part of the build: the class name is deliberately outside surefire's default includes, because every cell needs
  * a docker daemon and one of them removes the reaper. Run it by hand with
  * {@code mvnd -o -T1 test -Dtest=DockerProcessBindingProbe -Dsurefire.failIfNoSpecifiedTests=false} in this module's
- * directory on a box with docker. Nothing here touches ptstaging: no iqfeed image, no credentials, none of the fixed
- * IQConnect ports - the payload is a plain shell container and the port collision uses an unused 17xxx port. Every
- * container, process and file a cell starts is removed in its finally block.
+ * directory on a box with docker. Nothing here needs the live feed: no iqfeed image, no credentials, none of the
+ * fixed IQConnect ports - the payload is a plain shell container and the port collision uses an unused 17xxx port.
+ * Every container, process and file a cell starts is removed in its finally block.
  */
 @NotThreadSafe
 public class DockerProcessBindingProbe extends ATest {
