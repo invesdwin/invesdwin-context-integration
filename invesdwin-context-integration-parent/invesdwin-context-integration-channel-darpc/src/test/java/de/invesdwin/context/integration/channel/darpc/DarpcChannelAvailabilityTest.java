@@ -13,9 +13,9 @@ import de.invesdwin.util.assertions.Assertions;
  * harnesses of this module depend on, and reports it honestly rather than letting them error.
  * <p>
  * On a machine without the disni native library the cell is skipped by an assumption, not passed - a skip must never
- * look like a pass. Measured on subes-lap-mid, 2026-11-15: no box in this fleet that this session could reach has the
- * library (subes-lap-mid, subes-lappy and ptstaging each report no infiniband device and no libdisni), and the eight
- * latency classes of this module fail with {@code java.lang.UnsatisfiedLinkError: no disni in java.library.path}
+ * look like a pass. Measured 2026-11-15 across the fleet over ssh: subes-lap-mid, subes-lap-xmg and subes-lappy each
+ * have no infiniband device, no libdisni in ldconfig and no libdisni on disk, while the disni 2.1 Java artifact sits in
+ * every local repository - the module compiles and only the native load fails - and the eight latency classes all die on {@code java.lang.UnsatisfiedLinkError: no disni in java.library.path}
  * followed by the permanent {@code NoClassDefFoundError: Could not initialize class
  * com.ibm.disni.verbs.impl.NativeDispatcher}.
  */
