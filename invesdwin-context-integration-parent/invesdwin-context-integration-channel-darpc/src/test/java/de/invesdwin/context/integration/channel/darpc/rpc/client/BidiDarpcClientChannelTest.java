@@ -20,8 +20,9 @@ public class BidiDarpcClientChannelTest extends AChannelTest {
 
     @Test
     public void testBidiDarpcPerformance() throws InterruptedException {
+        final String addr = findLocalNetworkAddress();
         final int port = NetworkUtil.findAvailableTcpPort();
-        final InetSocketAddress address = new InetSocketAddress("192.168.0.20", port);
+        final InetSocketAddress address = new InetSocketAddress(addr, port);
         runDarpcPerformanceTest(address);
     }
 
