@@ -23,8 +23,8 @@ import jakarta.servlet.http.HttpServletResponseWrapper;
  * try-with-resources closes it on the way out of a failed write, and that close flushes. From then on
  * {@link RetryLaterFilter} cannot answer the refusal any more (it deliberately leaves a committed response alone),
  * so the exception reaches the webserver, which logs a WARN with a full stack per request while the client receives
- * a truncated body without a message - measured on ptstaging 2026-11-12: 230 such records in one 6-minute run, 229
- * of them inside 61 seconds on a single financialdatalive/getTicks range.
+ * a truncated body without a message - measured on the production service 2026-11-12: 230 such records in one
+ * 6-minute run, 229 of them inside 61 seconds on a single financialdatalive/getTicks range.
  *
  * This wrapper keeps the body out of the container until the chain has finished: while nothing has been released,
  * writes go into a bounded buffer and the container stream is never touched. {@link #flushBufferedBody()} hands the
