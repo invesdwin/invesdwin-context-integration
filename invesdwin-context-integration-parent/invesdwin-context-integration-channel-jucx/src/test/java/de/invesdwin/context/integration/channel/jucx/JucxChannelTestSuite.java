@@ -41,12 +41,10 @@ import org.junit.platform.suite.api.Suite;
  * own. None of them is selected, because a second UCX-using class in one reused fork can end it, which would replace
  * the report of the classes above with a crash rather than add coverage of this module.
  */
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ BidiJucxChannelTest.class, JucxChannelTest.class, RpcJucxChannelTest.class,
         JucxChannelAvailabilityTest.class })
 @Immutable
-// CHECKSTYLE:ON
 public class JucxChannelTestSuite {
 
 }

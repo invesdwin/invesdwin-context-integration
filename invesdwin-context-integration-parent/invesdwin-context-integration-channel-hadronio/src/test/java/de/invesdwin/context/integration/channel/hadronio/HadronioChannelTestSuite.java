@@ -33,12 +33,10 @@ import de.invesdwin.context.integration.channel.hadronio.blocking.BlockingHadron
  * ({@code UcpParams.setMtWorkersShared}, or a UCX build without {@code --enable-mt}), not an RDMA device: until that
  * is settled they would replace the module's report with a crash instead of adding coverage.
  */
-// CHECKSTYLE:OFF
 @Suite
 @SelectClasses({ HadronioChannelAvailabilityTest.class, BidiBlockingHadronioSocketChannelTest.class,
         BlockingHadronioSocketChannelTest.class, BidiHadronioSocketChannelTest.class, HadronioSocketChannelTest.class })
 @Immutable
-// CHECKSTYLE:ON
 public class HadronioChannelTestSuite {
 
 }
