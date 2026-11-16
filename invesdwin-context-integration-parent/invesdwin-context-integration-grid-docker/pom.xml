@@ -16,6 +16,7 @@
 				<configuration>
 					<includes>
 						<include>de/invesdwin/context/integration/grid/docker/DockerContainerTestSuite.java</include>
+						<include>de/invesdwin/context/integration/grid/docker/DockerContainerIntegrationTestSuite.java</include>
 					</includes>
 				</configuration>
 			</plugin>
