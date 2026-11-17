@@ -95,7 +95,7 @@
 		<project.version.invesdwin-context-persistence>1.0.4-SNAPSHOT</project.version.invesdwin-context-persistence>
 		<project.version.invesdwin-context-security>1.0.3-SNAPSHOT</project.version.invesdwin-context-security>
 		<version.spring-batch-admin>1.3.1.RELEASE</version.spring-batch-admin>
-		<version.freemarker>2.3.23</version.freemarker>
+		<version.freemarker>2.3.35</version.freemarker>
 		<version.spring-amqp>3.2.8</version.spring-amqp>
 		<version.artemis>2.27.0</version.artemis>
 		<version.jakarta-jms>3.1.0</version.jakarta-jms>
