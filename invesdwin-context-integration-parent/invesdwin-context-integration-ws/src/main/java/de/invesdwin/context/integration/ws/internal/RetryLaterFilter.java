@@ -6,7 +6,6 @@ import javax.annotation.concurrent.ThreadSafe;
 
 import de.invesdwin.context.integration.retry.IRetryLaterException;
 import de.invesdwin.context.integration.ws.IntegrationWsProperties;
-import de.invesdwin.context.log.Log;
 import de.invesdwin.util.error.Throwables;
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
@@ -43,14 +42,16 @@ import jakarta.servlet.http.HttpServletResponse;
  * than that is a real stream and goes to the container while the handler is still writing, and a failure after that
  * point cannot be rewritten without corrupting the body, so it keeps the old path.
  *
+ * Every refusal is announced by {@link RetryLaterRefusalReports}: one line per route and verdict class per minute,
+ * carrying the number of refusals that line covers. Without it the path is silent at production log levels, and a
+ * consumer stuck retrying for hours leaves no server-side trace of what refused it.
+ *
  * The consumer side is unaffected: the http client surfaces any non-2xx as an IOException, which is in the
  * allowed causes of the retry policies, so the calling @Retry aspects back off exactly as they did with the
  * webserver error page before.
  */
 @ThreadSafe
 public class RetryLaterFilter implements Filter {
-
-    private static final Log LOG = new Log(RetryLaterFilter.class);
 
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
@@ -80,9 +81,7 @@ public class RetryLaterFilter implements Filter {
                 throw e;
             }
             deferred.discardBufferedBody();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("Answering with retry-later for [%s]: %s", httpRequest.getRequestURI(), retry.getMessage());
-            }
+            RetryLaterRefusalReports.record(httpRequest.getRequestURI(), retry);
             httpResponse.reset();
             httpResponse.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             httpResponse.setContentType("text/plain");

@@ -6,10 +6,12 @@ import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
 import de.invesdwin.context.integration.ws.internal.RetryLaterFilterTest;
+import de.invesdwin.context.integration.ws.internal.RetryLaterRefusalReportTest;
 import de.invesdwin.context.integration.ws.registry.publication.XsdWebServicePublicationTest;
 
 @Suite
-@SelectClasses({ XsdWebServicePublicationTest.class, RetryLaterFilterTest.class })
+@SelectClasses({ XsdWebServicePublicationTest.class, RetryLaterFilterTest.class,
+        RetryLaterRefusalReportTest.class })
 @Immutable
 public class WebServiceTestSuite {
 
