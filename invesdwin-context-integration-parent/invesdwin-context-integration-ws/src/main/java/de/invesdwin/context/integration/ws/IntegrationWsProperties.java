@@ -23,10 +23,12 @@ public final class IntegrationWsProperties {
     public static final String WSS_USERNAMETOKEN_PASSWORD;
     public static final String SPRING_WEB_USER;
     public static final String SPRING_WEB_PASSWORD;
+    public static final int SPRING_WEB_RETRY_LATER_BUFFER_BYTES;
     private static final SystemProperties SYSTEM_PROPERTIES = new SystemProperties(IntegrationWsProperties.class);
 
     private static final String KEY_REGISTRY_SERVER_URI = "REGISTRY_SERVER_URI";
     private static final String KEY_USE_REGISTRY_GATEWAY = "USE_REGISTRY_GATEWAY";
+    private static final String KEY_SPRING_WEB_RETRY_LATER_BUFFER_BYTES = "SPRING_WEB_RETRY_LATER_BUFFER_BYTES";
 
     static {
         WSS_USERNAMETOKEN_USER = SYSTEM_PROPERTIES.getString("WSS_USERNAMETOKEN_USER");
@@ -35,6 +37,8 @@ public final class IntegrationWsProperties {
         SPRING_WEB_USER = SYSTEM_PROPERTIES.getString("SPRING_WEB_USER");
         SPRING_WEB_PASSWORD = SYSTEM_PROPERTIES.getStringWithSecurityWarning("SPRING_WEB_PASSWORD",
                 IProperties.INVESDWIN_DEFAULT_PASSWORD);
+        SPRING_WEB_RETRY_LATER_BUFFER_BYTES = SYSTEM_PROPERTIES.getIntegerOptional(
+                KEY_SPRING_WEB_RETRY_LATER_BUFFER_BYTES, 16 * 1024).intValue();
         //just validate that the property exists
         Assertions.assertThat(getRegistryServerUri()).isNotNull();
     }

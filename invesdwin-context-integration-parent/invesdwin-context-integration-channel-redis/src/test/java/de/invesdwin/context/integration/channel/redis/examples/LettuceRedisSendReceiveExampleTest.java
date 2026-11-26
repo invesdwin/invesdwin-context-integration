@@ -31,7 +31,7 @@ import io.lettuce.core.api.sync.RedisStreamCommands;
 
 @Testcontainers
 @NotThreadSafe
-public class RedisSendReceiveExampleTest extends ATest {
+public class LettuceRedisSendReceiveExampleTest extends ATest {
 
     private static final String STREAM_NAME = "helloworldtopic";
     private static final String GROUP_NAME = "test_consumer_group";

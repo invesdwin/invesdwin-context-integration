@@ -142,7 +142,7 @@
 		<version.confluent>7.8.3</version.confluent>
 		<version.pulsar>4.1.2</version.pulsar>
 		<version.lettuce>6.8.0.RELEASE</version.lettuce>
-		<version.jedis>6.1.0</version.jedis>
+		<version.jedis>8.0.1</version.jedis>
 		<version.disni>2.1</version.disni>
 		<version.darpc>1.9</version.darpc>
 		<version.jucx>1.14.100</version.jucx>
